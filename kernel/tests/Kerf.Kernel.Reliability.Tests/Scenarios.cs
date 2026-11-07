@@ -55,6 +55,39 @@ internal static class Scenarios
         return name.EndsWith(".gz", StringComparison.Ordinal) ? new GZipStream(stream, CompressionMode.Decompress) : stream;
     }
 
+    // A file that's read is walked as a caller would: a refusal at either step is what's wanted
+    private static string OpenAndWalk(Result<Shape> read)
+    {
+        if (!read.IsSuccess)
+        {
+            return read.Error!.Code.Value;
+        }
+
+        return Walk(read.Value);
+    }
+
+    private static string OpenAndWalk(Result<ModelNode> read)
+    {
+        if (!read.IsSuccess)
+        {
+            return read.Error!.Code.Value;
+        }
+
+        return read.Value.Shape is { } shape ? Walk(shape) : "no shape";
+    }
+
+    private static string Walk(Shape shape)
+    {
+        try
+        {
+            return "walked " + shape.AllFaces().Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (ArgumentException)
+        {
+            return "refused";
+        }
+    }
+
     private static MemoryStream Bytes(string name)
     {
         var bytes = new MemoryStream();
@@ -143,6 +176,9 @@ internal static class Scenarios
 
             return shape.AllFaces().Length.ToString(System.Globalization.CultureInfo.InvariantCulture);
         },
+        ["doubling-brep"] = () => OpenAndWalk(Brep.Read(DoublingFiles.Brep())),
+        ["doubling-step"] = () => OpenAndWalk(Step.Read(DoublingFiles.Step())),
+        ["doubling-gltf"] = () => OpenAndWalk(Gltf.Read(DoublingFiles.Gltf())),
         ["mesh-too-fine"] = () => Outcome(Solid.Sphere(10).Value.Shape.Mesh(new MeshOptions { LinearDeflection = 1e-6, Parallel = false })),
         ["mesh-sensible"] = () => Outcome(Solid.Sphere(10).Value.Shape.Mesh(new MeshOptions { LinearDeflection = 1e-2, Parallel = false })),
         ["placement-chain"] = PlacementChain,
