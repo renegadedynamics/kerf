@@ -418,7 +418,7 @@ internal static class ShapeAlgebra
         var result = found.Count == 1 ? found[0] : ShapeExtensions.MakeComposite(found);
         if (!SkipClean.Clean)
             return result;
-        // Only tidying, so a clean that spoils a good result is left out, as BoolOp did a moment ago with this same clean (decision 21505)
+        // Only tidying, so a clean that spoils a good result is left out, as BoolOp did a moment ago with this same clean (decision 1882)
         var cleaned = result.Clean();
         if (cleaned.IsValid || !result.IsValid)
             return cleaned;

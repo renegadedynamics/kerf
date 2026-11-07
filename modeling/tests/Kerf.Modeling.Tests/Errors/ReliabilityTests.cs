@@ -55,7 +55,7 @@ public class ReliabilityTests
         Assert.Equal(100, new GridLocations(1, 1, 10, 10).Count);
     }
 
-    // A spline's pipe at 0.72 failed after 320,000 sections for each end, 5 to 12 s. It should still fail, and the small one still work (decision 21507)
+    // A spline's pipe at 0.72 failed after 320,000 sections for each end, 5 to 12 s. It should still fail, and the small one still work (decision 1884)
     [Fact]
     public void A_fillet_that_cannot_fit_a_pipe_still_fails_and_a_small_one_works()
     {
