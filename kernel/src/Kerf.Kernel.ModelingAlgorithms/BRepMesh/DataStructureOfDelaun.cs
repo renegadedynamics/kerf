@@ -79,6 +79,9 @@ internal sealed class DataStructureOfDelaun : Transient
         return _storage.Circles;
     }
 
+    /// <summary>Starts this structure's first Delaunay's cells on the storage's array, if it has storage.</summary>
+    internal void LendCellNodes(CircleTool circles) => _storage?.LendCellNodes(circles);
+
     /// <summary>Gives the storage back to the thread. Neither the structure nor a Delaunay over it may be used from here on.</summary>
     internal void ReleaseStorage()
     {

@@ -45,17 +45,19 @@ internal interface ICellFilterInspector<TTarget, TPoint>
 /// <c>Inspect</c> and removed with <c>Remove</c>. OCCT's allocator arguments are dropped. Within a cell, targets are
 /// visited newest first, as in OCCT.
 /// </remarks>
+// A node of the list of targets of a cell: in one array, linked by position, so that a target costs no object of its own (unit 11B;
+// the mesher binds several cells for every triangle). -1 ends a list.
+internal struct CellFilterNode<TTarget>
+{
+    public TTarget Object;
+    public int Next;
+}
+
 internal class CellFilter<TInspector, TTarget, TPoint>
     where TInspector : ICellFilterInspector<TTarget, TPoint>
 {
     // A node of the list of targets of a cell: in one array, linked by position, so that a target costs no object of its
     // own (unit 11B; the mesher binds several cells for every triangle). -1 ends a list.
-    private struct ListNode
-    {
-        public TTarget Object;
-        public int Next;
-    }
-
     // The indexes of a cell, as a key that needs no array of its own up to three dimensions (all but math_GlobOptMin's rare
     // larger spaces). Nothing enumerates the cells, so the key's hash can't reach a result.
     private readonly struct CellKey : IEquatable<CellKey>
@@ -95,7 +97,7 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     protected int _dim;
     // A cell's value is the position of the first node of its list
     private readonly Dictionary<CellKey, int> _cells = new();
-    private ListNode[] _nodes = [];
+    private CellFilterNode<TTarget>[] _nodes = [];
     private int _nodeCount;
     private int _firstFree = -1;
     // Optional: the cells of a known 2D window in one array, each the position of its first node plus one, 0 for no cell. A
@@ -278,6 +280,24 @@ internal class CellFilter<TInspector, TTarget, TPoint>
         _nodeCount = 0;
         _firstFree = -1;
     }
+
+    /// <summary>
+    /// Starts on <paramref name="nodes"/>, an array kept from an earlier filter, whose old contents aren't read: a node is written
+    /// when it's made. Only before anything is added.
+    /// </summary>
+    internal void UseNodes(CellFilterNode<TTarget>[] nodes) => _nodes = nodes;
+
+    /// <summary>The array of nodes, to keep for another filter; this filter can't be used again.</summary>
+    internal CellFilterNode<TTarget>[] TakeNodes()
+    {
+        CellFilterNode<TTarget>[] nodes = _nodes;
+        _nodes = [];
+        _nodeCount = 0;
+        return nodes;
+    }
+
+    /// <summary>The capacity of the array of nodes, which is what <see cref="MaxNodes"/> is compared with.</summary>
+    internal int NodeCapacity => _nodes.Length;
 
     /// <summary>Kerf: how many targets in cells it may hold, counting one in several cells several times (decision 1856).</summary>
     internal int MaxNodes { get; set; } = int.MaxValue;

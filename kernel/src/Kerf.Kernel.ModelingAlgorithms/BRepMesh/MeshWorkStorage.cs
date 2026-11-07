@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+
 namespace Kerf.Engine.Meshing;
 
 /// <summary>
 /// A thread's lists of triangles and circles for meshing one face, kept for the next face, as OCCT's face algorithm gets its
 /// memory from one allocator rather than growing a new array each time. The set is out of the static while a face uses it, so
 /// a nested use makes its own and nothing crosses threads. A list is empty when it's rented, and reads go by its count, so a
-/// face can't see the last one's values. A thread keeps about 360 kB for its life; anything larger is only held weakly
+/// face can't see the last one's values. A thread keeps about 490 kB for its life; anything larger is only held weakly
 /// (<see cref="MeshWorkList{T}"/>).
 /// </summary>
 internal sealed class MeshWorkStorage
@@ -26,6 +28,52 @@ internal sealed class MeshWorkStorage
     /// <summary>Whether a Delaunay has the circles.</summary>
     public bool CirclesTaken;
 
+    // The cells of the first Delaunay's circles: up to this many nodes stay with the thread, and a larger array is only held weakly,
+    // as in MeshWorkList. It's always a power of 2 or empty, as the filter grows it
+    private const int LargestCellNodesKept = 1 << 13;
+    private CellFilterNode<int>[] _cellNodes = [];
+    private WeakReference<CellFilterNode<int>[]>? _heldCellNodes;
+    private CircleTool? _cellNodesLentTo;
+
+    /// <summary>Lends the array of cells to the first Delaunay's circles.</summary>
+    public void LendCellNodes(CircleTool circles)
+    {
+        if (_cellNodesLentTo is not null)
+        {
+            return;
+        }
+        if (_heldCellNodes is not null && _heldCellNodes.TryGetTarget(out CellFilterNode<int>[]? held))
+        {
+            _heldCellNodes.SetTarget(null!);
+            _cellNodes = held;
+        }
+        circles.UseCellNodes(_cellNodes);
+        _cellNodes = [];
+        _cellNodesLentTo = circles;
+    }
+
+    private void TakeBackCellNodes()
+    {
+        if (_cellNodesLentTo is null)
+        {
+            return;
+        }
+        CellFilterNode<int>[] nodes = _cellNodesLentTo.TakeCellNodes();
+        _cellNodesLentTo = null;
+        if (nodes.Length <= LargestCellNodesKept)
+        {
+            _cellNodes = nodes;
+        }
+        else if (_heldCellNodes is null)
+        {
+            _heldCellNodes = new WeakReference<CellFilterNode<int>[]>(nodes);
+        }
+        else
+        {
+            _heldCellNodes.SetTarget(nodes);
+        }
+    }
+
     /// <summary>The thread's set, or a new one.</summary>
     public static MeshWorkStorage Rent()
     {
@@ -44,6 +92,7 @@ internal sealed class MeshWorkStorage
         storage.Elements.Empty();
         storage.Circles.Empty();
         storage.LinkNodes.Empty();
+        storage.TakeBackCellNodes();
         t_spare = storage;
     }
 }
