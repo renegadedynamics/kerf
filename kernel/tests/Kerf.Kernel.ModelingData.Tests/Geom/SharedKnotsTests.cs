@@ -19,12 +19,20 @@ public class SharedKnotsTests
     [Fact]
     public void Frozen_splines_with_the_same_knots_share_them_and_read_the_same()
     {
-        BSplineCurve3D first = Spline(1), second = Spline(2), third = Spline(3, 2.5);
-        Point3D before = second.Value(0.7);
-        Assert.NotSame(first.InternalKnots(), second.InternalKnots());
+        BSplineCurve3D first, second, third = Spline(3, 2.5);
+        Point3D before = Spline(2).Value(0.7);
+        Assert.NotSame(Spline(1).InternalKnots(), Spline(2).InternalKnots());
 
-        first.Freeze();
-        second.Freeze();
+        // The table is lossy: a test running in parallel can take a slot between two freezes, so try more than once
+        int tries = 0;
+        do
+        {
+            first = Spline(1);
+            second = Spline(2);
+            first.Freeze();
+            second.Freeze();
+        }
+        while (!(ReferenceEquals(first.InternalKnots(), second.InternalKnots()) && ReferenceEquals(first.InternalMultiplicities(), second.InternalMultiplicities())) && ++tries < 100);
         third.Freeze();
 
         Assert.Same(first.InternalKnots(), second.InternalKnots());
