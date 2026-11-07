@@ -25,8 +25,9 @@ Measured on Kerf at `6b66dd4e7`, the depth at which each died, on a 1 MB stack, 
 | | `AllFaces`, volume, bounding box, mesh, `Clean` | never: these walks are loops | |
 | `ModelNode` or `Assembly` tree n deep | STEP, glTF and 3MF writers; `new Assembly` | 120 to 1,000 (8 kB a level) | Refused past 64 |
 | **A file:** STEP assemblies 990 deep (1.6 MB) | `Step.Read` | died | `exchange.limit-exceeded`. An `InsufficientExecutionStackException`, at 450, had come straight out of `Read` |
-| **A file:** STEP composite curves 3,000 and 30,000 deep | `Step.Read` | died | Read, with that curve left out, as any entity that can't be translated |
-| A file: STEP mapped items 30,000, trimmed curves 30,000, representation relationships 30,000, parameter lists 200,000 | `Step.Read` | stopped cleanly already | |
+| **A file:** STEP composite curves 3,000 and 30,000 deep | `Step.Read` | died | `exchange.limit-exceeded` (decision 21107) |
+| A file: STEP trimmed curves 30,000; offset surfaces 30,000 | `Step.Read` | **read as a success with the entity missing** | `exchange.limit-exceeded` (decision 21107) |
+| A file: STEP mapped items 30,000, parameter lists 200,000 | `Step.Read` | stopped cleanly already | |
 | A file: BREP 990, glTF 300 and 3,000 | their readers | stopped cleanly already at 1,000 and 256; each now fails past 64 | |
 | A chain of placements | `s = s.Moved(step)`, 3,000 times | 3,000 | A loop; folds past 1,024 items (decision 21101). 1,000,000 moves in 39 s |
 | Curves or surfaces on curves or surfaces, 100,000 deep (`OffsetCurve3D` on itself…) | evaluation | never: they flatten, or stop | |

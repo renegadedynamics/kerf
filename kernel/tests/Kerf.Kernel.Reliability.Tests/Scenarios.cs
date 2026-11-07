@@ -116,6 +116,13 @@ internal static class Scenarios
         ["tree-3mf"] = () => Outcome(ThreeMf.Write(Tree(Limit), new MemoryStream())),
         ["step-file-too-deep"] = () => Outcome(Step.Read(Bytes("deep-assembly-990.step.gz"))),
         ["step-curves-too-deep"] = () => Outcome(Step.Read(Bytes("deep-composite-curve-3000.step.gz"))),
+        ["step-trimmed-curves-too-deep"] = () => Outcome(Step.Read(Bytes("deep-trimmed-curve-30000.step.gz"))),
+        ["step-surfaces-too-deep"] = () => Outcome(Step.Read(Bytes("deep-offset-surface-30000.step.gz"))),
+        ["step-curves-deep-but-fine"] = () =>
+        {
+            Result<ModelNode> read = Step.Read(Bytes("deep-composite-curve-300.step.gz"));
+            return read.IsSuccess ? read.Value.ToShape().AllEdges().Length.ToString(System.Globalization.CultureInfo.InvariantCulture) : read.Error!.Code.Value;
+        },
         ["gltf-file-too-deep"] = () => Outcome(Gltf.Read(Bytes("deep-assembly-300.glb"))),
         ["brep-file-too-deep"] = () => Outcome(Brep.Read(Bytes("deep-compound-500.brep"))),
         ["moved-many-times"] = MovedManyTimes,

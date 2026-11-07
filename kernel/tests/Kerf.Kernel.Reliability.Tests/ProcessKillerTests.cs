@@ -42,13 +42,15 @@ public class ProcessKillerTests
 
     [Theory]
     [InlineData("step-file-too-deep", "exchange.limit-exceeded")]
+    [InlineData("step-curves-too-deep", "exchange.limit-exceeded")]
+    [InlineData("step-trimmed-curves-too-deep", "exchange.limit-exceeded")]
+    [InlineData("step-surfaces-too-deep", "exchange.limit-exceeded")]
     [InlineData("gltf-file-too-deep", "exchange.limit-exceeded")]
     [InlineData("brep-file-too-deep", "exchange.malformed")]
     public void A_file_nested_too_deep_is_a_failure(string scenario, string code) => Assert.Equal(code, ChildProcess.Run(scenario));
 
-    // The reader treats it as any entity it can't translate: left out, and the file reads
     [Fact]
-    public void A_file_of_curves_nested_too_deep_leaves_them_out() => Assert.Equal("ok", ChildProcess.Run("step-curves-too-deep"));
+    public void Curves_nested_but_within_the_stack_are_read_whole() => Assert.Equal("1", ChildProcess.Run("step-curves-deep-but-fine"));
 
     [Fact]
     public void A_compound_holding_another_twice_at_each_level_is_refused() => Assert.Equal("refused", ChildProcess.Run("shared-twice-each-level", 60));

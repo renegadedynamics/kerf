@@ -36,7 +36,9 @@ internal static class ExchangeTree
 
     /// <summary>The diagnostic of a reader's exception on bad data.</summary>
     public static Diagnostic BadData(Exception e, string format)
-        => e is InvalidDataException or InsufficientExecutionStackException
+        => e is InsufficientExecutionStackException
+            ? Diagnostic.Error(LimitExceeded, $"The {format} data is nested too deep to read: its curves, surfaces or representations refer to each other in too long a chain.")
+            : e is InvalidDataException
             ? Diagnostic.Error(LimitExceeded, $"The {format} data is larger than the limits: {FailureDiagnostics.PublicText(e)}")
             : Diagnostic.Error(Malformed, $"The {format} data couldn't be read: it is malformed or truncated ({FailureDiagnostics.PublicText(e)}).");
 

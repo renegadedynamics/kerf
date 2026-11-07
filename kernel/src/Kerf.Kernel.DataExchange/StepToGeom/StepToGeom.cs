@@ -1970,7 +1970,8 @@ internal static class StepToGeom
         }
         // OCCT catches Standard_Failure under OCC_CATCH_SIGNALS, so system signals too: their .NET counterparts are
         // the other exceptions (decision 1183)
-        catch (Exception exception) when (exception is not OutOfMemoryException and not OperationCanceledException)
+        catch (Exception exception) when (exception is not OutOfMemoryException and not OperationCanceledException
+                                          and not InsufficientExecutionStackException) // Kerf: decision 21107
         {
             // OCCT_DEBUG output left out
         }

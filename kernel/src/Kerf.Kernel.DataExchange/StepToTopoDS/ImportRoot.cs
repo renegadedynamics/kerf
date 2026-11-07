@@ -39,5 +39,7 @@ internal class ImportRoot
     /// (decisions 1183, 1201).
     /// </summary>
     internal static bool CaughtBySignals(Exception exception)
-        => exception is not OutOfMemoryException and not OperationCanceledException and not ImmutableObjectException;
+        => exception is not OutOfMemoryException and not OperationCanceledException and not ImmutableObjectException
+           // Kerf: data nested too deep fails the read: caught here, its entity would just be missing (decision 21107)
+           and not InsufficientExecutionStackException;
 }

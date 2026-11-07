@@ -177,7 +177,7 @@ public sealed class StepToGeomTests
     public void Cyclic_replicas_end_without_a_stack_overflow()
     {
         // two curve replicas of each other: OCCT recurses until the stack overflows; the port throws a catchable
-        // exception (decision 1240), and MakeSurface's catch-all turns a surface cycle into null as OCCT does
+        // exception (decision 1240), which MakeSurface now lets through too, so that the read fails (decision 21107)
         var anOperator = new StepCartesianTransformationOperator3d();
         anOperator.SetLocalOrigin(Point(0, 0, 0));
         var A = new StepCurveReplica();
@@ -190,7 +190,7 @@ public sealed class StepToGeomTests
         var R = new StepSurfaceReplica();
         S.Init(Name(), R, anOperator);
         R.Init(Name(), S, anOperator);
-        Assert.Null(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeSurface(S));
+        Assert.ThrowsAny<InsufficientExecutionStackException>(() => global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeSurface(S));
     }
 
     [Fact]
