@@ -1433,7 +1433,7 @@ internal partial class ImpPrmIntersection
         {
             // The pieces carry only their end vertices, so one partly out of the face must find the bound
             // between them, or it is judged whole by its middle and can go out with what's in the face (#1543; decision
-            // 20905). OCCT doesn't. Other pieces stay as OCCT leaves them.
+            // 1834). OCCT doesn't. Other pieces stay as OCCT leaves them.
             if (dslin.Value(i) is WLine piece && piece.NbPnts() > 1)
             {
                 if (!reversed && CrossesDomain(piece, d1, true))
