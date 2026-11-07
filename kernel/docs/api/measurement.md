@@ -17,6 +17,8 @@ public static class MeasureOperations   // extension members on Shape (and Edge,
     public static double Area(Shape shape, MassOptions? options = null);
     public static double Length(Shape shape, MassOptions? options = null);
     public static MassProperties MassProperties(Shape shape, Dimension dimension, MassOptions? options = null);
+    // The centre of the faces' area alone: exact for one planar face bounded by lines and circles
+    public static Point3D CentreOfArea(Shape shape, MassOptions? options = null);
     // BRepBndLib: Add, AddOptimal, AddOBB
     public static BoundingBox BoundingBox(Shape shape, bool optimal = false, bool useTriangulation = false);
     public static OrientedBox OrientedBox(Shape shape, bool optimal = false);

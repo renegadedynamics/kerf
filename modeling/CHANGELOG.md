@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Center` and `Plane(face)` are exact for a planar face bounded by lines and circles,** and far quicker, so the last digits of what's built on one can change.
+- **An extrusion with nothing to merge skips its clean,** with the same shape and order, for a quarter to a half fewer bytes (the kernel's `docs/performance.md`).
+
 ## 0.3.0
 
 - **Bento's examples recalculate about 4.6 times as fast as at 0.2.0, with 72% fewer bytes:** 265 ms from 1,211 ms, and 126 MB from 450 MB, with ReadyToRun (the kernel's `docs/performance.md`).

@@ -15,6 +15,21 @@ public class MeasurementTests
     private const double Tol = 1e-6;
 
     [Fact]
+    public void A_faces_centre_of_area_is_the_mass_properties_centre()
+    {
+        Solid box = Fixtures.Box();
+        foreach (Face face in box.AllFaces())
+        {
+            Point3D exact = face.CentreOfArea();
+            Point3D integrated = face.MassProperties(Dimension.Area).CentreOfMass;
+            Assert.True(new Vector3D(exact, integrated).Magnitude < 1e-9);
+        }
+
+        // A shape of more than one face integrates, and is the same figure
+        Assert.Equal(box.MassProperties(Dimension.Area).CentreOfMass, box.CentreOfArea());
+    }
+
+    [Fact]
     public void A_box_has_its_volume_area_and_length()
     {
         Solid box = Fixtures.Box();
