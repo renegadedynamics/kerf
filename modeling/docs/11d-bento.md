@@ -45,4 +45,4 @@ Bento gets these from the packages, with nothing to change: opening on the bench
 Two things are Bento's to consider, neither needed:
 
 - **Self-contained and composite**, if Bento ships its own runtime: `<PublishReadyToRunComposite>true</PublishReadyToRunComposite>` gave 419 ms against 509, at 169 MB for the whole benchmark, built from source. It wasn't checked from the packages, and Avalonia would add to it.
-- **Bento's own generics over Kerf's types**, if it publishes ReadyToRun: `<PublishReadyToRunCrossgen2ExtraArgs>--non-local-generics-module:*;--opt-cross-module:*;--Ot</PublishReadyToRunCrossgen2ExtraArgs>`. Not measured in Bento.
+- **Bento's own generics over Kerf's types**, if it publishes ReadyToRun: `<PublishReadyToRunCrossgen2ExtraArgs>--opt-cross-module:*;--Ot</PublishReadyToRunCrossgen2ExtraArgs>`. Not measured in Bento.

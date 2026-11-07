@@ -510,9 +510,9 @@ Each row is the five assemblies compiled with crossgen2 and the same benchmark, 
 | Plain ReadyToRun (what 0.2.0 ships) | 743 | 4,497 | 39.7 | |
 | `--Ot` alone | 736 | 4,499 | 40.6 | |
 | `--non-local-generics-module:*`, `--Ot` | 739 | 4,499 | 40.6 | No use alone |
-| `--opt-cross-module:*`, `--Ot` | 600 | 2,888 | 45.6 | |
+| **`--opt-cross-module:*`, `--Ot`: taken since 0.3.0** | **600** | **2,888** | **45.6** | **The library's** |
 | Both, without `--Ot` | 530 | 1,731 | 46.1 | |
-| **Both, with `--Ot`: taken** | **512** | **1,789** | **48.1** | **The library's** |
+| Both, with `--Ot`, as at first | 512 | 1,789 | 48.1 | Breaks a second copy (decision 21801) |
 | Both, with `--instruction-set:x86-64-v3` | 522 | 1,716 | 46.1 | Not taken: 8 ms, for code that assumes AVX2 |
 | Both, with `--type-validation:SkipTypeValidation` | 531 | 1,731 | 46.1 | No use |
 | Kerf's five as one version bubble (`--inputbubble`), alone | 683 | 3,818 | 42.6 | The owner's, below |
@@ -520,6 +520,7 @@ Each row is the five assemblies compiled with crossgen2 and the same benchmark, 
 | Kerf's five as one composite image | 521 | 2,184 | 46.2 | Not possible in a package |
 | The benchmark self-contained, composite with the framework | 419 | 449 | 169 for the whole application | The host's |
 
+- **Replaced** (decision 21801): non-local generics are out, as a second copy of Kerf in a process compiled by the JIT then fails. The rest of this list is as decision 1689 had it, with both.
 - **Taken** (decision 1689): `PublishReadyToRunCrossgen2ExtraArgs` in both `Directory.Build.props`, used only when publishing ReadyToRun. It costs a library user 3.9 MB of download and 8.4 MB on disk, and nothing else: no setting, no change of API. `--opt-cross-module` lets framework code inline into Kerf's and `--non-local-generics-module` lets an assembly hold instantiations over other assemblies' types; the first is what lets the second help.
 - **The framework can change under these.** Code inlined across the version boundary carries a check of the IL it inlined, and is dropped for the JIT if that doesn't match, which a forced mismatch confirmed (decision 1689): a library swapped under a small application compiled this way, and its inlined and generic code was rejected and compiled afresh, returning the new library's values. What was measured: assemblies compiled against framework 10.0.0 and run on 10.0.11 open in 512 ms against 514, with the same 1,789 methods and the same results, so a patch of the framework is no trouble, and the JIT is the worst case. .NET 9's framework couldn't be used to force mismatches, because Kerf's IL doesn't compile against it. Five suites pass with these assemblies in place of the IL (below). These two options are little documented; crossgen2's help doesn't call them unsupported, as it does `--inputbubbleref`.
 - **The version bubble is left to the owner** (decision 1690). It gives another 34 ms for another 3.7 MB. But it ties the five assemblies together: code from one is compiled into another with no check, so a mix of versions would misbehave or stop at load (inferred from how the runtime treats bubbles; not tried). The packages would have to depend on each other at exactly the same version, where NuGet now allows a newer one. A bubble is also what `--inputbubbleref` makes, the option the help calls unsupported.

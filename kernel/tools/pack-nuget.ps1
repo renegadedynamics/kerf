@@ -151,7 +151,28 @@ if (!Exporters3D.ExportGltf(part, gltf, new GltfExportOptions { Binary = true })
 gltf.Position = 0;
 var fromGltf = Importers.ImportGltf(gltf).Value;
 if (fromGltf.Faces().Count == 0) throw new Exception("glTF read back no faces");
-Console.WriteLine($"Smoke test passed: volume {part.Volume:F6}, STEP {step.Length} bytes, glTF {gltf.Length} bytes");
+// A second copy, as a host's plug-in has, from bytes and so compiled by the JIT, beside this one's precompiled code (decision 21801)
+var secondCopy = new SecondCopy(AppContext.BaseDirectory).FromBytes(typeof(SecondCopy).Assembly.Location);
+var secondVolume = (double)secondCopy.GetType("SecondCopy")!.GetMethod("Volume")!.Invoke(null, null)!;
+if (Math.Abs(secondVolume - SecondCopy.Volume()) > 1e-6) throw new Exception($"a second copy's volume is {secondVolume}");
+Console.WriteLine($"Smoke test passed: volume {part.Volume:F6}, STEP {step.Length} bytes, glTF {gltf.Length} bytes, and a second copy works");
+
+sealed class SecondCopy(string folder) : System.Runtime.Loader.AssemblyLoadContext("second copy", isCollectible: true)
+{
+    public static double Volume() => (Operations.Fillet(new Box(10, 10, 10).Edges(), 1).Value - new Cylinder(2, 20)).Volume;
+
+    public System.Reflection.Assembly FromBytes(string path)
+    {
+        using var image = new MemoryStream(File.ReadAllBytes(path));
+        return LoadFromStream(image);
+    }
+
+    protected override System.Reflection.Assembly? Load(System.Reflection.AssemblyName name)
+    {
+        var path = Path.Combine(folder, name.Name + ".dll");
+        return File.Exists(path) ? FromBytes(path) : null;
+    }
+}
 '@ | Set-Content -Encoding utf8 (Join-Path $smoke 'Program.cs')
   dotnet run --project (Join-Path $smoke 'smoke.csproj') -c Release -nologo
   if ($LASTEXITCODE) { throw "the smoke test failed" }
