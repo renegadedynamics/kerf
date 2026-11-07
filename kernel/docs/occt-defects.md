@@ -32,7 +32,6 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | #1444, #572 | A mesh of 1.43 deflection for 0.45; a cone with no triangles, a warning only | Reproduced | M each |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
-| Silent wrong answer | Upstream `53706f78a8` | Rational section weights in `GeomFill_Profiler`; Newton backtracking; the other two parts are ported (decision 1822) | Upstream fix, not checked here | M |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
 | Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
@@ -60,6 +59,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| `53706f78a8` | A loft's rational section changing shape, for weights that agree part way through being scaled | 22603 |
 | Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 22602 |
 | #1123 | A minimum distance of 0.083 between parts that intersect | 22601 |
 | #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 1860, 1863, 1866 |
@@ -382,7 +382,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 
 | Commit | What it says | Status | Why |
 |---|---|---|---|
-| `53706f78a8` | Modeling - Fix intersection, fitting and profile regressions (#1653) | applies | Ranked above; not ported |
+| `53706f78a8` | Modeling - Fix intersection, fitting and profile regressions (#1653) | applies | The closed polygon and `LeastSquare` (decision 1822) and the profile's weights (decision 22603) are ported. Left: Newton's line search and `IntCurveSurface`'s scaled transitions, not seen to matter |
 | `8f95c78c7c` | Data Exchange - Support companion streams and improve STEP PMI handling (#1647) | applies | STEP PMI units and references; companion streams are a feature. Small pieces |
 | `71658f6c8f` | Modeling - Fix geometry evaluation and data exchange regressions (#1644) | applies | The offset surface and `ApproxInt` are ported (decisions 1811, 1812); rest to read |
 | `8f817f5da5` | Modeling - Fix numerical accuracy and geometry differences (#1640) | applies | Ranked above; large |

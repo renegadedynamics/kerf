@@ -57,16 +57,35 @@ internal class Profiler
             {
                 int np = ci.PoleCount;
                 double sigma = 0.0;
-                int j;
+                int j, largest = 1, smallest = 1;
                 for (j = 1; j <= np; j++)
                 {
                     sigma += ci.Weight(j);
+                    largest = ci.Weight(j) > ci.Weight(largest) ? j : largest;
+                    smallest = ci.Weight(j) < ci.Weight(smallest) ? j : smallest;
                 }
                 sigma /= np;
+                // Upstream 53706f78a8: a sum that overflows has a finite mean, found by scaling first
+                if (double.IsInfinity(sigma))
+                {
+                    double scaled = 0.0;
+                    for (j = 1; j <= np; j++)
+                    {
+                        scaled += ci.Weight(j) / ci.Weight(largest);
+                    }
+                    sigma = ci.Weight(largest) * (scaled / np);
+                }
+                // Upstream 53706f78a8: SetWeight makes a curve whose weights all agree non-rational, with weights of 1, so
+                // scaling them in turn could lose the rest ((8, 2, 2) passes through (2, 2, 2)): an extreme goes last
+                int last = sigma > 1.0 ? largest : smallest;
                 for (j = 1; j <= np; j++)
                 {
-                    ci.SetWeight(j, ci.Weight(j) / sigma);
+                    if (j != last)
+                    {
+                        ci.SetWeight(j, ci.Weight(j) / sigma);
+                    }
                 }
+                ci.SetWeight(last, ci.Weight(last) / sigma);
             }
         }
         // fin de l essai
