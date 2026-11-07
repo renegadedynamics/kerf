@@ -4,7 +4,7 @@
 > can go ahead and optimise from there." So optimisation comes first, and the points the owner set aside until after 0.2.0
 > follow it. The next release is 0.3.0, with no fixed scope and no rush: possibly Saturday 7 November (decision 1681).
 >
-> **Closed, 7 November 2026, at 0.3.0** (decision 1888). The targets are met: recalculation 251 ms against 822, and 127 MB
+> **Closed, 7 November 2026, at 0.3.0** (decision 1888). The targets are met: recalculation 265 ms against 822, and 126 MB
 > allocated against 225. Units 11Q, 11S, 11I and 11J carry on in the next phase, with the rest of what the decision lists.
 > Bento's unit is on a Bento branch for the owner to merge.
 
