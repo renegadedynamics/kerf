@@ -96,6 +96,17 @@ public class CompoundTests
         // N.B. b and bb overlap but still add to Compound volume
     }
 
+    // The operator cleans a second time: at this offset the clean makes a shell that isn't connected, where BoolOp had left it out
+    [Fact]
+    public void Common_operator_keeps_a_good_result_a_clean_would_spoil()
+    {
+        Part cylinder = new Cylinder(5, 10);
+        Part tool = new Location(new Point3D(-3e-7, 0, 0)) * (new Rotation(Axis.X, 90) * new Cylinder(5, 20));
+        Shape common = cylinder & tool;
+        Assert.True(common.IsValid);
+        Assert.Equal(16.0 / 3 * 125, common.Volume, 0.5);
+    }
+
     [Fact]
     public void Volume_counts_solids_at_any_depth()
     {

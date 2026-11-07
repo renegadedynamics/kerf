@@ -416,7 +416,14 @@ internal static class ShapeAlgebra
         if (found.Count == 0)
             return default;
         var result = found.Count == 1 ? found[0] : ShapeExtensions.MakeComposite(found);
-        return SkipClean.Clean ? result.Clean() : result;
+        if (!SkipClean.Clean)
+            return result;
+        // Only tidying, so a clean that spoils a good result is left out, as BoolOp did a moment ago with this same clean (decision 21505)
+        var cleaned = result.Clean();
+        if (cleaned.IsValid || !result.IsValid)
+            return cleaned;
+        Warnings.Warn("Boolean operation unable to clean: that would make its result invalid");
+        return result;
     }
 
     /// <summary>What this compound has in common with others, always as a compound.</summary>
