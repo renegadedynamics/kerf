@@ -1,6 +1,6 @@
 # Booleans check their result's volume, for Bento's branch
 
-The owner's decision (kernel `docs/decisions.md`, 21301): a Boolean proved wrong fails, as an invalid one does (`11r-bento.md`).
+The owner's decision (kernel `docs/decisions.md`, 1860): a Boolean proved wrong fails, as an invalid one does (`11r-bento.md`).
 
 **Nothing has to change for Bento to build or to show the reason.** The code is `result.invalid`, so `ModelFunctions.Run` gives `#VALUE!` with the message, and `ModelingDiagnostics.TryGetInvalid` gives the shape to draw as broken.
 

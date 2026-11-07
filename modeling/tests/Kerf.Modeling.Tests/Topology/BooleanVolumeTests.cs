@@ -3,7 +3,7 @@ using Kerf.Tests.Shared;
 namespace Kerf.Modeling.Tests;
 
 /// <summary>
-/// The modelling layer's Booleans check what comes out of their clean against their inputs' volumes (decision 21301): a wrong
+/// The modelling layer's Booleans check what comes out of their clean against their inputs' volumes (decision 1860): a wrong
 /// result fails, carrying the shape.
 /// </summary>
 public class BooleanVolumeTests

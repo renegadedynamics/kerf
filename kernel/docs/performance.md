@@ -1339,4 +1339,4 @@ Each of the eight above that is a fuse of solids that touch, whose result comes 
 | #245 | Fails: removed nothing | Fails: empty | Passes |
 | #1039, a shell | | No rule | |
 
-The table's rules alone find only #1629: decision 1865 says why, and 21307 what was added.
+The table's rules alone find only #1629: decision 1865 says why, and 1866 what was added.

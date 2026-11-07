@@ -61,7 +61,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 21301, 21304, 21307 |
+| #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 1860, 1863, 1866 |
 | #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
 | #1613 | A fuse dropping a compound of reversed solids | 1832 |
 | #994 | A face lost reading a STEP offset surface whose basis is C0 at a knot | 1838 |

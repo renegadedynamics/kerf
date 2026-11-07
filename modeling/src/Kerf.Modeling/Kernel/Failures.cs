@@ -191,7 +191,7 @@ internal static class Failures
         return failure;
     }
 
-    /// <summary>The failure for <paramref name="shape"/>, which is wrong for the reason <paramref name="error"/> gives, carrying it (decision 21301).</summary>
+    /// <summary>The failure for <paramref name="shape"/>, which is wrong for the reason <paramref name="error"/> gives, carrying it (decision 1860).</summary>
     internal static InvalidOperationException Wrong(Shape shape, Diagnostic error)
     {
         var failure = Failed([error]);

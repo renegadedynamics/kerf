@@ -109,7 +109,7 @@ public static partial class ShapeExtensions
         else if (made)
             result = Failures.Valid(result, what);
 
-        // A valid shape can still be the wrong one, and its volume can prove it (decision 21301). As above, a clean that spoils
+        // A valid shape can still be the wrong one, and its volume can prove it (decision 1860). As above, a clean that spoils
         // a good result is left out
         if (made && RuleOf(operation) is { } rule
             && BooleanVolumes.Check(rule, arg, tool, result, options?.FuzzyValue ?? 0) is { } wrong)
