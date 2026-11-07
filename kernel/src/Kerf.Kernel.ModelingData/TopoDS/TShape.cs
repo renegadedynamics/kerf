@@ -47,7 +47,7 @@ internal abstract class TShape : Transient
     }
 
     /// <summary>The child shapes (OCCT: private, read by its friends TopoDS_Iterator and TopoDS_Builder).</summary>
-    internal readonly NCollection_List<Shape> _shapes = new();
+    internal NCollection_List<Shape> _shapes = new();
 
     private ushort _state;
 
@@ -262,8 +262,7 @@ internal abstract class TShape : Transient
         }
         if (!isWalkNeeded)
         {
-            FreezeRepresentations();
-            Freeze();
+            FreezeOne();
             return;
         }
 
@@ -286,12 +285,18 @@ internal abstract class TShape : Transient
             }
             else
             {
-                TShape tShape = top.TShape;
-                tShape.FreezeRepresentations();
-                tShape.Freeze();
+                top.TShape.FreezeOne();
                 stack.RemoveAt(stack.Count - 1);
             }
         }
+    }
+
+    // Its lists won't grow now, and a kept shape holds them for hours, so they let go of the room they had for growing
+    private void FreezeOne()
+    {
+        _shapes = _shapes.Finished();
+        FreezeRepresentations();
+        Freeze();
     }
 
     /// <summary>
@@ -305,6 +310,6 @@ internal abstract class TShape : Transient
     private struct FreezeFrame(TShape theTShape)
     {
         public readonly TShape TShape = theTShape;
-        public List<Shape>.Enumerator Children = theTShape._shapes.GetEnumerator();
+        public NCollection_List<Shape>.Enumerator Children = theTShape._shapes.GetEnumerator();
     }
 }

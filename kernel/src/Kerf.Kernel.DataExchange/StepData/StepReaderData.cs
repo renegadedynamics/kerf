@@ -2115,7 +2115,7 @@ internal class StepReaderData : FileReaderData
             for (int na = nba; na > 0; na--)
             {
                 //    We process: sub-lists (except subn), idents (if Map says OK ...)
-                FileParameter fp = ChangeParameter(nda + na);
+                ref FileParameter fp = ref ChangeParameter(nda + na);
                 ParamType letype = fp.ParamType();
                 if (letype == global::Kerf.Engine.Exchange.Framework.ParamType.ParamSub)
                 {
@@ -2317,7 +2317,7 @@ internal class StepReaderData : FileReaderData
                 int nba = NbParams(num);
                 for (int na = 1; na <= nba; na++)
                 {
-                    FileParameter fp = ChangeParam(num, na);
+                    ref FileParameter fp = ref ChangeParam(num, na);
                     if (fp.ParamType() != global::Kerf.Engine.Exchange.Framework.ParamType.ParamIdent)
                     {
                         continue;
@@ -2384,7 +2384,7 @@ internal class StepReaderData : FileReaderData
                 //  Otherwise, we should note that there were sub-lists and resume afterwards
                 //  Reverse processing ensures that nested sub-lists are resolved before their containers
                 //  This is critical for maintaining referential integrity in complex STEP structures
-                FileParameter fp = ChangeParam(num, na);
+                ref FileParameter fp = ref ChangeParam(num, na);
                 ParamType letype = fp.ParamType();
                 if (letype == global::Kerf.Engine.Exchange.Framework.ParamType.ParamSub)
                 {

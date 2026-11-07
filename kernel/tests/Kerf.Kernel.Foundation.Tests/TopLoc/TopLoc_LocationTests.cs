@@ -133,6 +133,36 @@ public class TopLoc_LocationSemanticsTests
         Assert.True(aA.NextLocation().NextLocation().IsIdentity);
     }
 
+    // Unit 11Q: a product made again shares the chain made before, and reads the same as one made anew
+    [Fact]
+    public void A_repeated_product_shares_its_chain_and_equals_a_new_one()
+    {
+        var aD1 = new Datum3D(Rotation(0.3));
+        var aD2 = new Datum3D(Translation(4));
+        Placement aA = new Placement(aD1) * new Placement(aD2);
+        Placement aB = new Placement(aD2) * new Placement(aD1);
+        Placement aFirst = aA * aB;
+        Placement aSecond = aA * aB;
+        Assert.True(aFirst.IsEqual(aSecond));
+        Assert.Equal(aFirst.Transformation, aSecond.Transformation);
+        Assert.Same(aFirst.NextLocation().FirstDatum(), aSecond.NextLocation().FirstDatum());
+
+        for (int i = 0; i < 8; i++) // past the few it remembers
+        {
+            _ = aA * new Placement(new Datum3D(Translation(i + 1)));
+        }
+
+        Placement aAfter = aA * aB;
+        Assert.True(aFirst.IsEqual(aAfter));
+        Assert.Equal(aFirst.GetHashCode(), aAfter.GetHashCode());
+        Assert.Equal(aFirst.Transformation, aAfter.Transformation);
+
+        // A product that cancels is remembered as the identity
+        Placement aInverse = aA.Inverted();
+        Assert.True((aA * aInverse).IsIdentity);
+        Assert.True((aA * aInverse).IsIdentity);
+    }
+
     [Fact]
     public void Multiplication_cancels_inverse_datums()
     {

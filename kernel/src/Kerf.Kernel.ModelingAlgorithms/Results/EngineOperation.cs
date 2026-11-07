@@ -37,9 +37,10 @@ internal static class EngineOperation
     /// <param name="checkedAs">What to call the result if it's checked (<c>The fillet</c>), which a failure carrying it then
     /// says isn't valid (decision 1742); null leaves it unchecked: an operation that can't make an invalid shape, or a caller
     /// who asked not to.</param>
+    /// <param name="alsoCheck">A further check of the result, with <paramref name="checkedAs"/>, for what the validity check can't see.</param>
     public static Result<Built<TShape>> Run<TShape>(Func<ProgressRange, EngineOutcome> run, Diagnostic failure,
                                                     IProgress<double>? progress = null, CancellationToken cancellationToken = default,
-                                                    string? checkedAs = null)
+                                                    string? checkedAs = null, Func<Shape, Diagnostic?>? alsoCheck = null)
         where TShape : struct, IShape<TShape>
     {
         ArgumentNullException.ThrowIfNull(run);
@@ -97,7 +98,7 @@ internal static class EngineOperation
             ? [.. AlertDiagnostics.ToDiagnostics(done).Where(d => !d.IsError)]
             : [];
         var built = new Built<TShape>(typed, ShapeHistory.FromEngine(outcome.History));
-        return checkedAs is not null && Validity.Problem(shape, checkedAs) is { } problem
+        return checkedAs is not null && (Validity.Problem(shape, checkedAs) ?? alsoCheck?.Invoke(shape)) is { } problem
             ? Result<Built<TShape>>.Invalid(built, problem, warnings)
             : Result<Built<TShape>>.Success(built, warnings);
     }

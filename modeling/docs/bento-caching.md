@@ -86,6 +86,16 @@ Bento shouldn't wait for these. Ask Kerf's maintainer if the figures point here:
 - **An exact key on geometry,** such as a public `ExactKey` on `Location`, `Plane` and `Axis`, so Bento needn't dig out components.
 - **An estimate of a shape's size,** for the budget.
 
+## 5a. What memory says (added 7 November, from unit 11Q's sixth slice)
+
+**Meshes are most of what a chain of cells keeps:** 55% to 98% of it, once each step has been shown (4.96 of 5.42 MB for 30 cells cutting holes in a plate). And **71% to 87% of those faces are unchanged from the step before.** So:
+
+- **The first stage's cache must count meshes in its budget,** and they'll dominate it. See `11q-bento.md`: dropping the meshes of cells no longer on screen, and meshing again if they come back, keeps memory near the shapes' own, at the cost of meshing again as the selection moves. Function results and meshes may want separate budgets, as a shape is cheap to keep and a mesh isn't.
+- **Meshes per face (use case 8 and section 5) would help memory as well as time,** and that's a stronger case than time alone. It's with unit 11O, on Kerf's side, after 0.3.0.
+- **Nothing in Kerf's shapes holds on to more than it should:** a kept shape's cost is its geometry, topology and representations (1.0 to 5.5 kB a face), and no working data outlives an operation. So dropping a value does free it.
+
+**Validity:** since unit 11R, an invalid result is a failure that carries the shape (`modeling/docs/11r-bento.md`). A cache shouldn't store those at first, as this outline already says for errors; and a cached good result needn't be checked again.
+
 ## 6. How to measure
 
 The plan's measure of success is "recalculating an edit to one cell". Kerf's rig (`kernel/tools/bench.ps1`) times whole workbooks, so this needs a new benchmark, on Bento's side, on the examples in `Extensions/Bento.Cad/samples/introductory-examples.bento`, and on a long chain of about thirty features:

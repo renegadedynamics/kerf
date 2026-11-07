@@ -17,6 +17,7 @@
 //     back and compared (unit 11N, StepTidyFigures.cs);
 //   ... -- features [filter]: offsets, thick solids, fillets, chamfers, drafts and a BRepFeat boss on frozen parts
 //     (unit 10H5, Features.cs);
+//   ... -- step-phases file: what a STEP import holds after parsing and after the transfer (unit 11Q, StepPhases.cs);
 //   ... -- stepfile [native-times.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the fastest of 5 parses
 //     from memory, against native's when a file of them, frozen before unit 10B, is given (StepFileBench.cs);
 //   ... -- construction [filter]: prisms, revolutions, pipes, lofts and the makers on frozen inputs (unit 10H3,
@@ -36,6 +37,12 @@ using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
 using Kerf.Engine;
 using Kerf.Kernel.Benchmarks;
+
+if (args.Length > 1 && args[0] == "step-phases")
+{
+    StepPhases.Run(args[1]);
+    return 0;
+}
 
 if (args.Length > 0 && args[0] == "bdn")
 {

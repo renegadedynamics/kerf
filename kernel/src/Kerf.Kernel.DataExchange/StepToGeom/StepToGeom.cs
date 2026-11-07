@@ -1941,10 +1941,8 @@ internal static class StepToGeom
                             }
                         }
                     }
-                    if (basisSurface.Continuity != C0)
-                    {
-                        return new OffsetSurface(basisSurface, offset);
-                    }
+                    // Kerf: a basis that stays C0 at a knot still makes the surface. OCCT gives none, and the file's face is lost (#994; decision 1838)
+                    return new OffsetSurface(basisSurface, offset, skipContinuityCheck: basisSurface.Continuity == C0);
                 }
             }
             else if (ss is StepSurfaceReplica)

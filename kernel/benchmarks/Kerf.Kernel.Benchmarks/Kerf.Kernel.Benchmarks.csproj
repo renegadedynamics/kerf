@@ -15,6 +15,7 @@
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
     <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingAlgorithms\Kerf.Kernel.ModelingAlgorithms.csproj" />
     <Compile Include="..\BenchRows.cs" Link="BenchRows.cs" />
+    <Compile Include="..\Kerf.Kernel.Bento.Benchmarks\HeapWalk.cs" Link="HeapWalk.cs" />
     <!-- The STEP parser's suite (unit 8P) -->
     <ProjectReference Include="..\..\src\Kerf.Kernel.DataExchange\Kerf.Kernel.DataExchange.csproj" />
     <!-- The WebAssembly demo's work, to compare its buffers with win-x64's -->

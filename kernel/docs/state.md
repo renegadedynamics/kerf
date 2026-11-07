@@ -157,6 +157,7 @@ The three tables the plan names (decision 1388):
 | ModelingAlgorithms/IntCurve/SampledPolygons.cs (`t_current`) | **new** (11Q, decision 1755): the table of a 2D offset's trimming, set only around `IntersectWith`. Nothing crosses threads |
 | ModelingData/AdvApprox/ApproxAFunction.cs (`CoefficientsWork.t_spare`), Foundation/BSplCLib/BSplCLib.cs (`t_localMatrices`) | **new** (11Q, decision 1758): a thread's work, zeroed before use. Nothing crosses threads |
 | ModelingAlgorithms/BRepMesh/MeshWorkStorage.cs (`t_spare`) | **new** (11Q, decision 1759): a thread's lists for meshing a face, out of the static while in use. Nothing crosses threads |
+| Foundation/TopLoc/Placement.cs (`ProductMemo.s_entries`, `s_next`) | **new** (11Q, decision 1842): a thread's last four products of placements, chains that never change. Nothing crosses threads |
 | ModelingAlgorithms/GeomFill/QuasiAngularConvertor.cs (`t_ofThread`) | **new** (11Q, decision 1766): a thread's convertor, initialised, for one `Section` at a time, which writes every vector it reads. Nothing crosses threads |
 | Foundation/math/Bfgs.cs (`Work.t_largeSpare`), ModelingData/AdvApprox/ApproxAFunction.cs (`CoefficientsWork.t_largeSpare`) | **new** (11Q, decision 1763): a thread's larger work, held weakly. `MeasurementGauss`'s `t_spare` is weak now too, and the mesher's larger arrays (decision 1762). Nothing crosses threads |
 | the shared empty values (`BOPDS_DS`'s pave blocks and face information, `TopoDS_Iterator`'s, BRepFill's, ChFi3d's, TopOpeBRepDS's lists) | constants: read-only for callers, as OCCT's; 10J returns read-only types |
@@ -179,6 +180,8 @@ The three tables the plan names (decision 1388):
 | `GeomTools.s_nesting`, `WorkingOverlay.t_current`, `SampledPolygons.t_current`, the walkings' step traces | a number, or null outside an operation | none |
 
 The limits add up to about 760 kB a thread: 18 MB on 24 threads.
+
+`ProductMemo` adds four placement chains a thread, a few kB unless a chain is very long. **Two statics are for the process:** `SharedArrays<T>.s_slots` (decision 1841), arrays of frozen splines, at most 1,024 of up to 32 values for each of `double` and `int`, about 300 kB and 180 kB; a slot is one reference, so a race can only lose an entry. And `NCollection_List<T>.s_sharedEmpty` (decision 1840), one empty list for each `T`, which refuses to grow.
 
 **Unit 11C looked at what one-time initialisation costs on opening a workbook:** 2 to 5 of about 255 samples on the first pass's working thread, spread over dozens of small types. So nothing was made lazy, and this list is unchanged (decision 1693).
 
@@ -294,6 +297,8 @@ The clean-up after decision 1681 deleted fields that were written and never read
 
 The fixes for OCCT's defects (decisions 1775 to 1788) add no shared state: all are local to a call. `SamplingHelpers`' two new methods and the offset's concentric case work on their arguments alone. `StepGenTests` writes to a temporary folder of its own.
 
+**The third pass (decisions 1830 to 1838)** adds one piece of state: `BrepTopolTool`'s classifiers per tolerance, an immutable list whose head is replaced whole (decision 1835). A tool shared between threads may build one twice and can't read one for another tolerance. The rest is local to a call.
+
 ## A check's memory
 
 Not merged (decision 1798), so nothing changes here. On `phase11/valid-cache`: one field on `BrepTFace`, an immutable record replaced whole by `Volatile.Write`, and in `ValidMemory` a setting read once from the environment and counters that only the comparison mode touches.
@@ -305,4 +310,7 @@ The second pass (decisions 1811 to 1822) adds no static, thread static or lock, 
 
 Decisions 1823 to 1828 add one static, `Analyzer.Finished`: a delegate for tests, set once at a test process's start before any check when `KERF_CHECK_COMPARE` is set, and otherwise always null. A result's `ContextMap` is under the same lock as the dictionary it replaces when on the pool, and that lock is made before the pool starts; the `IndexedSet` for sub-shapes in the analyzer is one for each chunk, so each thread has its own. `_line` on an edge's check is written while the map is built, on one thread, and only read after. A wire's map kept from `Minimum` is no longer written by `Closed`, so there's less to race than before. The comparison's counters in `tests/Shared/FullCheck` are `Interlocked`, and in tests only.
 
+## Fillet limits
+
+Decisions 1847 to 1852 add no static, thread static or lock. `FilletLimits` works on its arguments, its `Neighbours` belong to one call, and its Boolean runs in the calling thread, on the caller's frozen shape, as any Boolean does.
 Unit 11T (decisions 21101 to 21106) adds one static: `Kerf.Cancellation`'s `AsyncLocal<CancellationToken>`, per flow, as the other `AsyncLocal` scopes are, and flowing into parallel loops the same way. A scope that is set is cleared by the `using` that set it. `MeshBudget` is one object for each `MeshOptions.ToEngine()`, shared by the faces of one mesh: its total is `Interlocked`, and it decides only whether to stop, so it can't change a mesh that finishes. `TShape._compoundNesting` and `TCompound._walkLeaves` are written while a shape is being built, before it's frozen or shared, as its child list is. A field in `TShape` takes two bytes that were padding (`TCompound` gains eight of its own).

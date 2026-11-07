@@ -26,7 +26,7 @@ using static Kerf.Modeling.Operations;
 
 const double Length = 80.0, Width = 60.0, Thickness = 10.0;
 
-var examples = new (string Name, Func<Shape> Build)[]
+var examples = new (string Name, Func<ModelShape> Build)[]
 {
     // A1 =CAD_PT_BOX(80, 60, 10); A2 =CAD_CUT(A1, CAD_PT_CYLINDER(22 / 2, 10))
     ("2 plate with hole", () => new Box(Length, Width, Thickness) - new Cylinder(22.0 / 2, Thickness)),
@@ -94,13 +94,39 @@ var examples = new (string Name, Func<Shape> Build)[]
     }),
 };
 
+// What stays in memory (unit 11Q, sixth slice): KeptMemory.cs has the command lines
+switch (args.Length > 0 ? args[0] : "")
+{
+    case "kept":
+        KeptMemory.Kept(examples, args.Length > 1 ? args[1] : null, args.Length > 2 ? int.Parse(args[2], CultureInfo.InvariantCulture) : 8);
+        return 0;
+    case "kept-types":
+        KeptMemory.KeptTypes(examples, args.Length > 1 ? args[1] : null);
+        return 0;
+    case "chain":
+        KeptMemory.Chain(args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : 30);
+        return 0;
+    case "step":
+        KeptMemory.Step([.. args.Skip(1).Where(a => a != "same")], args.Contains("same"));
+        return 0;
+    case "statics":
+        KeptMemory.Statics(args[1]);
+        return 0;
+    case "digest":
+        KeptMemory.Digest(examples, args[1..]);
+        return 0;
+    case "peak":
+        KeptMemory.Peak(args[1], null, args.Contains("mesh"));
+        return 0;
+}
+
 // Images (unit 10L4): `-- images [passes]` draws each example's lines (exact hidden lines, isometric) as SVG and renders
 // it at 800 x 600 (meshed for rendering, supersampled 2 x 2) as PNG, and times both
 if (args.Length > 0 && args[0] == "images")
 {
     int imagePasses = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : 5;
     Console.WriteLine("example                   svg ms  svg MB  edges   svg KB  png ms  png MB  render ms  png KB");
-    foreach ((string name, Func<Shape> build) in examples)
+    foreach ((string name, Func<ModelShape> build) in examples)
     {
         global::Kerf.Topology.Shape part = build();
         var svgTimes = new double[imagePasses];
@@ -227,17 +253,17 @@ if (args.Length > 0 && args[0] == "measures")
         new Plane(new Point3D(2, 3, 20)) * new Ellipse(12, 6),
         new Plane(new Point3D(-3, 0, 40)) * new Rectangle(8, 16),
     }).Value;
-    (string Name, Func<Shape> Build)[] others =
+    (string Name, Func<ModelShape> Build)[] others =
     [
         ("helical sweep, size 10", () => Swept(10)),
         ("helical sweep, size 0.01", () => Swept(0.01)),
         ("helical sweep, size 10000", () => Swept(10000)),
-        ("loft", Lofted),
+        ("loft", () => Lofted()),
     ];
     // Files named after the passes: a free-form part, say, from a STEP file
     foreach (string file in args.Skip(2))
     {
-        others = [.. others, (Path.GetFileName(file), () => Importers.ImportStep(file).Value.Shape)];
+        others = [.. others, (Path.GetFileName(file), () => Importers.ImportStep(file).Value)];
     }
 
     foreach (var (name, build) in examples.Concat(others))
