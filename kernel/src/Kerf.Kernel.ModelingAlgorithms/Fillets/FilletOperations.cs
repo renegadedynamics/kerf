@@ -132,9 +132,9 @@ public static class FilletOperations
             ArgumentNullException.ThrowIfNull(edges);
             options ??= FilletOptions.Default;
             Shape solid = shape.AsShape();
-            FilletSpec[] specs = [.. edges];
-            Owned(solid, specs.Select(s => s.Edge));
-            foreach (FilletSpec spec in specs)
+            FilletSpec[] given = [.. edges];
+            Owned(solid, given.Select(s => s.Edge));
+            foreach (FilletSpec spec in given)
             {
                 MakerOutcome.Positive(spec.Radius, nameof(edges));
                 if (spec.EndRadius is { } end)
@@ -142,8 +142,28 @@ public static class FilletOperations
                     MakerOutcome.Positive(end, nameof(edges));
                 }
             }
+
+            // What the geometry already settles (decision 1898): within tolerance of the limit is the limit, past it nothing fits
+            FilletLimits.Fit? fit = null;
+            FilletSpec[] specs = given;
             return EngineOperation.Run<Shape>(range =>
             {
+                fit = FilletLimits.Judge(solid, given);
+
+                // A caller who has left the check out has asked for what the algorithm makes
+                if (options.CheckResult && fit is { Above: true } && FilletLimits.TooLarge(fit.Value, given) is { } refused)
+                {
+                    return new EngineOutcome(false, static () => default, Failure: refused, MoreFailures: [refused]);
+                }
+                if (fit is { AtLimit: true })
+                {
+                    double limit = fit.Value.Limit;
+                    specs = [.. given.Select(s => s with { Radius = limit })];
+                    if (FilletLimits.Fillet(solid, specs, options) is { } exact)
+                    {
+                        return exact;
+                    }
+                }
                 var fillet = new MakeFillet(solid, options.Shape);
                 FilletTolerances t = options.Tolerances;
                 fillet.SetParams(t.Angular, t.Spine, t.Parametric, t.Approximation3D, t.Approximation2D, t.Deflection);
@@ -166,13 +186,13 @@ public static class FilletOperations
                     return outcome;
                 }
 
-                // ChFi3d has failed: is it a limit, where a face just disappears? (decision 1847)
-                if (FilletLimits.Fillet(solid, specs, options) is { } limit)
+                // ChFi3d has failed: is it a limit, for radii that differ, where a face just disappears? (decision 1847)
+                if (fit is null && FilletLimits.Fillet(solid, specs, options) is { } mixed)
                 {
-                    return limit;
+                    return mixed;
                 }
                 ImmutableArray<Diagnostic> faulty = Faulty(fillet, specs.Length);
-                if (FilletLimits.TooLarge(solid, specs) is { } tooLarge)
+                if (fit is { } known && FilletLimits.TooLarge(known, specs) is { } tooLarge)
                 {
                     faulty = [tooLarge, .. faulty];
                 }
@@ -184,8 +204,8 @@ public static class FilletOperations
         /// <summary>
         /// The most that a radius on these edges can be, from their geometry, without trying: for straight edges between planes
         /// beside a rectangular face, where the fillet uses up the face (and half of it, with the edge opposite too). No tangent
-        /// fillet fits above it, though other things can stop one sooner, and at it the fillet may not be built. Null if the edges
-        /// say nothing.
+        /// fillet fits above it, so <c>Fillet</c> refuses one at once, though other things can stop one sooner, and at it the fillet
+        /// may not be built. A radius within the shape's tolerance of this is taken as this. Null if the edges say nothing.
         /// </summary>
         public double? FilletLimit(IEnumerable<Edge> edges)
         {
@@ -213,12 +233,12 @@ public static class FilletOperations
             ArgumentNullException.ThrowIfNull(edges);
             options ??= ChamferOptions.Default;
             Shape solid = shape.AsShape();
-            ChamferSpec[] specs = [.. edges];
-            Owned(solid, specs.Select(s => s.Edge));
-            var faces = new Face[specs.Length];
-            for (int i = 0; i < specs.Length; i++)
+            ChamferSpec[] given = [.. edges];
+            Owned(solid, given.Select(s => s.Edge));
+            var faces = new Face[given.Length];
+            for (int i = 0; i < given.Length; i++)
             {
-                ChamferSpec spec = specs[i];
+                ChamferSpec spec = given[i];
                 MakerOutcome.Positive(spec.Distance, nameof(edges));
                 if (spec.Distance2 is not null && spec.Angle is not null)
                 {
@@ -237,6 +257,7 @@ public static class FilletOperations
                 ChamferMode.ConstantThroatWithPenetration => ChamfMode.ConstThroatWithPenetrationChamfer,
                 _ => throw new ArgumentOutOfRangeException(nameof(options), options.Mode, "An unknown chamfer mode."),
             };
+            ChamferSpec[] specs = given;
             return EngineOperation.Run<Shape>(range =>
             {
                 var chamfer = new MakeChamfer(solid);
@@ -259,7 +280,7 @@ public static class FilletOperations
                     }
                 }
                 EngineOutcome outcome = MakerOutcome.Of(chamfer, range, [solid],
-                                                        () => FilletLimits.TooLarge(solid, specs, faces)
+                                                        () => (FilletLimits.Judge(solid, specs, options) is { } fit ? FilletLimits.TooLarge(fit, specs) : FilletLimits.TooLarge(solid, specs, faces, options))
                                                               ?? Diagnostic.Error(Failed, $"The chamfer couldn't be built on {specs.Length} edge(s).").WithShapes(specs.Select(s => (Shape)s.Edge)));
                 return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,

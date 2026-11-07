@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Globalization;
 using Kerf.Engine;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Construction.Api;
@@ -19,40 +20,67 @@ namespace Kerf.Fillets;
 /// <summary>
 /// Fillets and chamfers on straight edges between planes where a face just disappears (decision 1847; docs/fillet-design.md):
 /// ChFi3d's analytic case refuses a contact line that lies exactly on a face's boundary, and it has no way to remove a face,
-/// though the answer is exact. Asked only after ChFi3d has failed, so nothing that works changes. Its result is checked
-/// against the volume and area the geometry gives, and if they differ, ChFi3d's failure stands.
+/// though the answer is exact. Its result is checked against the volume and area the geometry gives, and if they differ,
+/// it isn't used.
 /// </summary>
-/// <remarks>Also the arithmetic of how large such a fillet can be, for the messages and <c>MaxFillet</c>.</remarks>
+/// <remarks>Also the arithmetic of how large such a fillet can be (<see cref="Fit"/>), which is asked before ChFi3d: a size
+/// within tolerance of the limit is the limit, and one past it is refused at once (decision 1898).</remarks>
 internal static class FilletLimits
 {
     private const double Tolerance = Tolerances.Confusion;
 
-    /// <summary>Which faces and edges meet where, so that a large shape's edges aren't each a search of the whole shape.</summary>
+    // The cosine of 0.2 radians, twice the angle ChFi3d's test of tangency allows
+    private const double WellApart = 0.98;
+
+    /// <summary>Which faces and edges meet where, so that a large shape's edges aren't each a search of the whole shape. Every fillet
+    /// asks this now, so only which faces an edge is on is found for the whole shape, and the rest when a case at a limit needs it.</summary>
     private sealed class Neighbours
     {
+        private readonly Shape _shape;
         private readonly Dictionary<Shape, List<Face>> _facesOfEdge = new(ShapeHasher.Instance);
-        private readonly Dictionary<Shape, List<Face>> _facesOfVertex = new(ShapeHasher.Instance);
-        private readonly Dictionary<Shape, List<Edge>> _edgesOfVertex = new(ShapeHasher.Instance);
         private readonly Dictionary<Shape, Dictionary<Shape, Edge>> _edgesOfFace = new(ShapeHasher.Instance);
         private readonly Dictionary<Shape, Direction3D?> _normals = new(ShapeHasher.Instance);
+        private Dictionary<Shape, List<Face>>? _facesOfVertex;
+        private Dictionary<Shape, List<Edge>>? _edgesOfVertex;
 
         public Neighbours(Shape shape)
         {
+            _shape = shape;
             foreach (Face face in shape.AllFaces())
             {
-                var own = new Dictionary<Shape, Edge>(ShapeHasher.Instance);
-                _edgesOfFace[face] = own;
                 foreach (Edge edge in face.AllEdges())
                 {
                     Add(_facesOfEdge, edge, face);
+                }
+            }
+        }
+
+        private Dictionary<Shape, Edge> OwnEdges(Face face)
+        {
+            if (!_edgesOfFace.TryGetValue(face, out Dictionary<Shape, Edge>? own))
+            {
+                own = new Dictionary<Shape, Edge>(ShapeHasher.Instance);
+                foreach (Edge edge in face.AllEdges())
+                {
                     own.TryAdd(edge, edge);
                 }
+                _edgesOfFace[face] = own;
+            }
+            return own;
+        }
+
+        private void FindVertices()
+        {
+            _facesOfVertex = new(ShapeHasher.Instance);
+            _edgesOfVertex = new(ShapeHasher.Instance);
+            foreach (Face face in _shape.AllFaces())
+            {
                 foreach (Vertex vertex in face.AllVertices())
                 {
                     Add(_facesOfVertex, vertex, face);
                 }
             }
-            foreach (Edge edge in shape.AllEdges())
+            foreach (Edge edge in _shape.AllEdges())
             {
                 foreach (Vertex vertex in edge.AllVertices())
                 {
@@ -75,16 +103,30 @@ internal static class FilletLimits
         }
 
         /// <summary>The face's edges, each as the face holds it.</summary>
-        public IReadOnlyCollection<Edge> Edges(Face face) => _edgesOfFace[face].Values;
+        public IReadOnlyCollection<Edge> Edges(Face face) => OwnEdges(face).Values;
 
         /// <summary>The edge as the face holds it, with its orientation there.</summary>
-        public Edge Oriented(Face face, Edge edge) => _edgesOfFace[face][edge];
+        public Edge Oriented(Face face, Edge edge) => OwnEdges(face)[edge];
 
         public IReadOnlyList<Face> Faces(Edge edge) => _facesOfEdge.TryGetValue(edge, out List<Face>? faces) ? faces : [];
 
-        public IReadOnlyList<Face> Faces(Vertex vertex) => _facesOfVertex.TryGetValue(vertex, out List<Face>? faces) ? faces : [];
+        public IReadOnlyList<Face> Faces(Vertex vertex)
+        {
+            if (_facesOfVertex is null)
+            {
+                FindVertices();
+            }
+            return _facesOfVertex!.TryGetValue(vertex, out List<Face>? faces) ? faces : [];
+        }
 
-        public IReadOnlyList<Edge> Edges(Vertex vertex) => _edgesOfVertex.TryGetValue(vertex, out List<Edge>? edges) ? edges : [];
+        public IReadOnlyList<Edge> Edges(Vertex vertex)
+        {
+            if (_edgesOfVertex is null)
+            {
+                FindVertices();
+            }
+            return _edgesOfVertex!.TryGetValue(vertex, out List<Edge>? edges) ? edges : [];
+        }
 
         private static void Add<T>(Dictionary<Shape, List<T>> map, Shape key, T value)
             where T : struct, IShape<T>
@@ -107,7 +149,8 @@ internal static class FilletLimits
     /// <param name="Width">The distance to the opposite edge of a rectangular face that a tangent contact can't pass, or null when
     /// the face isn't like that, as nothing is then known.</param>
     /// <param name="Opposite">That opposite edge, which a second fillet may share the width with.</param>
-    private readonly record struct Side(Face Face, Direction3D Normal, Direction3D Inward, double? Width, Edge Opposite);
+    /// <param name="Tolerance">How closely the shape knows that width: see <see cref="WidthTolerance"/>.</param>
+    private readonly record struct Side(Face Face, Direction3D Normal, Direction3D Inward, double? Width, Edge Opposite, double Tolerance);
 
     /// <summary>A straight edge between two planes.</summary>
     private readonly record struct Corner(Edge Edge, Point3D Start, Point3D End, Side One, Side Two)
@@ -126,63 +169,89 @@ internal static class FilletLimits
         public double ContactPerRadius => 1 / Math.Tan(Angle / 2);
     }
 
+    /// <summary>How one size stands against the faces beside some edges.</summary>
+    /// <param name="Limit">The most that fits: above it, a contact line would lie off its face.</param>
+    /// <param name="Above">Past the limit by more than the shape's tolerance: proved not to fit.</param>
+    /// <param name="AtLimit">Within the shape's tolerance of the limit, either way: it is the limit.</param>
+    /// <param name="Over">The edges that don't fit, when it's above.</param>
+    public readonly record struct Fit(double Limit, bool Above, bool AtLimit, IReadOnlyList<Edge> Over);
+
     /// <summary>The upper limit on one radius for all these edges, from the straight ones between planes beside a rectangular
     /// face: no tangent fillet fits above it. Null if none of the edges gives a limit.</summary>
-    public static double? LargestRadius(Shape shape, IEnumerable<Edge> edges)
+    public static double? LargestRadius(Shape shape, IEnumerable<Edge> edges) =>
+        Quietly(() => Judge(Corners(shape, edges), 0, static corner => corner.ContactPerRadius))?.Limit;
+
+    /// <summary>How one radius on all these edges stands, or null if the specs don't give one radius or the edges give no limit.</summary>
+    public static Fit? Judge(Shape shape, FilletSpec[] specs) =>
+        specs.Any(s => s.EndRadius is not null) || specs.Any(s => s.Radius != specs[0].Radius)
+            ? null
+            : Quietly(() => Judge(Corners(shape, specs.Select(s => s.Edge)), specs[0].Radius, static corner => corner.ContactPerRadius));
+
+    /// <summary>As for a fillet, for a chamfer of one length on both faces, measured from the edge: a chamfer's length has the same
+    /// limit as a contact's distance.</summary>
+    public static Fit? Judge(Shape shape, ChamferSpec[] specs, ChamferOptions options) =>
+        options.Mode != ChamferMode.Classic || specs.Any(s => s.Angle is not null || (s.Distance2 is { } d2 && d2 != s.Distance) || s.Distance != specs[0].Distance)
+            ? null
+            : Quietly(() => Judge(Corners(shape, specs.Select(s => s.Edge)), specs[0].Distance, static _ => 1));
+
+    // A shape this can't read has no limit it knows of: the algorithm's turn, which this mustn't stop
+    private static Fit? Quietly(Func<Fit?> judge)
     {
-        Dictionary<Shape, Corner> corners = Corners(shape, edges);
+        try
+        {
+            return judge();
+        }
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
+        {
+            return null;
+        }
+    }
+
+    private static Fit? Judge(Dictionary<Shape, Corner> corners, double size, Func<Corner, double> contactPerSize)
+    {
         double? largest = null;
+        bool atLimit = false;
+        var over = new List<Edge>();
         foreach ((Corner corner, Side side) in Sides(corners.Values))
         {
             if (side.Width is { } width)
             {
-                double demand = corner.ContactPerRadius + (corners.TryGetValue(side.Opposite, out Corner opposite) ? opposite.ContactPerRadius : 0);
+                double demand = contactPerSize(corner) + (corners.TryGetValue(side.Opposite, out Corner opposite) ? contactPerSize(opposite) : 0);
                 largest = Math.Min(largest ?? double.MaxValue, width / demand);
+                double past = size * demand - width;
+                if (past > side.Tolerance && !over.Any(e => e.IsSame(corner.Edge)))
+                {
+                    over.Add(corner.Edge);
+                }
+                atLimit |= Math.Abs(past) <= side.Tolerance;
             }
+        }
+        if (largest is not { } limit)
+        {
+            return null;
         }
 
         // Without the last bits of the tangent's rounding: well within the tolerance, and 10 reads as 10
-        return largest is { } limit ? Math.Round(limit, 9) : null;
+        double rounded = Math.Round(limit, 9);
+        return new Fit(rounded > 0 ? rounded : limit, over.Count > 0, atLimit && over.Count == 0, over);
     }
 
-    /// <summary>The error saying that a failed fillet's radii don't fit, or that they only just do, if the geometry says so.</summary>
-    public static Diagnostic? TooLarge(Shape shape, FilletSpec[] specs)
-    {
-        if (specs.Any(s => s.EndRadius is not null) || specs.Any(s => s.Radius != specs[0].Radius))
-        {
-            return null;
-        }
-        Edge[] edges = [.. specs.Select(s => s.Edge)];
-        return LargestRadius(shape, edges) is { } largest ? Message(shape, edges, "fillet", "radius", specs[0].Radius, largest) : null;
-    }
+    /// <summary>The error for a size that doesn't fit, or that only just does and couldn't be built; null for one below the limit.</summary>
+    public static Diagnostic? TooLarge(Fit fit, FilletSpec[] specs) =>
+        Message([.. specs.Select(s => s.Edge)], "fillet", "radius", specs[0].Radius, fit);
 
-    /// <summary>As <see cref="TooLarge(Shape, FilletSpec[])"/>, for a chamfer with one length: a chamfer's length has the same limit
-    /// as a contact's distance.</summary>
-    public static Diagnostic? TooLarge(Shape shape, ChamferSpec[] specs, Face[] referenceFaces)
+    /// <inheritdoc cref="TooLarge(Fit, FilletSpec[])"/>
+    public static Diagnostic? TooLarge(Fit fit, ChamferSpec[] specs) =>
+        Message([.. specs.Select(s => s.Edge)], "chamfer", "length", specs[0].Distance, fit);
+
+    /// <summary>The error for a chamfer of two lengths on one edge that doesn't fit, or null.</summary>
+    public static Diagnostic? TooLarge(Shape shape, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options)
     {
-        if (specs.Any(s => s.Angle is not null))
-        {
-            return null;
-        }
-        if (specs.Length == 1 && specs[0].Distance2 is { } second && second != specs[0].Distance)
+        if (options.Mode == ChamferMode.Classic && specs.Length == 1 && specs[0].Angle is null && specs[0].Distance2 is { } second && second != specs[0].Distance)
         {
             return Read(new Neighbours(shape), specs[0].Edge) is { } corner ? TwoLengths(corner, specs[0].Distance, second, referenceFaces[0]) : null;
         }
-        if (specs.Any(s => s.Distance2 is { } d2 && d2 != s.Distance) || specs.Any(s => s.Distance != specs[0].Distance))
-        {
-            return null;
-        }
-        Edge[] edges = [.. specs.Select(s => s.Edge)];
-        Dictionary<Shape, Corner> corners = Corners(shape, edges);
-        double? largest = null;
-        foreach ((Corner _, Side side) in Sides(corners.Values))
-        {
-            if (side.Width is { } width)
-            {
-                largest = Math.Min(largest ?? double.MaxValue, width / (corners.ContainsKey(side.Opposite) ? 2 : 1));
-            }
-        }
-        return largest is { } limit ? Message(shape, edges, "chamfer", "length", specs[0].Distance, limit) : null;
+        return null;
     }
 
     private static Diagnostic? TwoLengths(in Corner corner, double onReference, double onOther, Face reference)
@@ -191,7 +260,7 @@ internal static class FilletLimits
         double on1 = oneIsReference ? onReference : onOther, on2 = oneIsReference ? onOther : onReference;
         foreach ((Side side, double length) in new[] { (corner.One, on1), (corner.Two, on2) })
         {
-            if (side.Width is { } width && length > width + Tolerance)
+            if (side.Width is { } width && length > width + side.Tolerance)
             {
                 Edge edge = corner.Edge;
                 return Diagnostic.Error(FilletOperations.TooLarge,
@@ -201,18 +270,23 @@ internal static class FilletLimits
         return null;
     }
 
-    private static Diagnostic? Message(Shape shape, Edge[] edges, string what, string size, double value, double largest)
+    private static Diagnostic? Message(Edge[] edges, string what, string size, double value, Fit fit)
     {
-        if (value > largest + Tolerance)
+        if (fit.Above)
         {
+            // To twelve figures: given back as the size, what this says fits is within tolerance of the limit, at any size of shape.
+            // The size asked for gets as many as it takes to differ from that
+            string most = fit.Limit.ToString("G12", CultureInfo.CurrentCulture);
+            string asked = value.ToString("G6", CultureInfo.CurrentCulture);
+            asked = asked == fit.Limit.ToString("G6", CultureInfo.CurrentCulture) ? value.ToString("G15", CultureInfo.CurrentCulture) : asked;
             return Diagnostic.Error(FilletOperations.TooLarge,
-                $"The {what} with a {size} of {value:G6} is too large for {Edges(edges)}: the most that fits is {largest:G6}, where it uses up the whole width of a face beside the edge.")
-                .WithShapes(edges.Select(e => (Shape)e));
+                $"The {what} with a {size} of {asked} is too large for {Edges(edges)}: the most that fits is {most}, where it uses up the whole width of a face beside the edge.")
+                .WithShapes(fit.Over.Select(e => (Shape)e));
         }
-        if (value >= largest - Tolerance)
+        if (fit.AtLimit)
         {
             return Diagnostic.Error(FilletOperations.TooLarge,
-                $"The {what} with a {size} of {value:G6} uses up the whole width of a face beside {Edges(edges)}, and this case can't be built yet: try a slightly smaller {size}.")
+                $"The {what} with a {size} of {fit.Limit:G6} uses up the whole width of a face beside {Edges(edges)}, and this case can't be built yet: try a slightly smaller {size}.")
                 .WithShapes(edges.Select(e => (Shape)e));
         }
         return null;
@@ -321,11 +395,11 @@ internal static class FilletLimits
                 if (side.Width is { } width)
                 {
                     double demand = cuts.Sum(c => c.ContactOn(side.Face));
-                    if (demand > width + Tolerance)
+                    if (demand > width + side.Tolerance)
                     {
                         return null;
                     }
-                    if (demand >= width - Tolerance)
+                    if (demand >= width - side.Tolerance)
                     {
                         atLimit = true;
                         double scale = width / demand;
@@ -591,8 +665,8 @@ internal static class FilletLimits
             tangent = tangent.Reversed();
         }
         Direction3D inward = normal.Crossed(tangent);
-        double? width = Width(neighbours, face, edge, normal, inward, start, out Edge opposite);
-        return new Side(face, normal, inward, width, opposite);
+        double? width = Width(neighbours, face, edge, normal, inward, start, out Edge opposite, out double tolerance);
+        return new Side(face, normal, inward, width, opposite, tolerance);
     }
 
     private static Direction3D OutwardNormal(Face face, in Plane3D plane)
@@ -602,10 +676,12 @@ internal static class FilletLimits
     }
 
     // The face's width from the edge, if it's a four-sided face of straight edges whose far side is parallel to the edge and
-    // ends the plane: past it the next face turns away, so a contact line can't carry on along it
-    private static double? Width(Neighbours neighbours, Face face, Edge edge, Direction3D normal, Direction3D inward, in Point3D start, out Edge opposite)
+    // ends the plane: past it the next face turns away, by more than the fillet's algorithm calls tangent, so a contact line can't
+    // carry on along it
+    private static double? Width(Neighbours neighbours, Face face, Edge edge, Direction3D normal, Direction3D inward, in Point3D start, out Edge opposite, out double tolerance)
     {
         opposite = default;
+        tolerance = Tolerance;
         IReadOnlyCollection<Edge> edges = neighbours.Edges(face);
         if (edges.Count != 4 || edges.Any(e => new EdgeCurveAdaptor(e).GetType() != CurveKind.Line))
         {
@@ -620,16 +696,17 @@ internal static class FilletLimits
         Point3D from = start;
         Vector3D toFirst = new(from, Tool.Pnt(far[0])), toSecond = new(from, Tool.Pnt(far[1]));
         double w1 = toFirst.Dot(new Vector3D(inward)), w2 = toSecond.Dot(new Vector3D(inward));
-        if (w1 <= Tolerance || Math.Abs(w1 - w2) > Tolerance)
-        {
-            return null;
-        }
         Edge[] across = [.. edges.Where(e => far.All(v => e.AllVertices().Any(w => w.IsSame(v))))];
         if (across.Length != 1)
         {
             return null;
         }
         Edge farEdge = across[0];
+        tolerance = WidthTolerance(face, edge, farEdge);
+        if (w1 <= tolerance || Math.Abs(w1 - w2) > tolerance)
+        {
+            return null;
+        }
         Face[] beyond = [.. neighbours.Faces(farEdge).Where(f => !f.IsSame(face))];
         if (beyond.Length != 1)
         {
@@ -639,8 +716,35 @@ internal static class FilletLimits
         {
             return null;
         }
+
+        // An edge ChFi3d takes as tangent, as up to 0.1 radians between planes, is no limit: the fillet goes on over it, and it's
+        // right, a ball touching the next face instead (decision 1899; docs/fillet-design.md)
+        // It samples the edge, which every fillet would pay for: planes well apart, not coded tangent, don't need that
+        bool wellApart = next.Dot(normal) < WellApart && Tool.Continuity(farEdge, face, beyond[0]) == Continuity.C0;
+        if (!wellApart && Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(farEdge, face, beyond[0]))
+        {
+            return null;
+        }
         opposite = farEdge;
         return w1;
+    }
+
+    // How closely the shape knows a width: the largest tolerance of the face and of the two edges it's measured between, with
+    // their vertices. It's in length, whatever the shape's size: a contact line this near the far edge is on it, as the shape can't
+    // tell them apart, and a face left narrower than this has no width. Past it, the contact line is off the face whichever way the
+    // tolerances lie, which is what makes refusing a proof.
+    private static double WidthTolerance(in Face face, in Edge edge, in Edge far)
+    {
+        double tolerance = Math.Max(Tolerance, Tool.Tolerance(face));
+        foreach (Edge e in new[] { edge, far })
+        {
+            tolerance = Math.Max(tolerance, Tool.Tolerance(e));
+            foreach (Vertex vertex in e.AllVertices())
+            {
+                tolerance = Math.Max(tolerance, Tool.Tolerance(vertex));
+            }
+        }
+        return tolerance;
     }
 
     // Each end of the edge is a corner of three faces, the third square to the edge: so a section is cut all along it

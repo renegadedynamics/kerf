@@ -216,6 +216,21 @@ public class FilletLimitTests
         Assert.True(failed.IsFailure);
     }
 
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(5.7, false)]
+    [InlineData(5.74, true)] // just past 0.1 radians, what the fillet algorithm calls tangent
+    [InlineData(45, true)]
+    public void A_far_edge_the_algorithm_calls_tangent_is_no_limit(double degrees, bool limits)
+    {
+        // The top runs from (0,0) to (5,0) and then falls away by this angle; the side at x = 0 is well over 5 deep
+        double fall = 20 * Math.Tan(degrees * Math.PI / 180), bottom = -fall - 10;
+        Part shape = Extrude(new Polygon(new Point3D(0, 0, 0), new Point3D(0, bottom, 0), new Point3D(25, bottom, 0), new Point3D(25, -fall, 0), new Point3D(5, 0, 0)), 30).Value;
+        double? limit = ((Shape)shape).FilletLimit([At(shape, 0, 0, 15)]);
+        Assert.NotNull(limit);
+        Assert.Equal(limits, Math.Abs(limit.Value - 5) < 1e-9);
+    }
+
     [Fact]
     public void A_slanted_end_stays_with_the_fillet_algorithm()
     {

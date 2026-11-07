@@ -37,7 +37,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
 | Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
-| Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **For the owner** |
+| Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **Not ported, the owner's decision** (1892, 22104); done another way for straight edges (1847) |
 | Failure on an ordinary shape | corpus: offset/wire_* | 77 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
 | Unintuitive API | #1632 | MakeChamfer doesn't report which contours failed | Read | S |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
@@ -48,7 +48,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 ## Questions for the owner
 
 1. **Should `Kerf.Modeling`'s area and volume use the precise path?** The default integrates at a fixed number of points, and was 3.7% off on the worst corpus case. The precise path now matches a fine mesh, at a measured 1.85 times the cost on the issue's set (not measured here). I recommend yes, with a time check first. **Answered yes, done: decision 1802; it costs no more here.**
-2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list. *Since then: on straight edges between planes it's done another way (decision 1847), and upstream's own results for the four corpus cases it changes are still faulty. [fillet-design.md](fillet-design.md) recommends not porting it.*
+2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list. *Since then: on straight edges between planes it's done another way (decision 1847), and upstream's own results for the four corpus cases it changes are still faulty. [fillet-design.md](fillet-design.md) recommended not porting it, and the owner agreed: **it isn't ported** (decisions 1892, 1901).*
 3. **The 2D offset's failures (77 corpus cases).** Fixing them means a new way of making offsets, not a patch: I recommend a survey of what Bento needs first.
 4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case. **Answered yes, done: decision 1805.**
 5. **Should a Boolean check its result's volume?** #1659, #1643 and others give a Cut larger than its object, or a Common of nothing where the input's point classification finds plenty, and no error. A check that a Cut is no larger than its object, a Common no larger than the smaller, and a Fuse no smaller than the larger would turn those into failures carrying the shape, as decision 1742 does for invalid shapes. It wouldn't catch #1629, which comes out at exactly the block's volume, or #1613's kind. It costs a volume per Boolean, not measured here. I recommend yes if a time check allows it. **Answered yes, done: decisions 1860 to 1868,** which do catch #1629 and need more than volumes for the rest.
@@ -283,7 +283,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1276 | HLR from cylinder's axis is extremely slow | can't tell | Needs the issue's attached model; not reproduced in this pass (slowness: belongs with 11Q) |
 | 1238 | Entity missing when call 'XCAFDoc_DimTolTool.GetGDTPresentations()' | not relevant | OCAF or CDF documents: not ported; Kerf has an immutable assembly tree (unported.md) |
 | 1217 | Chamfer fails for bspline corner | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
-| 1177 | Fillet/Chamfer cannot cannot meet opposite edges | applies | Upstream fixed it in #1449, not ported: a fillet can't reach the opposite edge. Large: `f713b1305f` |
+| 1177 | Fillet/Chamfer cannot cannot meet opposite edges | applies | Upstream fixed it in #1449, not ported, and it won't be (decision 1901): a fillet can't reach the opposite edge, except as decision 1847 does. `f713b1305f` |
 | 1173 | Section of two solids results in a compound of edges | not relevant | A question of what a section returns: it returns edges, by design |
 | 1162 | make MAX_TEX_NUMBER settable from code | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1161 | Poor PSO_Perform performance | not relevant | PSO's speed: 11Q |
@@ -375,7 +375,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1488 | Vector scale error in DRAW | not relevant | Draw's own command or harness: Draw-lite has its own |
 | 1452 | Crash when atttempting to apply a negative offset to a small diamater circular wire. | already fixed | Decision 1788: `e177d7e68c` ported |
 | 1451 | [FreeCAD] OCCT does not support revolved geometry without "parting lines" | not relevant | A request for a new feature, not a defect |
-| 172 | Fillet can not round a face | can't tell | Upstream fix is `f713b1305f`, not ported. bugs/modalg_7 OCC25478 cases are BAD for it |
+| 172 | Fillet can not round a face | can't tell | Upstream fix is `f713b1305f`, not ported, and it won't be (decision 1901). bugs/modalg_7 OCC25478 cases are BAD for it |
 
 ## OCCT's commits since 8.0.1
 
@@ -444,7 +444,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | `e177d7e68c` | Modeling - Fix circular wire handling in BRepOffsetAPI_MakeOffset (#1453) | already fixed | Decision 1788: ported |
 | `5eba9aff4f` | Tests - Migrate DRAW tests to Gtests (#1448) | not relevant | Tests |
 | `0f7ab882d5` | Foundation Classes, NCollection - optimize iteration workflow (#1446) | not relevant | Speed of collections |
-| `f713b1305f` | Modeling Algorithms - Enhance fillet and chamfer handling. Part 2 (#1449) | applies | Fillets to the opposite edge, #1177: large. For the owner |
+| `f713b1305f` | Modeling Algorithms - Enhance fillet and chamfer handling. Part 2 (#1449) | applies | Fillets to the opposite edge, #1177: large. Not ported, the owner's decision (22104) |
 | `cbca11e975` | Modeling - Enhance fillet and chamfer handling. Part 1 (#1293) | applies | As above |
 | `0d47342863` | Coding, Modeling Data - Clean up dead headers (#1439) | not relevant | Headers |
 | `4c2c356490` | Data Exchange, IGES - Add stream-based I/O support (#1406) | not relevant | IGES |

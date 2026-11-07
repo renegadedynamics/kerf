@@ -1,6 +1,6 @@
 # Fillets: where they stop, and what could replace them
 
-*7 November 2026. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here.*
+*7 November 2026. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
 
 **In short.** The 10 mm case is fixed, without a rewrite (decision 1847). That class of failure is not one failure of ChFi3d's mathematics: ChFi3d computes the right surface and then can't remove a face. **A rewrite of ChFi3d isn't justified yet, but a rolling-ball path that runs only where ChFi3d has failed is,** one analytic stage at a time. Its next stage is circular edges, the largest group among the corpus's fillet failures (8 of 23, 3 of them exactly this limit). Don't port `f713b1305f`.
 
@@ -58,7 +58,7 @@ Measured: volume, area and validity against the true answer, in `FilletLimitTest
 | Four edges to a cylinder; a hexagon's six; a triangle's three | Fails | **Exact** |
 | A concave edge up to its limit | Fails | **Exact** |
 | Chamfer of a whole width; two meeting; four to a diamond; two lengths | Fails | **Exact** |
-| Above the limit | "no starting solution" | Says what fits |
+| Above the limit | "no starting solution" | Says what fits, and since unit 12C without trying |
 | All edges of a cube, r = 5 (a sphere); a bar's (a capsule) | Fails | **Fails**: says it can't be built yet; 4.99999 works |
 | Disc's rim, r = h; both rims, r = h / 2; hemisphere; sphere from a short cylinder | Fails | **Fails**, as before |
 | Hole's rim, r = 10 in a 10 mm plate | Fails | Fails |
@@ -118,7 +118,7 @@ So of the 23: **2 fixed now; 5 more at exact limits within stages 2 and 3; 3 pas
 
 **The chamfer corners.** 22 cases: 12 `_sequence`, 9 `_complex`, and dist_angle/A1. A rolling ball doesn't apply: a chamfer has no ball, and these fail on corners on open shells, where ChFi3d's curves don't close a loop on a face (corpus-failures.md). They'd need their own treatment, cutting by a plane or ruled tool, which is **simpler than a fillet's** but is its own unit. **None fixed by a rolling ball.** Those that read FAILED are where the port refuses what native makes invalid (decision 1735), which stands.
 
-**Upstream's fillets to the opposite edge (`f713b1305f`, 27 files).** Read from GitHub, not ported. 12 of its source files are TopOpeBRepBuild and TopOpeBRepDS, which Kerf has replaced, so that half is to be done over in `BOPReconstruction`; 5 are ChFi3d (`_0` +131, `SpKP` +148, `_C1` +31); the others are tests. It's the same limit: "Exclude fully consumed faces... Accept tangential contacts while rejecting transversal intersections". **It changes four corpus cases, B2, Q3, Q8 and W7, and all four keep their TODO, now "Faulty shapes":** upstream's own reference says its result is invalid there. So it would take each from failing to invalid, except that Kerf would refuse them, as it does an invalid result. Q8 is now right here without it. **Its reason for being on the list has mostly gone. I recommend not porting it:** that reverses occt-defects.md's advice, which predates this.
+**Upstream's fillets to the opposite edge (`f713b1305f`, 27 files).** Read from GitHub, not ported. 12 of its source files are TopOpeBRepBuild and TopOpeBRepDS, which Kerf has replaced, so that half is to be done over in `BOPReconstruction`; 5 are ChFi3d (`_0` +131, `SpKP` +148, `_C1` +31); the others are tests. It's the same limit: "Exclude fully consumed faces... Accept tangential contacts while rejecting transversal intersections". **It changes four corpus cases, B2, Q3, Q8 and W7, and all four keep their TODO, now "Faulty shapes":** upstream's own reference says its result is invalid there. So it would take each from failing to invalid, except that Kerf would refuse them, as it does an invalid result. Q8 is now right here without it. **Its reason for being on the list has mostly gone. I recommend not porting it:** that reverses occt-defects.md's advice, which predates this. **The owner agreed: it isn't ported** (decisions 1892, 1901).
 
 **Unit 11T's islands** (its reliability.md, in progress when read):
 
@@ -128,9 +128,9 @@ So of the 23: **2 fixed now; 5 more at exact limits within stages 2 and 3; 3 pas
 | Crossing cylinders, all edges | 401 of 401 | Plausibly, as corners. Stage 4 |
 | Fillet on a loft | 39 of 2,194 | Perhaps: general surfaces. Stage 5 |
 | Chamfer on a loft | 946 of 2,194 | No ball. Own unit |
-| Fillets that fail slowly (a box just above its limit 3.4 s; a loft 13.9 s; a pipe 12.5 s) | | **Partly now:** see below |
+| Fillets that fail slowly (a box just above its limit 3.4 s; a loft 13.9 s; a pipe 12.5 s) | | **The box's, done** (section 8) |
 
-The box's case could end at once: `FilletLimits` knows from the geometry that it can't fit. **It isn't short-circuited here,** as ChFi3d returning something above the limit would then change; a question for the owner. The loft's and pipe's need a limit on the work in `ApproxAFunction`, which is 11T's question, and a rewrite would have its own version of that.
+The box's case now ends at once. The loft's and pipe's needed a limit on the work in `ApproxAFunction`: decision 1884.
 
 **What it wouldn't fix.** Files that Draw-lite can't read or scripts counting edges. Anything to do with `ChFi2d`. The tolerance of imported shapes (a rolling ball on a sloppy import fails too). Self-intersecting results from radii larger than local curvature: they'd fail honestly, which is better, but they wouldn't work.
 
@@ -169,6 +169,51 @@ Every stage runs after ChFi3d fails, until stage 6 says otherwise. Each leaves t
 3. **Don't port `f713b1305f`.**
 4. **Stop there and look.** Stage 4 and beyond should wait for failures from Bento's users that are ChFi3d's own, as beyond-compatibility.md says. By then the event list here will have been tried on small cases, and I'd read Braid first.
 5. **A separate small unit for chamfer corners,** when one of them matters to someone.
+
+## 8. Limits as built (unit 12C)
+
+Decisions 1898 to 1901. Times are from a machine shared with other work.
+
+**What's proved.** No tangent fillet fits where a contact line would lie off a rectangular face beside the edge, when the face past its far edge turns by more than ChFi3d calls tangent. **The limit was wrong below that:** see the next section. It's only an upper limit: other things can stop a fillet sooner.
+
+**Does ChFi3d ever return something above the limit?** Yes, in two ways, measured on ChFi3d alone:
+
+| What it returned above the width | Where | So |
+|---|---|---|
+| **Valid and right** | The next face within 0.1 radians, either way: a ball touching the side and the next face, to 1e-10 by volume, against the section by hand | **The limit was wrong** (decision 1899). There's no limit there now, and it isn't refused |
+| **Invalid** | All of a cube's edges, a top's four, an S of two: 97 of 3,890 runs above a limit, such as volume 1,546 for what should be near 524 | Refused: this was the slow case |
+| Nothing | The other 3,793 | Refused |
+| **Valid, above a limit still claimed** | **None,** in 65 cases at five sizes | |
+
+**On the corpus's real cases.** With a temporary line in Draw's `blend`, over `blend`, `chamfer` and `bugs/modalg_*`: 116 fillets had edges with a limit. None of one radius lay above it. Four of one radius lay exactly on it, and ChFi3d failed on each: Q8, bug25478_1, bug25478_2 and bug32931, as section 4 says. The two with their largest radius at or above the number are of several radii (E3 and A4), which aren't judged, and were built, valid. The corpus's Draw commands call the engine, not `FilletOperations`, so 0 of its 3,140 statuses move, as they shouldn't.
+
+**Near the limit, by the radius.** For each case and size in the survey, from half the limit to five times it (29 radii), through the public `Fillet`:
+
+| Radius | One edge, or edges apart, square ends | Corners, slanted ends |
+|---|---|---|
+| Below by more than the band | ChFi3d, right by volume | ChFi3d, right by volume |
+| Within the band, either way | The limit, exact | "can't be built yet" |
+| Above the band | Refused, says what fits | The same |
+
+The 26 cases away from a near-tangent edge go through these in order at all five sizes, on all 29 radii, with nothing out of place: built, then perhaps "can't be built yet", then refused. The band's width is the shape's tolerance on the contact line, so for a radius it's that over the contact per unit of radius.
+
+**How it behaves by size.** The tolerance is absolute, as all of the kernel's are.
+
+| Size | Band, as a part of it | Limit's rounding (9 places) | What else |
+|---:|---:|---:|---|
+| 0.01 | 1e-5 | 5e-8 | ChFi3d's own tolerances are absolute too, 1e-4 on the spine: a hundredth of the shape. Its corners are right by volume only to 2e-6, where they're 1e-6 or better at the larger sizes |
+| 1 | 1e-7 | 5e-10 | |
+| 10 | 1e-8 | 5e-11 | |
+| 10,000 | 1e-11 | 5e-14 | Still some 50,000 times the rounding of a coordinate there. `MaxFillet`'s defaults throw (decision 1900) |
+
+**What's still "sometimes it works".** Neither reaches a wrong answer silently, and neither has a limit, so neither is refused. Both are ChFi3d's, and in occt-issues.md:
+
+- **A next face within 0.1 radians, just below the width:** the result is invalid over a band up to about 1e-6 wide at small angles and 1e-8 at 5 degrees, and carries the shape. Either side of that it's right.
+- **A contact line reaching a tangent edge,** as a far side with a fillet on it: fails from the width to as much as 1e-5 above it, though it's right on both sides.
+
+**The check, separately from how it's built.** `FilletLimitSweepTests`: 16 cases at six sizes, 0.01 to 10,000: boxes, moved and turned, several edges apart, faces at other angles, a concave edge, a slanted end, a chain round a top, all of a cube. The volume and area come from each section's corners by hand (for the slanted end, integrals over the spandrel; for the chain, by layers, volume only). 6 radii below, 7 in the band with the limit itself, 8 above, with the limit claimed checked against one by hand, and a fine sweep of a cube's edge with 100 radii from 1e-12 to 7e-3 either side at four sizes. A shape with its tolerances raised to 1e-3 is in `FilletLimitsTests`.
+
+**Its cost.** About 4% of a working fillet's bytes, and under 3% of its time on a shape of 262 faces. It would have been 8% and 11% without making the rest of `Neighbours` wait until a limit asks.
 
 ## Sources
 

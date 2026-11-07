@@ -2221,3 +2221,10 @@ The list and its ranking are in [occt-defects.md](occt-defects.md).
 | `IntAna_QuadQuadGeo`, `IntPatch_ImpImpIntersection`, equal cylinders whose axes are under 1e-7 from crossing | Ellipses where the true curves turn away within sqrt(2 R d), so edges through the crossing points disagree with them. On native 8.0.1: a round notch wrong in 88 of 267 steps, with no failure | Fixed where a crossing point is at a face's end (decision 1885); radius 500 still fails |
 | `BRepBlend_AppFuncRoot`, `Approx_SweepApproximation` | A blend surface that can't be fitted takes up to 320,000 solves, and the fillet then fails | Bounded at 20,000 (decision 1884) |
 | `BRepTopAdaptor_FClass2d`, `IntTools_FClass2d` | A NaN or infinite parameter never returns | Fixed (decision 1883) |
+
+Found by unit 12C (fillet-design.md, section 8), each a loud failure:
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `ChFi3d_Builder`, a next face within 0.1 radians | Just below the face's width, by up to about 1e-6 at small angles and 1e-8 at 5 degrees, the fillet comes out invalid. Above and below that it's right | `result.invalid`, carrying the shape | leave, until a user meets it: it wants a stage of fillet-design.md's |
+| `ChFi3d_Builder`, a contact line reaching a tangent edge | From the radius where the contact line meets a tangent edge to as much as 1e-5 above it, it fails, though it's right on both sides | `fillet.*` failure at a radius that should work | leave, as above |

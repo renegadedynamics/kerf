@@ -22,7 +22,7 @@ public class FilletFailuresTests
     const string PlateMessage =
         "The fillet with a radius of 3 is too large for these 12 edges: the most that fits is 1" + UsesUp
         + " It failed on 8 of 12 edges "
-        + "(no starting solution: [1] at (-10, 0, 1), [3] at (-10, 0, -1), "
+        + "(too large: [1] at (-10, 0, 1), [3] at (-10, 0, -1), "
         + "[5] at (10, 0, 1), [7] at (10, 0, -1), [8] at (0, -10, -1), "
         + "[9] at (0, -10, 1), [10] at (0, 10, -1), [11] at (0, 10, 1)).";
 
@@ -43,21 +43,19 @@ public class FilletFailuresTests
     }
 
     /// <summary>
-    /// Radius 11 on a 20 mm box: the engine gives what OCCT gives, an invalid shape, and the shorthand refuses it, so a
-    /// cell shows the reason and not a shape that can't be used (decision 1740).
+    /// Radius 11 on a 20 mm box: the engine gives what OCCT gives, an invalid shape, so it isn't asked (decision 22101), and a
+    /// cell shows what fits and not a shape that can't be used (decision 1740).
     /// </summary>
     [Fact]
     public void A_radius_past_half_the_box_is_refused()
     {
         var box = Box(20, 20, 20);
         var failed = Failures.Try(() => box.Fillet(11, box.Edges()));
-        Assert.Equal(DiagnosticCode.InvalidResult, failed.Error!.Code);
-        Assert.Contains("Try a smaller radius", failed.Error.Message, StringComparison.Ordinal);
-        Assert.True(failed.TryGetInvalid(out var invalid));
-        Assert.False(invalid.IsValid);
+        Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error!.Code);
+        Assert.Contains("the most that fits is 10,", failed.Error.Message, StringComparison.Ordinal);
+        Assert.False(failed.TryGetInvalid(out _));
         Assert.Throws<InvalidOperationException>(() => failed.Value);
-        Assert.True(ModelingDiagnostics.TryGetInvalid(Assert.Throws<InvalidOperationException>(() => box.Fillet(11, box.Edges())), out var thrown));
-        Assert.False(thrown.IsValid);
+        Assert.False(ModelingDiagnostics.TryGetInvalid(Assert.Throws<InvalidOperationException>(() => box.Fillet(11, box.Edges())), out _));
         Assert.False(ModelingDiagnostics.TryGetInvalid(new InvalidOperationException(), out _));
         Assert.True(box.Fillet(9.99, box.Edges()).IsValid);
     }
@@ -84,9 +82,7 @@ public class FilletFailuresTests
              "The fillet with a radius of 3 on 1 of 1 edges (no starting solution: [0] at (-9.12132, -4.12132, 2), 7 additional tangent edges)" + Advice),
             (topEdges[..7],
              "The fillet with a radius of 3 is too large for these 7 edges: the most that fits is 2" + UsesUp
-             + " It failed on 7 of 7 edges (no starting solution: [0] at (-10, 0, 2), [1] at (-9.12132, -4.12132, 2), [2] at (0, -5, 2), "
-             + "[3] at (9.12132, -4.12132, 2), [4] at (10, 0, 2), [5] at (9.12132, 4.12132, 2), [6] at (0, 5, 2), "
-             + "1 additional tangent edge)."),
+             + " It failed on 4 of 7 edges (too large: [0] at (-10, 0, 2), [2] at (0, -5, 2), [4] at (10, 0, 2), [6] at (0, 5, 2))."),
         ];
         foreach (var (selection, details) in cases)
         {
@@ -112,12 +108,11 @@ public class FilletFailuresTests
             Assert.Equal($"The fillet with a radius of {text}" + Advice, failed.Error!.Message);
         else
         {
-            // What the engine made on the cube, a radius past half its side, isn't valid: a failure that carries it
-            Assert.Equal(DiagnosticCode.InvalidResult, failed.Error!.Code);
-            Assert.StartsWith($"The fillet with a radius of {text} isn't valid: ", failed.Error.Message, StringComparison.Ordinal);
-            Assert.EndsWith("Try a smaller radius, or MaxFillet to find the largest that works.", failed.Error.Message, StringComparison.Ordinal);
-            Assert.True(failed.TryGetInvalid(out var invalid));
-            Assert.False(invalid.IsValid);
+            // A radius past half the cube's side: refused from the geometry, where the engine made something invalid (decision 22101)
+            Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error!.Code);
+            Assert.Contains($"The fillet with a radius of {text} is too large", failed.Error.Message, StringComparison.Ordinal);
+            Assert.Contains("the most that fits is 5,", failed.Error.Message, StringComparison.Ordinal);
+            Assert.False(failed.TryGetInvalid(out _));
         }
     }
 
@@ -135,7 +130,7 @@ public class FilletFailuresTests
         Assert.Equal(
             "The fillet with a radius of 3 is too large for these 4 edges: the most that fits is 1" + UsesUp
             + " It failed on 3 of 4 edges "
-            + "(no starting solution: [0] at (-10, 0, -1), "
+            + "(too large: [0] at (-10, 0, -1), "
             + "[2] at (-10, 0, 1), [3] at (-10, 0, 1)).",
             failed.Error!.Message);
     }
