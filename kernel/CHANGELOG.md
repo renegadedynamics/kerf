@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **A disc's rim rounded to its full height, full rounds, hemispheres and a sphere from a short cylinder work,** as does a hole's rim or a boss's foot rounded to its wall's height: circular edges between a plane, cylinder or cone, with the result checked by Pappus, on exact tori and spheres.
+
 - **A fillet too large for a circular edge between a plane, cylinder or cone now says what fits:** `FilletLimit` gives the radius, and `Fillet` refuses above it at once, with a radius within tolerance of it taken as it.
 
 - **`CentreOfArea()`** gives the centre of a shape's faces' area without its moments, exact for a planar face bounded by lines and circles.

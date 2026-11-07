@@ -5,6 +5,8 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **Round a disc's rim to its full height, make a full round, a hemisphere or a sphere from a short cylinder:** these used to fail, and now give exact tori and spheres.
+
 - **A fillet too large for a circular edge, such as a cylinder's rim, says what fits,** and `MaxFillet` doesn't try above it.
 
 - **`Center` and `Plane(face)` are exact for a planar face bounded by lines and circles,** and far quicker, so the last digits of what's built on one can change.

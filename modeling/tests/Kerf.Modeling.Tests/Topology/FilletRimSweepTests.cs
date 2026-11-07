@@ -149,6 +149,43 @@ public class FilletRimSweepTests
 
     [Theory]
     [MemberData(nameof(Sizes))]
+    public void Below_a_limit_the_answer_is_the_sections(double s)
+    {
+        foreach (Case c in Cases(s))
+        {
+            foreach (double radius in new[] { 0.5 * c.Limit, 0.9 * c.Limit, 0.99 * c.Limit, 0.999 * c.Limit, c.Limit - 1e-5, c.Limit - 1e-6 })
+            {
+                string what = $"{c.Name} at size {s}, radius {radius:R}";
+                var made = Round(c, radius);
+                Assert.True(made.IsSuccess, what + ": " + made.Error?.Message);
+                Right(made.Value, Answer(c, radius), what);
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Sizes))]
+    public void Within_tolerance_of_a_limit_is_the_limit_and_it_is_built(double s)
+    {
+        foreach (Case c in Cases(s))
+        {
+            var atLimit = Round(c, c.Limit);
+            string name = $"{c.Name} at size {s}, at the limit";
+            Assert.True(atLimit.IsSuccess, name + ": " + atLimit.Error?.Message);
+            Right(atLimit.Value, Answer(c, c.Limit), name);
+            Assert.Equal(c.FacesAtLimit, atLimit.Value.Faces().Count);
+            foreach (double offset in new[] { -2.5e-8, -1e-8, -1e-10, 1e-10, 1e-8, 2.5e-8 })
+            {
+                var made = Round(c, c.Limit + offset);
+                Assert.True(made.IsSuccess, $"{name} {offset}: {made.Error?.Message}");
+                Assert.True(atLimit.Value.Volume == made.Value.Volume, $"{name} {offset}: {atLimit.Value.Volume:R}, {made.Value.Volume:R}");
+                Assert.True(atLimit.Value.Area == made.Value.Area, $"{name} {offset}: {atLimit.Value.Area:R}, {made.Value.Area:R}");
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Sizes))]
     public void Above_a_limit_it_is_refused_and_says_what_fits(double s)
     {
         foreach (Case c in Cases(s))
@@ -172,4 +209,64 @@ public class FilletRimSweepTests
         }
     }
 
+    [Theory]
+    [InlineData(0.01)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(10000)]
+    public void A_fine_sweep_either_side_changes_outcome_once(double s)
+    {
+        // Worst case first: bunching up at the limit from both sides, the outcome goes from built to refused once, and each built is right
+        foreach (Case c in Cases(s))
+        {
+            bool refused = false;
+            double atLimit = Round(c, c.Limit).Value.Volume;
+            foreach (int sign in new[] { -1, 1 })
+            {
+                for (int e = sign < 0 ? -3 : -12; sign < 0 ? e >= -12 : e <= -3; e += sign < 0 ? -1 : 1)
+                {
+                    foreach (double m in new[] { 1, 2, 5 })
+                    {
+                        double radius = c.Limit + sign * m * Math.Pow(10, e) * Math.Min(1, s);
+                        string what = $"{c.Name} at size {s}, radius {radius:R}";
+                        var made = Round(c, radius);
+                        if (made.IsSuccess)
+                        {
+                            Assert.False(refused, what + ": built after a refusal");
+
+                            // Within tolerance of the limit it's the limit: at the smallest size, that's a part in 50,000 of the radius
+                            bool isLimit = Math.Abs(radius - c.Limit) <= 2e-6 && made.Value.Volume == atLimit;
+                            Right(made.Value, Answer(c, isLimit ? c.Limit : radius), what);
+                        }
+                        else
+                        {
+                            refused = true;
+                            Assert.True(radius > c.Limit, what + ": " + made.Error!.Message);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void A_full_round_of_equal_sizes_is_a_sphere()
+    {
+        Part cylinder = new Cylinder(5, 10);
+        var made = Fillet(cylinder, cylinder.Edges().Where(e => e.GeomType == GeomType.Circle), 5);
+        Assert.True(made.IsSuccess, made.Error?.Message);
+        Face only = Assert.Single(made.Value.Faces());
+        Assert.Equal(GeomType.Sphere, only.GeomType);
+    }
+
+    [Theory]
+    [InlineData(5, GeomType.Torus)]    // A tube as wide as the torus
+    [InlineData(7, GeomType.Torus)]    // Wider: the hole's wall used up and a thin plate
+    public void The_new_surface_is_exact_however_the_tube_compares(double radius, GeomType kind)
+    {
+        Part disc = new Cylinder(10, radius);
+        var made = Fillet(disc, disc.Edges().Where(e => e.GeomType == GeomType.Circle && e.Center().Z > 0), radius);
+        Assert.True(made.IsSuccess, made.Error?.Message);
+        Assert.Contains(made.Value.Faces(), f => f.GeomType == kind);
+    }
 }

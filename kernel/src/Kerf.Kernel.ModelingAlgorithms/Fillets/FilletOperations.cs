@@ -191,6 +191,12 @@ public static class FilletOperations
                 {
                     return mixed;
                 }
+
+                // Or a rim, at a limit or not (unit 12L)
+                if (FilletLimits.AfterAlgorithm(solid, specs, options) is { } after)
+                {
+                    return after;
+                }
                 ImmutableArray<Diagnostic> faulty = Faulty(fillet, specs.Length);
                 if (fit is { } known && FilletLimits.TooLarge(known, specs) is { } tooLarge)
                 {
