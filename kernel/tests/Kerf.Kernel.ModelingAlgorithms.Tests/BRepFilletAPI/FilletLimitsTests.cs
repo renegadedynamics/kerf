@@ -97,6 +97,23 @@ public class FilletLimitsTests
         Assert.Equal(7, box.Fillet([edge], 10 - 2e-3).Value.Shape.AllFaces().Length);
     }
 
+    [Theory]
+    // At the default tolerance, on a square edge: the whole strip, 10 tolerances, is a move of 1e-6
+    [InlineData(10 - 9e-7, 10, 1e-7, 10 - 9e-7, true)]
+    [InlineData(10 - 2e-6, 10, 1e-7, 10 - 2e-6, false)]
+    // An obtuse corner, where the contact line moves a tenth of the radius: the same strip would move it by more
+    [InlineData(1 - 5e-7, 1, 1e-7, 10 - 5e-6, false)]
+    [InlineData(1 - 5e-8, 1, 1e-7, 10 - 5e-7, true)]
+    // A sloppy shape: within its tolerance is the limit, and past that the move is what counts, not 10 of its tolerances
+    [InlineData(10 - 5e-4, 10, 1e-3, 10 - 5e-4, true)]
+    [InlineData(10 - 2e-3, 10, 1e-3, 10 - 2e-3, false)]
+    // Far from the limit
+    [InlineData(5, 10, 1e-7, 5, false)]
+    public void A_strip_moves_a_radius_by_at_most_a_millionth_of_a_unit(double used, double width, double tolerance, double radius, bool isLimit)
+    {
+        Assert.Equal(isLimit, FilletLimits.TooNarrowToLeave(used, width, tolerance, radius));
+    }
+
     [Fact]
     public void A_shape_too_sloppy_to_know_its_width_gives_no_limit()
     {

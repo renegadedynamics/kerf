@@ -376,7 +376,7 @@ internal static partial class FilletLimits
                 {
                     return null;
                 }
-                if (r * demand >= width - TooNarrow * side.Tolerance)
+                if (TooNarrowToLeave(r * demand, width, side.Tolerance, r))
                 {
                     r = Math.Min(r, width / demand);
                 }
