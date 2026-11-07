@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **An extrusion along its own plane, a loft of sections in one plane and a sweep along the section's plane now fail,** carrying the empty solid, where they reported success (decision 22602).
 - **A minimum distance between parts that intersect is zero:** where their faces cross inside both, with no edge or vertex involved, it used to report the nearest vertex (decision 22601).
 - **A parallel operation's progress never runs backwards,** and a progress callback gets its reports one at a time (decision 1903).
 - **A cube rounded all over is a sphere, a bar is a capsule, and a plate is a pillow, at the radius that just fits:** fillets where edges meet at a limit now work, with corners on exact spheres, as do slanted ends, a chain round a top, an L's top with its re-entrant corner, and convex and concave edges that touch. `MaxFillet` gives that radius itself. What the fillet algorithm makes invalid is now also tried by this path before it's reported.

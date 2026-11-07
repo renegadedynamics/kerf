@@ -54,12 +54,13 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 ## For unit 11S: results of no volume reported as success
 
-From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's plane (volume 0, invalid, and no failure); a `Solid.MakeLoft` of two sections in one plane (0, "valid"); the kernel's `Sweeps.Sweep` with `SweepFrame.Fixed` and `WithCorrection`, or along the section's plane.
+From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's plane (volume 0, invalid, and no failure); a `Solid.MakeLoft` of two sections in one plane (0, "valid"); the kernel's `Sweeps.Sweep` with `SweepFrame.Fixed` and `WithCorrection`, or along the section's plane. **All fixed by decision 22602;** `WithCorrection` turns the section to the path, so it has its volume, 2000 for a 10 by 10 square along 20, and needs nothing.
 
 ## Fixed so far
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 22602 |
 | #1123 | A minimum distance of 0.083 between parts that intersect | 22601 |
 | #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 1860, 1863, 1866 |
 | #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
