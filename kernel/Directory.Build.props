@@ -20,12 +20,13 @@
 
   <!--
     What ReadyToRun compiles (unit 11C, docs/performance.md): the framework's code may be inlined into Kerf's, each piece
-    guarded at load by a check of its IL, and any assembly may hold generic instantiations over types from others, which is
+    guarded at load by a check of its IL. Not non-local generics: they'd save more of what the JIT would otherwise compile, but
+    another copy of Kerf in the process, compiled by the JIT, then fails (decision 21801). This is
     most of what the JIT would otherwise compile on opening. About 21% larger on disk than plain ReadyToRun; opening
     falls by about 30%. Used only when publishing ReadyToRun, as tools/pack-nuget.ps1 and tools/bench.ps1 do.
   -->
   <PropertyGroup>
-    <PublishReadyToRunCrossgen2ExtraArgs>--non-local-generics-module:*;--opt-cross-module:*;--Ot</PublishReadyToRunCrossgen2ExtraArgs>
+    <PublishReadyToRunCrossgen2ExtraArgs>--opt-cross-module:*;--Ot</PublishReadyToRunCrossgen2ExtraArgs>
   </PropertyGroup>
 
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->
