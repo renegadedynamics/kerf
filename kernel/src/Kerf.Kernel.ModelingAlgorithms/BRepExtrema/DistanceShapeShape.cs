@@ -962,7 +962,7 @@ internal sealed class DistanceShapeShape
         for (int i = 1; i <= _mapF1.Count; i++)
         {
             Box box1 = _bf1.Value(i);
-            if (box1.IsVoid)
+            if (box1.IsVoid || box1.IsOpen)
             {
                 continue;
             }
@@ -970,7 +970,7 @@ internal sealed class DistanceShapeShape
             for (int j = 1; j <= _mapF2.Count; j++)
             {
                 Box box2 = _bf2.Value(j);
-                if (box2.IsVoid || box1.Distance(box2) > 0)
+                if (box2.IsVoid || box2.IsOpen || box1.Distance(box2) > 0)
                 {
                     continue;
                 }

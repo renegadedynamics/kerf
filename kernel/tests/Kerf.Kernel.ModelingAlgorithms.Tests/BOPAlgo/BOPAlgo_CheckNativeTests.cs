@@ -269,6 +269,12 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                 // A walking piece partly out of a face finds its bound vertex, which native loses (decision 1834). The
                 // checker's verdict on this shape is the same, OK, before and after; its record of the pair differs.
             }
+            else if (aCase.Name.StartsWith("occ/Ball.brep", StringComparison.Ordinal) && aCase.Run[0] == "si" && Findings(aPort) == Findings(aCase.Native))
+            {
+                // Decision 22608: faces 60 and 81 of the ball cross close to tangent, and a curve OCCT took for a tangency
+                // is walked: the pair has two curves, not one, and what the check reports is the same
+                ++anIdentical;
+            }
             else if (aCase.Name.StartsWith("occ/bottle.brep", StringComparison.Ordinal) && Findings(aPort) == Findings(aCase.Native))
             {
                 // Decision 1818: a corner's sphere touches its fillet's torus along a circle, which is analytic now and was

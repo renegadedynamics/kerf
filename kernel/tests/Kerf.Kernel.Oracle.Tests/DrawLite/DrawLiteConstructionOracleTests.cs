@@ -136,6 +136,13 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         {
             theTally.MaskedEqual++;
         }
+        else if ((theWhat.EndsWith(" scalexyz", StringComparison.Ordinal) || theWhat.EndsWith(" deform", StringComparison.Ordinal))
+                 && MaskFree(WithoutMeshes(aN)) == MaskFree(WithoutMeshes(aP)))
+        {
+            // Decision 22612: a general transform's mesh has its normals by the inverse transpose, and stays in its face's
+            // placement, where native's doesn't; the rest is compared
+            theTally.MaskedEqual++;
+        }
         else if (theTally.Differences.Count < 5)
         {
             theTally.Differences.Add($"{theWhat}:\n--- native\n{aN}\n--- port\n{aP}");
@@ -144,6 +151,14 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         {
             theTally.Differences.Add(theWhat);
         }
+    }
+
+    // BRep text without its triangulations
+    private static string WithoutMeshes(string theText)
+    {
+        int aFrom = theText.IndexOf("\nTriangulations ", StringComparison.Ordinal);
+        int aTo = theText.IndexOf("\nTShapes ", StringComparison.Ordinal);
+        return aFrom >= 0 && aTo > aFrom ? theText[..aFrom] + theText[aTo..] : theText;
     }
 
     private static void Same(Tally theTally, double theNative, double thePort, string theWhat)
