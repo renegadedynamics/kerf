@@ -134,6 +134,9 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         "boolean/bcut_complex/F2",
         // native OCCT (Kerf.Modeling's build) gives the same 6 vertices on the port's bcommon result and on its own
         "bugs/heal/bug29382_3",
+        // decision 22302: a line tangent to a cylinder, 0.0019 from a vertex, is covered by it, so the section has one edge and one
+        // vertex fewer than the script's 19 and 13. The rest of what it checks of all five results passes
+        "bugs/modalg_7/bug27928",
 
         // The cases FollowsCalledProcsOnly made runnable (decision 972), attributed by unit 7W:
         // decision 955 again: the section of the sewn shell by the plane y = 1 is the shell's common edge itself in

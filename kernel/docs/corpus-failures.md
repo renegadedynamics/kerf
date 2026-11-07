@@ -46,6 +46,7 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 |---|---|
 | demo/samples/anc101 | Native fails the same way (decision 1310) |
 | lowalgos/extss/bug29712_44 | The script's mistake; native gives 0 too (decision 1309) |
+| bugs/modalg_7/bug27928 | Unit 12G's reach for a grazing edge (decision 22302) takes a tiny edge of the section `r4`: 12 vertices and 18 edges for 13 and 19. Everything else the script checks passes. A deliberate change, for the owner |
 | bugs/heal/bug29382_3 | Native gives the same 6 vertices (occt-issues.md) |
 | bugs/modalg_7/bug26034 | Native, with exceptions compiled in, gives the same warning (unit 7W) |
 | chamfer/dist_angle_sequence/A5, chamfer/equal_dist_sequence/A5 | Native's result is invalid at step 15 too. The port's is invalid with far fewer faces: see "Faces lost silently" |

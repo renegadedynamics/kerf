@@ -124,6 +124,17 @@ internal sealed class EdgeFaceJob : EdgeFace, BooleanParallel.IContextSolver<Int
 
 internal partial class PaveFiller
 {
+    // How far apart, in space, the ends of a range of an edge lie, where it can graze a face: something in it must curve
+    private double TouchSpan(in Edge edge, in ParameterRange range, in Face face)
+    {
+        EdgeCurveAdaptor curve = new(edge);
+        if (curve.GetType() == Line && _context!.SurfaceAdaptor(face).GetType() == Plane)
+        {
+            return 0.0;
+        }
+        return curve.Value(range.First()).DistanceTo(curve.Value(range.Last()));
+    }
+
     /// <summary>The edge/face interferences.</summary>
     protected virtual void PerformEF(ProgressRange range)
     {
@@ -450,6 +461,10 @@ internal partial class PaveFiller
                                     double distPP = p.DistanceTo(pnew0);
                                     double tol = Tool.Tolerance(v);
                                     double maxDist = 1.0e4 * tol;
+                                    // An edge grazing a face stays within tolerance over sqrt(2 R tol), so the reach is what the touch
+                                    // spans, not a fixed length: past 1e-3 a large cylinder's edge got new vertices either side of one
+                                    // already touching (decision 22302)
+                                    maxDist = Max(maxDist, TouchSpan(e, r, f));
                                     if (tol < .01)
                                     {
                                         maxDist = Min(maxDist, 0.1);

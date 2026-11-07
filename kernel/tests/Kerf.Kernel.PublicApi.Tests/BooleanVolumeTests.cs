@@ -296,6 +296,20 @@ public class BooleanVolumeTests
         Assert.Equal(Math.PI * radius * radius * 2 * radius - common, result.IntegrateVolume(), 2e-4 * common);
     }
 
+    // The clean wasn't at fault in these: an edge grazing a face got new vertices either side of the one already touching, once the
+    // touch was longer than a fixed 1e-3, and a fuse lost their common or half a cylinder: up to 16.5% out, valid (decision 22302)
+    [Theory]
+    [InlineData(50, -2e-8, 1.0)]
+    [InlineData(500, -2e-7, 1.0)]
+    [InlineData(1000, 1e-6, 0.0)]
+    public void A_fuse_of_large_equal_cylinders_nearly_crossing_loses_nothing(double radius, double offset, double height)
+    {
+        (Shape cylinder, Shape tool, double common) = Crossing(radius, offset, height);
+        Shape result = cylinder.Fuse(tool).Value.Shape;
+        double both = Math.PI * radius * radius * 6 * radius;
+        Assert.Equal(both - common, result.IntegrateVolume(), 2e-4 * both);
+    }
+
     // A cylinder of the radius, standing on the origin's plane by half its height, and one twice as long across it with its axis at
     // height * radius and offset from the first's, with their common part from the geometry
     private static (Shape Cylinder, Shape Tool, double Common) Crossing(double radius, double offset, double height)
