@@ -112,12 +112,11 @@ public class FilletFailuresTests
             Assert.Equal($"The fillet with a radius of {text}" + Advice, failed.Error!.Message);
         else
         {
-            // What the engine made on the cube, a radius past half its side, isn't valid: a failure that carries it
-            Assert.Equal(DiagnosticCode.InvalidResult, failed.Error!.Code);
-            Assert.StartsWith($"The fillet with a radius of {text} isn't valid: ", failed.Error.Message, StringComparison.Ordinal);
-            Assert.EndsWith("Try a smaller radius, or MaxFillet to find the largest that works.", failed.Error.Message, StringComparison.Ordinal);
-            Assert.True(failed.TryGetInvalid(out var invalid));
-            Assert.False(invalid.IsValid);
+            // A radius past half the cube's side: refused from the geometry, where the engine made something invalid (decision 22101)
+            Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error!.Code);
+            Assert.Contains($"The fillet with a radius of {text} is too large", failed.Error.Message, StringComparison.Ordinal);
+            Assert.Contains("the most that fits is 5,", failed.Error.Message, StringComparison.Ordinal);
+            Assert.False(failed.TryGetInvalid(out _));
         }
     }
 
