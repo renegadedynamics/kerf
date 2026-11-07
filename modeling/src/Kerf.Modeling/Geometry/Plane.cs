@@ -97,11 +97,27 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     static Plane3D FromFace(Face face, Vector3D? xDir)
     {
+        var (x14, z14) = FaceDirections(face, xDir);
+        return Build(face.MassProperties(Dimension.Area, TopoUtil.MeasuredMoments).CentreOfMass, x14, z14);
+    }
+
+    /// <summary>
+    /// The normal of the plane a face makes, without its origin, which takes integrating the face for its centre of mass:
+    /// what <c>new Plane(face).ZDir</c> gives.
+    /// </summary>
+    /// <exception cref="ArgumentException">The face isn't planar.</exception>
+    internal static Direction3D NormalOf(Face face)
+    {
+        var (x14, z14) = FaceDirections(face, null);
+        return new Plane(Build(Point3D.Origin, x14, z14), owned: true).ZDir;
+    }
+
+    static (Vector3D X, Vector3D Z) FaceDirections(Face face, Vector3D? xDir)
+    {
         if (face.IsPlanar is null)
             throw new ArgumentException("Planes can only be created from planar faces");
         var topoFace = face;
         topoFace.TryGetSurface(out var surface);
-        var origin = topoFace.MassProperties(Dimension.Area, TopoUtil.MeasuredMoments).CentreOfMass;
         Vector3D faceXDir;
         if (surface is BoundedSurface bounded)
         {
@@ -116,7 +132,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         }
         var x14 = (xDir ?? faceXDir).Round(14);
         var z14 = FaceNormal(topoFace, surface).Round(14);
-        return Build(origin, x14, z14);
+        return (x14, z14);
     }
 
     /// <summary>The normal of a face where it is nearest the global origin (build123d's <c>get_topods_face_normal</c>).</summary>

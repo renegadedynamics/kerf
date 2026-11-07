@@ -98,6 +98,7 @@ internal sealed class Delaun
     {
         _meshData = oldMesh;
         _circles = new CircleTool(vertexIndices.Count, oldMesh.TakeCircles());
+        oldMesh.LendCellNodes(_circles);
         _supVert = new List<int>(3);
         _initCircles = false;
         Perform(vertexIndices);
@@ -114,6 +115,7 @@ internal sealed class Delaun
     {
         _meshData = oldMesh;
         _circles = new CircleTool(vertexIndices.Count, oldMesh.TakeCircles());
+        oldMesh.LendCellNodes(_circles);
         _supVert = new List<int>(3);
         _initCircles = false;
         Perform(vertexIndices, cellsCountU, cellsCountV);

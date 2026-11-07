@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## 0.3.0 (unreleased)
 
+- **Recalculation and a parallel round are about a fifth quicker, with about a fifth fewer bytes,** on Bento's examples, with the same shapes and meshes (a loaded machine). `Volume` and `Area` are exact on planar faces, so they can differ from before in their last digits.
 - **`Volume` of a compound counts its solids at any depth,** and a compsolid's; a box in three nested compounds had a volume of 0.
 - **`&` no longer returns an invalid solid** when a clean would spoil its good result.
 - **Equal cylinders that nearly cross are right,** and a failing fillet fails sooner (the kernel's `CHANGELOG`).

@@ -117,12 +117,13 @@ public static partial class Operations
     private static Part ExtrudeCore(IReadOnlyList<Face> faces, double? amount, Until? until, Shape? target, ExtrudeOptions options)
     {
         var (dir, both, taper, clean) = (options.Direction, options.Both, options.Taper, options.Clean);
-        var facePlanes = new List<Plane>();
+        // Only the direction is read, so a face's centre of mass isn't worked out
+        var normals = new List<Direction3D>();
         foreach (var face in faces)
         {
             try
             {
-                facePlanes.Add(new Plane(face));
+                normals.Add(Plane.NormalOf(face));
             }
             catch (ArgumentException e) when (!Diagnostic.IsKernelFailure(e))
             {
@@ -132,27 +133,27 @@ public static partial class Operations
 
         if (dir is { } direction)
             // Override in the provided direction
-            facePlanes = [.. faces.Select(f => new Plane(f.Center(), f.CenterLocation.XAxis.Direction, direction))];
-        if (facePlanes.Count != faces.Count)
+            normals = [.. faces.Select(f => new Plane(f.Center(), f.CenterLocation.XAxis.Direction, direction).ZDir)];
+        if (normals.Count != faces.Count)
             throw new ArgumentException("A direction is needed to extrude a non-planar face.", nameof(options));
 
         var newSolids = new List<Shape>();
         for (int i = 0; i < faces.Count; i++)
         {
-            var (face, plane) = (faces[i], facePlanes[i]);
+            var (face, normal) = (faces[i], normals[i]);
             foreach (var sign in both ? new[] { 1, -1 } : [1])
             {
                 if (amount is { } a)
                 {
                     newSolids.Add(taper == 0
-                        ? Solid.Extrude(face, plane.ZDir * a * sign)
-                        : Solid.ExtrudeTaper(face, plane.ZDir * a * sign, taper));
+                        ? Solid.Extrude(face, normal * a * sign)
+                        : Solid.ExtrudeTaper(face, normal * a * sign, taper));
                 }
                 else
                 {
                     if (target!.Value.IsEmpty)
                         throw new ArgumentException("The target to extrude up to is empty.", nameof(target));
-                    newSolids.Add(Solid.ExtrudeUntil(face, target.Value, plane.ZDir * sign, until!.Value));
+                    newSolids.Add(Solid.ExtrudeUntil(face, target.Value, normal * sign, until!.Value));
                 }
             }
         }

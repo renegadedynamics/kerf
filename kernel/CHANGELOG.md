@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Recalculation and a parallel round are about a fifth quicker, with about a fifth fewer bytes,** on Bento's examples, with the same shapes and meshes (a loaded machine). `IntegrateVolume` and `IntegrateArea` with a tolerance give planar faces exactly, so a result can differ from before in its last digits.
 - **Equal cylinders that nearly cross are right:** a round notch, offset by rounding or an imported file, could remove nothing or fail; now Cut, Common and Fuse are right at the offsets measured, for radii of 0.5 and 5 (`docs/reliability.md`). A radius of 500 can still fail.
 - **`IntegrateVolume()` and `IntegrateArea()` are precise by default,** to 1e-6: they could be 18% out on faces bounded by a walked intersection. `MassOptions { Tolerance = 0 }` asks for the fixed points.
 - **A fillet that can't be made fails sooner:** 0.2 to 0.6 s where it took 4 to 7 s. **`Face.Classify` with a NaN or infinite parameter** answers `Out`; it never returned.

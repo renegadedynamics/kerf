@@ -41,7 +41,7 @@ internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
 
     private readonly SpatialTree<TheObjType, TheBndType> _tree;
     private readonly List<ObjBnd> _seqPtr;
-    private readonly Mt19937 _randGen; // random number generator
+    private DefaultMt19937 _randGen; // random number generator
     private readonly bool _isFullRandom;
 
     /// <summary>A filler of <paramref name="tree"/>.</summary>
@@ -50,11 +50,11 @@ internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     /// Takes effect when the number of items is large (order of 50,000). When true, the maximal randomisation gives a
     /// better balanced tree; when false, the tree is worse balanced but filled faster.
     /// </param>
-    public SpatialTreeFiller(SpatialTree<TheObjType, TheBndType> tree, bool isFullRandom = true)
+    /// <param name="capacity">How many objects are to come, if that's known.</param>
+    public SpatialTreeFiller(SpatialTree<TheObjType, TheBndType> tree, bool isFullRandom = true, int capacity = 0)
     {
         _tree = tree;
-        _seqPtr = new List<ObjBnd>();
-        _randGen = new Mt19937(5489u /* == std::mt19937::default_seed */);
+        _seqPtr = new List<ObjBnd>(capacity);
         _isFullRandom = isFullRandom;
     }
 

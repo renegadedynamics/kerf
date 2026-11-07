@@ -78,6 +78,9 @@ internal class Properties
         _inertia = other._inertia;
     }
 
+    /// <summary>Adds to the mass alone, for a caller that wants nothing else: the centre and inertia no longer mean anything.</summary>
+    internal void AddMass(double mass) => _dim += mass;
+
     /// <summary>
     /// Adds the global properties of <paramref name="item"/>, with density <paramref name="density"/>, to this
     /// system. Huygens' theorem moves the inertia of Item to the reference point of this system. A density already
