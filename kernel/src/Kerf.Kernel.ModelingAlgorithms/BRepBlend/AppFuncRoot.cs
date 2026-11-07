@@ -21,6 +21,10 @@ namespace Kerf.Engine.Fillets.Blend;
 /// </remarks>
 internal abstract class AppFuncRoot : SweepFunction
 {
+    // More sections than one approximation of a surface should want: see decision 21507
+    private const int MaxSearches = 20_000;
+
+    private int _searches;
     private readonly Line _line;
     private readonly AppFunction _func;
     private readonly math_Vector _tolerance;
@@ -246,6 +250,11 @@ internal abstract class AppFuncRoot : SweepFunction
     // convergence. It fails on singular surfaces, or with no information on the line.
     private bool SearchPoint(AppFunction func, double param, ref BlendPoint pnt)
     {
+        if (++_searches > MaxSearches)
+        {
+            return false;
+        }
+
         bool trouve;
         int dim = func.NbVariables();
         // (1) Find a point of init
