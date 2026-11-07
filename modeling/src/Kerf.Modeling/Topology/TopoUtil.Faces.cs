@@ -33,7 +33,7 @@ internal static partial class TopoUtil
     private const double SurelyAtAnAngle = 1e-6, SurelyApart = 1e-5;
 
     /// <summary>
-    /// Whether a clean is sure to hand back what extruding this profile along its normal makes (decision 22002). It merges only
+    /// Whether a clean is sure to hand back what extruding this profile along its normal makes (decision 1895). It merges only
     /// through an edge two faces share, so only neighbouring sides could merge, and a side's edges only once its neighbour has gone.
     /// A case in doubt answers false and is cleaned: any curve but a line or a circle, any edge that isn't plainly part of a
     /// boundary, a vertex with other than two ends of edges, lines within a millionth of a radian of one line, circles

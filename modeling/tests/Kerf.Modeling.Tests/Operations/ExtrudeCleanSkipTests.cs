@@ -9,7 +9,7 @@ using static Kerf.Modeling.Operations;
 namespace Kerf.Modeling.Tests.Operations;
 
 /// <summary>
-/// An extrusion skips its clean when the profile has nothing to merge (decision 22002). The test of that is the only safe one: over
+/// An extrusion skips its clean when the profile has nothing to merge (decision 1895). The test of that is the only safe one: over
 /// many profiles, with and without the skip, the same BREP text, so the same faces and edges in the same order with the same
 /// orientation, geometry and tolerances, and the same empty record; and a clean that would have been skipped hands back the very
 /// shape it was given.

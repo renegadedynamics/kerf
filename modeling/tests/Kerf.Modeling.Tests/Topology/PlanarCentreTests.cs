@@ -8,7 +8,7 @@ using static Kerf.Modeling.Operations;
 namespace Kerf.Modeling.Tests.Topology;
 
 /// <summary>
-/// <c>Center</c> and <c>Plane(face)</c> take a planar face's centre in closed form (decision 22001). Each figure here is worked out
+/// <c>Center</c> and <c>Plane(face)</c> take a planar face's centre in closed form (decision 1894). Each figure here is worked out
 /// from the geometry by hand, and the integration has to agree to its own tolerance.
 /// </summary>
 public class PlanarCentreTests
