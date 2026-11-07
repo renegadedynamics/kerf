@@ -19,6 +19,9 @@ public static class Mesher
     /// <summary>The code of a warning that some faces couldn't be meshed: <c>meshing.faces-not-meshed</c>.</summary>
     public static DiagnosticCode FacesNotMeshed { get; } = new("meshing.faces-not-meshed");
 
+    /// <summary>The mesh would pass <see cref="MeshOptions.MaxTriangles"/>.</summary>
+    public static DiagnosticCode TooLarge { get; } = new("meshing.too-large");
+
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
         /// <summary>
@@ -40,6 +43,8 @@ public static class Mesher
             }
 
             options ??= MeshOptions.Default;
+            cancellationToken = Cancellation.Effective(cancellationToken);
+            using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             var indicator = new ProgressIndicator(cancellationToken, progress);
             ShapeMesh? mesh;
@@ -52,6 +57,10 @@ public static class Mesher
             catch (OperationCanceledException)
             {
                 throw;
+            }
+            catch (MeshTooLargeException e)
+            {
+                return Result<ShapeMesh>.Failure(Diagnostic.Error(TooLarge, e.Message));
             }
             catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
             {

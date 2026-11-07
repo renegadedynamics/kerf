@@ -514,7 +514,9 @@ internal partial class FilletBuilderBase
             {
                 denom++;
 
-                if (Math.Abs(deltav) <= tolget2d)
+                // Kerf: OCCT #1495: with degenerate normals all along, reaching the tolerance takes more steps than an int
+                // holds, each with two evaluations. A thousand points without a normal say the same (decision 1858)
+                if (Math.Abs(deltav) <= tolget2d || denom > 1000)
                 {
                     return false;
                 }

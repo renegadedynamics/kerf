@@ -262,6 +262,8 @@ public static class MeasureOperations
 
     private static Result<DistanceResult> DistanceCore(in Shape a, in Shape b, DistanceOptions options, CancellationToken cancellationToken)
     {
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var indicator = new ProgressIndicator(cancellationToken);
         var calc = new DistanceShapeShape();

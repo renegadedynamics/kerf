@@ -42,6 +42,9 @@ internal sealed class DataStructureOfDelaun : Transient
     private readonly Queue<int> _delLinks;
     private readonly MeshWorkList<Triangle> _elements;
     private MeshWorkStorage? _storage;
+
+    /// <summary>Kerf: how many circles in cells a mesh may hold; see <see cref="Tools.MeshBudget"/>.</summary>
+    public int MaxCircleEntries { get; set; } = int.MaxValue;
     private readonly NCollection_PackedMapOfInteger _elementsOfDomain;
     private readonly NCollection_PackedMapOfInteger _linksOfDomain;
     private readonly LinkedListOfInteger.Iterator _cleanLinkIterator = new(); // Kept: a link is cleaned twice for each triangle (unit 11B)

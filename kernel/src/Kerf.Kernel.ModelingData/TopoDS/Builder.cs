@@ -34,6 +34,19 @@ namespace Kerf.Engine.Topology;
 /// </remarks>
 internal class Builder
 {
+    /// <summary>
+    /// The most levels of compound inside a compound (decision 1854). Most walks of a shape recurse once a level, and on a
+    /// 1 MB stack the most costly fails at about 200 levels, and on 512 kB at about 100. No real model comes near it: assemblies nest a few levels.
+    /// </summary>
+    internal const int MaxCompoundNesting = 64;
+
+    /// <summary>
+    /// The most leaves a walk of a compound may visit (decision 1857). A compound holding another twice, 40 levels deep, is a
+    /// million million of them, for a walk that never ends. Each leaf is a shape of its own to every operation, and
+    /// a hundred million is more than any machine could hold or a model use.
+    /// </summary>
+    internal const long MaxWalkLeaves = 100_000_000;
+
     public Builder()
     {
     }
@@ -216,6 +229,32 @@ internal class Builder
                 // Kerf: a frozen shape takes the child in the working overlay's copy of it, if one is open
                 TShape tShape = WorkingOverlay.ForWrite(aShape.TShape()!);
                 tShape.CheckMutable(); // Kerf: frozen
+                // Kerf: a depth every walk of a shape can afford, or a stack overflow would end the process (decision 1854)
+                if (iC == (uint)ShapeType.Compound)
+                {
+                    int nesting = componentTShape._compoundNesting + 1;
+                    if (nesting > MaxCompoundNesting)
+                    {
+                        throw new ConstructionErrorException($"Compounds are nested more than {MaxCompoundNesting} deep.");
+                    }
+
+                    if (nesting > tShape._compoundNesting)
+                    {
+                        tShape._compoundNesting = (ushort)nesting;
+                    }
+                }
+
+                if (tShape is TCompound compound)
+                {
+                    long leaves = compound._walkLeaves + (componentTShape is TCompound inner ? inner._walkLeaves : 1);
+                    if (leaves > MaxWalkLeaves)
+                    {
+                        throw new ConstructionErrorException($"A walk of this compound would visit more than {MaxWalkLeaves} shapes.");
+                    }
+
+                    compound._walkLeaves = leaves;
+                }
+
                 tShape._shapes.Append(child);
                 tShape.Modified(true);
             }

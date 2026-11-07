@@ -128,6 +128,11 @@ internal class NurbsRangeSplitter : UVParamRangeSplitter
                     continue;
                 }
 
+                if ((nodes.Size() & 1023) == 0)
+                {
+                    parameters.Budget?.Check(nodes.Size());
+                }
+
                 nodes.Append(new Point2D(param1, param2));
             }
         }

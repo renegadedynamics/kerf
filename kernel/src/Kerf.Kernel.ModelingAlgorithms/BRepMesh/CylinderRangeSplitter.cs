@@ -65,6 +65,11 @@ internal class CylinderRangeSplitter : DefaultRangeSplitter
         {
             for (double pasU = rangeU.first + du; pasU < pasMaxU; pasU += du)
             {
+                if ((nodes.Size() & 1023) == 0)
+                {
+                    parameters.Budget?.Check(nodes.Size());
+                }
+
                 nodes.Append(new Point2D(pasU, pasV));
             }
         }

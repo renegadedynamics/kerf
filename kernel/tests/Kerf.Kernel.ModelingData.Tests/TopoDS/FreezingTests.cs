@@ -283,13 +283,19 @@ public class FreezingTests
         Compound aLeaf = new();
         aBuilder.MakeCompound(ref aLeaf);
         Compound aRoot = aLeaf;
-        for (int i = 0; i < 100_000; i++)
+        for (int i = 0; i < Builder.MaxCompoundNesting; i++)
         {
             Compound aParent = new();
             aBuilder.MakeCompound(ref aParent);
             aBuilder.Add(aParent, aRoot);
             aRoot = aParent;
         }
+
+        // one more would overflow a stack in the walks of a shape (decision 1854)
+        Compound aTooDeep = new();
+        aBuilder.MakeCompound(ref aTooDeep);
+        Compound aRootForTheCheck = aRoot;
+        EngineAssert.Throws<ConstructionErrorException>(() => new Builder().Add(aTooDeep, aRootForTheCheck));
 
         aRoot.TShape()!.FreezeGraph();
         Assert.True(aLeaf.TShape()!.IsFrozen);

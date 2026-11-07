@@ -333,6 +333,7 @@ internal abstract partial class FilletBuilderBase
         // Construction of the stripe of fillet on each stripe.
         for (itel.Initialize(_listStripe); itel.More(); itel.Next())
         {
+            Cancellation.ThrowIfRequested(); // Kerf: OCCT's fillets ignore their range (decision 1855)
             itel.Value().Spine().SetErrorStatus(ErrorStatus.Ok);
             try
             {
@@ -362,6 +363,7 @@ internal abstract partial class FilletBuilderBase
             int j = 0;
             for (j = 1; j <= _vDataMap.Extent(); j++)
             {
+                Cancellation.ThrowIfRequested();
                 try
                 {
                     PerformFilletOnVertex(j);
@@ -405,6 +407,7 @@ internal abstract partial class FilletBuilderBase
             int i1 = 0;
             for (itel.Initialize(_listStripe), i1 = 0; itel.More(); itel.Next(), i1++)
             {
+                Cancellation.ThrowIfRequested();
                 Stripe? st = itel.Value();
                 // 05/02/02 akm vvv : (OCC119) First we'll check ain't there
                 //                    intersections between fillets

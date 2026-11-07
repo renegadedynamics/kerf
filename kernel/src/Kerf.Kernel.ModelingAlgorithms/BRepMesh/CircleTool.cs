@@ -53,6 +53,9 @@ internal sealed class CircleTool
     /// <summary>Sets the size of the cells, the same in both directions, and clears the cells.</summary>
     public void SetCellSize(double size) => _cellFilter.Reset(size);
 
+    /// <summary>Kerf: how many circles in cells it may hold (decision 1856).</summary>
+    public void SetMaxEntries(int entries) => _cellFilter.MaxNodes = entries;
+
     /// <summary>Sets the size of the cells in each direction, and clears the cells.</summary>
     public void SetCellSize(double sizeX, double sizeY)
     {

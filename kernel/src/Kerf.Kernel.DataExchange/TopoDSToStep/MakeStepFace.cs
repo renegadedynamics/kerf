@@ -53,6 +53,8 @@ internal sealed class MakeStepFace : ExportRoot
     /// <remarks>Needs <see cref="ShapeAlgo.Init"/> (degenerate tori are rewritten through its container).</remarks>
     public void Init(in Face aFace, ExportTool aTool, FinderProcess fp, in Factors localFactors)
     {
+        Cancellation.ThrowIfRequested(); // Kerf: one solid is one step of the writer's progress, for all its faces (decision 1855)
+
         // --------------------------------------------------------------
         // the face is given with its relative orientation (in the Shell)
         // --------------------------------------------------------------

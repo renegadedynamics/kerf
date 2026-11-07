@@ -95,6 +95,9 @@ internal struct ToolParameters : IEquatable<ToolParameters>
     /// <summary>Allows the quality of the generated mesh to decrease below the existing one's.</summary>
     public bool AllowQualityDecrease;
 
+    /// <summary>Kerf: stops a public mesh too large to be meant (decision 1856); null for the engine's own.</summary>
+    public MeshBudget? Budget;
+
     // Kerf additions: equality (translation-rules section 3)
 
     public readonly bool Equals(ToolParameters other) =>

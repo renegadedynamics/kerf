@@ -393,6 +393,12 @@ internal class Analyzer
             var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
             for (int i = first; i < end; ++i)
             {
+                // Kerf: a check of a large shape is seconds (decision 1855)
+                if ((i & 63) == 0)
+                {
+                    Cancellation.ThrowIfRequested();
+                }
+
                 Perform(_map.KeyAt(i), _map.ValueAt(i), mapS);
             }
         }

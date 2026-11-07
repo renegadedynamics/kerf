@@ -52,6 +52,11 @@ internal abstract class BaseMeshAlgo : MeshAlgo
             _dFace = dFace;
             _parameters = parameters;
             _structure = new DataStructureOfDelaun(storage: MeshWorkStorage.Rent());
+            if (parameters.Budget is { } budget)
+            {
+                _structure.MaxCircleEntries = budget.MaxCircleEntries;
+            }
+
             _nodesMap = new List<Point3D>();
             _usedNodes = new Dictionary<int, int>();
 
@@ -67,6 +72,10 @@ internal abstract class BaseMeshAlgo : MeshAlgo
         }
         catch (Exception exception) when (ModelAlgo.IsCaughtFailure(exception))
         {
+        }
+        catch (InsufficientMemoryException) when (parameters.Budget is not null)
+        {
+            parameters.Budget.Refuse();
         }
 
         _dFace = null; // Do not hold link to face.
@@ -274,6 +283,7 @@ internal abstract class BaseMeshAlgo : MeshAlgo
 
         CollectNodes(triangulation);
 
+        _parameters.Budget?.Commit(triangulation.TriangleCount);
         ShapeTool.AddInFace(_dFace!, triangulation);
     }
 

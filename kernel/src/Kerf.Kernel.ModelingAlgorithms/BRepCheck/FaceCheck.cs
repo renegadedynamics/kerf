@@ -271,6 +271,7 @@ internal class FaceCheck : ResultCheck
         index = 1;
         while (index < nbwire)
         {
+            Cancellation.ThrowIfRequested(); // Kerf: a face of thousands of wires takes seconds (decision 1855)
             for (exp1.Init(_shape, ShapeType.Wire), indexbis = 0; exp1.More(); exp1.Next())
             {
                 indexbis++;
@@ -411,6 +412,7 @@ internal class FaceCheck : ResultCheck
 
             bool hasBox1 = wireBoxMap.TryGetValue(wir1, out Box2d box1);
 
+            Cancellation.ThrowIfRequested();
             for (exp2.Init(forwardFace, ShapeType.Wire); exp2.More(); exp2.Next())
             {
                 Wire wir2 = ShapeCasts.Wire(exp2.Current());
@@ -555,6 +557,7 @@ internal class FaceCheck : ResultCheck
         var exp = new Explorer(_shape.Oriented(Forward), ShapeType.Wire);
         for (; exp.More(); exp.Next())
         {
+            Cancellation.ThrowIfRequested();
             Wire wir = ShapeCasts.Wire(exp.Current());
             if (!wext.IsNull && wir.IsSame(wext))
             {

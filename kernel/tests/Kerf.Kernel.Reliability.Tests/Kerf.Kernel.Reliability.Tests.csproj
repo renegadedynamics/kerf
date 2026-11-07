@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    What can take a process down, or stall it (unit 11T; docs/reliability.md). A stack overflow can't be caught, so each case
+    that could cause one runs in a process of its own, on a thread with a 1 MB stack and a heap limit: this assembly's own
+    Main, run by the tests. A failure then fails one test, not the test host.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kerf.Kernel.Foundation\Kerf.Kernel.Foundation.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingData\Kerf.Kernel.ModelingData.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingAlgorithms\Kerf.Kernel.ModelingAlgorithms.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.DataExchange\Kerf.Kernel.DataExchange.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Files nested too deep: a STEP assembly 990 levels deep, which ended the process; glTF 300, BREP 500 -->
+    <EmbeddedResource Include="Fixtures\*" LogicalName="Fixtures.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Remove="Kerf.Engine" />
+    <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" />
+    <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" />
+  </ItemGroup>
+
+</Project>

@@ -64,6 +64,8 @@ public static class Step
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(stream);
         options ??= StepWriteOptions.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
         // The shapes' unit is the file's (XCAF's length unit, in metres)
@@ -115,6 +117,8 @@ public static class Step
     private static Result<ModelNode> ReadCore(string name, Stream stream, StepReadOptions options, string? folder, IProgress<double>? progress,
                                               CancellationToken cancellationToken)
     {
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         ReadLimits limits = options.Limits;
         var stepLimits = new ParserReadLimits { MaxFileSize = limits.MaxBytes, MaxRecords = limits.MaxEntities, MaxDepth = limits.MaxDepth };

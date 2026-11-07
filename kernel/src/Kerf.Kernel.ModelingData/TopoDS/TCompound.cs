@@ -8,6 +8,11 @@ namespace Kerf.Engine.Topology;
 /// <summary>An all-purpose set of shapes.</summary>
 internal class TCompound : TShape
 {
+    /// <summary>
+    /// How many leaves a walk of this compound visits: a shape used twice counts twice, at each level (decision 1857).
+    /// </summary>
+    internal long _walkLeaves;
+
     /// <summary>An empty TCompound.</summary>
     public TCompound() : base(global::Kerf.Topology.ShapeType.Compound)
     {

@@ -45,6 +45,8 @@ internal static class EngineOperation
     {
         ArgumentNullException.ThrowIfNull(run);
         ArgumentNullException.ThrowIfNull(failure);
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var indicator = new ProgressIndicator(cancellationToken, progress);
         EngineOutcome outcome;

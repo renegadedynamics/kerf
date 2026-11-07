@@ -147,18 +147,14 @@ public class BinToolsUntrustedTests
     public void Nested_shapes_are_capped()
     {
         // the table-based format: shapes refer to earlier ones, so the reading is flat, but writers and explorers recurse
-        byte[] anOk = BinToolsRoundTripTests.WriteSet(NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting - 1), 4);
+        byte[] anOk = BinToolsRoundTripTests.WriteSet(NestedCompounds(BrepBuilder.MaxCompoundNesting + 1), 4);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.Read(out Shape aRead, new MemoryStream(anOk));
         Assert.Equal(anOk, BinToolsRoundTripTests.WriteSet(aRead, 4));
-        byte[] aDeep = BinToolsRoundTripTests.WriteSet(NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting), 4);
-        EngineAssert.Throws<StreamFormatErrorException>(() => ReadSet(aDeep));
 
         // the position-based format reads recursively
-        byte[] aPositional = BinToolsRoundTripTests.WriteShapes(true, false, NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting / 2 - 2));
+        byte[] aPositional = BinToolsRoundTripTests.WriteShapes(true, false, NestedCompounds(BrepBuilder.MaxCompoundNesting + 1));
         Shape aShape = BinToolsRoundTripTests.ReadShapes(aPositional, 1)[0];
         Assert.Equal(ShapeType.Compound, aShape.Type);
-        byte[] aTooDeep = BinToolsRoundTripTests.WriteShapes(true, false, NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting));
-        EngineAssert.Throws<StreamFormatErrorException>(() => ReadPositional(aTooDeep));
 
         // 100,000 nested compounds as bytes, which no writer would produce: a deep stack becomes an error
         var aStream = new MemoryStream();

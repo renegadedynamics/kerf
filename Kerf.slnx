@@ -24,6 +24,7 @@
     <Project Path="kernel/tests/Kerf.Kernel.ModelingData.Tests/Kerf.Kernel.ModelingData.Tests.csproj" />
     <Project Path="kernel/tests/Kerf.Kernel.Oracle.Tests/Kerf.Kernel.Oracle.Tests.csproj" />
     <Project Path="kernel/tests/Kerf.Kernel.PublicApi.Tests/Kerf.Kernel.PublicApi.Tests.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.Reliability.Tests/Kerf.Kernel.Reliability.Tests.csproj" />
   </Folder>
   <Folder Name="/modeling/" />
   <Folder Name="/modeling/src/">
