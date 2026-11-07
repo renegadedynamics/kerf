@@ -41,7 +41,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 ## Questions for the owner
 
 1. **Should `Kerf.Modeling`'s area and volume use the precise path?** The default integrates at a fixed number of points, and was 3.7% off on the worst corpus case. The precise path now matches a fine mesh, at a measured 1.85 times the cost on the issue's set (not measured here). I recommend yes, with a time check first. **Answered yes, done: decision 1802; it costs no more here.**
-2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list.
+2. **Fillets to the opposite edge (#1177, #172, upstream `f713b1305f`).** Porting needs 27 upstream files in the fillet code. I recommend it before any rolling-ball rewrite, as it's the most common request in the fillet list. *Since then: on straight edges between planes it's done another way (decision 21201), and upstream's own results for the four corpus cases it changes are still faulty. [fillet-design.md](fillet-design.md) recommends not porting it.*
 3. **The 2D offset's failures (77 corpus cases).** Fixing them means a new way of making offsets, not a patch: I recommend a survey of what Bento needs first.
 4. **A default sweep that fails (#1630).** Should a sweep with the default trihedron retry with another when its approximation fails? I recommend yes until the cause is found; Frenet and discrete both work on the case. **Answered yes, done: decision 1805.**
 

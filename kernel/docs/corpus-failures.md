@@ -188,6 +188,10 @@ Do these instead, cheapest first:
 
 The list of real failures this question was waiting for is the 37 cases above, plus whatever users report.
 
+## Since this survey
+
+At the head of 7 November the fillet and chamfer groups read OK 749, BAD 35, FAILED 10, IMPROVEMENT 6, SKIPPED 84. [fillet-design.md](fillet-design.md) sorts the 45 by surfaces and by what a new path would fix.
+
 ## Left
 
 - J5, and the faces lost silently, as above.
