@@ -193,7 +193,7 @@ public class FilletLimitTests
         var box = new Box(10, 10, 10);
         Assert.Equal(10, box.MaxFillet([At(box, 5, 5, 0)]));
         Assert.Equal(5, box.MaxFillet([At(box, 5, 0, 5), At(box, -5, 0, 5)]));
-        // Below it, for what can't yet be built; still within the tolerance
+        // Below it, for what can't yet be built, by the search as it was
         double all = box.MaxFillet(box.Edges());
         Assert.InRange(all, 4.9, 5);
     }

@@ -123,9 +123,11 @@ public static partial class Shape3DExtensions
                 {
                     // Diagnostics mustn't mask the kernel's failure
                 }
-                string message = Shape3DExtensions.TooLargeMessage(filleted.Diagnostics)
-                                 ?? $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
-                                    + "to find the largest that works.";
+                // What doesn't fit says so, and with several edges, which of them the algorithm failed on
+                string message = Shape3DExtensions.TooLargeMessage(filleted.Diagnostics) is { } tooLarge
+                    ? edges.Count > 1 && details.Length > 0 ? $"{tooLarge} It failed{details}." : tooLarge
+                    : $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
+                      + "to find the largest that works.";
                 throw filleted.TryGetInvalid(out var invalid)
                     ? Failures.Invalid(invalid.Shape, invalid.Shape.Validate(), $"The fillet with a radius of {Formatting.Number(radius)}",
                                        "Try a smaller radius, or MaxFillet to find the largest that works.")
@@ -138,7 +140,7 @@ public static partial class Shape3DExtensions
 
         /// <summary>
         /// The largest fillet radius the edges take: for straight edges between planes, what the geometry gives, if that can be
-        /// built; otherwise found by a binary search to within <paramref name="tolerance"/>, below that limit if there is one.
+        /// built; otherwise found by a binary search to within <paramref name="tolerance"/>.
         /// </summary>
         /// <exception cref="InvalidOperationException">No value was found within <paramref name="maxIterations"/>.</exception>
         /// <exception cref="ArgumentException">The shape isn't valid.</exception>
@@ -161,8 +163,8 @@ public static partial class Shape3DExtensions
                 // They work: close enough, or try the larger window
                 return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
             }
-            if (self.AsShape().FilletLimit(edges) is { } limit)
-                return self.AsShape().Fillet(edges, limit).IsFailure ? Search(0.0, limit, 0) : limit;
+            if (self.AsShape().FilletLimit(edges) is { } limit && self.AsShape().Fillet(edges, limit).IsSuccess)
+                return limit;
             return Search(0.0, 2 * self.Bounds().Diagonal, 0);
         }
 
