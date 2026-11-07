@@ -955,6 +955,65 @@ From one more pass of the corpus on this build (`KERF_CORPUS_TIMES`, six at a ti
 - **Share meshes between cells, by the face.** Expected gain: most of a chain's meshes, which are 55% to 98% of what it holds, 71% to 87% of whose faces are unchanged, and the time to mesh them: in a chain, only new faces would be meshed. It's a larger change: a mesh would have to be the same whichever shape a face is in, and today a face's mesh depends on the whole shape's tolerance and on edges shared with its neighbours. Bento can already get much of the memory by not keeping models off screen ([11q-bento.md](../../modeling/docs/11q-bento.md)), and unit 11O may change the mesh's storage anyway, so I'd take this up there.
 - **One pass from the parser into the reader's data.** The parser's records are copied into the reader's parameters, and the first stage above is the import's largest. A moderate rewrite of `StepFileReader` and `ReadData`, where the sizes the reader needs are the only reason for two passes. Expected gain: the first stage goes, but the third stays, so live data falls only if the entities shrink too (the graph's lists, a point's coordinates, names): together perhaps 110 to 80 MB, inferred, and the peak in proportion on the workstation collector. Only for large imports, so I wouldn't yet.
 
+### The seventh slice: the modelling layer
+
+*7 November 2026, on a machine shared with another helper: every time here is from a loaded machine, alternating fresh processes, ReadyToRun, and the clean timed run follows. Bytes don't depend on the load, though a whole-process figure moves by about 2% between runs. `KERF_BENTO_ONLY` runs some examples alone.*
+
+**The layer itself costs almost nothing, and that's the finding.** Measured by inclusive shares (decision 1706), attributing each sample or tick to the nearest Kerf frame:
+
+| | Layer's own bytes | Layer's own samples |
+|---|---:|---:|
+| Bento's eleven examples, all threads | 0.57% | 0.68% |
+| The same, the main thread only | 0.94% | 1.85% |
+| "For-loop" alone | 1.02% | 1.45% |
+| A harness of the modelling tests' common operations: selectors, ordering, `Center`, `Bounds`, `Area`, moves, sketches, extrusions | 2.79% | 2.94% |
+
+The wrappers, conversions, selectors and `Explore` are all small. No site of its own passes 0.42% in the harness, or 0.08% in Bento's examples. A pass of the test suite couldn't be traced, as the test host is stopped before its trace closes. What the layer *asks for* is what costs, so that's where this slice looked: of the main thread's bytes and samples before this slice, the Boolean 21.8% and 18.6%, the mesher 19.4% and 32.5%, validity checks 5.6% and 3.3%, cleans 6.6% and 3.1%, measuring 5.3% and 9.7%, optimal boxes 3.6% and 7.3%.
+
+**Work done twice or for nothing:**
+
+| Found | Verdict against the bar | Before, after |
+|---|---|---|
+| **A volume of planes needs no integration** (decision 21402). A planar face's part is its height over the reference point, times its area in UV, over 3, and the area is closed-form for lines and circles. Curved faces are still integrated | Time: **clears it on small solids** | Measuring 9.7% to about 3% of the main thread's samples. Most of "for-loop"'s time below, with the next row |
+| **An extrusion integrated each face for a plane's origin, and read only its normal** (decision 21403) | Part of the above | 1% of "for-loop"'s main thread |
+| **A spatial tree's search made a 64-slot stack each time, 536 bytes, and the mesher's check searches once for each segment** (decision 21405), and **each filler made and seeded a Mersenne Twister** of 2.5 kB | Bytes, with the rows below | 3.2% of the bytes gone |
+| **The mesher's lists of links** were an object for each link at each node (decision 21406) | Bytes, with the rows below | 4.4% of the bytes gone |
+| **The cells of the circles** grew a new array for each face (decision 21406) | Bytes, with the rows below | About 3% of the bytes |
+| **The map of links** was an object for each link (decision 21407, which reverses 1760) | Bytes | 127.2 to 123.1 MB, 263 to 259 ms; 250 to 245 ms on one processor |
+| **A set and two lists grown from nothing where the size was known** (decisions 21405 and 21406) | Bytes | About 1% |
+| **Boxed adaptor values, 3.4%** (decision 21404): the geometry object already holds them | **Kept**, in about 10 minutes of the 45: plainly no slower | 149.5 to 144.9 MB (3.1%), 263.5 to 258.4 ms, processor time within noise, the same digests |
+
+**All together, on the owner's bar: a success by both of its tests.**
+
+| Loaded machine | Before | After | |
+|---|---:|---:|---|
+| **Recalculation, 8 alternating pairs** | 369.6 ms | 295.0 ms | **-20%**; whole-process CPU 36.1 to 33.9 s, -6%, with the pool threads' spinning in it |
+| Allocated per recalculation, the same pairs | 151.3 MB | 124.7 MB | **-18%** |
+| "For-loop", 6 alternating pairs | 19.4 ms, 10.5 MB | 14.6 ms, 9.2 MB | **-25%**, -12%; the night's clean run was 17.8 ms and 10.6 MB |
+| "Function, for-loop", the same | 15.6 ms, 7.8 MB | 12.0 ms, 7.1 MB | -23%, -9% |
+| "Point lists", bytes, one run each | 6.3 MB | 3.9 MB | -38% |
+| The bottle, bytes, one run each | 47.1 MB | 36.8 MB | -22% |
+| **A parallel round, 24 copies, three alternating pairs** | 3,656, 3,656, 4,431 ms | 2,767, 2,954, 3,178 ms | **about -20%**, as the owner expected |
+| Its collector pauses | about 2,400 ms | about 1,800 ms | about -25% |
+| Its bytes | 3,820 MB | 3,120 MB | -18% |
+
+Results: the same BREP text and meshes by digest on all eleven examples. Six volumes change in their last digit or two, and the figures the rig reads don't. The closed form against the integration, run together inside `IntegrateVolume` and `IntegrateArea` on the modelling suite and the Boolean corpus: 5,286 comparisons, all under 1e-13 of the value but one, 4.8e-11 of a volume of 4e-5 that's nearly all cancellation. That count is nearly all the modelling suite: the corpus's own measuring commands use the default integration, which is unchanged.
+
+**What a thread keeps grew:** `MeshWorkStorage` from 360 to about 610 kB, so the limits add up to about 1 MB a thread. Measured after three rounds, `-- thread-sets 24`: 18.0 to 23.6 MB. That's under the owner's rule of about 50 MB, and bytes fell by far more per round.
+
+**Looked at and left:**
+
+- **Remembering a shape's volume or validity on its `TShape`** isn't needed: on planes a volume now costs almost nothing, and decisions 1798 and 1864 stand. A result's volume is still worked out twice where it's curved, by the Boolean's check and by whoever reads it (2% to 3% of those examples at most).
+- **Checks repeated over the same faces:** an extrusion checks its profile, after `FixFace` or a fuse checked those faces. That's 1.0% of the bytes, and only the memo of decisions 1798 to 1801 removes it.
+- **A clean after each extrusion:** 3.6% of the main thread's bytes and 1.9% of its samples, 5.4% and 4.2% on "for-loop". An extrusion with no two neighbouring edges of its profile on one line or circle has nothing to clean, but proving that the result is the same isn't plainly safe tonight. See the question below.
+- **`Center` and `Plane(face)`'s centre of mass** could be closed-form on planes too, and take a fifth of the harness's samples, but a different last digit there moves the geometry built from it, so it isn't the same result. Exact centres would be a small change with a visible effect, for the owner.
+- **Helpers:** `SLProps`, `SurfaceContinuity` and `IsTangentFaces` are 0.4% and 3.4% inclusive, spread over fillets. `FunctionSetRoot`'s vectors are 3.9%, nearly all under intersections, which another helper had open. Boxes in "extrude until" are three different boxes, not one three times.
+
+#### For the owner
+
+- **Skip the clean after an extrusion when the profile has nothing to merge?** About 2% of Bento's bytes, and 4% to 5% of examples of many small solids. It needs a check that the result really is the same, over more than these examples.
+- **Exact centres of planar faces?** See above: quicker `Center`, with different last digits in what's built from one.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP
