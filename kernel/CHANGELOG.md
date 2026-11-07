@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A damaged file can't hang a read or a mesh that's cancelled:** a parameter too far from its range to reach, a file of 2^40 shapes in 20 kB, and a BREP with `nan` or `inf` in it are failures (decisions 22501, 22502, 22504); more of a mesh and of a STEP read can be cancelled (decision 22503).
 - **A parallel operation's progress never runs backwards,** and a progress callback gets its reports one at a time (decision 1903).
 - **`CentreOfArea()`** gives the centre of a shape's faces' area without its moments, exact for a planar face bounded by lines and circles.
 - **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius within the shape's tolerance of the limit is the limit, the same in every figure, on either side (decisions 1898, 1899). All of a cube's edges past half its side used to fail with `result.invalid`, carrying what it made; now with `fillet.too-large`. A fillet just below a limit, by under the tolerance, no longer leaves faces narrower than that.
