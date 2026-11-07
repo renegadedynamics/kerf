@@ -652,8 +652,15 @@ internal sealed class CompatibleWires
         Exploration.Vertices(startEdge, out Vertex v1, out Vertex v2);
         origin = (v1.IsSame(startVertex)) ? v2 : v1;
 
-        for (;;)
+        // A walk round a wire meets each edge once. A section passing a vertex twice could circle for ever, growing the list (decision 1883)
+        IndexedSet<Shape> edges = new(ShapeHasher.Instance);
+        Exploration.MapShapes(aWire, ShapeType.Edge, edges);
+        for (int walked = 0; ; walked++)
         {
+            if (walked > edges.Count)
+            {
+                throw new global::Kerf.Engine.Foundation.FailureException("A section's wire can't be walked round from its start.");
+            }
             NCollection_List<Shape>.Iterator itE = new(mapVE.GetValue(curVertex));
             for (; itE.More(); itE.Next())
             {

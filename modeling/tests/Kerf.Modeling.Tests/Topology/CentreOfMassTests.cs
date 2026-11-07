@@ -82,8 +82,8 @@ public class CentreOfMassTests
         Assert.Equal(points.Average(p => p.X), centre.X, 1e-4);
         Assert.Equal(points.Average(p => p.Y), centre.Y, 1e-4);
         Assert.Equal(5, centre.Z, 1e-6);
-        // 10.97 by the default, for a true 9.96: a whole unit on a part 100 across
-        Assert.True(Math.Abs(((Shape)wall).MassProperties(Dimension.Area).CentreOfMass.Y - centre.Y) > 0.5);
+        // 10.97 by fixed points, for a true 9.96: a whole unit on a part 100 across
+        Assert.True(Math.Abs(((Shape)wall).MassProperties(Dimension.Area, new MassOptions { Tolerance = 0 }).CentreOfMass.Y - centre.Y) > 0.5);
     }
 
     [Fact]

@@ -513,16 +513,18 @@ internal static class OffsetSurfaceUtils
         double du = u - uStart;
         double dv = v - vStart;
         double step = Math.Max(2.0 * Math.Sqrt(du * du + dv * dv), global::Kerf.Engine.Foundation.Precision.PConfusion());
-        if (step >= dist)
+        if (!(step < dist))
         {
             return false;
         }
 
         step /= dist;
+        double uBefore = u, vBefore = v;
         u += dirU * step;
         v += dirV * step;
 
-        return true;
+        // A step below the last digit of a huge parameter moves nothing, and its callers would ask again for ever (decision 1883)
+        return u != uBefore || v != vBefore;
     }
 
     // Queries the osculating surfaces at (U, V) as OCCT's OscSurfQueryType does.

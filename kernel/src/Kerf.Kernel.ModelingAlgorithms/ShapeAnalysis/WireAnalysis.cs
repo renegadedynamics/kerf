@@ -2591,8 +2591,13 @@ internal class WireAnalysis : Transient
             }
 
             isWholes[ei] = false;
-            for (;;)
+            // Halving: past this count the interval has closed without the distance landing between the tolerances (decision 1883)
+            for (int halved = 0; ; halved++)
             {
+                if (halved > 128)
+                {
+                    return false;
+                }
                 double param = (param1 + params1[ei]) * 0.5;
                 cs[ei]!.D0(param, out ps2[ei]);
                 double dist = Project(cs[1 - ei]!,

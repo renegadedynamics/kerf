@@ -606,6 +606,11 @@ internal sealed class FaceClassifier2D
         bool isVPer = surf.IsVPeriodic;
         double uperiod = isUPer ? surf.UPeriod() : 0.0;
         double vperiod = isVPer ? surf.VPeriod() : 0.0;
+        // Stepping by a period would never reach a range from here: NaN stays NaN, and a period is below the last digit of 1e16 (decision 1883)
+        if (double.IsNaN(u) || double.IsNaN(v) || (isUPer && !(Math.Abs(u) < 1e15)) || (isVPer && !(Math.Abs(v) < 1e15)))
+        {
+            return Out;
+        }
 
         bool urecadre, vrecadre, bUseClassifier;
         int dedans;
@@ -772,6 +777,11 @@ internal sealed class FaceClassifier2D
         bool isVPer = surf.IsVPeriodic;
         double uperiod = isUPer ? surf.UPeriod() : 0.0;
         double vperiod = isVPer ? surf.VPeriod() : 0.0;
+        // Stepping by a period would never reach a range from here: NaN stays NaN, and a period is below the last digit of 1e16 (decision 1883)
+        if (double.IsNaN(u) || double.IsNaN(v) || (isUPer && !(Math.Abs(u) < 1e15)) || (isVPer && !(Math.Abs(v) < 1e15)))
+        {
+            return Out;
+        }
         Containment status = Unknown;
         bool urecadre = false, vrecadre = false;
         int dedans;

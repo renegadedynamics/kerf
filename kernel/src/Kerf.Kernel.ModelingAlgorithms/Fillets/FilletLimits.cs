@@ -668,8 +668,11 @@ internal static class FilletLimits
     // Kept apart so that the file reads as the geometry
     private static class Integral
     {
-        public static double Volume(in Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape);
+        // Fixed points: planes and cylinders are exact by them, and these are held to one part in a million (decision 1879)
+        private static readonly Kerf.Measurement.MassOptions Fixed = new() { Tolerance = 0 };
 
-        public static double Area(in Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateArea(shape);
+        public static double Volume(in Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, Fixed);
+
+        public static double Area(in Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateArea(shape, Fixed);
     }
 }

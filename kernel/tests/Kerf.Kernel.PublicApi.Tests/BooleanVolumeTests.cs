@@ -3,7 +3,9 @@
 using Kerf.Booleans;
 using Kerf.Construction;
 using Kerf.Exchange;
+using Kerf.Features;
 using Kerf.Geometry;
+using Kerf.Measurement;
 using Kerf.Topology;
 
 namespace Kerf.Kernel.PublicApi.Tests;
@@ -115,7 +117,7 @@ public class BooleanVolumeTests
     public void A_fuse_between_the_bounds_passes()
     {
         Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(10)));
-        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(15)));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(14)));
     }
 
     [Fact]
@@ -225,6 +227,52 @@ public class BooleanVolumeTests
             Assert.True(a.Fuse(b).IsSuccess);
             Assert.True(b.Cut(a).IsSuccess);
         }
+    }
+
+    // Both inputs' whole volume, with points inside both: what a notch's fuse gave at 3e-12, and native at 31 of 89 steps
+    [Fact]
+    public void A_fuse_as_large_as_its_inputs_with_points_in_both_fires() =>
+        Fires(Check(BooleanVolumeRule.Fuse, Box(10), Box(10, at: 5), Compound(Box(10), Box(10, at: 5))),
+              "The fuse's result is wrong", "inside both");
+
+    [Fact]
+    public void A_fuse_that_lost_a_small_overlap_passes_inside_the_margin()
+    {
+        // A pin of 1 by 1 by 0.5 into a block of 1000: its overlap is well under the margin of the block's size
+        Shape block = Box(100, 100, 100);
+        Shape pin = Solid.Box(1, 1, 10).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(50, 50, 99.5))));
+        Assert.True(block.Fuse(pin).IsSuccess);
+        // Apart, or touching, nothing overlaps
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(10, at: 20), Compound(Box(10), Box(10, at: 20))));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(10, at: 10), Compound(Box(10), Box(10, at: 10))));
+    }
+
+    // Axes that nearly cross, in the end plane of a cylinder (decision 1885). Each offset here gave a Cut that removed nothing, a
+    // Common that was empty or a Fuse with the volume of both, as a success until the checks came in, then a failure
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1e-13)]
+    [InlineData(3e-13)]
+    [InlineData(-5e-13)]
+    [InlineData(1e-12)]
+    [InlineData(-2e-12)]
+    [InlineData(5e-12)]
+    [InlineData(3e-11)]
+    [InlineData(1e-9)]
+    [InlineData(-5e-9)]
+    [InlineData(1e-8)]
+    [InlineData(5e-7)]
+    [InlineData(1e-5)]
+    public void A_round_notch_of_equal_radius_nearly_crossing_is_right(double offset)
+    {
+        Shape cylinder = Solid.Cylinder(5, 10).Value.Shape;
+        var turn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), Direction3D.UnitX), -Math.PI / 2);
+        Shape tool = Solid.Cylinder(5, 20).Value.Shape.Transformed(turn).Value.Shape
+            .Transformed(Transform3D.Translation(new Vector3D(offset, -10, 10))).Value.Shape;
+        double whole = Math.PI * 25 * 10, length = Math.PI * 25 * 20, half = 16.0 / 3 * 125 / 2;
+        Assert.Equal(whole - half, cylinder.Cut(tool).Value.Shape.IntegrateVolume(), 0.2);
+        Assert.Equal(half, cylinder.Common(tool).Value.Shape.IntegrateVolume(), 0.2);
+        Assert.Equal(whole + length - half, cylinder.Fuse(tool).Value.Shape.IntegrateVolume(), 0.2);
     }
 
     [Fact]

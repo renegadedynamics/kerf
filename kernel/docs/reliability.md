@@ -128,15 +128,61 @@ Time from cancelling to returning, cancelled at 2, 10, 30, 50, 70 and 90% of a r
 | 7 | A cylinder's seam, a sphere's pole: turned in 0.5° steps, 0.01° near the seam | 0 of 3,165 | | Clean |
 | 8 | Near-tangent, near-coplanar, near-coaxial, by powers of ten to 1e-13: box on box, sphere in cylinder, torus on plane | 0 failures of 1,196; volumes follow | | Clean |
 
-**Also found: the kernel's default volume is wrong on these shapes.** `IntegrateVolume()` with no options gives 139.90 for 118.73 on a Cut of those crossing cylinders 1.5e-5 off, 18% out, and the same at many other offsets (a walked intersection's faces), where `MassOptions { Tolerance = 1e-6 }` gives the right figure each time. This is decision 1802's finding at a larger size. `Kerf.Modeling` uses the precise path, so only the kernel's direct callers see it. **It looks like an island and isn't one in the shape,** so anyone measuring by the default will think the Boolean is at fault, as this unit first did. A question below.
+**Also found, and fixed in the second pass (decision 1879): the kernel's default volume is wrong on these shapes.** `IntegrateVolume()` with no options gives 139.90 for 118.73 on a Cut of those crossing cylinders 1.5e-5 off, 18% out, and the same at many other offsets (a walked intersection's faces), where `MassOptions { Tolerance = 1e-6 }` gives the right figure each time. This is decision 1802's finding at a larger size. `Kerf.Modeling` uses the precise path, so only the kernel's direct callers see it. **It looks like an island and isn't one in the shape,** so anyone measuring by the default will think the Boolean is at fault, as this unit first did. A question below.
 
-**Also found, a smaller thing:** `Kerf.Modeling`'s `Volume` of a compound counts solids directly in it, and in compounds directly in it, as build123d's does, so deeper ones count nothing: a box in three nested compounds has a volume of 0. Not changed.
+**Also found, a smaller thing, and fixed in the second pass (decision 1880):** `Kerf.Modeling`'s `Volume` of a compound counts solids directly in it, and in compounds directly in it, as build123d's does, so deeper ones count nothing: a box in three nested compounds has a volume of 0. Not changed.
+
+## 4a. The second pass (decisions 1879 to 1884)
+
+**Island 1's cause, and its fix.** Equal cylinders whose axes cross touch at two points. Offset the axes by d and the true curves turn away within sqrt(2 R d) of those points, 3e-6 at d = 1e-12 for R = 5, while `QuadQuadGeo` calls anything under 1e-7 crossing. So the section ends at the crossing, and an edge through the point is cut where it truly lies, 30 tolerances away. They don't meet, and a face stays whole. It takes an edge there: a face's end circle, and a seam, which on the default `Cylinder` is at +X so it's there unless turned. Turning both seams away cured it, which is what found it. **So treating nearly equal as equal is the fault, not the cure.** Where a crossing point is at a face's end, and the offset is more than a tolerance's turn, the curves are now solved as they lie, by the code used anyway from 1e-7. Elsewhere the ellipses stay, as they're more exact.
+
+Wrong or failed through `Kerf.Modeling`, in steps of an offset (from 1e-13 to 5e-3 in 89 steps before, and to 1e-16 in 113 where the sweep says so, on a loaded machine):
+
+| Sweep | Failed before | Silently wrong before | Failed now | Silently wrong now |
+|---|---:|---:|---:|---:|
+| Notch, Cut | 20 of 89 | 0 | 0 of 113 | 0 |
+| Notch, Common | 20 of 89 | 2 invalid | 0 of 113 | 0 |
+| Notch, Fuse | 16 of 89 | 2 | 0 of 113 | 0 |
+| Moved and turned off the origin, Cut and Common, of 113 | 25 and 25 | 0 | 0 | 0 |
+| Tool at 60 degrees, Cut and Common, of 113 | 20 and 20 | 0 | 0 | 0 |
+| Radius 0.5, Cut and Common, of 113 | 17 and 17 | 0 | 0 | **1** (Cut, 0.8% out at -5e-11) and 0 |
+| **Radius 500,** Cut and Common, of 113 | 17 and 18 | 2 invalid | **21 and 22** | 0 |
+| One seam turned, Fuse, of 89 | 0 | 16 | 1 | 0 |
+| Radius 5 + d, with the axes crossing exactly, Cut and Common, of 89 | 2 and 2 | 2 invalid | 2 and 2 | 0 |
+
+Native 8.0.1 on the notch: no failures, 88 wrong of 267, 18 of them invalid Fuses. **What the volume check caught before the fix** (item 2 of the brief, at `d53180d08`): of the notch's 58 wrong answers, 56 were failures, and 2 Fuses went through, as a Fuse may be as large as both inputs. Those are caught now (decision 1881). So are the invalid solids `&` returned after a second clean (decision 1882).
+
+**Island 2, the equal tee, is not this.** Its crossing is exact, so none of this touches it: 514 of 2,508 before and after, the same outcome at every step. Native on the same radii up to 0.104 (it was stopped there by a time limit): 451 of 828 where Kerf has 460, agreeing on 809. The walk starts mid-edge and fails going towards the point where the two surfaces become tangent, so the fillet must vanish there (inferred from where the walk reports failing). That's `ChFi3d`'s, and it's a stage of [fillet-design.md](fillet-design.md), not a small fix.
+
+**The fillet that fails slowly.** All its time is `AppFuncRoot.SearchPoint`, in one approximation of a surface that can't be fitted: up to 319,969 sections, the most the approximation's limit on segments allows, where a fillet that works takes 33 to 609, and then the fillet fails anyway. One approximation now stops at 20,000 sections and reports that it failed, the path a solver's failure takes. A pipe, on a loaded machine, from 0.4 to 7.3 s down to 0.17 to 0.55 s, at nine radii, with the same outcome at all twelve tried. The figure's evidence is in decision 1884.
+
+**The loops and `unsafe`, by reading only** (decision 1883). 100 loops: 67 end by their structure; 12 are proportional to their input (the STEP scanner and parser, the STL and binary readers); 21 could spin or weren't proved not to.
+
+| Fixed | What could keep it going | Whose input |
+|---|---|---|
+| `FClass2d`, `FaceClassifier2D` (3 loops) | NaN or infinity, **run: never returned**; a pcurve past 1e16 | A caller's point; a file |
+| `CompatibleWires:655` | A section passing a vertex twice | A user's wire, by a loft |
+| `ChFi3d/Builder_1:1023` | f1 and f2 in another fan round a vertex | A solid, by a fillet |
+| `WireAnalysis:2594` | The halving's interval closing outside the band | A file, with `FixTailMode` on |
+| `IntTools_FaceFace.Tools:923` | A step of 0 or below the last digit | Derived |
+| `OffsetSurfaceUtils.ShiftPoint`, for 5 loops | A step below the last digit at a huge parameter, by a singular point | A file's surface |
+
+| Left, each one counter, low plausibility | Why it could spin |
+|---|---|
+| `LocOpe/LocalSplitShape:392` | An open wire wraps round for ever; no caller in `src` |
+| `ShapeUpgrade/UnifySameDomain:1102` | Two seams in a loop, on a doubly periodic surface |
+| `ShapeUpgrade_UnifySameDomain.Faces:439` | An edge with no vertices is never marked used |
+| `ShapeCustom/BSplineRestriction:783` | `_nbMaxSeg` of 0 doubling for ever: a caller's parameter |
+| `BRepOffsetAPI/MiddlePath:404`, `BRepFill/TrimShellCorner:974`, `ShapeConstruct/ProjectCurveOnSurface:1334`, `IntTools/EdgeEdge:1309` | Unproved, or NaN only |
+| `TopExp/Explorer:152` | Not a spin: 2^k on a file of compounds each holding the last twice, which `Builder.MaxWalkLeaves` should refuse (decision 1857; not checked on each reader) |
+
+**`unsafe`:** none, and no pointers. 45 uses of `Unsafe.` in 11 files, 647 of `stackalloc` in 151, all span-checked, so the only risk is the stack. No size from a file reaches a `stackalloc`, and no index from a file reaches an unchecked access. `while` and `do` loops weren't read, nor every long body.
 
 ## 5. What's left
 
 - **For unit 11Q:** writing a large solid to STEP spends about 85% of its time in shape processing, nearly all of it `SplitCommonVertexFixer` and the check. That fixer goes over all pairs of a face's wires and makes an `ExtendWireData` for each pair, so a face of 3,600 holes costs seconds, to find vertices shared between wires, which it could do with one map. From one trace of `write-plate 60`, 6.3 s.
 - **Bento's line** in `ModelFunctions.Run`. Nothing above about cells helps until then.
-- **Island 1** is the worst thing here: a wrong answer, reported as a success. A fix needs the Boolean's handling of a double point worked out, and it's not small.
+- **Island 1:** radius 500 is no better, as the tolerance doesn't scale with the walk, and one Cut at radius 0.5 is 0.8% out and reported as a success (section 4a).
 - **Fillets that fail slowly,** if anyone wants them to fail quickly. A question below.
 - **`unsafe` and `Unsafe.*`,** and the 112 unbounded loops, weren't audited.
 - **An unknown stack overflow** in code not walked here can still end the process. The tests cover what could be found by building deep input, not every recursion.
@@ -146,7 +192,7 @@ Time from cancelling to returning, cancelled at 2, 10, 30, 50, 70 and 90% of a r
 ## 6. Questions for the owner
 
 1. **Is the ambient `Kerf.Cancellation` the right shape?** It breaks the rule against ambient state, as `OperationContext` and the overlay already do under decision 1386, because operators can't take a token and hundreds of overloads would be the alternative. **Recommended: keep.** It's public API and easily renamed before 0.3.0.
-2. **Should a fillet give up after a time?** A failing fillet takes up to 14 s. A limit on the approximation's work, say ten times a usual fillet of that many edges, would end those early. It might fail some fillet that would have worked after 10 s, and which fillet would depend on the limit and not the machine if it's counted in work. **Recommended: not yet.** Cancellation answers the case in a spreadsheet. Ask again if it's still felt after Bento's line goes in.
+2. **Should a fillet give up after a time?** *The second pass found a count that did it without moving a corpus case, so it's decision 1884: 20,000 sections for one surface. The owner may still prefer otherwise.* A failing fillet takes up to 14 s. A limit on the approximation's work, say ten times a usual fillet of that many edges, would end those early. It might fail some fillet that would have worked after 10 s, and which fillet would depend on the limit and not the machine if it's counted in work. **Recommended: not yet.** Cancellation answers the case in a spreadsheet. Ask again if it's still felt after Bento's line goes in.
 3. **The limits:** 64 levels of nesting, 100 million leaves, 10 million triangles, 10 million locations. **Recommended: as they are.** The last two are the only ones that a real use could conceivably meet, and `MaxTriangles` is an option.
 4. **Should the kernel's `IntegrateVolume()` default to the precise path too,** as `Kerf.Modeling` does (decision 1802)? It's silently 18% out in the case above. **Recommended: yes,** with a relative tolerance by default; about the same cost by that decision's figures. Not done here, as it changes results.
 5. **Island 1 and 2 next?** They're the ones a user would meet, and they aren't small. **Recommended: yes, 1 first, after 0.3.0,** starting with native OCCT on the same inputs to see if it's inherited.

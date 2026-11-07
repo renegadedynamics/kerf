@@ -54,4 +54,14 @@ public class ReliabilityTests
         Assert.Throws<ArgumentException>(() => new HexLocations(1, 100_000, 100_000));
         Assert.Equal(100, new GridLocations(1, 1, 10, 10).Count);
     }
+
+    // A spline's pipe at 0.72 failed after 320,000 sections for each end, 5 to 12 s. It should still fail, and the small one still work (decision 21507)
+    [Fact]
+    public void A_fillet_that_cannot_fit_a_pipe_still_fails_and_a_small_one_works()
+    {
+        var path = new Spline(new Point3D(0, 0, 0), new Point3D(10, 0, 10), new Point3D(20, 10, 20), new Point3D(20, 20, 30));
+        Shape pipe = Ops.Sweep(Plane.XY * new Circle(1), (Shape)path).Value;
+        Assert.False(Ops.Fillet(pipe, pipe.Edges(), 0.72).IsSuccess);
+        Assert.True(Ops.Fillet(pipe, pipe.Edges(), 0.1).IsSuccess);
+    }
 }

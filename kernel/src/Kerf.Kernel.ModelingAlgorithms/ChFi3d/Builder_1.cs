@@ -1020,7 +1020,8 @@ internal static class Builder_1
         Edge curEdge = new();
         Face prevFace = firstFace;
         Face curFace = new();
-        for (;;)
+        // Round a vertex: no vertex has so many faces. If f1 and f2 are in another fan of faces, the walk would circle for ever, so they stay as given (decision 1883)
+        for (int walked = 0; walked < 100_000; walked++)
         {
             IndexedMap<Shape, NCollection_List<Shape>> vertexEdgeMap =
                 new(ShapeHasher.Instance);

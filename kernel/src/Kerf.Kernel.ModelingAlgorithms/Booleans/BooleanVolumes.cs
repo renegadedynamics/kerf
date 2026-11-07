@@ -83,7 +83,7 @@ public static class BooleanVolumes
         // A common that made nothing breaks no rule of volume, so nothing need be measured: only a point in both can prove it wrong
         if (rule == BooleanVolumeRule.Common && outcome.Count == 0)
         {
-            return ProvedToOverlap(rule, arguments, tools, result, fuzzyValue);
+            return ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0);
         }
         var a = new Measure();
         foreach (Shape shape in arguments)
@@ -107,8 +107,13 @@ public static class BooleanVolumes
         bool negative = outcome.Count > 0 && outcome.Smallest < -margin;
         if (r >= least - margin && r <= most + margin && !negative)
         {
-            // Within the rules, but a cut that removed nothing can still be proved wrong
-            return rule == BooleanVolumeRule.Cut && r >= a.Sum * (1 - MarginOfSize) ? ProvedToOverlap(rule, arguments, tools, result, fuzzyValue) : null;
+            // Within the rules, but a cut that removed nothing, or a fuse that lost nothing, can still be proved wrong
+            return rule switch
+            {
+                BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0),
+                BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, Math.Max(0, most - r)),
+                _ => null,
+            };
         }
 
         // Past a rule, which is rare, so this is when the dearer questions are worth asking: is it proved?
@@ -125,7 +130,9 @@ public static class BooleanVolumes
     // cut still in its result (decisions 1866 to 1868). The rules of volume can't see this, and it's what #1659, #1643 and #245 do.
     // Only for one input on each side, as what several mean together isn't plain; a grid of points in the boxes' overlap can miss
     // a small overlap, and then nothing is said. Two points are asked for, as a classifier can be wrong about one.
-    private static Diagnostic? ProvedToOverlap(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue)
+    // A fuse is as large as its inputs together only if they barely overlap: the points found stand for a volume each, and to prove
+    // it wrong must stand for over twice what it lost, as a pin in a large block can be within the margin and right (decision 1881).
+    private static Diagnostic? ProvedToOverlap(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double lost)
     {
         if (arguments.Count != 1 || tools.Count != 1)
         {
@@ -151,6 +158,8 @@ public static class BooleanVolumes
         double depth = -1;
         int found = 0;
         Point3D first = default;
+        double cell = (toX - fromX) * (toY - fromY) * (toZ - fromZ) / Math.Pow(OverlapGrid + 1, 3);
+        double needed = Math.Max(2, 2 * lost / cell + 1);
         for (int i = 1; i <= OverlapGrid; i++)
         {
             for (int j = 1; j <= OverlapGrid; j++)
@@ -184,11 +193,15 @@ public static class BooleanVolumes
                         {
                             first = point;
                         }
-                        else
+                        if (found >= needed)
                         {
-                            return Diagnostic.Error(DiagnosticCode.InvalidResult, rule == BooleanVolumeRule.Common
-                                ? $"The common's result is wrong: it's empty, but the point ({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)}) and others are inside both inputs."
-                                : $"The cut's result is wrong: it removed nothing, but the point ({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)}) and others are inside the tool and still in the result.");
+                            string at = $"({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)})";
+                            return Diagnostic.Error(DiagnosticCode.InvalidResult, rule switch
+                            {
+                                BooleanVolumeRule.Common => $"The common's result is wrong: it's empty, but the point {at} and others are inside both inputs.",
+                                BooleanVolumeRule.Cut => $"The cut's result is wrong: it removed nothing, but the point {at} and others are inside the tool and still in the result.",
+                                _ => $"The fuse's result is wrong: it's as large as its inputs together, but the point {at} and others are inside both of them.",
+                            });
                         }
                     }
                 }

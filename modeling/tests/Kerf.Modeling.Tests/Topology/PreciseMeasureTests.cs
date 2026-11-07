@@ -28,13 +28,15 @@ public class PreciseMeasureTests
 
     private static Vector3D Node(ReadOnlySpan<float> nodes, int i) => new(nodes[3 * i], nodes[3 * i + 1], nodes[3 * i + 2]);
 
+    private static readonly MassOptions FixedPoints = new() { Tolerance = 0 };
+
     [Fact]
     public void A_fine_mesh_sides_with_the_precise_path()
     {
         Shape example = IntroductoryExamplesTests.Build(12);
         var mesh = OfMesh(example, 0.002);
-        Assert.True(Math.Abs(example.Volume - mesh.Volume) < Math.Abs(example.IntegrateVolume() - mesh.Volume) / 2);
-        Assert.True(Math.Abs(example.Area - mesh.Area) < Math.Abs(example.IntegrateArea() - mesh.Area) / 2);
+        Assert.True(Math.Abs(example.Volume - mesh.Volume) < Math.Abs(example.IntegrateVolume(FixedPoints) - mesh.Volume) / 2);
+        Assert.True(Math.Abs(example.Area - mesh.Area) < Math.Abs(example.IntegrateArea(FixedPoints) - mesh.Area) / 2);
         Assert.Equal(mesh.Area, example.Area, 1e-5 * mesh.Area);
     }
 

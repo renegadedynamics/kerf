@@ -46,7 +46,7 @@ public static class MeasureOperations
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> isn't one of the enum's.</exception>
         public MassProperties MassProperties(Dimension dimension, MassOptions? options = null)
-            => ToMassProperties(Integrate(NotNull(shape.AsShape()), dimension, options), dimension);
+            => ToMassProperties(Integrate(NotNull(shape.AsShape()), dimension, options ?? Moments), dimension);
 
         /// <summary>
         /// A box aligned with the axes containing the shape (OCCT's <c>BRepBndLib::Add</c>): enlarged by the shape's
@@ -193,6 +193,9 @@ public static class MeasureOperations
         }
     }
 
+    // A centre and moments follow a face's mass less closely than the mass does: 4e-6 out on a cylinder at 1e-6, exact from 1e-8 (decision 1808)
+    private static readonly MassOptions Moments = new() { Tolerance = 1e-9 };
+
     private static Properties Integrate(in Shape shape, Dimension dimension, MassOptions? options, bool massOnly = false)
     {
         options ??= MassOptions.Default;
@@ -202,13 +205,13 @@ public static class MeasureOperations
             case Dimension.Length:
                 MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation, settled: true);
                 break;
-            case Dimension.Area when options.Tolerance > 0:
+            case Dimension.Area when options.Tolerance > 0 && !options.UseTriangulation:
                 MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly);
                 break;
             case Dimension.Area:
                 MassPropertiesBuilder.SurfaceProperties(shape, props, options.SkipShared, options.UseTriangulation);
                 break;
-            case Dimension.Volume when options.Tolerance > 0:
+            case Dimension.Volume when options.Tolerance > 0 && !options.UseTriangulation:
                 MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly);
                 break;
             case Dimension.Volume:

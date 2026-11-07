@@ -3738,6 +3738,44 @@ internal sealed partial class ImpImpIntersection
 
     //=================================================================================================
 
+    // Two cylinders of equal radius whose axes cross touch at two points, where their ellipses cross. Axes that only nearly cross,
+    // by d, have no such points: each curve turns away within sqrt(2 R d) of them, which is 3e-4 for a d of 1e-8, where QuadQuadGeo
+    // still gives the ellipses. An edge through such a point is intersected as it truly lies, so it's cut that far from where the
+    // ellipses cross, far past the tolerance, and neither the edge's vertices nor the curves' ends meet. A face's edges are there when
+    // a point is at the end of its height. That made Booleans of a round notch wrong or fail in 20 of 89 steps, so there the curves
+    // are solved as they truly lie (decision 1885). Away from a face's end, nothing is there to disagree, and the ellipses stay.
+    private static bool CrossingOnlyWithinTolerance(in Cylinder3D cyl1, in Cylinder3D cyl2, in Box2d uvSurf1, in Box2d uvSurf2)
+    {
+        double radius = cyl1.Radius;
+        Xyz dir1 = cyl1.Axis.Direction.XYZ(), dir2 = cyl2.Axis.Direction.XYZ();
+        Xyz across = dir1.Crossed(dir2);
+        double sine = across.Modulus();
+        if (sine <= 0)
+        {
+            return false;
+        }
+        Xyz between = cyl2.Location.XYZ() - cyl1.Location.XYZ();
+        double offset = Math.Abs(between.Dot(across)) / sine;
+        double tolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
+        // Exact: the turn is within the tolerance
+        if (2 * radius * offset <= tolerance * tolerance)
+        {
+            return false;
+        }
+        // The points are on the common perpendicular of the axes, so their height on each is where that meets it
+        double cosine = dir1.Dot(dir2);
+        double along1 = (between.Dot(dir1) - cosine * between.Dot(dir2)) / (sine * sine);
+        double along2 = (cosine * between.Dot(dir1) - between.Dot(dir2)) / (sine * sine);
+        double reach = 10 * Math.Sqrt(2 * radius * (offset + tolerance));
+        return AtEnd(along1, uvSurf1, reach) || AtEnd(along2, uvSurf2, reach);
+    }
+
+    private static bool AtEnd(double height, in Box2d uv, double reach)
+    {
+        uv.Get(out _, out double vFirst, out _, out double vLast);
+        return Math.Abs(height - vFirst) <= reach || Math.Abs(height - vLast) <= reach;
+    }
+
     private static IntStatus IntCyCy(in SurfaceQuadric quad1,
                                      in SurfaceQuadric quad2,
                                      double tol3D,
@@ -3765,7 +3803,7 @@ internal sealed partial class ImpImpIntersection
             return IntStatus.IntStatus_Fail;
         }
 
-        if (inter.TypeInter() != NoGeometricSolution)
+        if (inter.TypeInter() != NoGeometricSolution && !(inter.TypeInter() == Ellipse && CrossingOnlyWithinTolerance(cyl1, cyl2, uvSurf1, uvSurf2)))
         {
             if (CyCyAnalyticalIntersect(quad1,
                                         quad2,
