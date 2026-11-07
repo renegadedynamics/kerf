@@ -286,14 +286,19 @@ internal static class Failures
         }
     }
 
-    /// <summary>As <see cref="Try{T}"/>, with the warnings raised meanwhile (<see cref="Warnings"/>) on a successful result.</summary>
-    internal static Result<T> TryWarned<T>(DiagnosticCode code, Func<T> operation)
+    /// <summary>
+    /// As <see cref="Try{T}"/>, with the warnings raised meanwhile (<see cref="Warnings"/>) on a successful result: each with
+    /// <paramref name="code"/>, or, if that's null, those with a code of their own (the kernel's), each with it.
+    /// </summary>
+    internal static Result<T> TryWarned<T>(DiagnosticCode? code, Func<T> operation)
     {
         using var warnings = Warnings.Capture();
         var result = Try(operation);
-        return result.TryGetValue(out var value) && warnings.Messages.Count > 0
-            ? Result<T>.Success(value, [.. warnings.Messages.Select(m => Diagnostic.Warning(code, m))])
-            : result;
+        if (!result.TryGetValue(out var value))
+            return result;
+        ImmutableArray<Diagnostic> raised = [.. warnings.Raised.Where(r => (code ?? r.Code) is not null)
+                                                       .Select(r => Diagnostic.Warning((code ?? r.Code)!.Value, r.Message))];
+        return raised.IsEmpty ? result : Result<T>.Success(value, raised);
     }
 
     /// <summary>The failure for a kernel failure met while doing <paramref name="what"/>.</summary>

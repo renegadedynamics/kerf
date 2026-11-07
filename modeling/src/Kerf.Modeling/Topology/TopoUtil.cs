@@ -146,15 +146,16 @@ internal static partial class TopoUtil
     internal static readonly FixOptions UncheckedFix = new() { CheckResult = false };
 
     /// <summary>
-    /// A kernel result that failed only because what it made isn't valid, with that fixed if fixing makes it valid: the
-    /// offsets, which ShapeFix can often put right. Any other result is left as it is.
+    /// A kernel result that failed because what it made isn't valid, with that fixed if fixing makes it valid and
+    /// <paramref name="wrong"/> finds nothing wrong with the fix: the offsets, which ShapeFix can often put right, and whose
+    /// size the kernel checks (decision 1918), as the fix must pass too. Any other result is left as it is.
     /// </summary>
-    internal static Result<Built<Shape>> Repaired(Result<Built<Shape>> made)
+    internal static Result<Built<Shape>> Repaired(Result<Built<Shape>> made, Func<Shape, Diagnostic?> wrong)
     {
         if (!made.TryGetInvalid(out var invalid))
             return made;
         var repaired = Fix(invalid.Shape);
-        return repaired.IsValid ? Result<Built<Shape>>.Success(new Built<Shape>(repaired, invalid.History)) : made;
+        return repaired.IsValid && wrong(repaired) is null ? Result<Built<Shape>>.Success(new Built<Shape>(repaired, invalid.History)) : made;
     }
 
     /// <summary>A compound of the given shapes (the kernel's empty compound for none), frozen.</summary>

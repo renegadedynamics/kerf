@@ -425,7 +425,7 @@ public static partial class Operations
     /// <exception cref="ArgumentNullException"><paramref name="objects"/> is null.</exception>
     /// <exception cref="ArgumentException">One of the objects can't be offset.</exception>
     public static Result<ModelShape> Offset(IEnumerable<Shape> objects, double amount, OffsetOptions? options = null) =>
-        Failures.Try(() => OffsetOrThrow(objects, amount, options));
+        Failures.TryWarned(null, () => OffsetOrThrow(objects, amount, options));
 
     internal static ModelShape OffsetOrThrow(IEnumerable<Shape> objects, double amount, OffsetOptions? options)
     {

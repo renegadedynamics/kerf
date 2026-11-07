@@ -82,7 +82,7 @@ var boss = FeatureOperations.ExtrudeUntil(part, profileFace, sketchFace, taper: 
 | Today | Kerf |
 |---|---|
 | `BRepOffset_MakeOffset.Initialize(shape, amount, tol, BRepOffset_Skin, inter, selfInter, join…)`, `MakeOffsetShape()` | `OffsetOperations.Offset` with `OffsetOptions` |
-| `BRepOffsetAPI_MakeThickSolid.MakeThickSolidByJoin(…)` | `Hollow` |
+| `BRepOffsetAPI_MakeThickSolid.MakeThickSolidByJoin(…)` | `Hollow`, or `ThickSolid` for any shape; both checked for size, as `Offset` is (`OffsetVolumes.Check`, decisions 1918 and 22901) |
 | `BRepOffset_MakeOffset` with `MakeThickSolid` on a face | `Thicken` |
 | `BRepOffsetAPI_MakeOffset` (`Init(join, open)`, `AddWire`, `Perform(amount)`) | `Offset2D` |
 | `BRepOffset_Mode`, `GeomAbs_JoinType` | `OffsetMode`, `JoinKind` |

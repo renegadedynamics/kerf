@@ -185,7 +185,7 @@ public static partial class Shape3DExtensions
             var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
             // BRepOffsetAPI_MakeThickSolid by join, in skin mode, with intersections
             var options = new OffsetOptions { Tolerance = tolerance, Mode = OffsetMode.Skin, Intersection = true, SelfIntersection = false, Join = join };
-            var made = TopoUtil.Repaired(self.AsShape().ThickSolid(faceList.Select(f => f), thickness, options));
+            var made = ThickSolid(self.AsShape(), faceList, thickness, options, "The hollow solid");
             if (made.TryGetInvalid(out _))
                 throw Failures.Expected(ModelingDiagnostics.OffsetFailed, "An alternative kind may resolve this error.", made);
             // OCCT can report success and still hand back a null shape
@@ -230,7 +230,7 @@ public static partial class Shape3DExtensions
                 Join = join,
                 RemoveInternalEdges = true,
             };
-            var made = TopoUtil.Repaired(self.AsShape().ThickSolid(faceList.Select(f => f), thickness, options));
+            var made = ThickSolid(self.AsShape(), faceList, thickness, options, "The offset's result");
             if (!made.TryGetValue(out var thick))
                 throw Failures.Expected(ModelingDiagnostics.OffsetFailed, "The offset failed; another kind of join may work.", made);
             var solid = thick.Shape;
@@ -279,7 +279,23 @@ public static partial class Shape3DExtensions
         }
     }
 
-
+    /// <summary>
+    /// The kernel's thick solid, which checks its size and makes it again with mitres if round joins failed at an apex
+    /// (decisions 1918 and 1938), with an invalid one repaired only if the repair passes the same check of size; on success the
+    /// kernel's warnings are raised (<c>offset.join-changed</c>).
+    /// </summary>
+    private static Result<Built<Shape>> ThickSolid(Shape shape, List<Face> openings, double thickness, OffsetOptions options, string what)
+    {
+        // With no openings the kernel's thick solid is the offset turned inside out when outwards
+        var made = TopoUtil.Repaired(shape.ThickSolid(openings, thickness, options),
+                                     repaired => OffsetVolumes.Check(shape, thickness, options.Join,
+                                                                     openings.Count == 0 && thickness > 0 ? repaired.Reversed() : repaired,
+                                                                     what, isWall: openings.Count > 0));
+        if (made.IsSuccess)
+            foreach (var warning in made.Diagnostics)
+                Warnings.Warn(warning);
+        return made;
+    }
 
     /// <summary>A 3D operation's result as topology rather than as the source's class: a Solid, or a Part of several.</summary>
     internal static Shape Make3DResult(Shape shape)
