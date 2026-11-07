@@ -141,6 +141,19 @@ public class SilentResultTests
         }
     }
 
+    // A wall made outwards lies outside its input: one that holds the input's centre is wrong, as the inverted cone's hollow
+    // with mitres outwards was once repaired into the cone itself
+    [Fact]
+    public void A_wall_made_outwards_that_fills_its_input_is_wrong()
+    {
+        Solid cone = Solid.Cone(0, 5, 12).Value.Shape;
+
+        Assert.NotNull(OffsetVolumes.Check(cone, 1, JoinKind.Intersection, cone, "The hollow solid", isWall: true));
+        Solid upright = Solid.Cone(5, 0, 12).Value.Shape;
+        Face bottom = upright.AllFaces().First(f => f.TryGetSurface(out Surface? s) && s is PlaneSurface);
+        Assert.True(upright.Hollow([bottom], 1).IsSuccess);
+    }
+
     [Theory]
     [InlineData(-1, 107.757)] // by similar triangles: the cone's inscribed sphere has a radius of 10/3
     [InlineData(-2, 20.106)]

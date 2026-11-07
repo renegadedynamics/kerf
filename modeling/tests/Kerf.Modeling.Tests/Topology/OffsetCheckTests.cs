@@ -81,6 +81,20 @@ public class OffsetCheckTests
         }
     }
 
+    // Hollowed outwards with mitres, the inverted cone's thick solid isn't valid, and ShapeFix made it the cone itself, 314.159,
+    // with no wall: the repair is now checked as the kernel checks what it makes, and fails, so the kernel's failure stands
+    [Theory]
+    [InlineData(0.5)]
+    [InlineData(1)]
+    public void A_repair_that_fills_the_wall_fails(double thickness)
+    {
+        var cone = Solid.MakeCone(0, 5, 12);
+        var top = cone.Faces().Where(GeomType.Plane);
+
+        Assert.Throws<InvalidOperationException>(() => cone.Hollow(top, thickness, kind: Kind.Intersection));
+        Assert.Throws<InvalidOperationException>(() => cone.Offset3D(top, thickness, kind: Kind.Intersection));
+    }
+
     // Outwards, round joins are right as they are, by Steiner's formula, for both cones and both ways of asking: no warning
     [Theory]
     [InlineData(0.5, 473.198)]

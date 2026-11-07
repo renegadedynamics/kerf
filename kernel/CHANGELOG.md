@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **`ThickSolid` is checked and retried as `Offset` and `Hollow` are:** a cone with its apex, inwards with round joins, is made with mitres and says so, and an offset that comes out nonsense fails, holding the shape (decision 22901). `OffsetVolumes.Check` is public, as `BooleanVolumes.Check` is. **A hollow solid made outwards that fills the solid it was made around fails** (decision 22902).
 - **A cone offset or hollowed inwards with round joins now works,** where it failed: it's made with mitres, which give the same solid there, and the result carries the warning `offset.join-changed` (decision 1938). A hollow solid made inwards that takes nothing out fails, where it reported success (decision 1939).
 - **An offset that comes out nonsense now fails, holding the shape:** a cone with its apex offset inwards reported success with a volume of 3.7e101 (decision 1918). With `Join = JoinKind.Intersection` an upright cone gives the right answer.
 - **`Face.FromSurface` with bounds off the surface fails,** where it reported success (decision 1919).
