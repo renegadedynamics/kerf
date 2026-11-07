@@ -3,8 +3,9 @@
 All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET packages). Versions follow [SemVer](https://semver.org); before
 1.0 a minor version may break the API.
 
-## 0.3.0 (unreleased)
+## 0.3.0
 
+- **Bento's examples recalculate about 4.8 times as fast as at 0.2.0, with 72% fewer bytes:** 251 ms from 1,211 ms, and 127 MB from 450 MB (the kernel's `docs/performance.md`).
 - **Recalculation and a parallel round are about a fifth quicker, with about a fifth fewer bytes,** on Bento's examples, with the same shapes and meshes (a loaded machine). `Volume` and `Area` are exact on planar faces, so they can differ from before in their last digits.
 - **`Volume` of a compound counts its solids at any depth,** and a compsolid's; a box in three nested compounds had a volume of 0.
 - **`&` no longer returns an invalid solid** when a clean would spoil its good result.

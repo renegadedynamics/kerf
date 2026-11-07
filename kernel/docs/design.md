@@ -72,7 +72,7 @@ Progress is measured by `dotnet run tools/port-status.cs`, which writes [port-st
 | **8. Data exchange** (done; [phase8-plan.md](phase8-plan.md)) | STEP's entity classes generated from OCCT's own C++ (decision 1166), StepData/XSBase/STEPControl ported; immutable assembly tree; STL, glTF, 3MF, OBJ written fresh | Bytes in and out without native code |
 | **9. Switch-over** (done; [phase9-plan.md](phase9-plan.md)) | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
 | **10. A .NET library** (done; [phase10-plan.md](phase10-plan.md)) | Kerf: the public API, immutability with no copy at entry, results, OCCT's bugs, one set of shapes with the modelling layer | |
-| **11. Optimisation** ([phase11-plan.md](phase11-plan.md)) | A benchmark rig, then speed and memory; the points left from phase 10 | |
+| **11. Optimisation** (done; [phase11-plan.md](phase11-plan.md)) | A benchmark rig, then speed and memory; the points left from phase 10 | |
 
 ## Not ported
 
