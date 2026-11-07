@@ -115,7 +115,7 @@ public class BooleanVolumeTests
     public void A_fuse_between_the_bounds_passes()
     {
         Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(10)));
-        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(15)));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(14)));
     }
 
     [Fact]
@@ -225,6 +225,24 @@ public class BooleanVolumeTests
             Assert.True(a.Fuse(b).IsSuccess);
             Assert.True(b.Cut(a).IsSuccess);
         }
+    }
+
+    // Both inputs' whole volume, with points inside both: what a notch's fuse gave at 3e-12, and native at 31 of 89 steps
+    [Fact]
+    public void A_fuse_as_large_as_its_inputs_with_points_in_both_fires() =>
+        Fires(Check(BooleanVolumeRule.Fuse, Box(10), Box(10, at: 5), Compound(Box(10), Box(10, at: 5))),
+              "The fuse's result is wrong", "inside both");
+
+    [Fact]
+    public void A_fuse_that_lost_a_small_overlap_passes_inside_the_margin()
+    {
+        // A pin of 1 by 1 by 0.5 into a block of 1000: its overlap is well under the margin of the block's size
+        Shape block = Box(100, 100, 100);
+        Shape pin = Solid.Box(1, 1, 10).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(50, 50, 99.5))));
+        Assert.True(block.Fuse(pin).IsSuccess);
+        // Apart, or touching, nothing overlaps
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(10, at: 20), Compound(Box(10), Box(10, at: 20))));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(10, at: 10), Compound(Box(10), Box(10, at: 10))));
     }
 
     [Fact]
