@@ -28,8 +28,9 @@ namespace Kerf.Engine.Meshing;
 ///   NCollection_List over an incremental allocator: removing a link while another loop walks the same list leaves
 ///   that loop where OCCT's continues;</item>
 ///   <item>the links are an indexed map with OCCT's equality (either orientation, never a deleted link) whose keys and
-///   values stay at the same place, so <see cref="ElementsConnectedTo"/> returns a reference that sees later changes,
-///   as the C++ <c>const BRepMesh_PairOfIndex&amp;</c> does.</item>
+///   values stay at the same place until a link is added, so <see cref="ElementsConnectedTo"/> returns a reference that sees
+///   later changes, as the C++ <c>const BRepMesh_PairOfIndex&amp;</c> does. Adding a link can move them, so no such reference
+///   is held over <see cref="AddLink"/>: each user reads it at once, or deletes triangles, which only removes (decision 21407).</item>
 /// </list>
 /// </remarks>
 internal sealed class DataStructureOfDelaun : Transient
@@ -58,7 +59,7 @@ internal sealed class DataStructureOfDelaun : Transient
     {
         _nodes = new VertexTool();
         _nodeLinks = new Dictionary<int, LinkedListOfInteger>();
-        _links = new LinkMap(reservedNodeSize * 3);
+        _links = new LinkMap(reservedNodeSize * 3, storage);
         _delLinks = new Queue<int>();
         _storage = storage;
         _elements = storage?.Elements ?? new MeshWorkList<Triangle>(reservedNodeSize * 2);
@@ -87,6 +88,7 @@ internal sealed class DataStructureOfDelaun : Transient
     {
         if (_storage is not null)
         {
+            _links.ReleaseStorage();
             MeshWorkStorage.Return(_storage);
             _storage = null;
         }
@@ -811,24 +813,26 @@ internal sealed class DataStructureOfDelaun : Transient
     /// </summary>
     private sealed class LinkMap
     {
-        private sealed class Node(in MeshEdge theKey, in PairOfIndex theValue, int theIndex, Node? theNext)
-        {
-            public MeshEdge Key = theKey;
-            public PairOfIndex Value = theValue;
-            public readonly int Index = theIndex;
-            public Node? Next = theNext;
-        }
-
-        private Node?[]? _data1;
-        private readonly List<Node> _data2 = [];
+        // Nodes by index from 1, at position index - 1, with Next the index of the next in the bucket and 0 the end: only
+        // what a key equal to another finds is read from a bucket, and keys are unique, so a bucket's order reaches nothing
+        private readonly MeshWorkList<LinkMapNode> _nodes;
+        private readonly MeshWorkStorage? _storage;
+        private int[] _buckets = [];
+        private bool _hasBuckets;
         private long _nbBuckets;
 
-        public LinkMap(int nbBuckets)
+        public LinkMap(int nbBuckets, MeshWorkStorage? storage)
         {
             _nbBuckets = nbBuckets > 0 ? nbBuckets : 1;
+            _storage = storage;
+            _nodes = storage?.LinkMapNodes ?? new MeshWorkList<LinkMapNode>(nbBuckets > 0 ? nbBuckets : 1);
+            if (storage is not null)
+            {
+                _buckets = storage.TakeLinkBuckets();
+            }
         }
 
-        public int Extent() => _data2.Count;
+        public int Extent() => _nodes.Count;
 
         private static long HashCode(in MeshEdge key, long upperBound) => key.OcctHash() % upperBound + 1;
 
@@ -837,84 +841,78 @@ internal sealed class DataStructureOfDelaun : Transient
             long newBuck = Primes.NextPrimeForMap(n);
             if (newBuck <= _nbBuckets)
             {
-                if (_data1 is null)
-                {
-                    newBuck = _nbBuckets;
-                }
-                else
+                if (_hasBuckets)
                 {
                     return;
                 }
+
+                newBuck = _nbBuckets;
             }
 
-            Node?[] newdata = new Node?[newBuck + 1];
-            if (_data1 is not null)
+            if (_buckets.Length < newBuck + 1)
             {
-                for (long i = 0; i <= _nbBuckets; ++i)
-                {
-                    Node? p = _data1[i];
-                    while (p is not null)
-                    {
-                        long k = HashCode(p.Key, newBuck);
-                        Node? q = p.Next;
-                        p.Next = newdata[k];
-                        newdata[k] = p;
-                        p = q;
-                    }
-                }
+                _buckets = new int[newBuck + 1];
+            }
+            else
+            {
+                Array.Clear(_buckets, 0, (int)newBuck + 1);
             }
 
             _nbBuckets = newBuck;
-            _data1 = newdata;
+            _hasBuckets = true;
+            for (int index = 1; index <= _nodes.Count; ++index)
+            {
+                ref LinkMapNode node = ref _nodes[index - 1];
+                long k = HashCode(node.Key, newBuck);
+                node.Next = _buckets[k];
+                _buckets[k] = index;
+            }
         }
 
-        private Node? Lookup(in MeshEdge key, out long hash)
+        private int Lookup(in MeshEdge key)
         {
-            hash = 0;
-            if (_data2.Count == 0)
+            if (_nodes.Count == 0)
             {
-                return null;
+                return 0;
             }
 
-            hash = HashCode(key, _nbBuckets);
-            for (Node? node = _data1![hash]; node is not null; node = node.Next)
+            for (int index = _buckets[HashCode(key, _nbBuckets)]; index != 0; index = _nodes[index - 1].Next)
             {
-                if (node.Key.IsEqual(key))
+                if (_nodes[index - 1].Key.IsEqual(key))
                 {
-                    return node;
+                    return index;
                 }
             }
 
-            return null;
+            return 0;
         }
 
         public int Add(in MeshEdge key, in PairOfIndex item)
         {
-            if (_data2.Count == 0 || _data2.Count > _nbBuckets)
+            if (_nodes.Count == 0 || _nodes.Count > _nbBuckets)
             {
-                ReSize(_data2.Count);
+                ReSize(_nodes.Count);
             }
 
-            Node? node = this.Lookup(key, out long hash);
-            if (node is not null)
+            int found = Lookup(key);
+            if (found != 0)
             {
-                return node.Index;
+                return found;
             }
 
-            hash = HashCode(key, _nbBuckets);
-            int newIndex = _data2.Count + 1;
-            node = new Node(key, item, newIndex, _data1![hash]);
-            _data1[hash] = node;
-            _data2.Add(node);
+            long hash = HashCode(key, _nbBuckets);
+            _nodes.Add(new LinkMapNode { Key = key, Value = item, Next = _buckets[hash] });
+            int newIndex = _nodes.Count;
+            _buckets[hash] = newIndex;
             return newIndex;
         }
 
-        public int FindIndex(in MeshEdge key) => this.Lookup(key, out _) is Node node ? node.Index : 0;
+        public int FindIndex(in MeshEdge key) => Lookup(key);
 
-        private Node NodeOf(int index)
+        private ref LinkMapNode NodeOf(int index)
         {
-            Standard_OutOfRange_Raise_if(index < 1 || index > _data2.Count, "NCollection_IndexedDataMap::FindKey");
-            return _data2[index - 1];
+            Standard_OutOfRange_Raise_if(index < 1 || index > _nodes.Count, "NCollection_IndexedDataMap::FindKey");
+            return ref _nodes[index - 1];
         }
 
         public ref MeshEdge FindKey(int index) => ref NodeOf(index).Key;
@@ -923,75 +921,72 @@ internal sealed class DataStructureOfDelaun : Transient
 
         public void Substitute(int index, in MeshEdge key1, in PairOfIndex item)
         {
-            Standard_OutOfRange_Raise_if(index < 1 || index > _data2.Count,
+            Standard_OutOfRange_Raise_if(index < 1 || index > _nodes.Count,
                                          "NCollection_IndexedDataMap::Substitute : Index is out of range");
 
+            // Copies: the arguments can be references into this map's nodes
+            MeshEdge newKey = key1;
+            PairOfIndex newItem = item;
+
             // check if theKey1 is not already in the map
-            Node? node = this.Lookup(key1, out long hash);
-            if (node is not null)
+            int found = Lookup(newKey);
+            if (found != 0)
             {
-                if (node.Index != index)
+                if (found != index)
                 {
                     throw new DomainErrorException("NCollection_IndexedDataMap::Substitute : Attempt to substitute existing key");
                 }
 
-                node.Key = key1;
-                node.Value = item;
+                ref LinkMapNode same = ref _nodes[found - 1];
+                same.Key = newKey;
+                same.Value = newItem;
                 return;
             }
 
-            // Find the node for the index I
-            node = _data2[index - 1];
-
-            // remove the old key
-            long iK = HashCode(node.Key, _nbBuckets);
-            Node? q = _data1![iK];
-            if (ReferenceEquals(q, node))
-            {
-                _data1[iK] = node.Next;
-            }
-            else
-            {
-                while (!ReferenceEquals(q!.Next, node))
-                {
-                    q = q.Next;
-                }
-
-                q.Next = node.Next;
-            }
+            // Find the node for the index I, and remove the old key
+            ref LinkMapNode node = ref _nodes[index - 1];
+            Unlink(index, node);
 
             // update the node
-            node.Key = key1;
-            node.Value = item;
-            node.Next = _data1[hash];
-            _data1[hash] = node;
+            long hash = HashCode(newKey, _nbBuckets);
+            node.Key = newKey;
+            node.Value = newItem;
+            node.Next = _buckets[hash];
+            _buckets[hash] = index;
         }
 
         public void RemoveLast()
         {
-            int lastIndex = _data2.Count;
+            int lastIndex = _nodes.Count;
             Standard_OutOfRange_Raise_if(lastIndex == 0, "NCollection_IndexedDataMap::RemoveLast");
+            Unlink(lastIndex, _nodes[lastIndex - 1]);
+            _nodes.RemoveLast();
+        }
 
-            // Find the node for the last index and remove it
-            Node p = _data2[lastIndex - 1];
-            _data2.RemoveAt(lastIndex - 1);
-
-            // remove the key
-            long iK = HashCode(p.Key, _nbBuckets);
-            Node? q = _data1![iK];
-            if (ReferenceEquals(q, p))
+        // A removed node's value stays readable until the next Add, as a caller holding a reference to it expects
+        private void Unlink(int index, in LinkMapNode node)
+        {
+            long k = HashCode(node.Key, _nbBuckets);
+            int q = _buckets[k];
+            if (q == index)
             {
-                _data1[iK] = p.Next;
+                _buckets[k] = node.Next;
+                return;
             }
-            else
-            {
-                while (!ReferenceEquals(q!.Next, p))
-                {
-                    q = q.Next;
-                }
 
-                q.Next = p.Next;
+            while (_nodes[q - 1].Next != index)
+            {
+                q = _nodes[q - 1].Next;
             }
+
+            _nodes[q - 1].Next = node.Next;
+        }
+
+        /// <summary>Gives the buckets back to the storage.</summary>
+        public void ReleaseStorage()
+        {
+            _storage?.GiveLinkBuckets(_buckets);
+            _buckets = [];
         }
     }
 }
