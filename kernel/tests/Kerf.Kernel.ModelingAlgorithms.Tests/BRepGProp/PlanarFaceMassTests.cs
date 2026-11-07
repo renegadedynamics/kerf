@@ -110,6 +110,61 @@ public class PlanarFaceMassTests
         Assert.Equal(Area(cylinder, false), Area(cylinder, true), 1e-9);
     }
 
+    private static Point3D IntegratedCentre(in Shape shape)
+    {
+        var props = new Properties();
+        MassPropertiesBuilder.SurfaceProperties(shape, props, 1e-9);
+        return props.CentreOfMass();
+    }
+
+    private static void AssertCentre(in Face face, Point3D expected, double tolerance = 1e-11)
+    {
+        Assert.True(PlanarFaceMass.TryCentre(face, new Domain(), out Point3D centre));
+        Assert.True(new Vector3D(centre, expected).Magnitude <= tolerance, $"{centre.X} {centre.Y} {centre.Z} against {expected.X} {expected.Y} {expected.Z}");
+        Point3D integrated = IntegratedCentre(face);
+        Assert.True(new Vector3D(centre, integrated).Magnitude <= 1e-7, $"{centre.X} {centre.Y} {centre.Z} against the integration's {integrated.X} {integrated.Y} {integrated.Z}");
+    }
+
+    [Fact]
+    public void A_boxes_faces_have_their_centres_wherever_they_are_and_whichever_way_turned()
+    {
+        Shape box = TestShapes.Frozen(TestShapes.Box(4, 6, 2));
+        var turned = Transform3D.Rotation(new Axis3D(new Point3D(10, -20, 30), new Direction3D(1, 2, 3)), 0.7);
+        var far = Transform3D.Translation(new Vector3D(1000, -2000, 500));
+        var scaled = Transform3D.Scale(new Point3D(1, 1, 1), 2.0);
+        foreach (Face face in BRepGPropTestShapes.Faces(box))
+        {
+            Point3D centre = IntegratedCentre(face);
+            AssertCentre(face, centre, 1e-7);
+            AssertCentre(ShapeCasts.Face(face.Reversed()), centre, 1e-7);
+            AssertCentre(ShapeCasts.Face(face.Moved(new Placement(turned))), centre.Transformed(turned), 1e-7);
+            AssertCentre(ShapeCasts.Face(face.Moved(new Placement(far))), centre.Transformed(far), 1e-7);
+            AssertCentre(ShapeCasts.Face(face.Moved(new Placement(scaled))), centre.Transformed(scaled), 1e-7);
+        }
+    }
+
+    [Fact]
+    public void A_cylinders_discs_are_at_its_axis()
+    {
+        Shape cylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2, 5));
+        var discs = BRepGPropTestShapes.Faces(cylinder).Where(f => Tool.Surface(f) is PlaneSurface).ToList();
+        Assert.Equal(2, discs.Count);
+        foreach (Face disc in discs)
+        {
+            Assert.True(PlanarFaceMass.TryCentre(disc, new Domain(), out Point3D centre));
+            Assert.Equal(0.0, centre.X, 1e-14);
+            Assert.Equal(0.0, centre.Y, 1e-14);
+        }
+    }
+
+    [Fact]
+    public void A_face_of_another_kind_or_an_open_boundary_has_no_exact_centre()
+    {
+        Shape cylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2, 5));
+        Face side = BRepGPropTestShapes.Faces(cylinder).First(f => Tool.Surface(f) is not PlaneSurface);
+        Assert.False(PlanarFaceMass.TryCentre(side, new Domain(), out _));
+    }
+
     [Fact]
     public void A_planar_face_is_answered()
     {

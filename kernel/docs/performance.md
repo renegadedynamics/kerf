@@ -1022,6 +1022,30 @@ Results: the same BREP text and meshes by digest on all eleven examples. Six vol
 - **Skip the clean after an extrusion when the profile has nothing to merge?** About 2% of Bento's bytes, and 4% to 5% of examples of many small solids. It needs a check that the result really is the same, over more than these examples.
 - **Exact centres of planar faces?** See above: quicker `Center`, with different last digits in what's built from one.
 
+## Exact planar centres and no needless clean (units 12A and 12B)
+
+*7 November 2026, on a machine shared with the owner and other helpers, with a corpus run alongside: bytes are good to about 2%, a whole-process figure a little worse, and the times here are from a loaded machine. The clean timed run follows. Each row is one call, after 200 to warm up, counted on its thread.*
+
+| Bytes for one call | Rectangle | Plate with a hole | Hexagon | Circle |
+|---:|---:|---:|---:|---:|
+| Centre, integrated | 4,109 | 4,518 | 5,261 | 3,285 |
+| `Center`, now | 904 | 888 | 1,184 | 888 |
+| Extrusion with its clean | 161,002 | 235,372 | 240,972 | 80,241 |
+| Extrusion now | 93,800 | 147,808 | 123,743 | 58,312 |
+| of which the test for the skip | 2,704 | 2,968 | 2,568 | 1,416 |
+
+So `Center` falls by about three quarters in bytes, and from 0.05 to 0.24 ms to about 0.001 ms; an extrusion falls by 27% to 49% in bytes. Bento's examples, four alternating runs, seven passes, medians, in MB:
+
+| | Before | After | |
+|---|---:|---:|---|
+| Prismatic solid | 1.6 | 1.5 | -9% |
+| Nesting locations | 14.9 | 13.1 | -12% |
+| For-loop | 9.4 | 8.9 | -5% |
+| Function, for-loop | 7.0 | 6.6 | -6% |
+| All eleven | 128.4 | 124.2 | -3.3% |
+
+The other seven move within the noise of a run, which reaches 2 MB on the largest. Against the bar of decision 1829: an extrusion clears 20% in bytes wherever it's the work, and examples of many small solids clear 5%, while a whole recalculation of Bento's mixed examples doesn't. Results: decisions 1894 and 1895. The corpus's boolean, blend, lowalgos and heal groups, 7,615 cases, are the same case by case as the run after unit 11E; neither change touches what they run.
+
 ## StepTidy (unit 11N)
 
 *5 November 2026, `Kerf.Kernel.Benchmarks -- step-tidy` over the 289 files `-- healing` exports, written by the plain STEP

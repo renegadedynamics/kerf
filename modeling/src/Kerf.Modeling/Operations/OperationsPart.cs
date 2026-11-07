@@ -165,7 +165,13 @@ public static partial class Operations
             newSolids = [last.Fuse(newSolids.Take(newSolids.Count - 1))];
         }
         if (clean)
-            newSolids = [.. newSolids.Select(s => s.Clean())];
+        {
+            // Plain prisms line up with their profiles, and one with nothing to merge needs no clean. Its record is the clean's: empty
+            bool prisms = amount is not null && taper == 0 && !both;
+            newSolids = [.. newSolids.Select((s, i) => prisms && TopoUtil.NothingToCleanAfterExtruding(faces[i], normals[i])
+                ? s.MadeBy(HistoryLog.Current is null ? null : new ModelHistory())
+                : s.Clean())];
+        }
 
         return new Part(new ShapeList<Shape>(newSolids).Solids());
     }
