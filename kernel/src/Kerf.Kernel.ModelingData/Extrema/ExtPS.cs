@@ -66,7 +66,7 @@ internal class ExtPS
                 }
                 d1NormMax = 0.0;
 
-                for (t = u1; t <= u2; t = t + step)
+                for (t = u1; t <= u2; t = StepLimit.Moved(t, t + step))
                 {
                     s.D1(t, param, out _, out Vector3D d1U, out _);
                     d1NormMax = Max(d1NormMax, d1U.Magnitude);
@@ -88,7 +88,7 @@ internal class ExtPS
                     return false;
                 }
                 d1NormMax = 0.0;
-                for (t = v1; t <= v2; t = t + step)
+                for (t = v1; t <= v2; t = StepLimit.Moved(t, t + step))
                 {
                     s.D1(param, t, out _, out _, out Vector3D d1V);
                     d1NormMax = Max(d1NormMax, d1V.Magnitude);

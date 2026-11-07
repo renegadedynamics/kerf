@@ -1306,8 +1306,14 @@ internal class EdgeEdge
         }
         //
         double anEps = Max(eps, Epsilon(Max(Math.Abs(a), Math.Abs(b))) * 10.0);
-        for (;;)
+        // Kerf: from any finite a and b this is down to anEps in about 80 steps. Only NaN or infinity reach the limit, and
+        // then the projection has failed (decision 1913)
+        for (int steps = 0; ; steps++)
         {
+            if (steps > 512)
+            {
+                return 1;
+            }
             if (iC * (yp - yl) > 0)
             {
                 a = xl;

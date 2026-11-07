@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
 
@@ -245,12 +246,12 @@ internal static class IntImpParGen
             double periode, t;
             theDomain.EquivalentParameters(out t, out periode);
             periode -= t;
-            while (modParam < theDomain.FirstParameter() && modParam + periode < theDomain.LastParameter())
+            for (int aStep = 0; modParam < theDomain.FirstParameter() && modParam + periode < theDomain.LastParameter(); StepLimit.Next(ref aStep))
             {
                 modParam += periode;
             }
 
-            while (modParam > theDomain.LastParameter() && modParam - periode > theDomain.FirstParameter())
+            for (int aStep = 0; modParam > theDomain.LastParameter() && modParam - periode > theDomain.FirstParameter(); StepLimit.Next(ref aStep))
             {
                 modParam -= periode;
             }

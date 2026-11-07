@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Measurement;
@@ -582,14 +583,14 @@ internal sealed class FClass2d
             {
                 if (uu < _umin)
                 {
-                    while (uu < _umin)
+                    for (int aStep = 0; uu < _umin; StepLimit.Next(ref aStep))
                     {
                         uu += uperiod;
                     }
                 }
                 else
                 {
-                    while (uu >= _umin)
+                    for (int aStep = 0; uu >= _umin; StepLimit.Next(ref aStep))
                     {
                         uu -= uperiod;
                     }
@@ -602,14 +603,14 @@ internal sealed class FClass2d
             {
                 if (vv < _vmin)
                 {
-                    while (vv < _vmin)
+                    for (int aStep = 0; vv < _vmin; StepLimit.Next(ref aStep))
                     {
                         vv += vperiod;
                     }
                 }
                 else
                 {
-                    while (vv >= _vmin)
+                    for (int aStep = 0; vv >= _vmin; StepLimit.Next(ref aStep))
                     {
                         vv -= vperiod;
                     }

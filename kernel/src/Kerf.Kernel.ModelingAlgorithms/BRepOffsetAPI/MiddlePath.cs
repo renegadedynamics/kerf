@@ -401,8 +401,19 @@ internal class MiddlePath : MakeShape
             nbVer++;
         }
         i = 1;
+        // Kerf: a section is added each time, with vertices put into the paths on the way, and nothing shows that the end
+        // edges all turn up in one section (decision 1913)
+        int sectionsLeft = 64;
+        for (int aPath = 1; aPath <= _paths.Length(); aPath++)
+        {
+            sectionsLeft += 16 * _paths[aPath].Length();
+        }
         for (;;)
         {
+            if (--sectionsLeft < 0)
+            {
+                throw new ConstructionErrorException("BRepOffsetAPI_MiddlePath: the paths don't reach their end together");
+            }
             for (j = 1; j <= edgeSeq.Length(); j++)
             {
                 edgeSeq[j].Nullify();
@@ -665,6 +676,10 @@ internal class MiddlePath : MakeShape
                                 _paths[k].InsertBefore(i, vertexAsEdge);
                             }
                             j = 1; // start from beginning
+                            if (--sectionsLeft < 0)
+                            {
+                                throw new ConstructionErrorException("BRepOffsetAPI_MiddlePath: the paths never agree on a section");
+                            }
                         }
                         else if (chooseEdge == 2)
                         {

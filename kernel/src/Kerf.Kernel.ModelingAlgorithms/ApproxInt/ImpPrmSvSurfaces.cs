@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Implicit;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
@@ -583,11 +584,11 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
                     if (qSurf.TypeQuadric() != Plane)
                     {
-                        while (u1 - tu1 > M_PI)
+                        for (int aStep = 0; u1 - tu1 > M_PI; StepLimit.Next(ref aStep))
                         {
                             u1 -= M_PI + M_PI;
                         }
-                        while (tu1 - u1 > M_PI)
+                        for (int aStep = 0; tu1 - u1 > M_PI; StepLimit.Next(ref aStep))
                         {
                             u1 += M_PI + M_PI;
                         }
@@ -611,11 +612,11 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                     // aQSurf.Parameters(P, u2, v2);
                     if (qSurf.TypeQuadric() != Plane)
                     {
-                        while (u2 - tu2 > M_PI)
+                        for (int aStep = 0; u2 - tu2 > M_PI; StepLimit.Next(ref aStep))
                         {
                             u2 -= M_PI + M_PI;
                         }
-                        while (tu2 - u2 > M_PI)
+                        for (int aStep = 0; tu2 - u2 > M_PI; StepLimit.Next(ref aStep))
                         {
                             u2 += M_PI + M_PI;
                         }
@@ -828,7 +829,7 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 if (qSurf.TypeQuadric() != Plane)
                 {
                     double sign = (newU1 > u1) ? -1 : 1;
-                    while (Math.Abs(u1 - newU1) > M_PI)
+                    for (int aStep = 0; Math.Abs(u1 - newU1) > M_PI; StepLimit.Next(ref aStep))
                     {
                         newU1 += sign * (M_PI + M_PI);
                     }
@@ -844,7 +845,7 @@ internal class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 if (qSurf.TypeQuadric() != Plane)
                 {
                     double sign = (newU2 > u2) ? -1 : 1;
-                    while (Math.Abs(u2 - newU2) > M_PI)
+                    for (int aStep = 0; Math.Abs(u2 - newU2) > M_PI; StepLimit.Next(ref aStep))
                     {
                         newU2 += sign * (M_PI + M_PI);
                     }

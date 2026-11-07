@@ -1001,11 +1001,11 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
         if (_periodic)
         {
             period = _flatKnots.Value(_flatKnots.Upper() - _deg) - _flatKnots.Value(_deg + 1);
-            while (parameter > _flatKnots.Value(_flatKnots.Upper() - _deg))
+            for (int aStep = 0; parameter > _flatKnots.Value(_flatKnots.Upper() - _deg); StepLimit.Next(ref aStep))
             {
                 parameter -= period;
             }
-            while (parameter < _flatKnots.Value((_deg + 1)))
+            for (int aStep = 0; parameter < _flatKnots.Value((_deg + 1)); StepLimit.Next(ref aStep))
             {
                 parameter += period;
             }

@@ -857,7 +857,7 @@ internal static partial class BuilderTools
         const int nbP = 11;
         double dt = (t2 - t1) / nbP;
         //
-        for (t = t1 + dt; t <= t2; t += dt)
+        for (t = t1 + dt; t <= t2; t = StepLimit.Moved(t, t + dt))
         {
             curve.D1(t, out Point3D _, out tangent);
             if (tangent.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -907,7 +907,7 @@ internal static partial class BuilderTools
                 t = t1;
                 curve.D1(t, out Point3D _, out Vector3D v1);
                 //
-                for (t = t1 + dt; t <= t2; t += dt)
+                for (t = t1 + dt; t <= t2; t = StepLimit.Moved(t, t + dt))
                 {
                     curve.D1(t, out Point3D _, out Vector3D v2);
                     //

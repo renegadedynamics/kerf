@@ -509,7 +509,8 @@ internal class MinimalVariation : Batten
         int nbKnots = _knots.Length();
         double valAngles =
           (Math.Abs(_oldAngle1) + Math.Abs(_oldAngle2) + 2 * Math.Abs(_oldAngle2 - _oldAngle1));
-        while (valAngles > (2 * (nbKnots - 2) + 1) * (1 + 2 * nbKnots))
+        // Kerf: an infinite angle never fits, and the count overflows on the way (decision 1913)
+        for (int aStep = 0; valAngles > (2 * (nbKnots - 2) + 1) * (1 + 2 * nbKnots); StepLimit.Next(ref aStep))
         {
             newKnots = true;
             nbKnots += nbKnots - 1;

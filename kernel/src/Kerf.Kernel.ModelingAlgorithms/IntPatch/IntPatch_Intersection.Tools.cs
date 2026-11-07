@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
@@ -32,9 +33,9 @@ internal partial class PatchIntersection
         double tMinXYZ = RealLast();
         double tMaxXYZ = -tMinXYZ;
         Point3D ptMax = new(), ptMin = new();
-        for (double u = s.FirstUParameter(); u <= s.LastUParameter(); u += du)
+        for (double u = s.FirstUParameter(); u <= s.LastUParameter(); u = StepLimit.Moved(u, u + du))
         {
-            for (double v = s.FirstVParameter(); v <= s.LastVParameter(); v += dv)
+            for (double v = s.FirstVParameter(); v <= s.LastVParameter(); v = StepLimit.Moved(v, v + dv))
             {
                 s.D0(u, v, out Point3D puv);
                 double cXYZ = puv.XYZ().Modulus();

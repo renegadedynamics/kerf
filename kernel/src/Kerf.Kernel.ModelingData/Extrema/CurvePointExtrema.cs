@@ -596,6 +596,7 @@ internal class CurvePointExtrema
     {
         int i;
         double u;
+        Cancellation.ThrowIfRequested(); // Kerf: a damaged range calls this over and over, and each costs more than the last
         _extPC.Initialize(_mysample, _myintuinf, _myintusup, _mytolu, _mytolf);
         _extPC.Perform(p);
         _mydone = _extPC.IsDone;

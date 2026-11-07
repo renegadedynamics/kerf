@@ -26,11 +26,11 @@ internal static class ComputeDataFcts
     internal static double ChFiKPart_InPeriod(double U, double uFirst, double uLast, double eps)
     {
         double u = U, period = uLast - uFirst;
-        while (eps < (uFirst - u))
+        for (int aStep = 0; eps < (uFirst - u); StepLimit.Next(ref aStep))
         {
             u += period;
         }
-        while (eps > (uLast - u))
+        for (int aStep = 0; eps > (uLast - u); StepLimit.Next(ref aStep))
         {
             u -= period;
         }

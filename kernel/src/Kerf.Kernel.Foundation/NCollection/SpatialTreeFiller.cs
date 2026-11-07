@@ -75,6 +75,11 @@ internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
         {
             for (i = nbAdd; i > 0; i--)
             {
+                if ((i & 1023) == 0)
+                {
+                    Cancellation.ThrowIfRequested();
+                }
+
                 int ind = (int)(_randGen.Invoke() % (uint)i);
                 ObjBnd objBnd = _seqPtr[ind];
                 _tree.Add(objBnd.myObj, objBnd.myBnd);
@@ -85,6 +90,11 @@ internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
         {
             for (i = nbAdd; i > 0; i--)
             {
+                if ((i & 1023) == 0)
+                {
+                    Cancellation.ThrowIfRequested();
+                }
+
                 int ind = i - (int)(_randGen.Invoke() % (uint)i) - 1;
                 ObjBnd objBnd = _seqPtr[ind];
                 _tree.Add(objBnd.myObj, objBnd.myBnd);

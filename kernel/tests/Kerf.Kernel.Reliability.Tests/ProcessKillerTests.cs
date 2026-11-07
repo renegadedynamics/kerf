@@ -49,6 +49,12 @@ public class ProcessKillerTests
     [InlineData("brep-file-too-deep", "exchange.malformed")]
     public void A_file_nested_too_deep_is_a_failure(string scenario, string code) => Assert.Equal(code, ChildProcess.Run(scenario));
 
+    [Theory]
+    [InlineData("doubling-brep", "exchange.malformed")]
+    [InlineData("doubling-step", "exchange.nothing-done")]
+    [InlineData("doubling-gltf", "exchange.malformed")]
+    public void A_small_file_of_two_to_the_forty_shapes_is_a_failure(string scenario, string code) => Assert.Equal(code, ChildProcess.Run(scenario, 60));
+
     [Fact]
     public void Curves_nested_but_within_the_stack_are_read_whole() => Assert.Equal("1", ChildProcess.Run("step-curves-deep-but-fine"));
 

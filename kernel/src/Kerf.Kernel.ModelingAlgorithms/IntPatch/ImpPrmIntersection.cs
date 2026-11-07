@@ -495,11 +495,11 @@ internal partial class ImpPrmIntersection
                                 case SurfaceKind.Cone:
                                 case SurfaceKind.Sphere:
                                 case SurfaceKind.Torus:
-                                    while (u2 < (anU2 - 1.5 * M_PI))
+                                    for (int aStep = 0; u2 < (anU2 - 1.5 * M_PI); StepLimit.Next(ref aStep))
                                     {
                                         u2 += M_PI + M_PI;
                                     }
-                                    while (u2 > (anU2 + 1.5 * M_PI))
+                                    for (int aStep = 0; u2 > (anU2 + 1.5 * M_PI); StepLimit.Next(ref aStep))
                                     {
                                         u2 -= M_PI + M_PI;
                                     }
@@ -509,11 +509,11 @@ internal partial class ImpPrmIntersection
                             }
                             if (typeS2 == SurfaceKind.Torus)
                             {
-                                while (v2 < (anV2 - 1.5 * M_PI))
+                                for (int aStep = 0; v2 < (anV2 - 1.5 * M_PI); StepLimit.Next(ref aStep))
                                 {
                                     v2 += M_PI + M_PI;
                                 }
-                                while (v2 > (anV2 + 1.5 * M_PI))
+                                for (int aStep = 0; v2 > (anV2 + 1.5 * M_PI); StepLimit.Next(ref aStep))
                                 {
                                     v2 -= M_PI + M_PI;
                                 }
@@ -531,11 +531,11 @@ internal partial class ImpPrmIntersection
                                 case SurfaceKind.Cone:
                                 case SurfaceKind.Sphere:
                                 case SurfaceKind.Torus:
-                                    while (u2 < (anU2 - 1.5 * M_PI))
+                                    for (int aStep = 0; u2 < (anU2 - 1.5 * M_PI); StepLimit.Next(ref aStep))
                                     {
                                         u2 += M_PI + M_PI;
                                     }
-                                    while (u2 > (anU2 + 1.5 * M_PI))
+                                    for (int aStep = 0; u2 > (anU2 + 1.5 * M_PI); StepLimit.Next(ref aStep))
                                     {
                                         u2 -= M_PI + M_PI;
                                     }
@@ -545,11 +545,11 @@ internal partial class ImpPrmIntersection
                             }
                             if (typeS2 == SurfaceKind.Torus)
                             {
-                                while (v2 < (anV2 - 1.5 * M_PI))
+                                for (int aStep = 0; v2 < (anV2 - 1.5 * M_PI); StepLimit.Next(ref aStep))
                                 {
                                     v2 += M_PI + M_PI;
                                 }
-                                while (v2 > (anV2 + 1.5 * M_PI))
+                                for (int aStep = 0; v2 > (anV2 + 1.5 * M_PI); StepLimit.Next(ref aStep))
                                 {
                                     v2 -= M_PI + M_PI;
                                 }

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Patches;
@@ -90,12 +91,12 @@ internal static class LineTool
     {
         double aresult = parameter;
         offset = 0.0;
-        while (aresult < parmin)
+        for (int aStep = 0; aresult < parmin; StepLimit.Next(ref aStep))
         {
             aresult += period;
             offset += period;
         }
-        while (aresult > parmax)
+        for (int aStep = 0; aresult > parmax; StepLimit.Next(ref aStep))
         {
             aresult -= period;
             offset -= period;

@@ -3413,12 +3413,12 @@ internal static partial class BSplCLib
         {
             period = flatKnots[flatKnots.Upper() - 1] - flatKnots[2];
 
-            while (localParameter > flatKnots[flatKnots.Upper() - 1])
+            for (int aStep = 0; localParameter > flatKnots[flatKnots.Upper() - 1]; StepLimit.Next(ref aStep))
             {
                 localParameter -= period;
             }
 
-            while (localParameter < flatKnots[2])
+            for (int aStep = 0; localParameter < flatKnots[2]; StepLimit.Next(ref aStep))
             {
                 localParameter += period;
             }
@@ -3592,12 +3592,12 @@ internal static partial class BSplCLib
         {
             period = flatKnots[flatKnots.Upper() - 1] - flatKnots[2];
 
-            while (localParameter > flatKnots[flatKnots.Upper() - 1])
+            for (int aStep = 0; localParameter > flatKnots[flatKnots.Upper() - 1]; StepLimit.Next(ref aStep))
             {
                 localParameter -= period;
             }
 
-            while (localParameter < flatKnots[2])
+            for (int aStep = 0; localParameter < flatKnots[2]; StepLimit.Next(ref aStep))
             {
                 localParameter += period;
             }
@@ -4781,22 +4781,22 @@ internal static partial class BSplCLib
             double upper = knots.Last();
             period = upper - lower;
 
-            while (curFirst < lower)
+            for (int aStep = 0; curFirst < lower; StepLimit.Next(ref aStep))
             {
                 curFirst += period;
                 firstPeriod--;
             }
-            while (curLast < lower)
+            for (int aStep = 0; curLast < lower; StepLimit.Next(ref aStep))
             {
                 curLast += period;
                 lastPeriod--;
             }
-            while (curFirst >= upper)
+            for (int aStep = 0; curFirst >= upper; StepLimit.Next(ref aStep))
             {
                 curFirst -= period;
                 firstPeriod += 1;
             }
-            while (curLast >= upper)
+            for (int aStep = 0; curLast >= upper; StepLimit.Next(ref aStep))
             {
                 curLast -= period;
                 lastPeriod += 1;

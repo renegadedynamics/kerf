@@ -971,11 +971,24 @@ internal sealed class TrimShellCorner
 
         bool error = false;
         NCollection_Sequence<Shape> wseq = new();
+        // Kerf: each step takes an edge from the compound, but Remove says nothing if the edge isn't a direct child of it,
+        // and this would never end (decision 1913)
+        // Three for each edge is enough: taking it to start a wire, taking it to go on with one, and a last look for each wire
+        int stepsLeft = 4;
+        for (Explorer counted = new(oldComp2, ShapeType.Edge); counted.More(); counted.Next())
+        {
+            stepsLeft += 4;
+        }
         for (;;)
         {
             Explorer explo = new(oldComp2, ShapeType.Edge);
             if (!explo.More())
             {
+                break;
+            }
+            if (--stepsLeft < 0)
+            {
+                error = true;
                 break;
             }
             Edge firstEdge = ShapeCasts.Edge(explo.Current());
@@ -989,6 +1002,11 @@ internal sealed class TrimShellCorner
 
             for (;;)
             {
+                if (--stepsLeft < 0)
+                {
+                    error = true;
+                    break;
+                }
                 Vertex[] extremity = new Vertex[2];
                 Exploration.Vertices(newWire, out extremity[0], out extremity[1]);
                 if (extremity[0].IsNull || extremity[1].IsNull)

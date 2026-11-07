@@ -78,13 +78,17 @@ public static class OffsetOperations
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             NonZero(distance, nameof(distance));
-            return EngineOperation.Run<Shape>(range =>
+            Result<Built<Shape>> made = EngineOperation.Run<Shape>(range =>
             {
                 var offset = new MakeOffsetShape();
                 offset.PerformByJoin(s, distance, options.Tolerance, options.Mode, options.Intersection, options.SelfIntersection,
                                      options.Join, options.RemoveInternalEdges, range);
                 return MakerOutcome.Done(offset, [s], () => StatusDiagnostics.ToDiagnostic(offset.MakeOffset().Error()));
             }, Failure, progress, cancellationToken, options.CheckResult ? "The offset's result" : null);
+            return options.CheckResult && made.TryGetValue(out Built<Shape>? built)
+                   && OffsetVolumes.Check(s, distance, options.Join, built.Shape, "The offset's result") is { } wrong
+                ? Result<Built<Shape>>.Invalid(built, wrong, made.Diagnostics)
+                : made;
         }
 
         /// <summary>A face or shell made a solid of <paramref name="thickness"/> (along its normal when positive).</summary>
@@ -208,13 +212,17 @@ public static class OffsetOperations
                 }
                 faces.Append(face);
             }
-            return EngineOperation.Run<Solid>(range =>
+            Result<Built<Solid>> made = EngineOperation.Run<Solid>(range =>
             {
                 var thick = new MakeThickSolid();
                 thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
                                            options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
                 return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
             }, Failure, progress, cancellationToken, options.CheckResult ? "The hollow solid" : null);
+            return options.CheckResult && made.TryGetValue(out Built<Solid>? built)
+                   && OffsetVolumes.Check(s, thickness, options.Join, built.Shape.AsShape(), "The hollow solid", isWall: true) is { } wrong
+                ? Result<Built<Solid>>.Invalid(built, wrong, made.Diagnostics)
+                : made;
         }
     }
 
