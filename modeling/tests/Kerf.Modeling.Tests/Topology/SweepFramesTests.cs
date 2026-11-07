@@ -102,7 +102,7 @@ public class SweepFramesTests
     [Fact]
     public void A_solid_of_no_volume_fails()
     {
-        // The direction in the profile's plane; sections in one plane (decision 22602)
+        // The direction in the profile's plane; sections in one plane (decision 1927)
         var extrude = Assert.ThrowsAny<Exception>(() => Solid.Extrude(Face.MakeRect(10, 10), new Vector3D(1, 0, 0)));
         Assert.Contains("encloses no volume", extrude.Message);
         var loft = Assert.ThrowsAny<Exception>(() => Solid.MakeLoft([Wire.MakeRect(10, 10), Wire.MakeRect(6, 6)]));

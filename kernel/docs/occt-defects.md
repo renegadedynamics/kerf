@@ -59,18 +59,18 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 22611 |
-| `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 22612 |
-| #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 22610 |
-| #1039 | A section's closed curve lost between a sphere and a slice at a shallow angle, 86898 for 73353 | 22608 |
-| #1632, #1431 | A chamfer not saying which contours failed; the same 2D corner chamfered twice an internal fault | 22609 |
-| #1039 | A slice's Common with a model, 86898 for about 70000, reported as a success: now a failure | 22606 |
-| #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 22607 |
-| #572 | A cone from a STEP file with no triangles | 22605 |
-| #1444 | A thin torus's mesh 1.42 from the surface for 0.45 asked | 22604 |
-| `53706f78a8` | A loft's rational section changing shape, for weights that agree part way through being scaled | 22603 |
-| Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 22602 |
-| #1123 | A minimum distance of 0.083 between parts that intersect | 22601 |
+| #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 1937 |
+| `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 1936 |
+| #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 1935 |
+| #1039 | A section's closed curve lost between a sphere and a slice at a shallow angle, 86898 for 73353 | 1934 |
+| #1632, #1431 | A chamfer not saying which contours failed; the same 2D corner chamfered twice an internal fault | 1933 |
+| #1039 | A slice's Common with a model, 86898 for about 70000, reported as a success: now a failure | 1932 |
+| #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 1931 |
+| #572 | A cone from a STEP file with no triangles | 1930 |
+| #1444 | A thin torus's mesh 1.42 from the surface for 0.45 asked | 1929 |
+| `53706f78a8` | A loft's rational section changing shape, for weights that agree part way through being scaled | 1928 |
+| Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 1927 |
+| #1123 | A minimum distance of 0.083 between parts that intersect | 1926 |
 | #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 1860, 1863, 1866 |
 | #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
 | #1613 | A fuse dropping a compound of reversed solids | 1832 |
