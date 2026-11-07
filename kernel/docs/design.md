@@ -73,6 +73,7 @@ Progress is measured by `dotnet run tools/port-status.cs`, which writes [port-st
 | **9. Switch-over** (done; [phase9-plan.md](phase9-plan.md)) | build123d.NET moves onto OCCT.NET, op by op through BRep bytes, then drops native OCCT | |
 | **10. A .NET library** (done; [phase10-plan.md](phase10-plan.md)) | Kerf: the public API, immutability with no copy at entry, results, OCCT's bugs, one set of shapes with the modelling layer | |
 | **11. Optimisation** (done; [phase11-plan.md](phase11-plan.md)) | A benchmark rig, then speed and memory; the points left from phase 10 | |
+| **12. Trustworthy results** ([phase12-plan.md](phase12-plan.md)) | Wrong or failing results, fillets a user would notice, then speed | |
 
 ## Not ported
 
