@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 36 already fixed, 88 not relevant, 52 applies, 48 can't tell. The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 2 already fixed, 57 not relevant, 11 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 46 already fixed, 88 not relevant, 42 applies, 48 can't tell (unit 12J moved nine from applies to already fixed; the base's line said 36 and 52, where its rows count 37 and 51). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -36,6 +36,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
 | Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
 | Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **Not ported, the owner's decision** (1892, 1901); done another way for straight edges (1847) |
+| Failure on an ordinary shape | corpus: offset/shape_type_i | A cone's offset, with its apex: `Solid.Cone(5, 0, 12).Offset(-1)` with round joins, and a cone with its apex at the bottom inwards with either join or outwards with mitres. Failures since decision 1918; found by 12J, not fixed: with mitres the first is right (107.757, by similar triangles), so a retry with mitres inwards would serve it, but that needs decision 1918's check, which this branch didn't have. The apex at the bottom is the enlarged face keeping its far side, past the base's plane, in `BuildOffsetByInter`; its box reaches 3.8 million | Reproduced | M; the retry S |
 | Failure on an ordinary shape | corpus: offset/wire_* | 77 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
 | Unintuitive API | #1618, the rest | `Point3D` takes NaN, so `Vertex.At` does. `Solid.Box` refuses it, checked through the public layer (and decision 1820 for directions) | Reproduced | S to M |
