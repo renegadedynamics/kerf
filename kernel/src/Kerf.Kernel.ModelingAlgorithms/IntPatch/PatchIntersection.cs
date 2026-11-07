@@ -1208,7 +1208,7 @@ internal partial class PatchIntersection
             double d1NormMax = 0.0;
             Xyz pmid = new(0.0, 0.0, 0.0);
             int nb = 0;
-            for (t = pinf; t <= psup; t += dt)
+            for (t = pinf; t <= psup; t = StepLimit.Moved(t, t + dt))
             {
                 p1 = bnd.Value(t);
                 s1.D1(p1.X, p1.Y, out pp1, out Vector3D du, out Vector3D dv);

@@ -57,11 +57,11 @@ internal static class RstInt
             case SurfaceKind.Cone:
             case SurfaceKind.Sphere:
             case SurfaceKind.Torus:
-                while (u1 < (u1p - 1.5 * M_PI))
+                for (int aStep = 0; u1 < (u1p - 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u1 += M_PI + M_PI;
                 }
-                while (u1 > (u1p + 1.5 * M_PI))
+                for (int aStep = 0; u1 > (u1p + 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u1 -= M_PI + M_PI;
                 }
@@ -71,11 +71,11 @@ internal static class RstInt
         }
         if (typeS1 == SurfaceKind.Torus)
         {
-            while (v1 < (v1p - 1.5 * M_PI))
+            for (int aStep = 0; v1 < (v1p - 1.5 * M_PI); StepLimit.Next(ref aStep))
             {
                 v1 += M_PI + M_PI;
             }
-            while (v1 > (v1p + 1.5 * M_PI))
+            for (int aStep = 0; v1 > (v1p + 1.5 * M_PI); StepLimit.Next(ref aStep))
             {
                 v1 -= M_PI + M_PI;
             }
@@ -87,11 +87,11 @@ internal static class RstInt
             case SurfaceKind.Cone:
             case SurfaceKind.Sphere:
             case SurfaceKind.Torus:
-                while (u2 < (u2p - 1.5 * M_PI))
+                for (int aStep = 0; u2 < (u2p - 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u2 += M_PI + M_PI;
                 }
-                while (u2 > (u2p + 1.5 * M_PI))
+                for (int aStep = 0; u2 > (u2p + 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u2 -= M_PI + M_PI;
                 }
@@ -101,11 +101,11 @@ internal static class RstInt
         }
         if (typeS2 == SurfaceKind.Torus)
         {
-            while (v2 < (v1p - 1.5 * M_PI)) // OCCT: compares V2 with V1p, not V2p (reproduced)
+            for (int aStep = 0; v2 < (v1p - 1.5 * M_PI); StepLimit.Next(ref aStep)) // OCCT: compares V2 with V1p, not V2p (reproduced)
             {
                 v2 += M_PI + M_PI;
             }
-            while (v2 > (v2p + 1.5 * M_PI))
+            for (int aStep = 0; v2 > (v2p + 1.5 * M_PI); StepLimit.Next(ref aStep))
             {
                 v2 -= M_PI + M_PI;
             }

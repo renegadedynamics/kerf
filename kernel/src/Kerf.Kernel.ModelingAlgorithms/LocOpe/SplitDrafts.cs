@@ -1740,12 +1740,12 @@ internal sealed class SplitDrafts
                 double ptra = 0.0;
 
                 double ustart = Min(uf, ul);
-                while (ustart < -global::Kerf.Engine.Foundation.Precision.PConfusion())
+                for (int aStep = 0; ustart < -global::Kerf.Engine.Foundation.Precision.PConfusion(); StepLimit.Next(ref aStep))
                 {
                     ustart += speriod;
                     ptra += speriod;
                 }
-                while (ustart > speriod - global::Kerf.Engine.Foundation.Precision.PConfusion())
+                for (int aStep = 0; ustart > speriod - global::Kerf.Engine.Foundation.Precision.PConfusion(); StepLimit.Next(ref aStep))
                 {
                     ustart -= speriod;
                     ptra -= speriod;

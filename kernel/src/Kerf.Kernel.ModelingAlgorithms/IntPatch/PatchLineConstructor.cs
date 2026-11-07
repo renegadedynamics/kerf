@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
@@ -365,11 +366,11 @@ internal partial class PatchLineConstructor
                 double cadrinf = LocalFirstParameter(l);
                 double cadrsup = LocalLastParameter(l);
                 double acadr = (firstp + lastp) * 0.5;
-                while (acadr < cadrinf)
+                for (int aStep = 0; acadr < cadrinf; StepLimit.Next(ref aStep))
                 {
                     acadr += M_PI + M_PI;
                 }
-                while (acadr > cadrsup)
+                for (int aStep = 0; acadr > cadrsup; StepLimit.Next(ref aStep))
                 {
                     acadr -= M_PI + M_PI;
                 }

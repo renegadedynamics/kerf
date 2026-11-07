@@ -195,11 +195,11 @@ internal class GLine : PatchLine
             {
                 if (_fipt && _lapt)
                 {
-                    while (par < pf)
+                    for (int aStep = 0; par < pf; StepLimit.Next(ref aStep))
                     {
                         par += M_PI + M_PI;
                     }
-                    while (par > pl)
+                    for (int aStep = 0; par > pl; StepLimit.Next(ref aStep))
                     {
                         par -= M_PI + M_PI;
                     }

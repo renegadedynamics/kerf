@@ -277,44 +277,44 @@ internal class WLine : PointLine, IWLine<WLine>
     {
         if (u1Period != 0)
         {
-            while (anu1 - u1 > 0.8 * u1Period)
+            for (int aStep = 0; anu1 - u1 > 0.8 * u1Period; StepLimit.Next(ref aStep))
             {
                 u1 += u1Period;
             }
-            while (u1 - anu1 > 0.8 * u1Period)
+            for (int aStep = 0; u1 - anu1 > 0.8 * u1Period; StepLimit.Next(ref aStep))
             {
                 u1 -= u1Period;
             }
         }
         if (u2Period != 0)
         {
-            while (anu2 - u2 > 0.8 * u2Period)
+            for (int aStep = 0; anu2 - u2 > 0.8 * u2Period; StepLimit.Next(ref aStep))
             {
                 u2 += u2Period;
             }
-            while (u2 - anu2 > 0.8 * u2Period)
+            for (int aStep = 0; u2 - anu2 > 0.8 * u2Period; StepLimit.Next(ref aStep))
             {
                 u2 -= u2Period;
             }
         }
         if (v1Period != 0)
         {
-            while (anv1 - v1 > 0.8 * v1Period)
+            for (int aStep = 0; anv1 - v1 > 0.8 * v1Period; StepLimit.Next(ref aStep))
             {
                 v1 += v1Period;
             }
-            while (v1 - anv1 > 0.8 * v1Period)
+            for (int aStep = 0; v1 - anv1 > 0.8 * v1Period; StepLimit.Next(ref aStep))
             {
                 v1 -= v1Period;
             }
         }
         if (v2Period != 0)
         {
-            while (anv2 - v2 > 0.8 * v2Period)
+            for (int aStep = 0; anv2 - v2 > 0.8 * v2Period; StepLimit.Next(ref aStep))
             {
                 v2 += v2Period;
             }
-            while (v2 - anv2 > 0.8 * v2Period)
+            for (int aStep = 0; v2 - anv2 > 0.8 * v2Period; StepLimit.Next(ref aStep))
             {
                 v2 -= v2Period;
             }

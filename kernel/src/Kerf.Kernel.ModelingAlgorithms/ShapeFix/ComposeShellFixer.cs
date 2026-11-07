@@ -8,6 +8,7 @@
 //    svv  10.01.00 porting on DEC
 
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
@@ -2123,7 +2124,7 @@ internal class ComposeShellFixer : RootFixer
                 double period = umax - umin;
                 double x = pos.X;
                 double sh = ShapeAnalysisAnalysis.AdjustToPeriod(x, uf, uf + period);
-                for (; x + sh <= ul + pprec; sh += period)
+                for (; x + sh <= ul + pprec; sh = StepLimit.Moved(sh, sh + period))
                 {
                     Line2D ln = line.Translated(new Vector2D(sh, 0));
                     int cutIndex = GetPatchIndex(x + sh + pprec, _grid.InternalUJointValues()!, _uClosed);
@@ -2146,7 +2147,7 @@ internal class ComposeShellFixer : RootFixer
                 double period = vmax - vmin;
                 double y = pos.Y;
                 double sh = ShapeAnalysisAnalysis.AdjustToPeriod(y, vf, vf + period);
-                for (; y + sh <= vl + pprec; sh += period)
+                for (; y + sh <= vl + pprec; sh = StepLimit.Moved(sh, sh + period))
                 {
                     Line2D ln = line.Translated(new Vector2D(0, sh));
                     int cutIndex = GetPatchIndex(y + sh + pprec, _grid.InternalVJointValues()!, _vClosed);

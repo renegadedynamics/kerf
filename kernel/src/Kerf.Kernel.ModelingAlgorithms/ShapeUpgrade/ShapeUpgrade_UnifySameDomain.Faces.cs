@@ -422,7 +422,7 @@ internal partial class UnifySameDomain
         return (firstPoint, lastPoint);
     }
 
-    private static bool RelocatePCurvesToNewUorigin(
+    internal static bool RelocatePCurvesToNewUorigin(
       NCollection_Sequence<Shape>                                       edges,
       in Shape                                                          firstFace,
       in Face                                                           refFace,
@@ -515,6 +515,12 @@ internal partial class UnifySameDomain
             {
                 if (!RemoveEdgeFromMap(currentEdge, vEmap))
                 {
+                    // Kerf: an edge with no vertices in the map is never used, so the outer loop would pick it for ever
+                    // (decision 22501). The caller then leaves these faces as they were
+                    if (!usedEdges.Contains(startEdge))
+                    {
+                        return false;
+                    }
                     break; // end of contour in 2d
                 }
                 usedEdges.Add(currentEdge);

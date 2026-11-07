@@ -356,7 +356,7 @@ internal class ComputeApprox
                         bool isclandper = (!(myCurve.IsClosed) && !(myCurve.IsPeriodic));
                         bool isFirst = true;
                         var aUTrack = new Winding(w1, u1);
-                        for (double par = w1 + step; par <= w2; par += step)
+                        for (double par = w1 + step; par <= w2; par = StepLimit.Moved(par, par + step))
                         {
                             if (!isclandper)
                             {
@@ -552,7 +552,7 @@ internal class ComputeApprox
                     myU2 = u1;
                     double pmin = w1, pmax = w1, plim = w2 + .1 * step;
                     var aUTrack = new Winding(w1, u1);
-                    for (double par = w1 + step; par <= plim; par += step)
+                    for (double par = w1 + step; par <= plim; par = StepLimit.Moved(par, par + step))
                     {
                         p = myCurve.Value(par);
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, p, out u, out v);
@@ -854,7 +854,7 @@ internal class ComputeApprox
                     myU2 = u1;
                     double pmin = w1, pmax = w1, plim = w2 + .1 * step;
                     var aUTrack = new Winding(w1, u1);
-                    for (double par = w1 + step; par <= plim; par += step)
+                    for (double par = w1 + step; par <= plim; par = StepLimit.Moved(par, par + step))
                     {
                         p = myCurve.Value(par);
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(sp, p, out u, out v);
@@ -940,7 +940,7 @@ internal class ComputeApprox
                 double pminU = w1, pmaxU = w1, pminV = w1, pmaxV = w1, plim = w2 + .1 * step;
                 var aUTrack = new Winding(w1, u1);
                 var aVTrack = new Winding(w1, v1);
-                for (double par = w1 + step; par <= plim; par += step)
+                for (double par = w1 + step; par <= plim; par = StepLimit.Moved(par, par + step))
                 {
                     p = myCurve.Value(par);
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(tr, p, out u, out v);

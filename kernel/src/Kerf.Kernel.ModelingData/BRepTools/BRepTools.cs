@@ -185,7 +185,7 @@ internal static partial class BrepTools
                 if (!s.IsUClosed)
                 {
                     double vStep = vmax - vmin;
-                    for (double v = vmin; v <= vmax; v += vStep)
+                    for (double v = vmin; v <= vmax; v = StepLimit.Moved(v, v + vStep))
                     {
                         p1 = s.Value(umin, v);
                         p2 = s.Value(umax, v);
@@ -270,7 +270,7 @@ internal static partial class BrepTools
                 if (!s.IsVClosed)
                 {
                     double uStep = umax - umin;
-                    for (double u = umin; u <= umax; u += uStep)
+                    for (double u = umin; u <= umax; u = StepLimit.Moved(u, u + uStep))
                     {
                         p1 = s.Value(u, vmin);
                         p2 = s.Value(u, vmax);
@@ -1180,7 +1180,7 @@ internal static partial class BrepTools
                 Point3D pc, ps;
                 int cnt = 0;
                 double t = first;
-                for (; t <= last; t += dt)
+                for (; t <= last; t = StepLimit.Moved(t, t + dt))
                 {
                     cnt++;
                     c2d.D0(t, out p2d);

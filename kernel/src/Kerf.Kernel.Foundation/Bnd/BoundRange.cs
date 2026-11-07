@@ -262,7 +262,7 @@ internal partial struct BoundRange : IEquatable<BoundRange>
             list.Append(new BoundRange(_first, valPrev));
         }
 
-        for (double aVal = valPrev + aPeriod; aVal <= _last; aVal += aPeriod)
+        for (double aVal = valPrev + aPeriod; aVal <= _last; aVal = StepLimit.Moved(aVal, aVal + aPeriod))
         {
             list.Append(new BoundRange(valPrev, aVal));
             valPrev = aVal;

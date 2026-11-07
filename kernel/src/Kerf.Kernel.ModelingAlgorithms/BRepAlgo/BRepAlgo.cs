@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Healing.Checks;
@@ -565,7 +566,7 @@ internal static class BRepAlgo
                         if (isSameDir)
                         {
                             // Check if first parameter is greater then the last one.
-                            while (newFpar > newLpar)
+                            for (int aStep = 0; newFpar > newLpar; StepLimit.Next(ref aStep))
                             {
                                 newFpar -= period;
                             }
@@ -573,7 +574,7 @@ internal static class BRepAlgo
                         else
                         { // !isSameDir
                             // Check if last parameter is greater then the first one.
-                            while (newLpar > newFpar)
+                            for (int aStep = 0; newLpar > newFpar; StepLimit.Next(ref aStep))
                             {
                                 newLpar -= period;
                             }

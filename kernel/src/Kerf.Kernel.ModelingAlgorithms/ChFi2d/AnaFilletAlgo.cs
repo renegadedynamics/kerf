@@ -73,12 +73,12 @@ internal sealed class AnaFilletAlgo
         // Compare angles between vectors to middle point and to the end point.
         Vector3D startv = new(center, start), endv = new(center, end), middlev = new(center, m);
         double middlea = startv.AngleWithRef(middlev, new Vector3D(plane.Direction));
-        while (middlea < 0.0)
+        for (int aStep = 0; middlea < 0.0; StepLimit.Next(ref aStep))
         {
             middlea += 2.0 * M_PI;
         }
         double enda = startv.AngleWithRef(endv, new Vector3D(plane.Direction));
-        while (enda < 0.0)
+        for (int aStep = 0; enda < 0.0; StepLimit.Next(ref aStep))
         {
             enda += 2.0 * M_PI;
         }

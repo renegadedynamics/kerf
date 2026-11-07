@@ -275,12 +275,12 @@ internal class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyIm
                 theImpCurveDomain.EquivalentParameters(out param1_origine, out param1_fin);
                 double periode = param1_fin - param1_origine;
 
-                while (param1_inf < param1_origine)
+                for (int aStep = 0; param1_inf < param1_origine; StepLimit.Next(ref aStep))
                 {
                     param1_inf += periode;
                 }
 
-                while (param1_sup < param1_origine)
+                for (int aStep = 0; param1_sup < param1_origine; StepLimit.Next(ref aStep))
                 {
                     param1_sup += periode;
                 }

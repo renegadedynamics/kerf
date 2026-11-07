@@ -702,11 +702,11 @@ internal sealed class BSpline : Transient
         if (_periodic)
         {
             period = _flatknots.Value(_flatknots.Upper() - _deg) - _flatknots.Value(_deg + 1);
-            while (parameter > _flatknots.Value(_flatknots.Upper() - _deg))
+            for (int aStep = 0; parameter > _flatknots.Value(_flatknots.Upper() - _deg); StepLimit.Next(ref aStep))
             {
                 parameter -= period;
             }
-            while (parameter < _flatknots.Value((_deg + 1)))
+            for (int aStep = 0; parameter < _flatknots.Value((_deg + 1)); StepLimit.Next(ref aStep))
             {
                 parameter += period;
             }

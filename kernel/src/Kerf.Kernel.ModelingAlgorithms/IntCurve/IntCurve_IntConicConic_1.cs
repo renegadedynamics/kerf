@@ -5,6 +5,7 @@
 // a modifier le cas de 2 points confondus ( Insert a la place d'append ? )
 
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
@@ -750,11 +751,11 @@ internal sealed partial class IntConicConic
             deltat = Math.BitDecrement(PIpPI);
         }
 
-        while (c1Domain.Binf >= PIpPI)
+        for (int aStep = 0; c1Domain.Binf >= PIpPI; StepLimit.Next(ref aStep))
         {
             c1Domain.Binf -= PIpPI;
         }
-        while (c1Domain.Binf < 0.0)
+        for (int aStep = 0; c1Domain.Binf < 0.0; StepLimit.Next(ref aStep))
         {
             c1Domain.Binf += PIpPI;
         }
@@ -768,11 +769,11 @@ internal sealed partial class IntConicConic
             deltat = Math.BitDecrement(PIpPI);
         }
 
-        while (c2Domain.Binf >= PIpPI)
+        for (int aStep = 0; c2Domain.Binf >= PIpPI; StepLimit.Next(ref aStep))
         {
             c2Domain.Binf -= PIpPI;
         }
-        while (c2Domain.Binf < 0.0)
+        for (int aStep = 0; c2Domain.Binf < 0.0; StepLimit.Next(ref aStep))
         {
             c2Domain.Binf += PIpPI;
         }
@@ -2074,11 +2075,11 @@ internal sealed partial class IntConicConic
 
         PeriodicInterval cDomain = new(CIRC_Domain);
         double deltat = cDomain.Bsup - cDomain.Binf;
-        while (cDomain.Binf >= PIpPI)
+        for (int aStep = 0; cDomain.Binf >= PIpPI; StepLimit.Next(ref aStep))
         {
             cDomain.Binf -= PIpPI;
         }
-        while (cDomain.Binf < 0.0)
+        for (int aStep = 0; cDomain.Binf < 0.0; StepLimit.Next(ref aStep))
         {
             cDomain.Binf += PIpPI;
         }
@@ -2105,11 +2106,11 @@ internal sealed partial class IntConicConic
             cDomain.Bsup = bsupModif - t;
         }
         deltat = cDomain.Bsup - cDomain.Binf;
-        while (cDomain.Binf >= PIpPI)
+        for (int aStep = 0; cDomain.Binf >= PIpPI; StepLimit.Next(ref aStep))
         {
             cDomain.Binf -= PIpPI;
         }
-        while (cDomain.Binf < 0.0)
+        for (int aStep = 0; cDomain.Binf < 0.0; StepLimit.Next(ref aStep))
         {
             cDomain.Binf += PIpPI;
         }
@@ -2645,11 +2646,11 @@ internal sealed partial class IntConicConic
         //
         PeriodicInterval eDomain = new(de);
         double deltat = eDomain.Bsup - eDomain.Binf;
-        while (eDomain.Binf >= PIpPI)
+        for (int aStep = 0; eDomain.Binf >= PIpPI; StepLimit.Next(ref aStep))
         {
             eDomain.Binf -= PIpPI;
         }
-        while (eDomain.Binf < 0.0)
+        for (int aStep = 0; eDomain.Binf < 0.0; StepLimit.Next(ref aStep))
         {
             eDomain.Binf += PIpPI;
         }
@@ -2673,11 +2674,11 @@ internal sealed partial class IntConicConic
             eDomain.Bsup = bsupModif - t;
         }
         deltat = eDomain.Bsup - eDomain.Binf;
-        while (eDomain.Binf >= PIpPI)
+        for (int aStep = 0; eDomain.Binf >= PIpPI; StepLimit.Next(ref aStep))
         {
             eDomain.Binf -= PIpPI;
         }
-        while (eDomain.Binf < 0.0)
+        for (int aStep = 0; eDomain.Binf < 0.0; StepLimit.Next(ref aStep))
         {
             eDomain.Binf += PIpPI;
         }

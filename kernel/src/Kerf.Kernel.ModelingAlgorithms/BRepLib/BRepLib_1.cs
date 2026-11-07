@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -79,7 +80,8 @@ internal static partial class BrepLibrary
         bool isOut = false;
         double uIn = startU;
         double uOut = uIn;
-        while (!isOut)
+        // Kerf: a step too small to move the parameter (decision 22501)
+        for (int aStep = 0; !isOut; StepLimit.Next(ref aStep))
         {
             uIn = uOut;
             uOut += step;

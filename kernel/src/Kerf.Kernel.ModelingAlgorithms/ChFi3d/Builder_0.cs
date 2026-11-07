@@ -42,11 +42,11 @@ internal static partial class Builder_0
     {
         double period = uLast - uFirst;
         double u = U;
-        while (eps < (uFirst - u))
+        for (int aStep = 0; eps < (uFirst - u); StepLimit.Next(ref aStep))
         {
             u += period;
         }
-        while (eps > (uLast - u))
+        for (int aStep = 0; eps > (uLast - u); StepLimit.Next(ref aStep))
         {
             u -= period;
         }

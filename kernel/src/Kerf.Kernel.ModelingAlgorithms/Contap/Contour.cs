@@ -238,11 +238,11 @@ internal sealed class Contour
             lmf = M_PI + M_PI; //-- myHS1->UPeriod();
             f = myHS1.FirstUParameter();
             l = myHS1.LastUParameter();
-            while (u1 < f)
+            for (int aStep = 0; u1 < f; StepLimit.Next(ref aStep))
             {
                 u1 += lmf;
             }
-            while (u1 > l)
+            for (int aStep = 0; u1 > l; StepLimit.Next(ref aStep))
             {
                 u1 -= lmf;
             }
@@ -252,11 +252,11 @@ internal sealed class Contour
             lmf = M_PI + M_PI; //-- myHS1->VPeriod();
             f = myHS1.FirstVParameter();
             l = myHS1.LastVParameter();
-            while (v1 < f)
+            for (int aStep = 0; v1 < f; StepLimit.Next(ref aStep))
             {
                 v1 += lmf;
             }
-            while (v1 > l)
+            for (int aStep = 0; v1 > l; StepLimit.Next(ref aStep))
             {
                 v1 -= lmf;
             }
