@@ -2234,3 +2234,5 @@ Found by unit 12J:
 | Where | What | Effect | Triage |
 |---|---|---|---|
 | `BRepExtrema_DistShapeShape` | Only stationary points from a grid: faces crossing along a closed curve inside both aren't found | A positive distance between parts that intersect (#1123) | fixed (decision 22601) |
+| `BRepMesh`, a torus's grid | Parameters from the boundary's points, and no control of the deviation | A mesh 1.42 from the surface for 0.45 asked (#1444) | fixed (decision 22604) |
+| `BRepMesh`, a sphere's grid | Long triangles beside the seam, and no control of the deviation | 1.69 times the deflection on 3% of the triangles, at some deflections | **open**: the same fix doubles those meshes and grows others by 28%; for the owner (decision 22604) |

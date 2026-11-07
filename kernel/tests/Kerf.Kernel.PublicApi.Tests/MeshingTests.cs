@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Construction;
 using Kerf.Exchange;
 using Kerf.Geometry;
 using Kerf.Measurement;
@@ -30,6 +31,46 @@ public class MeshingTests
             }
         }
         Assert.All(all, t => Assert.InRange(Math.Max(t.A, Math.Max(t.B, t.C)), 0, mesh.NodeCount - 1));
+    }
+
+    // The worst of a mesh's triangles' centres and edges' midpoints, measured from the surface
+    private static double Deviation(ShapeMesh mesh)
+    {
+        double worst = 0;
+        foreach (FaceMesh face in mesh.Faces)
+        {
+            Point3D[] nodes = face.GetNodes();
+            foreach (Triangle t in face.GetTriangles())
+            {
+                Point3D a = nodes[t.A], b = nodes[t.B], c = nodes[t.C];
+                Point3D[] samples =
+                [
+                    new((a.X + b.X + c.X) / 3, (a.Y + b.Y + c.Y) / 3, (a.Z + b.Z + c.Z) / 3),
+                    new((a.X + b.X) / 2, (a.Y + b.Y) / 2, (a.Z + b.Z) / 2),
+                    new((b.X + c.X) / 2, (b.Y + c.Y) / 2, (b.Z + c.Z) / 2),
+                    new((a.X + c.X) / 2, (a.Y + c.Y) / 2, (a.Z + c.Z) / 2),
+                ];
+                foreach (Point3D sample in samples)
+                {
+                    worst = Math.Max(worst, face.Face.ParametersOf(sample, 1e-6).Gap);
+                }
+            }
+        }
+        return worst;
+    }
+
+    [Fact]
+    public void A_thin_toruss_mesh_keeps_to_the_deflection_asked()
+    {
+        // OCCT #1444: 1.42 from the surface for 0.45 asked, and nothing said
+        Shape face = Brep.Read(new MemoryStream(Fixtures.Bytes("thin-torus-face"))).Value;
+        ShapeMesh mesh = face.Mesh(new MeshOptions { LinearDeflection = 0.45, AngularDeflection = 0.27, MinSize = 0.2 }).Value;
+        Assert.InRange(Deviation(mesh), 0, 0.45);
+
+        // A torus whose grid meets it isn't refined: 26 by 26 quadrilaterals, two triangles each
+        ShapeMesh plain = Solid.Torus(10, 2).Value.Shape.Mesh(new MeshOptions { LinearDeflection = 0.281, AngularDeflection = 0.5 }).Value;
+        Assert.Equal(2 * 26 * 26, plain.TriangleCount);
+        Assert.InRange(Deviation(plain), 0, 0.281);
     }
 
     [Fact]
