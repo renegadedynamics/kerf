@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **`GeneralTransform3D.ToTransform` accepts a rotation and a uniform scale given as a matrix,** which it refused (decision 22607).
 - **A cone from a STEP file whose seam leans by a rounding error now meshes:** it had no triangles (decision 22605).
 - **A thin torus's mesh keeps to the deflection asked:** it could be three times out, and say nothing (decision 22604).
 - **An extrusion along its own plane, a loft of sections in one plane and a sweep along the section's plane now fail,** carrying the empty solid, where they reported success (decision 22602).
