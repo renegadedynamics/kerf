@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Solid.Extrude` along the profile's plane and `Solid.MakeLoft` of sections in one plane now fail,** where they gave a solid of no volume.
 - **Round all of a cube's edges to half its side and get a sphere, all of a bar's for a capsule,** and likewise slanted ends, a chain round a top, and an L's top. `MaxFillet` gives the radius that just fits, where it gave a little less.
 
 - **Round a disc's rim to its full height, make a full round, a hemisphere or a sphere from a short cylinder:** these used to fail, and now give exact tori and spheres.

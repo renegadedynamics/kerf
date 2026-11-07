@@ -170,7 +170,11 @@ internal static partial class TopoUtil
         }
         // The loft no longer writes pcurves into the sections' edges (the kernel's unit 10H3), so they aren't copied
         var sections = list.Where(o => o.IsVertex() || o.IsWire()).Select(o => o).ToList();
-        return Failures.Get(Sweeps.Loft(sections, new LoftOptions { MakeSolid = filled, Ruled = ruled, CheckResult = false }), () => "loft").Shape;
+        var loft = Failures.Get(Sweeps.Loft(sections, new LoftOptions { MakeSolid = filled, Ruled = ruled, CheckResult = false }), () => "loft").Shape;
+        // Sections in one plane make a "valid" solid of nothing (decision 22602)
+        if (filled && Math.Abs(loft.IntegrateVolume()) <= 1e-10 * Math.Pow(loft.IntegrateArea(), 1.5))
+            throw Failures.Expected(Sweeps.NoVolume, "The loft encloses no volume: its sections lie in one plane.", shapes: loft);
+        return loft;
     }
 
     /// <summary>A planar face from an outer wire and holes.</summary>

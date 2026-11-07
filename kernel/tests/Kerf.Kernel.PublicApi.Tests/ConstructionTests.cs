@@ -2,6 +2,7 @@
 
 using Kerf.Construction;
 using Kerf.Geometry;
+using Kerf.Measurement;
 using Kerf.Topology;
 
 namespace Kerf.Kernel.PublicApi.Tests;
@@ -273,5 +274,41 @@ public class ConstructionTests
         Assert.NotEmpty(onto.Value);
         Wire away = Wire.Polygon([new(50, 50, 20), new(52, 50, 20), new(52, 52, 20)], closed: true).Value;
         Assert.Equal(ShapeProjections.ProjectionEmpty, ShapeProjections.Project(away, box, Direction3D.UnitZ).Error!.Code);
+    }
+
+    [Fact]
+    public void A_solid_of_no_volume_is_a_failure_carrying_it()
+    {
+        Wire square = Wire.Polygon([new(0, 0, 0), new(10, 0, 0), new(10, 10, 0), new(0, 10, 0)], closed: true).Value;
+        Wire inner = Wire.Polygon([new(2, 2, 0), new(8, 2, 0), new(8, 8, 0), new(2, 8, 0)], closed: true).Value;
+        Wire path = Wire.Polygon([new(0, 0, 0), new(20, 0, 0)], closed: false).Value;
+        Face face = Face.FromWire(square).Value;
+
+        void Empty(Result<Built<Shape>> made)
+        {
+            Assert.True(made.IsFailure);
+            Assert.True(made.TryGetInvalid(out Built<Shape>? shape));
+            Assert.Equal(0, shape.Shape.IntegrateVolume(), 1e-6);
+        }
+
+        // The direction in the profile's plane
+        Result<Built<Shape>> flat = face.Extrude(new Vector3D(1, 0, 0));
+        Empty(flat);
+        Assert.Equal(Sweeps.NoVolume, flat.Error!.Code);
+        // Sections in one plane
+        Result<Built<Shape>> loft = Sweeps.Loft([square, inner], new LoftOptions { MakeSolid = true });
+        Empty(loft);
+        Assert.Equal(Sweeps.NoVolume, loft.Error!.Code);
+        // A path in the section's plane
+        Empty(Sweeps.Sweep(square, path, new SweepOptions { MakeSolid = true }));
+        Empty(Sweeps.Sweep(square, path, new SweepOptions { MakeSolid = true, Frame = SweepFrame.Fixed, FixedFrame = Frame3D.World, TryOtherFrames = false }));
+
+        // What's left is its volume, however thin: base times height
+        Assert.Equal(100 * 1e-6, face.Extrude(new Vector3D(1, 0, 1e-6)).Value.Shape.IntegrateVolume(), 1e-9);
+        Assert.Equal(300, face.Extrude(new Vector3D(0, 0, 3)).Value.Shape.IntegrateVolume(), 1e-9);
+        // Asked not to check, it comes back as it was
+        Assert.True(face.Extrude(new Vector3D(1, 0, 0), new ExtrudeOptions { CheckResult = false }).IsSuccess);
+        // The profile turned to the path has its volume: area times length
+        Assert.Equal(100 * 20, Sweeps.Sweep(square, path, new SweepOptions { MakeSolid = true, WithCorrection = true, TryOtherFrames = false }).Value.Shape.IntegrateVolume(), 1e-6);
     }
 }

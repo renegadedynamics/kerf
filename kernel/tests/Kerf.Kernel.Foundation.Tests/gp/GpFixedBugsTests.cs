@@ -208,4 +208,34 @@ public class GpFixedBugsTests
         }
         Assert.Equal(0.0, aD2.Direction.XY().Dot(x), Tol);
     }
+
+    [Fact]
+    public void A_general_transform_from_a_matrix_inverts_and_converts_when_it_is_a_similarity()
+    {
+        // OCCT #1355: a quarter turn about Z, twice the size, moved by (1, 2, 3), given as a 4 by 4 matrix
+        double[] matrix = [0, -2, 0, 1, 2, 0, 0, 2, 0, 0, 2, 3, 0, 0, 0, 1];
+        GeneralTransform3D general = new GeneralTransform3D().WithMat4(matrix);
+        Point3D moved = new Point3D(1, 0, 0).Transformed(general.ToTransform());
+        Assert.Equal(1, moved.X, 1e-12);
+        Assert.Equal(4, moved.Y, 1e-12);
+        Assert.Equal(3, moved.Z, 1e-12);
+        Assert.Equal(2, general.ToTransform().ScaleFactor, 1e-12);
+
+        // The inverse takes it back
+        Xyz back = new Xyz(1, 4, 3);
+        general.Inverted().Transforms(ref back);
+        Assert.Equal(1, back.X(), 1e-12);
+        Assert.Equal(0, back.Y(), 1e-12);
+        Assert.Equal(0, back.Z(), 1e-12);
+
+        // A mirror is one, with a negative scale
+        Point3D mirrored = new Point3D(1, 2, 3).Transformed(new GeneralTransform3D().WithMat4([-1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1]).ToTransform());
+        Assert.Equal(-1, mirrored.X, 1e-12);
+        Assert.Equal(-3, mirrored.Z, 1e-12);
+
+        // A shear and a stretch in one direction aren't, and neither is a singular matrix
+        Assert.Throws<InvalidOperationException>(() => new GeneralTransform3D().WithMat4([1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]).ToTransform());
+        Assert.Throws<InvalidOperationException>(() => new GeneralTransform3D().WithMat4([2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]).ToTransform());
+        Assert.Throws<InvalidOperationException>(() => new GeneralTransform3D().WithMat4([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]).ToTransform());
+    }
 }

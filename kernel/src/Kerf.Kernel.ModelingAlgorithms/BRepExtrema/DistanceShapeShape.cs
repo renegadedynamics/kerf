@@ -7,6 +7,8 @@ using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
+using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -925,6 +927,11 @@ internal sealed class DistanceShapeShape
                 }
             }
 
+            if (Math.Abs(_distRef) > _eps)
+            {
+                FindFacesCrossing();
+            }
+
             //  Modified by Sergey KHROMOV - Tue Mar  6 11:55:03 2001 Begin
             // OCCT: the index isn't stepped back after a removal, so the solution after a removed one is not checked
             // (occt-issues.md).
@@ -942,6 +949,102 @@ internal sealed class DistanceShapeShape
         }
 
         return _isDone;
+    }
+
+    /// <summary>
+    /// Faces whose boxes overlap, looked at for a section. The extrema above look for points where the distance is
+    /// stationary, from a grid, so faces that cross along a closed curve inside both of them, with no edge or vertex
+    /// involved, can be missed altogether: OCCT #1123 reports 0.083 between parts that intersect. Not OCCT's (decision 1926).
+    /// </summary>
+    private void FindFacesCrossing()
+    {
+        IntersectionContext? context = null;
+        for (int i = 1; i <= _mapF1.Count; i++)
+        {
+            Box box1 = _bf1.Value(i);
+            if (box1.IsVoid || box1.IsOpen)
+            {
+                continue;
+            }
+
+            for (int j = 1; j <= _mapF2.Count; j++)
+            {
+                Box box2 = _bf2.Value(j);
+                if (box2.IsVoid || box2.IsOpen || box1.Distance(box2) > 0)
+                {
+                    continue;
+                }
+
+                context ??= new IntersectionContext();
+                Face face1 = ShapeCasts.Face(_mapF1[i - 1]);
+                Face face2 = ShapeCasts.Face(_mapF2[j - 1]);
+                if (Tool.Surface(face1) is null || Tool.Surface(face2) is null)
+                {
+                    continue;
+                }
+
+                if (FacesCross(face1, face2, context, out Point3D point))
+                {
+                    context.ProjPS(face1).Perform(point);
+                    context.ProjPS(face1).LowerDistanceParameters(out double u1, out double v1);
+                    context.ProjPS(face2).Perform(point);
+                    context.ProjPS(face2).LowerDistanceParameters(out double u2, out double v2);
+                    _solutionsShape1.Clear();
+                    _solutionsShape2.Clear();
+                    _solutionsShape1.Append(new SolutionElem(0, point, SupportType.IsInFace, face1, u1, v1));
+                    _solutionsShape2.Append(new SolutionElem(0, point, SupportType.IsInFace, face2, u2, v2));
+                    _distRef = 0;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// <summary>Whether a section curve of the two faces has a point in both, nearer to both than the distance so far.</summary>
+    private bool FacesCross(in Face face1, in Face face2, IntersectionContext context, out Point3D point)
+    {
+        const int samples = 16;
+        point = default;
+        var intersection = new FaceFace();
+        intersection.SetContext(context);
+        try
+        {
+            intersection.Perform(face1, face2);
+            if (!intersection.IsDone)
+            {
+                return false;
+            }
+
+            NCollection_Sequence<IntersectionCurve> lines = intersection.InternalLines();
+            for (int c = 1; c <= lines.Length(); c++)
+            {
+                IntersectionCurve line = lines.Value(c);
+                double first = 0, last = 0;
+                Point3D firstPoint = default, lastPoint = default;
+                double tolerance = Math.Max(line.Tolerance(), global::Kerf.Engine.Foundation.Precision.Confusion());
+                if (tolerance >= _distRef || !line.HasBounds() || !line.Bounds(ref first, ref last, ref firstPoint, ref lastPoint))
+                {
+                    continue;
+                }
+
+                for (int k = 0; k <= samples; k++)
+                {
+                    Point3D candidate = default;
+                    if (line.D0(first + (last - first) * k / samples, ref candidate)
+                        && context.IsValidPointForFaces(candidate, face1, face2, tolerance))
+                    {
+                        point = candidate;
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
+        {
+            // The intersection couldn't be worked out, which says nothing about the distance found
+        }
+
+        return false;
     }
 
     /// <summary>True if the minimum distance is found.</summary>

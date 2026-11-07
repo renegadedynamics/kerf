@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 36 already fixed, 88 not relevant, 53 applies, 2 not reproduced, 45 can't tell (unit 12I; [corpus-failures.md](corpus-failures.md) sorts those by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 2 already fixed, 57 not relevant, 11 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 46 already fixed, 88 not relevant, 43 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -25,23 +25,21 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1659, #1643, #1629 | A Cut that removes nothing or comes out with a solid inside out, a Common empty. Sections left open or the wrong way in. **Now reported as failures (decisions 1860 to 1868); the wrong answers remain.** The figures once given here, 5271.23 from 5264.71 and 1773362 from 1750653, were the default integration's errors (decision 1865) | Reproduced | L for the causes |
+| Silent wrong answer | #1629 | A Cut that comes out with a solid inside out. **Reported as a failure (decision 1863); the wrong answer remains.** #1659 and #1643 are now right (decisions 1935, 1937) | Reproduced | L for the cause |
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
-| Silent wrong answer | #1039, #245 | A face/solid Common with an edge missing, 86898 for about 70000: not reported, as a shell has no rule (decision 1862). A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
-| Silent wrong answer | #1123 | A minimum distance of 0.083 between parts that intersect | Reproduced | M |
+| Silent wrong answer | #245 | A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
-| Silent wrong answer | #1444, #572 | A mesh of 1.43 deflection for 0.45; a cone with no triangles, a warning only | Reproduced | M each |
+| Silent wrong answer | A sphere | A sphere's mesh 1.69 times its deflection on 3% of its triangles (decision 1929) | Reproduced | S; **for the owner**: the fix costs triangles |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
-| Silent wrong answer | Upstream `53706f78a8` | Rational section weights in `GeomFill_Profiler`; Newton backtracking; the other two parts are ported (decision 1822) | Upstream fix, not checked here | M |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
 | Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
 | Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **Not ported, the owner's decision** (1892, 1901); done another way for straight edges (1847) |
+| Failure on an ordinary shape | corpus: offset/shape_type_i | A cone's offset, with its apex: `Solid.Cone(5, 0, 12).Offset(-1)` with round joins, and a cone with its apex at the bottom inwards with either join or outwards with mitres. Failures since decision 1918; found by 12J, not fixed: with mitres the first is right (107.757, by similar triangles), so a retry with mitres inwards would serve it, but that needs decision 1918's check, which this branch didn't have. The apex at the bottom is the enlarged face keeping its far side, past the base's plane, in `BuildOffsetByInter`; its box reaches 3.8 million | Reproduced | M; the retry S |
 | Failure on an ordinary shape | corpus: offset/wire_* | 77 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
-| Unintuitive API | #1632 | MakeChamfer doesn't report which contours failed | Read | S |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
-| Unintuitive API | #1618, the rest | `Point3D` and `MakeBox` take NaN. Directions refuse it (decision 1820) | Reproduced | S to M |
+| Unintuitive API | #1618, the rest | `Point3D` takes NaN, so `Vertex.At` does. `Solid.Box` refuses it, checked through the public layer (and decision 1820 for directions) | Reproduced | S to M |
 | Costs time only | #1622, #1697 | Lipschitz estimate on `GlobOptFuncCCC2` too large; a mesh's stated deflection too large, which inflates a box from it | Read | For 11Q |
 | Costs time only | #1495 | `StoreData`'s walk could spin | Read | S |
 
@@ -55,12 +53,24 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 ## For unit 11S: results of no volume reported as success
 
-From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's plane (volume 0, invalid, and no failure); a `Solid.MakeLoft` of two sections in one plane (0, "valid"); the kernel's `Sweeps.Sweep` with `SweepFrame.Fixed` and `WithCorrection`, or along the section's plane.
+From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's plane (volume 0, invalid, and no failure); a `Solid.MakeLoft` of two sections in one plane (0, "valid"); the kernel's `Sweeps.Sweep` with `SweepFrame.Fixed` and `WithCorrection`, or along the section's plane. **All fixed by decision 1927;** `WithCorrection` turns the section to the path, so it has its volume, 2000 for a 10 by 10 square along 20, and needs nothing.
 
 ## Fixed so far
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 22611 |
+| `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 22612 |
+| #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 22610 |
+| #1039 | A section's closed curve lost between a sphere and a slice at a shallow angle, 86898 for 73353 | 22608 |
+| #1632, #1431 | A chamfer not saying which contours failed; the same 2D corner chamfered twice an internal fault | 22609 |
+| #1039 | A slice's Common with a model, 86898 for about 70000, reported as a success: now a failure | 22606 |
+| #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 22607 |
+| #572 | A cone from a STEP file with no triangles | 22605 |
+| #1444 | A thin torus's mesh 1.42 from the surface for 0.45 asked | 22604 |
+| `53706f78a8` | A loft's rational section changing shape, for weights that agree part way through being scaled | 22603 |
+| Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 22602 |
+| #1123 | A minimum distance of 0.083 between parts that intersect | 22601 |
 | #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 1860, 1863, 1866 |
 | #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
 | #1613 | A fuse dropping a compound of reversed solids | 1832 |
@@ -165,16 +175,16 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1671 | IntWalk_PWalking's step is relative to the face's parameter range, so sections on long helical faces lose accuracy and booleans go wrong | can't tell | Needs the issue's attached model; not reproduced in this pass (the step is relative, read) |
 | 1665 | Fillet failure on a simple solid | can't tell | Tried on its file: it reads, valid. The issue doesn't say which edges |
 | 1661 | Documentation - Add AGENTS.md that points coding assistants to the contribution rules | not relevant | OCCT's documentation or tests only |
-| 1659 | Boolean cut silently returns an imprint instead of a cut: plane/B-spline section loop left open | applies | Reproduced on its files: Cut 5271.23 from 5264.71, Common empty, two loose vertices in the section, no error |
+| 1659 | Boolean cut silently returns an imprint instead of a cut: plane/B-spline section loop left open | already fixed | Decision 1935: its files, Cut 4903.29 and Common 375.21, adding to 5278.50, 5 faces, a closed section |
 | 1658 | `SetColor()` does not recolor seam / degenerated / boundary edges of a shape | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1652 | Data Exchange, STEP Import - Spherical/toroidal CURVE_BOUNDED_SURFACE with a clockwise OUTER_BOUNDARY_CURVE is read as the complement of the patch sin | can't tell | CURVE_BOUNDED_SURFACE read: same reader; needs a file |
 | 1651 | GeomLProp_SLProps: MinCurvature/MaxCurvature/MeanCurvature/GaussianCurvature return the previous value on the first call after construction or SetPara | already fixed | Kerf computes before reading: `SLProps.RequireCurvature` (decision in phase 2); the port's comment says so |
-| 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | applies | Reproduced from its numbers, baked sections: Fuse 1773362, Common 0, Cut 1773362 from 1750653, no error. Its located sections weren't tried |
+| 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | already fixed | Decision 1937: right the other way round, which is now tried; the cause in one order isn't found |
 | 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | applies | Reproduced on its files: 10596.3 for 29799.9, with an edge's tolerance of 190, and valid. Its other order is right. The public fillet now fails (decision 1833); the cause isn't found |
 | 1638 | Segfault in STEPCAFControl_Reader::findReprItems when a representation has no items | not relevant | Null items natively a crash; the port's STEP layer reports (decision 1050s) |
 | 1637 | GCC 16 miscompiles BRepClass3d_SClassifier::Perform in 7.9.x, classifying a point on an edge segfaults | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1633 | BRepAlgoAPI_Common returns an empty result (and Cut removes nothing) for two overlapping cylinders whose axes are about 1 degree apart | already fixed | Decision 1783; reproduced (Common 0 at 1°) and fixed: the walk ran on past both bounds |
-| 1632 | Modeling Algorithms - Expose faulty contours and vertices on BRepFilletAPI_MakeChamfer | applies | An API gap: MakeChamfer doesn't report its faulty contours. Small |
+| 1632 | Modeling Algorithms - Expose faulty contours and vertices on BRepFilletAPI_MakeChamfer | already fixed | Decision 1933 |
 | 1631 | Modeling Algorithms - BRepFilletAPI_MakeFillet loses external radius law and throws in Build | already fixed | Reproduced: works, 7962.8; decision 1676 fixed `ChFiDS_FilSpine.Reset` |
 | 1630 | Modeling - BRepOffsetAPI_MakePipe access violation for cubic spine and circular face | applies | Reproduced: no crash, but `ApiMakePipe.Shape()` refuses: a cubic spine and a circle make no pipe |
 | 1629 | Boolean cut of a helical sweep fused with a cylinder returns the argument uncut plus an inverted solid, silently, at some depths | applies | Reproduced on its files: Cut gives two solids totalling 7705.48, the block's volume, no error |
@@ -224,9 +234,9 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1460 | Data Exchange, STEP Export - Natural bound written as VERTEX_LOOP drops the seam of a trimmed periodic face | can't tell | Same writer; not tried |
 | 1458 | Rename TKCAF and TKMesh-related toolkits to make them fit to the general TK-naming rule | not relevant | Build, packaging or repository matter: Kerf has its own build |
 | 1456 | BOPTools_AlgoTools3D::DoSplitSEAMOnFace(edge, face) SIGSEGVs on a null pcurve (unchecked BRep_Tool::CurveOnSurface, unlike its 3-argument sibling) | not relevant | A null dereference natively; here an exception, and BOPAlgo reports it |
-| 1444 | Bad meshing of torus-like shapes with some specific curvatures | applies | Reproduced on its file: a deflection of 1.43 for 0.45 asked, silently |
+| 1444 | Bad meshing of torus-like shapes with some specific curvatures | already fixed | Decision 1929: its file, 0.28 measured for 0.45 asked. A sphere is left: see the decision |
 | 1434 | GeomTools_Curve2dSet::Add / GeomTools_SurfaceSet::Add accept a null handle and defer the crash to Write(), unlike the CurveSet sibling | not relevant | Natively a crash on a null handle: the port's analyzers refuse null (nullable) |
-| 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | applies | Natively a crash; here a null dereference becomes an exception. Small |
+| 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | already fixed | Decision 1933: `fillet.connexion-error`, by a test |
 | 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering |
 | 1429 | HLRAlgo_PolyHidingData.hxx:43:5: error: 'gp_XYZ' does not name a type | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1427 | Failing fillet on tapered surface | applies | Reproduced on its files: `tapered_2_9` fails where `tapered_2_8` works |
@@ -255,7 +265,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1358 | Visualization - dynamic highlight results are not cleared by AIS_InteractiveContext::Redisplay() | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1357 | Modeling Algorithms - ASSERT failed in BRepTools_History::AddGenerated() in debug mode | not relevant | A debug-build assertion, which the port doesn't have |
 | 1356 | Foundation Classes, OSD_Host::InternetAddress() - possible NULL dereference on copying gethostbyname() result | not relevant | OSD_Host isn't ported |
-| 1355 | Foundation - gp_GTrsf::SetVectorialPart sets scale to 0.0 causing non-invertable matrix | applies | Read: `WithVectorialPart` sets the scale to 0 as the issue says, so such a transform can't invert. Small |
+| 1355 | Foundation - gp_GTrsf::SetVectorialPart sets scale to 0.0 causing non-invertable matrix | already fixed | Decision 1931: conversion now works; inversion already did, as it uses the matrix alone |
 | 1354 | Visualization - update links of highlight drawers in SetAttributes | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1353 | Tests - move tests bugs modalg_5 bug24157_* from group bugs modalg_5 to perf | not relevant | OCCT's documentation or tests only |
 | 1352 | Mesh -  tricheck command incorrectly reports error on internal face | not relevant | Draw's own command or harness: Draw-lite has its own |
@@ -289,7 +299,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1161 | Poor PSO_Perform performance | not relevant | PSO's speed: 11Q |
 | 1138 | Missing shape labels for certain datum labels | not relevant | Datum labels in the assembly document, which isn't ported ([unported.md](unported.md)) |
 | 1124 | Incorrectly computed sections | applies | Reproduced on its files: with approximation off, case 4 has 0.004 of its 40.53 length and two loose vertices, and with it on all four close. `BooleanOptions` and `Kerf.Modeling` now approximate (decision 1836). The cause with it off isn't found |
-| 1123 | Incorrect minimum distance with intersecting parts | applies | Reproduced on its files, with its figures: 6.08e-5 and 0.083 where the parts intersect |
+| 1123 | Incorrect minimum distance with intersecting parts | already fixed | Decision 1926: its four files through `Distance`: 0, 0, 8e-15 and 2e-15, and a Common of 2.96, 2.16, 1.48 and 0.92 |
 | 1107 | mkoffsetshape bad geometry (wrench.brep) | applies | Reproduced on its file: invalid, two open shells. The public offset fails |
 | 1106 | mkoffsetshape bad geometry (pacman.brep) | applies | Reproduced on its file: invalid. The public offset fails |
 | 1081 | Conversion STP AP242 to GLB | applies | Reproduced on its file: invalid, and 106 s and 1.08M triangles to mesh on a loaded machine |
@@ -298,7 +308,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1053 | Reserved identifier violation (header guards) | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1043 | Unexpected memory footprint differences | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1041 | Boolean fuse operation fails when rotation is involved | can't tell | Needs the issue's attached model; not reproduced in this pass (Boolean with rotation) |
-| 1039 | Missing intersection edges when performing face-model BREP intersection | applies | Reproduced on its files: the slice's area is 86898 where its neighbour's is 70013, with one more edge |
+| 1039 | Missing intersection edges when performing face-model BREP intersection | already fixed | Decisions 1932 and 1934: its files, Common and Cut add up to the slice's area, and the section has no loose ends |
 | 1036 | Inconsistent Generated/Modified/IsDeleted implementations across BRepBuilderAPI classes Summary | applies | A real inconsistency in history across makers; a design job, partly done by Kerf.Modeling's own history. Medium |
 | 994 | OFFSET_SURFACE did not parse correctly | already fixed | Reproduced on its file: 35 of 36 faces, and the shell open. The basis is C0 at a knot, so no surface was made. Fixed: decision 1838; 36 faces, 4 valid solids, and it meshes |
 | 986 | Provide an approach to tracking Topo_Shape after using ShapeFix_Shape | not relevant | A request for a new feature, not a defect |
@@ -321,7 +331,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 639 | Sweeping fail with RightCorner transition mode | applies | Reproduced on its files: not done. A failure, not a wrong shape |
 | 588 | Extrema between two circular curves incorrect | already fixed | Tried on five of its cases: the shortest extremum matches `distmini` on each. Its patch's flag for infinitely many isn't compared |
 | 575 | Incorrect HLR result | can't tell | Needs the issue's attached model; not reproduced in this pass (hidden lines) |
-| 572 | Cone surface cannot be triangulated | applies | Reproduced on its file: no triangles, valid face. The mesher's structure ends with no elements; not a range clipped by rounding, which was tried |
+| 572 | Cone surface cannot be triangulated | already fixed | Decision 1930: its file, 342 triangles at 0.091 for 0.1 asked |
 | 568 | OCC+VTK：The program crashed in debug mode | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 553 | ElCLib::AdjustPeriodic() failed to add a period | applies | Read: `AdjustPeriodic` uses the same test; needs a very small Preci. Small but delicate |
 | 541 | Origin and color problems with SolidWorks STEP models. | not relevant | Origin and colours through the assembly document, which isn't ported ([unported.md](unported.md)) |
@@ -381,7 +391,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 
 | Commit | What it says | Status | Why |
 |---|---|---|---|
-| `53706f78a8` | Modeling - Fix intersection, fitting and profile regressions (#1653) | applies | Ranked above; not ported |
+| `53706f78a8` | Modeling - Fix intersection, fitting and profile regressions (#1653) | applies | The closed polygon and `LeastSquare` (decision 1822) and the profile's weights (decision 1928) are ported. Left: Newton's line search and `IntCurveSurface`'s scaled transitions, not seen to matter |
 | `8f95c78c7c` | Data Exchange - Support companion streams and improve STEP PMI handling (#1647) | applies | STEP PMI units and references; companion streams are a feature. Small pieces |
 | `71658f6c8f` | Modeling - Fix geometry evaluation and data exchange regressions (#1644) | applies | The offset surface and `ApproxInt` are ported (decisions 1811, 1812); rest to read |
 | `8f817f5da5` | Modeling - Fix numerical accuracy and geometry differences (#1640) | applies | Ranked above; large |
@@ -433,7 +443,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | `4478114223` | Application Framework - Remove obsolete UTL package (#1474) | not relevant | Not ported |
 | `e4da2bbd16` | Modeling - Modernize BRepGProp_Gauss integration storage (#1473) | not relevant | Storage |
 | `3ed71f8914` | Data Exchange, STEP - add FieldKind enum and fix field handling (#1470) | can't tell | STEP field handling: to compare |
-| `1349657592` | Modeling - Correct BRepTools transformations (#1472) | applies | Transforming triangulations: winding under mirrors and normals. To check against `BRepTools` here; small |
+| `1349657592` | Modeling - Correct BRepTools transformations (#1472) | already fixed | Decision 1936: the general transform of a mesh. `BRepTools_TrsfModification`'s part is the same but for a mesh with a placement of its own, which nothing here makes |
 | `ec6533d50d` | Documentation - Improve Doxygen configuration and build (#1469) | not relevant | Documentation |
 | `4719d5fa98` | Modeling Data - Refactor Geom_OsculatingSurface (#1468) | not relevant | A refactoring |
 | `4c8d3df98d` | Tests - Fix DRAW test migration (#1464) | not relevant | Tests |

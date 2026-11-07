@@ -154,12 +154,12 @@ public class BooleanVolumeTests
     }
 
     [Fact]
-    public void Inputs_that_are_not_solids_have_no_rule()
+    public void Inputs_that_are_not_solids_have_no_rule_of_volume()
     {
         Shape face = Box(10).Explore<Face>().First();
         Shape shell = Box(10).Explore<Shell>().First();
         Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), face, Box(11)));
-        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), shell, Box(11)));
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), shell, shell));
         Assert.Null(Check(BooleanVolumeRule.Fuse, shell, Box(10), Box(1)));
         Assert.Null(Check(BooleanVolumeRule.Cut, Compound(Box(10), face), Box(1), Box(20)));
     }
@@ -281,6 +281,91 @@ public class BooleanVolumeTests
         Result<Built<Shape>> plain = Box(10).Cut(Box(5), new BooleanOptions { CheckResult = false });
         Assert.True(plain.IsSuccess);
         Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5), plain.Value.Shape));
+    }
+
+    // A square in the plane z = 5, with its corners at (x0, 0) and (x1, 10)
+    private static Shape Square(double x0, double x1)
+    {
+        Wire outline = Wire.Polygon([new(x0, 0, 5), new(x1, 0, 5), new(x1, 10, 5), new(x0, 10, 5)], closed: true).Value;
+        return Face.FromWire(outline).Value;
+    }
+
+    [Fact]
+    public void A_face_against_a_solid_must_keep_the_right_side_of_it()
+    {
+        // OCCT #1039's kind, made to order: the slice runs from 0 to 20 through a box from 0 to 10
+        Shape box = Box(10), slice = Square(0, 20), inside = Square(0, 10), outside = Square(10, 20);
+
+        // What's right passes
+        Assert.Null(Check(BooleanVolumeRule.Common, slice, box, inside));
+        Assert.Null(Check(BooleanVolumeRule.Common, box, slice, inside));
+        Assert.Null(Check(BooleanVolumeRule.Cut, slice, box, outside));
+
+        // Keeping what's outside, or losing what's inside
+        Fires(Check(BooleanVolumeRule.Common, slice, box, slice), "isn't the part of its faces inside the solid");
+        Fires(Check(BooleanVolumeRule.Common, box, slice, outside), "isn't the part of its faces inside the solid");
+        Fires(Check(BooleanVolumeRule.Common, slice, box, Square(0, 5)), "isn't the part of its faces inside the solid");
+        // Keeping what's inside, or losing what's outside
+        Fires(Check(BooleanVolumeRule.Cut, slice, box, slice), "isn't the part of its faces outside the solid");
+        Fires(Check(BooleanVolumeRule.Cut, slice, box, Square(15, 20)), "isn't the part of its faces outside the solid");
+
+        // A slip of a thousandth of the solid's size is left to tolerance: it can't prove anything
+        Assert.Null(Check(BooleanVolumeRule.Common, slice, box, Square(0, 10.0001)));
+
+        // A real one, each way
+        Assert.Equal(100, slice.Common(box).Value.Shape.IntegrateArea(), 1e-6);
+        Assert.Equal(100, slice.Cut(box).Value.Shape.IntegrateArea(), 1e-6);
+        Assert.Equal(100, box.Common(slice).Value.Shape.IntegrateArea(), 1e-6);
+
+        // A cut of a solid by a face isn't looked at, and neither is a fuse
+        Assert.Null(Check(BooleanVolumeRule.Cut, box, slice, box));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, slice, box, slice));
+    }
+
+    [Fact]
+    public void Surfaces_a_sliver_apart_that_cross_arent_tangent()
+    {
+        // OCCT #1039: a sphere of radius 2500 and a slice that crosses it at a slope of about 0.03. The closed curve between them was
+        // thrown away as a tangency, leaving 95.5 of the section, and with it a Common of the wrong side
+        Shape sphere = Solid.Sphere(2500).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(0, 0, -2477))));
+        Shape slice = Brep.Read(new MemoryStream(Fixtures.Bytes("slice"))).Value;
+        Shape section = sphere.Section(slice).Value.Shape;
+
+        // The closed curve runs at 64 to 67.5 from the axis, so its length is between those circles'
+        double ring = 0;
+        foreach (Edge edge in section.AllEdges())
+        {
+            BoundingBox box = edge.BoundingBox();
+            if (Math.Max(Math.Abs(box.Min.X), Math.Abs(box.Max.X)) < 70 && Math.Max(Math.Abs(box.Min.Y), Math.Abs(box.Max.Y)) < 70)
+            {
+                ring += edge.IntegrateLength();
+            }
+        }
+        Assert.InRange(ring, 2 * Math.PI * 64, 2 * Math.PI * 67.5);
+    }
+
+    [Fact]
+    public void A_walk_that_stops_short_still_closes_its_section()
+    {
+        // OCCT #1659: two curves of the section 1e-3 apart at a near-tangency; one was lost, so the Cut removed nothing and the Common was empty
+        Shape junction = Brep.Read(new MemoryStream(Fixtures.Bytes("loft-junction"))).Value;
+        Shape cutter = Brep.Read(new MemoryStream(Fixtures.Bytes("cap-cutter"))).Value;
+        var precise = new MassOptions { Tolerance = 1e-6 };
+
+        Shape cut = junction.Cut(cutter).Value.Shape, common = junction.Common(cutter).Value.Shape;
+        Assert.Equal(5, cut.AllFaces().Length);
+        // What's cut away and what's left make up the object
+        double whole = junction.IntegrateVolume(precise);
+        Assert.Equal(whole, cut.IntegrateVolume(precise) + common.IntegrateVolume(precise), 0.01);
+        Assert.InRange(common.IntegrateVolume(precise), 300, 450);
+
+        // The section is closed: each end of an edge meets another
+        Shape section = junction.Section(cutter).Value.Shape;
+        foreach (Vertex vertex in section.AllVertices())
+        {
+            int meeting = section.AllEdges().Sum(edge => (edge.FirstVertex.IsSame(vertex) ? 1 : 0) + (edge.LastVertex.IsSame(vertex) ? 1 : 0));
+            Assert.Equal(0, meeting % 2);
+        }
     }
 
     // Two fitted curves meeting at a corner a few millionths across, whose end tangents happened to agree, were merged into one

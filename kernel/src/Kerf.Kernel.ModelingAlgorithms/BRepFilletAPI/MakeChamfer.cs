@@ -205,6 +205,16 @@ internal class MakeChamfer : LocalOperation
 
     //=================================================================================================
 
+    /// <summary>The number of contours that failed (#1632; OCCT has this only on the fillet).</summary>
+    public int FaultyContourCount => _builder.FaultyContourCount;
+
+    /// <summary>The index of the <paramref name="i"/>-th contour that failed.</summary>
+    public int FaultyContour(int i) => _builder.FaultyContour(i);
+
+    /// <summary>Why contour <paramref name="ic"/> failed.</summary>
+    public ErrorStatus StripeStatus(int ic) => _builder.StripeStatus(ic);
+
+    /// <inheritdoc/>
     public override int NbEdges(int i)
     {
         Spine spine = _builder.Value(i)!;

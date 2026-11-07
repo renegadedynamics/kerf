@@ -10,7 +10,6 @@ using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Kerf.Geometry.TransformForm;
 
 namespace Kerf.Engine.Topology.Tools;
 
@@ -227,9 +226,11 @@ internal class GTrsfModification : Modification
             return false;
         }
 
-        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart);
-        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationXyz());
-        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation));
+        // From upstream 1349657592: into the face's own placement, which it keeps, and with the sign of the determinant, as the scale
+        // here is never negative, so a mirror never turned its triangles
+        GeneralTransform3D gTrsf = Representation(_gTrsf, loc, face.Placement);
+        Matrix3x3 vectorial = gTrsf.VectorialPart;
+        bool isNegative = vectorial.Determinant < 0.0;
 
         triangulation = triangulation.Copy();
         triangulation.SetCachedMinMax(new Box()); // clear bounding box
@@ -244,7 +245,7 @@ internal class GTrsfModification : Modification
             triangulation.SetNode(ind, p);
         }
         // modify triangles orientation in case of mirror transformation
-        if (_gScale < 0.0)
+        if (isNegative)
         {
             for (int ind = 1; ind <= triangulation.TriangleCount; ++ind)
             {
@@ -255,20 +256,26 @@ internal class GTrsfModification : Modification
             }
         }
         // modify normals
-        if (triangulation.HasNormals)
+        if (triangulation.HasNormals && !vectorial.IsSingular)
         {
+            // A normal goes by the inverse transpose: OCCT took the matrix with its diagonal set to 1, which is wrong but for a pure scale
+            Matrix3x3 normals = vectorial.Inverted().Transposed();
             for (int ind = 1; ind <= triangulation.NodeCount; ++ind)
             {
-                Direction3D normal = triangulation.Normal(ind);
-                Matrix3x3 mat = gTrsf.VectorialPart;
-                mat = mat.WithDiagonal(1.0, 1.0, 1.0);
-                Transform3D trsf = new Transform3D(1.0, Rotation, mat, new Xyz(0.0, 0.0, 0.0));
-                normal = normal.Transformed(trsf);
-                triangulation.SetNormal(ind, normal);
+                Xyz normal = triangulation.Normal(ind).XYZ();
+                normal.Multiply(normals);
+                triangulation.SetNormal(ind, new Direction3D(normal.X(), normal.Y(), normal.Z()));
             }
         }
 
         return true;
+    }
+
+    // The transformation of a mesh's values, from where they are held to where they will be read
+    private static GeneralTransform3D Representation(in GeneralTransform3D transform, Placement source, Placement target)
+    {
+        GeneralTransform3D into = new GeneralTransform3D(target.Transformation.Inverted());
+        return into.Multiplied(transform).Multiplied(new GeneralTransform3D(source.Transformation));
     }
 
     /// <summary>The edge's 3D polygon transformed; false if it has none.</summary>
@@ -280,9 +287,7 @@ internal class GTrsfModification : Modification
             return false;
         }
 
-        GeneralTransform3D gTrsf = new GeneralTransform3D().WithVectorialPart(_gTrsf.VectorialPart);
-        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationXyz());
-        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation));
+        GeneralTransform3D gTrsf = Representation(_gTrsf, loc, edge.Placement);
 
         poly = poly.Copy();
         poly.Deflection(poly.Deflection() * Math.Abs(_gScale));

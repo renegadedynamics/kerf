@@ -78,6 +78,38 @@ public class GeomFill_AppSurfTests
         EngineAssert.Throws<global::Kerf.Engine.Foundation.DomainErrorException>(() => aP.KnotsAndMults(new NCollection_Array1<double>(1, 2), aM));
     }
 
+    [Theory]
+    [InlineData(8.0, 2.0, 2.0)] // Passes through (2, 2, 2) if scaled in turn, which lost the weights
+    [InlineData(1.0, 0.5, 1.0)]
+    [InlineData(1e308, 5e307, 1e308)] // A sum past the largest double
+    public void Profiler_keeps_a_rational_sections_shape_whatever_its_weights(double w1, double w2, double w3)
+    {
+        BSplineCurve3D Section(double z)
+        {
+            var poles = new NCollection_Array1<Point3D>(1, 3) { [1] = new(-1, 0, z), [2] = new(0, 1, z), [3] = new(1, 0, z) };
+            var weights = new NCollection_Array1<double>(1, 3) { [1] = w1, [2] = w2, [3] = w3 };
+            var knots = new NCollection_Array1<double>(1, 2) { [1] = 0, [2] = 1 };
+            var mults = new NCollection_Array1<int>(1, 2) { [1] = 3, [2] = 3 };
+            return new BSplineCurve3D(poles, weights, knots, mults, 2);
+        }
+
+        Profiler profiler = new();
+        BSplineCurve3D first = Section(0);
+        profiler.AddCurve(first);
+        profiler.AddCurve(Section(1));
+        profiler.Perform(1e-7);
+
+        // The value of a rational quadratic by its definition, which only the weights' ratios decide
+        for (int i = 0; i <= 8; i++)
+        {
+            double u = i / 8.0, a = (1 - u) * (1 - u), b = 2 * u * (1 - u), c = u * u;
+            double r1 = w1 / w2, r3 = w3 / w2;
+            double denominator = a * r1 + b + c * r3;
+            var expected = new Point3D((c * r3 - a * r1) / denominator, b / denominator, 0);
+            Assert.True(expected.DistanceTo(profiler.Curve(1).Value(u)) < 1e-12, $"at {u}");
+        }
+    }
+
     [Fact]
     public void Profiler_never_changes_the_callers_curves_and_hands_out_frozen_ones()
     {

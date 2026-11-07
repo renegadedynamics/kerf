@@ -2,6 +2,7 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Exchange;
 using Kerf.Features;
 using Kerf.Geometry;
 using Kerf.Measurement;
@@ -118,6 +119,39 @@ public class MeasurementTests
         Assert.Equal(20, first.OnB.X, Tol);
         Assert.False(first.SupportShapeA.IsNull);
         Assert.Equal(0, MeasureOperations.Distance(box, box).Value.Value, Tol);
+    }
+
+    [Fact]
+    public void Parts_that_cross_inside_their_faces_are_no_distance_apart()
+    {
+        // OCCT #1123: their faces cross along one closed curve, with every edge and vertex clear of the other part, and OCCT gives 0.083
+        Shape main = Brep.Read(new MemoryStream(Fixtures.Bytes("crossing-main"))).Value;
+        Shape part = Brep.Read(new MemoryStream(Fixtures.Bytes("crossing-part"))).Value;
+        Assert.True(main.Common(part).Value.Shape.IntegrateVolume() > 2);
+
+        DistanceResult distance = main.Distance(part).Value;
+        Assert.Equal(0, distance.Value);
+        DistanceSolution solution = Assert.Single(distance.Solutions);
+        Assert.Equal(SupportKind.Face, solution.SupportA);
+        Assert.Equal(SupportKind.Face, solution.SupportB);
+        Assert.True(main.IsOnFace(solution.OnA, 1e-5));
+        Assert.True(part.IsOnFace(solution.OnB, 1e-5));
+    }
+
+    [Fact]
+    public void Faces_whose_boxes_overlap_and_dont_cross_keep_their_distance()
+    {
+        // A cylinder through the hole of a torus: every box overlaps, and the gap is the torus's inner radius less the cylinder's
+        Solid torus = Solid.Torus(20, 2).Value;
+        Solid cylinder = Solid.Cylinder(5, 40).Value;
+        Shape through = cylinder.Moved(Transform3D.Translation(new Vector3D(0, 0, -20)));
+        Assert.Equal(20 - 2 - 5, torus.Distance(through).Value.Value, Tol);
+
+        // A sphere in a hollow: the same, with the inner face's box around the sphere
+        Solid sphere = Solid.Sphere(3).Value;
+        Solid outer = Solid.Sphere(10).Value, inner = Solid.Sphere(8).Value;
+        Shape shell = outer.Cut(inner).Value.Shape;
+        Assert.Equal(8 - 3, sphere.Distance(shell).Value.Value, Tol);
     }
 
     [Fact]
