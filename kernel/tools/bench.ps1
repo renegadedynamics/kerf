@@ -306,6 +306,9 @@ $suites = @(
   @{ Name = 'parallel-host'; Exe = 'bento'; Args = @('9', "$([Environment]::ProcessorCount)"); Full = 3; Quick = 1; Prefix = 'host '
     Env = @{ DOTNET_gcServer = '1'; DOTNET_TieredPGO = '0'; DOTNET_TC_CallCountingDelayMs = '0' } },
   @{ Name = 'images'; Exe = 'bento'; Args = @('images', '9'); Full = 3; Quick = 1 },
+  # A first fillet, cut and STEP export in a new process as a Bento extension loads Kerf: as it does today, and from Kerf's files (decisions 1891 and 1892)
+  @{ Name = 'first-bento-today'; Exe = 'bento'; Args = @('first-load', 'bytes'); Full = 5; Quick = 3 },
+  @{ Name = 'first-bento-files'; Exe = 'bento'; Args = @('first-load', 'files'); Full = 5; Quick = 3 },
   @{ Name = 'meshing'; Exe = 'kernel'; Args = @('quick'); Full = 3; Quick = 1 },
   @{ Name = 'construction'; Exe = 'kernel'; Args = @('construction'); Full = 3; Quick = 1 },
   @{ Name = 'features'; Exe = 'kernel'; Args = @('features'); Full = 3; Quick = 1 },
