@@ -31,9 +31,9 @@ The main work, with silent errors first.
 
 | Unit | What | Done when |
 |---|---|---|
-| **12E** The silent Cut | The Cut of cylinders at radius 0.5 that comes out 0.8% wrong and says nothing, as the volume check's margin lets it through. | Right, or a failure carrying the shape |
-| **12F** The equal tee | Fillets on the equal tee: 514 of 2,508 wrong or failing. | The rate falls, or the cause is written down |
-| **12G** Radius 500 | Cylinders of radius 500: 21 to 22 of 113 steps fail, all loudly, up from 17 to 18. Why it rose, then the cause. | The same |
+| **12E** The silent Cut | The Cut of cylinders at radius 0.5 that comes out 0.8% wrong and says nothing, as the volume check's margin lets it through. | Right, or a failure carrying the shape. **Done:** right; the cause was the clean's merge, and it wasn't the only one (decisions 22301 and 22303) |
+| **12F** The equal tee | Fillets on the equal tee: 514 of 2,508 wrong or failing. | The rate falls, or the cause is written down. **Cause written down:** ChFi3d's walk near the tangency, 514 still (decision 22304) |
+| **12G** Radius 500 | Cylinders of radius 500: 21 to 22 of 113 steps fail, all loudly, up from 17 to 18. Why it rose, then the cause. | The same. **Part done:** 13 and 13; an absolute reach was the cause of most; what's left is in reliability.md (decision 22302) |
 | **12H** Hang risks (11T) | The suspect loops in reliability.md, and the rest of its ranked list of failure islands. | Each bounded, or shown to be bounded by something other than a user's input |
 | **12I** The corpus | The 59 FAILED, the 502 BAD, and the 48 issues that couldn't be told. | Each attributed, as in corpus-failures.md, and fixed where the fix is plain |
 | **12J** OCCT's defects (11S) | Carry on down occt-defects.md, from the top. | Ongoing |

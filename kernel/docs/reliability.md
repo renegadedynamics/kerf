@@ -178,11 +178,44 @@ Native 8.0.1 on the notch: no failures, 88 wrong of 267, 18 of them invalid Fuse
 
 **`unsafe`:** none, and no pointers. 45 uses of `Unsafe.` in 11 files, 647 of `stackalloc` in 151, all span-checked, so the only risk is the stack. No size from a file reaches a `stackalloc`, and no index from a file reaches an unchecked access. `while` and `do` loops weren't read, nor every long body.
 
+## 4b. Phase 12: 12E, 12F, 12G (decisions 22301 to 22304)
+
+Measured through `Kerf.Modeling`, on a loaded machine: 18 radii from 0.01 to 10,000, a tool at the end plane, half way and in the middle, Cut, Common and Fuse, at 113 offsets from 5e-3 to 1e-16, against volumes integrated from the geometry alone. 18,306 calls.
+
+| Radius | Failed before | Now | Silently over 0.3% before | Now | Worst now |
+|---:|---:|---:|---:|---:|---:|
+| 0.01 | 0 | 0 | 22 | 20 | 0.79% |
+| 0.05 | 0 | 0 | 1 | 1 | 0.33% |
+| 0.1 | 0 | 0 | 1 | 0 | 0.25% |
+| 0.2 | 0 | 0 | 0 | 0 | 0.17% |
+| 0.5 | 3 | 3 | 1 | 0 | 0.11% |
+| 1, 2, 5 | 0 | 0 | 0 | 0 | 0.08% |
+| 10 | 2 | 2 | 2 | 0 | 0.02% |
+| 20 | 2 | 2 | 0 | 0 | 0.02% |
+| 50 | 29 | 10 | 3 | 0 | 0.01% |
+| 100 | 52 | 23 | 1 | 0 | |
+| 200 | 58 | 27 | 0 | 0 | |
+| 500 | 63 | 33 | 3 | 0 | |
+| 1,000 | 75 | 43 | 2 | 0 | |
+| 2,000 | 96 | 64 | 2 | 0 | |
+| 5,000 | 105 | 64 | 1 | 0 (now a failure) | |
+| 10,000 | 91 | 58 | 0 | 0 | |
+
+**So yes, it's scale, from both ends.** Failures grow with the radius, as absolute tolerances meet a touch that spans sqrt(2 R tol). What's left at small radii is silent: at 0.01, where 1e-7 is a hundred-thousandth of the size, offsets within a few tolerances are up to 0.79% out, valid. It's inside the volume check's reach only by points. Nobody draws a cylinder 0.02 across at this tolerance by accident, though a model in metres does: **a question for the owner.**
+
+**The 0.8% wasn't the only one.** At base, 17 answers over 0.3% at radii over 0.01, up to 16.5%, all valid. One is left, 0.33% at 0.05.
+
+**Radius 500, in the sweep of section 4a:** Cut 21 to 13, Common 22 to 13. Left: -5e-10 to -2e-10, and under about 2e-12. Tried and left out: decision 22302.
+
+**The equal tee:** 514 of 2,508, unchanged, the same at each step. It's ChFi3d's walk near the tangency (decision 22304). It stays a failure, loud.
+
+**The check by points** (decision 22303) fired once in the sweep, rightly, and found no false failure there or in the corpus.
+
 ## 5. What's left
 
 - **For unit 11Q:** writing a large solid to STEP spends about 85% of its time in shape processing, nearly all of it `SplitCommonVertexFixer` and the check. That fixer goes over all pairs of a face's wires and makes an `ExtendWireData` for each pair, so a face of 3,600 holes costs seconds, to find vertices shared between wires, which it could do with one map. From one trace of `write-plate 60`, 6.3 s.
 - **Bento's line** in `ModelFunctions.Run`. Nothing above about cells helps until then.
-- **Island 1:** radius 500 is no better, as the tolerance doesn't scale with the walk, and one Cut at radius 0.5 is 0.8% out and reported as a success (section 4a).
+- **Island 1:** radius 500 is better and not done, and radii of 0.05 and under are up to 0.79% out near a tolerance's offset (section 4b).
 - **Fillets that fail slowly,** if anyone wants them to fail quickly. A question below.
 - **`unsafe` and `Unsafe.*`,** and the 112 unbounded loops, weren't audited.
 - **An unknown stack overflow** in code not walked here can still end the process. The tests cover what could be found by building deep input, not every recursion.
