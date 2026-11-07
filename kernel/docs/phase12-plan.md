@@ -59,7 +59,7 @@ Ongoing, to the owner's bar.
 
 | Unit | What |
 |---|---|
-| **12N** Unexplained rises | Extrude until's +3.6 MB, a thick solid's +2.2%, and `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB |
+| **12N** Unexplained rises: **explained** (decisions 22701 to 22704) | Extrude until's +3.6 MB, a thick solid's +2.2%, and `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB. The thick solid's is fixed (rounding taken as crossing, decision 22704); extrude until's is decision 1881's check and the mesh's the rig's noise, both under the bar. With it, decision 1918's cone: round joins at an apex retried with mitres |
 | **12O** The mesher (11O) | Meet the deflection at a sensible triangle count, so that `ControlAllSurfaces` can go altogether (decision 1680) |
 | **12P** Wasteful cases (11Q) | Down the slowest list: the corpus's slowest cases, the rig's slowest suites and Bento's examples |
 
