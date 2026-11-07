@@ -343,6 +343,8 @@ internal class BSplineRestriction : CustomModification
         _maxDegree = aMaxDegree;
         _continuity3d = aContinuity3d;
         _continuity2d = aContinuity2d;
+        // Kerf: 0 or below would double for ever, looking for a surface that fits (decision 1913)
+        Refusal.ArgumentIf(aNbMaxSeg <= 0, FailureKind.ConstructionError, "ShapeCustom_BSplineRestriction: the most segments must be above 0");
         _nbMaxSeg = aNbMaxSeg;
         _surfaceError = global::Kerf.Engine.Foundation.Precision.Confusion();
         _curve3dError = global::Kerf.Engine.Foundation.Precision.Confusion();
@@ -376,6 +378,8 @@ internal class BSplineRestriction : CustomModification
         _maxDegree = aMaxDegree;
         _continuity3d = aContinuity3d;
         _continuity2d = aContinuity2d;
+        // Kerf: 0 or below would double for ever, looking for a surface that fits (decision 1913)
+        Refusal.ArgumentIf(aNbMaxSeg <= 0, FailureKind.ConstructionError, "ShapeCustom_BSplineRestriction: the most segments must be above 0");
         _nbMaxSeg = aNbMaxSeg;
         _surfaceError = global::Kerf.Engine.Foundation.Precision.Confusion();
         _curve3dError = global::Kerf.Engine.Foundation.Precision.Confusion();

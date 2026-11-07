@@ -34,8 +34,8 @@ The main work, with silent errors first.
 | **12E** The silent Cut | The Cut of cylinders at radius 0.5 that comes out 0.8% wrong and says nothing, as the volume check's margin lets it through. | Right, or a failure carrying the shape. **Done:** right; the cause was the clean's merge, and it wasn't the only one (decisions 22301 and 22303) |
 | **12F** The equal tee | Fillets on the equal tee: 514 of 2,508 wrong or failing. | The rate falls, or the cause is written down. **Cause written down:** ChFi3d's walk near the tangency, 514 still (decision 22304) |
 | **12G** Radius 500 | Cylinders of radius 500: 21 to 22 of 113 steps fail, all loudly, up from 17 to 18. Why it rose, then the cause. | The same. **Part done:** 13 and 13; an absolute reach was the cause of most; what's left is in reliability.md (decision 22302) |
-| **12H** Hang risks (11T) | The suspect loops in reliability.md, and the rest of its ranked list of failure islands. | Each bounded, or shown to be bounded by something other than a user's input |
-| **12I** The corpus | The 59 FAILED, the 502 BAD, and the 48 issues that couldn't be told. | Each attributed, as in corpus-failures.md, and fixed where the fix is plain |
+| **12H** Hang risks (11T) | The suspect loops in reliability.md, and the rest of its ranked list of failure islands. | Each bounded, or shown to be bounded by something other than a user's input. **Done** (decisions 1913 to 1917; reliability.md, section 4b): about 220 loops; 1,000 damaged files, none that a cancel can't stop |
+| **12I** The corpus | The 59 FAILED, the 502 BAD, and the 48 issues that couldn't be told. | Each attributed, as in corpus-failures.md, and fixed where the fix is plain. **Attributed; 3 silent faults fixed** (decisions 1918 to 1921; corpus-failures.md). 396 of the BAD stand on their scripts alone |
 | **12J** OCCT's defects (11S) | Carry on down occt-defects.md, from the top. | Ongoing |
 
 ## 3. Fillets a user would notice
@@ -46,9 +46,9 @@ judgements, and could be out by half either way.**
 
 | Unit | What | Size | Gets |
 |---|---|---:|---|
-| **12K** Rims (stage 1) | Better messages, as for straight edges; limits for circles | 100 | "The most that fits" on a cylinder |
-| **12L** Circular edges (stage 3) | Plane and coaxial cylinder or cone: a revolved tool, the same check by Pappus | 300 to 600 | B2, Q3, W7; a disc's rim; full rounds; hemispheres |
-| **12M** Corners (stage 2) | Spherical patches where three blends of one radius meet; slanted ends | 500 to 1,000 | Cube to sphere; bar to capsule; bug32931, bug25478_2 |
+| **12K** Rims (stage 1): **done** (177 lines; decision 1904) | Better messages, as for straight edges; limits for circles | 100 | "The most that fits" on a cylinder |
+| **12L** Circular edges (stage 3): **done** (290 lines; decisions 1905 to 1907) | Plane and coaxial cylinder or cone: a revolved tool, the same check by Pappus | 300 to 600 | B2, Q3, W7; a disc's rim; full rounds; hemispheres |
+| **12M** Corners (stage 2): **done** (about 600 lines; decisions 1908 to 1911) | Spherical patches where three blends of one radius meet; slanted ends | 500 to 1,000 | Cube to sphere; bar to capsule; bug32931, bug25478_2 |
 
 **Then stop and look.** General-surface fillets (stages 4 and 5) and replacing ChFi3d (stage 6) wait for failures from
 Bento's users that justify them.

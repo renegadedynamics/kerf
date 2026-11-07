@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
@@ -39,7 +40,7 @@ internal sealed partial class ImpImpIntersection
         double thetamin = 0.0;
 
         double theparameteronarc = _theparameteronarc;
-        for (double _theta = u0alin + dtheta; _theta <= u1alin - dtheta; _theta += dtheta)
+        for (double _theta = u0alin + dtheta; _theta <= u1alin - dtheta; _theta = StepLimit.Moved(_theta, _theta + dtheta))
         {
             Point3D p = alin.Value(_theta);
             double d = p.DistanceTo(pSurf);
@@ -255,11 +256,11 @@ internal sealed partial class ImpImpIntersection
             f = myHS1.FirstUParameter();
             l = myHS1.LastUParameter();
             fpls2 = 0.5 * (f + l);
-            while ((u1 < f) && ((fpls2 - u1) > (u1 + lmf - fpls2)))
+            for (int aStep = 0; (u1 < f) && ((fpls2 - u1) > (u1 + lmf - fpls2)); StepLimit.Next(ref aStep))
             {
                 u1 += lmf;
             }
-            while ((u1 > l) && ((u1 - fpls2) > (fpls2 - (u1 - lmf))))
+            for (int aStep = 0; (u1 > l) && ((u1 - fpls2) > (fpls2 - (u1 - lmf))); StepLimit.Next(ref aStep))
             {
                 u1 -= lmf;
             }
@@ -270,11 +271,11 @@ internal sealed partial class ImpImpIntersection
             f = myHS1.FirstVParameter();
             l = myHS1.LastVParameter();
             fpls2 = 0.5 * (f + l);
-            while ((v1 < f) && ((fpls2 - v1) > (v1 + lmf - fpls2)))
+            for (int aStep = 0; (v1 < f) && ((fpls2 - v1) > (v1 + lmf - fpls2)); StepLimit.Next(ref aStep))
             {
                 v1 += lmf;
             }
-            while ((v1 > l) && ((v1 - fpls2) > (fpls2 - (v1 - lmf))))
+            for (int aStep = 0; (v1 > l) && ((v1 - fpls2) > (fpls2 - (v1 - lmf))); StepLimit.Next(ref aStep))
             {
                 v1 -= lmf;
             }
@@ -285,11 +286,11 @@ internal sealed partial class ImpImpIntersection
             f = myHS2.FirstUParameter();
             l = myHS2.LastUParameter();
             fpls2 = 0.5 * (f + l);
-            while ((u2 < f) && ((fpls2 - u2) > (u2 + lmf - fpls2)))
+            for (int aStep = 0; (u2 < f) && ((fpls2 - u2) > (u2 + lmf - fpls2)); StepLimit.Next(ref aStep))
             {
                 u2 += lmf;
             }
-            while ((u2 > l) && ((u2 - fpls2) > (fpls2 - (u2 - lmf))))
+            for (int aStep = 0; (u2 > l) && ((u2 - fpls2) > (fpls2 - (u2 - lmf))); StepLimit.Next(ref aStep))
             {
                 u2 -= lmf;
             }
@@ -300,11 +301,11 @@ internal sealed partial class ImpImpIntersection
             f = myHS2.FirstVParameter();
             l = myHS2.LastVParameter();
             fpls2 = 0.5 * (f + l);
-            while ((v2 < f) && ((fpls2 - v2) > (v2 + lmf - fpls2)))
+            for (int aStep = 0; (v2 < f) && ((fpls2 - v2) > (v2 + lmf - fpls2)); StepLimit.Next(ref aStep))
             {
                 v2 += lmf;
             }
-            while ((v2 > l) && ((v2 - fpls2) > (fpls2 - (v2 - lmf))))
+            for (int aStep = 0; (v2 > l) && ((v2 - fpls2) > (fpls2 - (v2 - lmf))); StepLimit.Next(ref aStep))
             {
                 v2 -= lmf;
             }

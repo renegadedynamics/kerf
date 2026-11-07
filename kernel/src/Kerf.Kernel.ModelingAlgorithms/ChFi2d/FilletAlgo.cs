@@ -142,11 +142,11 @@ internal sealed class FilletAlgo
         _curve1 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(curve1, _start1, _end1, _plane)!;
         _curve2 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(curve2, _start2, _end2, _plane)!;
 
-        while (_curve1.IsPeriodic && _start1 >= _end1)
+        for (int aStep = 0; _curve1.IsPeriodic && _start1 >= _end1; StepLimit.Next(ref aStep))
         {
             _end1 += _curve1.Period;
         }
-        while (_curve2.IsPeriodic && _start2 >= _end2)
+        for (int aStep = 0; _curve2.IsPeriodic && _start2 >= _end2; StepLimit.Next(ref aStep))
         {
             _end2 += _curve2.Period;
         }
@@ -331,7 +331,7 @@ internal sealed class FilletAlgo
 
             // checking the right parameter
             double paramProj = proj.Parameter(a);
-            while (_curve2!.IsPeriodic && paramProj < _start2)
+            for (int aStep = 0; _curve2!.IsPeriodic && paramProj < _start2; StepLimit.Next(ref aStep))
             {
                 paramProj += _curve2.Period;
             }

@@ -3,6 +3,7 @@
 // The file-static functions of IntPatch_ImpPrmIntersection.cxx (see IntPatch_ImpPrmIntersection.cs).
 
 using Kerf.Engine.Booleans.Legacy;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Engine.Numerics;
@@ -360,11 +361,11 @@ internal partial class ImpPrmIntersection
         switch (typeS1)
         {
             case SurfaceKind.Torus:
-                while (v1 < (v1p - 1.5 * M_PI))
+                for (int aStep = 0; v1 < (v1p - 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     v1 += M_PI + M_PI;
                 }
-                while (v1 > (v1p + 1.5 * M_PI))
+                for (int aStep = 0; v1 > (v1p + 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     v1 -= M_PI + M_PI;
                 }
@@ -372,11 +373,11 @@ internal partial class ImpPrmIntersection
             case SurfaceKind.Cylinder:
             case SurfaceKind.Cone:
             case SurfaceKind.Sphere:
-                while (u1 < (u1p - 1.5 * M_PI))
+                for (int aStep = 0; u1 < (u1p - 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u1 += M_PI + M_PI;
                 }
-                while (u1 > (u1p + 1.5 * M_PI))
+                for (int aStep = 0; u1 > (u1p + 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u1 -= M_PI + M_PI;
                 }
@@ -387,11 +388,11 @@ internal partial class ImpPrmIntersection
         switch (typeS2)
         {
             case SurfaceKind.Torus:
-                while (v2 < (v2p - 1.5 * M_PI))
+                for (int aStep = 0; v2 < (v2p - 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     v2 += M_PI + M_PI;
                 }
-                while (v2 > (v2p + 1.5 * M_PI))
+                for (int aStep = 0; v2 > (v2p + 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     v2 -= M_PI + M_PI;
                 }
@@ -399,11 +400,11 @@ internal partial class ImpPrmIntersection
             case SurfaceKind.Cylinder:
             case SurfaceKind.Cone:
             case SurfaceKind.Sphere:
-                while (u2 < (u2p - 1.5 * M_PI))
+                for (int aStep = 0; u2 < (u2p - 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u2 += M_PI + M_PI;
                 }
-                while (u2 > (u2p + 1.5 * M_PI))
+                for (int aStep = 0; u2 > (u2p + 1.5 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u2 -= M_PI + M_PI;
                 }
@@ -506,14 +507,14 @@ internal partial class ImpPrmIntersection
                 double uu = u2;
                 if (u2 > (2.0 * M_PI))
                 {
-                    while (uu > (2.0 * M_PI))
+                    for (int aStep = 0; uu > (2.0 * M_PI); StepLimit.Next(ref aStep))
                     {
                         uu -= (2.0 * M_PI);
                     }
                 }
                 else
                 {
-                    while (uu < 0.0)
+                    for (int aStep = 0; uu < 0.0; StepLimit.Next(ref aStep))
                     {
                         uu += (2.0 * M_PI);
                     }
@@ -534,14 +535,14 @@ internal partial class ImpPrmIntersection
                 double uu = u2;
                 if (u2 > (2.0 * M_PI))
                 {
-                    while (uu > (2.0 * M_PI))
+                    for (int aStep = 0; uu > (2.0 * M_PI); StepLimit.Next(ref aStep))
                     {
                         uu -= (2.0 * M_PI);
                     }
                 }
                 else
                 {
-                    while (uu < 0.0)
+                    for (int aStep = 0; uu < 0.0; StepLimit.Next(ref aStep))
                     {
                         uu += (2.0 * M_PI);
                     }
@@ -555,14 +556,14 @@ internal partial class ImpPrmIntersection
         {
             if (u1 < 0.0)
             {
-                while (u < 0.0)
+                for (int aStep = 0; u < 0.0; StepLimit.Next(ref aStep))
                 {
                     u += 2.0 * M_PI;
                 }
             }
             if (u1 > (2.0 * M_PI))
             {
-                while (u > (2.0 * M_PI))
+                for (int aStep = 0; u > (2.0 * M_PI); StepLimit.Next(ref aStep))
                 {
                     u -= (2.0 * M_PI);
                 }
@@ -684,14 +685,14 @@ internal partial class ImpPrmIntersection
         {
             if (u < 0.0)
             {
-                while (u < 0.0)
+                for (int aStep = 0; u < 0.0; StepLimit.Next(ref aStep))
                 {
                     u += dblpi;
                 }
             }
             else
             {
-                while (u > dblpi)
+                for (int aStep = 0; u > dblpi; StepLimit.Next(ref aStep))
                 {
                     u -= dblpi;
                 }

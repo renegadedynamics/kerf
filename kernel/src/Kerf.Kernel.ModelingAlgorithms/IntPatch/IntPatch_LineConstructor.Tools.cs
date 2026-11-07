@@ -74,11 +74,11 @@ internal partial class PatchLineConstructor
             lmf = M_PI + M_PI; //-- myHS1->UPeriod();
             f = myHS1.FirstUParameter();
             l = myHS1.LastUParameter();
-            while (u1 < f)
+            for (int aStep = 0; u1 < f; StepLimit.Next(ref aStep))
             {
                 u1 += lmf;
             }
-            while (u1 > l)
+            for (int aStep = 0; u1 > l; StepLimit.Next(ref aStep))
             {
                 u1 -= lmf;
             }
@@ -88,11 +88,11 @@ internal partial class PatchLineConstructor
             lmf = M_PI + M_PI; //-- myHS1->VPeriod();
             f = myHS1.FirstVParameter();
             l = myHS1.LastVParameter();
-            while (v1 < f)
+            for (int aStep = 0; v1 < f; StepLimit.Next(ref aStep))
             {
                 v1 += lmf;
             }
-            while (v1 > l)
+            for (int aStep = 0; v1 > l; StepLimit.Next(ref aStep))
             {
                 v1 -= lmf;
             }
@@ -102,11 +102,11 @@ internal partial class PatchLineConstructor
             lmf = M_PI + M_PI; //-- myHS2->UPeriod();
             f = myHS2.FirstUParameter();
             l = myHS2.LastUParameter();
-            while (u2 < f)
+            for (int aStep = 0; u2 < f; StepLimit.Next(ref aStep))
             {
                 u2 += lmf;
             }
-            while (u2 > l)
+            for (int aStep = 0; u2 > l; StepLimit.Next(ref aStep))
             {
                 u2 -= lmf;
             }
@@ -116,11 +116,11 @@ internal partial class PatchLineConstructor
             lmf = M_PI + M_PI; //-- myHS2->VPeriod();
             f = myHS2.FirstVParameter();
             l = myHS2.LastVParameter();
-            while (v2 < f)
+            for (int aStep = 0; v2 < f; StepLimit.Next(ref aStep))
             {
                 v2 += lmf;
             }
-            while (v2 > l)
+            for (int aStep = 0; v2 > l; StepLimit.Next(ref aStep))
             {
                 v2 -= lmf;
             }

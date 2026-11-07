@@ -51,12 +51,13 @@ public class InvalidResultTests
     public void A_fillet_says_what_is_wrong_and_names_the_shapes()
     {
         // A top that turns by 1 degree 5 along, and a radius just under that: no limit is claimed there, as the fillet rolls on to the
-        // next face, and just here the engine's result isn't valid (fillet-design.md, section 8)
+        // next face, and just here the engine's result isn't valid (fillet-design.md, section 8). The exact path, which has taken that over
+        // for a circular section (decision 1910), makes no other kind
         double fall = 20 * Math.Tan(Math.PI / 180);
         Wire section = Wire.Polygon([new Point3D(0, 0, 0), new Point3D(0, -10, 0), new Point3D(25, -10, 0), new Point3D(25, -fall, 0), new Point3D(5, 0, 0)], closed: true).Value;
         Shape prism = Face.FromWire(section).Value.Extrude(new Vector3D(0, 0, 30)).Value.Shape;
         Edge side = prism.AllEdges().First(e => e.AllVertices().All(v => Math.Abs(v.Point.X) < 1e-9 && Math.Abs(v.Point.Y) < 1e-9));
-        Result<Built<Shape>> result = prism.Fillet([side], 5 - 1e-8);
+        Result<Built<Shape>> result = prism.Fillet([side], 5 - 1e-8, new FilletOptions { Shape = FilletShape.Polynomial });
         Carries(result, "The fillet's result isn't valid: ");
         Assert.NotEmpty(result.Error!.Shapes);
         Assert.True(result.TryGetInvalid(out Built<Shape>? invalid));

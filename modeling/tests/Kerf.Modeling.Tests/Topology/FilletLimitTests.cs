@@ -177,13 +177,13 @@ public class FilletLimitTests
     }
 
     [Fact]
-    public void A_limit_with_corners_says_so()
+    public void A_limit_with_corners_is_built()
     {
-        // A sphere's worth of edges: exact, but it needs corners, which this doesn't do
+        // A sphere's worth of edges: one exact face (decision 1908)
         var box = new Box(10, 10, 10);
-        var failed = Fillet(box.Edges(), 5);
-        Assert.True(failed.IsFailure);
-        Assert.Contains("can't be built yet", failed.Error!.Message, StringComparison.Ordinal);
+        var made = Fillet(box.Edges(), 5);
+        Assert.True(made.IsSuccess, made.Error?.Message);
+        Assert.Equal(GeomType.Sphere, Assert.Single(made.Value.Faces()).GeomType);
         Assert.True(Fillet(box.Edges(), 4.99).IsSuccess);
     }
 

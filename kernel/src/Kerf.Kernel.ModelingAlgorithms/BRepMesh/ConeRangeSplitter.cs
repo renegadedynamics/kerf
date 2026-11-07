@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
@@ -69,9 +70,9 @@ internal class ConeRangeSplitter : DefaultRangeSplitter
 
         double pasMaxV = rangeV.second - steps.second * 0.5;
         double pasMaxU = rangeU.second - steps.first * 0.5;
-        for (double pasV = rangeV.first + steps.second; pasV < pasMaxV; pasV += steps.second)
+        for (double pasV = rangeV.first + steps.second; pasV < pasMaxV; pasV = StepLimit.Moved(pasV, pasV + steps.second))
         {
-            for (double pasU = rangeU.first + steps.first; pasU < pasMaxU; pasU += steps.first)
+            for (double pasU = rangeU.first + steps.first; pasU < pasMaxU; pasU = StepLimit.Moved(pasU, pasU + steps.first))
             {
                 if ((nodes.Size() & 1023) == 0)
                 {

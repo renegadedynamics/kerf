@@ -178,7 +178,34 @@ Native 8.0.1 on the notch: no failures, 88 wrong of 267, 18 of them invalid Fuse
 
 **`unsafe`:** none, and no pointers. 45 uses of `Unsafe.` in 11 files, 647 of `stackalloc` in 151, all span-checked, so the only risk is the stack. No size from a file reaches a `stackalloc`, and no index from a file reaches an unchecked access. `while` and `do` loops weren't read, nor every long body.
 
-## 4b. Phase 12: 12E, 12F, 12G (decisions 22301 to 22304)
+## 4b. The third pass (12H, decisions 1913 to 1917)
+
+**Unsafe code:** decision 1883 read the `stackalloc`s. The other half now is too: the 45 `Unsafe.` uses are types and sizes, except `Matrix2x2`, `Matrix3x3`, `INCollection_Vec` and `NCollection_AliasedArray`, and each of those checks its index first, in Release as well. No input reaches outside a bound.
+
+| Loop | Could it spin? | Now |
+|---|---|---|
+| About 200 `while` loops stepping by a period (171 changed) | **Measured** past 25 s: a radius of 1e15 in a STEP file, `WireExplorer` | `StepLimit`, a failure |
+| 40 `for` loops over a range in steps | Inferred from a stack in `ExtPS.IsoIsDeg`, on a radius of 1e9 | `StepLimit.Moved`, a failure |
+| `TopExp/Explorer:152`, on files | **Measured:** a 20 kB STEP file never returned | Refused (decision 1916) |
+| `ShapeUpgrade_UnifySameDomain.Faces:439` | An edge with no vertices: a test builds it. That it spun is by reading | Returns false |
+| `ShapeUpgrade/UnifySameDomain:1102` | No input found | A limit, then the failed-wire path |
+| `BRepFill/TrimShellCorner:974` | No input found | A limit, then its error flag |
+| `LocOpe/LocalSplitShape:392` | No input found | Throws |
+| `ShapeCustom/BSplineRestriction:783` | 0 segments, by reading | Refused |
+| `BRepOffsetAPI/MiddlePath:404` | No input found | Throws |
+| `ShapeConstruct/ProjectCurveOnSurface:1334`, `IntTools/EdgeEdge:1309` | NaN or infinity only, by the arithmetic | Throws; a failure status |
+
+**The sweep of damaged files** (decision 1917): one number of a BREP or STEP file changed, and 11 operations run, 25 s each, on a loaded machine.
+
+| | Files | Stalled past 25 s | Died |
+|---|---:|---:|---:|
+| Before | 1,313 | 15 | 0 (3 out of memory, as an exception) |
+| After, the same files, no cancel | 1,313 | 6, each large work: all stop when cancelled | 0 (3) |
+| After, 1,000 new files, cancelled at 3 s | 1,000 | **0** | 0 (3) |
+
+**The islands that were left** (3 to 6 in section 4) are failures, not stalls: each returned a failure in the probe here, so none is a hang risk and they stay as they are. A loft (square to circle) offset outwards by 0.1, 0.5 or 1 is `result.invalid`, "Bad orientation of subshape", and inwards it's valid. All edges chamfered at 0.05 or 0.1 fail, at 0.5 it works, and it fillets at all three. **Not looked into; for the next batch:** native can't be asked, so whose that orientation is isn't known.
+
+## 4c. Phase 12: 12E, 12F, 12G (decisions 22301 to 22304)
 
 Measured through `Kerf.Modeling`, on a loaded machine: 18 radii from 0.01 to 10,000, a tool at the end plane, half way and in the middle, Cut, Common and Fuse, at 113 offsets from 5e-3 to 1e-16, against volumes integrated from the geometry alone. 18,306 calls.
 
@@ -209,15 +236,15 @@ Measured through `Kerf.Modeling`, on a loaded machine: 18 radii from 0.01 to 10,
 
 **The equal tee:** 514 of 2,508, unchanged, the same at each step. It's ChFi3d's walk near the tangency (decision 22304). It stays a failure, loud.
 
-**The check by points** (decision 22303) fired once in the sweep, rightly, and found no false failure there or in the corpus.
+**The check by points** (decision 22303) fired once in the sweep, rightly, and found no false failure there or in the corpus. It was reverted, not merged, for its cost.
 
 ## 5. What's left
 
 - **For unit 11Q:** writing a large solid to STEP spends about 85% of its time in shape processing, nearly all of it `SplitCommonVertexFixer` and the check. That fixer goes over all pairs of a face's wires and makes an `ExtendWireData` for each pair, so a face of 3,600 holes costs seconds, to find vertices shared between wires, which it could do with one map. From one trace of `write-plate 60`, 6.3 s.
 - **Bento's line** in `ModelFunctions.Run`. Nothing above about cells helps until then.
-- **Island 1:** radius 500 is better and not done, and radii of 0.05 and under are up to 0.79% out near a tolerance's offset (section 4b).
+- **Island 1:** radius 500 is better and not done, and radii of 0.05 and under are up to 0.79% out near a tolerance's offset (section 4c).
 - **Fillets that fail slowly,** if anyone wants them to fail quickly. A question below.
-- **`unsafe` and `Unsafe.*`,** and the 112 unbounded loops, weren't audited.
+- **`while` and `do` loops other than those stepping a parameter** still weren't read; the sweep of section 4b is what stands in for that. **A mesh can still run out of memory** on a damaged file, as an exception (3 in 1,000).
 - **An unknown stack overflow** in code not walked here can still end the process. The tests cover what could be found by building deep input, not every recursion.
 
 **Tested on:** Reliability 35, Foundation 2,533, ModelingData 3,338, PublicApi 400, DataExchange 348, ModelingAlgorithms 5,712 (9 skipped), DrawLite 737, Kerf.Modeling 2,097, all passing; `KERF_CORPUS_FULL=1` on the fillet, Boolean, STEP, STEP-CAF, offset and hidden-line corpus classes, 23 tests passing in 18 minutes. The full corpus wasn't run.

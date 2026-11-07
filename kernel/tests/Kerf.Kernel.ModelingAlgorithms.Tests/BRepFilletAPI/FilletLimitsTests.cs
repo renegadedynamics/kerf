@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Booleans;
 using Kerf.Construction;
 using Kerf.Engine.Healing.Fixes;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Fillets;
@@ -95,6 +97,23 @@ public class FilletLimitsTests
         Assert.Equal(7, box.Fillet([edge], 10 - 2e-3).Value.Shape.AllFaces().Length);
     }
 
+    [Theory]
+    // At the default tolerance, on a square edge: the whole strip, 10 tolerances, is a move of 1e-6
+    [InlineData(10 - 9e-7, 10, 1e-7, 10 - 9e-7, true)]
+    [InlineData(10 - 2e-6, 10, 1e-7, 10 - 2e-6, false)]
+    // An obtuse corner, where the contact line moves a tenth of the radius: the same strip would move it by more
+    [InlineData(1 - 5e-7, 1, 1e-7, 10 - 5e-6, false)]
+    [InlineData(1 - 5e-8, 1, 1e-7, 10 - 5e-7, true)]
+    // A sloppy shape: within its tolerance is the limit, and past that the move is what counts, not 10 of its tolerances
+    [InlineData(10 - 5e-4, 10, 1e-3, 10 - 5e-4, true)]
+    [InlineData(10 - 2e-3, 10, 1e-3, 10 - 2e-3, false)]
+    // Far from the limit
+    [InlineData(5, 10, 1e-7, 5, false)]
+    public void A_strip_moves_a_radius_by_at_most_a_millionth_of_a_unit(double used, double width, double tolerance, double radius, bool isLimit)
+    {
+        Assert.Equal(isLimit, FilletLimits.TooNarrowToLeave(used, width, tolerance, radius));
+    }
+
     [Fact]
     public void A_shape_too_sloppy_to_know_its_width_gives_no_limit()
     {
@@ -175,6 +194,181 @@ public class FilletLimitsTests
         double exact = box.Chamfer([edge], 10).Value.Shape.IntegrateVolume();
         Assert.Equal(exact, box.Chamfer([edge], 10 + 5e-8).Value.Shape.IntegrateVolume(), 1e-3);
         Assert.Contains("the most that fits is 10,", box.Chamfer([edge], 10 + 2e-7).Error!.Message, StringComparison.Ordinal);
+    }
+
+    private static Edge Circle(Shape shape, double z)
+    {
+        foreach (Edge edge in shape.AllEdges())
+        {
+            if (edge.AllVertices().Length == 1 && !Tool.Degenerated(edge) && Math.Abs(edge.AllVertices()[0].Point.Z - z) < 1e-9)
+            {
+                return edge;
+            }
+        }
+        throw new InvalidOperationException("No such circle.");
+    }
+
+    [Fact]
+    public void A_rims_fillet_keeps_its_history_as_ChFi3ds_would()
+    {
+        // A disc 5 high, its top rim rounded by 5: the side goes, the top shrinks, and the bottom stays
+        Solid disc = Solid.Cylinder(10, 5).Value;
+        Edge rim = Circle(disc, 5);
+        Built<Shape> made = disc.Fillet([rim], 5).Value;
+        Assert.Equal(3, made.Shape.AllFaces().Length);
+        Face torus = Assert.Single(made.History.Generated(rim).Select(g => ShapeCasts.Face(g)));
+        Assert.Contains(made.Shape.AllFaces(), f => f.IsSame(torus));
+        Assert.Equal(SurfaceKind.Torus, new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(torus).GetType());
+        Assert.True(made.History.IsRemoved(rim));
+        Face side = disc.AllFaces().First(f => f.AllEdges().Any(e => e.IsSame(rim)) && f.AllEdges().Length > 1);
+        Assert.True(made.History.IsRemoved(side));
+        Face top = disc.AllFaces().First(f => f.AllEdges().Length == 1 && f.AllEdges()[0].IsSame(rim));
+        Assert.False(made.History.IsRemoved(top));
+        Assert.Contains(made.Shape.AllFaces(), f => made.History.Modified(top).Any(m => m.IsSame(f)));
+
+        // Coded tangent to the top, as ChFi3d's are, and sharp at the bottom, as the side it replaced ended there
+        Assert.Equal(1, TangentEdges(made.Shape));
+    }
+
+    [Fact]
+    public void A_hole_in_the_way_of_a_rims_fillet_refuses_it_and_says_so()
+    {
+        // The tool would run through the hole, so the section's answer is wrong: the algorithm's failure stands
+        Shape disc = Solid.Cylinder(10, 5).Value.Shape.Cut(Solid.Cylinder(1, 5).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(8, 0, 0))))).Value.Shape;
+        var failed = disc.Fillet([Circle(disc, 5)], 5);
+        Assert.True(failed.IsFailure);
+        Assert.Contains("can't be built yet", failed.Error!.Message, StringComparison.Ordinal);
+    }
+
+    private static Shape? Corpus(string file)
+    {
+        string path = Path.Combine(typeof(FilletLimitsTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                                       .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", file);
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+        return BrepTools.Read(out Shape shape, path) ? shape : null;
+    }
+
+    [Theory]
+    [InlineData("CFI_4_e1_ffr.rle", 1, 1)] // blend/simple/Q3, at scale 1: a boss of radius 1, 1 high
+    [InlineData("CCV_1_d12gsg.rle", 20, 10)] // blend/simple/W7: a boss of radius 20, 10 high
+    public void OCCTs_own_bosses_rounded_to_their_height_are_right(string file, double radius, double height)
+    {
+        if (Corpus(file) is not { } shape)
+        {
+            return; // OCCT's test data isn't here
+        }
+        Edge edge = shape.AllEdges()[4];
+        Built<Shape> made = shape.Fillet([edge], height).Value;
+
+        // A quarter circle's section beside a cylinder, turned about its axis. Its moment: the square, less the quarter circle
+        double r = height, x = radius;
+        double moment = r * r * (x + r / 2) - Math.PI * r * r / 4 * (x + r - 4 * r / (3 * Math.PI));
+        Assert.Equal(shape.IntegrateVolume() + 2 * Math.PI * moment, made.Shape.IntegrateVolume(), 1e-6 * shape.IntegrateVolume());
+        double arc = Math.PI * r / 2 * (x + r - 2 * r / Math.PI);
+        double strips = r * (x + r / 2) + r * x;
+        Assert.Equal(shape.IntegrateArea() + 2 * Math.PI * (arc - strips), made.Shape.IntegrateArea(), 1e-6 * shape.IntegrateArea());
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(made.Shape, "It"));
+    }
+
+    [Fact]
+    public void OCCTs_B2_is_built()
+    {
+        // blend/complex/B2: a wall 15 high round a circle, and the radius takes all of it
+        if (Corpus("CFI_pro10320.rle") is not { } shape)
+        {
+            return;
+        }
+        Edge edge = shape.AllEdges()[14];
+        Built<Shape> made = shape.Fillet([edge], 15).Value;
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(made.Shape, "It"));
+        Assert.Contains(made.History.Generated(edge), g => new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(ShapeCasts.Face(g)).GetType() == SurfaceKind.Torus);
+    }
+
+    [Fact]
+    public void OCCTs_fillets_that_touch_with_one_edge_concave_are_right()
+    {
+        // tests/bugs/modalg_7/bug25478_2: a corner cut from a cube, its three upright edges rounded by half the walls they share
+        Shape cut = Solid.Box(10, 10, 10).Value.Shape.Cut(Solid.Box(10, 10, 12).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(5, 5, -1))))).Value.Shape;
+        Edge[] upright = [.. cut.AllEdges().Where(e => e.AllVertices()[0].Point.Z != e.AllVertices()[^1].Point.Z && IsAt(e, 5, 10) | IsAt(e, 10, 5) | IsAt(e, 5, 5))];
+        Assert.Equal(3, upright.Length);
+        Built<Shape> made = cut.Fillet(upright, 2.5).Value;
+        double spandrel = 2.5 * 2.5 * (1 - Math.PI / 4) * 10;
+        Assert.Equal(750 - 2 * spandrel + spandrel, made.Shape.IntegrateVolume(), 1e-6);
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(made.Shape, "It"));
+        foreach (Edge edge in upright)
+        {
+            Assert.True(made.History.IsRemoved(edge));
+            Assert.NotEmpty(made.History.Generated(edge));
+        }
+    }
+
+    private static bool IsAt(Edge edge, double x, double y) =>
+        edge.AllVertices().All(v => Math.Abs(v.Point.X - x) < 1e-9 && Math.Abs(v.Point.Y - y) < 1e-9);
+
+    [Fact]
+    public void OCCTs_L_with_its_top_split_is_right_and_runs_through_the_split()
+    {
+        // tests/bugs/modalg_8/bug32931, which crashed in ChFi3d: an L whose top is three faces, its edges selected all but the last two
+        // of the chain, which run on in line. By layers: five mitres and a pivot, as FilletLimitSweepTests' L has
+        if (Corpus("bug32931.brep") is not { } shape)
+        {
+            return;
+        }
+        Edge[] all = [.. shape.AllEdges()];
+        Edge[] chain = [all[9], all[17], all[18], all[19], all[20], all[16]];
+        Built<Shape> made = shape.Fillet(chain, 1).Value;
+        const double Plan = 36, Perimeter = 40, R = 1;
+        double removed = 0;
+        for (int i = 0; i < 2000; i++)
+        {
+            double angle = (i + 0.5) / 2000 * Math.PI / 2;
+            double w = R * (1 - Math.Sin(angle));
+            removed += (Perimeter * w - 5 * w * w + Math.PI / 4 * w * w) * R * Math.Sin(angle) * (Math.PI / 2) / 2000;
+        }
+        Assert.Equal(Plan * 10 - removed, made.Shape.IntegrateVolume(), 1e-5);
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(made.Shape, "It"));
+        foreach (Edge edge in chain)
+        {
+            Assert.NotEmpty(made.History.Generated(edge));
+        }
+    }
+
+    [Fact]
+    public void A_cube_rounded_all_over_is_a_sphere_and_every_edge_and_corner_made_it()
+    {
+        Solid cube = Solid.Box(10, 10, 10).Value;
+        Built<Shape> made = cube.Fillet(cube.AllEdges(), 5).Value;
+        Face only = Assert.Single(made.Shape.AllFaces());
+        Assert.Equal(SurfaceKind.Sphere, new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(only).GetType());
+        foreach (Edge edge in cube.AllEdges())
+        {
+            Assert.True(made.History.IsRemoved(edge));
+            Assert.Contains(made.History.Generated(edge), g => g.IsSame(only));
+        }
+        foreach (Vertex vertex in cube.AllVertices())
+        {
+            Assert.Contains(made.History.Generated(vertex), g => g.IsSame(only));
+        }
+        foreach (Face face in cube.AllFaces())
+        {
+            Assert.True(made.History.IsRemoved(face));
+        }
+    }
+
+    [Fact]
+    public void A_bars_corners_come_from_its_vertices_and_its_sides_from_its_edges()
+    {
+        Solid bar = Solid.Box(10, 10, 40).Value;
+        Built<Shape> made = bar.Fillet(bar.AllEdges(), 5).Value;
+        Assert.Equal(12, made.Shape.AllFaces().Length);
+        foreach (Vertex vertex in bar.AllVertices())
+        {
+            Face patch = ShapeCasts.Face(Assert.Single(made.History.Generated(vertex)));
+            Assert.Equal(SurfaceKind.Sphere, new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(patch).GetType());
+        }
     }
 
     [Fact]

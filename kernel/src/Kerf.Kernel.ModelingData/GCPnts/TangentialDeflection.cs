@@ -579,8 +579,14 @@ internal sealed class TangentialDeflection
         bool isNeedToCheck = false;
         Point3D prevPoint = _points.Last();
 
-        while (morePoints)
+        // Kerf: past the most points, a curve's parameter this large has stopped moving (decision 1913)
+        for (int aStep = 0; morePoints; StepLimit.Next(ref aStep))
         {
+            if ((aStep & 1023) == 1023)
+            {
+                Cancellation.ThrowIfRequested();
+            }
+
             idx[0] = GetIntervalIdx(u1, intervs, idx[0]);
             u2 += du;
 
@@ -1208,8 +1214,14 @@ internal sealed class TangentialDeflection
         bool isNeedToCheck = false;
         Point3D prevPoint = _points.Last();
 
-        while (morePoints)
+        // Kerf: past the most points, a curve's parameter this large has stopped moving (decision 1913)
+        for (int aStep = 0; morePoints; StepLimit.Next(ref aStep))
         {
+            if ((aStep & 1023) == 1023)
+            {
+                Cancellation.ThrowIfRequested();
+            }
+
             idx[0] = GetIntervalIdx(u1, intervs, idx[0]);
             u2 += du;
 

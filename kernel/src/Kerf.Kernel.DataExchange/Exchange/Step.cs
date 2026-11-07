@@ -5,6 +5,7 @@ using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Step;
 using Kerf.Engine.Exchange.Step.Caf;
 using Kerf.Engine.Exchange.Step.Construct;
+using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Parser;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
@@ -97,6 +98,7 @@ public static class Step
         {
             done = writer.Transfer(document, in parameters, ModelType.AsIs, null, new ProgressIndicator(cancellationToken, progress).Start());
             cancellationToken.ThrowIfCancellationRequested();
+            using OperationContext.Scope texts = OperationContext.Begin(StepWriter.TextsAsDirectives, true);
             done = done && writer.WriteStream(stream) == ReturnStatus.RetDone;
         }
         catch (Exception e) when (Refusal.IsFailure(e))

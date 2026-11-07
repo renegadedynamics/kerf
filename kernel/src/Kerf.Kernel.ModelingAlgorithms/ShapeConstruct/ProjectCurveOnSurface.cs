@@ -895,12 +895,12 @@ internal class ProjectCurveOnSurface : Transient
             double prevX, firstX = points2d[1].X;
             if (!isFromCache)
             {
-                while (firstX < uf)
+                for (int aStep = 0; firstX < uf; StepLimit.Next(ref aStep))
                 {
                     firstX += up;
                     points2d[1] = points2d[1].WithX(firstX);
                 }
-                while (firstX > ul)
+                for (int aStep = 0; firstX > ul; StepLimit.Next(ref aStep))
                 {
                     firstX -= up;
                     points2d[1] = points2d[1].WithX(firstX);
@@ -910,12 +910,12 @@ internal class ProjectCurveOnSurface : Transient
             if (surface.IsUPeriodic && isFromCache)
             {
                 double minParam = uf, maxParam = ul;
-                while (minParam > savedPoint.X)
+                for (int aStep = 0; minParam > savedPoint.X; StepLimit.Next(ref aStep))
                 {
                     minParam -= up;
                     maxParam -= up;
                 }
-                while (maxParam < savedPoint.X)
+                for (int aStep = 0; maxParam < savedPoint.X; StepLimit.Next(ref aStep))
                 {
                     minParam += up;
                     maxParam += up;
@@ -977,12 +977,12 @@ internal class ProjectCurveOnSurface : Transient
             double prevY, firstY = points2d[1].Y;
             if (!isFromCache)
             {
-                while (firstY < vf)
+                for (int aStep = 0; firstY < vf; StepLimit.Next(ref aStep))
                 {
                     firstY += vp;
                     points2d[1] = points2d[1].WithY(firstY);
                 }
-                while (firstY > vl)
+                for (int aStep = 0; firstY > vl; StepLimit.Next(ref aStep))
                 {
                     firstY -= vp;
                     points2d[1] = points2d[1].WithY(firstY);
@@ -992,12 +992,12 @@ internal class ProjectCurveOnSurface : Transient
             if (surface.IsVPeriodic && isFromCache)
             {
                 double minParam = vf, maxParam = vl;
-                while (minParam > savedPoint.Y)
+                for (int aStep = 0; minParam > savedPoint.Y; StepLimit.Next(ref aStep))
                 {
                     minParam -= vp;
                     maxParam -= vp;
                 }
-                while (maxParam < savedPoint.Y)
+                for (int aStep = 0; maxParam < savedPoint.Y; StepLimit.Next(ref aStep))
                 {
                     minParam += vp;
                     maxParam += vp;
@@ -1152,12 +1152,12 @@ internal class ProjectCurveOnSurface : Transient
                             for (int j = ind - 2; j > 0; j--)
                             {
                                 double curX = points2d[j].X;
-                                while (curX < PrevX - dU)
+                                for (int aStep = 0; curX < PrevX - dU; StepLimit.Next(ref aStep))
                                 {
                                     curX += up;
                                     points2d[j] = points2d[j].WithX(curX);
                                 }
-                                while (curX > PrevX + dU)
+                                for (int aStep = 0; curX > PrevX + dU; StepLimit.Next(ref aStep))
                                 {
                                     curX -= up;
                                     points2d[j] = points2d[j].WithX(curX);
@@ -1170,12 +1170,12 @@ internal class ProjectCurveOnSurface : Transient
                             for (int j = ind + 1; j <= points2d.Length(); j++)
                             {
                                 double curX = points2d[j].X;
-                                while (curX < PrevX - dU)
+                                for (int aStep = 0; curX < PrevX - dU; StepLimit.Next(ref aStep))
                                 {
                                     curX += up;
                                     points2d[j] = points2d[j].WithX(curX);
                                 }
-                                while (curX > PrevX + dU)
+                                for (int aStep = 0; curX > PrevX + dU; StepLimit.Next(ref aStep))
                                 {
                                     curX -= up;
                                     points2d[j] = points2d[j].WithX(curX);
@@ -1221,12 +1221,12 @@ internal class ProjectCurveOnSurface : Transient
                             for (int j = ind - 2; j > 0; j--)
                             {
                                 double curY = points2d[j].Y;
-                                while (curY < PrevY - dV)
+                                for (int aStep = 0; curY < PrevY - dV; StepLimit.Next(ref aStep))
                                 {
                                     curY += vp;
                                     points2d[j] = points2d[j].WithY(curY);
                                 }
-                                while (curY > PrevY + dV)
+                                for (int aStep = 0; curY > PrevY + dV; StepLimit.Next(ref aStep))
                                 {
                                     curY -= vp;
                                     points2d[j] = points2d[j].WithY(curY);
@@ -1239,12 +1239,12 @@ internal class ProjectCurveOnSurface : Transient
                             for (int j = ind + 1; j <= points2d.Length(); j++)
                             {
                                 double curY = points2d[j].Y;
-                                while (curY < PrevY - dV)
+                                for (int aStep = 0; curY < PrevY - dV; StepLimit.Next(ref aStep))
                                 {
                                     curY += vp;
                                     points2d[j] = points2d[j].WithY(curY);
                                 }
-                                while (curY > PrevY + dV)
+                                for (int aStep = 0; curY > PrevY + dV; StepLimit.Next(ref aStep))
                                 {
                                     curY -= vp;
                                     points2d[j] = points2d[j].WithY(curY);
@@ -1331,8 +1331,13 @@ internal class ProjectCurveOnSurface : Transient
         Point2D finishPoint = (isUIso) ? new Point2D(finishCoord, secondPointOfLine.Y)
                                            : new Point2D(secondPointOfLine.X, finishCoord);
 
-        for (;;)
+        // Kerf: halving ends within about 1,100 steps of any finite interval, so only NaN reaches this (decision 1913)
+        for (int halvings = 0; ; halvings++)
         {
+            if (halvings > 2048)
+            {
+                throw new ConstructionErrorException("ShapeConstruct_ProjectCurveOnSurface: a parameter isn't a number");
+            }
             if (Math.Abs(secondPointOfLine.Coord(3 - indCoord) - finishCoord) <= 2 * global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 break;
@@ -2264,12 +2269,12 @@ internal class ProjectCurveOnSurface : Transient
         {
             aSavedParam = savedParam;
             aSavedPoint = savedPoint;
-            while (minParam > aSavedParam)
+            for (int aStep = 0; minParam > aSavedParam; StepLimit.Next(ref aStep))
             {
                 minParam -= period;
                 maxParam -= period;
             }
-            while (maxParam < aSavedParam)
+            for (int aStep = 0; maxParam < aSavedParam; StepLimit.Next(ref aStep))
             {
                 minParam += period;
                 maxParam += period;

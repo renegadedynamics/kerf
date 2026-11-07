@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Geometry.Splines;
@@ -713,7 +714,7 @@ internal sealed class OsculatingSurface
         {
             step = (u2 - u1) / 10;
             d1NormMax = 0.0;
-            for (t = u1; t <= u2; t = t + step)
+            for (t = u1; t <= u2; t = StepLimit.Moved(t, t + step))
             {
                 s.D1(t, param, out p, out d1U, out d1V);
                 d1NormMax = Math.Max(d1NormMax, d1U.Magnitude);
@@ -728,7 +729,7 @@ internal sealed class OsculatingSurface
         {
             step = (v2 - v1) / 10;
             d1NormMax = 0.0;
-            for (t = v1; t <= v2; t = t + step)
+            for (t = v1; t <= v2; t = StepLimit.Moved(t, t + step))
             {
                 s.D1(param, t, out p, out d1U, out d1V);
                 d1NormMax = Math.Max(d1NormMax, d1V.Magnitude);

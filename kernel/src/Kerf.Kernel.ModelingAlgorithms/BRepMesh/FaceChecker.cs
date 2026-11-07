@@ -188,6 +188,11 @@ internal class FaceChecker : Transient
 
                 for (int pointIt = 1; pointIt < pCurve.ParametersNb(); ++pointIt)
                 {
+                    if ((pointIt & 1023) == 0)
+                    {
+                        Cancellation.ThrowIfRequested();
+                    }
+
                     Point2D pnt1 = pCurve.GetPoint(pointIt - 1);
                     Point2D pnt2 = pCurve.GetPoint(pointIt);
 

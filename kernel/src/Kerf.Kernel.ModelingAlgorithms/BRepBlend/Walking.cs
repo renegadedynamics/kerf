@@ -1671,7 +1671,7 @@ internal class Walking
         if (uPeriod > 0.0)
         {
             double sign = (newU < oldU) ? 1 : -1;
-            while (Math.Abs(newU - oldU) > uPeriod / 2)
+            for (int aStep = 0; Math.Abs(newU - oldU) > uPeriod / 2; StepLimit.Next(ref aStep))
             {
                 newU += sign * uPeriod;
             }
@@ -1679,7 +1679,7 @@ internal class Walking
         if (vPeriod > 0.0)
         {
             double sign = (newV < oldV) ? 1 : -1;
-            while (Math.Abs(newV - oldV) > vPeriod / 2)
+            for (int aStep = 0; Math.Abs(newV - oldV) > vPeriod / 2; StepLimit.Next(ref aStep))
             {
                 newV += sign * vPeriod;
             }
@@ -2452,7 +2452,7 @@ internal class Walking
         {
             double period = _hguide.Period();
             double sign = (newParam < param) ? 1 : -1;
-            while (Math.Abs(newParam - param) > period / 2)
+            for (int aStep = 0; Math.Abs(newParam - param) > period / 2; StepLimit.Next(ref aStep))
             {
                 newParam += sign * period;
             }

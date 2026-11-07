@@ -59,13 +59,14 @@ public class FilletTests
     }
 
     [Fact]
-    public void A_fillet_limit_says_nothing_of_a_curved_edge()
+    public void A_fillet_limit_on_a_rim_is_what_its_faces_allow_and_on_other_curves_nothing()
     {
         Solid cylinder = Solid.Cylinder(5, 20).Value;
-        Assert.Null(cylinder.FilletLimit([cylinder.AllEdges()[0]]));
-        Solid cone = Solid.Cone(5, 0, 10).Value;
-        Assert.Null(cone.FilletLimit(cone.AllEdges()));
+        Assert.Equal(5, cylinder.FilletLimit(cylinder.AllEdges().Where(e => e.AllVertices().Length == 1))!.Value, 1e-9);
+        Solid sphere = Solid.Sphere(5).Value;
+        Assert.Null(sphere.FilletLimit(sphere.AllEdges()));
     }
+
 
     [Fact]
     public void A_fillets_misuse_throws()
