@@ -37,9 +37,8 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
 | Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **Not ported, the owner's decision** (1892, 1901); done another way for straight edges (1847) |
 | Failure on an ordinary shape | corpus: offset/wire_* | 77 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
-| Unintuitive API | #1632 | MakeChamfer doesn't report which contours failed | Read | S |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
-| Unintuitive API | #1618, the rest | `Point3D` and `MakeBox` take NaN. Directions refuse it (decision 1820) | Reproduced | S to M |
+| Unintuitive API | #1618, the rest | `Point3D` takes NaN, so `Vertex.At` does. `Solid.Box` refuses it, checked through the public layer (and decision 1820 for directions) | Reproduced | S to M |
 | Costs time only | #1622, #1697 | Lipschitz estimate on `GlobOptFuncCCC2` too large; a mesh's stated deflection too large, which inflates a box from it | Read | For 11Q |
 | Costs time only | #1495 | `StoreData`'s walk could spin | Read | S |
 
@@ -59,6 +58,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1632, #1431 | A chamfer not saying which contours failed; the same 2D corner chamfered twice an internal fault | 22609 |
 | #1039 | A slice's Common with a model, 86898 for about 70000, reported as a success: now a failure | 22606 |
 | #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 22607 |
 | #572 | A cone from a STEP file with no triangles | 22605 |
@@ -179,7 +179,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1638 | Segfault in STEPCAFControl_Reader::findReprItems when a representation has no items | not relevant | Null items natively a crash; the port's STEP layer reports (decision 1050s) |
 | 1637 | GCC 16 miscompiles BRepClass3d_SClassifier::Perform in 7.9.x, classifying a point on an edge segfaults | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1633 | BRepAlgoAPI_Common returns an empty result (and Cut removes nothing) for two overlapping cylinders whose axes are about 1 degree apart | already fixed | Decision 1783; reproduced (Common 0 at 1°) and fixed: the walk ran on past both bounds |
-| 1632 | Modeling Algorithms - Expose faulty contours and vertices on BRepFilletAPI_MakeChamfer | applies | An API gap: MakeChamfer doesn't report its faulty contours. Small |
+| 1632 | Modeling Algorithms - Expose faulty contours and vertices on BRepFilletAPI_MakeChamfer | already fixed | Decision 22609 |
 | 1631 | Modeling Algorithms - BRepFilletAPI_MakeFillet loses external radius law and throws in Build | already fixed | Reproduced: works, 7962.8; decision 1676 fixed `ChFiDS_FilSpine.Reset` |
 | 1630 | Modeling - BRepOffsetAPI_MakePipe access violation for cubic spine and circular face | applies | Reproduced: no crash, but `ApiMakePipe.Shape()` refuses: a cubic spine and a circle make no pipe |
 | 1629 | Boolean cut of a helical sweep fused with a cylinder returns the argument uncut plus an inverted solid, silently, at some depths | applies | Reproduced on its files: Cut gives two solids totalling 7705.48, the block's volume, no error |
@@ -231,7 +231,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1456 | BOPTools_AlgoTools3D::DoSplitSEAMOnFace(edge, face) SIGSEGVs on a null pcurve (unchecked BRep_Tool::CurveOnSurface, unlike its 3-argument sibling) | not relevant | A null dereference natively; here an exception, and BOPAlgo reports it |
 | 1444 | Bad meshing of torus-like shapes with some specific curvatures | already fixed | Decision 22604: its file, 0.28 measured for 0.45 asked. A sphere is left: see the decision |
 | 1434 | GeomTools_Curve2dSet::Add / GeomTools_SurfaceSet::Add accept a null handle and defer the crash to Write(), unlike the CurveSet sibling | not relevant | Natively a crash on a null handle: the port's analyzers refuse null (nullable) |
-| 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | applies | Natively a crash; here a null dereference becomes an exception. Small |
+| 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | already fixed | Decision 22609: `fillet.connexion-error`, by a test |
 | 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering |
 | 1429 | HLRAlgo_PolyHidingData.hxx:43:5: error: 'gp_XYZ' does not name a type | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1427 | Failing fillet on tapered surface | applies | Reproduced on its files: `tapered_2_9` fails where `tapered_2_8` works |
