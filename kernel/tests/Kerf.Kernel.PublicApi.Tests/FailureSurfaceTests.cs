@@ -271,6 +271,14 @@ public class FailureSurfaceTests
                 || (method.DeclaringType?.ContainsGenericParameters ?? false)
                 || (method is MethodInfo info && info.ReturnType.IsByRefLike))
                 return;
+            // An init accessor called on a harvested object could be MeshOptions.Default's: 1e-300 is a legal deflection, and every
+            // other test in this assembly's parallel run that meshed by default then failed, in about one run in four
+            if (method is MethodInfo setter && setter.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(IsExternalInit)))
+            {
+                if (setter.DeclaringType?.GetConstructor(Type.EmptyTypes) is not { } fresh)
+                    return;
+                receiver = fresh.Invoke(null);
+            }
             Type[] types = parameters.Select(p => p.ParameterType.IsByRef ? p.ParameterType.GetElementType()! : p.ParameterType).ToArray();
             object?[] good = types.Select(t => Good(t).FirstOrDefault()).ToArray();
             Invoke(method, receiver, good, escapes);
