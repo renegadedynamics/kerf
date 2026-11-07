@@ -98,11 +98,11 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     static Plane3D FromFace(Face face, Vector3D? xDir)
     {
         var (x14, z14) = FaceDirections(face, xDir);
-        return Build(face.MassProperties(Dimension.Area, TopoUtil.MeasuredMoments).CentreOfMass, x14, z14);
+        return Build(TopoUtil.FaceCenter(face), x14, z14);
     }
 
     /// <summary>
-    /// The normal of the plane a face makes, without its origin, which takes integrating the face for its centre of mass:
+    /// The normal of the plane a face makes, without working out its origin:
     /// what <c>new Plane(face).ZDir</c> gives.
     /// </summary>
     /// <exception cref="ArgumentException">The face isn't planar.</exception>

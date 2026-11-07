@@ -27,7 +27,7 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The centre of mass of a face's area.</summary>
-    internal static Point3D FaceCenter(Face face) => face.MassProperties(Dimension.Area, MeasuredMoments).CentreOfMass;
+    internal static Point3D FaceCenter(Face face) => face.CentreOfArea(MeasuredMoments);
 
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
     internal static bool PointOnFace(Face face, Point3D point, double tolerance = Constants.Tolerance) =>
