@@ -83,7 +83,7 @@ public static class BooleanVolumes
         // A common that made nothing breaks no rule of volume, so nothing need be measured: only a point in both can prove it wrong
         if (rule == BooleanVolumeRule.Common && outcome.Count == 0)
         {
-            return ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0);
+            return ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0, -1);
         }
         var a = new Measure();
         foreach (Shape shape in arguments)
@@ -110,8 +110,8 @@ public static class BooleanVolumes
             // Within the rules, but a cut that removed nothing, or a fuse that lost nothing, can still be proved wrong
             return rule switch
             {
-                BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0),
-                BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, Math.Max(0, most - r)),
+                BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0, Math.Min(a.Sum, b.Sum)),
+                BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
                 _ => null,
             };
         }
@@ -132,7 +132,7 @@ public static class BooleanVolumes
     // a small overlap, and then nothing is said. Two points are asked for, as a classifier can be wrong about one.
     // A fuse is as large as its inputs together only if they barely overlap: the points found stand for a volume each, and to prove
     // it wrong must stand for over twice what it lost, as a pin in a large block can be within the margin and right (decision 1881).
-    private static Diagnostic? ProvedToOverlap(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double lost)
+    private static Diagnostic? ProvedToOverlap(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double lost, double smallerVolume)
     {
         if (arguments.Count != 1 || tools.Count != 1)
         {
@@ -148,6 +148,19 @@ public static class BooleanVolumes
         double fromY = Math.Max(inA.Min.Y, inB.Min.Y), toY = Math.Min(inA.Max.Y, inB.Max.Y);
         double fromZ = Math.Max(inA.Min.Z, inB.Min.Z), toZ = Math.Min(inA.Max.Z, inB.Max.Z);
         if (!double.IsFinite(fromX + toX + fromY + toY + fromZ + toZ) || toX <= fromX || toY <= fromY || toZ <= fromZ)
+        {
+            return null;
+        }
+
+        // A point deep inside both has a ball of that radius inside both, and so inside the overlap of their boxes. Inputs that only
+        // touch have a slab of their tolerances for an overlap, which no point can be deep in, so nothing need be classified: a
+        // bottle's neck on its body took 343 points of each, a quarter of its bytes (decision 1887)
+        if (smallerVolume < 0)
+        {
+            smallerVolume = Math.Min(a.IntegrateVolume(Measured), b.IntegrateVolume(Measured));
+        }
+        double size = Math.Cbrt(smallerVolume);
+        if (Math.Min(toX - fromX, Math.Min(toY - fromY, toZ - fromZ)) < 2 * OverlapDepth * size)
         {
             return null;
         }
@@ -183,7 +196,6 @@ public static class BooleanVolumes
                         {
                             return null;
                         }
-                        double size = Math.Cbrt(Math.Min(a.IntegrateVolume(Measured), b.IntegrateVolume(Measured)));
                         depth = OverlapDepth * size + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
                     }
                     // Deep inside both, so it can't be tolerance or a touch
