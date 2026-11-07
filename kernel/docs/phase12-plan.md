@@ -59,7 +59,7 @@ Ongoing, to the owner's bar.
 
 | Unit | What |
 |---|---|
-| **12N** Unexplained rises | Extrude until's +3.6 MB, and a thick solid's +2.2% |
+| **12N** Unexplained rises | Extrude until's +3.6 MB, a thick solid's +2.2%, and `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB |
 | **12O** The mesher (11O) | Meet the deflection at a sensible triangle count, so that `ControlAllSurfaces` can go altogether (decision 1680) |
 | **12P** Wasteful cases (11Q) | Down the slowest list: the corpus's slowest cases, the rig's slowest suites and Bento's examples |
 
@@ -83,4 +83,4 @@ Fitted around the rest.
 
 As in phase 11: at most three helpers at once, each on a branch and worktree of its own, then the merge gate, one at a
 time. Results stay identical unless a unit says otherwise and records why. Timed claims come from a quiet machine, and the
-rig compares against `docs/benchmarks/2026-11-07-d18bc4ede.tsv`. Nothing is pushed, except by the owner.
+rig compares against `docs/benchmarks/2026-11-07-f5a7bd7a2.tsv` (decision 1902). Nothing is pushed, except by the owner.
