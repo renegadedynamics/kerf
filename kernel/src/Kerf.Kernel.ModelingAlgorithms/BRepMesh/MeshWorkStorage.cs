@@ -1,12 +1,14 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
+
 namespace Kerf.Engine.Meshing;
 
 /// <summary>
 /// A thread's lists of triangles and circles for meshing one face, kept for the next face, as OCCT's face algorithm gets its
 /// memory from one allocator rather than growing a new array each time. The set is out of the static while a face uses it, so
 /// a nested use makes its own and nothing crosses threads. A list is empty when it's rented, and reads go by its count, so a
-/// face can't see the last one's values. A thread keeps about 360 kB for its life; anything larger is only held weakly
+/// face can't see the last one's values. A thread keeps about 610 kB for its life; anything larger is only held weakly
 /// (<see cref="MeshWorkList{T}"/>).
 /// </summary>
 internal sealed class MeshWorkStorage
@@ -20,8 +22,81 @@ internal sealed class MeshWorkStorage
     /// <summary>The circles of the structure's first Delaunay.</summary>
     public readonly MeshWorkList<MeshCircle> Circles = new(256);
 
+    /// <summary>The nodes of the lists of links at each of the structure's nodes.</summary>
+    public readonly MeshWorkList<LinkNode> LinkNodes = new(1024);
+
+    /// <summary>The structure's map of links.</summary>
+    public readonly MeshWorkList<LinkMapNode> LinkMapNodes = new(256, largestKept: 1 << 12);
+
+    // The map's buckets, of however many it last needed, up to this
+    private const int LargestLinkBucketsKept = 1 << 12;
+    private int[] _linkBuckets = [];
+
+    /// <summary>The kept buckets, in no particular state: the map clears what it uses.</summary>
+    public int[] TakeLinkBuckets()
+    {
+        int[] buckets = _linkBuckets;
+        _linkBuckets = [];
+        return buckets;
+    }
+
+    /// <summary>Keeps the map's buckets, if they aren't large.</summary>
+    public void GiveLinkBuckets(int[] buckets)
+    {
+        if (buckets.Length <= LargestLinkBucketsKept)
+        {
+            _linkBuckets = buckets;
+        }
+    }
+
     /// <summary>Whether a Delaunay has the circles.</summary>
     public bool CirclesTaken;
+
+    // The cells of the first Delaunay's circles: up to this many nodes stay with the thread, and a larger array is only held weakly,
+    // as in MeshWorkList. It's always a power of 2 or empty, as the filter grows it
+    private const int LargestCellNodesKept = 1 << 13;
+    private CellFilterNode<int>[] _cellNodes = [];
+    private WeakReference<CellFilterNode<int>[]>? _heldCellNodes;
+    private CircleTool? _cellNodesLentTo;
+
+    /// <summary>Lends the array of cells to the first Delaunay's circles.</summary>
+    public void LendCellNodes(CircleTool circles)
+    {
+        if (_cellNodesLentTo is not null)
+        {
+            return;
+        }
+        if (_heldCellNodes is not null && _heldCellNodes.TryGetTarget(out CellFilterNode<int>[]? held))
+        {
+            _heldCellNodes.SetTarget(null!);
+            _cellNodes = held;
+        }
+        circles.UseCellNodes(_cellNodes);
+        _cellNodes = [];
+        _cellNodesLentTo = circles;
+    }
+
+    private void TakeBackCellNodes()
+    {
+        if (_cellNodesLentTo is null)
+        {
+            return;
+        }
+        CellFilterNode<int>[] nodes = _cellNodesLentTo.TakeCellNodes();
+        _cellNodesLentTo = null;
+        if (nodes.Length <= LargestCellNodesKept)
+        {
+            _cellNodes = nodes;
+        }
+        else if (_heldCellNodes is null)
+        {
+            _heldCellNodes = new WeakReference<CellFilterNode<int>[]>(nodes);
+        }
+        else
+        {
+            _heldCellNodes.SetTarget(nodes);
+        }
+    }
 
     /// <summary>The thread's set, or a new one.</summary>
     public static MeshWorkStorage Rent()
@@ -31,6 +106,8 @@ internal sealed class MeshWorkStorage
         storage.CirclesTaken = false;
         storage.Elements.TakeHeldArray();
         storage.Circles.TakeHeldArray();
+        storage.LinkNodes.TakeHeldArray();
+        storage.LinkMapNodes.TakeHeldArray();
         return storage;
     }
 
@@ -39,8 +116,26 @@ internal sealed class MeshWorkStorage
     {
         storage.Elements.Empty();
         storage.Circles.Empty();
+        storage.LinkNodes.Empty();
+        storage.LinkMapNodes.Empty();
+        storage.TakeBackCellNodes();
         t_spare = storage;
     }
+}
+
+/// <summary>A link of the structure's map, with the pair of triangles at it; a next of 0 is the end of its bucket.</summary>
+internal struct LinkMapNode
+{
+    public MeshEdge Key;
+    public PairOfIndex Value;
+    public int Next;
+}
+
+/// <summary>A node of a list of links, in the array of all of them; a next of 0 is the end of its list.</summary>
+internal struct LinkNode
+{
+    public int Value;
+    public int Next;
 }
 
 /// <summary>
@@ -50,11 +145,9 @@ internal sealed class MeshWorkStorage
 /// next generation 0 collection. So a thread can't pin megabytes because it once met a large face, while the next large face
 /// before a generation 2 collection doesn't grow its own.
 /// </summary>
-internal sealed class MeshWorkList<T>(int capacity)
+internal sealed class MeshWorkList<T>(int capacity, int largestKept = 1 << 13)
     where T : struct
 {
-    private const int LargestKept = 1 << 13;
-
     private T[] _items = new T[capacity];
     private T[]? _kept;
     private WeakReference<T[]>? _held;
@@ -82,6 +175,9 @@ internal sealed class MeshWorkList<T>(int capacity)
         }
         _items[_count++] = value;
     }
+
+    /// <summary>Removes the last value, which a reference to it can still read until the next <see cref="Add"/>.</summary>
+    public void RemoveLast() => _count--;
 
     /// <summary>Makes room for <paramref name="capacity"/> values.</summary>
     public void EnsureCapacity(int capacity)
@@ -119,7 +215,7 @@ internal sealed class MeshWorkList<T>(int capacity)
     public void Empty()
     {
         _count = 0;
-        if (_items.Length > LargestKept)
+        if (_items.Length > largestKept)
         {
             if (_held is null)
             {
@@ -137,7 +233,7 @@ internal sealed class MeshWorkList<T>(int capacity)
     // While it's larger, _kept holds the array that stays, to go back to
     private void Grow(int needed)
     {
-        if (_items.Length <= LargestKept)
+        if (_items.Length <= largestKept)
         {
             _kept = _items;
         }

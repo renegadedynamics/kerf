@@ -54,7 +54,21 @@ internal sealed class CircleTool
     public void SetCellSize(double size) => _cellFilter.Reset(size);
 
     /// <summary>Kerf: how many circles in cells it may hold (decision 1856).</summary>
-    public void SetMaxEntries(int entries) => _cellFilter.MaxNodes = entries;
+    public void SetMaxEntries(int entries)
+    {
+        _cellFilter.MaxNodes = entries;
+        // The limit is read against the array's size when it's full, so a larger kept array mustn't put it off
+        if (_cellFilter.NodeCapacity > entries)
+        {
+            _cellFilter.UseNodes([]);
+        }
+    }
+
+    /// <summary>Starts the cells on an array kept from an earlier face, before any circle is bound.</summary>
+    internal void UseCellNodes(CellFilterNode<int>[] nodes) => _cellFilter.UseNodes(nodes);
+
+    /// <summary>The cells' array, to keep for the next face. This tool can't be used again.</summary>
+    internal CellFilterNode<int>[] TakeCellNodes() => _cellFilter.TakeNodes();
 
     /// <summary>Sets the size of the cells in each direction, and clears the cells.</summary>
     public void SetCellSize(double sizeX, double sizeY)

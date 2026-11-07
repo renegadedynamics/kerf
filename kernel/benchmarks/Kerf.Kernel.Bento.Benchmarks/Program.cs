@@ -94,6 +94,12 @@ var examples = new (string Name, Func<ModelShape> Build)[]
     }),
 };
 
+// To look at some of the examples alone: KERF_BENTO_ONLY holds part of their names, separated by commas
+if (Environment.GetEnvironmentVariable("KERF_BENTO_ONLY") is { Length: > 0 } only)
+{
+    examples = [.. examples.Where(e => only.Split(',').Any(o => e.Name.Contains(o, StringComparison.Ordinal)))];
+}
+
 // What stays in memory (unit 11Q, sixth slice): KeptMemory.cs has the command lines
 switch (args.Length > 0 ? args[0] : "")
 {

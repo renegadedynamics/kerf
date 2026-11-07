@@ -166,7 +166,7 @@ The three tables the plan names (decision 1388):
 
 | Set | Most a thread keeps | Typical, Bento's examples |
 |---|---:|---:|
-| `MeshWorkStorage` | 8,192 triangles and circles, 360 kB | 352 kB |
+| `MeshWorkStorage` | 8,192 triangles and circles, link nodes and cell nodes; 4,096 links and buckets (decisions 1875, 1876): about 610 kB | not measured apart; 23.6 MB over all the sets on about 50 threads |
 | `GenExtPS.WorkGrids` | 1,024 cells, 200 kB | none |
 | `Class2dPoints` | 4,096 points, 65 kB | 8 kB |
 | `ApproxAFunction.CoefficientsWork` | 8,192 values, 64 kB | none |
@@ -179,7 +179,7 @@ The three tables the plan names (decision 1388):
 | `MathBase.t_mmcmher` | one small record, fillet approximations only | none |
 | `GeomTools.s_nesting`, `WorkingOverlay.t_current`, `SampledPolygons.t_current`, the walkings' step traces | a number, or null outside an operation | none |
 
-The limits add up to about 760 kB a thread: 18 MB on 24 threads.
+The limits add up to about 1 MB a thread: 24 MB on 24 threads.
 
 `ProductMemo` adds four placement chains a thread, a few kB unless a chain is very long. **Two statics are for the process:** `SharedArrays<T>.s_slots` (decision 1841), arrays of frozen splines, at most 1,024 of up to 32 values for each of `double` and `int`, about 300 kB and 180 kB; a slot is one reference, so a race can only lose an entry. And `NCollection_List<T>.s_sharedEmpty` (decision 1840), one empty list for each `T`, which refuses to grow.
 

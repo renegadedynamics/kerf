@@ -2854,7 +2854,7 @@ internal static partial class BrepLibrary
         HashSet<int> degNodes = degeneratedNodes;
         Span<int> node = stackalloc int[3];
         var tool = new EvalDeflection(face);
-        var links = new HashSet<Link>();
+        var links = new HashSet<Link>(2 * pt.TriangleCount); // Each inner link is met twice, so about 1.5 for a triangle
         double sqDeflection = 0.0;
         Transform3D trsf = loc.Transformation;
         var p3d = new Point3D[3];

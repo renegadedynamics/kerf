@@ -3,6 +3,50 @@
 namespace Kerf.Engine.Foundation.Std;
 
 /// <summary>
+/// The sequence of <c>std::mt19937</c> with its default seed, as <see cref="Mt19937"/> gives it, without a generator's 2.5 kB and
+/// seeding for each user: the first values come from a table every thread shares, which never changes once made, and a
+/// generator is only made for a user that goes past them.
+/// </summary>
+internal struct DefaultMt19937
+{
+    private const int TableLength = 624;
+
+    private static readonly uint[] Table = MakeTable();
+
+    private int _next;
+    private Mt19937? _rest;
+
+    /// <summary>The next value of the sequence.</summary>
+    public uint Invoke()
+    {
+        if (_next < TableLength)
+        {
+            return Table[_next++];
+        }
+        if (_rest is null)
+        {
+            _rest = new Mt19937();
+            for (int i = 0; i < TableLength; ++i)
+            {
+                _rest.Invoke();
+            }
+        }
+        return _rest.Invoke();
+    }
+
+    private static uint[] MakeTable()
+    {
+        var generator = new Mt19937();
+        var table = new uint[TableLength];
+        for (int i = 0; i < TableLength; ++i)
+        {
+            table[i] = generator.Invoke();
+        }
+        return table;
+    }
+}
+
+/// <summary>
 /// C++'s <c>std::mt19937</c>, the 32-bit Mersenne Twister (MT19937), giving the same sequence as every standard
 /// library for the same seed. OCCT uses it where its results depend on the sequence (NCollection_UBTreeFiller's
 /// shuffle, which shapes the tree), so the port's trees are OCCT's.

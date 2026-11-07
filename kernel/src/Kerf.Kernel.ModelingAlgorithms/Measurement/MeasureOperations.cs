@@ -32,11 +32,11 @@ public static class MeasureOperations
         /// <summary>The volume the shape's faces bound, whatever the shape is (OCCT's <c>BRepGProp::VolumeProperties</c>): zero for a shape
         /// without faces; for an open shell, the signed volume of the cone from its location's origin.</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public double IntegrateVolume(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Volume, options).Mass();
+        public double IntegrateVolume(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Volume, options, massOnly: true).Mass();
 
         /// <summary>The area of the shape's faces (<c>BRepGProp::SurfaceProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options).Mass();
+        public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options, massOnly: true).Mass();
 
         /// <summary>The length of the shape's edges (<c>BRepGProp::LinearProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
@@ -193,7 +193,7 @@ public static class MeasureOperations
         }
     }
 
-    private static Properties Integrate(in Shape shape, Dimension dimension, MassOptions? options)
+    private static Properties Integrate(in Shape shape, Dimension dimension, MassOptions? options, bool massOnly = false)
     {
         options ??= MassOptions.Default;
         var props = new Properties();
@@ -203,13 +203,13 @@ public static class MeasureOperations
                 MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation, settled: true);
                 break;
             case Dimension.Area when options.Tolerance > 0:
-                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared);
+                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly);
                 break;
             case Dimension.Area:
                 MassPropertiesBuilder.SurfaceProperties(shape, props, options.SkipShared, options.UseTriangulation);
                 break;
             case Dimension.Volume when options.Tolerance > 0:
-                MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared);
+                MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly);
                 break;
             case Dimension.Volume:
                 MassPropertiesBuilder.VolumeProperties(shape, props, options.OnlyClosed, options.SkipShared, options.UseTriangulation);

@@ -165,13 +165,19 @@ internal class FaceChecker : Transient
         {
             WireModel dWire = _dFace.GetWire(wireIndex);
 
-            List<Segment> segments = new(dWire.EdgesNb());
+            int segmentCount = 0;
+            for (int edgeIt = 0; edgeIt < dWire.EdgesNb(); ++edgeIt)
+            {
+                segmentCount += dWire.GetEdge(edgeIt).GetPCurve(_dFace, dWire.GetEdgeOrientation(edgeIt)).ParametersNb() - 1;
+            }
+
+            List<Segment> segments = new(segmentCount);
             IndexedSpatialTree<int, Box2d> bndBoxTree = new();
 
             _wiresSegments[wireIndex] = segments;
             _wiresBndBoxTree[wireIndex] = bndBoxTree;
 
-            SpatialTreeFiller<int, Box2d> bndBoxTreeFiller = new(bndBoxTree);
+            SpatialTreeFiller<int, Box2d> bndBoxTreeFiller = new(bndBoxTree, capacity: segmentCount);
 
             for (int edgeIt = 0; edgeIt < dWire.EdgesNb(); ++edgeIt)
             {
