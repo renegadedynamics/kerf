@@ -1,9 +1,10 @@
-﻿// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Construction;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Fillets;
 using Kerf.Geometry;
+using Kerf.Measurement;
 using Kerf.Topology;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepFilletAPI;
@@ -50,6 +51,15 @@ public class FilletLimitsTests
                 || Math.Abs(e.AllVertices()[0].Point.Y - first.AllVertices()[0].Point.Y) < 1e-9));
         // With each other, and each with what's left of the face it's also cut back
         Assert.Equal(3, TangentEdges(box.Fillet([first, opposite], 5).Value.Shape));
+    }
+
+    [Fact]
+    public void OCCTs_own_touching_fillets_work()
+    {
+        // tests/bugs/modalg_7/bug25478_1: "Fillets can not touch", a TODO there
+        Solid box = Solid.Box(10, 10, 10).Value;
+        Built<Shape> made = box.Fillet([box.AllEdges()[0], box.AllEdges()[2]], 5).Value;
+        Assert.Equal(1000 - 2 * (1 - Math.PI / 4) * 25 * 10, made.Shape.IntegrateVolume(), 1e-6);
     }
 
     [Fact]

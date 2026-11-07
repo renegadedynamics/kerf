@@ -5,6 +5,7 @@ using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -25,6 +26,79 @@ namespace Kerf.Fillets;
 internal static class FilletLimits
 {
     private const double Tolerance = Tolerances.Confusion;
+
+    /// <summary>Which faces and edges meet where, so that a large shape's edges aren't each a search of the whole shape.</summary>
+    private sealed class Neighbours
+    {
+        private readonly Dictionary<Shape, List<Face>> _facesOfEdge = new(ShapeHasher.Instance);
+        private readonly Dictionary<Shape, List<Face>> _facesOfVertex = new(ShapeHasher.Instance);
+        private readonly Dictionary<Shape, List<Edge>> _edgesOfVertex = new(ShapeHasher.Instance);
+        private readonly Dictionary<Shape, Dictionary<Shape, Edge>> _edgesOfFace = new(ShapeHasher.Instance);
+        private readonly Dictionary<Shape, Direction3D?> _normals = new(ShapeHasher.Instance);
+
+        public Neighbours(Shape shape)
+        {
+            foreach (Face face in shape.AllFaces())
+            {
+                var own = new Dictionary<Shape, Edge>(ShapeHasher.Instance);
+                _edgesOfFace[face] = own;
+                foreach (Edge edge in face.AllEdges())
+                {
+                    Add(_facesOfEdge, edge, face);
+                    own.TryAdd(edge, edge);
+                }
+                foreach (Vertex vertex in face.AllVertices())
+                {
+                    Add(_facesOfVertex, vertex, face);
+                }
+            }
+            foreach (Edge edge in shape.AllEdges())
+            {
+                foreach (Vertex vertex in edge.AllVertices())
+                {
+                    Add(_edgesOfVertex, vertex, edge);
+                }
+            }
+        }
+
+        /// <summary>The outward normal of a planar face, or null for any other. Asked once a face, as a surface's adaptor
+        /// on a face of many edges isn't cheap.</summary>
+        public Direction3D? Normal(Face face)
+        {
+            if (!_normals.TryGetValue(face, out Direction3D? normal))
+            {
+                var surface = new FaceSurfaceAdaptor(face);
+                normal = surface.GetType() == SurfaceKind.Plane ? OutwardNormal(face, surface.Plane()) : null;
+                _normals[face] = normal;
+            }
+            return normal;
+        }
+
+        /// <summary>The face's edges, each as the face holds it.</summary>
+        public IReadOnlyCollection<Edge> Edges(Face face) => _edgesOfFace[face].Values;
+
+        /// <summary>The edge as the face holds it, with its orientation there.</summary>
+        public Edge Oriented(Face face, Edge edge) => _edgesOfFace[face][edge];
+
+        public IReadOnlyList<Face> Faces(Edge edge) => _facesOfEdge.TryGetValue(edge, out List<Face>? faces) ? faces : [];
+
+        public IReadOnlyList<Face> Faces(Vertex vertex) => _facesOfVertex.TryGetValue(vertex, out List<Face>? faces) ? faces : [];
+
+        public IReadOnlyList<Edge> Edges(Vertex vertex) => _edgesOfVertex.TryGetValue(vertex, out List<Edge>? edges) ? edges : [];
+
+        private static void Add<T>(Dictionary<Shape, List<T>> map, Shape key, T value)
+            where T : struct, IShape<T>
+        {
+            if (!map.TryGetValue(key, out List<T>? list))
+            {
+                map[key] = list = [];
+            }
+            if (!list.Any(v => v.AsShape().IsSame(value.AsShape())))
+            {
+                list.Add(value);
+            }
+        }
+    }
 
     /// <summary>One face beside a straight edge.</summary>
     /// <param name="Face">The face.</param>
@@ -56,13 +130,13 @@ internal static class FilletLimits
     /// face: no tangent fillet fits above it. Null if none of the edges gives a limit.</summary>
     public static double? LargestRadius(Shape shape, IEnumerable<Edge> edges)
     {
-        Corner[] corners = [.. Corners(shape, edges)];
+        Dictionary<Shape, Corner> corners = Corners(shape, edges);
         double? largest = null;
-        foreach ((Corner corner, Side side) in Sides(corners))
+        foreach ((Corner corner, Side side) in Sides(corners.Values))
         {
             if (side.Width is { } width)
             {
-                double demand = corner.ContactPerRadius + corners.Where(c => c.Edge.IsSame(side.Opposite)).Sum(c => c.ContactPerRadius);
+                double demand = corner.ContactPerRadius + (corners.TryGetValue(side.Opposite, out Corner opposite) ? opposite.ContactPerRadius : 0);
                 largest = Math.Min(largest ?? double.MaxValue, width / demand);
             }
         }
@@ -92,20 +166,20 @@ internal static class FilletLimits
         }
         if (specs.Length == 1 && specs[0].Distance2 is { } second && second != specs[0].Distance)
         {
-            return Read(shape, specs[0].Edge) is { } corner ? TwoLengths(corner, specs[0].Distance, second, referenceFaces[0]) : null;
+            return Read(new Neighbours(shape), specs[0].Edge) is { } corner ? TwoLengths(corner, specs[0].Distance, second, referenceFaces[0]) : null;
         }
         if (specs.Any(s => s.Distance2 is { } d2 && d2 != s.Distance) || specs.Any(s => s.Distance != specs[0].Distance))
         {
             return null;
         }
         Edge[] edges = [.. specs.Select(s => s.Edge)];
-        Corner[] corners = [.. Corners(shape, edges)];
+        Dictionary<Shape, Corner> corners = Corners(shape, edges);
         double? largest = null;
-        foreach ((Corner corner, Side side) in Sides(corners))
+        foreach ((Corner _, Side side) in Sides(corners.Values))
         {
             if (side.Width is { } width)
             {
-                largest = Math.Min(largest ?? double.MaxValue, width / (1 + corners.Count(c => c.Edge.IsSame(side.Opposite))));
+                largest = Math.Min(largest ?? double.MaxValue, width / (corners.ContainsKey(side.Opposite) ? 2 : 1));
             }
         }
         return largest is { } limit ? Message(shape, edges, "chamfer", "length", specs[0].Distance, limit) : null;
@@ -121,7 +195,7 @@ internal static class FilletLimits
             {
                 Edge edge = corner.Edge;
                 return Diagnostic.Error(FilletOperations.TooLarge,
-                    $"A chamfer length of {length:G6} is too large for {Edges([edge])}: the face it's measured on is {width:G6} wide.").WithShapes([edge]);
+                    $"The chamfer with a length of {length:G6} is too large for {Edges([edge])}: the face it's measured on is {width:G6} wide.").WithShapes([edge]);
             }
         }
         return null;
@@ -132,13 +206,13 @@ internal static class FilletLimits
         if (value > largest + Tolerance)
         {
             return Diagnostic.Error(FilletOperations.TooLarge,
-                $"A {what} {size} of {value:G6} is too large for {Edges(edges)}: the most that fits is {largest:G6}, where it uses up the whole width of a face beside the edge.")
+                $"The {what} with a {size} of {value:G6} is too large for {Edges(edges)}: the most that fits is {largest:G6}, where it uses up the whole width of a face beside the edge.")
                 .WithShapes(edges.Select(e => (Shape)e));
         }
         if (value >= largest - Tolerance)
         {
             return Diagnostic.Error(FilletOperations.TooLarge,
-                $"A {what} {size} of {value:G6} uses up the whole width of a face beside {Edges(edges)}, and this case can't be built yet: try a slightly smaller {size}.")
+                $"The {what} with a {size} of {value:G6} uses up the whole width of a face beside {Edges(edges)}, and this case can't be built yet: try a slightly smaller {size}.")
                 .WithShapes(edges.Select(e => (Shape)e));
         }
         return null;
@@ -156,7 +230,7 @@ internal static class FilletLimits
             return "this edge";
         }
         Point3D a = Tool.Pnt(ends[0]), b = Tool.Pnt(ends[1]);
-        return $"the edge at ({(a.X + b.X) / 2:G6}, {(a.Y + b.Y) / 2:G6}, {(a.Z + b.Z) / 2:G6})";
+        return $"the edge at ({Math.Round((a.X + b.X) / 2, 6):G6}, {Math.Round((a.Y + b.Y) / 2, 6):G6}, {Math.Round((a.Z + b.Z) / 2, 6):G6})";
     }
 
     /// <summary>The fillet, if each edge is a straight one between planes, the edges share no vertex, and a face just disappears.</summary>
@@ -166,7 +240,7 @@ internal static class FilletLimits
         {
             return null;
         }
-        return Build(shape, specs.Select(s => (s.Edge, (s.Radius, s.Radius), (double?)s.Radius)));
+        return Safely(() => Build(shape, specs.Select(s => (s.Edge, (s.Radius, s.Radius), (double?)s.Radius))));
     }
 
     /// <summary>The chamfer, under the same conditions as <see cref="Fillet"/>; a chamfer by an angle isn't handled.</summary>
@@ -176,7 +250,20 @@ internal static class FilletLimits
         {
             return null;
         }
-        return Build(shape, specs.Select((s, i) => (s.Edge, (s.Distance, s.Distance2 ?? s.Distance), (double?)null)), referenceFaces);
+        return Safely(() => Build(shape, specs.Select(s => (s.Edge, (s.Distance, s.Distance2 ?? s.Distance), (double?)null)), referenceFaces));
+    }
+
+    // Nothing here may mask ChFi3d's failure, which has already happened
+    private static EngineOutcome? Safely(Func<EngineOutcome?> build)
+    {
+        try
+        {
+            return build();
+        }
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
+        {
+            return null;
+        }
     }
 
     // sizes: a chamfer's distances on the reference face and the other; a fillet's radius twice, and also as radius
@@ -187,10 +274,11 @@ internal static class FilletLimits
         {
             return null;
         }
+        var neighbours = new Neighbours(shape);
         var cuts = new Cutter[parts.Length];
         for (int i = 0; i < parts.Length; i++)
         {
-            if (Read(shape, parts[i].Edge) is not { } corner || !EndsSquare(shape, corner))
+            if (Read(neighbours, parts[i].Edge) is not { } corner || !EndsSquare(neighbours, corner))
             {
                 return null;
             }
@@ -429,18 +517,21 @@ internal static class FilletLimits
     }
 
     // The corners among the edges
-    private static IEnumerable<Corner> Corners(Shape shape, IEnumerable<Edge> edges)
+    private static Dictionary<Shape, Corner> Corners(Shape shape, IEnumerable<Edge> edges)
     {
+        var neighbours = new Neighbours(shape);
+        var corners = new Dictionary<Shape, Corner>(ShapeHasher.Instance);
         foreach (Edge edge in edges)
         {
-            if (Read(shape, edge) is { } corner)
+            if (Read(neighbours, edge) is { } corner)
             {
-                yield return corner;
+                corners[edge] = corner;
             }
         }
+        return corners;
     }
 
-    private static IEnumerable<(Corner Corner, Side Side)> Sides(Corner[] corners)
+    private static IEnumerable<(Corner Corner, Side Side)> Sides(IEnumerable<Corner> corners)
     {
         foreach (Corner corner in corners)
         {
@@ -449,15 +540,19 @@ internal static class FilletLimits
         }
     }
 
-    private static Corner? Read(Shape shape, Edge edge)
+    private static Corner? Read(Neighbours neighbours, Edge edge)
     {
+        if (Tool.Degenerated(edge))
+        {
+            return null;
+        }
         var curve = new EdgeCurveAdaptor(edge);
         if (curve.GetType() != CurveKind.Line)
         {
             return null;
         }
-        Face[] faces = [.. shape.AllFaces().Where(f => f.AllEdges().Any(e => e.IsSame(edge)))];
-        if (faces.Length != 2 || faces[0].IsSame(faces[1]))
+        IReadOnlyList<Face> faces = neighbours.Faces(edge);
+        if (faces.Count != 2)
         {
             return null;
         }
@@ -467,7 +562,7 @@ internal static class FilletLimits
             return null;
         }
         Point3D start = curve.Value(curve.FirstParameter()), end = curve.Value(curve.LastParameter());
-        if (ReadSide(shape, faces[0], edge, start, end) is not { } one || ReadSide(shape, faces[1], edge, start, end) is not { } two)
+        if (ReadSide(neighbours, faces[0], edge, start, end) is not { } one || ReadSide(neighbours, faces[1], edge, start, end) is not { } two)
         {
             return null;
         }
@@ -481,24 +576,22 @@ internal static class FilletLimits
         return new Corner(edge, start, end, one, two);
     }
 
-    private static Side? ReadSide(Shape shape, Face face, Edge edge, in Point3D start, in Point3D end)
+    private static Side? ReadSide(Neighbours neighbours, Face face, Edge edge, in Point3D start, in Point3D end)
     {
-        var surface = new FaceSurfaceAdaptor(face);
-        if (surface.GetType() != SurfaceKind.Plane)
+        if (neighbours.Normal(face) is not { } normal)
         {
             return null;
         }
-        Direction3D normal = OutwardNormal(face, surface.Plane());
 
         // The face lies to the left of its oriented edge, seen from outside; the edge's first as the edge runs
-        Edge oriented = face.AllEdges().First(e => e.IsSame(edge));
+        Edge oriented = neighbours.Oriented(face, edge);
         Direction3D tangent = new(new Vector3D(start, end));
         if (oriented.Orientation == Orientation.Reversed)
         {
             tangent = tangent.Reversed();
         }
         Direction3D inward = normal.Crossed(tangent);
-        double? width = Width(shape, face, edge, normal, inward, start, out Edge opposite);
+        double? width = Width(neighbours, face, edge, normal, inward, start, out Edge opposite);
         return new Side(face, normal, inward, width, opposite);
     }
 
@@ -510,11 +603,11 @@ internal static class FilletLimits
 
     // The face's width from the edge, if it's a four-sided face of straight edges whose far side is parallel to the edge and
     // ends the plane: past it the next face turns away, so a contact line can't carry on along it
-    private static double? Width(Shape shape, Face face, Edge edge, Direction3D normal, Direction3D inward, in Point3D start, out Edge opposite)
+    private static double? Width(Neighbours neighbours, Face face, Edge edge, Direction3D normal, Direction3D inward, in Point3D start, out Edge opposite)
     {
         opposite = default;
-        Edge[] edges = [.. face.AllEdges()];
-        if (edges.Length != 4 || edges.Any(e => new EdgeCurveAdaptor(e).GetType() != CurveKind.Line))
+        IReadOnlyCollection<Edge> edges = neighbours.Edges(face);
+        if (edges.Count != 4 || edges.Any(e => new EdgeCurveAdaptor(e).GetType() != CurveKind.Line))
         {
             return null;
         }
@@ -537,17 +630,12 @@ internal static class FilletLimits
             return null;
         }
         Edge farEdge = across[0];
-        Face[] beyond = [.. shape.AllFaces().Where(f => !f.IsSame(face) && f.AllEdges().Any(e => e.IsSame(farEdge)))];
+        Face[] beyond = [.. neighbours.Faces(farEdge).Where(f => !f.IsSame(face))];
         if (beyond.Length != 1)
         {
             return null;
         }
-        var next = new FaceSurfaceAdaptor(beyond[0]);
-        if (next.GetType() != SurfaceKind.Plane)
-        {
-            return null;
-        }
-        if (OutwardNormal(beyond[0], next.Plane()).Dot(normal) >= 1 - 1e-9)
+        if (neighbours.Normal(beyond[0]) is not { } next || next.Dot(normal) >= 1 - 1e-9)
         {
             return null;
         }
@@ -556,21 +644,20 @@ internal static class FilletLimits
     }
 
     // Each end of the edge is a corner of three faces, the third square to the edge: so a section is cut all along it
-    private static bool EndsSquare(Shape shape, in Corner corner)
+    private static bool EndsSquare(Neighbours neighbours, in Corner corner)
     {
         Edge edge = corner.Edge;
         Face one = corner.One.Face, two = corner.Two.Face;
         Direction3D along = corner.Along;
         foreach (Vertex end in edge.AllVertices())
         {
-            int edgesAtEnd = shape.AllEdges().Count(e => !e.IsSame(edge) && e.AllVertices().Any(v => v.IsSame(end)));
-            Face[] third = [.. shape.AllFaces().Where(f => !f.IsSame(one) && !f.IsSame(two) && f.AllVertices().Any(v => v.IsSame(end)))];
+            int edgesAtEnd = neighbours.Edges(end).Count(e => !e.IsSame(edge));
+            Face[] third = [.. neighbours.Faces(end).Where(f => !f.IsSame(one) && !f.IsSame(two))];
             if (edgesAtEnd != 2 || third.Length != 1)
             {
                 return false;
             }
-            var surface = new FaceSurfaceAdaptor(third[0]);
-            if (surface.GetType() != SurfaceKind.Plane || Math.Abs(OutwardNormal(third[0], surface.Plane()).Dot(along)) < 1 - 1e-9)
+            if (neighbours.Normal(third[0]) is not { } normal || Math.Abs(normal.Dot(along)) < 1 - 1e-9)
             {
                 return false;
             }

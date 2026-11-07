@@ -63,6 +63,8 @@ public class FilletTests
     {
         Solid cylinder = Solid.Cylinder(5, 20).Value;
         Assert.Null(cylinder.FilletLimit([cylinder.AllEdges()[0]]));
+        Solid cone = Solid.Cone(5, 0, 10).Value;
+        Assert.Null(cone.FilletLimit(cone.AllEdges()));
     }
 
     [Fact]
