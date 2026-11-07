@@ -5,11 +5,14 @@ using Kerf.Engine;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Fillets;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Tools;
+using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using EngineCut = Kerf.Engine.Booleans.Api.Cut;
@@ -23,11 +26,15 @@ namespace Kerf.Fillets;
 /// though the answer is exact. Its result is checked against the volume and area the geometry gives, and if they differ,
 /// it isn't used.
 /// </summary>
-/// <remarks>Also the arithmetic of how large such a fillet can be (<see cref="Fit"/>), which is asked before ChFi3d: a size
+/// <remarks>Also whole circles between surfaces turned about one axis, by a turned tool and Pappus, once ChFi3d has failed (decision 1905).
+/// And the arithmetic of how large such a fillet can be (<see cref="Fit"/>), which is asked before ChFi3d: a size
 /// within tolerance of the limit is the limit, and one past it is refused at once (decision 1898).</remarks>
-internal static class FilletLimits
+internal static partial class FilletLimits
 {
     private const double Tolerance = Tolerances.Confusion;
+
+    // How many of the shape's tolerances wide a strip of a face has to be for a tool to leave it
+    private const double TooNarrow = 10;
 
     // The cosine of 0.2 radians, twice the angle ChFi3d's test of tangency allows
     private const double WellApart = 0.98;
@@ -216,7 +223,7 @@ internal static class FilletLimits
         {
             if (side.Width is { } width)
             {
-                double demand = contactPerSize(corner) + (corners.TryGetValue(side.Opposite, out Corner opposite) ? contactPerSize(opposite) : 0);
+                double demand = contactPerSize(corner) + (!side.Opposite.IsNull && corners.TryGetValue(side.Opposite, out Corner opposite) ? contactPerSize(opposite) : 0);
                 largest = Math.Min(largest ?? double.MaxValue, width / demand);
                 double past = size * demand - width;
                 if (past > side.Tolerance && !over.Any(e => e.IsSame(corner.Edge)))
@@ -249,7 +256,8 @@ internal static class FilletLimits
     {
         if (options.Mode == ChamferMode.Classic && specs.Length == 1 && specs[0].Angle is null && specs[0].Distance2 is { } second && second != specs[0].Distance)
         {
-            return Read(new Neighbours(shape), specs[0].Edge) is { } corner ? TwoLengths(corner, specs[0].Distance, second, referenceFaces[0]) : null;
+            var neighbours = new Neighbours(shape);
+            return (Read(neighbours, specs[0].Edge) ?? ReadRim(neighbours, specs[0].Edge)) is { } corner ? TwoLengths(corner, specs[0].Distance, second, referenceFaces[0]) : null;
         }
         return null;
     }
@@ -301,6 +309,12 @@ internal static class FilletLimits
         Vertex[] ends = [.. edges[0].AllVertices()];
         if (ends.Length != 2)
         {
+            var curve = new EdgeCurveAdaptor(edges[0]);
+            if (curve.GetType() == CurveKind.Circle)
+            {
+                Circle3D circle = curve.Circle();
+                return $"the circular edge of radius {circle.Radius:G6} at ({Math.Round(circle.Location.X, 6):G6}, {Math.Round(circle.Location.Y, 6):G6}, {Math.Round(circle.Location.Z, 6):G6})";
+            }
             return "this edge";
         }
         Point3D a = Tool.Pnt(ends[0]), b = Tool.Pnt(ends[1]);
@@ -315,6 +329,16 @@ internal static class FilletLimits
             return null;
         }
         return Safely(() => Build(shape, specs.Select(s => (s.Edge, (s.Radius, s.Radius), (double?)s.Radius))));
+    }
+
+    /// <summary>What's built once ChFi3d has failed: the fillet, if the edges are whole circles between surfaces turned about their axes, or straight between planes, meeting or not.</summary>
+    public static EngineOutcome? AfterAlgorithm(Shape shape, FilletSpec[] specs, FilletOptions options)
+    {
+        if (options.Shape != FilletShape.Rational || specs.Any(s => s.EndRadius is not null))
+        {
+            return null;
+        }
+        return Safely(() => BuildRims(shape, specs) ?? BuildCorners(shape, specs) ?? BuildCornersOnUnified(shape, specs));
     }
 
     /// <summary>The chamfer, under the same conditions as <see cref="Fillet"/>; a chamfer by an angle isn't handled.</summary>
@@ -419,16 +443,34 @@ internal static class FilletLimits
             return null;
         }
 
-        BooleanOperation operation = cuts[0].Corner.IsConvex ? new EngineCut() : new EngineFuse();
-        var tools = new NCollection_List<Shape>();
-        foreach (Cutter cut in cuts)
+        return Finish(shape, cuts);
+    }
+
+    // One Boolean with all the tools, the check against the geometry, and the history
+    private static EngineOutcome? Finish(Shape shape, Cutter[] cuts)
+    {
+        bool convex = cuts[0].Corner.IsConvex;
+        Shape? result = Boolean(convex ? new EngineCut() : new EngineFuse(), shape, [.. cuts.Select(static c => c.Tool())], out History? made, simplify: !convex);
+        if (result is null || result.Value.AllSolids().Length != 1)
         {
-            tools.Append(cut.Tool());
+            return null;
+        }
+        return Checked(shape, result.Value.AllSolids()[0], made ?? new History(), cuts);
+    }
+
+    // The arguments, less or with the tools; null if it fails. Never parallel: this runs inside one operation, on its thread
+    private static Shape? Boolean(BooleanOperation operation, in Shape shape, IEnumerable<Shape> tools, out History? history, bool simplify = false)
+    {
+        history = null;
+        var toolList = new NCollection_List<Shape>();
+        foreach (Shape tool in tools)
+        {
+            toolList.Append(tool);
         }
         var arguments = new NCollection_List<Shape>();
         arguments.Append(shape);
         operation.SetArguments(arguments);
-        operation.SetTools(tools);
+        operation.SetTools(toolList);
         operation.SetNonDestructive(true);
         operation.SetToFillHistory(true);
         operation.SetRunParallel(false);
@@ -437,52 +479,200 @@ internal static class FilletLimits
         {
             return null;
         }
-        if (!cuts[0].Corner.IsConvex)
+        if (simplify)
         {
             operation.SimplifyResult();
         }
-        Shape result = operation.Shape();
-        if (result.AllSolids().Length != 1)
-        {
-            return null;
-        }
-        Shape solid = result.AllSolids()[0];
+        history = operation.History() is { } made ? new History(made) : new History();
+        return operation.Shape();
+    }
+
+    private static EngineOutcome? Checked(Shape shape, Shape solid, History history, Cutter[] cuts)
+    {
         double sign = cuts[0].Corner.IsConvex ? -1 : 1;
-        double volume = Integral.Volume(shape) + sign * cuts.Sum(c => c.Corner.Length * c.Section);
-        double area = Integral.Area(shape) + cuts.Sum(c => c.Corner.Length * (c.NewWidth - c.On1 - c.On2) + sign * 2 * c.Section);
-        if (Math.Abs(Integral.Volume(solid) - volume) > 1e-6 * Math.Max(1, volume) || Math.Abs(Integral.Area(solid) - area) > 1e-6 * Math.Max(1, area)
+        return Checked(shape, solid, history, sign * cuts.Sum(static c => c.SweptVolume), cuts.Sum(c => c.AreaChange(sign)),
+                       [.. cuts.Select(static c => ((Shape)c.Corner.Edge, (Func<Face, bool>)(f => c.IsNewFace(f))))], cuts[0].Rim is not null);
+    }
+
+    // The answer against the geometry, then what it's coded with and where it came from. To one part in a million: of the whole on a
+    // straight edge at a limit, as it was; of the shape's own size elsewhere, as a small shape's figures are small, with what the shape's
+    // tolerance can move a face by over its area, which is the larger part only at the smallest sizes
+    private static EngineOutcome? Checked(Shape shape, Shape solid, History history, double volumeChange, double areaChange, (Shape Source, Func<Face, bool> IsNew)[] made, bool ownSize)
+    {
+        double volume = Integral.Volume(shape) + volumeChange;
+        double area = Integral.Area(shape) + areaChange;
+        double slack = ownSize ? Tolerance * area : 0;
+        double perimeter = ownSize ? 10 * Tolerance * Math.Sqrt(area) : 0;
+        if (Math.Abs(Integral.Volume(solid) - volume) > Allowed(volume, ownSize) + slack || Math.Abs(Integral.Area(solid) - area) > Allowed(area, ownSize) + perimeter
             || Validity.Problem(solid, "The fillet") is not null)
         {
             return null;
         }
 
         // A fillet's edges are coded tangent, as ChFi3d's are (decision 1719): a draft reads that
-        Shape[] newEdges = [.. solid.AllFaces().Where(f => cuts.Any(c => c.IsNewFace(f))).SelectMany(f => f.AllEdges()).Select(e => (Shape)e)];
+        Shape[] newEdges = [.. solid.AllFaces().Where(f => made.Any(m => m.IsNew(f))).SelectMany(f => f.AllEdges()).Select(e => (Shape)e)];
         solid = BrepLibrary.RegularityEncoded(solid, newEdges, out History coded);
 
         // The new faces, and the edges they came from; the Boolean knows the rest
-        History history = operation.History() is { } made ? new History(made) : new History();
         history.Merge(coded);
-        foreach (Cutter cut in cuts)
+        foreach ((Shape source, Func<Face, bool> isNew) in made)
         {
-            Face[] faces = [.. solid.AllFaces().Where(cut.IsNewFace)];
+            Face[] faces = [.. solid.AllFaces().Where(isNew)];
             if (faces.Length == 0)
             {
                 return null;
             }
             foreach (Face face in faces)
             {
-                history.AddGenerated(cut.Corner.Edge, face);
+                history.AddGenerated(source, face);
             }
-            history.Remove(cut.Corner.Edge);
+            history.Remove(source);
         }
         Shape built = solid;
         return new EngineOutcome(true, () => built, history);
     }
 
-    /// <summary>What's cut from one corner, and how.</summary>
-    private readonly record struct Cutter(Corner Corner, double On1, double On2, double? Radius)
+    private static double Allowed(double expected, bool ownSize) => 1e-6 * (ownSize ? Math.Abs(expected) : Math.Max(1, expected));
+
+    /// <summary>The fillet on whole circles between surfaces turned about their axes, each straight in section: a tool made by turning
+    /// the section of what's cut or added, as for a straight edge, and checked by Pappus. It's asked only once ChFi3d has failed.</summary>
+    private static EngineOutcome? BuildRims(Shape shape, FilletSpec[] specs)
     {
+        if (shape.AllSolids().Length != 1 || shape.Type is not (ShapeType.Solid or ShapeType.Compound))
+        {
+            return null;
+        }
+        var neighbours = new Neighbours(shape);
+        var cuts = new Cutter[specs.Length];
+        for (int i = 0; i < specs.Length; i++)
+        {
+            if (ReadRim(neighbours, specs[i].Edge) is not { } corner)
+            {
+                return null;
+            }
+            double on = specs[i].Radius * corner.ContactPerRadius;
+            cuts[i] = new Cutter(corner, on, on, specs[i].Radius, new EdgeCurveAdaptor(specs[i].Edge).Circle());
+            if (corner.IsConvex != cuts[0].Corner.IsConvex)
+            {
+                return null;
+            }
+        }
+
+        // What Judge has already asked for one radius, for those it doesn't judge: a contact line off its face has no answer here
+        foreach (Cutter cut in cuts)
+        {
+            foreach (Side side in new[] { cut.Corner.One, cut.Corner.Two })
+            {
+                if (side.Width is { } width)
+                {
+                    double demand = cuts.Sum(c => c.ContactOn(side.Face));
+                    if (demand > width + side.Tolerance)
+                    {
+                        return null;
+                    }
+                    // ChFi3d has failed, and what's left of the face is too narrow for the Boolean to tell its two sides apart: the limit
+                    if (demand >= width - TooNarrow * side.Tolerance)
+                    {
+                        double scale = width / demand;
+                        for (int k = 0; k < cuts.Length; k++)
+                        {
+                            if (cuts[k].ContactOn(side.Face) > 0)
+                            {
+                                cuts[k] = cuts[k].ScaledOn(side.Face, scale);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return Ball(shape, cuts) ?? Finish(shape, cuts);
+    }
+
+    // When the fillets leave only a ball, that's the answer, as one face: no face of the shape survives, so two tools have nothing to
+    // be right about but where they meet. The check that follows is as for any other: it's right only if the shape was what it seemed
+    private static EngineOutcome? Ball(Shape shape, Cutter[] cuts)
+    {
+        double r = cuts[0].Radius!.Value;
+        Point3D centre = cuts[0].BallCentre;
+        if (!cuts[0].Corner.IsConvex || cuts.Any(c => c.Radius != r || c.BallCentre.DistanceTo(centre) > Tolerance))
+        {
+            return null;
+        }
+
+        // Every face beside these edges has to be used up, or there's more to the shape than a ball
+        foreach (Cutter cut in cuts)
+        {
+            foreach (Side side in new[] { cut.Corner.One, cut.Corner.Two })
+            {
+                if (side.Width is not { } width || cuts.Sum(c => c.ContactOn(side.Face)) < width - side.Tolerance)
+                {
+                    return null;
+                }
+            }
+        }
+        Shape ball = new MakeSphere(centre, r).Shape().AllSolids()[0];
+        var history = new History();
+        foreach (Face face in shape.AllFaces())
+        {
+            history.Remove(face);
+        }
+        foreach (Edge edge in shape.AllEdges())
+        {
+            history.Remove(edge);
+        }
+        return Checked(shape, ball, history, cuts);
+    }
+
+    /// <summary>What's cut from one corner, and how.</summary>
+    private readonly record struct Cutter(Corner Corner, double On1, double On2, double? Radius, Circle3D? Rim = null)
+    {
+        /// <summary>The centre of the fillet's section.</summary>
+        public Point3D BallCentre => Centre(Corner.Start);
+
+        /// <summary>The volume taken away, or added.</summary>
+        public double SweptVolume => Rim is { } rim ? 2 * Math.PI * SectionMoment(rim) : Corner.Length * Section;
+
+        /// <summary>What the whole shape's area changes by: the new face, less the strips of the two faces it stands on, and on a
+        /// straight edge the section at each end, which <paramref name="sign"/> says is gained or lost.</summary>
+        public double AreaChange(double sign)
+        {
+            if (Rim is not { } rim)
+            {
+                return Corner.Length * (NewWidth - On1 - On2) + sign * 2 * Section;
+            }
+            double r = Radius!.Value;
+            double halfTurn = (Math.PI - Corner.Angle) / 2;
+            Point3D centre = Centre(Corner.Start);
+            double arcMean = Across(rim, centre) + Bisector(rim) * r * Math.Sin(halfTurn) / halfTurn;
+            double edge = rim.Radius;
+            double strip1 = On1 * (edge + Across(rim, Contact1(Corner.Start))) / 2, strip2 = On2 * (edge + Across(rim, Contact2(Corner.Start))) / 2;
+            return 2 * Math.PI * (2 * halfTurn * r * arcMean - strip1 - strip2);
+        }
+
+        // How far from the axis, along the section
+        private double Across(in Circle3D rim, in Point3D point) => new Vector3D(rim.Location, point).Dot(new Vector3D(rim.Location, Corner.Start)) / rim.Radius;
+
+        // The radial part of the unit vector from the fillet's centre towards the edge
+        private double Bisector(in Circle3D rim)
+        {
+            Direction3D outward = new(new Vector3D(Centre(Corner.Start), Corner.Start));
+            return new Vector3D(outward).Dot(new Vector3D(rim.Location, Corner.Start)) / rim.Radius;
+        }
+
+        // The first moment about the axis of the section: the kite of edge, contacts and centre, less the sector
+        private double SectionMoment(in Circle3D rim)
+        {
+            double r = Radius!.Value;
+            double halfTurn = (Math.PI - Corner.Angle) / 2;
+            Point3D centre = Centre(Corner.Start);
+            double e = rim.Radius, c = Across(rim, centre), c1 = Across(rim, Contact1(Corner.Start)), c2 = Across(rim, Contact2(Corner.Start));
+            double triangle = r * On1 / 2; // each of two: base On, height r
+            double kite = triangle * (e + c1 + c) / 3 + triangle * (e + c2 + c) / 3;
+            double sector = r * r * halfTurn * (c + Bisector(rim) * 2 * r * Math.Sin(halfTurn) / (3 * halfTurn));
+            return kite - sector;
+        }
+
+
         public double ContactOn(Face face) =>
             (Corner.One.Face.IsSame(face) ? On1 : 0) + (Corner.Two.Face.IsSame(face) ? On2 : 0);
 
@@ -527,9 +717,19 @@ internal static class FilletLimits
         /// with the shape; one to add has to be flush with both.</summary>
         public Shape Tool()
         {
-            Direction3D along = Corner.Along;
+            if (Rim is { } rim)
+            {
+                return RimTool(rim);
+            }
             double margin = Corner.IsConvex ? Math.Max(1, Math.Max(Corner.Length, Math.Max(On1, On2))) : 0;
-            Point3D at = Corner.Start.Translated(new Vector3D(along) * -margin);
+            return PrismTool(-margin, Corner.Length + margin, margin);
+        }
+
+        /// <summary>The section, running from one place along the edge to another, and standing out past the faces by a margin.</summary>
+        public Shape PrismTool(double from, double to, double margin)
+        {
+            Direction3D along = Corner.Along;
+            Point3D at = Corner.Start.Translated(new Vector3D(along) * from);
             Point3D p1 = Contact1(at), p2 = Contact2(at);
             var wire = new MakeWire();
             wire.Add(Curved(at, p1, p2));
@@ -551,7 +751,61 @@ internal static class FilletLimits
             }
             Direction3D normal = along;
             Face section = new MakeFace(new Plane3D(at, normal), wire.Wire()).Face();
-            return new ApiMakePrism(section, new Vector3D(along) * (Corner.Length + 2 * margin)).Shape();
+            return new ApiMakePrism(section, new Vector3D(along) * (to - from)).Shape();
+        }
+
+        // The section turned about the axis. One to cut stands out past both faces by as much as it can without reaching the axis
+        private Shape RimTool(Circle3D rim)
+        {
+            Point3D at = Corner.Start;
+            Line3D axisLine = new(rim.Axis);
+            Vector3D outward = new Vector3D(rim.Location, at) * (1 / rim.Radius);
+            Point3D OnAxisIfNear(in Point3D point)
+            {
+                double across = new Vector3D(rim.Location, point).Dot(outward);
+                return Math.Abs(across) <= 1e-9 * Math.Max(1, rim.Radius) ? point.Translated(outward * -across) : point;
+            }
+            Point3D p1 = OnAxisIfNear(Contact1(at)), p2 = OnAxisIfNear(Contact2(at));
+            var wire = new MakeWire();
+            wire.Add(Curved(at, p1, p2));
+            if (Corner.IsConvex)
+            {
+                Vector3D n1 = new(Corner.One.Normal), n2 = new(Corner.Two.Normal);
+                double margin = Math.Max(1, Math.Max(rim.Radius, Math.Max(On1, On2)));
+                foreach ((Point3D from, Vector3D n) in new[] { (p1, n1), (p2, n2), (at, n1 + n2) })
+                {
+                    double towardsAxis = -n.Dot(outward);
+                    double across = new Vector3D(rim.Location, from).Dot(outward);
+                    if (towardsAxis > 1e-12)
+                    {
+                        double scale = from == at ? 1 + Corner.One.Normal.Dot(Corner.Two.Normal) : 1;
+                        margin = Math.Min(margin, 0.5 * across * scale / towardsAxis);
+                    }
+                }
+                Point3D a = OnAxisIfNear(p2.Translated(n2 * margin));
+                Point3D corner = OnAxisIfNear(at.Translated((n1 + n2) * (margin / (1 + Corner.One.Normal.Dot(Corner.Two.Normal)))));
+                Point3D b = OnAxisIfNear(p1.Translated(n1 * margin));
+                wire.Add(new MakeEdge(p2, a).Edge());
+                wire.Add(new MakeEdge(a, corner).Edge());
+                wire.Add(new MakeEdge(corner, b).Edge());
+                wire.Add(new MakeEdge(b, p1).Edge());
+            }
+            else
+            {
+                wire.Add(new MakeEdge(p2, at).Edge());
+                wire.Add(new MakeEdge(at, p1).Edge());
+            }
+            Direction3D normal = new(new Vector3D(rim.Axis.Direction).Crossed(outward));
+            Face section = new MakeFace(new Plane3D(at, normal), wire.Wire()).Face();
+            return OnTorus(new ApiMakeRevol(section, rim.Axis, 2 * Math.PI).Shape(), rim);
+        }
+
+        private Shape OnTorus(in Shape tool, in Circle3D rim)
+        {
+            Point3D centre = Centre(Corner.Start);
+            Vector3D outward = new Vector3D(rim.Location, Corner.Start) * (1 / rim.Radius);
+            double major = new Vector3D(rim.Location, centre).Dot(outward);
+            return PutOnTorus(tool, centre.Translated(outward * -major), rim.Axis.Direction, new Direction3D(outward), major, Radius!.Value);
         }
 
         private Edge Curved(in Point3D at, in Point3D p1, in Point3D p2)
@@ -561,15 +815,43 @@ internal static class FilletLimits
                 return new MakeEdge(p1, p2).Edge();
             }
             Point3D centre = Centre(at);
+            if (Rim is { } rim)
+            {
+                return ArcOnTorusFrame(centre, new Direction3D(new Vector3D(rim.Location, Corner.Start)), rim.Axis.Direction, r, p1, p2);
+            }
             Direction3D axis = new(new Vector3D(centre, p1).Crossed(new Vector3D(centre, p2)));
             var circle = new Circle3D(new Frame3D(centre, axis, new Direction3D(new Vector3D(centre, p1))), r);
             return new MakeEdge(circle, p1, p2).Edge();
+        }
+
+        // Whether it's the turned arc: a torus, or a sphere where the centre is on the axis
+        private bool IsOnRimTool(FaceSurfaceAdaptor surface, in Circle3D rim)
+        {
+            double r = Radius!.Value;
+            Point3D centre = Centre(Corner.Start);
+            double fromAxis = new Line3D(rim.Axis).DistanceTo(centre);
+            switch (surface.GetType())
+            {
+                case SurfaceKind.Torus:
+                    Torus3D torus = surface.Torus();
+                    return Math.Abs(torus.MinorRadius - r) <= Tolerance && Math.Abs(torus.MajorRadius - fromAxis) <= Tolerance
+                           && new Line3D(rim.Axis).DistanceTo(torus.Location) <= Tolerance && Math.Abs(torus.Axis.Direction.Dot(rim.Axis.Direction)) >= 1 - 1e-9;
+                case SurfaceKind.Sphere:
+                    Sphere3D sphere = surface.Sphere();
+                    return Math.Abs(sphere.Radius - r) <= Tolerance && sphere.Location.DistanceTo(centre) <= Tolerance;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>Whether a face of the result lies on the fillet's cylinder, or the chamfer's plane.</summary>
         public bool IsNewFace(Face face)
         {
             var surface = new FaceSurfaceAdaptor(face);
+            if (Rim is { } rim)
+            {
+                return IsOnRimTool(surface, rim);
+            }
             if (Radius is { } r)
             {
                 if (surface.GetType() != SurfaceKind.Cylinder)
@@ -577,8 +859,16 @@ internal static class FilletLimits
                     return false;
                 }
                 Cylinder3D c = surface.Cylinder();
-                return Math.Abs(c.Radius - r) <= Tolerance && Math.Abs(c.Axis.Direction.Dot(Corner.Along)) >= 1 - 1e-9
-                       && new Line3D(c.Axis).DistanceTo(Centre(Corner.Start)) <= Tolerance;
+                if (Math.Abs(c.Radius - r) > Tolerance || Math.Abs(c.Axis.Direction.Dot(Corner.Along)) < 1 - 1e-9
+                    || new Line3D(c.Axis).DistanceTo(Centre(Corner.Start)) > Tolerance)
+                {
+                    return false;
+                }
+
+                // Its own side of the cylinder, which fillets meeting across a face can share: towards the edge
+                Point3D middle = Centre(Corner.Start);
+                Vector3D towardsEdge = new(middle, Corner.Start);
+                return face.AllVertices().All(v => new Vector3D(middle, Kerf.Engine.Topology.Brep.Tool.Pnt(v)).Dot(towardsEdge) >= -Tolerance * towardsEdge.Magnitude);
             }
             if (surface.GetType() != SurfaceKind.Plane)
             {
@@ -590,6 +880,37 @@ internal static class FilletLimits
         }
     }
 
+    // An arc, the short way, on a circle that starts outwards and turns towards the axis's direction, as a torus about that axis is framed
+    private static Edge ArcOnTorusFrame(in Point3D centre, in Direction3D outward, in Direction3D axis, double r, in Point3D p1, in Point3D p2)
+    {
+        var round = new Circle3D(new Frame3D(centre, new Direction3D(new Vector3D(outward).Crossed(new Vector3D(axis))), outward), r);
+        double from = ElCLib.Parameter(round, p1), to = ElCLib.Parameter(round, p2);
+        double sweep = to - from;
+        sweep -= 2 * Math.PI * Math.Floor(sweep / (2 * Math.PI));
+        return sweep < Math.PI ? new MakeEdge(round, p1, p2).Edge() : new MakeEdge(round, p2, p1).Edge();
+    }
+
+    // A tube as wide as the torus or wider stays a general surface of revolution when turned, though it's a torus: put it on one. Its
+    // arc is framed as above, so a torus framed the same way has the same parameters, and each edge's curve on the surface moves across as it is
+    private static Shape PutOnTorus(in Shape tool, in Point3D onAxis, in Direction3D axis, in Direction3D outward, double major, double minor)
+    {
+        var surfaces = new Dictionary<Shape, Surface>(ShapeHasher.Instance);
+        foreach (Face face in tool.AllFaces())
+        {
+            if (Tool.Surface(face, out _) is RevolutionSurface)
+            {
+                surfaces[face] = new ToroidalSurface(new Torus3D(new CoordinateSystem(onAxis, axis, outward), major, minor));
+            }
+        }
+        if (surfaces.Count == 0)
+        {
+            return tool;
+        }
+        var modifier = new Modifier(tool);
+        modifier.Perform(new NewSurfaceModification(surfaces));
+        return modifier.IsDone ? modifier.InternalModifiedShape(tool) : tool;
+    }
+
     // The corners among the edges
     private static Dictionary<Shape, Corner> Corners(Shape shape, IEnumerable<Edge> edges)
     {
@@ -597,7 +918,7 @@ internal static class FilletLimits
         var corners = new Dictionary<Shape, Corner>(ShapeHasher.Instance);
         foreach (Edge edge in edges)
         {
-            if (Read(neighbours, edge) is { } corner)
+            if ((Read(neighbours, edge) ?? ReadRim(neighbours, edge)) is { } corner)
             {
                 corners[edge] = corner;
             }
@@ -648,6 +969,170 @@ internal static class FilletLimits
             return null;
         }
         return new Corner(edge, start, end, one, two);
+    }
+
+    /// <summary>A whole circle between two surfaces turned about its axis, each straight in section: plane, cylinder or cone. In the
+    /// section through the axis it's a corner of two lines, so the arithmetic is a straight edge's; it starts and ends at one point
+    /// of the circle, where its sides are read.</summary>
+    private static Corner? ReadRim(Neighbours neighbours, Edge edge)
+    {
+        if (Tool.Degenerated(edge))
+        {
+            return null;
+        }
+        var curve = new EdgeCurveAdaptor(edge);
+        if (!WholeCircle(edge, curve))
+        {
+            return null;
+        }
+        IReadOnlyList<Face> faces = neighbours.Faces(edge);
+        if (faces.Count != 2)
+        {
+            return null;
+        }
+        Circle3D circle = curve.Circle();
+        Point3D at = curve.Value(curve.FirstParameter());
+
+        // The way the edge runs: the circle's own, as a whole circle's parameters aren't reversed on an edge held forwards
+        Direction3D tangent = new(new Vector3D(circle.Axis.Direction).Crossed(new Vector3D(circle.Location, at)));
+        if (ReadRimSide(neighbours, faces[0], edge, circle, at, tangent) is not { } one || ReadRimSide(neighbours, faces[1], edge, circle, at, tangent) is not { } two)
+        {
+            return null;
+        }
+        double angle = one.Inward.AngleTo(two.Inward);
+        return angle < 1e-6 || angle > Math.PI - 1e-6 ? null : new Corner(edge, at, at, one, two);
+    }
+
+    private static bool WholeCircle(in Edge edge, EdgeCurveAdaptor curve) =>
+        curve.GetType() == CurveKind.Circle && edge.AllVertices().Length == 1 && Math.Abs(curve.LastParameter() - curve.FirstParameter() - 2 * Math.PI) <= 1e-9;
+
+    private static Side? ReadRimSide(Neighbours neighbours, Face face, Edge edge, in Circle3D circle, in Point3D at, Direction3D tangent)
+    {
+        if (RimNormal(neighbours, face, circle, at) is not { } normal)
+        {
+            return null;
+        }
+        Edge oriented = neighbours.Oriented(face, edge);
+        Direction3D inward = normal.Crossed(oriented.Orientation == Orientation.Reversed ? tangent.Reversed() : tangent);
+        double? width = RimWidth(neighbours, face, edge, circle, at, inward, out Edge opposite, out double tolerance);
+        return new Side(face, normal, inward, width, opposite, tolerance);
+    }
+
+    // The face's outward normal at a point of the circle, if the surface is a plane square to it, or a cylinder or cone about its axis
+    private static Direction3D? RimNormal(Neighbours neighbours, Face face, in Circle3D circle, in Point3D at)
+    {
+        if (neighbours.Normal(face) is { } planar)
+        {
+            return Math.Abs(planar.Dot(circle.Axis.Direction)) >= 1 - 1e-9 ? planar : null;
+        }
+        var surface = new FaceSurfaceAdaptor(face);
+        CoordinateSystem position;
+        double semiAngle = 0;
+        switch (surface.GetType())
+        {
+            case SurfaceKind.Cylinder:
+                position = surface.Cylinder().Position;
+                break;
+            case SurfaceKind.Cone:
+                position = surface.Cone().Position;
+                semiAngle = surface.Cone().SemiAngle;
+                break;
+            default:
+                return null;
+        }
+        Direction3D axis = position.Direction;
+        if (Math.Abs(axis.Dot(circle.Axis.Direction)) < 1 - 1e-9 || new Line3D(position.Axis).DistanceTo(circle.Location) > Tolerance)
+        {
+            return null;
+        }
+
+        // Du x Dv of the surface, which faces away from the axis on a direct one
+        Vector3D radial = new(new Direction3D(new Vector3D(circle.Location, at)));
+        Vector3D normal = radial * Math.Cos(semiAngle) - new Vector3D(axis) * Math.Sin(semiAngle);
+        if (position.IsDirect == (face.Orientation == Orientation.Reversed))
+        {
+            normal *= -1;
+        }
+        return new Direction3D(normal);
+    }
+
+    // How far the face runs from the circle, along its section, where it ends all the way round at the same distance: at the centre of
+    // a plane, at a coaxial circle, or at a cone's apex. Anything else on the face, such as a hole beside the rim or the side of a plate,
+    // leaves the rest of the contact on the face, so it proves nothing
+    private static double? RimWidth(Neighbours neighbours, Face face, Edge edge, in Circle3D circle, in Point3D at, Direction3D inward, out Edge opposite, out double tolerance)
+    {
+        opposite = default;
+        tolerance = Tolerance;
+        var others = new List<Edge>();
+        bool planar = neighbours.Normal(face) is not null;
+        Edge apex = default;
+        foreach (Edge other in neighbours.Edges(face))
+        {
+            if (other.IsSame(edge))
+            {
+                continue;
+            }
+            if (Tool.Degenerated(other))
+            {
+                apex = other;
+            }
+            else if (planar || !Tool.IsClosed(other, face))
+            {
+                others.Add(other);
+            }
+        }
+        Vector3D toCentre = new(at, circle.Location);
+        if (others.Count == 0)
+        {
+            // A disc, to its centre, or a cone, to its apex
+            if (planar)
+            {
+                double centre = toCentre.Dot(new Vector3D(inward));
+                tolerance = WidthTolerance(face, edge, edge);
+                return centre > tolerance ? centre : null;
+            }
+            if (apex.IsNull || new FaceSurfaceAdaptor(face).GetType() != SurfaceKind.Cone)
+            {
+                return null;
+            }
+            tolerance = WidthTolerance(face, edge, apex);
+            double slant = new Vector3D(at, new FaceSurfaceAdaptor(face).Cone().Apex).Dot(new Vector3D(inward));
+            return slant > tolerance ? slant : null;
+        }
+        if (others.Count != 1 || !apex.IsNull)
+        {
+            return null;
+        }
+        Edge far = others[0];
+        var farCurve = new EdgeCurveAdaptor(far);
+        if (!WholeCircle(far, farCurve))
+        {
+            return null;
+        }
+        Circle3D farCircle = farCurve.Circle();
+        tolerance = WidthTolerance(face, edge, far);
+        if (Math.Abs(farCircle.Axis.Direction.Dot(circle.Axis.Direction)) < 1 - 1e-9 || new Line3D(circle.Axis).DistanceTo(farCircle.Location) > tolerance)
+        {
+            return null;
+        }
+
+        // On the section, where the far circle lies: the same point of it as of this one
+        Vector3D radial = toCentre * (-1 / circle.Radius);
+        Point3D farAt = farCircle.Location.Translated(radial * farCircle.Radius);
+        double width = new Vector3D(at, farAt).Dot(new Vector3D(inward));
+        if (width <= tolerance)
+        {
+            return null;
+        }
+
+        // A next face the algorithm calls tangent is no limit, as for a straight edge (decision 1899)
+        Face[] beyond = [.. neighbours.Faces(far).Where(f => !f.IsSame(face))];
+        if (beyond.Length != 1 || Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(far, face, beyond[0]))
+        {
+            return null;
+        }
+        opposite = far;
+        return width;
     }
 
     private static Side? ReadSide(Neighbours neighbours, Face face, Edge edge, in Point3D start, in Point3D end)

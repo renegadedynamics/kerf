@@ -6,6 +6,12 @@ version may break the API.
 ## Unreleased
 
 - **A parallel operation's progress never runs backwards,** and a progress callback gets its reports one at a time (decision 1903).
+- **A cube rounded all over is a sphere, a bar is a capsule, and a plate is a pillow, at the radius that just fits:** fillets where edges meet at a limit now work, with corners on exact spheres, as do slanted ends, a chain round a top, an L's top with its re-entrant corner, and convex and concave edges that touch. `MaxFillet` gives that radius itself. What the fillet algorithm makes invalid is now also tried by this path before it's reported.
+
+- **A disc's rim rounded to its full height, full rounds, hemispheres and a sphere from a short cylinder work,** as does a hole's rim or a boss's foot rounded to its wall's height: circular edges between a plane, cylinder or cone, with the result checked by Pappus, on exact tori and spheres.
+
+- **A fillet too large for a circular edge between a plane, cylinder or cone now says what fits:** `FilletLimit` gives the radius, and `Fillet` refuses above it at once, with a radius within tolerance of it taken as it.
+
 - **`CentreOfArea()`** gives the centre of a shape's faces' area without its moments, exact for a planar face bounded by lines and circles.
 - **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius within the shape's tolerance of the limit is the limit, the same in every figure, on either side (decisions 1898, 1899). All of a cube's edges past half its side used to fail with `result.invalid`, carrying what it made; now with `fillet.too-large`. A fillet just below a limit, by under the tolerance, no longer leaves faces narrower than that.
 - **`FilletLimit` no longer claims a limit where the next face is within 0.1 radians,** as the fillet rolls on to that face, rightly.

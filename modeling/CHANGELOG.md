@@ -5,6 +5,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **Round all of a cube's edges to half its side and get a sphere, all of a bar's for a capsule,** and likewise slanted ends, a chain round a top, and an L's top. `MaxFillet` gives the radius that just fits, where it gave a little less.
+
+- **Round a disc's rim to its full height, make a full round, a hemisphere or a sphere from a short cylinder:** these used to fail, and now give exact tori and spheres.
+
+- **A fillet too large for a circular edge, such as a cylinder's rim, says what fits,** and `MaxFillet` doesn't try above it.
+
 - **`Center` and `Plane(face)` are exact for a planar face bounded by lines and circles,** and far quicker, so the last digits of what's built on one can change.
 - **An extrusion with nothing to merge skips its clean,** with the same shape and order, for a quarter to a half fewer bytes (the kernel's `docs/performance.md`).
 - **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius a hair from the limit, either way, is the limit. `MaxFillet` gives the same answers with fewer tries (the kernel's `CHANGELOG`).
