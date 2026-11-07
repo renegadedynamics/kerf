@@ -25,7 +25,7 @@
     falls by about 30%. Used only when publishing ReadyToRun, as tools/pack-nuget.ps1 and tools/bench.ps1 do.
   -->
   <PropertyGroup>
-    <PublishReadyToRunCrossgen2ExtraArgs>--non-local-generics-module:*;--opt-cross-module:*;--Ot</PublishReadyToRunCrossgen2ExtraArgs>
+    <PublishReadyToRunCrossgen2ExtraArgs>--opt-cross-module:*;--Ot</PublishReadyToRunCrossgen2ExtraArgs>
   </PropertyGroup>
 
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->
