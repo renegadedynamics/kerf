@@ -103,12 +103,26 @@ public class FilletLimitsTests
     }
 
     [Fact]
-    public void Above_a_limit_nothing_is_built_though_the_result_is_not_checked()
+    public void Above_a_limit_it_is_refused_unless_the_check_is_left_out()
     {
-        // ChFi3d makes something here, and it isn't valid
+        // ChFi3d makes something here, and it isn't valid: a caller who left the check out asked for that
         Solid box = Solid.Box(10, 10, 10).Value;
-        var failed = box.Fillet(box.AllEdges(), 6, new FilletOptions { CheckResult = false });
+        Edge[] all = [.. box.AllEdges()];
+        var failed = box.Fillet(all, 6);
         Assert.Equal(FilletOperations.TooLarge, failed.Error!.Code);
+        Assert.Equal(12, failed.Error.Shapes.Length);
+        Shape made = box.Fillet(all, 6, new FilletOptions { CheckResult = false }).Value.Shape;
+        Assert.NotNull(Kerf.Engine.Foundation.Validity.Problem(made, "It"));
+    }
+
+    [Fact]
+    public void A_refusal_names_the_edges_that_do_not_fit()
+    {
+        // A plate: the eight edges beside its 2 thick sides, and not the four across them, though the limit holds for all
+        Solid plate = Solid.Box(20, 20, 2).Value;
+        var failed = plate.Fillet(plate.AllEdges(), 3);
+        Assert.Equal(FilletOperations.TooLarge, failed.Error!.Code);
+        Assert.Equal(8, failed.Error.Shapes.Length);
     }
 
     [Theory]

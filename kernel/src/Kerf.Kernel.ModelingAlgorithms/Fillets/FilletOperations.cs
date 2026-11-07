@@ -149,9 +149,11 @@ public static class FilletOperations
             return EngineOperation.Run<Shape>(range =>
             {
                 fit = FilletLimits.Judge(solid, given);
-                if (fit is { Above: true } && FilletLimits.TooLarge(fit.Value, given) is { } refused)
+
+                // A caller who has left the check out has asked for what the algorithm makes
+                if (options.CheckResult && fit is { Above: true } && FilletLimits.TooLarge(fit.Value, given) is { } refused)
                 {
-                    return new EngineOutcome(false, static () => default, Failure: refused);
+                    return new EngineOutcome(false, static () => default, Failure: refused, MoreFailures: [refused]);
                 }
                 if (fit is { AtLimit: true })
                 {

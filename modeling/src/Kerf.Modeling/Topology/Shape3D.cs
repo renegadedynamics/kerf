@@ -311,6 +311,7 @@ public static partial class Shape3DExtensions
                 "fillet.walking-failed" => "walking failure",
                 "fillet.no-starting-solution" => "no starting solution",
                 "fillet.twisted-surface" => "twisted surface",
+                "fillet.too-large" => "too large",
                 _ => "error",
             };
             if (!faulty.TryGetValue(reason, out var set))

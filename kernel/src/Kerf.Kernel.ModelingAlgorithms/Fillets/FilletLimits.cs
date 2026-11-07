@@ -173,7 +173,8 @@ internal static class FilletLimits
     /// <param name="Limit">The most that fits: above it, a contact line would lie off its face.</param>
     /// <param name="Above">Past the limit by more than the shape's tolerance: proved not to fit.</param>
     /// <param name="AtLimit">Within the shape's tolerance of the limit, either way: it is the limit.</param>
-    public readonly record struct Fit(double Limit, bool Above, bool AtLimit);
+    /// <param name="Over">The edges that don't fit, when it's above.</param>
+    public readonly record struct Fit(double Limit, bool Above, bool AtLimit, IReadOnlyList<Edge> Over);
 
     /// <summary>The upper limit on one radius for all these edges, from the straight ones between planes beside a rectangular
     /// face: no tangent fillet fits above it. Null if none of the edges gives a limit.</summary>
@@ -209,7 +210,8 @@ internal static class FilletLimits
     private static Fit? Judge(Dictionary<Shape, Corner> corners, double size, Func<Corner, double> contactPerSize)
     {
         double? largest = null;
-        bool above = false, atLimit = false;
+        bool atLimit = false;
+        var over = new List<Edge>();
         foreach ((Corner corner, Side side) in Sides(corners.Values))
         {
             if (side.Width is { } width)
@@ -217,7 +219,10 @@ internal static class FilletLimits
                 double demand = contactPerSize(corner) + (corners.TryGetValue(side.Opposite, out Corner opposite) ? contactPerSize(opposite) : 0);
                 largest = Math.Min(largest ?? double.MaxValue, width / demand);
                 double past = size * demand - width;
-                above |= past > side.Tolerance;
+                if (past > side.Tolerance && !over.Any(e => e.IsSame(corner.Edge)))
+                {
+                    over.Add(corner.Edge);
+                }
                 atLimit |= Math.Abs(past) <= side.Tolerance;
             }
         }
@@ -228,7 +233,7 @@ internal static class FilletLimits
 
         // Without the last bits of the tangent's rounding: well within the tolerance, and 10 reads as 10
         double rounded = Math.Round(limit, 9);
-        return new Fit(rounded > 0 ? rounded : limit, above, atLimit && !above);
+        return new Fit(rounded > 0 ? rounded : limit, over.Count > 0, atLimit && over.Count == 0, over);
     }
 
     /// <summary>The error for a size that doesn't fit, or that only just does and couldn't be built; null for one below the limit.</summary>
@@ -276,7 +281,7 @@ internal static class FilletLimits
             asked = asked == fit.Limit.ToString("G6", CultureInfo.CurrentCulture) ? value.ToString("G15", CultureInfo.CurrentCulture) : asked;
             return Diagnostic.Error(FilletOperations.TooLarge,
                 $"The {what} with a {size} of {asked} is too large for {Edges(edges)}: the most that fits is {most}, where it uses up the whole width of a face beside the edge.")
-                .WithShapes(edges.Select(e => (Shape)e));
+                .WithShapes(fit.Over.Select(e => (Shape)e));
         }
         if (fit.AtLimit)
         {
