@@ -46,6 +46,7 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 |---|---|
 | demo/samples/anc101 | Native fails the same way (decision 1310) |
 | lowalgos/extss/bug29712_44 | The script's mistake; native gives 0 too (decision 1309) |
+| bugs/modalg_7/bug27928 | Unit 12G's reach for a grazing edge (decision 1923) takes a tiny edge of the section `r4`: 12 vertices and 18 edges for 13 and 19. Everything else the script checks passes. A deliberate change, for the owner |
 | bugs/heal/bug29382_3 | Native gives the same 6 vertices (occt-issues.md) |
 | bugs/modalg_7/bug26034 | Native, with exceptions compiled in, gives the same warning (unit 7W) |
 | chamfer/dist_angle_sequence/A5, chamfer/equal_dist_sequence/A5 | Native's result is invalid at step 15 too. The port's is invalid with far fewer faces: see "Faces lost silently" |
@@ -191,6 +192,46 @@ The list of real failures this question was waiting for is the 37 cases above, p
 ## Since this survey
 
 At the head of 7 November the fillet and chamfer groups read OK 749, BAD 35, FAILED 10, IMPROVEMENT 6, SKIPPED 84. [fillet-design.md](fillet-design.md) sorts the 45 by surfaces and by what a new path would fix.
+
+## Every case attributed (unit 12I)
+
+*Decisions 1918 to 1921.* The same 569 cases as corpus-11e.txt, run again with their logs at the head of this branch. All three statuses came out the same. **The counts don't move: 59, 502 and 8, before and after,** as Draw-lite calls the engine and these fixes are in the public layer. Filtered runs at this branch, over the folders it reaches, against corpus-11e.txt: 5,677, 1,985 and 4,544 cases, 0 differences of status. The whole corpus wasn't run.
+
+| Kind | FAILED | BAD | IMPROVEMENT | How it's known |
+|---|---:|---:|---:|---|
+| **Draw-lite's gap:** a command or check it doesn't have | 38 | 0 | | The list above |
+| **Left out on purpose** | 6 | 0 | | Earlier decisions |
+| **The harness:** a speed check on a cold start; a data file missing; a TODO on a script's own text | 1 | 0 | 2 (gdml_private/B5: its file is missing; bug236: `directory`'s name) | Logs |
+| **Port:** scripts counting edges, where ours come in another order. The geometry is right given the same edge | 2 (G8, bug27711_3) | 0 | 2 can't be told (bug25206, bug27711_2: the same counting) | Decision 1738 |
+| **OCCT's own, run natively:** the 12, and the fillet survey's 30 | 12 | 30 | | Native failed at the same step, or was recorded so |
+| **OCCT's own, its log compared:** de/step_* | | 76 | | occt-defects.md: already equal to native's |
+| **OCCT's own, by its script alone** | | 396 | | The script's TODO says native fails with that message. **Not run on native** |
+| **The port better than native** | | | 4 (D8, H8, bug25979, bug25199: a valid result, within the tolerance the case asks) | Decisions 1113, 1741; the log |
+| **Total** | **59** | **502** | **8** | |
+
+**Are there port bugs in the BAD cases?** None found, though only 106 of the 502 are checked against native, so this is the weakest line above. What was looked for, in the logs: an exception or a command native wouldn't give (56 logs: each is what the TODO names), a TODO that's optional or for one platform (6: bug24909_1 and _2 throw `OutOfRange` where OCCT's ticket is a crash, and the rest give Windows' own figures), and figures far from the script's reference (103, below). Native can't be run on them any more: the Draw-lite corpus can only compare with what the scripts say.
+
+**What's silent and wrong, which is what matters here.** A BAD case tells you OCCT knows of a fault in a command, and not what Kerf's public operation does with it, so the ones that give figures were followed through the public API:
+
+| Found | Before | Now |
+|---|---|---|
+| **A cone offset, with its apex.** `Solid.Cone(5, 0, 12).Offset(-1)`, the default join: a success, "valid", volume **3.7e101**. Inverted, with mitres, 5.7e19 and a box of 3.8 million. 16 of 112 plain offsets of primitives (offset/shape_type_i showed it, with volumes to -2e20) | Success | A failure holding the shape (decision 1918). A solid's offset must hold a solid, of the size its input allows. **The geometry isn't fixed:** with mitres the same cone gives the right 107.757, so that's a place to start |
+| **A face with bounds off its surface** (mkface/after_extsurf_and_offset C6 to C9) | Success, invalid, a vertex tolerance of 19.8 | A failure (decision 1919) |
+| **STEP labels that aren't ASCII** (#1686) | Raw UTF-8 in a format that doesn't allow it | The format's directives (decision 1920) |
+| **boolean/bsection/B6:** two faces whose section should be 76 long come out with none | Success, empty | **Not fixed:** coplanar faces, and no rule known that an empty section breaks |
+
+The 103 figures, against the scripts' references, are about half checks with no reference at all (the script says 0, to print the figure). Thrusection's are sorted as stale in occt-defects.md, which wasn't rechecked. **Left to read one at a time:** bugs/modalg_2's bug5805 group (area half or a sixth of its reference), bugs/moddata_2/bug3721 (the fuse's area twice its reference; a Fuse's volume is checked, not its area), draft/angle F9 and G8. All say so in OCCT's TODOs.
+
+**The 48 issues that couldn't be told:** three were settled, leaving 45.
+
+| Why | Issues |
+|---|---:|
+| Needs a model attached to the issue: Kerf has the same code, by reading | 27 |
+| Read only: same code, no input built | 9 |
+| Its data could not be had or read | 8 |
+| Tried on its file, and nothing to judge it by | 1 |
+
+**Not done, by kind:** 2 port cases of edge order (not plain: decision 1738); 38 Draw-lite (no user sees these); 396 BAD not checked natively, which can't now be; the bsection, bug5805 and bug3721 rows above; the 45.
 
 ## Left
 

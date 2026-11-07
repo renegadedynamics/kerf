@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 
 namespace Kerf.Engine.Geometry;
@@ -156,14 +157,14 @@ internal static class ElSLib
     // Preserves values at exactly 2*PI for proper seam handling.
     private static void NormalizeAngle(ref double angle)
     {
-        while (angle < NEGATIVE_RESOLUTION)
+        for (int aStep = 0; angle < NEGATIVE_RESOLUTION; StepLimit.Next(ref aStep))
         {
             angle += Pipi;
         }
 
         // Only normalize angles strictly greater than 2*PI (with small tolerance)
         // to preserve the closing seam value of exactly 2*PI
-        while (angle > Pipi * (1.0 + Constants.Resolution()))
+        for (int aStep = 0; angle > Pipi * (1.0 + Constants.Resolution()); StepLimit.Next(ref aStep))
         {
             angle -= Pipi;
         }

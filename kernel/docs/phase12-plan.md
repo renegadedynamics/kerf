@@ -31,11 +31,11 @@ The main work, with silent errors first.
 
 | Unit | What | Done when |
 |---|---|---|
-| **12E** The silent Cut | The Cut of cylinders at radius 0.5 that comes out 0.8% wrong and says nothing, as the volume check's margin lets it through. | Right, or a failure carrying the shape |
-| **12F** The equal tee | Fillets on the equal tee: 514 of 2,508 wrong or failing. | The rate falls, or the cause is written down |
-| **12G** Radius 500 | Cylinders of radius 500: 21 to 22 of 113 steps fail, all loudly, up from 17 to 18. Why it rose, then the cause. | The same |
-| **12H** Hang risks (11T) | The suspect loops in reliability.md, and the rest of its ranked list of failure islands. | Each bounded, or shown to be bounded by something other than a user's input |
-| **12I** The corpus | The 59 FAILED, the 502 BAD, and the 48 issues that couldn't be told. | Each attributed, as in corpus-failures.md, and fixed where the fix is plain |
+| **12E** The silent Cut | The Cut of cylinders at radius 0.5 that comes out 0.8% wrong and says nothing, as the volume check's margin lets it through. | Right, or a failure carrying the shape. **Done:** right; the cause was the clean's merge, and it wasn't the only one (decisions 1922 and 1924) |
+| **12F** The equal tee | Fillets on the equal tee: 514 of 2,508 wrong or failing. | The rate falls, or the cause is written down. **Cause written down:** ChFi3d's walk near the tangency, 514 still (decision 1925) |
+| **12G** Radius 500 | Cylinders of radius 500: 21 to 22 of 113 steps fail, all loudly, up from 17 to 18. Why it rose, then the cause. | The same. **Part done:** 13 and 13; an absolute reach was the cause of most; what's left is in reliability.md (decision 1923) |
+| **12H** Hang risks (11T) | The suspect loops in reliability.md, and the rest of its ranked list of failure islands. | Each bounded, or shown to be bounded by something other than a user's input. **Done** (decisions 1913 to 1917; reliability.md, section 4b): about 220 loops; 1,000 damaged files, none that a cancel can't stop |
+| **12I** The corpus | The 59 FAILED, the 502 BAD, and the 48 issues that couldn't be told. | Each attributed, as in corpus-failures.md, and fixed where the fix is plain. **Attributed; 3 silent faults fixed** (decisions 1918 to 1921; corpus-failures.md). 396 of the BAD stand on their scripts alone |
 | **12J** OCCT's defects (11S) | Carry on down occt-defects.md, from the top. | Ongoing. **First pass done** (decisions 22601 to 22612): #1123, #1444, #572, #1039, #1659, #1643 right where they were wrong or failing; solids of no volume, a face against a solid, and a fuse that lost part of an input now fail; #1355, #1632, #1431 and upstream `53706f78a8` and `1349657592` in part. Left at the top: #1629, #245, #1639, the self-interfering fillets, a sphere's mesh (for the owner) and a cone's offset |
 
 ## 3. Fillets a user would notice

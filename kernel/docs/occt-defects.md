@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 46 already fixed, 88 not relevant, 42 applies, 48 can't tell (unit 12J moved nine from applies to already fixed; the base's line said 36 and 52, where its rows count 37 and 51). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 46 already fixed, 88 not relevant, 43 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -158,8 +158,8 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1691 | Crash with sweep with auxiliary spine | already fixed | Tried on its files: its first case isn't done, with the message native had. Its fourth is a null reference at `PipeShell.Add`, which the public layer reports as a failure. The other two pass a compound as the guide, which the typed API can't |
 | 1690 | STEP export: material density written with wrong unit exponents (g³·cm²) and an untyped value | applies | Read: same writer; material density units. Small, data exchange |
 | 1688 | Crash with loft on closed profile | already fixed | Tried on its files: a valid shell and no overflow. Its `SetMaxDegree(5)` wasn't set |
-| 1687 | BRepAlgoAPI_Fuse(S, Copy(S)) returns empty with IsDone=true while Fuse(S, S) succeeds (OCCT 7.9.3) | can't tell | Needs the issue's attached model; not reproduced in this pass (Boolean of a solid and its copy) |
-| 1686 | Data Exchange, STEP Export - Non-ASCII labels in AP214 files are written as raw UTF-8 instead of being encoded | can't tell | Non-ASCII labels in AP214; Kerf's writer is a port, not checked |
+| 1687 | BRepAlgoAPI_Fuse(S, Copy(S)) returns empty with IsDone=true while Fuse(S, S) succeeds (OCCT 7.9.3) | not reproduced | Fuse with a copy on a box, cylinder, sphere, cone and torus: right volume and faces, as Fuse with itself. Its model wasn't tried, so that's where it could still be |
+| 1686 | Data Exchange, STEP Export - Non-ASCII labels in AP214 files are written as raw UTF-8 instead of being encoded | applies, fixed | Decision 1920. It's as the issue says: raw UTF-8 in the file. Now `\\X2\\` and `\\X4\\`, read back the same |
 | 1685 | BRepGProp SurfaceProperties: phase-dependent area for a planar periodic B-spline, despite small error estimate | already fixed | Decision 1785; reproduced (22.285 for 22.900) and fixed: the box of a periodic pcurve's arc |
 | 1684 | Crash with loft on infinite line | already fixed | Tried on its files: a null reference, which the public `Loft` reports as a failure (by the code, not run) |
 | 1682 | BRepOffsetAPI_MakePipeShell with a guide distorts a straight sweep in 8.0.1 (exact in 7.9.3) | already fixed | Decision 1776 (same cause as #1681) |
@@ -167,7 +167,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1680 | BRepBndLib::AddOptimal ignores a trimmed edge on a face of revolution in 8.0.1 (correct in 7.9.3) | can't tell | Needs the issue's attached model; not reproduced in this pass (a box too large, not too small) |
 | 1679 | BRepBndLib::AddOptimal returns a box smaller than a smooth ThruSections loft (8.0.1 axis-aligned; 7.9.3 and 8.0.1 when rotated) | already fixed | Decision 1777; reproduced (29.969 for 30) and fixed |
 | 1678 | BOPAlgo_PaveFiller::MakeBlocks can pass a section edge with no 3D curve to BOPTools_AlgoTools::MakePCurve, which dereferences it (SIGSEGV) | not relevant | A null dereference natively; the port throws, and BOPAlgo reports a failure |
-| 1677 | STEP import: cone loses its apex when the file's uncertainty exceeds 2*pi mm | can't tell | Same reader; needs a file with an uncertainty over 2π mm, which is rare |
+| 1677 | STEP import: cone loses its apex when the file's uncertainty exceeds 2*pi mm | not reproduced | A written cone read back with an uncertainty of 1, 7 and 10: its faces, its apex and its volume hold. A file from elsewhere could still differ |
 | 1676 | Boolean operation between two simple faces takes unreasonable amount of time (12 minutes) | applies | Reproduced on its files: past 150 s. For 11Q |
 | 1675 | BRepGProp_Gauss: the precise (Eps) path never refines along U and drops U's error from its estimate, so swept B-splines, full revolutions and areas ar | already fixed | Decision 1784; the issue's patch applied by hand, with a test |
 | 1673 | Modeling Algorithms - ChFi3d_FilBuilder::Compute overflows the stack on a three-edge corner of a ThruSections loft (NaN bounds in GeomPlate initial su | applies | Built from its numbers: no overflow, but invalid, volume 1.8e6 from 67183. The public fillet fails |

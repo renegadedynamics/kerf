@@ -133,7 +133,7 @@ internal sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
                     lPar = fPar + 1.0;
                 }
 
-                for (; _curEdgePar < Probing_End; _curEdgePar += Probing_Step)
+                for (; _curEdgePar < Probing_End; _curEdgePar = StepLimit.Moved(_curEdgePar, _curEdgePar + Probing_Step))
                 {
                     double param = _curEdgePar * fPar + (1.0 - _curEdgePar) * lPar;
                     e.D1(param, out Point2D pOnC, out Vector2D tanVec);

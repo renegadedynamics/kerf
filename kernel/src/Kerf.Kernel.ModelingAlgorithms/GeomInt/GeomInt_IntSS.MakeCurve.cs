@@ -59,12 +59,12 @@ internal partial class IntSS
         }
         //
         double dU = 0.0;
-        while (ux < (umin - eps))
+        for (int aStep = 0; ux < (umin - eps); StepLimit.Next(ref aStep))
         {
             ux += period;
             dU += period;
         }
-        while (ux > (umax + eps))
+        for (int aStep = 0; ux > (umax + eps); StepLimit.Next(ref aStep))
         {
             ux -= period;
             dU -= period;

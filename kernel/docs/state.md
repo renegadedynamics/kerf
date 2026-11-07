@@ -325,3 +325,6 @@ Unit 12D (decisions 1896 and 1897) adds no shared state to Kerf. The rig's `Firs
 Units 12K to 12M (decisions 1904 to 1911) add no shared state: `FilletLimits`'s tools, `Neighbours` and `Mitre` are local to the call, its Gauss points are constant arrays read only, and its Booleans and `UnifySameDomain` run on the caller's thread, on copies (`SetNonDestructive`, `SetSafeInputMode`).
 
 Unit 12C (decisions 1898 to 1901) adds no shared state: `FilletLimits.Judge` and its `Neighbours` are local to the call, on frozen shapes, `WellApart` is a constant, and `MaxFillet` holds its limit in a local.
+
+Units 12H and 12I (decisions 1913 to 1921) add no shared state: `StepLimit` is static with only a constant, and each count is a local of its loop; `OffsetVolumes`' options are immutable and only read; `WithDirectives` is a pure function; a compound's count is set as it's built, before it's frozen, as it was.
+Units 12E, 12F and 12G (decisions 1922 to 1925) add no shared state: `HidesCorner`, `TouchSpan` and `ProvedByPoints` work on locals and read frozen shapes, each `SolidClassifier` is local to one call, and the new fields are constants.

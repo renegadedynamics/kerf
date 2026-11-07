@@ -385,8 +385,11 @@ internal sealed class LocalSplitShape
             Wire sectionWire = new();
             Vertex breakVertex;
             wexp.Next();
+            // Kerf: an open wire would wrap round for ever. A closed one closes within one wrap (decision 1913)
+            int wraps = 0;
             if (!wexp.More())
             {
+                wraps++;
                 wexp.Init(curWire, faceRef);
             }
             for (;;)
@@ -408,6 +411,10 @@ internal sealed class LocalSplitShape
                 wexp.Next();
                 if (!wexp.More())
                 {
+                    if (++wraps > 1)
+                    {
+                        throw new ConstructionErrorException("LocOpe_SplitShape: a wire to split doesn't close");
+                    }
                     wexp.Init(curWire, faceRef);
                 }
             }
@@ -419,10 +426,7 @@ internal sealed class LocalSplitShape
                 curWire = ShapeCasts.Wire(breakOnWires.First());
                 breakOnWires.RemoveFirst();
                 wexp.Init(curWire, faceRef);
-                while (!wexp.CurrentVertex().IsSame(theStartVertex))
-                {
-                    wexp.Next();
-                }
+                MoveTo(wexp, theStartVertex);
                 mw = new LibraryMakeWire();
                 continue;
             }
@@ -449,10 +453,7 @@ internal sealed class LocalSplitShape
                     curWire = ShapeCasts.Wire(breakOnWires.First());
                     breakOnWires.RemoveFirst();
                     wexp.Init(curWire, faceRef);
-                    while (!wexp.CurrentVertex().IsSame(theStartVertex))
-                    {
-                        wexp.Next();
-                    }
+                    MoveTo(wexp, theStartVertex);
                     mw = new LibraryMakeWire();
                     break;
                 }
@@ -463,10 +464,7 @@ internal sealed class LocalSplitShape
                     curWire = ShapeCasts.Wire(verWireMap.GetValue(startVertex));
 
                     wexp.Init(curWire, faceRef);
-                    while (!wexp.CurrentVertex().IsSame(startVertex))
-                    {
-                        wexp.Next();
-                    }
+                    MoveTo(wexp, startVertex);
 
                     NCollection_List<Shape> lsections = verSecMap.GetValue(startVertex);
                     if (lsections.Extent() == 1)
@@ -1379,6 +1377,19 @@ internal sealed class LocalSplitShape
             {
                 _map.GetValue(s).Append(s);
             }
+        }
+    }
+
+    // Kerf: walks the explorer to a vertex. Past the wire's end its vertex stays null and this would never end (decision 1913)
+    private static void MoveTo(WireExplorer explorer, in Vertex vertex)
+    {
+        while (!explorer.CurrentVertex().IsSame(vertex))
+        {
+            if (!explorer.More())
+            {
+                throw new ConstructionErrorException("LocOpe_SplitShape: a vertex isn't on the wire it's mapped to");
+            }
+            explorer.Next();
         }
     }
 

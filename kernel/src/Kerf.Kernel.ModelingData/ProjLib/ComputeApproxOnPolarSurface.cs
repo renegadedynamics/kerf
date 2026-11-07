@@ -1677,7 +1677,7 @@ internal class ComputeApproxOnPolarSurface
                 {
                     sense = -1;
                 }
-                while (testU < Uinf - tolU || testU > Usup + tolU)
+                for (int aStep = 0; testU < Uinf - tolU || testU > Usup + tolU; StepLimit.Next(ref aStep))
                 {
                     testU += sense * uperiod;
                 }
@@ -1693,7 +1693,7 @@ internal class ComputeApproxOnPolarSurface
                 {
                     sense = -1.0;
                 }
-                while (testV < Vinf - tolV || testV > Vsup + tolV)
+                for (int aStep = 0; testV < Vinf - tolV || testV > Vsup + tolV; StepLimit.Next(ref aStep))
                 {
                     testV += sense * vperiod;
                 }

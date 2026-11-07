@@ -246,7 +246,9 @@ internal class Builder
 
                 if (tShape is TCompound compound)
                 {
-                    long leaves = compound._walkLeaves + (componentTShape is TCompound inner ? inner._walkLeaves : 1);
+                    // Kerf: a compound counts as well as what's in it: empty ones held twice at each level counted 0, and a
+                    // walk of them never ended (decision 1916)
+                    long leaves = compound._walkLeaves + 1 + (componentTShape is TCompound inner ? inner._walkLeaves : 0);
                     if (leaves > MaxWalkLeaves)
                     {
                         throw new ConstructionErrorException($"A walk of this compound would visit more than {MaxWalkLeaves} shapes.");

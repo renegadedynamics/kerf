@@ -142,5 +142,10 @@ internal static class GeomTools
         const int THE_BUFFER_SIZE = 32;
         string buffer = StreamUtilities.ReadWord(IS, THE_BUFFER_SIZE - 1) ?? "";
         value = StreamUtilities.Strtod(buffer);
+        // Kerf: no geometry has these, and an infinite radius or range hangs what's done with it (decision 1914)
+        if (!double.IsFinite(value))
+        {
+            throw new StreamFormatErrorException($"A number in the file isn't finite: {buffer}");
+        }
     }
 }

@@ -1099,8 +1099,18 @@ internal partial class UnifySameDomain : Transient
                     Point2D curPoint   = startPCurve.Value(curParam);
 
                     Edge curEdge = startEdge;
+                    // Kerf: every step uses up an edge, except a seam's, which ReconstructMissedSeam can give again: two seams
+                    // of a doubly periodic surface could pass a wire between them for ever. This is the path a failed wire takes,
+                    // which leaves the faces as they were (decision 1913)
+                    int stepsLeft = 4 * (edges.Length() + removedEdges.Length()) + 16;
                     for (;;) // loop till the end of current new wire
                     {
+                        if (--stepsLeft < 0)
+                        {
+                            isWireBuildingFailed = true;
+                            break;
+                        }
+
                         var nextEdge  = new Edge();
                         var nextPoint = new Point2D();
 

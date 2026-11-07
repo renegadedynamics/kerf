@@ -932,7 +932,7 @@ internal sealed class WiresOnShape : Transient
 
             if (theUmin < umin - tolu)
             {
-                while (theUmin < umin - tolu)
+                for (int aStep = 0; theUmin < umin - tolu; StepLimit.Next(ref aStep))
                 {
                     theUmin += up;
                     nbtra++;
@@ -940,7 +940,7 @@ internal sealed class WiresOnShape : Transient
             }
             else if (theUmax > umax + tolu)
             {
-                while (theUmax > umax + tolu)
+                for (int aStep = 0; theUmax > umax + tolu; StepLimit.Next(ref aStep))
                 {
                     theUmax -= up;
                     nbtra--;
@@ -964,7 +964,7 @@ internal sealed class WiresOnShape : Transient
 
             if (theVmin < vmin - tolv)
             {
-                while (theVmin < vmin - tolv)
+                for (int aStep = 0; theVmin < vmin - tolv; StepLimit.Next(ref aStep))
                 {
                     theVmin += vp;
                     theVmax += vp;
@@ -973,7 +973,7 @@ internal sealed class WiresOnShape : Transient
             }
             else if (theVmax > vmax + tolv)
             {
-                while (theVmax > vmax + tolv)
+                for (int aStep = 0; theVmax > vmax + tolv; StepLimit.Next(ref aStep))
                 {
                     theVmax -= vp;
                     theVmin -= vp;
@@ -1092,7 +1092,7 @@ internal sealed class WiresOnShape : Transient
 
                     if (theUmin < umin - tolu)
                     {
-                        while (theUmin < umin - tolu)
+                        for (int aStep = 0; theUmin < umin - tolu; StepLimit.Next(ref aStep))
                         {
                             theUmin += up;
                             theUmax += up;
@@ -1101,7 +1101,7 @@ internal sealed class WiresOnShape : Transient
                     }
                     else if (theUmax > umax + tolu)
                     {
-                        while (theUmax > umax + tolu)
+                        for (int aStep = 0; theUmax > umax + tolu; StepLimit.Next(ref aStep))
                         {
                             theUmax -= up;
                             theUmin -= up;
@@ -1125,7 +1125,7 @@ internal sealed class WiresOnShape : Transient
 
                     if (theVmin < vmin - tolv)
                     {
-                        while (theVmin < vmin - tolv)
+                        for (int aStep = 0; theVmin < vmin - tolv; StepLimit.Next(ref aStep))
                         {
                             theVmin += vp;
                             theVmax += vp;
@@ -1134,7 +1134,7 @@ internal sealed class WiresOnShape : Transient
                     }
                     else if (theVmax > vmax + tolv)
                     {
-                        while (theVmax > vmax + tolv)
+                        for (int aStep = 0; theVmax > vmax + tolv; StepLimit.Next(ref aStep))
                         {
                             theVmax -= vp;
                             theVmin -= vp;

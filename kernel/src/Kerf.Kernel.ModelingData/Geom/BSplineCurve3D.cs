@@ -964,11 +964,11 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         // Is U within the period?
         double uf = FirstParameter, ul = LastParameter;
         double u = U, period = ul - uf;
-        while (tol < (uf - u))
+        for (int aStep = 0; tol < (uf - u); StepLimit.Next(ref aStep))
         {
             u += period;
         }
-        while (tol > (ul - u))
+        for (int aStep = 0; tol > (ul - u); StepLimit.Next(ref aStep))
         {
             u -= period;
         }

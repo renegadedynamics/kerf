@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Classification.Topological;
 using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -174,7 +175,7 @@ internal class FaceExplorer : IFaceExplorer<ClassifierEdge>
                         lPar = fPar + 1.0;
                     }
 
-                    for (; _curEdgePar < Probing_End; _curEdgePar += Probing_Step)
+                    for (; _curEdgePar < Probing_End; _curEdgePar = StepLimit.Moved(_curEdgePar, _curEdgePar + Probing_Step))
                     {
                         paramIn = _curEdgePar * fPar + (1.0 - _curEdgePar) * lPar;
 

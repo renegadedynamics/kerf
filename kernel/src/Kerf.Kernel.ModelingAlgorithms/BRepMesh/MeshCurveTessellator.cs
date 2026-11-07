@@ -147,6 +147,8 @@ internal class MeshCurveTessellator : CurveTessellator
             _faceRangeV[1] = surface.LastVParameter() + dv;
         }
 
+        // Kerf: an edge alone can be over the budget, as a damaged file's far too long one is (decision 1915)
+        _parameters.Budget?.Check(_discretTool.PointCount);
         AddInternalVertices();
         SplitByDeflection2d();
     }
@@ -312,6 +314,11 @@ internal class MeshCurveTessellator : CurveTessellator
         midpar = (first + last) * 0.5;
         _curve.D0(midpar, out Point3D midP3d);
         _discretTool.AddPoint(midP3d, midpar, false);
+        _parameters.Budget?.Check(_discretTool.PointCount);
+        if ((_discretTool.PointCount & 63) == 0)
+        {
+            Cancellation.ThrowIfRequested();
+        }
 
         SplitSegment(surf, curve2d, first, midpar, nbIter + 1);
         SplitSegment(surf, curve2d, midpar, last, nbIter + 1);

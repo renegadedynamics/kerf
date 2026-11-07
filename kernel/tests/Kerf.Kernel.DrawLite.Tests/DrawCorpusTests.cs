@@ -279,6 +279,17 @@ public class DrawCorpusTests(ITestOutputHelper output)
             return;
         }
 
+        // A filtered run (unit 12I): KERF_CORPUS_ONLY names a file of case ids, or of groups and grids ending in a slash.
+        // KERF_CORPUS_LOGS names a directory for the log of each case that isn't OK
+        if (Environment.GetEnvironmentVariable("KERF_CORPUS_ONLY") is { Length: > 0 } anOnlyFile)
+        {
+            string[] anOnly = File.ReadAllLines(anOnlyFile).Where(l => l.Length > 0).ToArray();
+            HashSet<string> anIds = anOnly.Where(l => !l.EndsWith('/')).ToHashSet(StringComparer.Ordinal);
+            string[] aPrefixes = anOnly.Where(l => l.EndsWith('/')).ToArray();
+            aRunnable = aRunnable.Where(c => anIds.Contains(c.Id) || aPrefixes.Any(f => c.Id.StartsWith(f, StringComparison.Ordinal))).ToList();
+            aRunnableBefore = [];
+        }
+
         // Unit 11Q's list of slow cases: each case's time, in one pass, written to the file this names
         if (Environment.GetEnvironmentVariable("KERF_CORPUS_TIMES") is { Length: > 0 } aTimesFile)
         {
@@ -295,6 +306,15 @@ public class DrawCorpusTests(ITestOutputHelper output)
         Statuses("before 4L2", Run(aRunnableBefore, Before4L2));
         List<DrawCaseRun> aRuns = Run(aRunnable, null);
         Statuses("now", aRuns);
+        if (Environment.GetEnvironmentVariable("KERF_CORPUS_LOGS") is { Length: > 0 } aLogs)
+        {
+            Directory.CreateDirectory(aLogs);
+            foreach (DrawCaseRun aRun in aRuns.Where(r => !r.Status.StartsWith("OK", StringComparison.Ordinal) && !r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)))
+            {
+                File.WriteAllText(Path.Combine(aLogs, aRun.Case.Id.Replace('/', '_') + ".log"), aRun.Log);
+            }
+        }
+
 
         foreach (DrawCaseRun aRun in aRuns)
         {

@@ -744,7 +744,8 @@ internal sealed class WireExplorer
         {
             double startPar = fP;
             bool nextPntOnEdge = false;
-            while (!nextPntOnEdge && startPar < lP)
+            // Kerf: at 1e15 a step of a thousandth of a short edge doesn't move, and this would never end (decision 1913)
+            while (!nextPntOnEdge && startPar < lP && startPar + dP != startPar)
             {
                 startPar += dP;
                 aPC.D0(startPar, out Point2D pnt);
@@ -774,7 +775,7 @@ internal sealed class WireExplorer
         {
             double startPar = lP;
             bool nextPntOnEdge = false;
-            while (!nextPntOnEdge && startPar > fP)
+            while (!nextPntOnEdge && startPar > fP && startPar - dP != startPar)
             {
                 startPar -= dP;
                 aPC.D0(startPar, out Point2D pnt);

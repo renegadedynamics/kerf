@@ -930,8 +930,10 @@ internal class StepWriter
     {
         AddParam();
         // Use helper function to clean text while preserving control directives
-        // Kerf: OCCT's text is UTF-8, so the line is filled with its bytes (decision 1192)
-        string aVal = ToFileText(CleanTextForSend(val));
+        // Kerf: OCCT's text is UTF-8, so the line is filled with its bytes (decision 1192); the public writer asks for ISO
+        // 10303-21's directives instead (OCCT #1686; decision 1920)
+        string aClean = CleanTextForSend(val);
+        string aVal = TextsAsDirectives.Value ? WithDirectives(aClean) : ToFileText(aClean);
         int nn = aVal.Length;
         // Add surrounding quotes
         aVal = nn == 0 ? "''" : "'" + aVal + "'";
@@ -1502,6 +1504,66 @@ internal class StepWriter
     {
         int end = text.IndexOf('\0');
         return end < 0 ? text.Length : end;
+    }
+
+    /// <summary>Whether <see cref="Send(string)"/> writes what isn't ASCII as directives, not as OCCT writes it.</summary>
+    internal static readonly ContextKey<bool> TextsAsDirectives = new("StepWriter.TextsAsDirectives", false);
+
+    /// <summary>
+    /// A text with what isn't ASCII as ISO 10303-21's directives: <c>\X2\</c> for the basic plane and <c>\X4\</c> beyond it, each
+    /// up to <c>\X0\</c>. The format allows nothing else in a text, and the reader decodes both (decision 1920).
+    /// </summary>
+    internal static string WithDirectives(string text)
+    {
+        if (text.AsSpan().IndexOfAnyExceptInRange('\0', '\x7f') < 0)
+        {
+            return text;
+        }
+
+        var result = new StringBuilder(text.Length + 16);
+        for (int i = 0; i < text.Length;)
+        {
+            if (text[i] < 0x80)
+            {
+                result.Append(text[i++]);
+                continue;
+            }
+
+            int wide = i;
+            while (wide < text.Length && text[wide] >= 0x80 && !char.IsSurrogate(text[wide]))
+            {
+                wide++;
+            }
+
+            if (wide > i)
+            {
+                result.Append("\\X2\\");
+                for (; i < wide; i++)
+                {
+                    result.Append(((int)text[i]).ToString("X4", CultureInfo.InvariantCulture));
+                }
+
+                result.Append("\\X0\\");
+                continue;
+            }
+
+            result.Append("\\X4\\");
+            while (i + 1 < text.Length && char.IsSurrogatePair(text[i], text[i + 1]))
+            {
+                result.Append(char.ConvertToUtf32(text[i], text[i + 1]).ToString("X8", CultureInfo.InvariantCulture));
+                i += 2;
+            }
+
+            if (i < text.Length && char.IsSurrogate(text[i]))
+            {
+                result.Append(0xFFFD.ToString("X8", CultureInfo.InvariantCulture)); // half a pair isn't a character
+                i++;
+            }
+
+            result.Append("\\X0\\");
+        }
+
+        return result.ToString();
     }
 
     /// <summary>A text of the model (OCCT's UTF-8) as the file's bytes, one char per byte (decision 1192).</summary>

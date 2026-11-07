@@ -5,6 +5,10 @@ version may break the API.
 
 ## Unreleased
 
+- **An offset that comes out nonsense now fails, holding the shape:** a cone with its apex offset inwards reported success with a volume of 3.7e101 (decision 1918). With `Join = JoinKind.Intersection` an upright cone gives the right answer.
+- **`Face.FromSurface` with bounds off the surface fails,** where it reported success (decision 1919).
+- **STEP names that aren't ASCII are written as the format's directives,** not raw UTF-8, and read back the same (OCCT #1686, decision 1920).
+- **A damaged file can't hang a read or a mesh that's cancelled:** a parameter too far from its range to reach, a file of 2^40 shapes in 20 kB, and a BREP with `nan` or `inf` in it are failures (decisions 1913, 1914, 1916); more of a mesh and of a STEP read can be cancelled (decision 1915).
 - **A Common, Cut or Fuse that comes out wrong is tried with its inputs the other way round, and that result returned, with a warning, if it's right:** #1643's lofts now give the right answers (decision 22611). **A Fuse that lost part of an input now fails,** carrying the shape.
 - **A general transform of a shape holding a mesh keeps its triangles facing outwards and its normals square to them,** and doesn't move a located mesh twice (decision 22612).
 - **A Cut, Common or Fuse no longer goes wrong where a section curve stops just short of another:** on #1659's loft and cylinder the Cut removed nothing, which had become a failure, and now it's right (decision 22610).
@@ -22,7 +26,7 @@ version may break the API.
 - **A disc's rim rounded to its full height, full rounds, hemispheres and a sphere from a short cylinder work,** as does a hole's rim or a boss's foot rounded to its wall's height: circular edges between a plane, cylinder or cone, with the result checked by Pappus, on exact tori and spheres.
 
 - **A fillet too large for a circular edge between a plane, cylinder or cone now says what fits:** `FilletLimit` gives the radius, and `Fillet` refuses above it at once, with a radius within tolerance of it taken as it.
-
+- **Crossing cylinders of equal radius are right more often, and at more sizes:** a Cut 0.8% out at a radius of 0.5, Cuts up to 16% out and Fuses up to 16.5% out, each valid and reported as a success, are right now, and failures over radii from 0.01 to 10,000 fall from 576 to 329 of 18,306 (`docs/reliability.md`). **A result that nearly touched is checked at points too:** it can fail with `result.invalid` where it passed.
 - **`CentreOfArea()`** gives the centre of a shape's faces' area without its moments, exact for a planar face bounded by lines and circles.
 - **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius within the shape's tolerance of the limit is the limit, the same in every figure, on either side (decisions 1898, 1899). All of a cube's edges past half its side used to fail with `result.invalid`, carrying what it made; now with `fillet.too-large`. A fillet just below a limit, by under the tolerance, no longer leaves faces narrower than that.
 - **`FilletLimit` no longer claims a limit where the next face is within 0.1 radians,** as the fillet rolls on to that face, rightly.

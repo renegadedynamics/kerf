@@ -300,10 +300,10 @@ internal class SolidExplorer
                 //--
                 //--  Then take a matrix of points on a tight grid
                 //--
-                for (u = du + (u1 + u2) * 0.5; u < u2; u += du)
+                for (u = du + (u1 + u2) * 0.5; u < u2; u = StepLimit.Moved(u, u + du))
                 {
                     //--  0  X    u increases
-                    for (v = dv + (v1 + v2) * 0.5; v < v2; v += dv)
+                    for (v = dv + (v1 + v2) * 0.5; v < v2; v = StepLimit.Moved(v, v + dv))
                     {
                         //--  0  0    v increases
                         if (++nbPntCalc >= indexPoint)
@@ -320,10 +320,10 @@ internal class SolidExplorer
                     }
                 }
 
-                for (u = -du + (u1 + u2) * 0.5; u > u1; u -= du)
+                for (u = -du + (u1 + u2) * 0.5; u > u1; u = StepLimit.Moved(u, u - du))
                 {
                     //--  0  0    u decreases
-                    for (v = -dv + (v1 + v2) * 0.5; v > v1; v -= dv)
+                    for (v = -dv + (v1 + v2) * 0.5; v > v1; v = StepLimit.Moved(v, v - dv))
                     {
                         //--  X  0    v decreases
                         if (++nbPntCalc >= indexPoint)
@@ -340,10 +340,10 @@ internal class SolidExplorer
                     }
                 }
 
-                for (u = -du + (u1 + u2) * 0.5; u > u1; u -= du)
+                for (u = -du + (u1 + u2) * 0.5; u > u1; u = StepLimit.Moved(u, u - du))
                 {
                     //--  X  0    u decreases
-                    for (v = dv + (v1 + v2) * 0.5; v < v2; v += dv)
+                    for (v = dv + (v1 + v2) * 0.5; v < v2; v = StepLimit.Moved(v, v + dv))
                     {
                         //--  0  0    v increases
                         if (++nbPntCalc >= indexPoint)
@@ -360,10 +360,10 @@ internal class SolidExplorer
                     }
                 }
 
-                for (u = du + (u1 + u2) * 0.5; u < u2; u += du)
+                for (u = du + (u1 + u2) * 0.5; u < u2; u = StepLimit.Moved(u, u + du))
                 {
                     //--  0  0     u increases
-                    for (v = -dv + (v1 + v2) * 0.5; v > v1; v -= dv)
+                    for (v = -dv + (v1 + v2) * 0.5; v > v1; v = StepLimit.Moved(v, v - dv))
                     {
                         //--  0  X     v decreases
                         if (++nbPntCalc >= indexPoint)
@@ -393,9 +393,9 @@ internal class SolidExplorer
                     dv = 1e-12;
                 }
 
-                for (u = du + u1; u < u2; u += du)
+                for (u = du + u1; u < u2; u = StepLimit.Moved(u, u + du))
                 {
-                    for (v = dv + v1; v < v2; v += dv)
+                    for (v = dv + v1; v < v2; v = StepLimit.Moved(v, v + dv))
                     {
                         if (++nbPntCalc >= indexPoint)
                         {

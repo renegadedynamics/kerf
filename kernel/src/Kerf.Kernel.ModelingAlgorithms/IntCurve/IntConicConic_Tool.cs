@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Intersection.TwoD;
 using Kerf.Geometry;
@@ -103,11 +104,11 @@ internal static class IntConicConic_Tool
     internal static double NormalizeOnCircleDomain(double _Param, in TwoDDomain theDomain)
     {
         double param = _Param;
-        while (param < theDomain.FirstParameter())
+        for (int aStep = 0; param < theDomain.FirstParameter(); StepLimit.Next(ref aStep))
         {
             param += PIpPI;
         }
-        while (param > theDomain.LastParameter())
+        for (int aStep = 0; param > theDomain.LastParameter(); StepLimit.Next(ref aStep))
         {
             param -= PIpPI;
         }
@@ -319,19 +320,19 @@ internal static class IntConicConic_Tool
         {
             if (!Isnull)
             {
-                while (Binf > PIpPI)
+                for (int aStep = 0; Binf > PIpPI; StepLimit.Next(ref aStep))
                 {
                     Binf -= PIpPI;
                 }
-                while (Binf < 0.0)
+                for (int aStep = 0; Binf < 0.0; StepLimit.Next(ref aStep))
                 {
                     Binf += PIpPI;
                 }
-                while (Bsup < Binf)
+                for (int aStep = 0; Bsup < Binf; StepLimit.Next(ref aStep))
                 {
                     Bsup += PIpPI;
                 }
-                while (Bsup >= (Binf + PIpPI))
+                for (int aStep = 0; Bsup >= (Binf + PIpPI); StepLimit.Next(ref aStep))
                 {
                     Bsup -= PIpPI;
                 }
@@ -362,7 +363,7 @@ internal static class IntConicConic_Tool
                 }
                 if (pInter.Bsup <= Binf)
                 {
-                    while (pInter.Binf <= Binf && pInter.Bsup <= Binf)
+                    for (int aStep = 0; pInter.Binf <= Binf && pInter.Bsup <= Binf; StepLimit.Next(ref aStep))
                     {
                         pInter.Binf += PIpPI;
                         pInter.Bsup += PIpPI;
@@ -370,7 +371,7 @@ internal static class IntConicConic_Tool
                 }
                 if (pInter.Binf >= Bsup)
                 {
-                    while (pInter.Binf >= Bsup && pInter.Bsup >= Bsup)
+                    for (int aStep = 0; pInter.Binf >= Bsup && pInter.Bsup >= Bsup; StepLimit.Next(ref aStep))
                     {
                         pInter.Binf -= PIpPI;
                         pInter.Bsup -= PIpPI;
