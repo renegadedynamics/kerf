@@ -20,6 +20,9 @@ internal sealed class MeshWorkStorage
     /// <summary>The circles of the structure's first Delaunay.</summary>
     public readonly MeshWorkList<MeshCircle> Circles = new(256);
 
+    /// <summary>The nodes of the lists of links at each of the structure's nodes.</summary>
+    public readonly MeshWorkList<LinkNode> LinkNodes = new(1024);
+
     /// <summary>Whether a Delaunay has the circles.</summary>
     public bool CirclesTaken;
 
@@ -31,6 +34,7 @@ internal sealed class MeshWorkStorage
         storage.CirclesTaken = false;
         storage.Elements.TakeHeldArray();
         storage.Circles.TakeHeldArray();
+        storage.LinkNodes.TakeHeldArray();
         return storage;
     }
 
@@ -39,8 +43,16 @@ internal sealed class MeshWorkStorage
     {
         storage.Elements.Empty();
         storage.Circles.Empty();
+        storage.LinkNodes.Empty();
         t_spare = storage;
     }
+}
+
+/// <summary>A node of a list of links, in the array of all of them; a next of 0 is the end of its list.</summary>
+internal struct LinkNode
+{
+    public int Value;
+    public int Next;
 }
 
 /// <summary>

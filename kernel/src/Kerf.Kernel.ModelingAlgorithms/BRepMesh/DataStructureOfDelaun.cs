@@ -41,6 +41,7 @@ internal sealed class DataStructureOfDelaun : Transient
     // doesn't move the rest (unit 9E)
     private readonly Queue<int> _delLinks;
     private readonly MeshWorkList<Triangle> _elements;
+    private readonly MeshWorkList<LinkNode> _linkNodes;
     private MeshWorkStorage? _storage;
 
     /// <summary>Kerf: how many circles in cells a mesh may hold; see <see cref="Tools.MeshBudget"/>.</summary>
@@ -61,6 +62,8 @@ internal sealed class DataStructureOfDelaun : Transient
         _delLinks = new Queue<int>();
         _storage = storage;
         _elements = storage?.Elements ?? new MeshWorkList<Triangle>(reservedNodeSize * 2);
+        _linkNodes = storage?.LinkNodes ?? new MeshWorkList<LinkNode>(reservedNodeSize * 6);
+        _linkNodes.Add(default); // Index 0 means none
         _elementsOfDomain = new NCollection_PackedMapOfInteger();
         _linksOfDomain = new NCollection_PackedMapOfInteger();
     }
@@ -100,7 +103,7 @@ internal sealed class DataStructureOfDelaun : Transient
         int nodeId = _nodes.Add(node, isForceAdd);
         if (!_nodeLinks.ContainsKey(nodeId))
         {
-            _nodeLinks[nodeId] = new LinkedListOfInteger();
+            _nodeLinks[nodeId] = new LinkedListOfInteger(_linkNodes);
         }
 
         return nodeId;
@@ -653,15 +656,21 @@ internal sealed class DataStructureOfDelaun : Transient
     /// </summary>
     public sealed class LinkedListOfInteger : IEnumerable<int>
     {
-        internal sealed class Node(int theValue)
+        // The nodes of all a structure's lists are in one array, by index, with 0 for none, as OCCT's are in one allocator: a
+        // removed node isn't used again and keeps its Next, as OCCT's freed node in incremental-allocator memory does
+        private readonly MeshWorkList<LinkNode> _nodes;
+        private int _first;
+        private int _last;
+        private int _length;
+
+        /// <summary>A list with nodes of its own, for use apart from a structure.</summary>
+        public LinkedListOfInteger()
         {
-            public int Value = theValue;
-            public Node? Next;
+            _nodes = new MeshWorkList<LinkNode>(4);
+            _nodes.Add(default);
         }
 
-        private Node? _first;
-        private Node? _last;
-        private int _length;
+        internal LinkedListOfInteger(MeshWorkList<LinkNode> nodes) => _nodes = nodes;
 
         /// <summary>The number of items.</summary>
         public int Extent() => _length;
@@ -670,25 +679,26 @@ internal sealed class DataStructureOfDelaun : Transient
         public int Size() => _length;
 
         /// <summary>Whether the list is empty.</summary>
-        public bool IsEmpty => _first is null;
+        public bool IsEmpty => _first == 0;
 
         /// <summary>The first item; throws <see cref="NoSuchObjectException"/> on an empty list.</summary>
-        public int First() => _first is not null ? _first.Value : throw new NoSuchObjectException("NCollection_List::First");
+        public int First() => _first != 0 ? _nodes[_first].Value : throw new NoSuchObjectException("NCollection_List::First");
 
         /// <summary>The last item; throws <see cref="NoSuchObjectException"/> on an empty list.</summary>
-        public int Last() => _last is not null ? _last.Value : throw new NoSuchObjectException("NCollection_List::Last");
+        public int Last() => _last != 0 ? _nodes[_last].Value : throw new NoSuchObjectException("NCollection_List::Last");
 
         /// <summary>Appends an item.</summary>
         public void Append(int item)
         {
-            Node node = new(item);
+            int node = _nodes.Count;
+            _nodes.Add(new LinkNode { Value = item });
             if (_length == 0)
             {
                 _first = node;
             }
             else
             {
-                _last!.Next = node;
+                _nodes[_last].Next = node;
             }
 
             _last = node;
@@ -698,7 +708,7 @@ internal sealed class DataStructureOfDelaun : Transient
         /// <summary>Removes every item.</summary>
         public void Clear()
         {
-            _first = _last = null;
+            _first = _last = 0;
             _length = 0;
         }
 
@@ -711,9 +721,9 @@ internal sealed class DataStructureOfDelaun : Transient
             }
 
             Clear();
-            for (Node? node = other._first; node is not null; node = node.Next)
+            for (int node = other._first; node != 0; node = other._nodes[node].Next)
             {
-                Append(node.Value);
+                Append(other._nodes[node].Value);
             }
 
             return this;
@@ -722,21 +732,21 @@ internal sealed class DataStructureOfDelaun : Transient
         /// <summary>Removes the iterator's item; the iterator moves to the next one.</summary>
         public void Remove(Iterator iter)
         {
-            Node current = iter._current!;
-            Node? node = current.Next;
-            if (iter._previous is null)
+            int current = iter._current;
+            int node = _nodes[current].Next;
+            if (iter._previous == 0)
             {
-                _first = current.Next;
+                _first = node;
                 _length--;
                 if (_length == 0)
                 {
-                    _last = null;
+                    _last = 0;
                 }
             }
             else
             {
-                iter._previous.Next = node;
-                if (ReferenceEquals(_last, current))
+                _nodes[iter._previous].Next = node;
+                if (_last == current)
                 {
                     _last = iter._previous;
                 }
@@ -744,15 +754,14 @@ internal sealed class DataStructureOfDelaun : Transient
                 _length--;
             }
 
-            // The removed node keeps its Next, as OCCT's freed node in incremental-allocator memory does.
             iter._current = node;
         }
 
         public IEnumerator<int> GetEnumerator()
         {
-            for (Node? node = _first; node is not null; node = node.Next)
+            for (int node = _first; node != 0; node = _nodes[node].Next)
             {
-                yield return node.Value;
+                yield return _nodes[node].Value;
             }
         }
 
@@ -761,8 +770,9 @@ internal sealed class DataStructureOfDelaun : Transient
         /// <summary>OCCT's list iterator: <c>for (It it(list); it.More(); it.Next()) it.Value();</c></summary>
         public sealed class Iterator
         {
-            internal Node? _current;
-            internal Node? _previous;
+            private MeshWorkList<LinkNode>? _nodes;
+            internal int _current;
+            internal int _previous;
 
             public Iterator() { }
 
@@ -770,23 +780,24 @@ internal sealed class DataStructureOfDelaun : Transient
 
             public void Init(LinkedListOfInteger list)
             {
+                _nodes = list._nodes;
                 _current = list._first;
-                _previous = null;
+                _previous = 0;
             }
 
             public void Initialize(LinkedListOfInteger list) => Init(list);
 
-            public bool More() => _current is not null;
+            public bool More() => _current != 0;
 
             public void Next()
             {
                 _previous = _current;
-                _current = _current!.Next;
+                _current = _nodes![_current].Next;
             }
 
-            public int Value() => _current!.Value;
+            public int Value() => _nodes![_current].Value;
 
-            public ref int ChangeValue() => ref _current!.Value;
+            public ref int ChangeValue() => ref _nodes![_current].Value;
         }
     }
 
