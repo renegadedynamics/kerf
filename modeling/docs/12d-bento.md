@@ -1,6 +1,6 @@
 # Unit 12D: Bento loads Kerf from its files
 
-The owner's decision (kernel decision 1892): Bento loads Kerf from its files, in a context that isn't collectible and is shared by whatever extension uses it, so it gets ReadyToRun. It's done on Bento's branch `kerf/load-from-files`, from `kerf/0.3.0`, for the owner to merge. Kerf itself didn't change; the rig has two new rows (decisions 22201 and 22202).
+The owner's decision (kernel decision 1892): Bento loads Kerf from its files, in a context that isn't collectible and is shared by whatever extension uses it, so it gets ReadyToRun. It's done on Bento's branch `kerf/load-from-files`, from `kerf/0.3.0`, for the owner to merge. Kerf itself didn't change; the rig has two new rows (decisions 1896 and 1897).
 
 ## What it gives
 
