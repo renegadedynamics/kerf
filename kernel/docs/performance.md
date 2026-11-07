@@ -999,6 +999,8 @@ The wrappers, conversions, selectors and `Explore` are all small. No site of its
 
 Results: the same BREP text and meshes by digest on all eleven examples. Six volumes change in their last digit or two, and the figures the rig reads don't. The closed form against the integration, run together inside `IntegrateVolume` and `IntegrateArea` on the modelling suite and the Boolean corpus: 5,286 comparisons, all under 1e-13 of the value but one, 4.8e-11 of a volume of 4e-5 that's nearly all cancellation. That count is nearly all the modelling suite: the corpus's own measuring commands use the default integration, which is unchanged.
 
+**Tested on:** Foundation 2,541, ModelingData 3,343, PublicApi 432, DataExchange 349, Reliability 38, ModelingAlgorithms 5,743 (9 skipped), DrawLite 656, Kerf.Modeling 2,125, all passing; and `KERF_CORPUS_FULL=1` on all 53 of the corpus's classes, passing against their expected results. That shows no case worsened against those lists; it isn't a per-case comparison of two builds.
+
 **What a thread keeps grew:** `MeshWorkStorage` from 360 to about 610 kB, so the limits add up to about 1 MB a thread. Measured after three rounds, `-- thread-sets 24`: 18.0 to 23.6 MB. That's under the owner's rule of about 50 MB, and bytes fell by far more per round.
 
 **Looked at and left:**
