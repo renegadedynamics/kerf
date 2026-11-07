@@ -3,6 +3,8 @@
 All notable changes to the Kerf.Kernel packages (until 0.2.0 the OCCT.NET packages). Versions follow [SemVer](https://semver.org); before 1.0 a minor
 version may break the API.
 
+## Unreleased
+
 ## 0.3.0
 
 - **Bento's examples recalculate about 4.6 times as fast as at 0.2.0, with 72% fewer bytes:** 265 ms from 1,211 ms, where native OCCT 8.0.1 takes 685 ms, and 126 MB from 450 MB, measured on a quiet machine with ReadyToRun (`docs/performance.md`). Opening them, cold, takes 518 ms from 1,764 ms (native 921 ms). A host's settings, as in `docs/performance.md`, give a recalculation of 166 ms and 24 copies in parallel in 530 ms, a speed-up of 7.5×. A host that loads Kerf collectibly or from bytes gets none of the ReadyToRun figures: the runtime compiles it all, and the first operation takes much longer (`docs/performance.md`, "Where it stands").
