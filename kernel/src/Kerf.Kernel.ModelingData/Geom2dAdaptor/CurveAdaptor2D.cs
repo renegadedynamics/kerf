@@ -302,27 +302,22 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
             else if (theType == typeof(CircleCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Circle;
-                _curveData = ((CircleCurve2D)c).Circle;
             }
             else if (theType == typeof(LineCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Line;
-                _curveData = ((LineCurve2D)c).Line;
             }
             else if (theType == typeof(EllipseCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Ellipse;
-                _curveData = ((EllipseCurve2D)c).Ellipse;
             }
             else if (theType == typeof(ParabolaCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Parabola;
-                _curveData = ((ParabolaCurve2D)c).Parabola;
             }
             else if (theType == typeof(HyperbolaCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Hyperbola;
-                _curveData = ((HyperbolaCurve2D)c).Hyperbola;
             }
             else if (theType == typeof(BezierCurve2D))
             {
@@ -716,23 +711,23 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
         switch (_typeCurve)
         {
             case global::Kerf.Geometry.CurveKind.Line:
-                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, (Line2D)_curveData!);
+                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, ((LineCurve2D)_curve!).Line);
                 return p;
 
             case global::Kerf.Geometry.CurveKind.Circle:
-                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, (Circle2D)_curveData!);
+                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, ((CircleCurve2D)_curve!).Circle);
                 return p;
 
             case global::Kerf.Geometry.CurveKind.Ellipse:
-                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, (Ellipse2D)_curveData!);
+                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, ((EllipseCurve2D)_curve!).Ellipse);
                 return p;
 
             case global::Kerf.Geometry.CurveKind.Hyperbola:
-                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, (Hyperbola2D)_curveData!);
+                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, ((HyperbolaCurve2D)_curve!).Hyperbola);
                 return p;
 
             case global::Kerf.Geometry.CurveKind.Parabola:
-                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, (Parabola2D)_curveData!);
+                p = global::Kerf.Engine.Geometry.ElCLib.Value(U, ((ParabolaCurve2D)_curve!).Parabola);
                 return p;
 
             case BezierCurve:
@@ -807,23 +802,23 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
         switch (_typeCurve)
         {
             case global::Kerf.Geometry.CurveKind.Line:
-                global::Kerf.Engine.Geometry.ElCLib.D1(U, (Line2D)_curveData!, out result.Point, out result.D1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, ((LineCurve2D)_curve!).Line, out result.Point, out result.D1);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Circle:
-                global::Kerf.Engine.Geometry.ElCLib.D1(U, (Circle2D)_curveData!, out result.Point, out result.D1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, ((CircleCurve2D)_curve!).Circle, out result.Point, out result.D1);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Ellipse:
-                global::Kerf.Engine.Geometry.ElCLib.D1(U, (Ellipse2D)_curveData!, out result.Point, out result.D1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, ((EllipseCurve2D)_curve!).Ellipse, out result.Point, out result.D1);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Hyperbola:
-                global::Kerf.Engine.Geometry.ElCLib.D1(U, (Hyperbola2D)_curveData!, out result.Point, out result.D1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, ((HyperbolaCurve2D)_curve!).Hyperbola, out result.Point, out result.D1);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Parabola:
-                global::Kerf.Engine.Geometry.ElCLib.D1(U, (Parabola2D)_curveData!, out result.Point, out result.D1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, ((ParabolaCurve2D)_curve!).Parabola, out result.Point, out result.D1);
                 return result;
 
             case BezierCurve:
@@ -903,25 +898,25 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
         switch (_typeCurve)
         {
             case global::Kerf.Geometry.CurveKind.Line:
-                global::Kerf.Engine.Geometry.ElCLib.D1(U, (Line2D)_curveData!, out result.Point, out result.D1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, ((LineCurve2D)_curve!).Line, out result.Point, out result.D1);
                 result.D2 = new Vector2D();
                 result.D2 = result.D2.WithCoord(0.0, 0.0);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Circle:
-                global::Kerf.Engine.Geometry.ElCLib.D2(U, (Circle2D)_curveData!, out result.Point, out result.D1, out result.D2);
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, ((CircleCurve2D)_curve!).Circle, out result.Point, out result.D1, out result.D2);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Ellipse:
-                global::Kerf.Engine.Geometry.ElCLib.D2(U, (Ellipse2D)_curveData!, out result.Point, out result.D1, out result.D2);
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, ((EllipseCurve2D)_curve!).Ellipse, out result.Point, out result.D1, out result.D2);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Hyperbola:
-                global::Kerf.Engine.Geometry.ElCLib.D2(U, (Hyperbola2D)_curveData!, out result.Point, out result.D1, out result.D2);
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, ((HyperbolaCurve2D)_curve!).Hyperbola, out result.Point, out result.D1, out result.D2);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Parabola:
-                global::Kerf.Engine.Geometry.ElCLib.D2(U, (Parabola2D)_curveData!, out result.Point, out result.D1, out result.D2);
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, ((ParabolaCurve2D)_curve!).Parabola, out result.Point, out result.D1, out result.D2);
                 return result;
 
             case BezierCurve:
@@ -1003,7 +998,7 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
         switch (_typeCurve)
         {
             case global::Kerf.Geometry.CurveKind.Line:
-                global::Kerf.Engine.Geometry.ElCLib.D1(U, (Line2D)_curveData!, out result.Point, out result.D1);
+                global::Kerf.Engine.Geometry.ElCLib.D1(U, ((LineCurve2D)_curve!).Line, out result.Point, out result.D1);
                 result.D2 = new Vector2D();
                 result.D2 = result.D2.WithCoord(0.0, 0.0);
                 result.D3 = new Vector2D();
@@ -1011,19 +1006,19 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Circle:
-                global::Kerf.Engine.Geometry.ElCLib.D3(U, (Circle2D)_curveData!, out result.Point, out result.D1, out result.D2, out result.D3);
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, ((CircleCurve2D)_curve!).Circle, out result.Point, out result.D1, out result.D2, out result.D3);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Ellipse:
-                global::Kerf.Engine.Geometry.ElCLib.D3(U, (Ellipse2D)_curveData!, out result.Point, out result.D1, out result.D2, out result.D3);
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, ((EllipseCurve2D)_curve!).Ellipse, out result.Point, out result.D1, out result.D2, out result.D3);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Hyperbola:
-                global::Kerf.Engine.Geometry.ElCLib.D3(U, (Hyperbola2D)_curveData!, out result.Point, out result.D1, out result.D2, out result.D3);
+                global::Kerf.Engine.Geometry.ElCLib.D3(U, ((HyperbolaCurve2D)_curve!).Hyperbola, out result.Point, out result.D1, out result.D2, out result.D3);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Parabola:
-                global::Kerf.Engine.Geometry.ElCLib.D2(U, (Parabola2D)_curveData!, out result.Point, out result.D1, out result.D2);
+                global::Kerf.Engine.Geometry.ElCLib.D2(U, ((ParabolaCurve2D)_curve!).Parabola, out result.Point, out result.D1, out result.D2);
                 result.D3 = new Vector2D();
                 result.D3 = result.D3.WithCoord(0.0, 0.0);
                 return result;
@@ -1105,19 +1100,19 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
         switch (_typeCurve)
         {
             case global::Kerf.Geometry.CurveKind.Line:
-                return global::Kerf.Engine.Geometry.ElCLib.DN(U, (Line2D)_curveData!, N);
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, ((LineCurve2D)_curve!).Line, N);
 
             case global::Kerf.Geometry.CurveKind.Circle:
-                return global::Kerf.Engine.Geometry.ElCLib.DN(U, (Circle2D)_curveData!, N);
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, ((CircleCurve2D)_curve!).Circle, N);
 
             case global::Kerf.Geometry.CurveKind.Ellipse:
-                return global::Kerf.Engine.Geometry.ElCLib.DN(U, (Ellipse2D)_curveData!, N);
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, ((EllipseCurve2D)_curve!).Ellipse, N);
 
             case global::Kerf.Geometry.CurveKind.Hyperbola:
-                return global::Kerf.Engine.Geometry.ElCLib.DN(U, (Hyperbola2D)_curveData!, N);
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, ((HyperbolaCurve2D)_curve!).Hyperbola, N);
 
             case global::Kerf.Geometry.CurveKind.Parabola:
-                return global::Kerf.Engine.Geometry.ElCLib.DN(U, (Parabola2D)_curveData!, N);
+                return global::Kerf.Engine.Geometry.ElCLib.DN(U, ((ParabolaCurve2D)_curve!).Parabola, N);
 
             case BezierCurve:
                 return _curve!.EvalDN(U, N);
@@ -1168,7 +1163,7 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
                 return ruv;
             case global::Kerf.Geometry.CurveKind.Circle:
                 {
-                    double r = ((Circle2D)_curveData!).Radius;
+                    double r = ((CircleCurve2D)_curve!).Circle.Radius;
                     if (r > ruv / 2.0)
                     {
                         return 2 * Math.Asin(ruv / (2 * r));
@@ -1180,7 +1175,7 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
                 }
             case global::Kerf.Geometry.CurveKind.Ellipse:
                 {
-                    return ruv / ((Ellipse2D)_curveData!).MajorRadius;
+                    return ruv / ((EllipseCurve2D)_curve!).Ellipse.MajorRadius;
                 }
             case BezierCurve:
                 {
@@ -1210,35 +1205,35 @@ internal class CurveAdaptor2D : Curve2DAdaptorBase
     {
         Standard_NoSuchObject_Raise_if(_typeCurve != global::Kerf.Geometry.CurveKind.Line,
                                        "Geom2dAdaptor_Curve::Line() - curve is not a Line");
-        return (Line2D)_curveData!;
+        return ((LineCurve2D)_curve!).Line;
     }
 
     public override Circle2D Circle()
     {
         Standard_NoSuchObject_Raise_if(_typeCurve != global::Kerf.Geometry.CurveKind.Circle,
                                        "Geom2dAdaptor_Curve::Circle() - curve is not a Circle");
-        return (Circle2D)_curveData!;
+        return ((CircleCurve2D)_curve!).Circle;
     }
 
     public override Ellipse2D Ellipse()
     {
         Standard_NoSuchObject_Raise_if(_typeCurve != global::Kerf.Geometry.CurveKind.Ellipse,
                                        "Geom2dAdaptor_Curve::Ellipse() - curve is not an Ellipse");
-        return (Ellipse2D)_curveData!;
+        return ((EllipseCurve2D)_curve!).Ellipse;
     }
 
     public override Hyperbola2D Hyperbola()
     {
         Standard_NoSuchObject_Raise_if(_typeCurve != global::Kerf.Geometry.CurveKind.Hyperbola,
                                        "Geom2dAdaptor_Curve::Hyperbola() - curve is not a Hyperbola");
-        return (Hyperbola2D)_curveData!;
+        return ((HyperbolaCurve2D)_curve!).Hyperbola;
     }
 
     public override Parabola2D Parabola()
     {
         Standard_NoSuchObject_Raise_if(_typeCurve != global::Kerf.Geometry.CurveKind.Parabola,
                                        "Geom2dAdaptor_Curve::Parabola() - curve is not a Parabola");
-        return (Parabola2D)_curveData!;
+        return ((ParabolaCurve2D)_curve!).Parabola;
     }
 
     public override int Degree()
