@@ -321,3 +321,4 @@ Decisions 1860 to 1868 add no shared state: `BooleanVolumes` has one static, `Me
 Unit 11T's second pass (decisions 1879 to 1884) adds no shared state: `MassOptions.Default` and `MeasureOperations.Moments` are immutable and only read, and `AppFuncRoot._searches` is an instance's, with one instance for each approximation, on one thread.
 
 Units 12A and 12B (decisions 1894 and 1895) add no shared state: `PlanarFaceMass.TryCentre` and `TopoUtil.NothingToCleanAfterExtruding` work only on locals and read frozen shapes.
+Unit 12D (decisions 1896 and 1897) adds no shared state to Kerf. The rig's `FirstLoad` runs once, before `Main`, on one thread. On Bento's branch, `SharedLibraryContext`'s table of contexts is read and written only under its lock, and each context's own table never changes once made.

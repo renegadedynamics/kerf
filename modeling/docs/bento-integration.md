@@ -19,6 +19,8 @@ geometry, mostly a good tessellation API (section 3).
 > project is now **Kerf** (unit 10E): the modelling layer is `Kerf.Modeling` (namespace `Kerf.Modeling`) over
 > `Kerf.Kernel.*`, and Bento moves to those packages in unit 10N. The requests and replies below are kept as they were
 > made, under the names of the time.
+>
+> **Loading (unit 12D):** on Bento's branch `kerf/load-from-files` the extension is still in a collectible context, but Kerf isn't: see [12d-bento.md](12d-bento.md).
 
 ## 1. How Bento will use the library
 
