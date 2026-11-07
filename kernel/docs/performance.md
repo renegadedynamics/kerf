@@ -1184,3 +1184,49 @@ Each group ran on its own, four cases at a time. Each case compares only the che
 Then, deliberately wrong shortcuts, to see the comparison fail: an end allowed 100 tolerances fails 5 and 4 of its tests, and the slope limit left out fails 1 (`A_slope_whose_ends_are_within_tolerance_but_whose_parameters_are_large`: a false "valid" without the limit). **One guard wasn't shown to matter:** leaving out the shortest range fails nothing, including in a test of stubs made for it. It stays, as nothing is lost by measuring a stub.
 
 **What's left:** an `NCollection_List` is three objects (itself, a `List<T>` and an array), so each status list is about 100 bytes: dropping the `List<T>` would help everywhere in the kernel, but is a change of its own. `FClass2d` is now the largest single part of a small shape's check, about a quarter, and what's in it is its answer. Beyond that the rest is spread: the top site is 3%.
+
+## Booleans check their result's volume
+
+*7 November 2026, on a shared machine: every time here is from a loaded machine, and bytes don't depend on the load. Decisions 21301 to 21309.*
+
+**Under the 3% the brief set, measured by the check's own time and bytes inside a recalculation,** as whole passes on this machine differ by more than the check costs. Bento's eleven examples, 30 passes, the last 15:
+
+| | Calls a pass | Time a pass | Share of a loaded recalculation (490 ms) | Bytes a pass | Share of 152 MB |
+|---|---:|---:|---:|---:|---:|
+| The check | 13, of which 7 are on solids | 6.2 ms | **1.3%** | 1.55 MB | **1.0%** |
+
+Six alternating pairs of whole processes (median of 30 passes, 490 ms against 632 ms for the base, 152.3 MB against 152.5 MB) can't see it: that's the load. Sketches and faces measure nothing, as their kinds are looked at first.
+
+**The Boolean suites,** each case's Boolean with `Simplify` and with no validity check, in one process, the check called after it:
+
+| Suite | Boolean | Check | Share | Bytes | A case's share: median, 90th percentile |
+|---|---:|---:|---:|---:|---:|
+| Simple, 407 cases | 6,625 ms | 454 ms | 6.8% | 5.4% | 9.5%, 17.5% |
+| Complex, 193 cases | 4,415 ms | 476 ms | 10.8% | 11.7% | 7.2%, 16.0% |
+
+Over the corpus's 4,215 Booleans the check's median is 0.43 ms, its 90th percentile 4.7 ms, its 99th 47 ms and its longest 1.29 s (`bugs/modalg_7/bug27760`).
+
+**How often it fires.** None of the corpus's 4,215 Booleans (3,425 cases), the suites' 600 or Bento's examples. Of the first, 3,268 had a rule to meet; 902 had something that isn't a solid, 41 an input of no positive volume, 4 an empty input. Six Booleans in 4 cases break a rule on inputs that aren't valid, and pass for that reason (decision 21303). Near-misses with valid inputs, past a rule as a share of the larger input; the margin starts at 1e-4:
+
+| Past a rule by | Booleans | |
+|---|---:|---|
+| Over 1e-4 | 0 | |
+| 1e-5 to 1e-4 | 2 | bug227: tolerance 0.6, and a mesh agrees |
+| 1e-6 to 1e-5 | 4 | buc60703 (tolerances up to 0.25), bug25722 (fuzzy value 1e-4) |
+| 1e-7 to 1e-6 | 2 | buc60703_3, bug25477_1 (fuzzy value 2e-5) |
+| 1e-12 to 1e-7 | 52 | Measurement's noise |
+
+Each of the eight above that is a fuse of solids that touch, whose result comes out a little over their sum as a large tolerance or a fuzzy value bridges them; a mesh of each result agrees with the integration to within the mesh's own error.
+
+**What it finds.** The thread of #1629 over a grid of 227 depths and sizes: 4 fire, all with a solid inside out, and no other. The issues, with the precise path's figures:
+
+| Issue | Cut | Common | Fuse |
+|---|---|---|---|
+| #1629 | Fails: solid of −29.97 | Fails: empty | Fails: 8023.19, over 7993.21 |
+| #1643, body and lip | Fails: removed nothing | Fails: empty | Passes, and is short by a little |
+| #1643, lip and body | Passes, right | Passes, right | Passes, right |
+| #1659 | Fails: removed nothing | Fails: empty | Passes, though it's the two inputs apart |
+| #245 | Fails: removed nothing | Fails: empty | Passes |
+| #1039, a shell | | No rule | |
+
+The table's rules alone find only #1629: decision 21306 says why, and 21307 what was added.

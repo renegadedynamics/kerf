@@ -196,6 +196,8 @@ The check is `Validate`'s, and `Error.Shapes` names the faulty sub-shapes. **Whi
 | `Revolve`, `Draft`, `SplitFaces`, `SplitAlong`, `Ruled`, `MakeSolid`, `FromPlane` with a boundary, `Transformed` by a general transform | The result | Always checked |
 | Primitives, edges and wires, `Transformed` by a rigid transform, `Mirrored`, `Scaled`, `Project`, `Helix`, `WithCurves3D` | None: a primitive can't be invalid, and moving a shape leaves it as good as it was | |
 
+A Boolean of solids also checks its result's volume against its inputs', with the same `CheckResult`, as a valid shape can still be the wrong one: `BooleanVolumes.Check` and [booleans.md](booleans.md).
+
 `Validate` itself still returns a report: asking whether a shape is valid isn't an operation that can fail. Reading a file
 doesn't check either, and an invalid shape read from one is caught by the next operation on it.
 

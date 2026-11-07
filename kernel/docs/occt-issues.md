@@ -2208,3 +2208,12 @@ The list and its ranking are in [occt-defects.md](occt-defects.md).
 | `StepToGeom::MakeSurface`, offset surface | No surface if the basis stays C0 | A face lost on reading (#994) | fixed (decision 1838) |
 | `ChFi3d`, a two-edge corner | A 3D curve 190 from its pcurves, by the shell's face order | Volume 10596 for 29800, valid (#1639) | **open**; public failure (decision 1833) |
 | `BRepMesh`, a cone from `Sfacciata.step` | The structure ends with no elements | No triangles on a valid face (#572) | **open** |
+
+## Found by the check of a Boolean's volume
+
+| What | Where | Status |
+|---|---|---|
+| The Booleans of `boolean/bopcut_complex/L8` and `M9`, `bugs/modalg_7/bug23187` and `boolean/opensolid/A2` have inputs that aren't valid: a volume integrated from such an input can be far off (L8's tool: 222537, a mesh's 371354), which is why the check asks for valid inputs before it says a rule is broken | Decision 21303 | leave |
+| #1629's fuse and common of the block and the tool are also wrong, which the issue doesn't say: the fuse is 8023.19 where the inputs together are 7993.21 (a mesh gives 8023.16), and the common is empty. The cut's solids are 7735.45 and −29.97, so the fuse has the same extra groove | `BOPAlgo`; decision 21304 | open, reported as a failure |
+| #1659 in Kerf, narrowed: the face/face intersector gives the whole loop, but the cap's section of the upper face comes in two curves, (795.403, 90.047, 496.186) to (796.105, 90.653, 495.623) and (796.104, 90.653, 495.623) to (819.288, 91.831, 495.402), about 1e-3 apart at the join, with a tolerance of 3e-4. The pave filler makes no pave block from the first, so its 1.07 of section is lost and the loop stays open. The issue took this for the intersection stopping short. Moving the cutter by 0.1 gives one curve. Not fixed: a change to the intersections needs the whole corpus | `BOPAlgo_PaveFiller_6`, `IntPatch` | open, reported as a failure |
+| #1643 in Kerf: `Common(body, lip)` is empty, `Cut(body, lip)` is the body and `Fuse(body, lip)` is the body too; the other order is right, 219351.87, 1559.60, 1742218.07. The located sections give the same. The fuse is short of the truth too, by the lip's part outside the body, and no rule can see that. The issue's empty fuse no longer happens | `BOPAlgo`; decision 21307 | open, reported as a failure |

@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **A Boolean whose result is proved wrong fails, carrying the shape:** a common larger than the smaller input, a cut outside A − B to A, a fuse outside the larger input to A + B, a solid inside out in the result, and an empty common or a cut that removed nothing where points lie well inside both inputs. `result.invalid`, leaving it out with `BooleanOptions.CheckResult = false`; `BooleanVolumes.Check` is the check itself. For solids only (decisions 21301 to 21309; OCCT #1629, #1643, #1659, #245).
 - **The validity check is cheaper on small shapes:** about half the bytes and a third less time on a box, a prism or many small solids (from a loaded machine), and about 8% fewer bytes over a recalculation of Bento's examples. No verdict or status changes: compared with the old check, on every sub-shape, over the corpus's Boolean, blend, chamfer and healing groups.
 - A fuse with a compound of reversed solids no longer drops them (#1613), and a cut by a helical tube no longer removes nothing depending on where it leaves (#1543).
 - A fillet or chamfer whose tolerance passes its size fails with `result.invalid`, carrying the shape, rather than succeeding with a wrong volume (#1639).

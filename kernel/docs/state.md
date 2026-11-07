@@ -306,3 +306,6 @@ The second pass (decisions 1811 to 1822) adds no static, thread static or lock, 
 ## The check on small shapes
 
 Decisions 1823 to 1828 add one static, `Analyzer.Finished`: a delegate for tests, set once at a test process's start before any check when `KERF_CHECK_COMPARE` is set, and otherwise always null. A result's `ContextMap` is under the same lock as the dictionary it replaces when on the pool, and that lock is made before the pool starts; the `IndexedSet` for sub-shapes in the analyzer is one for each chunk, so each thread has its own. `_line` on an edge's check is written while the map is built, on one thread, and only read after. A wire's map kept from `Minimum` is no longer written by `Closed`, so there's less to race than before. The comparison's counters in `tests/Shared/FullCheck` are `Interlocked`, and in tests only.
+## Booleans check their result's volume
+
+Decisions 21301 to 21309 add no shared state: `BooleanVolumes` has one static, `Measured`, an immutable `MassOptions` only read, as `TopoUtil.Measured` is, and everything else is local to a call. A volume isn't remembered on a shape (decision 21305). Each call makes its own classifiers.

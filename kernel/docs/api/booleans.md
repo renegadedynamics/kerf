@@ -41,6 +41,17 @@ public sealed record BooleanOptions
   `boolean.not-valid-input`, `boolean.unsupported-type`, `boolean.empty-result` (a warning), `boolean.failed`.
   Warnings from a successful run (OCCT's warning alerts) stay on the result.
 
+- **A result proved wrong fails** with `result.invalid`, carrying the shape, under the same `CheckResult` as the validity check (decisions 21301 to 21309), for Fuse, Cut and Common of solids:
+
+| Operation | Must hold, with A, B and R the volumes |
+|---|---|
+| Common | R ≤ min(A, B). If it's empty, no two points may lie well inside both |
+| Cut | A − B ≤ R ≤ A. If it removed nothing, no two points may lie well inside both and still in R |
+| Fuse | max(A, B) ≤ R ≤ A + B |
+| Any | No solid of the result inside out |
+
+  Each with a margin of a ten-thousandth of the larger input, and more for large tolerances or a fuzzy value. Nothing is said where anything isn't a solid (faces, shells, half-spaces), for an input that isn't valid, or about Split, Partition and Section. `BooleanVolumes.Check(rule, arguments, tools, result, fuzzyValue)` is the check itself, for a caller that runs one with `CheckResult = false` and tidies after, as `Kerf.Modeling` does.
+
 ## Examples
 
 ```csharp
