@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
@@ -253,6 +254,36 @@ public class ShapeBuildTests
     }
 
     [Fact]
+    public void CopyRanges_leaves_every_curve_where_it_is_if_one_of_them_cant_move()
+    {
+        // #1340: a circle past its period with a B-spline pcurve, which isn't periodic. OCCT moves the circle alone, and the
+        // pcurve ends up a period away from it: an invalid shape from a valid one.
+        var aB = new BrepBuilder();
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1);
+        Face aF = new();
+        aB.MakeFace(ref aF, XOY(), Conf);
+        var aKnots = NCollection_Array1<double>.From([7.0, 8.0]);
+        var aMults = NCollection_Array1<int>.From([2, 2]);
+        var aPCurve = new BSplineCurve2D(
+            NCollection_Array1<Point2D>.From([new Point2D(Math.Cos(7), Math.Sin(7)), new Point2D(Math.Cos(8), Math.Sin(8))]), aKnots, aMults, 1);
+        Edge aFrom = TestShapes.Edge(aCircle, 7, 8);
+        aB.UpdateEdge(aFrom, aPCurve, aF, Conf);
+        aB.Range(aFrom, aF, 7, 8);
+
+        Edge aTo = TestShapes.Edge(aCircle, 0, 1);
+        aB.UpdateEdge(aTo, aPCurve, aF, Conf);
+        aB.Range(aTo, aF, 0, 1);
+        new BuildEdgeBuilder().CopyRanges(aTo, aFrom, keepCurvesTogether: true);
+
+        Tool.Range(aTo, out double f, out double l);
+        Assert.Equal((7.0, 8.0), (f, l));
+        Tool.Range(aTo, aF, out f, out l);
+        Assert.Equal((7.0, 8.0), (f, l));
+        Assert.True(Tool.SameRange(aTo));
+        Assert.True(Tool.SameParameter(aTo));
+    }
+
+    [Fact]
     public void CopyRanges_shifts_into_the_period()
     {
         var sbe = new BuildEdgeBuilder();
@@ -263,6 +294,7 @@ public class ShapeBuildTests
         Tool.Range(aTo, out double f, out double l);
         Assert.Equal(7 - 2 * Math.PI, f, 1e-15);
         Assert.Equal(8 - 2 * Math.PI, l, 1e-15);
+
         Assert.False(Tool.SameRange(aTo));
         Assert.False(Tool.SameParameter(aTo));
 

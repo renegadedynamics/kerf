@@ -264,6 +264,11 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
             {
                 ++anIdentical;
             }
+            else if (aCase.Name.StartsWith("occ/CrankArm.brep", StringComparison.Ordinal) && aCase.Run[0] == "si")
+            {
+                // A walking piece partly out of a face finds its bound vertex, which native loses (decision 1834). The
+                // checker's verdict on this shape is the same, OK, before and after; its record of the pair differs.
+            }
             else if (aCase.Name.StartsWith("occ/bottle.brep", StringComparison.Ordinal) && Findings(aPort) == Findings(aCase.Native))
             {
                 // Decision 1818: a corner's sphere touches its fillet's torus along a circle, which is analytic now and was

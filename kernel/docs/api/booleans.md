@@ -31,7 +31,7 @@ public sealed record BooleanOptions
     public bool UseObb { get; init; }
     public bool Simplify { get; init; } = true;              // unify same-domain faces and edges after (SimplifyResult);
                                                              // its history is composed into the result's
-    public bool ApproximateSection { get; init; }            // Section only
+    public bool ApproximateSection { get; init; } = true;    // Section only (decision 1836)
 }
 ```
 

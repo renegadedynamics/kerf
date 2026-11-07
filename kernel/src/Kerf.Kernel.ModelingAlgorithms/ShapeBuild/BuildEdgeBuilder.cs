@@ -183,119 +183,114 @@ internal sealed partial class BuildEdgeBuilder
     /// <summary>
     /// Sets the ranges of the 3D curve and pcurves of <paramref name="toedge"/> to the part [alpha, beta] (as
     /// fractions) of the ranges of the matching curves of <paramref name="fromedge"/> (same surface and location for
-    /// pcurves); on periodic curves the range is shifted into the period, and the edge loses SameRange and
-    /// SameParameter.
+    /// pcurves). On periodic curves the range is shifted into the period, and the edge loses SameRange and SameParameter;
+    /// but with <paramref name="keepCurvesTogether"/>, if a curve of the edge isn't periodic, none is shifted and the flags
+    /// stay (#1340).
     /// </summary>
-    /// <remarks>Internal: it writes into <paramref name="toedge"/>, which throws if it is frozen.</remarks>
-    internal void CopyRanges(in Edge toedge, in Edge fromedge, double alpha = 0, double beta = 1)
+    /// <remarks>
+    /// Internal: it writes into <paramref name="toedge"/>, which throws if it is frozen. Unify's <c>ReShapeBuilder</c> asks to keep the
+    /// curves together, where Kerf differs from OCCT (decision 1830): it rebuilds an edge that was already right, and OCCT's
+    /// shift clears its flags with nothing to set them again, which leaves an invalid shape.
+    /// </remarks>
+    internal void CopyRanges(in Edge toedge, in Edge fromedge, double alpha = 0, double beta = 1, bool keepCurvesTogether = false)
     {
+        bool canShift = !keepCurvesTogether || AllCurvesPeriodic(toedge, fromedge);
+
         // Kerf: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
              fromitcr.Next())
         {
-            if (fromitcr.Value() is not GCurve fromGC)
+            if (MatchingCurve(toedge, fromitcr.Value()) is not { } toGC)
             {
                 continue;
             }
 
-            bool isC3d = fromGC.IsCurve3D;
-            if (isC3d)
-            {
-                if (fromGC.Curve3D() is null)
-                {
-                    continue;
-                }
-            }
-            else
-            {
-                if (fromGC.PCurve() is null)
-                {
-                    continue;
-                }
-            }
+            var fromGC = (GCurve)fromitcr.Value();
+            double first = fromGC.First();
+            double len = fromGC.Last() - first;
+            double newF = first + alpha * len;
+            double newL = first + beta * len;
 
-            if (!isC3d && !fromGC.IsCurveOnSurface())
+            // PTV: 22.03.2002 fix for edge range.
+            // file test-m020306-v2.step Shell #665 (Faces #40110. #40239).
+            if (canShift && PeriodOf(toGC) is { } periodic
+                && ((Math.Abs(newF - periodic.First) > global::Kerf.Engine.Foundation.Precision.PConfusion() && newF < periodic.First) || newF >= periodic.Last))
             {
-                continue; // only 3d curves and pcurves are treated
+                double shift = AdjustByPeriod(newF, 0.5 * (periodic.First + periodic.Last), periodic.Period);
+                newF += shift;
+                newL += shift;
+                new BrepBuilder().SameRange(toedge, false);
+                new BrepBuilder().SameParameter(toedge, false);
             }
 
-            Surface? surface = null;
-            Placement l = new Placement();
-            if (!isC3d)
+            toGC.SetRange(newF, newL);
+        }
+    }
+
+    // The curve's period and bounds, if it's periodic (15.11.2002 PTV OCC966)
+    private static (double Period, double First, double Last)? PeriodOf(GCurve curve)
+    {
+        if (curve is Curve3DRepresentation toC3d && toC3d.Curve3D() is { } crv3d && IsPeriodic(crv3d))
+        {
+            return (crv3d.Period, crv3d.FirstParameter, crv3d.LastParameter);
+        }
+
+        if (curve is CurveOnSurfaceRepresentation toCOS && toCOS.PCurve() is { } crv2d && IsPeriodic(crv2d))
+        {
+            return (crv2d.Period, crv2d.FirstParameter, crv2d.LastParameter);
+        }
+
+        return null;
+    }
+
+    private static bool AllCurvesPeriodic(in Edge toedge, in Edge fromedge)
+    {
+        for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
+             fromitcr.More();
+             fromitcr.Next())
+        {
+            if (MatchingCurve(toedge, fromitcr.Value()) is { } toGC && PeriodOf(toGC) is null)
             {
-                surface = fromGC.Surface();
-                l = fromGC.Location();
-            }
-
-            NCollection_List<CurveRepresentation> tolist = ((BrepTEdge)toedge.TShape()!).ChangeCurves();
-            for (var toitcr = new NCollection_List<CurveRepresentation>.Iterator(tolist); toitcr.More(); toitcr.Next())
-            {
-                if (toitcr.Value() is not GCurve toGC)
-                {
-                    continue;
-                }
-
-                if (isC3d)
-                {
-                    if (!toGC.IsCurve3D)
-                    {
-                        continue;
-                    }
-                }
-                else if (!toGC.IsCurveOnSurface() || surface != toGC.Surface() || !l.IsEqual(toGC.Location()))
-                {
-                    continue;
-                }
-
-                double first = fromGC.First();
-                double last = fromGC.Last();
-                double len = last - first;
-                double newF = first + alpha * len;
-                double newL = first + beta * len;
-
-                // PTV: 22.03.2002 fix for edge range.
-                // file test-m020306-v2.step Shell #665 (Faces #40110. #40239).
-                double period = 1.0, crvF = 0.0, crvL = 1.0;
-                bool doCheck = false;
-                if (toGC is Curve3DRepresentation toC3d)
-                {
-                    Curve3D? crv3d = toC3d.Curve3D();
-                    // 15.11.2002 PTV OCC966
-                    if (crv3d is not null && IsPeriodic(crv3d))
-                    {
-                        period = crv3d.Period;
-                        crvF = crv3d.FirstParameter;
-                        crvL = crv3d.LastParameter;
-                        doCheck = true;
-                    }
-                }
-                else if (toGC is CurveOnSurfaceRepresentation toCOS)
-                {
-                    Curve2D? crv2d = toCOS.PCurve();
-                    // 15.11.2002 PTV OCC966
-                    if (crv2d is not null && IsPeriodic(crv2d))
-                    {
-                        period = crv2d.Period;
-                        crvF = crv2d.FirstParameter;
-                        crvL = crv2d.LastParameter;
-                        doCheck = true;
-                    }
-                }
-
-                if (doCheck && ((Math.Abs(newF - crvF) > global::Kerf.Engine.Foundation.Precision.PConfusion() && newF < crvF) || newF >= crvL))
-                {
-                    double shift = AdjustByPeriod(newF, 0.5 * (crvF + crvL), period);
-                    newF += shift;
-                    newL += shift;
-                    new BrepBuilder().SameRange(toedge, false);
-                    new BrepBuilder().SameParameter(toedge, false);
-                }
-
-                toGC.SetRange(newF, newL);
-                break;
+                return false;
             }
         }
+
+        return true;
+    }
+
+    /// <summary>The curve of <paramref name="toedge"/> matching a 3D curve or a pcurve of another edge, if any.</summary>
+    private static GCurve? MatchingCurve(in Edge toedge, CurveRepresentation from)
+    {
+        if (from is not GCurve fromGC)
+        {
+            return null;
+        }
+
+        bool isC3d = fromGC.IsCurve3D;
+        if (isC3d ? fromGC.Curve3D() is null : fromGC.PCurve() is null || !fromGC.IsCurveOnSurface())
+        {
+            return null; // only 3d curves and pcurves are treated
+        }
+
+        Surface? surface = isC3d ? null : fromGC.Surface();
+        Placement l = isC3d ? new Placement() : fromGC.Location();
+        for (var toitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)toedge.TShape()!).ChangeCurves());
+             toitcr.More();
+             toitcr.Next())
+        {
+            if (toitcr.Value() is not GCurve toGC)
+            {
+                continue;
+            }
+
+            if (isC3d ? toGC.IsCurve3D : toGC.IsCurveOnSurface() && surface == toGC.Surface() && l.IsEqual(toGC.Location()))
+            {
+                return toGC;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Sets the range of the edge's 3D curve.</summary>

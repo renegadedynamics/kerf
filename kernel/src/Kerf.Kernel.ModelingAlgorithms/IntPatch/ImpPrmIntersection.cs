@@ -1431,7 +1431,52 @@ internal partial class ImpPrmIntersection
         _slin.Clear();
         for (int i = 1; i <= dslin.Length(); i++)
         {
+            // The pieces carry only their end vertices, so one partly out of the face must find the bound
+            // between them, or it is judged whole by its middle and can go out with what's in the face (#1543; decision
+            // 20905). OCCT doesn't. Other pieces stay as OCCT leaves them.
+            if (dslin.Value(i) is WLine piece && piece.NbPnts() > 1)
+            {
+                if (!reversed && CrossesDomain(piece, d1, true))
+                {
+                    RstInt.PutVertexOnLine(piece, surf1, d1, surf2, true, tolTang, wholePeriods: true);
+                }
+                else if (reversed && CrossesDomain(piece, d2, false))
+                {
+                    RstInt.PutVertexOnLine(piece, surf2, d2, surf1, false, tolTang, wholePeriods: true);
+                }
+            }
+
             _slin.Append(dslin.Value(i));
         }
+    }
+
+    // Whether some of the piece is out of the domain and some in it or on its boundary, as on the seam.
+    private static bool CrossesDomain(WLine piece, TopolTool domain, bool onFirst)
+    {
+        global::Kerf.Topology.Containment Of(in PntOn2S point)
+        {
+            double u, v;
+            if (onFirst)
+            {
+                point.ParametersOnS1(out u, out v);
+            }
+            else
+            {
+                point.ParametersOnS2(out u, out v);
+            }
+
+            return domain.Classify(new Point2D(u, v), global::Kerf.Engine.Foundation.Precision.PConfusion());
+        }
+
+        bool isOut = Of(piece.Point(1)) == global::Kerf.Topology.Containment.Out;
+        for (int i = 2; i <= piece.NbPnts(); i++)
+        {
+            if ((Of(piece.Point(i)) == global::Kerf.Topology.Containment.Out) != isOut)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
