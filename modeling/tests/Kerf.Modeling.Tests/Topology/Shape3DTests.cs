@@ -18,7 +18,7 @@ public class FilletFailuresTests
 
     const string UsesUp = ", where it uses up the whole width of a face beside the edge.";
 
-    // Kerf: a limit the geometry gives is said first (decision 21203), with the edges build123d's message lists after it
+    // Kerf: a limit the geometry gives is said first (decision 1849), with the edges build123d's message lists after it
     const string PlateMessage =
         "The fillet with a radius of 3 is too large for these 12 edges: the most that fits is 1" + UsesUp
         + " It failed on 8 of 12 edges "

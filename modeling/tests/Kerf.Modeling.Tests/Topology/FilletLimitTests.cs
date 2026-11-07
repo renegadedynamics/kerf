@@ -6,7 +6,7 @@ using static Kerf.Modeling.Operations;
 namespace Kerf.Modeling.Tests.Topology;
 
 /// <summary>
-/// Fillets and chamfers where the geometry just fits, compared with the true answer by volume and area (decision 21201;
+/// Fillets and chamfers where the geometry just fits, compared with the true answer by volume and area (decision 1847;
 /// the kernel's docs/fillet-design.md). Radius 10 on a 10 mm cube used to fail where 9.999999 worked.
 /// </summary>
 public class FilletLimitTests
