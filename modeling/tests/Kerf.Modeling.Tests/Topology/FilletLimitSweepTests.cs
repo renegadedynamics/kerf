@@ -453,7 +453,7 @@ public class FilletLimitSweepTests
             double fewer = Search(0, 2 * diagonal, 0, true, ref after);
             Assert.Equal(all, fewer);
 
-            // And it's the limit that's the answer, as each of these is now built there (decision 22406)
+            // And it's the limit that's the answer, as each of these is now built there (decision 1909)
             Assert.Equal(limit, shape.MaxFillet(list));
             Assert.True(after < before, $"{after} tries, from {before}");
         }

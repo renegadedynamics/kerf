@@ -8,7 +8,7 @@ using static Kerf.Modeling.Operations;
 namespace Kerf.Modeling.Tests.Topology;
 
 /// <summary>
-/// A radius swept across the limit of each circular edge between surfaces turned about one axis (decisions 22401 to 22404), at sizes
+/// A radius swept across the limit of each circular edge between surfaces turned about one axis (decisions 1904 to 1907), at sizes
 /// from 0.01 to 10,000. The answers come from each shape's section, by Pappus and Green's theorem worked out here along the lines
 /// and arc of the section, and not from how the fillet is made.
 /// </summary>

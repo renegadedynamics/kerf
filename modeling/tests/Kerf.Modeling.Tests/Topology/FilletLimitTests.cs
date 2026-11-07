@@ -179,7 +179,7 @@ public class FilletLimitTests
     [Fact]
     public void A_limit_with_corners_is_built()
     {
-        // A sphere's worth of edges: one exact face (decision 22405)
+        // A sphere's worth of edges: one exact face (decision 1908)
         var box = new Box(10, 10, 10);
         var made = Fillet(box.Edges(), 5);
         Assert.True(made.IsSuccess, made.Error?.Message);

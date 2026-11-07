@@ -255,7 +255,7 @@ public class ShapeTests
     public void MaxFillet()
     {
         Solid[] testSolids = [Solid.MakeBox(10, 8, 2), Solid.MakeCone(5, 3, 8)];
-        // build123d's were 0.96 and 3.84, from its search: the box's true limit, half its thinnest side, is now built (decision 22406)
+        // build123d's were 0.96 and 3.84, from its search: the box's true limit, half its thinnest side, is now built (decision 1909)
         double[] maxValues = [1, 3.84];
         for (int i = 0; i < testSolids.Length; i++)
         {
