@@ -203,7 +203,7 @@ public static class Gltf
         {
             tree = ExchangeTree.ToTree(model, options.Mesh);
         }
-        catch (Engine.Meshing.Tools.MeshTooLargeException e)
+        catch (Exception e) when (ExchangeTree.IsMeshRefused(e))
         {
             return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, e.Message));
         }
@@ -265,7 +265,7 @@ public static class ThreeMf
         {
             tree = ExchangeTree.ToTree(model, options.Mesh);
         }
-        catch (Engine.Meshing.Tools.MeshTooLargeException e)
+        catch (Exception e) when (ExchangeTree.IsMeshRefused(e))
         {
             return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, e.Message));
         }
@@ -298,8 +298,18 @@ public static class Obj
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new ObjTreeWriter(new ObjWriterOptions { Scale = options.Scale, ZUpToYUp = options.YUp, WriteNormals = options.Normals });
-        bool done = writer.Write(ExchangeTree.ToTree(model, options.Mesh), obj, materials, materialsName,
-                                 new ProgressIndicator(cancellationToken).Start());
+        Engine.Exchange.Documents.Tree tree;
+        try
+        {
+            tree = ExchangeTree.ToTree(model, options.Mesh);
+        }
+        catch (Exception e) when (ExchangeTree.IsMeshRefused(e))
+        {
+            // Kerf: OBJ let a mesh past its limit out as the engine's exception (decision 22801)
+            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, e.Message));
+        }
+
+        bool done = writer.Write(tree, obj, materials, materialsName, new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
         return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as OBJ."));
     }

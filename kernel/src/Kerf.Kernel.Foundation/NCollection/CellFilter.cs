@@ -299,6 +299,10 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     /// <summary>The capacity of the array of nodes, which is what <see cref="MaxNodes"/> is compared with.</summary>
     internal int NodeCapacity => _nodes.Length;
 
+    /// <summary>Kerf: how many targets in cells it has held at most since the last reset, one in several cells counted
+    /// several times (decision 22801).</summary>
+    internal int NodeCount => _nodeCount;
+
     /// <summary>Kerf: how many targets in cells it may hold, counting one in several cells several times (decision 1856).</summary>
     internal int MaxNodes { get; set; } = int.MaxValue;
 

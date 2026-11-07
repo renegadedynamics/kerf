@@ -47,6 +47,10 @@ internal sealed class DataStructureOfDelaun : Transient
 
     /// <summary>Kerf: how many circles in cells a mesh may hold; see <see cref="Tools.MeshBudget"/>.</summary>
     public int MaxCircleEntries { get; set; } = int.MaxValue;
+
+    /// <summary>Kerf: whether a face is refused if its circles in cells are out of proportion to its triangles; see
+    /// <see cref="CircleTool.EntriesPerCircle"/>.</summary>
+    public bool CirclesInProportion { get; set; }
     private readonly NCollection_PackedMapOfInteger _elementsOfDomain;
     private readonly NCollection_PackedMapOfInteger _linksOfDomain;
     private readonly LinkedListOfInteger.Iterator _cleanLinkIterator = new(); // Kept: a link is cleaned twice for each triangle (unit 11B)

@@ -36,6 +36,32 @@ public class DamagedFileTests
         Assert.Equal("exchange.malformed", read.Error!.Code.Value);
     }
 
+    // The six files of the damaged-file sweep (decision 1917) whose mesh ran out of a 1.5 GB heap: a cone's seam damaged
+    // on its curve or a pcurve, and a loft's surface, each to 1e17 or 2^31 (decision 22801)
+    [Theory]
+    [InlineData("1430-cone.brep")]
+    [InlineData("5462-cone.brep")]
+    [InlineData("20630-cone.brep")]
+    [InlineData("20030-loft.brep")]
+    [InlineData("20958-loft.brep")]
+    [InlineData("5086-loft.brep")]
+    public void A_mesh_of_a_face_damaged_out_of_proportion_fails_carrying_the_other_faces(string file)
+    {
+        using Stream resource = typeof(DamagedFileTests).Assembly.GetManifestResourceStream("DamagedFiles." + file)!;
+        Result<Shape> read = Brep.Read(resource);
+        Assert.True(read.IsSuccess);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+
+        Result<ShapeMesh> mesh = read.Value.Mesh(new MeshOptions { Parallel = false });
+
+        // Before, 1 GB and more, then out of memory; now under 200 MB
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, 500_000_000);
+        Assert.False(mesh.IsSuccess);
+        Assert.Equal(Mesher.FacesRefused, mesh.Error!.Code);
+        Assert.True(mesh.TryGetInvalid(out ShapeMesh? rest));
+        Assert.True(rest.TriangleCount > 0);
+    }
+
     [Fact]
     public async Task A_mesh_of_a_range_damaged_to_1e300_can_be_stopped()
     {

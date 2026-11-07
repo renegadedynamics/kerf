@@ -29,6 +29,9 @@ internal static class ExchangeTree
     /// <summary>STEP data that refers to other files, read from a stream: <c>exchange.external-references</c>.</summary>
     public static DiagnosticCode ExternalReferences { get; } = new("exchange.external-references");
 
+    /// <summary>Whether meshing a part for a writer stopped at a limit: the mesh's size, or a face refused (decision 22801).</summary>
+    internal static bool IsMeshRefused(Exception e) => e is MeshTooLargeException or MeshFaceRefusedException;
+
     /// <summary>The exceptions a reader throws on bad data (rather than misuse).</summary>
     public static bool IsBadData(Exception e)
         => (Refusal.IsFailure(e) || e is InvalidDataException or FormatException or EndOfStreamException or OverflowException
@@ -94,6 +97,12 @@ internal static class ExchangeTree
         {
             ToolParameters parameters = mesh.ToEngine();
             part = IncrementalMesh.Meshed(shape, parameters);
+            if (parameters.Budget is { RefusedFaces: > 0 and int refused })
+            {
+                // Kerf: a part written with faces missing would be a success for an invalid result (decision 22801)
+                throw new MeshFaceRefusedException($"{refused} {(refused == 1 ? "face" : "faces")} of {node.Name ?? "a part"} couldn't be meshed: "
+                                                   + "their mesh would take far more memory than their size and the deflection justify, as a damaged surface or range does.");
+            }
         }
 
         if (part is not { } partShape)

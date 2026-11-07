@@ -51,7 +51,7 @@ internal abstract class BaseMeshAlgo : MeshAlgo
         {
             _dFace = dFace;
             _parameters = parameters;
-            _structure = new DataStructureOfDelaun(storage: MeshWorkStorage.Rent());
+            _structure = new DataStructureOfDelaun(storage: MeshWorkStorage.Rent()) { CirclesInProportion = true };
             if (parameters.Budget is { } budget)
             {
                 _structure.MaxCircleEntries = budget.MaxCircleEntries;
@@ -69,6 +69,12 @@ internal abstract class BaseMeshAlgo : MeshAlgo
                 GenerateMesh(range);
                 CommitSurfaceTriangulation();
             }
+        }
+        catch (MeshFaceRefusedException)
+        {
+            // Kerf: the face, not the mesh, fails, and a public mesh says so (decision 22801)
+            dFace.SetStatus(StatusModel.Failure);
+            parameters.Budget?.RefuseFace();
         }
         catch (Exception exception) when (ModelAlgo.IsCaughtFailure(exception))
         {

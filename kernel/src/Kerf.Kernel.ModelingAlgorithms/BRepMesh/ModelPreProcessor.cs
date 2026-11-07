@@ -202,7 +202,7 @@ internal class ModelPreProcessor : ModelAlgo
                 {
                     if (dEdge.GetCurve().ParametersNb() == 2)
                     {
-                        if (SplitEdge(dEdge, dFace, Math.Abs(GetConeStep(dFace))))
+                        if (SplitEdge(dEdge, dFace, Math.Abs(GetConeStep(dFace)), _parameters.Budget))
                         {
                             Triangulation? triangulation =
                                 Tool.Triangulation(dFace.GetFace(), out Placement _);
@@ -241,8 +241,9 @@ internal class ModelPreProcessor : ModelAlgo
             return steps.second;
         }
 
-        // Splits 3D and all pcurves accordingly using the specified step.
-        private static bool SplitEdge(EdgeModel dEdge, FaceModel dFace, double du)
+        // Splits 3D and all pcurves accordingly using the specified step. Kerf: with a budget, refuses the face if the seam
+        // alone would have more points than the mesh may have (decision 22801)
+        private static bool SplitEdge(EdgeModel dEdge, FaceModel dFace, double du, MeshBudget? budget)
         {
             Edge e = dEdge.GetEdge();
             Face f = dFace.GetFace();
@@ -263,6 +264,19 @@ internal class ModelPreProcessor : ModelAlgo
             }
 
             double dt = Math.Abs(lParam - fParam) / mod * du;
+
+            // Kerf: a seam of a range damaged to 1e17, on its curve or a pcurve, asked for 1e17 / dt points, one at a time,
+            // until the memory ran out. Each curve is split over its own range, as SplitCurve does
+            CurveModel curve3d = dEdge.GetCurve();
+            double span = Math.Max(Math.Abs(curve3d.GetParameter(curve3d.ParametersNb() - 1) - curve3d.GetParameter(0)),
+                                   Math.Max(Math.Abs(ipc1.GetParameter(ipc1.ParametersNb() - 1) - ipc1.GetParameter(0)),
+                                            Math.Abs(ipc2.GetParameter(ipc2.ParametersNb() - 1) - ipc2.GetParameter(0))));
+            if (budget is not null && !budget.Fits(span / dt))
+            {
+                dFace.SetStatus(StatusModel.Failure);
+                budget.RefuseFace();
+                return false;
+            }
 
             if (!SplitCurve(hc!, dEdge.GetCurve(), dt))
             {

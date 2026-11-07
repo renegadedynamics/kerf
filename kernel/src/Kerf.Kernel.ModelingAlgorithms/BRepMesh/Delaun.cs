@@ -140,7 +140,6 @@ internal sealed class Delaun
     /// <summary>Sets up the circles' cells from the structure's nodes and fills them with its triangles.</summary>
     public void InitCirclesTool(int cellsCountU, int cellsCountV)
     {
-        _circles.SetMaxEntries(_meshData!.MaxCircleEntries);
         Box2d box = new();
         for (int nodeIt = 1; nodeIt <= _meshData!.NodeCount; ++nodeIt)
         {
@@ -491,6 +490,10 @@ internal sealed class Delaun
             scaler = 7;
         }
 
+        // Kerf: the limits on the circles in cells, here so that every path that sets the cells up has them (decisions 1856
+        // and 22801: Perform's didn't, and it's the one a face's mesh takes)
+        _circles.SetMaxEntries(_meshData.MaxCircleEntries);
+        _circles.LimitToProportion(_meshData.CirclesInProportion);
         _circles.SetMinMaxSize(new Xy(minX, minY), new Xy(maxX, maxY));
         _circles.SetCellSize(deltaX / Math.Max(cellsCountU, scaler),
                               deltaY / Math.Max(cellsCountV, scaler));

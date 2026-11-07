@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- BREP files with one number damaged, whose mesh took all the memory there was (decision 22801) -->
+    <EmbeddedResource Include="DamagedFiles\*.brep" LogicalName="DamagedFiles.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Native OCCT's STL reading and writing, recorded by tools/stlrec (unit 8H1) -->
     <EmbeddedResource Include="RWStl\Recordings\stlrec.txt.gz" LogicalName="RWStl.stlrec.txt.gz" />
     <!-- Hand-written STL inputs (read by the tests and by tools/stlrec) -->
