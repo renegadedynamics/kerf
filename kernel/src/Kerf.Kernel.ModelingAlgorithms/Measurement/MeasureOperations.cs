@@ -7,6 +7,7 @@ using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Measurement.Distance;
+using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 
@@ -37,6 +38,24 @@ public static class MeasureOperations
         /// <summary>The area of the shape's faces (<c>BRepGProp::SurfaceProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options, massOnly: true).Mass();
+
+        /// <summary>
+        /// The centre of mass of the shape's faces' area, without its moments: what <c>MassProperties(Dimension.Area).CentreOfMass</c>
+        /// integrates, and exact for a planar face alone that's bounded by lines and circles.
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        public Point3D CentreOfArea(MassOptions? options = null)
+        {
+            Shape s = NotNull(shape.AsShape());
+            options ??= Moments;
+            if (s.Type == ShapeType.Face && options.Tolerance > 0 && !options.UseTriangulation
+                && PlanarFaceMass.TryCentre(ShapeCasts.Face(s), new Domain(), out Point3D centre))
+            {
+                return centre;
+            }
+
+            return Integrate(s, Dimension.Area, options).CentreOfMass();
+        }
 
         /// <summary>The length of the shape's edges (<c>BRepGProp::LinearProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>

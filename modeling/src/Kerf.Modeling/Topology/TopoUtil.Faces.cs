@@ -27,7 +27,63 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The centre of mass of a face's area.</summary>
-    internal static Point3D FaceCenter(Face face) => face.MassProperties(Dimension.Area, MeasuredMoments).CentreOfMass;
+    internal static Point3D FaceCenter(Face face) => face.CentreOfArea(MeasuredMoments);
+
+    // How much further apart than the clean's own 1e-7 and 1e-12 two neighbours must be for this to be sure of them
+    private const double SurelyAtAnAngle = 1e-6, SurelyApart = 1e-5;
+
+    /// <summary>
+    /// Whether a clean is sure to hand back what extruding this profile along its normal makes (decision 1895). It merges only
+    /// through an edge two faces share, so only neighbouring sides could merge, and a side's edges only once its neighbour has gone.
+    /// A case in doubt answers false and is cleaned: any curve but a line or a circle, any edge that isn't plainly part of a
+    /// boundary, a vertex with other than two ends of edges, lines within a millionth of a radian of one line, circles
+    /// within 1e-5 of one circle. A line and a circle make a plane and a cylinder, which the clean never merges.
+    /// </summary>
+    internal static bool NothingToCleanAfterExtruding(Face profile, Vector3D direction)
+    {
+        if (!profile.TryGetSurface(out var surface) || surface is not PlaneSurface plane)
+            return false;
+        if (Math.Abs(new Vector3D(plane.Position.Direction).Dot(direction.Normalized())) < 1 - 1e-12)
+            return false;
+
+        var edges = Explore(profile, ShapeType.Edge);
+        var seen = new HashSet<Shape>(ShapeComparer.Same);
+        var curves = new Curve3D[edges.Count];
+        var joints = new Dictionary<Shape, (int First, int Second, int Ends)>(ShapeComparer.Same);
+        for (int i = 0; i < edges.Count; i++)
+        {
+            var edge = (Edge)edges[i];
+            if (edge.Orientation is not (Orientation.Forward or Orientation.Reversed) || !seen.Add(edge))
+                return false;
+            if (!edge.TryGetCurve(out var curve, out _) || curve is not (LineCurve3D or CircleCurve3D))
+                return false;
+            curves[i] = curve;
+            Shape first = edge.FirstVertex, last = edge.LastVertex;
+            if (first.IsNull || last.IsNull)
+                return false;
+            foreach (var vertex in new[] { first, last })
+            {
+                joints[vertex] = joints.TryGetValue(vertex, out var joint) ? (joint.First, i, joint.Ends + 1) : (i, -1, 1);
+            }
+        }
+
+        foreach (var (_, joint) in joints)
+        {
+            if (joint.Ends != 2)
+                return false;
+            if (joint.First != joint.Second && MightBeOne(curves[joint.First], curves[joint.Second]))
+                return false;
+        }
+        return edges.Count > 0;
+    }
+
+    private static bool MightBeOne(Curve3D a, Curve3D b) => (a, b) switch
+    {
+        (LineCurve3D p, LineCurve3D q) => new Vector3D(p.Position.Direction).Crossed(new Vector3D(q.Position.Direction)).Magnitude < SurelyAtAnAngle,
+        (CircleCurve3D p, CircleCurve3D q) => Math.Abs(p.Radius - q.Radius) < SurelyApart
+            && (p.Position.Location - q.Position.Location).Magnitude < SurelyApart,
+        _ => false,
+    };
 
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
     internal static bool PointOnFace(Face face, Point3D point, double tolerance = Constants.Tolerance) =>

@@ -5,6 +5,8 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Center` and `Plane(face)` are exact for a planar face bounded by lines and circles,** and far quicker, so the last digits of what's built on one can change.
+- **An extrusion with nothing to merge skips its clean,** with the same shape and order, for a quarter to a half fewer bytes (the kernel's `docs/performance.md`).
 - **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius a hair from the limit, either way, is the limit. `MaxFillet` gives the same answers with fewer tries (the kernel's `CHANGELOG`).
 
 ## 0.3.0

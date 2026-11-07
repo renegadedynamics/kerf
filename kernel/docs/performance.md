@@ -162,7 +162,7 @@ are bimodal, depending on when the runtime tiers up. Don't read a 20% move on on
 - **Native stops being the yardstick from here** (decision 1681): the work moves to what's slow, unit 11Q.
 - **Since this table:** [the run after 11C, 11D, 11P, 11Q's first slice and the clean-up](benchmarks/2026-11-06-bd7045018.md), on a quiet machine on 6 November, is the one to compare with now. Recalculation 279 ms (0.41× native), opening 470 ms (0.51×), 198 MB allocated per recalculation. Under a host's settings (unit 11D): recalculation 175 ms, a round 610 ms.
 - **0.3.0 as packed, 7 November:** [the release's run](benchmarks/2026-11-07-d18bc4ede.md), quiet, is the one to compare with now. Recalculation 265 ms (0.39× native), opening 518 ms (0.56×), 126 MB allocated per recalculation, settled 302 ms; the default parallel round 2,062 ms and a speed-up of 3.08×; under a host's settings 166 ms, a round of 530 ms and a speed-up of 7.50×. Against the run below it has only lost non-local generics (decision 1890): opening 446 to 518 ms, and the JIT's time in that 141 to 206 ms. Later recalculation, parallel rounds and bytes don't move beyond their noise, but for a few bytes of the JIT's own on the first small examples.
-- **What none of these show: Bento's own loading gets no ReadyToRun.** An extension's `AssemblyLoadContext` is collectible, and it loads from bytes, and the runtime doesn't use precompiled code in either case. So all of Kerf is compiled by the JIT there. **Measured, a fillet, a cut and a STEP export, first thing in a new process, on Kerf's packages:** 170 ms loaded normally, 2,200 ms collectible from bytes (twice each, on a quiet machine). The rig's opening figures, and the effect on code that's still warming up, don't apply to Bento's extension as it stands. The rig needs a row that loads as Bento does, and it's Bento's choice how Kerf is loaded; `bento-integration.md` has the options.
+- **What none of these show: Bento's own loading gets no ReadyToRun.** An extension's `AssemblyLoadContext` is collectible, and it loads from bytes, and the runtime doesn't use precompiled code in either case. So all of Kerf is compiled by the JIT there. **Measured, a fillet, a cut and a STEP export, first thing in a new process, on Kerf's packages:** 170 ms loaded normally, 2,200 ms collectible from bytes (twice each, on a quiet machine). The rig's opening figures, and the effect on code that's still warming up, don't apply to Bento's extension as it stands. The rig needs a row that loads as Bento does, and it's Bento's choice how Kerf is loaded; `bento-integration.md` has the options. **Since then (12D):** the rig has those rows, `first-bento-today` and `first-bento-files`, 2,444 and 225 ms on a loaded machine, and Bento's branch `kerf/load-from-files` loads Kerf from its files: 2,205 to 330 ms through its real loader, on the same terms ([12d-bento.md](../../modeling/docs/12d-bento.md)). What this paragraph says holds until that's merged.
 - **Before non-local generics went, 7 November:** [that run](benchmarks/2026-11-07-bcf6d5826.md), quiet. Recalculation 251 ms (0.37× native), opening 446 ms (0.48×), 127 MB allocated per recalculation, settled 290 ms; the default parallel round 2,068 ms and a speed-up of 2.97×; under a host's settings 166 ms, a round of 511 ms and a speed-up of 7.87×. The default round moves by about 12% within a run, so 1,903 and 2,068 ms aren't a difference; its bytes are, 3,495 to 3,189 MB. It holds the fix for the bottle's rise below (decision 1887). All nine suites pass, and the full corpus doesn't differ, in all 17,872 cases, by status.
 - **The morning of 7 November:** [the run after the modelling layer and the reliability second pass](benchmarks/2026-11-07-b54ad69ed.md), quiet, is the one to compare with now. Recalculation 256 ms (0.37× native), opening 454 ms (0.49×), 138 MB allocated per recalculation, settled 302 ms; the default parallel round 1,903 ms (from 2,378), with a speed-up of 3.25× and collector's pauses 27% shorter; under a host's settings 174 ms, a round of 531 ms and a speed-up of 7.97×. The longest single pause is 2.6 ms serially, 21.1 ms in a default round and 20.0 ms under a host's settings. Its flags: the bottle's allocation 46.6 to 49.2 MB, which hid a larger rise from decision 1881 that the modelling layer's cuts covered, 36.7 to 49.2 MB, since fixed (decision 1887); and a thick solid's 79.1 to 80.8 MB, not yet traced.
 
@@ -1021,6 +1021,30 @@ Results: the same BREP text and meshes by digest on all eleven examples. Six vol
 
 - **Skip the clean after an extrusion when the profile has nothing to merge?** About 2% of Bento's bytes, and 4% to 5% of examples of many small solids. It needs a check that the result really is the same, over more than these examples.
 - **Exact centres of planar faces?** See above: quicker `Center`, with different last digits in what's built from one.
+
+## Exact planar centres and no needless clean (units 12A and 12B)
+
+*7 November 2026, on a machine shared with the owner and other helpers, with a corpus run alongside: bytes are good to about 2%, a whole-process figure a little worse, and the times here are from a loaded machine. The clean timed run follows. Each row is one call, after 200 to warm up, counted on its thread.*
+
+| Bytes for one call | Rectangle | Plate with a hole | Hexagon | Circle |
+|---:|---:|---:|---:|---:|
+| Centre, integrated | 4,109 | 4,518 | 5,261 | 3,285 |
+| `Center`, now | 904 | 888 | 1,184 | 888 |
+| Extrusion with its clean | 161,002 | 235,372 | 240,972 | 80,241 |
+| Extrusion now | 93,800 | 147,808 | 123,743 | 58,312 |
+| of which the test for the skip | 2,704 | 2,968 | 2,568 | 1,416 |
+
+So `Center` falls by about three quarters in bytes, and from 0.05 to 0.24 ms to about 0.001 ms; an extrusion falls by 27% to 49% in bytes. Bento's examples, four alternating runs, seven passes, medians, in MB:
+
+| | Before | After | |
+|---|---:|---:|---|
+| Prismatic solid | 1.6 | 1.5 | -9% |
+| Nesting locations | 14.9 | 13.1 | -12% |
+| For-loop | 9.4 | 8.9 | -5% |
+| Function, for-loop | 7.0 | 6.6 | -6% |
+| All eleven | 128.4 | 124.2 | -3.3% |
+
+The other seven move within the noise of a run, which reaches 2 MB on the largest. Against the bar of decision 1829: an extrusion clears 20% in bytes wherever it's the work, and examples of many small solids clear 5%, while a whole recalculation of Bento's mixed examples doesn't. Results: decisions 1894 and 1895. The corpus's boolean, blend, lowalgos and heal groups, 7,615 cases, are the same case by case as the run after unit 11E; neither change touches what they run.
 
 ## StepTidy (unit 11N)
 
