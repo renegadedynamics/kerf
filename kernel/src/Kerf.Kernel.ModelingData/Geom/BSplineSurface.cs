@@ -87,6 +87,17 @@ public sealed partial class BSplineSurface : BoundedSurface
         _evalRep = null;
     }
 
+    // Frozen, its knots and multiplicities can't change, and most splines have the same ones (SharedArrays)
+    private protected override void OnFreezing()
+    {
+        _uKnots = SharedArrays<double>.Shared(_uKnots);
+        _vKnots = SharedArrays<double>.Shared(_vKnots);
+        _uFlatKnots = SharedArrays<double>.Shared(_uFlatKnots);
+        _vFlatKnots = SharedArrays<double>.Shared(_vFlatKnots);
+        _uMults = SharedArrays<int>.Shared(_uMults);
+        _vMults = SharedArrays<int>.Shared(_vMults);
+    }
+
     private static void CheckSurfaceData(NCollection_Array2<Point3D> sPoles,
                                          NCollection_Array1<double> suKnots,
                                          NCollection_Array1<double> svKnots,

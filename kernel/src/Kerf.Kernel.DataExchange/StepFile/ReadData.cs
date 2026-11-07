@@ -374,6 +374,12 @@ internal sealed class ReadData
         return true;
     }
 
+    /// <summary>
+    /// Forgets the head of the records, for a walk that goes once: each record and its arguments can then be collected as
+    /// soon as the walk has passed it, while the reader's parameters that replace them grow (unit 11Q, sixth slice).
+    /// </summary>
+    internal void WalkOnce() => _firstRec = null;
+
     /// <summary>Returns a value of all file counters (and starts the walk over the records).</summary>
     public void GetFileNbR(out int nbHead, out int nbRec, out int nbPage)
     {

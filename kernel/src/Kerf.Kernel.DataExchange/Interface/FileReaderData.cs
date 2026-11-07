@@ -159,7 +159,7 @@ internal abstract class FileReaderData : Transient
     /// <summary>
     /// Same as above, but in order to be modified on place
     /// </summary>
-    public FileParameter ChangeParam(int num, int nump)
+    public ref FileParameter ChangeParam(int num, int nump)
     {
         if (_thenm0 != num)
         if (_thenm0 != num)
@@ -167,7 +167,7 @@ internal abstract class FileReaderData : Transient
             _thenp0 = _thenumpar[num - 1];
             _thenm0 = num;
         }
-        return _theparams.ChangeParam(_thenp0 + nump);
+        return ref _theparams.ChangeParam(_thenp0 + nump);
     }
 
     /// <summary>
@@ -310,6 +310,7 @@ internal abstract class FileReaderData : Transient
         _thenumpar = new NCollection_Array1<int>(0, nbr);
         _theents = new NCollection_Array1<Transient>(0, nbr);
         _theparams = new ParamSet(npar);
+        _theparams.Reserve();
         _thenumpar.Init(0);
         _thenm0 = -1;
     }
@@ -318,9 +319,9 @@ internal abstract class FileReaderData : Transient
     /// Returns a parameter given its absolute rank in the file in order to be consulted or modified in
     /// specilaized actions
     /// </summary>
-    protected internal FileParameter ChangeParameter(int numpar)
+    protected internal ref FileParameter ChangeParameter(int numpar)
     {
-        return _theparams.ChangeParam(numpar);
+        return ref _theparams.ChangeParam(numpar);
     }
 
     /// <summary>

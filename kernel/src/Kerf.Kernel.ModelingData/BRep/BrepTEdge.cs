@@ -27,7 +27,7 @@ internal class BrepTEdge : TEdge
 
     private double _tolerance;
     private int _flags;
-    private readonly NCollection_List<CurveRepresentation> _curves = new();
+    private NCollection_List<CurveRepresentation> _curves = new();
 
     /// <summary>An empty edge: tolerance RealEpsilon(), SameParameter and SameRange.</summary>
     public BrepTEdge()
@@ -188,6 +188,7 @@ internal class BrepTEdge : TEdge
 
     internal override void FreezeRepresentations()
     {
+        _curves = _curves.Finished();
         foreach (CurveRepresentation cr in _curves)
         {
             cr.FreezeContents(); // the meshes the mesher attached unfrozen (decision 488)

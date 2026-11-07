@@ -10,6 +10,7 @@ version may break the API.
   vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 ## 0.3.0 (unreleased)
 
+- **Kept shapes take less memory, and importing large STEP files peaks lower:** a patterned shape up to 55% less and a STEP import with many B-splines 35% less, as equal data is now shared, and about 20% less otherwise; `bug30790`'s largest live data during its import fell from 178 to 110 MB. Every shape, mesh and record reads the same.
 - **The validity check is cheaper on small shapes:** about half the bytes and a third less time on a box, a prism or many small solids (from a loaded machine), and about 8% fewer bytes over a recalculation of Bento's examples. No verdict or status changes: compared with the old check, on every sub-shape, over the corpus's Boolean, blend, chamfer and healing groups.
 - A fuse with a compound of reversed solids no longer drops them (#1613), and a cut by a helical tube no longer removes nothing depending on where it leaves (#1543).
 - A fillet or chamfer whose tolerance passes its size fails with `result.invalid`, carrying the shape, rather than succeeding with a wrong volume (#1639).
