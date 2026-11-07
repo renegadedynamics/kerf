@@ -3,13 +3,9 @@
 All notable changes to the Kerf.Kernel packages (until 0.2.0 the OCCT.NET packages). Versions follow [SemVer](https://semver.org); before 1.0 a minor
 version may break the API.
 
-## Unreleased
+## 0.3.0
 
-- **Unifying (and so a simplified Boolean) no longer fails on two kinds of valid shape:** edges meeting where one has a
-  zero-length tangent, as a B-spline with its end pole repeated, are left unmerged, and infinite lines, which have no
-  vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
-## 0.3.0 (unreleased)
-
+- **Bento's examples recalculate about 4.8 times as fast as at 0.2.0, with 72% fewer bytes:** 251 ms from 1,211 ms, where native OCCT 8.0.1 takes 685 ms, and 127 MB from 450 MB, measured on a quiet machine with ReadyToRun (`docs/performance.md`). Opening them, cold, takes 446 ms from 1,764 ms (native 921 ms). A host's settings, as in `docs/performance.md`, give a recalculation of 166 ms and 24 copies in parallel in 511 ms, a speed-up of 7.9×.
 - **Recalculation and a parallel round are about a fifth quicker, with about a fifth fewer bytes,** on Bento's examples, with the same shapes and meshes (a loaded machine). `IntegrateVolume` and `IntegrateArea` with a tolerance give planar faces exactly, so a result can differ from before in its last digits.
 - **Equal cylinders that nearly cross are right:** a round notch, offset by rounding or an imported file, could remove nothing or fail; now Cut, Common and Fuse are right at the offsets measured, for radii of 0.5 and 5 (`docs/reliability.md`). A radius of 500 can still fail.
 - **`IntegrateVolume()` and `IntegrateArea()` are precise by default,** to 1e-6: they could be 18% out on faces bounded by a walked intersection. `MassOptions { Tolerance = 0 }` asks for the fixed points.
@@ -89,6 +85,9 @@ version may break the API.
 - **Joining edges on part of a Bezier curve:** the joined curve now follows that part. OCCT trimmed it twice, so it came back shorter and on the wrong parameters.
 - **Faster optimal boxes:** a torus patch's is worked out rather than searched for, and `AddOptimal` skips faces that can't enlarge the box.
   The results differ by 1e-7 at most.
+- **Unifying (and so a simplified Boolean) no longer fails on two kinds of valid shape:** edges meeting where one has a
+  zero-length tangent, as a B-spline with its end pole repeated, are left unmerged, and infinite lines, which have no
+  vertices, pass through. In OCCT both raise (`docs/occt-issues.md`; decisions 1652 and 1653).
 
 ## 0.2.0
 

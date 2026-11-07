@@ -30,9 +30,9 @@ are the kernel's structs (`Kerf.Topology`), every value is immutable, and nothin
 
 ## Status
 
-0.2.0 is the first release under the name Kerf, and a pre-1.0 one: minor versions may break the API. It replaces the
+0.3.0 is the second release under the name Kerf, and a pre-1.0 one: minor versions may break the API. Kerf replaces the
 `OcctNet.*` and `Build123d` packages, which end at 0.1.0. Kerf diverges from OCCT and build123d, and isn't endorsed by
-either project. What's next is in [kernel/docs/phase11-plan.md](kernel/docs/phase11-plan.md), and the changes are in
+either project. What's left of the last phase is in [kernel/docs/phase11-plan.md](kernel/docs/phase11-plan.md), and the changes are in
 each layer's CHANGELOG ([kernel](kernel/CHANGELOG.md), [modeling](modeling/CHANGELOG.md)).
 
 ## Building
