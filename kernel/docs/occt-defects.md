@@ -28,7 +28,6 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | #1659, #1643, #1629 | A Cut that removes nothing or comes out with a solid inside out, a Common empty. Sections left open or the wrong way in. **Now reported as failures (decisions 1860 to 1868); the wrong answers remain.** The figures once given here, 5271.23 from 5264.71 and 1773362 from 1750653, were the default integration's errors (decision 1865) | Reproduced | L for the causes |
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
 | Silent wrong answer | #1039, #245 | A face/solid Common with an edge missing, 86898 for about 70000: not reported, as a shell has no rule (decision 1862). A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
-| Silent wrong answer | #1123 | A minimum distance of 0.083 between parts that intersect | Reproduced | M |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
 | Silent wrong answer | #1444, #572 | A mesh of 1.43 deflection for 0.45; a cone with no triangles, a warning only | Reproduced | M each |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
@@ -61,6 +60,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1123 | A minimum distance of 0.083 between parts that intersect | 22601 |
 | #1629, #1643, #1659, #245 | Booleans valid and wrong, reported as a success: now a failure, causes open | 1860, 1863, 1866 |
 | #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
 | #1613 | A fuse dropping a compound of reversed solids | 1832 |
@@ -289,7 +289,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1161 | Poor PSO_Perform performance | not relevant | PSO's speed: 11Q |
 | 1138 | Missing shape labels for certain datum labels | not relevant | Datum labels in the assembly document, which isn't ported ([unported.md](unported.md)) |
 | 1124 | Incorrectly computed sections | applies | Reproduced on its files: with approximation off, case 4 has 0.004 of its 40.53 length and two loose vertices, and with it on all four close. `BooleanOptions` and `Kerf.Modeling` now approximate (decision 1836). The cause with it off isn't found |
-| 1123 | Incorrect minimum distance with intersecting parts | applies | Reproduced on its files, with its figures: 6.08e-5 and 0.083 where the parts intersect |
+| 1123 | Incorrect minimum distance with intersecting parts | already fixed | Decision 22601: its four files through `Distance`: 0, 0, 8e-15 and 2e-15, and a Common of 2.96, 2.16, 1.48 and 0.92 |
 | 1107 | mkoffsetshape bad geometry (wrench.brep) | applies | Reproduced on its file: invalid, two open shells. The public offset fails |
 | 1106 | mkoffsetshape bad geometry (pacman.brep) | applies | Reproduced on its file: invalid. The public offset fails |
 | 1081 | Conversion STP AP242 to GLB | applies | Reproduced on its file: invalid, and 106 s and 1.08M triangles to mesh on a loaded machine |

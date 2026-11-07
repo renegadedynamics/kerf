@@ -2228,3 +2228,9 @@ Found by unit 12C (fillet-design.md, section 8), each a loud failure:
 |---|---|---|---|
 | `ChFi3d_Builder`, a next face within 0.1 radians | Just below the face's width, by up to about 1e-6 at small angles and 1e-8 at 5 degrees, the fillet comes out invalid. **Since unit 12M the public `Fillet` builds these exactly instead (decision 1910),** and the engine's own remains as it was. Above and below that it's right | `result.invalid`, carrying the shape | leave, until a user meets it: it wants a stage of fillet-design.md's |
 | `ChFi3d_Builder`, a contact line reaching a tangent edge | From the radius where the contact line meets a tangent edge to as much as 1e-5 above it, it fails, though it's right on both sides | `fillet.*` failure at a radius that should work | leave, as above |
+
+Found by unit 12J:
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `BRepExtrema_DistShapeShape` | Only stationary points from a grid: faces crossing along a closed curve inside both aren't found | A positive distance between parts that intersect (#1123) | fixed (decision 22601) |
