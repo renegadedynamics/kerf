@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A Common, Cut or Fuse that comes out wrong is tried with its inputs the other way round, and that result returned, with a warning, if it's right:** #1643's lofts now give the right answers (decision 22611). **A Fuse that lost part of an input now fails,** carrying the shape.
 - **A general transform of a shape holding a mesh keeps its triangles facing outwards and its normals square to them,** and doesn't move a located mesh twice (decision 22612).
 - **A Cut, Common or Fuse no longer goes wrong where a section curve stops just short of another:** on #1659's loft and cylinder the Cut removed nothing, which had become a failure, and now it's right (decision 22610).
 - **A closed section curve between surfaces that cross at a shallow angle is no longer lost as a tangency,** which gave a Common with an edge missing and the wrong area (decision 22608).

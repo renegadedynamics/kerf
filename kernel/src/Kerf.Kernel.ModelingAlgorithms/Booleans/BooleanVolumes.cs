@@ -126,6 +126,7 @@ public static class BooleanVolumes
             return rule switch
             {
                 BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0, Math.Min(a.Sum, b.Sum)),
+                BooleanVolumeRule.Fuse when r <= least + margin && ProvedLost(arguments, tools, result, fuzzyValue, Math.Min(a.Sum, b.Sum)) is { } lost => lost,
                 BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
                 _ => null,
             };
@@ -320,6 +321,81 @@ public static class BooleanVolumes
             }
         }
 
+        return null;
+    }
+
+    // A fuse no larger than its larger input holds the smaller one inside it, or has lost part of it: OCCT #1643 gives the body alone,
+    // with the lip's part outside it gone, which no rule of volume can see (decision 22611). Two points on the smaller input's faces,
+    // well outside the result, prove the second; the volume lost can be too small for a grid inside it to reach.
+    private static Diagnostic? ProvedLost(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double smallerVolume)
+    {
+        if (arguments.Count != 1 || tools.Count != 1 || smallerVolume <= 0)
+        {
+            return null;
+        }
+
+        bool argumentIsSmaller = arguments[0].IntegrateVolume(Measured) <= tools[0].IntegrateVolume(Measured);
+        Shape smaller = argumentIsSmaller ? arguments[0] : tools[0], larger = argumentIsSmaller ? tools[0] : arguments[0];
+        if (smaller.AllFaces().Length > FacesLooked)
+        {
+            return null;
+        }
+
+        var inResult = new SolidClassifier(result);
+        var inLarger = new SolidClassifier(larger);
+        double depth = -1;
+        int found = 0;
+        Point3D first = default;
+        foreach (Face face in smaller.AllFaces())
+        {
+            var surface = new FaceSurfaceAdaptor(face);
+            double fromU = surface.FirstUParameter(), toU = surface.LastUParameter(), fromV = surface.FirstVParameter(), toV = surface.LastVParameter();
+            if (!double.IsFinite(fromU + toU + fromV + toV))
+            {
+                continue;
+            }
+
+            for (int i = 1; i <= FaceGrid; i++)
+            {
+                for (int j = 1; j <= FaceGrid; j++)
+                {
+                    double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
+                    if (face.Classify(new Point2D(u, v)) != Containment.In)
+                    {
+                        continue;
+                    }
+
+                    Point3D point = surface.Value(u, v);
+                    // What's inside the larger input is in a fuse whatever its classifier says of the result
+                    if (Inside(inResult, point) || Inside(inLarger, point))
+                    {
+                        continue;
+                    }
+
+                    if (depth < 0)
+                    {
+                        if (!Trustworthy(arguments) || !Trustworthy(tools))
+                        {
+                            return null;
+                        }
+                        depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
+                    }
+
+                    if (Deep(point, result, depth) && Deep(point, larger, depth))
+                    {
+                        if (found++ == 0)
+                        {
+                            first = point;
+                        }
+                        if (found >= 2)
+                        {
+                            return Diagnostic.Error(DiagnosticCode.InvalidResult,
+                                $"The fuse's result is wrong: it lost part of an input, as the point ({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)}) and others are on that input and outside the result.");
+                        }
+                    }
+                }
+            }
+        }
         return null;
     }
 

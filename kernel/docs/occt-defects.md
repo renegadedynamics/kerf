@@ -25,7 +25,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1659, #1643, #1629 | A Cut that removes nothing or comes out with a solid inside out, a Common empty. Sections left open or the wrong way in. **Now reported as failures (decisions 1860 to 1868); the wrong answers remain.** The figures once given here, 5271.23 from 5264.71 and 1773362 from 1750653, were the default integration's errors (decision 1865) | Reproduced | L for the causes |
+| Silent wrong answer | #1629 | A Cut that comes out with a solid inside out. **Reported as a failure (decision 1863); the wrong answer remains.** #1659 and #1643 are now right (decisions 22610, 22611) | Reproduced | L for the cause |
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
 | Silent wrong answer | #245 | A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
@@ -58,6 +58,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 22611 |
 | `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 22612 |
 | #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 22610 |
 | #1039 | A section's closed curve lost between a sphere and a slice at a shallow angle, 86898 for 73353 | 22608 |
@@ -177,7 +178,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1658 | `SetColor()` does not recolor seam / degenerated / boundary edges of a shape | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 1652 | Data Exchange, STEP Import - Spherical/toroidal CURVE_BOUNDED_SURFACE with a clockwise OUTER_BOUNDARY_CURVE is read as the complement of the patch sin | can't tell | CURVE_BOUNDED_SURFACE read: same reader; needs a file |
 | 1651 | GeomLProp_SLProps: MinCurvature/MaxCurvature/MeanCurvature/GaussianCurvature return the previous value on the first call after construction or SetPara | already fixed | Kerf computes before reading: `SLProps.RequireCurvature` (decision in phase 2); the port's comment says so |
-| 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | applies | Reproduced from its numbers, baked sections: Fuse 1773362, Common 0, Cut 1773362 from 1750653, no error. Its located sections weren't tried |
+| 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | already fixed | Decision 22611: right the other way round, which is now tried; the cause in one order isn't found |
 | 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | applies | Reproduced on its files: 10596.3 for 29799.9, with an edge's tolerance of 190, and valid. Its other order is right. The public fillet now fails (decision 1833); the cause isn't found |
 | 1638 | Segfault in STEPCAFControl_Reader::findReprItems when a representation has no items | not relevant | Null items natively a crash; the port's STEP layer reports (decision 1050s) |
 | 1637 | GCC 16 miscompiles BRepClass3d_SClassifier::Perform in 7.9.x, classifying a point on an edge segfaults | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
