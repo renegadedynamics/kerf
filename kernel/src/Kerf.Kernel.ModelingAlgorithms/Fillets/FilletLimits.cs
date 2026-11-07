@@ -36,6 +36,9 @@ internal static partial class FilletLimits
     // How many of the shape's tolerances wide a strip of a face has to be for a tool to leave it
     private const double TooNarrow = 10;
 
+    // The most a radius is moved for that, in the model's units, whatever the shape's tolerance (the owner, decision 1912)
+    private const double LargestMove = 1e-6;
+
     // The cosine of 0.2 radians, twice the angle ChFi3d's test of tangency allows
     private const double WellApart = 0.98;
 
@@ -571,7 +574,7 @@ internal static partial class FilletLimits
                         return null;
                     }
                     // ChFi3d has failed, and what's left of the face is too narrow for the Boolean to tell its two sides apart: the limit
-                    if (demand >= width - TooNarrow * side.Tolerance)
+                    if (TooNarrowToLeave(demand, width, side.Tolerance, cuts.Max(c => c.ContactOn(side.Face) > 0 ? c.Radius ?? c.ContactOn(side.Face) : 0)))
                     {
                         double scale = width / demand;
                         for (int k = 0; k < cuts.Length; k++)
@@ -587,6 +590,11 @@ internal static partial class FilletLimits
         }
         return Ball(shape, cuts) ?? Finish(shape, cuts);
     }
+
+    // Whether a radius using this much of a width is taken as the limit: within the tolerance it is (decision 1898), and in a strip too
+    // narrow for a tool to leave only if that moves it by no more than the owner allows. Past that, it's tried as asked, and may fail
+    internal static bool TooNarrowToLeave(double used, double width, double tolerance, double radius) =>
+        used >= width - tolerance || (used >= width - TooNarrow * tolerance && radius * (width - used) / used <= LargestMove);
 
     // When the fillets leave only a ball, that's the answer, as one face: no face of the shape survives, so two tools have nothing to
     // be right about but where they meet. The check that follows is as for any other: it's right only if the shape was what it seemed

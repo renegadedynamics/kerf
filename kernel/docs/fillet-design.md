@@ -174,6 +174,8 @@ Every stage runs after ChFi3d fails, until stage 6 says otherwise. Each leaves t
 
 Decisions 1898 to 1901. Times are from a machine shared with other work.
 
+**A radius moved for a narrow strip:** at most 1e-6 of the model's units (decision 1912).
+
 **What's proved.** No tangent fillet fits where a contact line would lie off a rectangular face beside the edge, when the face past its far edge turns by more than ChFi3d calls tangent. **The limit was wrong below that:** see the next section. It's only an upper limit: other things can stop a fillet sooner.
 
 **Does ChFi3d ever return something above the limit?** Yes, in two ways, measured on ChFi3d alone:
