@@ -10,6 +10,19 @@ public class LocationList : IReadOnlyList<Location>
     /// <summary>A location list of the given locations.</summary>
     public LocationList(IEnumerable<Location> locations) => LocalLocations = [.. locations];
 
+    /// <summary>
+    /// The most locations a pattern can have (decision 21104): 100 bytes or so each, so a billion would take more memory than
+    /// most machines have before anything had been placed, and no model could use them.
+    /// </summary>
+    public const int MaxCount = 10_000_000;
+
+    /// <exception cref="ArgumentException">Too many.</exception>
+    private protected static void CheckCount(long count)
+    {
+        if (count > MaxCount)
+            throw new ArgumentException($"A pattern of {count} locations is more than the {MaxCount} allowed");
+    }
+
     /// <summary>The locations, in local construction coordinates.</summary>
     public IReadOnlyList<Location> LocalLocations { get; }
 
@@ -106,6 +119,7 @@ public class GridLocations : LocationList
     {
         if (xCount < 1 || yCount < 1)
             throw new ArgumentException($"At least 1 elements required, requested {xCount}, {yCount}");
+        CheckCount((long)xCount * yCount);
         size = new Vector3D(xSpacing * (xCount - 1), ySpacing * (yCount - 1), 0);
         var offset = align.Offset(Point3D.Origin, size.ToPoint());
         min = offset.ToPoint();
@@ -136,6 +150,7 @@ public class PolarLocations : LocationList
     {
         if (count < 1)
             throw new ArgumentException($"At least 1 elements required, requested {count}");
+        CheckCount(count);
         var step = count == 1 ? 0.0 : angularRange / (count - (endpoint ? 1 : 0));
         var locations = new List<Location>();
         for (int i = 0; i < count; i++)
@@ -193,6 +208,7 @@ public class HexLocations : LocationList
         var ySpacing = diagonal * Math.Sqrt(3) / 2;
         if (xSpacing <= 0 || ySpacing <= 0 || xCount < 1 || yCount < 1)
             throw new ArgumentException("Spacing and count must be > 0 ");
+        CheckCount((long)xCount * yCount);
         // The raw coordinates from the bottom left
         var points = new List<Point3D>();
         for (int x = 0; x < xCount; x += 2)
