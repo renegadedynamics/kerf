@@ -123,7 +123,7 @@ Run `kernel/tools/bench.ps1`, on Windows PowerShell 5.1 or later. It takes about
 `docs/benchmarks/<date>-<commit>.md` and `.tsv`. For a unit's before-and-after, on each commit:
 
 ```powershell
-kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-07-3e9d11be2.tsv
+kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-07-b54ad69ed.tsv
 ```
 
 It exits with 1 on a regression and 2 on a busy machine; `-Result <tsv>` compares without running. Each row is the median
@@ -161,6 +161,8 @@ are bimodal, depending on when the runtime tiers up. Don't read a 20% move on on
 - **The targets are met:** recalculation was to be within 1.2× of native, and it's nearly twice as fast. Eight of the eleven examples are ahead of or within 1.2× of native. "Point lists" (1.82×, 6 ms over) and "select last" (1.49×, 5 ms over) are small in absolute terms.
 - **Native stops being the yardstick from here** (decision 1681): the work moves to what's slow, unit 11Q.
 - **Since this table:** [the run after 11C, 11D, 11P, 11Q's first slice and the clean-up](benchmarks/2026-11-06-bd7045018.md), on a quiet machine on 6 November, is the one to compare with now. Recalculation 279 ms (0.41× native), opening 470 ms (0.51×), 198 MB allocated per recalculation. Under a host's settings (unit 11D): recalculation 175 ms, a round 610 ms.
+- **The morning of 7 November:** [the run after the modelling layer and the reliability second pass](benchmarks/2026-11-07-b54ad69ed.md), quiet, is the one to compare with now. Recalculation 256 ms (0.37× native), opening 454 ms (0.49×), 138 MB allocated per recalculation, settled 302 ms; the default parallel round 1,903 ms (from 2,378), with a speed-up of 3.25× and collector's pauses 27% shorter; under a host's settings 174 ms, a round of 531 ms and a speed-up of 7.97×. The longest single pause is 2.6 ms serially, 21.1 ms in a default round and 20.0 ms under a host's settings. Its flags: the bottle's allocation 46.6 to 49.2 MB, and a thick solid's 79.1 to 80.8 MB, not yet traced.
+
 - **The night of 6 to 7 November:** [the run with the checks in](benchmarks/2026-11-07-3e9d11be2.md), quiet, is the one to compare with now. Recalculation 275 ms (0.40× native), opening 468 ms (0.51×), 152 MB allocated per recalculation; under a host's settings 174 ms and a round of 571 ms. So this holds what each operation now checks (units 11R and the Boolean volumes) and the precise area, volume and centre, with the rest of the work paying for them, except on examples of many small solids: "for-loop" 10.6 to 17.8 ms, and 9.0 to 10.6 MB. Settled recalculation 298 to 328 ms.
 - **What a user would feel from the collector isn't a hitch:** the longest single pause is 5.2 ms serially, 25.8 ms in a default parallel round and 16.8 ms under a host's settings. **Peak working set under a host's settings is noisy:** 355, 409, 444, 333 and 459 MB over the last five runs. The slowest one model in any round, 532 ms under a host's settings, includes the first, cold round.
 
