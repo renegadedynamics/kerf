@@ -1,6 +1,6 @@
 # Fillets: where they stop, and what could replace them
 
-*7 November 2026. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
+*7 November 2026; section 9 is what units 12K to 12M built. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
 
 **In short.** The 10 mm case is fixed, without a rewrite (decision 1847). That class of failure is not one failure of ChFi3d's mathematics: ChFi3d computes the right surface and then can't remove a face. **A rewrite of ChFi3d isn't justified yet, but a rolling-ball path that runs only where ChFi3d has failed is,** one analytic stage at a time. Its next stage is circular edges, the largest group among the corpus's fillet failures (8 of 23, 3 of them exactly this limit). Don't port `f713b1305f`.
 
@@ -59,9 +59,9 @@ Measured: volume, area and validity against the true answer, in `FilletLimitTest
 | A concave edge up to its limit | Fails | **Exact** |
 | Chamfer of a whole width; two meeting; four to a diamond; two lengths | Fails | **Exact** |
 | Above the limit | "no starting solution" | Says what fits, and since unit 12C without trying |
-| All edges of a cube, r = 5 (a sphere); a bar's (a capsule) | Fails | **Fails**: says it can't be built yet; 4.99999 works |
-| Disc's rim, r = h; both rims, r = h / 2; hemisphere; sphere from a short cylinder | Fails | **Fails**, as before |
-| Hole's rim, r = 10 in a 10 mm plate | Fails | Fails |
+| All edges of a cube, r = 5 (a sphere); a bar's (a capsule) | Fails | **Exact,** since unit 12M (section 9) |
+| Disc's rim, r = h; both rims, r = h / 2; hemisphere; sphere from a short cylinder | Fails | **Exact,** since unit 12L (section 9) |
+| Hole's rim, r = 10 in a 10 mm plate | Fails | **Exact,** since unit 12L |
 | Cylinder's rim, r = R, one end or both (a dome, a capsule) | Works | Works, unchanged |
 
 **An independent check:** `blend/simple/Q8` is such a case. Through `FilletOperations` it now gives an area of 11957.1. Upstream's reference after `f713b1305f` is 1.19571e+10, at a scale of 1000: the same to the digits it records. **Its result is valid, where upstream's own TODO for that case says it's faulty.** The corpus's status stays BAD, as Draw's `blend` calls the engine's `MakeFillet`, and the fallback isn't in it.
@@ -214,6 +214,48 @@ The 26 cases away from a near-tangent edge go through these in order at all five
 **The check, separately from how it's built.** `FilletLimitSweepTests`: 16 cases at six sizes, 0.01 to 10,000: boxes, moved and turned, several edges apart, faces at other angles, a concave edge, a slanted end, a chain round a top, all of a cube. The volume and area come from each section's corners by hand (for the slanted end, integrals over the spandrel; for the chain, by layers, volume only). 6 radii below, 7 in the band with the limit itself, 8 above, with the limit claimed checked against one by hand, and a fine sweep of a cube's edge with 100 radii from 1e-12 to 7e-3 either side at four sizes. A shape with its tolerances raised to 1e-3 is in `FilletLimitsTests`.
 
 **Its cost.** About 4% of a working fillet's bytes, and under 3% of its time on a shape of 262 faces. It would have been 8% and 11% without making the rest of `Neighbours` wait until a limit asks.
+
+## 9. Rims and corners as built (units 12K, 12L, 12M)
+
+Decisions 22401 to 22408. Stages 1, 3 and 2, in that order, and then, as the plan says, stop. Nothing here is timed: the machine was shared, and the counts are what's reported.
+
+**How each runs.** Stage 1's limits are asked before ChFi3d. Stages 2 and 3 run only after ChFi3d has failed, or made something invalid, so what it builds right can't change. `ChFi3d` isn't touched.
+
+| Sizes | Estimate | As built (added, in production code) |
+|---|---:|---:|
+| Stage 1, limits for circles | 100 | 177 |
+| Stage 3, circular edges | 300 to 600 | 290 |
+| Stage 2, corners and slanted ends | 500 to 1,000 | about 600 |
+
+Stage 3 came in just below its range, as a rim's section is a straight edge's and most of it was there already. Stage 1 was nearly twice its estimate, for reading three kinds of surface and where each ends.
+
+**What now works that failed, measured through the public `Fillet`, right by closed forms worked out apart from how it's built:**
+
+| Shape | At what | Faces | Surfaces |
+|---|---|---:|---|
+| Disc's rim | r = h | 3 | A torus with a tube as wide as it, or wider |
+| Disc's two rims, a full round | r = h / 2 | 4 | Two tori |
+| Hemisphere; sphere from a cylinder | r = R = h; r = R = h / 2 | 2; 1 | Sphere |
+| Frustum's rim; ring's rims, one or both | Side used up, or the ring between | 3 to 5 | Torus |
+| Hole's rim in a plate, boss's foot, step, pocket's floor | Wall used up | | Torus; concave ones add |
+| B2, Q3, W7's edges | As in the corpus | | Torus |
+| All of a cube, a bar, a plate, a triangular bar | At the limit | 1; 12; 18; and so on | Sphere and cylinder |
+| Three edges at a corner, to an eighth of a sphere | r = the side | 4 | Sphere |
+| Slanted end; a chain round a top | At the limit | | Cylinder |
+| bug25478_2: two convex, one concave, touching | r = 2.5 | 9 | Cylinder |
+| bug32931: an L's top, split in three, which crashed native | r = 1 | 15 | Cylinder, and a torus at its pivot |
+
+Not the corpus's status: Draw's `blend` calls the engine, so those stay BAD or OK as they were. Filtered to `blend`, `chamfer` and `bugs/modalg_*`, 0 of 3,140 statuses differ from unit 11E's run.
+
+**Refusals on rims are as true as on straight edges.** ChFi3d alone, on 12 shapes at six sizes and seven radii above each limit (504 runs, asserted in `FilletRimSweepTests`), failed or made something invalid: never valid. Nothing is claimed for a plane with anything but a coaxial circle or nothing else on it, since the rest of a contact line stays on the face; so Y7 isn't refused, its rim having a tangent edge past its wall, and no limit, and it fails as it did. U7 and bug602 weren't tried. **A plan with a re-entrant corner has no width to read either:** above an L's limit the failure is ChFi3d's, not a refusal.
+
+**Sweeps, at sizes 0.01 to 10,000.** `FilletRimSweepTests`, 12 cases, and `FilletLimitSweepTests`, 20 cases: 6 radii below, 7 in the band, 7 or 8 above, at six sizes; and a fine sweep of each case at four sizes, 60 radii bunching up at the limit from either side, 2,880 and 4,800 runs. **On all of them the outcome goes from built to refused once and never back, and each built result is right by its section** to 1e-6, or 1e-5 at sizes below 0.5, as a shape's tolerance is a larger part there.
+
+**What the sweep caught.** A ring's two rims fail in ChFi3d from 1e-7 to 1e-6 below the limit, and a tool can't leave so thin a strip, so past failure a strip under ten tolerances is the limit (decision 22404). Two hemispheres at the largest size failed, so what's only a ball is made as one. A check of a part in a million refused a right chain at size 0.01 (decision 22408). `FilletLimits`'s check also refused a right three-edge corner, its own mistake (decision 22405). Each of those failed honestly rather than returning something wrong.
+
+**One of section 8's two bands has gone.** A next face within 0.1 radians, just below the width: ChFi3d's invalid results now go to the exact path, and it's right across the band (decision 22407). The other, a contact line reaching a tangent edge, is still ChFi3d's failure, as the path doesn't read tangent chains.
+
+**What this still doesn't do.** Different radii at a corner. Corners of more than three edges, or of concave edges; a concave edge with a slanted end. Mitres between edges of two different angles. Arcs rather than whole circles, and rims with their circle in pieces. A plane and sphere or torus. A bar's capsule stays 12 faces; only a whole ball is one. Chamfers at corners have their refusals, as they had, and no exact path. **Stage 4 and on, as the plan says, wait for failures from Bento's users.**
 
 ## Sources
 

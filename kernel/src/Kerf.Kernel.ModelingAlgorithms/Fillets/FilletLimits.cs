@@ -29,7 +29,7 @@ namespace Kerf.Fillets;
 /// <remarks>Also whole circles between surfaces turned about one axis, by a turned tool and Pappus, once ChFi3d has failed (decision 22402).
 /// And the arithmetic of how large such a fillet can be (<see cref="Fit"/>), which is asked before ChFi3d: a size
 /// within tolerance of the limit is the limit, and one past it is refused at once (decision 1898).</remarks>
-internal static class FilletLimits
+internal static partial class FilletLimits
 {
     private const double Tolerance = Tolerances.Confusion;
 
@@ -331,14 +331,14 @@ internal static class FilletLimits
         return Safely(() => Build(shape, specs.Select(s => (s.Edge, (s.Radius, s.Radius), (double?)s.Radius))));
     }
 
-    /// <summary>What's built once ChFi3d has failed: the fillet, if the edges are whole circles between surfaces turned about their axes.</summary>
+    /// <summary>What's built once ChFi3d has failed: the fillet, if the edges are whole circles between surfaces turned about their axes, or straight between planes, meeting or not.</summary>
     public static EngineOutcome? AfterAlgorithm(Shape shape, FilletSpec[] specs, FilletOptions options)
     {
         if (options.Shape != FilletShape.Rational || specs.Any(s => s.EndRadius is not null))
         {
             return null;
         }
-        return Safely(() => BuildRims(shape, specs));
+        return Safely(() => BuildRims(shape, specs) ?? BuildCorners(shape, specs) ?? BuildCornersOnUnified(shape, specs));
     }
 
     /// <summary>The chamfer, under the same conditions as <see cref="Fillet"/>; a chamfer by an angle isn't handled.</summary>
@@ -449,16 +449,28 @@ internal static class FilletLimits
     // One Boolean with all the tools, the check against the geometry, and the history
     private static EngineOutcome? Finish(Shape shape, Cutter[] cuts)
     {
-        BooleanOperation operation = cuts[0].Corner.IsConvex ? new EngineCut() : new EngineFuse();
-        var tools = new NCollection_List<Shape>();
-        foreach (Cutter cut in cuts)
+        bool convex = cuts[0].Corner.IsConvex;
+        Shape? result = Boolean(convex ? new EngineCut() : new EngineFuse(), shape, [.. cuts.Select(static c => c.Tool())], out History? made, simplify: !convex);
+        if (result is null || result.Value.AllSolids().Length != 1)
         {
-            tools.Append(cut.Tool());
+            return null;
+        }
+        return Checked(shape, result.Value.AllSolids()[0], made ?? new History(), cuts);
+    }
+
+    // The arguments, less or with the tools; null if it fails. Never parallel: this runs inside one operation, on its thread
+    private static Shape? Boolean(BooleanOperation operation, in Shape shape, IEnumerable<Shape> tools, out History? history, bool simplify = false)
+    {
+        history = null;
+        var toolList = new NCollection_List<Shape>();
+        foreach (Shape tool in tools)
+        {
+            toolList.Append(tool);
         }
         var arguments = new NCollection_List<Shape>();
         arguments.Append(shape);
         operation.SetArguments(arguments);
-        operation.SetTools(tools);
+        operation.SetTools(toolList);
         operation.SetNonDestructive(true);
         operation.SetToFillHistory(true);
         operation.SetRunParallel(false);
@@ -467,55 +479,60 @@ internal static class FilletLimits
         {
             return null;
         }
-        if (!cuts[0].Corner.IsConvex)
+        if (simplify)
         {
             operation.SimplifyResult();
         }
-        Shape result = operation.Shape();
-        if (result.AllSolids().Length != 1)
-        {
-            return null;
-        }
-        return Checked(shape, result.AllSolids()[0], operation.History() is { } made ? new History(made) : new History(), cuts);
+        history = operation.History() is { } made ? new History(made) : new History();
+        return operation.Shape();
     }
 
-    // The answer against the geometry, then what it's coded with and where it came from
     private static EngineOutcome? Checked(Shape shape, Shape solid, History history, Cutter[] cuts)
     {
         double sign = cuts[0].Corner.IsConvex ? -1 : 1;
-        double volume = Integral.Volume(shape) + sign * cuts.Sum(c => c.SweptVolume);
-        double area = Integral.Area(shape) + cuts.Sum(c => c.AreaChange(sign));
-        if (!Agrees(Integral.Volume(solid), volume, cuts) || !Agrees(Integral.Area(solid), area, cuts) || Validity.Problem(solid, "The fillet") is not null)
+        return Checked(shape, solid, history, sign * cuts.Sum(static c => c.SweptVolume), cuts.Sum(c => c.AreaChange(sign)),
+                       [.. cuts.Select(static c => ((Shape)c.Corner.Edge, (Func<Face, bool>)(f => c.IsNewFace(f))))], cuts[0].Rim is not null);
+    }
+
+    // The answer against the geometry, then what it's coded with and where it came from. To one part in a million: of the whole on a
+    // straight edge at a limit, as it was; of the shape's own size elsewhere, as a small shape's figures are small, with what the shape's
+    // tolerance can move a face by over its area, which is the larger part only at the smallest sizes
+    private static EngineOutcome? Checked(Shape shape, Shape solid, History history, double volumeChange, double areaChange, (Shape Source, Func<Face, bool> IsNew)[] made, bool ownSize)
+    {
+        double volume = Integral.Volume(shape) + volumeChange;
+        double area = Integral.Area(shape) + areaChange;
+        double slack = ownSize ? Tolerance * area : 0;
+        double perimeter = ownSize ? 10 * Tolerance * Math.Sqrt(area) : 0;
+        if (Math.Abs(Integral.Volume(solid) - volume) > Allowed(volume, ownSize) + slack || Math.Abs(Integral.Area(solid) - area) > Allowed(area, ownSize) + perimeter
+            || Validity.Problem(solid, "The fillet") is not null)
         {
             return null;
         }
 
         // A fillet's edges are coded tangent, as ChFi3d's are (decision 1719): a draft reads that
-        Shape[] newEdges = [.. solid.AllFaces().Where(f => cuts.Any(c => c.IsNewFace(f))).SelectMany(f => f.AllEdges()).Select(e => (Shape)e)];
+        Shape[] newEdges = [.. solid.AllFaces().Where(f => made.Any(m => m.IsNew(f))).SelectMany(f => f.AllEdges()).Select(e => (Shape)e)];
         solid = BrepLibrary.RegularityEncoded(solid, newEdges, out History coded);
 
         // The new faces, and the edges they came from; the Boolean knows the rest
         history.Merge(coded);
-        foreach (Cutter cut in cuts)
+        foreach ((Shape source, Func<Face, bool> isNew) in made)
         {
-            Face[] faces = [.. solid.AllFaces().Where(cut.IsNewFace)];
+            Face[] faces = [.. solid.AllFaces().Where(isNew)];
             if (faces.Length == 0)
             {
                 return null;
             }
             foreach (Face face in faces)
             {
-                history.AddGenerated(cut.Corner.Edge, face);
+                history.AddGenerated(source, face);
             }
-            history.Remove(cut.Corner.Edge);
+            history.Remove(source);
         }
         Shape built = solid;
         return new EngineOutcome(true, () => built, history);
     }
 
-    // To one part in a million: of the whole on a straight edge, as it was; of the size itself on a rim, as a small shape's are small
-    private static bool Agrees(double measured, double expected, Cutter[] cuts) =>
-        Math.Abs(measured - expected) <= 1e-6 * (cuts[0].Rim is null ? Math.Max(1, expected) : Math.Abs(expected));
+    private static double Allowed(double expected, bool ownSize) => 1e-6 * (ownSize ? Math.Abs(expected) : Math.Max(1, expected));
 
     /// <summary>The fillet on whole circles between surfaces turned about their axes, each straight in section: a tool made by turning
     /// the section of what's cut or added, as for a straight edge, and checked by Pappus. It's asked only once ChFi3d has failed.</summary>
@@ -704,9 +721,15 @@ internal static class FilletLimits
             {
                 return RimTool(rim);
             }
-            Direction3D along = Corner.Along;
             double margin = Corner.IsConvex ? Math.Max(1, Math.Max(Corner.Length, Math.Max(On1, On2))) : 0;
-            Point3D at = Corner.Start.Translated(new Vector3D(along) * -margin);
+            return PrismTool(-margin, Corner.Length + margin, margin);
+        }
+
+        /// <summary>The section, running from one place along the edge to another, and standing out past the faces by a margin.</summary>
+        public Shape PrismTool(double from, double to, double margin)
+        {
+            Direction3D along = Corner.Along;
+            Point3D at = Corner.Start.Translated(new Vector3D(along) * from);
             Point3D p1 = Contact1(at), p2 = Contact2(at);
             var wire = new MakeWire();
             wire.Add(Curved(at, p1, p2));
@@ -728,7 +751,7 @@ internal static class FilletLimits
             }
             Direction3D normal = along;
             Face section = new MakeFace(new Plane3D(at, normal), wire.Wire()).Face();
-            return new ApiMakePrism(section, new Vector3D(along) * (Corner.Length + 2 * margin)).Shape();
+            return new ApiMakePrism(section, new Vector3D(along) * (to - from)).Shape();
         }
 
         // The section turned about the axis. One to cut stands out past both faces by as much as it can without reaching the axis
@@ -777,30 +800,12 @@ internal static class FilletLimits
             return OnTorus(new ApiMakeRevol(section, rim.Axis, 2 * Math.PI).Shape(), rim);
         }
 
-        // A tube as wide as the torus or wider stays a general surface of revolution when turned, though it's a torus: put it on one. The
-        // arc is on a circle that starts outwards from the centre and turns towards the axis's direction (see Curved), so a torus
-        // framed the same way has the same parameters, and each edge's curve on the surface moves across as it is
         private Shape OnTorus(in Shape tool, in Circle3D rim)
         {
             Point3D centre = Centre(Corner.Start);
             Vector3D outward = new Vector3D(rim.Location, Corner.Start) * (1 / rim.Radius);
             double major = new Vector3D(rim.Location, centre).Dot(outward);
-            var surfaces = new Dictionary<Shape, Surface>(ShapeHasher.Instance);
-            foreach (Face face in tool.AllFaces())
-            {
-                if (Kerf.Engine.Topology.Brep.Tool.Surface(face, out _) is RevolutionSurface)
-                {
-                    Point3D onAxis = centre.Translated(outward * -major);
-                    surfaces[face] = new ToroidalSurface(new Torus3D(new CoordinateSystem(onAxis, rim.Axis.Direction, new Direction3D(outward)), major, Radius!.Value));
-                }
-            }
-            if (surfaces.Count == 0)
-            {
-                return tool;
-            }
-            var modifier = new Modifier(tool);
-            modifier.Perform(new NewSurfaceModification(surfaces));
-            return modifier.IsDone ? modifier.InternalModifiedShape(tool) : tool;
+            return PutOnTorus(tool, centre.Translated(outward * -major), rim.Axis.Direction, new Direction3D(outward), major, Radius!.Value);
         }
 
         private Edge Curved(in Point3D at, in Point3D p1, in Point3D p2)
@@ -812,13 +817,7 @@ internal static class FilletLimits
             Point3D centre = Centre(at);
             if (Rim is { } rim)
             {
-                // Starting outwards, and turning towards the axis's direction: as a torus about that axis is framed. The arc is the short way
-                Direction3D outward = new(new Vector3D(rim.Location, Corner.Start));
-                var round = new Circle3D(new Frame3D(centre, new Direction3D(new Vector3D(outward).Crossed(new Vector3D(rim.Axis.Direction))), outward), r);
-                double from = ElCLib.Parameter(round, p1), to = ElCLib.Parameter(round, p2);
-                double sweep = to - from;
-                sweep -= 2 * Math.PI * Math.Floor(sweep / (2 * Math.PI));
-                return sweep < Math.PI ? new MakeEdge(round, p1, p2).Edge() : new MakeEdge(round, p2, p1).Edge();
+                return ArcOnTorusFrame(centre, new Direction3D(new Vector3D(rim.Location, Corner.Start)), rim.Axis.Direction, r, p1, p2);
             }
             Direction3D axis = new(new Vector3D(centre, p1).Crossed(new Vector3D(centre, p2)));
             var circle = new Circle3D(new Frame3D(centre, axis, new Direction3D(new Vector3D(centre, p1))), r);
@@ -860,8 +859,16 @@ internal static class FilletLimits
                     return false;
                 }
                 Cylinder3D c = surface.Cylinder();
-                return Math.Abs(c.Radius - r) <= Tolerance && Math.Abs(c.Axis.Direction.Dot(Corner.Along)) >= 1 - 1e-9
-                       && new Line3D(c.Axis).DistanceTo(Centre(Corner.Start)) <= Tolerance;
+                if (Math.Abs(c.Radius - r) > Tolerance || Math.Abs(c.Axis.Direction.Dot(Corner.Along)) < 1 - 1e-9
+                    || new Line3D(c.Axis).DistanceTo(Centre(Corner.Start)) > Tolerance)
+                {
+                    return false;
+                }
+
+                // Its own side of the cylinder, which fillets meeting across a face can share: towards the edge
+                Point3D middle = Centre(Corner.Start);
+                Vector3D towardsEdge = new(middle, Corner.Start);
+                return face.AllVertices().All(v => new Vector3D(middle, Kerf.Engine.Topology.Brep.Tool.Pnt(v)).Dot(towardsEdge) >= -Tolerance * towardsEdge.Magnitude);
             }
             if (surface.GetType() != SurfaceKind.Plane)
             {
@@ -871,6 +878,37 @@ internal static class FilletLimits
             return plane.DistanceTo(Contact1(Corner.Start)) <= Tolerance && plane.DistanceTo(Contact2(Corner.Start)) <= Tolerance
                    && plane.DistanceTo(Contact1(Corner.End)) <= Tolerance;
         }
+    }
+
+    // An arc, the short way, on a circle that starts outwards and turns towards the axis's direction, as a torus about that axis is framed
+    private static Edge ArcOnTorusFrame(in Point3D centre, in Direction3D outward, in Direction3D axis, double r, in Point3D p1, in Point3D p2)
+    {
+        var round = new Circle3D(new Frame3D(centre, new Direction3D(new Vector3D(outward).Crossed(new Vector3D(axis))), outward), r);
+        double from = ElCLib.Parameter(round, p1), to = ElCLib.Parameter(round, p2);
+        double sweep = to - from;
+        sweep -= 2 * Math.PI * Math.Floor(sweep / (2 * Math.PI));
+        return sweep < Math.PI ? new MakeEdge(round, p1, p2).Edge() : new MakeEdge(round, p2, p1).Edge();
+    }
+
+    // A tube as wide as the torus or wider stays a general surface of revolution when turned, though it's a torus: put it on one. Its
+    // arc is framed as above, so a torus framed the same way has the same parameters, and each edge's curve on the surface moves across as it is
+    private static Shape PutOnTorus(in Shape tool, in Point3D onAxis, in Direction3D axis, in Direction3D outward, double major, double minor)
+    {
+        var surfaces = new Dictionary<Shape, Surface>(ShapeHasher.Instance);
+        foreach (Face face in tool.AllFaces())
+        {
+            if (Tool.Surface(face, out _) is RevolutionSurface)
+            {
+                surfaces[face] = new ToroidalSurface(new Torus3D(new CoordinateSystem(onAxis, axis, outward), major, minor));
+            }
+        }
+        if (surfaces.Count == 0)
+        {
+            return tool;
+        }
+        var modifier = new Modifier(tool);
+        modifier.Perform(new NewSurfaceModification(surfaces));
+        return modifier.IsDone ? modifier.InternalModifiedShape(tool) : tool;
     }
 
     // The corners among the edges

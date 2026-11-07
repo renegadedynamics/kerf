@@ -271,6 +271,90 @@ public class FilletLimitsTests
     }
 
     [Fact]
+    public void OCCTs_fillets_that_touch_with_one_edge_concave_are_right()
+    {
+        // tests/bugs/modalg_7/bug25478_2: a corner cut from a cube, its three upright edges rounded by half the walls they share
+        Shape cut = Solid.Box(10, 10, 10).Value.Shape.Cut(Solid.Box(10, 10, 12).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(5, 5, -1))))).Value.Shape;
+        Edge[] upright = [.. cut.AllEdges().Where(e => e.AllVertices()[0].Point.Z != e.AllVertices()[^1].Point.Z && IsAt(e, 5, 10) | IsAt(e, 10, 5) | IsAt(e, 5, 5))];
+        Assert.Equal(3, upright.Length);
+        Built<Shape> made = cut.Fillet(upright, 2.5).Value;
+        double spandrel = 2.5 * 2.5 * (1 - Math.PI / 4) * 10;
+        Assert.Equal(750 - 2 * spandrel + spandrel, made.Shape.IntegrateVolume(), 1e-6);
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(made.Shape, "It"));
+        foreach (Edge edge in upright)
+        {
+            Assert.True(made.History.IsRemoved(edge));
+            Assert.NotEmpty(made.History.Generated(edge));
+        }
+    }
+
+    private static bool IsAt(Edge edge, double x, double y) =>
+        edge.AllVertices().All(v => Math.Abs(v.Point.X - x) < 1e-9 && Math.Abs(v.Point.Y - y) < 1e-9);
+
+    [Fact]
+    public void OCCTs_L_with_its_top_split_is_right_and_runs_through_the_split()
+    {
+        // tests/bugs/modalg_8/bug32931, which crashed in ChFi3d: an L whose top is three faces, its edges selected all but the last two
+        // of the chain, which run on in line. By layers: five mitres and a pivot, as FilletLimitSweepTests' L has
+        if (Corpus("bug32931.brep") is not { } shape)
+        {
+            return;
+        }
+        Edge[] all = [.. shape.AllEdges()];
+        Edge[] chain = [all[9], all[17], all[18], all[19], all[20], all[16]];
+        Built<Shape> made = shape.Fillet(chain, 1).Value;
+        const double Plan = 36, Perimeter = 40, R = 1;
+        double removed = 0;
+        for (int i = 0; i < 2000; i++)
+        {
+            double angle = (i + 0.5) / 2000 * Math.PI / 2;
+            double w = R * (1 - Math.Sin(angle));
+            removed += (Perimeter * w - 5 * w * w + Math.PI / 4 * w * w) * R * Math.Sin(angle) * (Math.PI / 2) / 2000;
+        }
+        Assert.Equal(Plan * 10 - removed, made.Shape.IntegrateVolume(), 1e-5);
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(made.Shape, "It"));
+        foreach (Edge edge in chain)
+        {
+            Assert.NotEmpty(made.History.Generated(edge));
+        }
+    }
+
+    [Fact]
+    public void A_cube_rounded_all_over_is_a_sphere_and_every_edge_and_corner_made_it()
+    {
+        Solid cube = Solid.Box(10, 10, 10).Value;
+        Built<Shape> made = cube.Fillet(cube.AllEdges(), 5).Value;
+        Face only = Assert.Single(made.Shape.AllFaces());
+        Assert.Equal(SurfaceKind.Sphere, new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(only).GetType());
+        foreach (Edge edge in cube.AllEdges())
+        {
+            Assert.True(made.History.IsRemoved(edge));
+            Assert.Contains(made.History.Generated(edge), g => g.IsSame(only));
+        }
+        foreach (Vertex vertex in cube.AllVertices())
+        {
+            Assert.Contains(made.History.Generated(vertex), g => g.IsSame(only));
+        }
+        foreach (Face face in cube.AllFaces())
+        {
+            Assert.True(made.History.IsRemoved(face));
+        }
+    }
+
+    [Fact]
+    public void A_bars_corners_come_from_its_vertices_and_its_sides_from_its_edges()
+    {
+        Solid bar = Solid.Box(10, 10, 40).Value;
+        Built<Shape> made = bar.Fillet(bar.AllEdges(), 5).Value;
+        Assert.Equal(12, made.Shape.AllFaces().Length);
+        foreach (Vertex vertex in bar.AllVertices())
+        {
+            Face patch = ShapeCasts.Face(Assert.Single(made.History.Generated(vertex)));
+            Assert.Equal(SurfaceKind.Sphere, new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(patch).GetType());
+        }
+    }
+
+    [Fact]
     public void The_shape_given_is_not_written()
     {
         Solid box = Solid.Box(10, 10, 10).Value;

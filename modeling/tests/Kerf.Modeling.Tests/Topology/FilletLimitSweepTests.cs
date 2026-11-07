@@ -19,8 +19,16 @@ public class FilletLimitSweepTests
     private static Edge At(Shape shape, double x, double y, double z) =>
         shape.Edges().OrderBy(e => Math.Sqrt(Math.Pow(e.Center().X - x, 2) + Math.Pow(e.Center().Y - y, 2) + Math.Pow(e.Center().Z - z, 2))).First();
 
-    /// <summary>A case: its true limit, worked out by hand, and its closed forms. Null where the limit isn't built yet.</summary>
-    private sealed record Case(string Name, Shape Solid, Edge[] Edges, double Limit, Func<double, (double Volume, double? Area)> Answer, bool BuiltAtLimit = true);
+    /// <summary>A case: its true limit, worked out by hand, and its closed forms.</summary>
+    private sealed record Case(string Name, Shape Solid, Edge[] Edges, double Limit, Func<double, (double Volume, double? Area)> Answer);
+
+    // A box with all its edges rounded: the Steiner formula, on the box left inside
+    private static (double Volume, double? Area) RoundedBox(double a, double b, double c, double r)
+    {
+        double x = a - 2 * r, y = b - 2 * r, z = c - 2 * r;
+        double surface = 2 * (x * y + y * z + z * x), mean = Math.PI * (x + y + z);
+        return (x * y * z + surface * r + mean * r * r + 4 * Math.PI * r * r * r / 3, surface + 2 * mean * r + 4 * Math.PI * r * r);
+    }
 
     // The change to a prism's section from rounding a corner where the inward directions make the angle: its area and perimeter
     private static (double Area, double Perimeter) Corner(double r, double angle, bool convex = true)
@@ -92,19 +100,45 @@ public class FilletLimitSweepTests
             double area = 2 * (4 - k / 2) * s * s + (1 + 4 + along / s + Math.Sqrt(1 + k * k)) * s * s;
             double arc = Half * r * along + k * r * r * (Half - 1);
             return (volume, area - (r * along + k * r * r / 2) - r * along + arc - spandrel - spandrel * Math.Sqrt(1 + k * k));
-        }, BuiltAtLimit: false);
+        });
 
         // A chain round a top: no cylinders' corners, as the upright edges stay sharp, so two cylinders meet at each. By layers
         var top = new Box(2 * s, 3 * s, s);
         yield return new("chain round a top", top, [.. top.Edges().Where(e => Math.Abs(e.Center().Z - s / 2) < 1e-6 * s)], s,
-                         r => (6 * s * s * s - 2 * (2 * s + 3 * s) * r * r * (1 - Math.PI / 4) + 4 * r * r * r * (5.0 / 3 - Half), null), BuiltAtLimit: false);
+                         r => (6 * s * s * s - 2 * (2 * s + 3 * s) * r * r * (1 - Math.PI / 4) + 4 * r * r * r * (5.0 / 3 - Half), null));
 
         // All of a cube's edges: a rounded cube, with a sphere's corners, and at the limit a sphere
         yield return new("all of a cube", cube, [.. cube.Edges()], s / 2, r =>
         {
             double f = s - 2 * r;
             return (f * f * f + 6 * r * f * f + 3 * Math.PI * r * r * f + 4 * Math.PI * r * r * r / 3, 6 * f * f + 6 * Math.PI * r * f + 4 * Math.PI * r * r);
-        }, BuiltAtLimit: false);
+        });
+
+        // All of a bar's and of a plate's: what's left inside is a line or a square, and the Steiner formula gives the rest
+        var lengths = new Box(s, s, 4 * s);
+        yield return new("all of a bar, to a capsule", lengths, [.. lengths.Edges()], s / 2, r => RoundedBox(s, s, 4 * s, r));
+        var plateAll = new Box(5 * s, 5 * s, s);
+        yield return new("all of a plate", plateAll, [.. plateAll.Edges()], s / 2, r => RoundedBox(5 * s, 5 * s, s, r));
+
+        // All of a triangular bar's: corners that aren't square. What's inside is a triangle and a height
+        var bar3 = Extrude(new RegularPolygon(s, 3), 6 * s).Value;
+        double side3 = Math.Sqrt(3) * s;
+        yield return new("all of a triangular bar", bar3, [.. bar3.Edges()], s / 2, r =>
+        {
+            double t = side3 - 2 * Math.Sqrt(3) * r, h = 6 * s - 2 * r, area3 = Math.Sqrt(3) / 4 * t * t;
+            double mean = 3 * (Math.PI / 3) * h + 6 * (Math.PI / 4) * t;
+            double surface = 2 * area3 + 3 * t * h;
+            return (area3 * h + surface * r + mean * r * r + 4 * Math.PI * r * r * r / 3, surface + 2 * mean * r + 4 * Math.PI * r * r);
+        });
+
+        // Three edges at one corner of a cube: an eighth of a sphere at the limit
+        var three = new Box(s, s, s);
+        yield return new("three at a corner", three, [.. three.Edges().Where(e => e.Center().X + e.Center().Y + e.Center().Z > 0.49 * s)], s, r =>
+        {
+            // In the box r each way at the corner, all outside the eighth of a sphere; along each edge past that box, its strip
+            double removed = 3 * r * r * (1 - Math.PI / 4) * (s - r) + r * r * r * (1 - Math.PI / 6);
+            return (s * s * s - removed, null);
+        });
     }
 
     private static void Right(Part part, (double Volume, double? Area) answer, string what, double relative = 1e-6)
@@ -163,16 +197,8 @@ public class FilletLimitSweepTests
                 }
             }
             string name = $"{c.Name} at size {s}, at the limit";
-            if (c.BuiltAtLimit)
-            {
-                Assert.True(atLimit.IsSuccess, name + ": " + atLimit.Error?.Message);
-                Right(atLimit.Value, c.Answer(c.Limit), name);
-            }
-            else
-            {
-                Assert.True(atLimit.IsFailure, name);
-                Assert.Contains("can't be built yet", atLimit.Error!.Message, StringComparison.Ordinal);
-            }
+            Assert.True(atLimit.IsSuccess, name + ": " + atLimit.Error?.Message);
+            Right(atLimit.Value, c.Answer(c.Limit), name, s < 0.5 ? 1e-5 : 1e-6);
         }
     }
 
@@ -264,6 +290,44 @@ public class FilletLimitSweepTests
     }
 
     [Theory]
+    [InlineData(0.01)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(10000)]
+    public void Every_case_changes_outcome_once_on_a_fine_sweep(double s)
+    {
+        // Worst case first, as for the cube above, on all of them: built, with the right answer, then refused, and never back
+        foreach (Case c in Cases(s))
+        {
+            double atLimit = Round(c, c.Limit).Value.Volume;
+            bool refused = false;
+            foreach (int sign in new[] { -1, 1 })
+            {
+                for (int e = sign < 0 ? -3 : -12; sign < 0 ? e >= -12 : e <= -3; e += sign < 0 ? -1 : 1)
+                {
+                    foreach (double m in new[] { 1, 2, 5 })
+                    {
+                        double radius = c.Limit + sign * m * Math.Pow(10, e) * Math.Min(1, s);
+                        string what = $"{c.Name} at size {s}, radius {radius:R}, {radius - c.Limit:G3} from the limit";
+                        var made = Round(c, radius);
+                        if (made.IsSuccess)
+                        {
+                            Assert.False(refused, what + ": built after a refusal");
+                            bool isLimit = Math.Abs(radius - c.Limit) <= 2e-6 && made.Value.Volume == atLimit;
+                            Right(made.Value, c.Answer(isLimit ? c.Limit : radius), what, s < 0.5 ? 1e-5 : 1e-6);
+                        }
+                        else
+                        {
+                            refused = true;
+                            Assert.True(radius > c.Limit, what + ": " + made.Error!.Message);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    [Theory]
     [InlineData(0.1, true)] // Near-tangent: ChFi3d rolls on past it, and is right
     [InlineData(1, true)]
     [InlineData(5, true)]
@@ -302,6 +366,51 @@ public class FilletLimitSweepTests
         Assert.True(made.IsSuccess, made.Error?.Message);
         Assert.True(made.Value.IsValid);
         Assert.Equal((section - removed) * 30, made.Value.Volume, 1e-6 * section * 30);
+    }
+
+    [Theory]
+    [MemberData(nameof(Sizes))]
+    public void An_Ls_top_all_round_has_five_mitres_and_a_pivot(double s)
+    {
+        // A plan with a re-entrant corner has no width the limit can read, so this asks only that the most it can take is right. By layers:
+        // at a depth, the plan inset by a width, with a mitre's corner at each convex one, and an arc round the re-entrant one
+        Part ell = Prism(s, 3, (0, 0), (2, 0), (2, 0.5), (0.5, 0.5), (0.5, 2), (0, 2));
+        Edge[] edges = [.. ell.Edges().Where(e => Math.Abs(e.Center().Z - 3 * s) < 1e-6 * s)];
+        double r = s / 4;
+        double planArea = 1.75 * s * s, perimeter = 8 * s, removed = 0;
+        const int Steps = 2000;
+        for (int i = 0; i < Steps; i++)
+        {
+            double angle = (i + 0.5) / Steps * Math.PI / 2;
+            double w = r * (1 - Math.Sin(angle));
+            removed += (perimeter * w - 5 * w * w + Math.PI / 4 * w * w) * r * Math.Sin(angle) * (Math.PI / 2) / Steps;
+        }
+        var made = Fillet(ell, edges, r);
+        Assert.True(made.IsSuccess, made.Error?.Message);
+        Right(made.Value, (planArea * 3 * s - removed, null), $"at size {s}", s < 0.5 ? 1e-5 : 1e-6);
+        Assert.Contains(made.Value.Faces(), f => f.GeomType == GeomType.Torus);
+    }
+
+    [Theory]
+    [InlineData(0.5)]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void What_the_algorithm_makes_invalid_just_below_a_near_tangent_edge_is_built_instead(double degrees)
+    {
+        // ChFi3d's band of invalid results (occt-issues.md), up to 1e-7 below the width of 5 here: now right all the way across it
+        double tilt = degrees * Math.PI / 180, fall = 20 * Math.Tan(tilt), bottom = -Math.Max(10, fall + 10);
+        Part shape = Prism(1, 30, (0, 0), (0, bottom), (25, bottom), (25, -fall), (5, 0));
+        Edge edge = At(shape, 0, 0, 15);
+        double section = 25 * -bottom - (20 * fall / 2);
+        foreach (double off in new[] { 1e-5, 1e-6, 3e-7, 1e-7, 3e-8, 1e-8, 3e-9, 1e-9 })
+        {
+            double r = 5 - off;
+            var made = Fillet(shape, edge, r);
+            Assert.True(made.IsSuccess, $"{off}: {made.Error?.Message}");
+            Assert.True(made.Value.IsValid);
+            Assert.Equal((section - r * r * (1 - Math.PI / 4)) * 30, made.Value.Volume, 1e-6 * section * 30);
+        }
     }
 
     [Fact]
@@ -343,7 +452,9 @@ public class FilletLimitSweepTests
             double all = Search(0, 2 * diagonal, 0, false, ref before);
             double fewer = Search(0, 2 * diagonal, 0, true, ref after);
             Assert.Equal(all, fewer);
-            Assert.Equal(all, shape.MaxFillet(list));
+
+            // And it's the limit that's the answer, as each of these is now built there (decision 22406)
+            Assert.Equal(limit, shape.MaxFillet(list));
             Assert.True(after < before, $"{after} tries, from {before}");
         }
     }

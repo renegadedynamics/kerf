@@ -255,14 +255,16 @@ public class ShapeTests
     public void MaxFillet()
     {
         Solid[] testSolids = [Solid.MakeBox(10, 8, 2), Solid.MakeCone(5, 3, 8)];
-        double[] maxValues = [0.96, 3.84];
+        // build123d's were 0.96 and 3.84, from its search: the box's true limit, half its thinnest side, is now built (decision 22406)
+        double[] maxValues = [1, 3.84];
         for (int i = 0; i < testSolids.Length; i++)
         {
             var max = testSolids[i].MaxFillet(testSolids[i].Edges());
             Check.AlmostEqual(maxValues[i], max, 2);
         }
+        var noLimit = Solid.MakeSphere(5);
         Assert.Throws<InvalidOperationException>(
-            () => testSolids[0].MaxFillet(testSolids[0].Edges(), tolerance: 1e-6, maxIterations: 1));
+            () => noLimit.MaxFillet(noLimit.Edges(), tolerance: 1e-6, maxIterations: 1));
         var box = Solid.MakeBox(1, 1, 1);
         Assert.Equal(ModelingDiagnostics.FilletFailed, Failures.Try(() => box.Fillet(0.75, box.Edges())).Error!.Code);
     }
