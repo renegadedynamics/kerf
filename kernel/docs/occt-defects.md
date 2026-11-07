@@ -61,14 +61,14 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 20905 |
-| #1613 | A fuse dropping a compound of reversed solids | 20903 |
-| #994 | A face lost reading a STEP offset surface whose basis is C0 at a knot | 20909 |
-| #1541, #1340 | Unify making a valid solid invalid: a box cut by a sphere lost a face | 20902, 20901 |
-| #1692 | A reused solid classifier's answer depending on the points before it | 20906 |
-| #1124 | The public section losing most of a curve (approximation now on) | 20907 |
-| #1310 | Unify leaving a closed pipe a face with no edges, and no mesh | 20908 |
-| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure, causes open | 20904 |
+| #1543 | A cut by a helical tube removing nothing, by where it left relative to the seam | 1834 |
+| #1613 | A fuse dropping a compound of reversed solids | 1832 |
+| #994 | A face lost reading a STEP offset surface whose basis is C0 at a knot | 1838 |
+| #1541, #1340 | Unify making a valid solid invalid: a box cut by a sphere lost a face | 1831, 1830 |
+| #1692 | A reused solid classifier's answer depending on the points before it | 1835 |
+| #1124 | The public section losing most of a curve (approximation now on) | 1836 |
+| #1310 | Unify leaving a closed pipe a face with no edges, and no mesh | 1837 |
+| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure, causes open | 1833 |
 | #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
 | #1604, #1679 | An optimal box smaller than the shape | 1777 |
 | Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 1802 |
