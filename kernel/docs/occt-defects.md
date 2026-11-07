@@ -59,6 +59,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1039 | A slice's Common with a model, 86898 for about 70000, reported as a success: now a failure | 22606 |
 | #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 22607 |
 | #572 | A cone from a STEP file with no triangles | 22605 |
 | #1444 | A thin torus's mesh 1.42 from the surface for 0.45 asked | 22604 |

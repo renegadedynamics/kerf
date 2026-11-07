@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A Common or Cut of faces with a solid fails, carrying the shape, if it kept the wrong side of the solid at points it can prove it:** a lost section edge used to pass with 24% too much area (decision 22606).
 - **`GeneralTransform3D.ToTransform` accepts a rotation and a uniform scale given as a matrix,** which it refused (decision 22607).
 - **A cone from a STEP file whose seam leans by a rounding error now meshes:** it had no triangles (decision 22605).
 - **A thin torus's mesh keeps to the deflection asked:** it could be three times out, and say nothing (decision 22604).
