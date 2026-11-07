@@ -35,8 +35,9 @@ public sealed record BooleanOptions
     /// into the operation's.</summary>
     public bool Simplify { get; init; } = true;
 
-    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid: true by default. The check
-    /// costs about 15% of a small Boolean; a caller that checks a later step can leave it out.</summary>
+    /// <summary>Check the result, and fail with <c>result.invalid</c>, carrying it, if it isn't valid or if its volume breaks a rule
+    /// of <see cref="BooleanVolumes"/>: true by default. The validity check costs about 15% of a small Boolean; a caller that checks
+    /// a later step can leave it out.</summary>
     public bool CheckResult { get; init; } = true;
 
     /// <summary>For <see cref="BooleanOperations.Section"/>: approximate the section curves by B-splines: true by default,
@@ -163,8 +164,21 @@ public static class BooleanOperations
             return Result<Built<Shape>>.Invalid(built, Diagnostic.Error(DiagnosticCode.InvalidResult, "The fuse of these shapes came out empty."),
                                                 result.Diagnostics);
         }
+        if (options is not { CheckResult: false } && result.TryGetValue(out built) && RuleOf(operation) is { } rule
+            && BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is { } wrong)
+        {
+            return Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
+        }
         return result;
     }
+
+    private static BooleanVolumeRule? RuleOf(BooleanOperation operation) => operation switch
+    {
+        EngineCommon => BooleanVolumeRule.Common,
+        EngineCut => BooleanVolumeRule.Cut,
+        EngineFuse => BooleanVolumeRule.Fuse,
+        _ => null,
+    };
 
     private static Result<Built<Shape>> Run(BuilderAlgo operation, IReadOnlyList<Shape> arguments, BooleanOptions? options,
                                             IProgress<double>? progress, CancellationToken cancellationToken)

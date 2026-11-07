@@ -80,6 +80,7 @@ public static partial class ShapeExtensions
         // A shortcut above made nothing, so has nothing new to check
         bool made = topoResult is null;
         string what = $"The {TopoUtil.BooleanName(operation)}'s result";
+        var (uncleaned, uncleanedHistory) = (result, history);
         if (SkipClean.Clean)
         {
             if (result.Unify(CleanOptions).TryGetValue(out var unified))
@@ -108,6 +109,18 @@ public static partial class ShapeExtensions
         else if (made)
             result = Failures.Valid(result, what);
 
+        // A valid shape can still be the wrong one, and its volume can prove it (decision 21301). As above, a clean that spoils
+        // a good result is left out
+        if (made && RuleOf(operation) is { } rule
+            && BooleanVolumes.Check(rule, arg, tool, result, options?.FuzzyValue ?? 0) is { } wrong)
+        {
+            if (result.IsSame(uncleaned) || BooleanVolumes.Check(rule, arg, tool, uncleaned, options?.FuzzyValue ?? 0) is not null)
+                throw Failures.Wrong(result, wrong);
+            Warnings.Warn("Boolean operation unable to clean: that would change its result's volume");
+            result = uncleaned;
+            history = uncleanedHistory;
+        }
+
         // Remove an unnecessary compound around a single shape
         if (result.IsCompound())
             result = TopoUtil.UnwrapCompound((Compound)result);
@@ -121,6 +134,14 @@ public static partial class ShapeExtensions
         }
         return result.MadeBy(history);
     }
+
+    private static BooleanVolumeRule? RuleOf(BooleanKind operation) => operation switch
+    {
+        BooleanKind.Common => BooleanVolumeRule.Common,
+        BooleanKind.Cut => BooleanVolumeRule.Cut,
+        BooleanKind.Fuse => BooleanVolumeRule.Fuse,
+        _ => null,
+    };
 
     /// <summary>A boolean operation whose pieces are returned as a list, empty for nothing.</summary>
     internal static ShapeList<Shape> BoolOpList(IEnumerable<Shape> args, IEnumerable<Shape> tools, BooleanKind operation)

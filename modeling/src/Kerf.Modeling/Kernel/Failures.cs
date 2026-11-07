@@ -191,6 +191,14 @@ internal static class Failures
         return failure;
     }
 
+    /// <summary>The failure for <paramref name="shape"/>, which is wrong for the reason <paramref name="error"/> gives, carrying it (decision 21301).</summary>
+    internal static InvalidOperationException Wrong(Shape shape, Diagnostic error)
+    {
+        var failure = Failed([error]);
+        failure.Data[InvalidKey] = shape;
+        return failure;
+    }
+
     /// <summary><paramref name="shape"/> if it's valid, or the failure of <see cref="Invalid"/>.</summary>
     internal static T Valid<T>(T shape, string what, string? advice = null) where T : struct, IShape<T>
     {
