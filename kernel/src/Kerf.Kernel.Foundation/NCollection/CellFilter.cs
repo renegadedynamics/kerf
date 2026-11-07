@@ -279,6 +279,9 @@ internal class CellFilter<TInspector, TTarget, TPoint>
         _firstFree = -1;
     }
 
+    /// <summary>Kerf: how many targets in cells it may hold, counting one in several cells several times (decision 21104).</summary>
+    internal int MaxNodes { get; set; } = int.MaxValue;
+
     private int NewNode(TTarget target, int next)
     {
         int node = _firstFree;
@@ -290,6 +293,11 @@ internal class CellFilter<TInspector, TTarget, TPoint>
         {
             if (_nodeCount == _nodes.Length)
             {
+                if (_nodes.Length >= MaxNodes)
+                {
+                    throw new InsufficientMemoryException("The filter holds more than its limit.");
+                }
+
                 Array.Resize(ref _nodes, Math.Max(16, _nodes.Length * 2));
             }
 

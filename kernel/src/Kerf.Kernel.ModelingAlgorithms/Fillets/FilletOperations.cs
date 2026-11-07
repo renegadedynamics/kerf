@@ -147,6 +147,7 @@ public static class FilletOperations
                 fillet.SetContinuity(options.InternalContinuity, options.AngularTolerance);
                 foreach (FilletSpec spec in specs)
                 {
+                    Cancellation.ThrowIfRequested(); // Kerf: finding a contour takes time on a large shape
                     if (spec.EndRadius is { } end)
                     {
                         fillet.Add(spec.Radius, end, spec.Edge);
@@ -213,6 +214,7 @@ public static class FilletOperations
                 chamfer.SetMode(mode);
                 for (int i = 0; i < specs.Length; i++)
                 {
+                    Cancellation.ThrowIfRequested();
                     ChamferSpec spec = specs[i];
                     if (spec.Angle is { } angle)
                     {

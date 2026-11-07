@@ -97,6 +97,8 @@ internal class SimpleApprox
     public void Perform(NCollection_Array1<int> localDimension, NCollection_Array1<double> localTolerancesArray,
                         double first, double last, int maxDegree)
     {
+        Cancellation.ThrowIfRequested(); // Kerf: a fillet that can't be approximated divides for many seconds (decision 21103)
+
         // ======= the computation of Pp(t) = Rr(t) + W(t)*Qq(t) =======
 
         _done = false;

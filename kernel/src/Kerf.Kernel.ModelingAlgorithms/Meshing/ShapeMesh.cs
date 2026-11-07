@@ -36,6 +36,16 @@ public sealed record MeshOptions
     /// <summary>Mesh the edges, then the faces, in parallel: the result is the serial one, bit for bit.</summary>
     public bool Parallel { get; init; } = true;
 
+    /// <summary>
+    /// The most triangles the mesh may have, or the operation fails with <see cref="Mesher.TooLarge"/>. The default, 10
+    /// million, is about 10 GB while meshing, and a part meshed for any real use is a fraction of it (decision 21104).
+    /// </summary>
+    public long MaxTriangles
+    {
+        get;
+        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The limit must be more than zero.");
+    } = 10_000_000;
+
     /// <summary>The smallest size of a mesh element; zero (the default) for a tenth of the deflection.</summary>
     public double MinSize
     {
@@ -74,6 +84,7 @@ public sealed record MeshOptions
             InParallel = Parallel,
             InternalVerticesMode = InternalVertices,
             EnableControlSurfaceDeflectionAllSurfaces = ControlAllSurfaces,
+            Budget = new Engine.Meshing.Tools.MeshBudget(MaxTriangles),
         };
         if (MinSize > 0)
         {

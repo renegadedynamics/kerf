@@ -73,6 +73,11 @@ internal class ConeRangeSplitter : DefaultRangeSplitter
         {
             for (double pasU = rangeU.first + steps.first; pasU < pasMaxU; pasU += steps.first)
             {
+                if ((nodes.Size() & 1023) == 0)
+                {
+                    parameters.Budget?.Check(nodes.Size());
+                }
+
                 nodes.Append(new Point2D(pasU, pasV));
             }
         }

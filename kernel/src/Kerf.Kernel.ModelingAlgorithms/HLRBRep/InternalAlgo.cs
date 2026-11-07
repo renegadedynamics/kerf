@@ -614,6 +614,7 @@ internal class InternalAlgo : Transient
     /// </summary>
     private void HideSelected(int I, bool sideFace)
     {
+        Cancellation.ThrowIfRequested(); // Kerf: OCCT's hiding has no progress (decision 21103)
         int e, f, j, nbVisEdges, nbSelEdges, nbSelFaces, nbCache;
         int nbFSide, nbFSimp;
 
@@ -789,6 +790,7 @@ internal class InternalAlgo : Transient
 
             for (int tt = 1; tt <= nf; tt++)
             {
+                Cancellation.ThrowIfRequested();
                 index[tt] = tt;
             }
 

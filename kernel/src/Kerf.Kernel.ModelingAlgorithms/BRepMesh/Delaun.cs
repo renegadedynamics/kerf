@@ -138,6 +138,7 @@ internal sealed class Delaun
     /// <summary>Sets up the circles' cells from the structure's nodes and fills them with its triangles.</summary>
     public void InitCirclesTool(int cellsCountU, int cellsCountV)
     {
+        _circles.SetMaxEntries(_meshData!.MaxCircleEntries);
         Box2d box = new();
         for (int nodeIt = 1; nodeIt <= _meshData!.NodeCount; ++nodeIt)
         {
@@ -781,6 +782,12 @@ internal sealed class Delaun
             if (!ps.More())
             {
                 return;
+            }
+
+            // Kerf: a long boundary comes here with no range (decision 21103)
+            if ((index & 63) == 0)
+            {
+                Cancellation.ThrowIfRequested();
             }
 
             // Taken and put back, as this can be reached again from within CreateTriangles below

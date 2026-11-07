@@ -798,6 +798,7 @@ internal class FunctionSetRoot
     public void Perform(FunctionSetWithDerivatives f, math_Vector startingPoint, math_Vector infBound,
                         math_Vector supBound, bool stopOnDivergent = false)
     {
+        Cancellation.ThrowIfRequested(); // Kerf: what long searches are made of, each a good many evaluations (decision 21103)
         int ninc = f.NbVariables(), neq = f.NbEquations();
 
         if ((neq <= 0) || (startingPoint.Length() != ninc) || (infBound.Length() != ninc)

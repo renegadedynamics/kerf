@@ -54,6 +54,12 @@ internal class DelaunayNodeInsertionMeshAlgo<RangeSplitter> : NodeInsertionMeshA
 
             RegisterSurfaceNodes(surfaceNodes);
         }
+        else if (GetParameters().Budget is not null && GetNodesMap().Count > 2000 && GetRangeSplitter() is not NurbsRangeSplitter)
+        {
+            // Kerf: triangulating so long a boundary may itself take all the memory, before the nodes inside are counted, and
+            // on these surfaces their list is quick to make and stops when it's too long (decision 21104)
+            _ = GetRangeSplitter().GenerateSurfaceNodes(GetParameters());
+        }
 
         return true;
     }
@@ -95,6 +101,7 @@ internal class DelaunayNodeInsertionMeshAlgo<RangeSplitter> : NodeInsertionMeshA
             return false;
         }
 
+        GetParameters().Budget?.Check((long)GetNodesMap().Count + nodes.Size());
         List<int> vertexIndexes = new(nodes.Size());
         NCollection_List<Point2D>.Iterator nodesIt = new(nodes);
         for (int nodeIt = 1; nodesIt.More(); nodesIt.Next(), ++nodeIt)

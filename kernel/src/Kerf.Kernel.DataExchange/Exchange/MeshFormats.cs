@@ -34,6 +34,8 @@ public static class Stl
     {
         ArgumentNullException.ThrowIfNull(stream);
         options ??= StlReadOptions.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var limits = new StlReadLimits
         {
@@ -84,6 +86,8 @@ public static class Stl
         ArgumentNullException.ThrowIfNull(mesh);
         ArgumentNullException.ThrowIfNull(stream);
         options ??= StlWriteOptions.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new ApiWriter();
         writer.SetASCIIMode(options.Ascii);
@@ -111,6 +115,8 @@ public static class Gltf
     {
         ArgumentNullException.ThrowIfNull(stream);
         options ??= GltfReadOptions.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var engineOptions = new EngineReadOptions
         {
@@ -188,9 +194,20 @@ public static class Gltf
     private static Result WriteCore(ModelNode model, Stream stream, Stream? buffer, string? bufferUri, GltfWriteOptions options,
                                 CancellationToken cancellationToken)
     {
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new GltfTreeWriter(new GltfWriterOptions { InputLengthUnit = options.Unit.Millimetres() / 1000.0, Generator = options.Generator });
-        var tree = ExchangeTree.ToTree(model, options.Mesh);
+        Engine.Exchange.Documents.Tree tree;
+        try
+        {
+            tree = ExchangeTree.ToTree(model, options.Mesh);
+        }
+        catch (Engine.Meshing.Tools.MeshTooLargeException e)
+        {
+            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, e.Message));
+        }
+
         var progress = new ProgressIndicator(cancellationToken);
         bool done;
         if (options.Binary)
@@ -239,9 +256,21 @@ public static class ThreeMf
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(stream);
         options ??= ThreeMfWriteOptions.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new TreeWriter(new WriteOptions { InputLengthUnit = options.Unit.Millimetres() / 1000.0 });
-        bool done = writer.Write(ExchangeTree.ToTree(model, options.Mesh), stream, new ProgressIndicator(cancellationToken).Start());
+        Engine.Exchange.Documents.Tree tree;
+        try
+        {
+            tree = ExchangeTree.ToTree(model, options.Mesh);
+        }
+        catch (Engine.Meshing.Tools.MeshTooLargeException e)
+        {
+            return Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, e.Message));
+        }
+
+        bool done = writer.Write(tree, stream, new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
         return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as 3MF."));
     }
@@ -265,6 +294,8 @@ public static class Obj
         ArgumentNullException.ThrowIfNull(obj);
         ArgumentNullException.ThrowIfNull(materialsName);
         options ??= ObjWriteOptions.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new ObjTreeWriter(new ObjWriterOptions { Scale = options.Scale, ZUpToYUp = options.YUp, WriteNormals = options.Normals });
         bool done = writer.Write(ExchangeTree.ToTree(model, options.Mesh), obj, materials, materialsName,
