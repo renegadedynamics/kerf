@@ -277,6 +277,7 @@ own. Those a program is likely to test for are static properties of the operatio
 | `boolean.empty-result` | `BooleanOperations` (warning) | The result is empty |
 | `fillet.<status>` | `Fillet2D`, `Chamfer2D` | `ChFi2d_ConstructionError` in kebab case (`fillet.computation-error`), with the corner |
 | `offset.not-planar` | `Offset2D` | The planar offset couldn't be built |
+| `offset.join-changed` | `Offset`, `Hollow` (warning) | Round joins failed at an apex, so the result was made with mitred joins, and passed its checks |
 | `draft.face-failed` | `FeatureOperations.Draft` | A face can't be drafted, with the face |
 | `feature.failed` | `FeatureOperations` | A feature failed with no status |
 

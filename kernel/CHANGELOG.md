@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A cone offset or hollowed inwards with round joins now works,** where it failed: it's made with mitres, which give the same solid there, and the result carries the warning `offset.join-changed` (decision 22701). A hollow solid made inwards that takes nothing out fails, where it reported success (decision 22702).
 - **An offset that comes out nonsense now fails, holding the shape:** a cone with its apex offset inwards reported success with a volume of 3.7e101 (decision 1918). With `Join = JoinKind.Intersection` an upright cone gives the right answer.
 - **`Face.FromSurface` with bounds off the surface fails,** where it reported success (decision 1919).
 - **STEP names that aren't ASCII are written as the format's directives,** not raw UTF-8, and read back the same (OCCT #1686, decision 1920).

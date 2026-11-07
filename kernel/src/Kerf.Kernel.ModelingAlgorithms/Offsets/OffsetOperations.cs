@@ -65,6 +65,10 @@ public static class OffsetOperations
     /// <summary>The offset failed without saying why: <c>offset.failed</c>.</summary>
     public static DiagnosticCode Failed { get; } = new("offset.failed");
 
+    /// <summary>A warning: with round joins an offset or a hollow solid came out wrong at an apex, so it was made with mitred
+    /// joins instead, which passed its checks: <c>offset.join-changed</c>.</summary>
+    public static DiagnosticCode JoinChanged { get; } = new("offset.join-changed");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The offset couldn't be built.");
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
@@ -78,17 +82,25 @@ public static class OffsetOperations
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             NonZero(distance, nameof(distance));
-            Result<Built<Shape>> made = EngineOperation.Run<Shape>(range =>
+            Result<Built<Shape>> made = OffsetShape(s, distance, options, progress, cancellationToken);
+            if (!options.CheckResult)
             {
-                var offset = new MakeOffsetShape();
-                offset.PerformByJoin(s, distance, options.Tolerance, options.Mode, options.Intersection, options.SelfIntersection,
-                                     options.Join, options.RemoveInternalEdges, range);
-                return MakerOutcome.Done(offset, [s], () => StatusDiagnostics.ToDiagnostic(offset.MakeOffset().Error()));
-            }, Failure, progress, cancellationToken, options.CheckResult ? "The offset's result" : null);
-            return options.CheckResult && made.TryGetValue(out Built<Shape>? built)
-                   && OffsetVolumes.Check(s, distance, options.Join, built.Shape, "The offset's result") is { } wrong
-                ? Result<Built<Shape>>.Invalid(built, wrong, made.Diagnostics)
-                : made;
+                return made;
+            }
+            Diagnostic? wrong = null;
+            if (made.TryGetValue(out Built<Shape>? built)
+                && (wrong = OffsetVolumes.Check(s, distance, options.Join, built.Shape, "The offset's result")) is null)
+            {
+                return made;
+            }
+            if (MitredInstead(s, options, cancellationToken) is { } mitred
+                && OffsetShape(s, distance, mitred, null, cancellationToken) is var retried
+                && retried.TryGetValue(out Built<Shape>? other)
+                && OffsetVolumes.Check(s, distance, mitred.Join, other.Shape, "The offset's result") is null)
+            {
+                return Result<Built<Shape>>.Success(other, [.. retried.Diagnostics, JoinWarning(wrong ?? made.Error!)]);
+            }
+            return wrong is null ? made : Result<Built<Shape>>.Invalid(built!, wrong, made.Diagnostics);
         }
 
         /// <summary>A face or shell made a solid of <paramref name="thickness"/> (along its normal when positive).</summary>
@@ -212,19 +224,63 @@ public static class OffsetOperations
                 }
                 faces.Append(face);
             }
-            Result<Built<Solid>> made = EngineOperation.Run<Solid>(range =>
+            Result<Built<Solid>> made = HollowSolid(s, faces, thickness, options, progress, cancellationToken);
+            if (!options.CheckResult)
             {
-                var thick = new MakeThickSolid();
-                thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
-                                           options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
-                return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
-            }, Failure, progress, cancellationToken, options.CheckResult ? "The hollow solid" : null);
-            return options.CheckResult && made.TryGetValue(out Built<Solid>? built)
-                   && OffsetVolumes.Check(s, thickness, options.Join, built.Shape.AsShape(), "The hollow solid", isWall: true) is { } wrong
-                ? Result<Built<Solid>>.Invalid(built, wrong, made.Diagnostics)
-                : made;
+                return made;
+            }
+            Diagnostic? wrong = null;
+            if (made.TryGetValue(out Built<Solid>? built)
+                && (wrong = OffsetVolumes.Check(s, thickness, options.Join, built.Shape.AsShape(), "The hollow solid", isWall: true)) is null)
+            {
+                return made;
+            }
+            if (MitredInstead(s, options, cancellationToken) is { } mitred
+                && HollowSolid(s, faces, thickness, mitred, null, cancellationToken) is var retried
+                && retried.TryGetValue(out Built<Solid>? other)
+                && OffsetVolumes.Check(s, thickness, mitred.Join, other.Shape.AsShape(), "The hollow solid", isWall: true) is null)
+            {
+                return Result<Built<Solid>>.Success(other, [.. retried.Diagnostics, JoinWarning(wrong ?? made.Error!)]);
+            }
+            return wrong is null ? made : Result<Built<Solid>>.Invalid(built!, wrong, made.Diagnostics);
         }
     }
+
+    private static Result<Built<Shape>> OffsetShape(Shape s, double distance, OffsetOptions options, IProgress<double>? progress,
+                                                    CancellationToken cancellationToken) =>
+        EngineOperation.Run<Shape>(range =>
+        {
+            var offset = new MakeOffsetShape();
+            offset.PerformByJoin(s, distance, options.Tolerance, options.Mode, options.Intersection, options.SelfIntersection,
+                                 options.Join, options.RemoveInternalEdges, range);
+            return MakerOutcome.Done(offset, [s], () => StatusDiagnostics.ToDiagnostic(offset.MakeOffset().Error()));
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The offset's result" : null);
+
+    private static Result<Built<Solid>> HollowSolid(Solid s, NCollection_List<Shape> faces, double thickness, OffsetOptions options,
+                                                    IProgress<double>? progress, CancellationToken cancellationToken) =>
+        EngineOperation.Run<Solid>(range =>
+        {
+            var thick = new MakeThickSolid();
+            thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
+                                       options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
+            return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The hollow solid" : null);
+
+    // Round joins at an apex can fail, or give nonsense, where mitres give the right solid (decision 22701): the options to try again
+    // with, or null. Moved inwards, past a convex edge, the two joins make the same solid.
+    private static OffsetOptions? MitredInstead(Shape s, OffsetOptions options, CancellationToken cancellationToken) =>
+        options.Join == JoinKind.Arc && !cancellationToken.IsCancellationRequested && HasApex(s)
+            ? options with { Join = JoinKind.Intersection }
+            : null;
+
+    // A conical face closed at its apex by a degenerate edge
+    private static bool HasApex(Shape s) =>
+        s.AllFaces().Any(f => f.TryGetSurface(out Surface? surface) && surface is ConicalSurface
+                              && f.AllEdges().Any(e => e.IsDegenerated));
+
+    private static Diagnostic JoinWarning(Diagnostic wrong) =>
+        Diagnostic.Warning(JoinChanged, "Made with mitred joins, not the round ones asked for, which failed: "
+                                        + char.ToLowerInvariant(wrong.Message[0]) + wrong.Message[1..]);
 
     // The faces to leave open, which must be the shape's
     private static NCollection_List<Shape> Openings(Shape shape, IEnumerable<Face> openings)

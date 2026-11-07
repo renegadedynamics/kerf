@@ -39,7 +39,7 @@ internal static class OffsetVolumes
     /// <param name="join">The join, which says how far a corner can go.</param>
     /// <param name="result">What came of it.</param>
     /// <param name="what">What to call it.</param>
-    /// <param name="isWall">A hollow solid: it holds less than a whole offset, so only the upper limits apply.</param>
+    /// <param name="isWall">A hollow solid: it holds less than a whole offset, so outwards there is no lower limit; inwards it must hold less than its input.</param>
     public static Diagnostic? Check(Shape input, double distance, JoinKind join, Shape result, string what, bool isWall = false)
     {
         if (input.Type != ShapeType.Solid && input.AllSolids().Length == 0)
@@ -73,6 +73,12 @@ internal static class OffsetVolumes
         if (distance < 0 && after > before + margin)
         {
             return Wrong(what, FormattableString.Invariant($"moved inwards it can't hold more, and its volume is {after:G6} from {before:G6}"));
+        }
+
+        // A wall made inwards is cut from the input, so something is taken out (decision 22702)
+        if (distance < 0 && isWall && after > before - margin)
+        {
+            return Wrong(what, FormattableString.Invariant($"hollowed inwards it must hold less, and its volume is {after:G6} from {before:G6}"));
         }
 
         if (distance > 0 && !isWall && after < before - margin)
