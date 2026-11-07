@@ -521,4 +521,52 @@ public class BRepTools_ModifierTests
         Assert.True(aRigid.GetResult().IsEqual(aMoved));
         Assert.True(aRigid.ModifiedShape(aBox).IsEqual(aBox));
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_general_transform_keeps_a_meshs_triangles_and_normals_true(bool moved)
+    {
+        // Upstream 1349657592: a mirror never turned the triangles, and the normals weren't a normal's transformation.
+        // x is mirrored and doubled, and y halved
+        Face face = ShapeCasts.Face(new Explorer(TestShapes.Box(1, 2, 3), ShapeType.Face).Current());
+        var mesh = new Triangulation(3, 1, false);
+        mesh.AddNormals();
+        mesh.SetNode(1, new Point3D(1, 2, 3));
+        mesh.SetNode(2, new Point3D(4, 2, 3));
+        mesh.SetNode(3, new Point3D(1, 5, 7));
+        mesh.SetTriangle(1, new Triangle1(1, 2, 3));
+        Direction3D normal = new(0, -0.8, 0.6);
+        for (int k = 1; k <= 3; k++)
+        {
+            mesh.SetNormal(k, normal);
+        }
+        new BrepBuilder().UpdateFace(face, mesh);
+        Placement placement = new(new Transform3D().WithTranslation(new Vector3D(5, 6, 7)));
+        if (moved)
+        {
+            face = ShapeCasts.Face(face.Moved(placement));
+        }
+
+        GeneralTransform3D stretch = GeneralTransform3D.Mat4([-2, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+        Assert.True(new GTrsfModification(stretch).NewTriangulation(face, out Triangulation? made));
+
+        // It stays in the face's placement, so what's read through that is the transformed point
+        Point3D Read(int k) => made!.Node(k).Transformed(face.Placement.Transformation);
+        Vector3D at = moved ? new Vector3D(5, 6, 7) : new Vector3D(0, 0, 0);
+        Point3D start = new(1 + at.X, 2 + at.Y, 3 + at.Z);
+        Assert.True(new Point3D(-2 * start.X, 0.5 * start.Y, start.Z).DistanceTo(Read(1)) < 1e-9);
+
+        // The triangle turned, so it faces as the input's does by the inverse transpose
+        made!.Triangle(1).Get(out int n1, out int n2, out int n3);
+        Assert.Equal((1, 3, 2), (n1, n2, n3));
+        Vector3D facing = new Vector3D(Read(n1), Read(n2)).Crossed(new Vector3D(Read(n1), Read(n3)));
+        Vector3D before = new Vector3D(new Point3D(1, 2, 3), new Point3D(4, 2, 3)).Crossed(new Vector3D(new Point3D(1, 2, 3), new Point3D(1, 5, 7)));
+        Assert.True(facing.Dot(new Vector3D(-0.5 * before.X, 2 * before.Y, before.Z)) > 0);
+
+        // The normal by the inverse transpose, so it's still square to the stretched triangle
+        Direction3D now = made.Normal(1);
+        Vector3D expected = new Vector3D(0, 2 * -0.8, 0.6).Normalized();
+        Assert.Equal(1, expected.Dot(new Vector3D(now.X, now.Y, now.Z)), 1e-9);
+    }
 }

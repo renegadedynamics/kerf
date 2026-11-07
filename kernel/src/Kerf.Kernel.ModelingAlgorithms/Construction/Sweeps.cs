@@ -4,10 +4,12 @@ using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Construction.Helix;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Measurement;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Kerf.Engine;
@@ -33,7 +35,47 @@ public static class Sweeps
     /// <summary>The profiles are closed but the sweep couldn't be closed into a solid: <c>construction.not-solid</c>.</summary>
     public static DiagnosticCode NotSolid { get; } = new("construction.not-solid");
 
+    /// <summary>A solid swept or lofted with no volume, carried by the failure: its profile edge-on to its path, or its
+    /// sections in one plane: <c>construction.no-volume</c>.</summary>
+    public static DiagnosticCode NoVolume { get; } = new("construction.no-volume");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(SweepFailed, "The sweep couldn't be built.");
+
+    /// <summary>
+    /// A problem if the shape's solids enclose nothing, which the validity check can pass (decision 1927). Against its
+    /// area, so it holds at any size, and a sliver at 1e-6 of a right angle still passes.
+    /// </summary>
+    private static Diagnostic? EnclosesNothing(in Shape shape, string what)
+    {
+        if (shape.AllSolids().IsEmpty)
+        {
+            return null;
+        }
+
+        double area = shape.IntegrateArea();
+        return area > 0 && Math.Abs(shape.IntegrateVolume()) > 1e-10 * Math.Pow(area, 1.5)
+            ? null
+            : Diagnostic.Error(NoVolume, $"{what} encloses no volume.");
+    }
+
+    /// <summary>Whether a profile needn't be measured: a plane's extrusion has a volume unless the direction lies in the plane.</summary>
+    private static bool PlainlyHasVolume(in Shape profile, in Vector3D direction)
+    {
+        if (profile.Type != ShapeType.Face)
+        {
+            return false;
+        }
+
+        var surface = new FaceSurfaceAdaptor((Face)profile);
+        if (surface.GetType() != SurfaceKind.Plane)
+        {
+            return false;
+        }
+
+        Direction3D normal = surface.Plane().Axis.Direction;
+        double along = (normal.X * direction.X + normal.Y * direction.Y + normal.Z * direction.Z) / direction.Magnitude;
+        return Math.Abs(along) > 1e-9;
+    }
 
     extension<TShape>(TShape profile) where TShape : struct, IShape<TShape>
     {
@@ -50,9 +92,14 @@ public static class Sweeps
             }
             Shape p = profile.AsShape();
             // A prism is as good as its profile, so only the profile is checked unless it's found wanting
-            string? check = options.CheckResult && Validity.Problem(p, "The profile") is not null ? "The extrusion" : null;
-            return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakePrism(p, direction, false, options.Canonize), range, p),
-                                              Failure, progress, cancellationToken, check);
+            bool invalidProfile = options.CheckResult && Validity.Problem(p, "The profile") is not null;
+            Result<Built<Shape>> made = EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakePrism(p, direction, false, options.Canonize), range, p),
+                                                                   Failure, progress, cancellationToken, invalidProfile ? "The extrusion" : null);
+            // Only the profile is checked, unless it's found wanting or the extrusion might enclose nothing (decision 1927)
+            return options.CheckResult && !PlainlyHasVolume(p, direction) && made.TryGetValue(out Built<Shape>? built)
+                   && EnclosesNothing(built.Shape, "The extrusion") is { } problem
+                ? Result<Built<Shape>>.Invalid(built, problem, made.Diagnostics)
+                : made;
         }
 
         /// <summary>The profile revolved about <paramref name="axis"/> by <paramref name="angle"/> (radians, at most 2π).</summary>
@@ -218,7 +265,8 @@ public static class Sweeps
                                          Failure: Diagnostic.Error(NotSolid, "The sweep couldn't be closed into a solid."));
             }
             return MakerOutcome.Done(pipe, inputs, () => StatusDiagnostics.ToDiagnostic(pipe.GetStatus()));
-        }, Failure, progress, cancellationToken, options.CheckResult ? "The sweep's result" : null);
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The sweep's result" : null,
+           options.MakeSolid ? static made => EnclosesNothing(made, "The sweep") : null);
     }
 
     /// <summary>A loft: a surface (or solid) through <paramref name="sections"/> in order, each a wire, or a vertex at
@@ -254,7 +302,8 @@ public static class Sweeps
             loft.SetMaxDegree(options.MaxDegree);
             loft.SetSmoothing(options.Smoothing);
             return MakerOutcome.Of(loft, range, inputs, () => StatusDiagnostics.ToDiagnostic(loft.GetStatus()));
-        }, Failure, progress, cancellationToken, options.CheckResult ? "The loft's result" : null);
+        }, Failure, progress, cancellationToken, options.CheckResult ? "The loft's result" : null,
+           options.MakeSolid ? static made => EnclosesNothing(made, "The loft") : null);
     }
 
     /// <summary>The ruled face between two edges (OCCT's <c>BRepFill::Face</c>).</summary>

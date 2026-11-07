@@ -560,6 +560,8 @@ public static partial class SolidExtensions
         {
             // A sweep that folds over itself is done, but not valid
             var swept = Sweeps.Sweep(wire, pathWire, makeSolid ? options : options with { CheckResult = false });
+            if (swept.TryGetInvalid(out var edgeOn) && swept.Error?.Code == Sweeps.NoVolume)
+                SolidExtensions.EnclosingSomething(edgeOn.Shape, mode);
             shapes.Add(swept.TryGetInvalid(out _)
                 ? throw Failures.Expected(Sweeps.SweepFailed, "A path with a sharp corner needs transition=Transition.RIGHT or "
                                           + "Transition.ROUND, or a filleted path, and the section must be small enough to turn each corner.", swept)

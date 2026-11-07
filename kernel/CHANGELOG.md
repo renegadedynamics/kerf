@@ -10,13 +10,24 @@ version may break the API.
 - **`Face.FromSurface` with bounds off the surface fails,** where it reported success (decision 1919).
 - **STEP names that aren't ASCII are written as the format's directives,** not raw UTF-8, and read back the same (OCCT #1686, decision 1920).
 - **A damaged file can't hang a read or a mesh that's cancelled:** a parameter too far from its range to reach, a file of 2^40 shapes in 20 kB, and a BREP with `nan` or `inf` in it are failures (decisions 1913, 1914, 1916); more of a mesh and of a STEP read can be cancelled (decision 1915).
+- **A Common, Cut or Fuse that comes out wrong is tried with its inputs the other way round, and that result returned, with a warning, if it's right:** #1643's lofts now give the right answers (decision 1937). **A Fuse that lost part of an input now fails,** carrying the shape.
+- **A general transform of a shape holding a mesh keeps its triangles facing outwards and its normals square to them,** and doesn't move a located mesh twice (decision 1936).
+- **A Cut, Common or Fuse no longer goes wrong where a section curve stops just short of another:** on #1659's loft and cylinder the Cut removed nothing, which had become a failure, and now it's right (decision 1935).
+- **A closed section curve between surfaces that cross at a shallow angle is no longer lost as a tangency,** which gave a Common with an edge missing and the wrong area (decision 1934).
+- **A chamfer that fails says which edges failed and why,** and a 2D chamfer given the same corner twice says so, where it was an internal fault (decision 1933).
+- **A Common or Cut of faces with a solid fails, carrying the shape, if it kept the wrong side of the solid at points it can prove it:** a lost section edge used to pass with 24% too much area (decision 1932).
+- **`GeneralTransform3D.ToTransform` accepts a rotation and a uniform scale given as a matrix,** which it refused (decision 1931).
+- **A cone from a STEP file whose seam leans by a rounding error now meshes:** it had no triangles (decision 1930).
+- **A thin torus's mesh keeps to the deflection asked:** it could be three times out, and say nothing (decision 1929).
+- **An extrusion along its own plane, a loft of sections in one plane and a sweep along the section's plane now fail,** carrying the empty solid, where they reported success (decision 1927).
+- **A minimum distance between parts that intersect is zero:** where their faces cross inside both, with no edge or vertex involved, it used to report the nearest vertex (decision 1926).
 - **A parallel operation's progress never runs backwards,** and a progress callback gets its reports one at a time (decision 1903).
 - **A cube rounded all over is a sphere, a bar is a capsule, and a plate is a pillow, at the radius that just fits:** fillets where edges meet at a limit now work, with corners on exact spheres, as do slanted ends, a chain round a top, an L's top with its re-entrant corner, and convex and concave edges that touch. `MaxFillet` gives that radius itself. What the fillet algorithm makes invalid is now also tried by this path before it's reported.
 
 - **A disc's rim rounded to its full height, full rounds, hemispheres and a sphere from a short cylinder work,** as does a hole's rim or a boss's foot rounded to its wall's height: circular edges between a plane, cylinder or cone, with the result checked by Pappus, on exact tori and spheres.
 
 - **A fillet too large for a circular edge between a plane, cylinder or cone now says what fits:** `FilletLimit` gives the radius, and `Fillet` refuses above it at once, with a radius within tolerance of it taken as it.
-
+- **Crossing cylinders of equal radius are right more often, and at more sizes:** a Cut 0.8% out at a radius of 0.5, Cuts up to 16% out and Fuses up to 16.5% out, each valid and reported as a success, are right now, and failures over radii from 0.01 to 10,000 fall from 576 to 329 of 18,306 (`docs/reliability.md`). **A result that nearly touched is checked at points too:** it can fail with `result.invalid` where it passed.
 - **`CentreOfArea()`** gives the centre of a shape's faces' area without its moments, exact for a planar face bounded by lines and circles.
 - **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius within the shape's tolerance of the limit is the limit, the same in every figure, on either side (decisions 1898, 1899). All of a cube's edges past half its side used to fail with `result.invalid`, carrying what it made; now with `fillet.too-large`. A fillet just below a limit, by under the tolerance, no longer leaves faces narrower than that.
 - **`FilletLimit` no longer claims a limit where the next face is within 0.1 radians,** as the fillet rolls on to that face, rightly.

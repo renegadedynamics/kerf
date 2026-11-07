@@ -2,7 +2,10 @@
 
 using System.Globalization;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Construction;
 using Kerf.Geometry;
 using Kerf.Healing;
@@ -31,7 +34,7 @@ public enum BooleanVolumeRule
 /// </summary>
 /// <remarks>
 /// The rules are for solids. If anything in the inputs or the result isn't a solid, or a compound of them, or an input's
-/// volume isn't positive, there's no rule and the result passes: so faces, shells and half-spaces. A compound's solids may
+/// volume isn't positive, there's no rule of volume: so faces, shells and half-spaces. Faces or shells against solids are tried at points instead. A compound's solids may
 /// overlap, so its sum is only the most it can hold, and its largest solid the least. Before a rule is said to be broken, the
 /// inputs must be valid and bounded, as a volume means nothing otherwise, and the margin grows with their tolerances. An empty
 /// common, or a cut that removed nothing, breaks no rule of volume, so points well inside both inputs are looked for instead.
@@ -56,6 +59,14 @@ public static class BooleanVolumes
     // The points tried in each direction, in the overlap of the inputs' boxes: 343 at most, most of them one classification
     private const int OverlapGrid = 7;
 
+    // The points tried in each direction on a face of a result that isn't solid, and how many faces it may have for that: most of a
+    // result's faces come from one or two faces of an input, and this keeps the classifications to a few thousand
+    private const int FaceGrid = 9;
+    private const int FacesLooked = 64;
+
+    // A face larger than this isn't a part, but a plane or the like with no bounds (Precision::Infinite is 2e100)
+    private const double UnboundedFace = 1e7;
+
     // How far inside both inputs a point must be, for their size, to prove they overlap
     private const double OverlapDepth = 1e-3;
 
@@ -76,7 +87,15 @@ public static class BooleanVolumes
         // Look at what the shapes are before measuring anything: a Boolean of faces costs nothing here
         if (!AllSolids(arguments) || !AllSolids(tools) || !AllSolids([result]) || !HasSolid(arguments) || !HasSolid(tools))
         {
-            return null;
+            try
+            {
+                return FacesAgainstSolids(rule, arguments, tools, result, fuzzyValue);
+            }
+            catch (Exception e) when (Refusal.IsFailure(e))
+            {
+                // A point that can't be judged proves nothing, and the Boolean itself worked
+                return null;
+            }
         }
         var outcome = new Measure();
         outcome.Add(result);
@@ -111,6 +130,7 @@ public static class BooleanVolumes
             return rule switch
             {
                 BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0, Math.Min(a.Sum, b.Sum)),
+                BooleanVolumeRule.Fuse when r <= least + margin && ProvedLost(arguments, tools, result, fuzzyValue, Math.Min(a.Sum, b.Sum)) is { } lost => lost,
                 BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
                 _ => null,
             };
@@ -214,6 +234,179 @@ public static class BooleanVolumes
                                 BooleanVolumeRule.Cut => $"The cut's result is wrong: it removed nothing, but the point {at} and others are inside the tool and still in the result.",
                                 _ => $"The fuse's result is wrong: it's as large as its inputs together, but the point {at} and others are inside both of them.",
                             });
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    // Faces or shells against solids have no volume to go by, so their result's faces are looked at (decision 1932): what a common
+    // keeps must not be outside the solids, and what a cut keeps must not be inside them. OCCT #1039 keeps 86898 of a slice through a
+    // model, with an edge of the section lost, where the slice beside it keeps 70013. A point counts only if it's further from the
+    // solids' shells than tolerance could explain, and two are asked for, as a classifier can be wrong about one. The inputs' faces
+    // are looked at too, for what the result ought to have kept. A result whose wrong part falls between the points is passed.
+    private static Diagnostic? FacesAgainstSolids(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue)
+    {
+        if (rule == BooleanVolumeRule.Fuse)
+        {
+            return null;
+        }
+
+        IReadOnlyList<Shape> solids, others;
+        if (AllSolids(tools) && HasSolid(tools) && !HasSolid(arguments))
+        {
+            (solids, others) = (tools, arguments);
+        }
+        else if (rule == BooleanVolumeRule.Common && AllSolids(arguments) && HasSolid(arguments) && !HasSolid(tools))
+        {
+            (solids, others) = (arguments, tools);
+        }
+        else
+        {
+            return null;
+        }
+
+        if (others.Any(static o => o.IsNull) || result.AllFaces().Length > FacesLooked
+            || others.Sum(static o => o.AllFaces().Length) is 0 or > FacesLooked || !Trustworthy(solids))
+        {
+            return null;
+        }
+
+        List<SolidClassifier> classifiers = [.. solids.SelectMany(static s => s.AllSolids()).Select(static s => new SolidClassifier(s))];
+        double size = Math.Cbrt(solids.Sum(static s => s.IntegrateVolume(Measured)));
+        double depth = OverlapDepth * size + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
+        int found = 0;
+        Point3D first = default;
+        foreach (Face face in result.AllFaces().Concat(others.SelectMany(static o => o.AllFaces())))
+        {
+            bool ofInput = found >= 0 && !result.AllFaces().Contains(face);
+            // Its own bounds, from its wires; a face with none, such as an infinite plane, has nothing to sample
+            if (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace)))
+            {
+                continue;
+            }
+
+            var surface = new FaceSurfaceAdaptor(face);
+            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+            if (!double.IsFinite(fromU + toU + fromV + toV))
+            {
+                continue;
+            }
+
+            for (int i = 1; i <= FaceGrid; i++)
+            {
+                for (int j = 1; j <= FaceGrid; j++)
+                {
+                    double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
+                    if (face.Classify(new Point2D(u, v)) != Containment.In)
+                    {
+                        continue;
+                    }
+
+                    Point3D point = surface.Value(u, v);
+                    bool inside = classifiers.Any(c => Inside(c, point));
+                    bool kept = inside == (rule == BooleanVolumeRule.Common);
+                    // Of the result: it mustn't be what the operation drops. Of the input: what the operation keeps must be in the result
+                    if (kept != ofInput || !solids.All(s => Deep(point, s, depth))
+                        || (ofInput && (!result.Distance(Vertex.At(point)).TryGetValue(out DistanceResult? gap) || gap.Value < depth)))
+                    {
+                        continue;
+                    }
+
+                    if (found++ == 0)
+                    {
+                        first = point;
+                    }
+
+                    if (found >= 2)
+                    {
+                        string at = $"({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)})";
+                        return Diagnostic.Error(DiagnosticCode.InvalidResult, rule == BooleanVolumeRule.Common
+                            ? $"The common's result isn't the part of its faces inside the solid, at the point {at} and others. An intersection was probably lost."
+                            : $"The cut's result isn't the part of its faces outside the solid, at the point {at} and others. An intersection was probably lost.");
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // A fuse no larger than its larger input holds the smaller one inside it, or has lost part of it: OCCT #1643 gives the body alone,
+    // with the lip's part outside it gone, which no rule of volume can see (decision 1937). Two points on the smaller input's faces,
+    // well outside the result, prove the second; the volume lost can be too small for a grid inside it to reach.
+    private static Diagnostic? ProvedLost(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double smallerVolume)
+    {
+        if (arguments.Count != 1 || tools.Count != 1 || smallerVolume <= 0)
+        {
+            return null;
+        }
+
+        bool argumentIsSmaller = arguments[0].IntegrateVolume(Measured) <= tools[0].IntegrateVolume(Measured);
+        Shape smaller = argumentIsSmaller ? arguments[0] : tools[0], larger = argumentIsSmaller ? tools[0] : arguments[0];
+        if (smaller.AllFaces().Length > FacesLooked)
+        {
+            return null;
+        }
+
+        var inResult = new SolidClassifier(result);
+        var inLarger = new SolidClassifier(larger);
+        double depth = -1;
+        int found = 0;
+        Point3D first = default;
+        foreach (Face face in smaller.AllFaces())
+        {
+            // Its own bounds, from its wires; a face with none, such as an infinite plane, has nothing to sample
+            if (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace)))
+            {
+                continue;
+            }
+
+            var surface = new FaceSurfaceAdaptor(face);
+            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+            if (!double.IsFinite(fromU + toU + fromV + toV))
+            {
+                continue;
+            }
+
+            for (int i = 1; i <= FaceGrid; i++)
+            {
+                for (int j = 1; j <= FaceGrid; j++)
+                {
+                    double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
+                    if (face.Classify(new Point2D(u, v)) != Containment.In)
+                    {
+                        continue;
+                    }
+
+                    Point3D point = surface.Value(u, v);
+                    // What's inside the larger input is in a fuse whatever its classifier says of the result
+                    if (Inside(inResult, point) || Inside(inLarger, point))
+                    {
+                        continue;
+                    }
+
+                    if (depth < 0)
+                    {
+                        if (!Trustworthy(arguments) || !Trustworthy(tools))
+                        {
+                            return null;
+                        }
+                        depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
+                    }
+
+                    if (Deep(point, result, depth) && Deep(point, larger, depth))
+                    {
+                        if (found++ == 0)
+                        {
+                            first = point;
+                        }
+                        if (found >= 2)
+                        {
+                            return Diagnostic.Error(DiagnosticCode.InvalidResult,
+                                $"The fuse's result is wrong: it lost part of an input, as the point ({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)}) and others are on that input and outside the result.");
                         }
                     }
                 }

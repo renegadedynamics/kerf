@@ -1,7 +1,10 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Tools;
+using Kerf.Geometry;
 using Kerf.Topology;
 using System.Globalization;
 using System.Reflection;
@@ -58,8 +61,28 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
 
     private static string Text(string theFile) => File.ReadAllText(theFile, Encoding.Latin1);
 
+    private int myTorusMeshes;
+    private bool myTorusCase;
+
+    private static bool HasTorus(in Shape theShape)
+    {
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            if (new FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current())).GetType() == SurfaceKind.Torus)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void Disagree(string theWhat)
     {
+        if (myTorusCase && !theWhat.Contains("the port fails", StringComparison.Ordinal))
+        {
+            return;
+        }
+
         if (myDisagreements.Count < 50)
         {
             output.WriteLine("DISAGREE " + theWhat);
@@ -150,6 +173,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
                        bool theInParallel)
     {
         myRuns++;
+        myTorusCase = false;
         var aDI = new DrawInterpreter(new StringWriter { NewLine = "\n" });
         aDI.LoadDrawResources(ResourcesDirectory);
         aDI.Eval($"restore {TclPath(theF1)} s; explode s f");
@@ -174,6 +198,14 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         if (theScript.StartsWith("incmesh", StringComparison.Ordinal))
         {
             Same($"Incremental Mesh, multi-threading {(theInParallel ? "ON" : "OFF")}\n{Statuses(aNativeFlags)}", aResult, $"{theWhat} result");
+        }
+
+        // Decision 1929: a torus is meshed to the deflection asked, where native's grid can miss it, so a shape with tori
+        // meshed at an absolute deflection gets more nodes than native's. Its run is made, with native's calls, and not compared
+        myTorusCase = !theIsRelative && HasTorus(aDI.GetShape("s"));
+        if (myTorusCase)
+        {
+            myTorusMeshes++;
         }
 
         // the whole shape
@@ -347,7 +379,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         }
 
         output.WriteLine($"{myRuns} runs: {myTextsSame} BRep texts byte-identical, {myTextsSameButChecked} but for the Checked flags "
-                         + $"(decision 551), {myRuns - myTextsSame - myTextsSameButChecked} different; {mySubShapes} exploded faces; {myValues} other values compared, "
+                         + $"(decision 551), {myRuns - myTextsSame - myTextsSameButChecked - myTorusMeshes} different, {myTorusMeshes} with tori not compared (decision 1929); {mySubShapes} exploded faces; {myValues} other values compared, "
                          + $"{myDisagreements.Count} disagreements");
         Assert.Empty(myDisagreements);
     }

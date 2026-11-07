@@ -326,4 +326,6 @@ Units 12K to 12M (decisions 1904 to 1911) add no shared state: `FilletLimits`'s 
 
 Unit 12C (decisions 1898 to 1901) adds no shared state: `FilletLimits.Judge` and its `Neighbours` are local to the call, on frozen shapes, `WellApart` is a constant, and `MaxFillet` holds its limit in a local.
 
+Units 12H and 12I (decisions 1913 to 1921) add no shared state: `StepLimit` is static with only a constant, and each count is a local of its loop; `OffsetVolumes`' options are immutable and only read; `WithDirectives` is a pure function; a compound's count is set as it's built, before it's frozen, as it was.
+Units 12E, 12F and 12G (decisions 1922 to 1925) add no shared state: `HidesCorner`, `TouchSpan` and `ProvedByPoints` work on locals and read frozen shapes, each `SolidClassifier` is local to one call, and the new fields are constants.
 Unit 12N (decisions 22701 to 22704) adds no shared state: the retried offset's options are a new immutable record, and the rest are locals. Units 12H and 12I (decisions 1913 to 1921) add no shared state: `StepLimit` is static with only a constant, and each count is a local of its loop; `OffsetVolumes`' options are immutable and only read; `WithDirectives` is a pure function; a compound's count is set as it's built, before it's frozen, as it was.
