@@ -56,15 +56,6 @@ public static class BooleanVolumes
     // The points tried in each direction, in the overlap of the inputs' boxes: 343 at most, most of them one classification
     private const int OverlapGrid = 7;
 
-    // Above this tolerance in a result, surfaces nearly touched: a hundred times the usual
-    private const double NearlyTouching = 1e-5;
-
-    // More faces than this in a result or an input and the points cost too much to ask at every Boolean: a corpus case took 8 s
-    private const int MostFacesAsked = 64;
-
-    // The points tried in each direction, in the inputs' whole box, where a result's tolerance is that large
-    private const int PointsGrid = 4;
-
     // How far inside both inputs a point must be, for their size, to prove they overlap
     private const double OverlapDepth = 1e-3;
 
@@ -117,12 +108,12 @@ public static class BooleanVolumes
         if (r >= least - margin && r <= most + margin && !negative)
         {
             // Within the rules, but a cut that removed nothing, or a fuse that lost nothing, can still be proved wrong
-            return (rule switch
+            return rule switch
             {
                 BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0, Math.Min(a.Sum, b.Sum)),
                 BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
                 _ => null,
-            }) ?? ProvedByPoints(rule, arguments, tools, result, fuzzyValue, Math.Min(a.Sum, b.Sum));
+            };
         }
 
         // Past a rule, which is rare, so this is when the dearer questions are worth asking: is it proved?
@@ -224,86 +215,6 @@ public static class BooleanVolumes
                                 _ => $"The fuse's result is wrong: it's as large as its inputs together, but the point {at} and others are inside both of them.",
                             });
                         }
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    // Within the rules of volume, a result can still have lost a part, as a fuse of crossing cylinders lost their common or half of
-    // one of them. So where the result's tolerances say surfaces nearly touched, which is where this happens, points are asked what the
-    // operation says of them. Each that disagrees, deep in or out of all three, proves it, and two are asked for (decision 22303).
-    private static Diagnostic? ProvedByPoints(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double smallerVolume)
-    {
-        if (arguments.Count != 1 || tools.Count != 1)
-        {
-            return null;
-        }
-        double tolerance = new ShapeToleranceAnalysis().Tolerance(result, 1);
-        if (tolerance <= NearlyTouching || result.AllFaces().Length > MostFacesAsked
-            || arguments[0].AllFaces().Length > MostFacesAsked || tools[0].AllFaces().Length > MostFacesAsked)
-        {
-            return null;
-        }
-        Shape a = arguments[0], b = tools[0];
-        BoundingBox inA = a.BoundingBox(), inB = b.BoundingBox();
-        double fromX = Math.Min(inA.Min.X, inB.Min.X), toX = Math.Max(inA.Max.X, inB.Max.X);
-        double fromY = Math.Min(inA.Min.Y, inB.Min.Y), toY = Math.Max(inA.Max.Y, inB.Max.Y);
-        double fromZ = Math.Min(inA.Min.Z, inB.Min.Z), toZ = Math.Max(inA.Max.Z, inB.Max.Z);
-        if (!double.IsFinite(fromX + toX + fromY + toY + fromZ + toZ))
-        {
-            return null;
-        }
-        var classifyA = new SolidClassifier(a);
-        var classifyB = new SolidClassifier(b);
-        var classifyResult = new SolidClassifier(result);
-        double depth = -1;
-        int found = 0;
-        Point3D first = default;
-        for (int i = 1; i <= PointsGrid; i++)
-        {
-            for (int j = 1; j <= PointsGrid; j++)
-            {
-                for (int k = 1; k <= PointsGrid; k++)
-                {
-                    var point = new Point3D(fromX + (toX - fromX) * i / (PointsGrid + 1), fromY + (toY - fromY) * j / (PointsGrid + 1),
-                                            fromZ + (toZ - fromZ) * k / (PointsGrid + 1));
-                    bool inFirst = Inside(classifyA, point), inSecond = Inside(classifyB, point);
-                    bool should = rule switch
-                    {
-                        BooleanVolumeRule.Common => inFirst && inSecond,
-                        BooleanVolumeRule.Cut => inFirst && !inSecond,
-                        _ => inFirst || inSecond,
-                    };
-                    if (should == Inside(classifyResult, point))
-                    {
-                        continue;
-                    }
-                    if (depth < 0)
-                    {
-                        if (!Trustworthy(arguments) || !Trustworthy(tools))
-                        {
-                            return null;
-                        }
-                        depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (tolerance + fuzzyValue);
-                    }
-                    if (Deep(point, a, depth) && Deep(point, b, depth) && Deep(point, result, depth) && found++ == 0)
-                    {
-                        first = point;
-                    }
-                    if (found >= 2)
-                    {
-                        string name = rule switch
-                        {
-                            BooleanVolumeRule.Common => "common",
-                            BooleanVolumeRule.Cut => "cut",
-                            _ => "fuse",
-                        };
-                        string at = $"({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)})";
-                        return Diagnostic.Error(DiagnosticCode.InvalidResult, should
-                            ? $"The {name}'s result is wrong: the point {at} and others should be in it and aren't."
-                            : $"The {name}'s result is wrong: the point {at} and others shouldn't be in it and are.");
                     }
                 }
             }
