@@ -29,7 +29,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
 | Silent wrong answer | #1039, #245 | A face/solid Common with an edge missing, 86898 for about 70000: not reported, as a shell has no rule (decision 1862). A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
-| Silent wrong answer | #572, a sphere | A cone with no triangles, a warning only; a sphere's mesh 1.69 times its deflection on 3% of its triangles (decision 22604) | Reproduced | M each; **for the owner**: the sphere's fix costs triangles |
+| Silent wrong answer | A sphere | A sphere's mesh 1.69 times its deflection on 3% of its triangles (decision 22604) | Reproduced | S; **for the owner**: the fix costs triangles |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
@@ -59,6 +59,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #572 | A cone from a STEP file with no triangles | 22605 |
 | #1444 | A thin torus's mesh 1.42 from the surface for 0.45 asked | 22604 |
 | `53706f78a8` | A loft's rational section changing shape, for weights that agree part way through being scaled | 22603 |
 | Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 22602 |
@@ -323,7 +324,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 639 | Sweeping fail with RightCorner transition mode | applies | Reproduced on its files: not done. A failure, not a wrong shape |
 | 588 | Extrema between two circular curves incorrect | already fixed | Tried on five of its cases: the shortest extremum matches `distmini` on each. Its patch's flag for infinitely many isn't compared |
 | 575 | Incorrect HLR result | can't tell | Needs the issue's attached model; not reproduced in this pass (hidden lines) |
-| 572 | Cone surface cannot be triangulated | applies | Reproduced on its file: no triangles, valid face. The mesher's structure ends with no elements; not a range clipped by rounding, which was tried |
+| 572 | Cone surface cannot be triangulated | already fixed | Decision 22605: its file, 342 triangles at 0.091 for 0.1 asked |
 | 568 | OCC+VTK：The program crashed in debug mode | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 553 | ElCLib::AdjustPeriodic() failed to add a period | applies | Read: `AdjustPeriodic` uses the same test; needs a very small Preci. Small but delicate |
 | 541 | Origin and color problems with SolidWorks STEP models. | not relevant | Origin and colours through the assembly document, which isn't ported ([unported.md](unported.md)) |

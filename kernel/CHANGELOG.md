@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A cone from a STEP file whose seam leans by a rounding error now meshes:** it had no triangles (decision 22605).
 - **A thin torus's mesh keeps to the deflection asked:** it could be three times out, and say nothing (decision 22604).
 - **An extrusion along its own plane, a loft of sections in one plane and a sweep along the section's plane now fail,** carrying the empty solid, where they reported success (decision 22602).
 - **A minimum distance between parts that intersect is zero:** where their faces cross inside both, with no edge or vertex involved, it used to report the nearest vertex (decision 22601).

@@ -2207,7 +2207,7 @@ The list and its ranking are in [occt-defects.md](occt-defects.md).
 | `ShapeUpgrade_UnifySameDomain`, a surface closed both ways | A face with no wires | Valid, and no mesh (#1310) | fixed (decision 1837) |
 | `StepToGeom::MakeSurface`, offset surface | No surface if the basis stays C0 | A face lost on reading (#994) | fixed (decision 1838) |
 | `ChFi3d`, a two-edge corner | A 3D curve 190 from its pcurves, by the shell's face order | Volume 10596 for 29800, valid (#1639) | **open**; public failure (decision 1833) |
-| `BRepMesh`, a cone from `Sfacciata.step` | The structure ends with no elements | No triangles on a valid face (#572) | **open** |
+| `BRepMesh`, a cone from `Sfacciata.step` | The structure ends with no elements | No triangles on a valid face (#572) | fixed (decision 22605) |
 | `ChFi3d_Builder::SplitKPart`, a contact line on a face's boundary | At a radius equal to the face's width, the analytic surface is right, but the contact line lies along the far edge and the hatcher finds 0 domains on it, so `SplitKPart` fails. The general walk then can't start either: "no starting solution". OCCT #1177, #172; upstream's `f713b1305f` accepts it, with 12 of its files in the TopOpeBRepBuild family that Kerf replaced | Radius 10 on a 10 mm cube fails where 9.999999 works | **Worked around, for straight edges between planes** (decisions 1847, 1848); ChFi3d is unchanged. fillet-design.md |
 | `ChFi3d`, just below a limit | A radius 1e-8 under a face's width leaves a face 1e-8 wide, below the tolerance, and it passes the check | 7 faces where 5 are right | **Left**, a question for the owner (decision 1851) |
 ## Found by the check of a Boolean's volume
@@ -2236,3 +2236,4 @@ Found by unit 12J:
 | `BRepExtrema_DistShapeShape` | Only stationary points from a grid: faces crossing along a closed curve inside both aren't found | A positive distance between parts that intersect (#1123) | fixed (decision 22601) |
 | `BRepMesh`, a torus's grid | Parameters from the boundary's points, and no control of the deviation | A mesh 1.42 from the surface for 0.45 asked (#1444) | fixed (decision 22604) |
 | `BRepMesh`, a sphere's grid | Long triangles beside the seam, and no control of the deviation | 1.69 times the deflection on 3% of the triangles, at some deflections | **open**: the same fix doubles those meshes and grows others by 28%; for the owner (decision 22604) |
+| `BRepMesh_ModelPreProcessor`, `SeamEdgeAmplifier` | Chooses a seam's pcurve with the curve's first parameter, far off on a line | A cone with no triangles (#572) | fixed (decision 22605) |

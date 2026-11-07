@@ -271,7 +271,7 @@ internal class ModelPreProcessor : ModelAlgo
 
             // Define two pcurves of the seam-edge.
             e = ShapeCasts.Edge(e.Oriented(Forward));
-            Curve2D? pc1 = Tool.CurveOnSurface(e, f, out double _, out double _);
+            Curve2D? pc1 = Tool.CurveOnSurface(e, f, out double start, out double _);
 
             e = ShapeCasts.Edge(e.Oriented(Reversed));
             Curve2D? pc2 = Tool.CurveOnSurface(e, f, out double _, out double _);
@@ -281,8 +281,10 @@ internal class ModelPreProcessor : ModelAlgo
                 return false;
             }
 
-            // Select the correct pcurve of the seam-edge.
-            Point2D fPntOfPC1 = pc1.Value(pc1.FirstParameter);
+            // Select the correct pcurve of the seam-edge. Not at the curve's own first parameter, as OCCT has it: a line's is
+            // far off, so one 2e-14 off vertical, as a STEP file's can be, is far from its edge, the pcurves swap, and the
+            // seam's inner nodes land on its other side, which leaves a cone's face with no triangles (#572, decision 22605)
+            Point2D fPntOfPC1 = pc1.Value(start);
 
             if (Math.Abs(lPntOfIPC1.X - fPntOfPC1.X) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {

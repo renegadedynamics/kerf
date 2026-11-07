@@ -74,6 +74,27 @@ public class MeshingTests
     }
 
     [Fact]
+    public void A_cone_whose_seam_is_a_little_off_vertical_has_its_triangles()
+    {
+        // OCCT #572, from its STEP file: its seam's pcurves lean by 2e-14, and it had no triangles and a warning
+        Shape face = Brep.Read(new MemoryStream(Fixtures.Bytes("cone-leaning-seam"))).Value;
+        Result<ShapeMesh> meshed = face.Mesh(new MeshOptions { LinearDeflection = 0.1, AngularDeflection = 0.5 });
+        Assert.Empty(meshed.Diagnostics);
+        ShapeMesh mesh = meshed.Value;
+        Assert.True(mesh.TriangleCount > 0);
+
+        double area = 0;
+        Point3D[] nodes = mesh.Faces[0].GetNodes();
+        foreach (Triangle t in mesh.Faces[0].GetTriangles())
+        {
+            area += new Vector3D(nodes[t.A], nodes[t.B]).Crossed(new Vector3D(nodes[t.A], nodes[t.C])).Magnitude / 2;
+        }
+
+        Assert.Equal(face.IntegrateArea(), area, face.IntegrateArea() * 0.01);
+        Assert.InRange(Deviation(mesh), 0, 0.1);
+    }
+
+    [Fact]
     public void A_box_meshes_into_two_triangles_a_face()
     {
         Solid box = Fixtures.Box();
