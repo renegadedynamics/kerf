@@ -323,3 +323,5 @@ Unit 11T's second pass (decisions 1879 to 1884) adds no shared state: `MassOptio
 Units 12A and 12B (decisions 1894 and 1895) add no shared state: `PlanarFaceMass.TryCentre` and `TopoUtil.NothingToCleanAfterExtruding` work only on locals and read frozen shapes.
 Unit 12D (decisions 1896 and 1897) adds no shared state to Kerf. The rig's `FirstLoad` runs once, before `Main`, on one thread. On Bento's branch, `SharedLibraryContext`'s table of contexts is read and written only under its lock, and each context's own table never changes once made.
 Unit 12C (decisions 1898 to 1901) adds no shared state: `FilletLimits.Judge` and its `Neighbours` are local to the call, on frozen shapes, `WellApart` is a constant, and `MaxFillet` holds its limit in a local.
+
+Units 12H and 12I (decisions 22501 to 22509) add no shared state: `StepLimit` is static with only a constant, and each count is a local of its loop; `OffsetVolumes`' options are immutable and only read; `WithDirectives` is a pure function; a compound's count is set as it's built, before it's frozen, as it was.

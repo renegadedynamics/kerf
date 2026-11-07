@@ -5,6 +5,9 @@ version may break the API.
 
 ## Unreleased
 
+- **An offset that comes out nonsense now fails, holding the shape:** a cone with its apex offset inwards reported success with a volume of 3.7e101 (decision 22506). With `Join = JoinKind.Intersection` an upright cone gives the right answer.
+- **`Face.FromSurface` with bounds off the surface fails,** where it reported success (decision 22507).
+- **STEP names that aren't ASCII are written as the format's directives,** not raw UTF-8, and read back the same (OCCT #1686, decision 22508).
 - **A damaged file can't hang a read or a mesh that's cancelled:** a parameter too far from its range to reach, a file of 2^40 shapes in 20 kB, and a BREP with `nan` or `inf` in it are failures (decisions 22501, 22502, 22504); more of a mesh and of a STEP read can be cancelled (decision 22503).
 - **A parallel operation's progress never runs backwards,** and a progress callback gets its reports one at a time (decision 1903).
 - **`CentreOfArea()`** gives the centre of a shape's faces' area without its moments, exact for a planar face bounded by lines and circles.

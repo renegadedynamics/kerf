@@ -184,7 +184,7 @@ Native 8.0.1 on the notch: no failures, 88 wrong of 267, 18 of them invalid Fuse
 
 | Loop | Could it spin? | Now |
 |---|---|---|
-| About 200 `while` loops stepping by a period (171 changed) | **Measured:** a radius of 1e15 in a STEP file, `WireExplorer` | `StepLimit`, a failure |
+| About 200 `while` loops stepping by a period (171 changed) | **Measured** past 25 s: a radius of 1e15 in a STEP file, `WireExplorer` | `StepLimit`, a failure |
 | 40 `for` loops over a range in steps | Inferred from a stack in `ExtPS.IsoIsDeg`, on a radius of 1e9 | `StepLimit.Moved`, a failure |
 | `TopExp/Explorer:152`, on files | **Measured:** a 20 kB STEP file never returned | Refused (decision 22504) |
 | `ShapeUpgrade_UnifySameDomain.Faces:439` | An edge with no vertices: a test builds it. That it spun is by reading | Returns false |
