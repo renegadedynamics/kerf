@@ -27,6 +27,9 @@ internal static class FilletLimits
 {
     private const double Tolerance = Tolerances.Confusion;
 
+    // The cosine of 0.2 radians, twice the angle ChFi3d's test of tangency allows
+    private const double WellApart = 0.98;
+
     /// <summary>Which faces and edges meet where, so that a large shape's edges aren't each a search of the whole shape.</summary>
     private sealed class Neighbours
     {
@@ -602,7 +605,8 @@ internal static class FilletLimits
     }
 
     // The face's width from the edge, if it's a four-sided face of straight edges whose far side is parallel to the edge and
-    // ends the plane: past it the next face turns away, so a contact line can't carry on along it
+    // ends the plane: past it the next face turns away, by more than the fillet's algorithm calls tangent, so a contact line can't
+    // carry on along it
     private static double? Width(Neighbours neighbours, Face face, Edge edge, Direction3D normal, Direction3D inward, in Point3D start, out Edge opposite)
     {
         opposite = default;
@@ -636,6 +640,15 @@ internal static class FilletLimits
             return null;
         }
         if (neighbours.Normal(beyond[0]) is not { } next || next.Dot(normal) >= 1 - 1e-9)
+        {
+            return null;
+        }
+
+        // An edge ChFi3d takes as tangent, as up to 0.1 radians between planes, is no limit: the fillet goes on over it, and it's
+        // right, a ball touching the next face instead (decision 22102; docs/fillet-design.md)
+        // It samples the edge, which every fillet would pay for: planes well apart, not coded tangent, don't need that
+        bool wellApart = next.Dot(normal) < WellApart && Tool.Continuity(farEdge, face, beyond[0]) == Continuity.C0;
+        if (!wellApart && Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(farEdge, face, beyond[0]))
         {
             return null;
         }
