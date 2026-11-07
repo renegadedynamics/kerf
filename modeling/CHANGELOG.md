@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## 0.3.0 (unreleased)
 
+- **A modelling call can be stopped:** inside `using (Kerf.Cancellation.Use(token))` every operation obeys the token, operators and constructors included (`docs/11t-bento.md`).
+- **What used to end the process is a failure:** an assembly or compound nested more than 64 levels, which died at 300 to 3,000; a long loop of moves, which now also stays linear; and files nested too deep.
+- **Requests too large to be meant fail at once:** a pattern of more than `LocationList.MaxCount` (10 million) locations, a tessellation of more than 10 million triangles.
 - **Areas and volumes are integrated precisely (a bug fix; results change):** `Area`, `Volume`, `ComputeVolume`, and sorting and grouping by them, to a millionth of each face's contribution, and the moments of inertia to 1e-9. OCCT's default of a fixed number of points was 6.5e-5 out on an introductory example, and can be 3.7% out on swept and B-spline faces. Over Bento's eleven examples this costs no more. `Center()` and `new Plane(face)`'s origin are on the precise path too, at 1e-9: a curved wall's centre was a whole unit out on a part 100 across.
 - **A partial torus is a slice of the tube (a bug fix; results change):** `new Torus(…, minorStartAngle, minorEndAngle)` and `Solid.MakeTorus` close the arc of the section with a straight line. They used to make OCCT's solid under the arc, closed by flat discs to the axis: 210.6 and not 53.5 for the outer half with R = 5, r = 1.
 - **A default sweep that fails tries another frame:** the Frenet frame, then the discrete one, as long as the result is valid (OCCT #1630). The operation's result carries a warning (`ModelingDiagnostics.SweepWarning`) naming the frame used; a shape's own `Solid.Sweep`, `Face.Sweep` and `Shell.Sweep` raise it through `Warnings`.

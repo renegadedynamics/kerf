@@ -22,6 +22,7 @@ public sealed record MeshOptions
     public bool Relative { get; init; }                         // deflection relative to each edge's size
     public bool Parallel { get; init; } = true;
     public double MinSize { get; init; }
+    public long MaxTriangles { get; init; } = 10_000_000;     // more fails with meshing.too-large
     public bool InternalVertices { get; init; } = true;
     public bool ControlAllSurfaces { get; init; }
 }

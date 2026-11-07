@@ -117,9 +117,16 @@ mechanically to ported code (`theX` → `x`, `myX` → `_x`, `aX` → `x`): tool
 - **Options are records** with defaults that are the common case: `new FuseOptions { Tolerance = 1e-6 }`. No long lists
   of optional parameters (more than three is a sign).
 - **Cancellation and progress:** `CancellationToken cancellationToken = default` last, and `IProgress<double>?` where an
-  operation is long. `Message_ProgressRange` stays inside the engine.
+  operation is long. `Message_ProgressRange` stays inside the engine. An operation without a token, as every operator is,
+  obeys `Kerf.Cancellation.Current`, and a long loop with no range to ask calls `Cancellation.ThrowIfRequested()` at the
+  level of an iteration that does real work (decision 21103; [reliability.md](reliability.md)).
+- **A recursion on what a user or a file controls has a depth limit that fails cleanly,** since a stack overflow ends the
+  process: `Builder.MaxCompoundNesting`, `ModelNode.MaxNesting`, or `RuntimeHelpers.EnsureSufficientExecutionStack()`. An
+  allocation sized by a request has a limit too (`MeshOptions.MaxTriangles`, `LocationList.MaxCount`). Test either in a
+  process of its own: `Kerf.Kernel.Reliability.Tests`.
 - **No ambient state:** no thread-static context, no global switches. What an operation needs, it is given (section
-  10).
+  10). The exceptions are what decision 1386 allows, where a chain is too long for a parameter: `OperationContext`, the
+  working overlay and `Cancellation` (decision 21103).
 
 ## 5. Results and errors
 

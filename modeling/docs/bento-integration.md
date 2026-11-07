@@ -154,6 +154,7 @@ Requirements behind that sketch:
 - **Cancellation and progress** for the long operations: booleans, fillets and chamfers, offsets, lofts, meshing, and
   STEP import and export. Accept a `CancellationToken` (wired to `Message_ProgressIndicator::UserBreak`) and optionally an
   `IProgress<double>`. Bento stops a cell's calculation when an input changes, and should be able to stop OCCT too.
+  Since unit 11T: `Kerf.Cancellation.Use(token)` round a cell's calculation ([11t-bento.md](11t-bento.md)).
 - **Cheap identity:** a fast way to tell whether two shape objects are the same geometry (`IsSame`/`IsEqual`, plus a hash
   consistent with it). Bento uses this to skip recalculating cells whose input didn't really change, and to cache meshes.
 
