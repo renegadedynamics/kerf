@@ -140,7 +140,8 @@ public static partial class Shape3DExtensions
 
         /// <summary>
         /// The largest fillet radius the edges take: for straight edges between planes, what the geometry gives, if that can be
-        /// built; otherwise found by a binary search to within <paramref name="tolerance"/>.
+        /// built; otherwise found by a binary search to within <paramref name="tolerance"/>, which doesn't try what the geometry
+        /// says can't fit.
         /// </summary>
         /// <exception cref="InvalidOperationException">No value was found within <paramref name="maxIterations"/>.</exception>
         /// <exception cref="ArgumentException">The shape isn't valid.</exception>
@@ -149,6 +150,7 @@ public static partial class Shape3DExtensions
             if (!self.IsValid)
                 throw new ArgumentException("Invalid Shape");
             var edges = edgeList.Select(e => e).ToList();
+            double? limit = self.AsShape().FilletLimit(edges);
             double Search(double windowMin, double windowMax, int iteration)
             {
                 var windowMid = (windowMin + windowMax) / 2;
@@ -157,14 +159,15 @@ public static partial class Shape3DExtensions
                     return windowMin;
                 if (iteration == maxIterations)
                     throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
-                // Do these numbers work? If not, try the smaller window
-                if (self.AsShape().Fillet(edges, windowMid).IsFailure)
+                // Do these numbers work? If not, try the smaller window. Past the limit they don't, so it isn't asked (decision 22103):
+                // the same halving, so the same answer, without the tries that can't fit
+                if (windowMid >= limit || self.AsShape().Fillet(edges, windowMid).IsFailure)
                     return Search(windowMin, windowMid, iteration + 1);
                 // They work: close enough, or try the larger window
                 return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
             }
-            if (self.AsShape().FilletLimit(edges) is { } limit && self.AsShape().Fillet(edges, limit).IsSuccess)
-                return limit;
+            if (limit is { } most && self.AsShape().Fillet(edges, most).IsSuccess)
+                return most;
             return Search(0.0, 2 * self.Bounds().Diagonal, 0);
         }
 
