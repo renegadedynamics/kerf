@@ -3738,6 +3738,9 @@ internal sealed partial class ImpImpIntersection
 
     //=================================================================================================
 
+    // A double's relative rounding
+    private const double DoubleRounding = 2.220446049250313e-16;
+
     // Two cylinders of equal radius whose axes cross touch at two points, where their ellipses cross. Axes that only nearly cross,
     // by d, have no such points: each curve turns away within sqrt(2 R d) of them, which is 3e-4 for a d of 1e-8, where QuadQuadGeo
     // still gives the ellipses. An edge through such a point is intersected as it truly lies, so it's cut that far from where the
@@ -3757,8 +3760,10 @@ internal sealed partial class ImpImpIntersection
         Xyz between = cyl2.Location.XYZ() - cyl1.Location.XYZ();
         double offset = Math.Abs(between.Dot(across)) / sine;
         double tolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
-        // Exact: the turn is within the tolerance
-        if (2 * radius * offset <= tolerance * tolerance)
+        // Exact: the turn is within the tolerance, or the offset is within the rounding of the axes' own coordinates, as when a
+        // thick solid's pipes on a box's edges, 30 to 60 from the origin, missed by 7e-15 (decision 1941)
+        double rounding = 4 * DoubleRounding * Math.Max(cyl1.Location.XYZ().Modulus(), cyl2.Location.XYZ().Modulus());
+        if (2 * radius * offset <= tolerance * tolerance || offset <= rounding)
         {
             return false;
         }
