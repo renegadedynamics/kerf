@@ -41,7 +41,7 @@ internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
 
     private readonly SpatialTree<TheObjType, TheBndType> _tree;
     private readonly List<ObjBnd> _seqPtr;
-    private readonly Mt19937 _randGen; // random number generator
+    private DefaultMt19937 _randGen; // random number generator
     private readonly bool _isFullRandom;
 
     /// <summary>A filler of <paramref name="tree"/>.</summary>
@@ -54,7 +54,6 @@ internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     {
         _tree = tree;
         _seqPtr = new List<ObjBnd>();
-        _randGen = new Mt19937(5489u /* == std::mt19937::default_seed */);
         _isFullRandom = isFullRandom;
     }
 

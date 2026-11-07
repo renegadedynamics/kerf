@@ -324,6 +324,42 @@ public class NCollection_UBTreeTest
     }
 
     [Fact]
+    public void DefaultMt19937_IsTheGeneratorsSequence_PastItsTable()
+    {
+        Mt19937 generator = new();
+        DefaultMt19937 shared = default;
+        for (int i = 0; i < 2000; i++)
+        {
+            Assert.Equal(generator.Invoke(), shared.Invoke());
+        }
+    }
+
+    [Fact]
+    public void A_tree_deeper_than_a_selects_first_stack_is_searched_whole()
+    {
+        // Each new item is nearest the first, so the first children go deep, and each level leaves its second child on the stack
+        SpatialTree<int, TestBnd1D> aTree = new();
+        aTree.Add(0, new TestBnd1D(0.0, 0.0));
+        aTree.Add(1, new TestBnd1D(1.0, 1.0));
+        const int aCount = 150;
+        double aAt = 1.0;
+        for (int i = 2; i < aCount; ++i)
+        {
+            aAt /= 3.0;
+            aTree.Add(i, new TestBnd1D(aAt, aAt));
+        }
+
+        int aDepth = 0;
+        for (var aNode = aTree.Root(); !aNode.IsLeaf; aNode = aNode.Child(0))
+        {
+            ++aDepth;
+        }
+        Assert.True(aDepth > 64, $"The tree is only {aDepth} deep");
+
+        Assert.Equal(aCount, aTree.Select(new TestSelector1D(new TestBnd1D(-1.0, 2.0))));
+    }
+
+    [Fact]
     public void Mt19937_MatchesTheStandardSequence()
     {
         // The C++ standard requires the 10000th value of a default-constructed std::mt19937 to be 4123659995

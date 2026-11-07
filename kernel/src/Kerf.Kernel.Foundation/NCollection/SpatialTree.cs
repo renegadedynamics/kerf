@@ -264,8 +264,9 @@ internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, IS
     /// <summary>Searches the branch for all objects conforming to the selector. Returns the number of objects accepted.</summary>
     protected int Select(TreeNode branch, Selector selector)
     {
-        const int THE_INIT_STACK_SIZE = 64;
-        TreeNode[] stack = new TreeNode[THE_INIT_STACK_SIZE];
+        // On the stack: a mesher's check selects once for each segment (11Q, decision 21405)
+        InitialStack initial = default;
+        Span<TreeNode> stack = initial;
         int top = 0;
         int nSel = 0;
 
@@ -295,12 +296,20 @@ internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, IS
             {
                 if (top + 2 > stack.Length)
                 {
-                    Array.Resize(ref stack, stack.Length * 2);
+                    var larger = new TreeNode[stack.Length * 2];
+                    stack.CopyTo(larger);
+                    stack = larger;
                 }
                 stack[top++] = node.Child(1);
                 stack[top++] = node.Child(0);
             }
         }
         return nSel;
+    }
+
+    [System.Runtime.CompilerServices.InlineArray(64)]
+    private struct InitialStack
+    {
+        private TreeNode _first;
     }
 }
