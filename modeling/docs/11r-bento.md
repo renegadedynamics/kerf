@@ -11,7 +11,7 @@ The owner's decision (kernel `docs/decisions.md`, 1742): no operation reports su
 | A sweep that folds over itself (`CAD_PT_SWEEP`) | A shape, and a warning | `#VALUE!`: "The sweep's result isn't valid: … A path with a sharp corner needs …" |
 | A Boolean with an invalid input, or that comes out invalid | A shape that later cells trip over | `#VALUE!`: "The cut's result isn't valid: …" |
 | A profile whose wires cross, or a face from them | A face or solid that's invalid | `#VALUE!`, at the first cell that makes it |
-| A fillet past what the part takes | `#VALUE!` with `modeling.fillet-failed` | `#VALUE!` with `result.invalid`; "Try a smaller radius, or MaxFillet to find the largest that works" stays |
+| A fillet past what the part takes | `#VALUE!` with `modeling.fillet-failed` | `#VALUE!` with `result.invalid`; "Try a smaller radius, or MaxFillet to find the largest that works" stays. Since unit 12C, past a limit it's `modeling.fillet-failed` saying what fits (12c-bento.md) |
 
 Eleven of the guide's examples, with their volumes, face counts and triangles, are unchanged. Search Bento's samples and workbooks for cells that relied on the warning: their shapes were already invalid, and now they say so.
 

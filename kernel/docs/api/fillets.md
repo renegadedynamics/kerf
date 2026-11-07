@@ -41,7 +41,7 @@ public sealed record FilletOptions
   `fillet.twisted-surface`, `fillet.radius-too-large`, `fillet.no-result`, each with the edges (`Shapes`) whose
   contour failed. Today the modelling layer reads `NbFaultyContours`, `FaultyContour`, `StripeStatus` to say which
   edges failed; that becomes the diagnostics' shapes.
-- **At a limit** (decision 1847): straight edges between planes, where a face just disappears, are built after ChFi3d fails; `FilletLimit(edges)` gives the largest radius they can take, and a size that doesn't fit fails with `fillet.too-large`, saying what does.
+- **At a limit** (decision 1847): straight edges between planes, where a face just disappears, are built after ChFi3d fails; `FilletLimit(edges)` gives the largest radius they can take, and a size that doesn't fit fails with `fillet.too-large`, saying what does. A radius within the shape's tolerance of that is that, and one above it fails at once, without trying (decision 22101), unless the next face is within what ChFi3d calls tangent, where there's no limit (22102).
 - 2D fillets and chamfers return the face; their history maps each vertex to the new edge (`Generated(vertex)`).
 
 ## Examples

@@ -319,3 +319,5 @@ Unit 11T (decisions 1853 to 1858) adds one static: `Kerf.Cancellation`'s `AsyncL
 Decisions 1860 to 1868 add no shared state: `BooleanVolumes` has one static, `Measured`, an immutable `MassOptions` only read, as `TopoUtil.Measured` is, and everything else is local to a call. A volume isn't remembered on a shape (decision 1864). Each call makes its own classifiers.
 
 Unit 11T's second pass (decisions 1879 to 1884) adds no shared state: `MassOptions.Default` and `MeasureOperations.Moments` are immutable and only read, and `AppFuncRoot._searches` is an instance's, with one instance for each approximation, on one thread.
+
+Unit 12C (decisions 22101 to 22104) adds no shared state: `FilletLimits.Judge` and its `Neighbours` are local to the call, on frozen shapes, `WellApart` is a constant, and `MaxFillet` holds its limit in a local.

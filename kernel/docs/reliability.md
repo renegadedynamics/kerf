@@ -71,7 +71,7 @@ Those are large inputs. **What the owner describes is a small change of input ma
 | Fillet on a pipe (a spline swept) | 46 ms | 12.5 s | 273 | radii 0.66 to 0.72, **and it fails** |
 | Fillet on a loft (square to circle) | 164 ms | 13.9 s | 85 | radii 3.94 to 3.96, **and it fails** |
 | Fillet on a spline's extrusion | 41 ms | 2.8 s | 68 | near the largest radius, **and it fails** |
-| Fillet on a box | 6.6 ms | 3.4 s, 0.7 s | up to 520 | just above the largest radius (5.0026), **and it fails** |
+| Fillet on a box | 6.6 ms | 3.4 s, 0.7 s | up to 520 | just above the largest radius (5.0026), **and it fails.** Now refused from the geometry in under 2 ms (decision 22101) |
 | Fillet on a slot | 30 ms | 0.9 s | 31 | |
 | Booleans of analytic shapes | 3 to 30 ms | under 0.4 s | under 40 | nothing like it |
 

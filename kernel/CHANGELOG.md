@@ -5,6 +5,9 @@ version may break the API.
 
 ## Unreleased
 
+- **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius within the shape's tolerance of the limit is the limit, the same in every figure, on either side (decisions 22101, 22102). All of a cube's edges past half its side used to fail with `result.invalid`, carrying what it made; now with `fillet.too-large`. A fillet just below a limit, by under the tolerance, no longer leaves faces narrower than that.
+- **`FilletLimit` no longer claims a limit where the next face is within 0.1 radians,** as the fillet rolls on to that face, rightly.
+
 ## 0.3.0
 
 - **Bento's examples recalculate about 4.6 times as fast as at 0.2.0, with 72% fewer bytes:** 265 ms from 1,211 ms, where native OCCT 8.0.1 takes 685 ms, and 126 MB from 450 MB, measured on a quiet machine with ReadyToRun (`docs/performance.md`). Opening them, cold, takes 518 ms from 1,764 ms (native 921 ms). A host's settings, as in `docs/performance.md`, give a recalculation of 166 ms and 24 copies in parallel in 530 ms, a speed-up of 7.5×. A host that loads Kerf collectibly or from bytes gets none of the ReadyToRun figures: the runtime compiles it all, and the first operation takes much longer (`docs/performance.md`, "Where it stands").

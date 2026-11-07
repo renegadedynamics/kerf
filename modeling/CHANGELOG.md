@@ -5,6 +5,8 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A fillet that can't fit fails at once and says what does,** where it could take seconds; a radius a hair from the limit, either way, is the limit. `MaxFillet` gives the same answers with fewer tries (the kernel's `CHANGELOG`).
+
 ## 0.3.0
 
 - **Bento's examples recalculate about 4.6 times as fast as at 0.2.0, with 72% fewer bytes:** 265 ms from 1,211 ms, and 126 MB from 450 MB, with ReadyToRun (the kernel's `docs/performance.md`).
