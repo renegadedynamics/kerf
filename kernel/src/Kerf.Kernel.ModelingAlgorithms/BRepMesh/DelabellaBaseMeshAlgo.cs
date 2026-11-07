@@ -134,7 +134,11 @@ internal class DelabellaBaseMeshAlgo : CustomBaseMeshAlgo
 
             throw new FailureException(Refusal.Unwrapped(theException).Message);
         }
-        catch (Exception exception) when (exception is not ImmutableObjectException)
+        // Kerf: OCCT's catch (...), but running out of memory, a cancel and the mesh's own limits go on up (decision 22802):
+        // as a failure, the face was left without triangles and the mesh carried on
+        catch (Exception exception) when (exception is not ImmutableObjectException and not OutOfMemoryException
+                                              and not OperationCanceledException and not Tools.MeshTooLargeException
+                                              and not Tools.MeshFaceRefusedException)
         {
             if (triangulator is not null)
             {
