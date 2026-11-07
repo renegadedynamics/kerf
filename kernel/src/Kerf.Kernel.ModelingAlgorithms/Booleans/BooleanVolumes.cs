@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
+using Kerf.Engine.Classification;
 using Kerf.Engine.Healing.Analysis;
+using Kerf.Construction;
 using Kerf.Geometry;
 using Kerf.Healing;
 using Kerf.Measurement;
@@ -12,10 +14,11 @@ namespace Kerf.Booleans;
 /// <summary>The Booleans whose result's volume can be checked against their inputs' (<see cref="BooleanVolumes.Check"/>).</summary>
 public enum BooleanVolumeRule
 {
-    /// <summary>The result is no larger than the smaller input.</summary>
+    /// <summary>The result is no larger than the smaller input, and empty only if no points lie well inside both.</summary>
     Common,
 
-    /// <summary>The result is no larger than the object, and no smaller than the object less the tools.</summary>
+    /// <summary>The result is no larger than the object, no smaller than the object less the tools, and has removed something
+    /// if points lie well inside both.</summary>
     Cut,
 
     /// <summary>The result is no smaller than the largest input, and no larger than the inputs together.</summary>
@@ -23,14 +26,15 @@ public enum BooleanVolumeRule
 }
 
 /// <summary>
-/// Whether a Boolean's result has a volume its inputs allow (decisions 21301 to 21306). A silent wrong Boolean can give a valid
+/// Whether a Boolean's result has a volume its inputs allow (decisions 21301 to 21309). A silent wrong Boolean can give a valid
 /// shape, which the validity check can't catch; breaking one of these rules proves the result wrong.
 /// </summary>
 /// <remarks>
 /// The rules are for solids. If anything in the inputs or the result isn't a solid, or a compound of them, or an input's
 /// volume isn't positive, there's no rule and the result passes: so faces, shells and half-spaces. A compound's solids may
 /// overlap, so its sum is only the most it can hold, and its largest solid the least. Before a rule is said to be broken, the
-/// inputs must be valid and bounded, as a volume means nothing otherwise, and the margin grows with their tolerances.
+/// inputs must be valid and bounded, as a volume means nothing otherwise, and the margin grows with their tolerances. An empty
+/// common, or a cut that removed nothing, breaks no rule of volume, so points well inside both inputs are looked for instead.
 /// </remarks>
 public static class BooleanVolumes
 {
@@ -38,8 +42,8 @@ public static class BooleanVolumes
     // more than most of what a rule could find, and on #1659 and #1643 it reported a Cut larger than its object where there was none
     private static readonly MassOptions Measured = new() { Tolerance = 1e-6 };
 
-    // How far past a rule, for the size of the inputs, a result may be (decision 21302). No good result in the corpus came within
-    // a third of it, once the tolerances are allowed for
+    // How far past a rule, for the size of the inputs, a result may be (decision 21302). The corpus's worst good result is 6.8e-5
+    // of its larger input, with tolerances of 0.6, and otherwise 6.7e-6
     private const double MarginOfSize = 1e-4;
 
     // A tolerance makes a shell of its width over a shape's surface, about 6 tolerances over the shape's size of its volume;
@@ -48,6 +52,12 @@ public static class BooleanVolumes
 
     // Volume is a cube, so anything this small for the shape's box is integration's noise (a half-space's, or two shells' that cancel)
     private const double SmallestOfBox = 1e-9;
+
+    // The points tried in each direction, in the overlap of the inputs' boxes: 343 at most, most of them one classification
+    private const int OverlapGrid = 7;
+
+    // How far inside both inputs a point must be, for their size, to prove they overlap
+    private const double OverlapDepth = 1e-3;
 
     /// <summary>
     /// The error if <paramref name="result"/> can't be what <paramref name="rule"/> makes of <paramref name="arguments"/> and
@@ -70,10 +80,10 @@ public static class BooleanVolumes
         }
         var outcome = new Measure();
         outcome.Add(result);
-        // A common that made nothing breaks no rule, so nothing need be measured
+        // A common that made nothing breaks no rule of volume, so nothing need be measured: only a point in both can prove it wrong
         if (rule == BooleanVolumeRule.Common && outcome.Count == 0)
         {
-            return null;
+            return ProvedToOverlap(rule, arguments, tools, result, fuzzyValue);
         }
         var a = new Measure();
         foreach (Shape shape in arguments)
@@ -97,7 +107,8 @@ public static class BooleanVolumes
         bool negative = outcome.Count > 0 && outcome.Smallest < -margin;
         if (r >= least - margin && r <= most + margin && !negative)
         {
-            return null;
+            // Within the rules, but a cut that removed nothing can still be proved wrong
+            return rule == BooleanVolumeRule.Cut && r >= a.Sum * (1 - MarginOfSize) ? ProvedToOverlap(rule, arguments, tools, result, fuzzyValue) : null;
         }
 
         // Past a rule, which is rare, so this is when the dearer questions are worth asking: is it proved?
@@ -108,6 +119,101 @@ public static class BooleanVolumes
             return null;
         }
         return Diagnostic.Error(DiagnosticCode.InvalidResult, Message(rule, a, b, outcome, negative, least, most));
+    }
+
+    // A common that made nothing, or a cut that removed nothing, is wrong if there are points well inside both inputs, and for a
+    // cut still in its result (decisions 21307 to 21309). The rules of volume can't see this, and it's what #1659, #1643 and #245 do.
+    // Only for one input on each side, as what several mean together isn't plain; a grid of points in the boxes' overlap can miss
+    // a small overlap, and then nothing is said. Two points are asked for, as a classifier can be wrong about one.
+    private static Diagnostic? ProvedToOverlap(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue)
+    {
+        if (arguments.Count != 1 || tools.Count != 1)
+        {
+            return null;
+        }
+        Shape a = arguments[0], b = tools[0];
+        BoundingBox inA = a.BoundingBox(), inB = b.BoundingBox();
+        if (!inA.Intersects(inB))
+        {
+            return null;
+        }
+        double fromX = Math.Max(inA.Min.X, inB.Min.X), toX = Math.Min(inA.Max.X, inB.Max.X);
+        double fromY = Math.Max(inA.Min.Y, inB.Min.Y), toY = Math.Min(inA.Max.Y, inB.Max.Y);
+        double fromZ = Math.Max(inA.Min.Z, inB.Min.Z), toZ = Math.Min(inA.Max.Z, inB.Max.Z);
+        if (!double.IsFinite(fromX + toX + fromY + toY + fromZ + toZ) || toX <= fromX || toY <= fromY || toZ <= fromZ)
+        {
+            return null;
+        }
+
+        var classifyA = new SolidClassifier(a);
+        var classifyB = new SolidClassifier(b);
+        SolidClassifier? classifyResult = rule == BooleanVolumeRule.Cut ? new SolidClassifier(result) : null;
+        double depth = -1;
+        int found = 0;
+        Point3D first = default;
+        for (int i = 1; i <= OverlapGrid; i++)
+        {
+            for (int j = 1; j <= OverlapGrid; j++)
+            {
+                for (int k = 1; k <= OverlapGrid; k++)
+                {
+                    var point = new Point3D(fromX + (toX - fromX) * i / (OverlapGrid + 1), fromY + (toY - fromY) * j / (OverlapGrid + 1),
+                                            fromZ + (toZ - fromZ) * k / (OverlapGrid + 1));
+                    if (!Inside(classifyA, point) || !Inside(classifyB, point))
+                    {
+                        continue;
+                    }
+                    // Inside both and gone from the result: the cut did remove something, however small (a small hole in a large block)
+                    if (classifyResult is not null && !Inside(classifyResult, point))
+                    {
+                        return null;
+                    }
+                    if (depth < 0)
+                    {
+                        if (!Trustworthy(arguments) || !Trustworthy(tools))
+                        {
+                            return null;
+                        }
+                        double size = Math.Cbrt(Math.Min(a.IntegrateVolume(Measured), b.IntegrateVolume(Measured)));
+                        depth = OverlapDepth * size + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
+                    }
+                    // Deep inside both, so it can't be tolerance or a touch
+                    if (Deep(point, a, depth) && Deep(point, b, depth))
+                    {
+                        if (found++ == 0)
+                        {
+                            first = point;
+                        }
+                        else
+                        {
+                            return Diagnostic.Error(DiagnosticCode.InvalidResult, rule == BooleanVolumeRule.Common
+                                ? $"The common's result is wrong: it's empty, but the point ({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)}) and others are inside both inputs."
+                                : $"The cut's result is wrong: it removed nothing, but the point ({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)}) and others are inside the tool and still in the result.");
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static bool Inside(SolidClassifier classifier, in Point3D point)
+    {
+        classifier.Perform(point, Tolerances.Confusion);
+        return classifier.State() == Containment.In;
+    }
+
+    private static bool Deep(in Point3D point, Shape shape, double depth)
+    {
+        Vertex vertex = Vertex.At(point);
+        foreach (Shell shell in shape.Explore<Shell>())
+        {
+            if (!shell.Distance(vertex).TryGetValue(out DistanceResult? distance) || distance.Value < depth)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static (double Least, double Most) Bounds(BooleanVolumeRule rule, in Measure a, in Measure b) => rule switch

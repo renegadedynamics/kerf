@@ -9,9 +9,9 @@ using Kerf.Topology;
 namespace Kerf.Kernel.PublicApi.Tests;
 
 /// <summary>
-/// A Boolean's result must have a volume its inputs allow (decisions 21301 to 21306): each rule firing and not firing, what
+/// A Boolean's result must have a volume its inputs allow (decisions 21301 to 21309): each rule firing and not firing, what
 /// the rules leave out, and the margin. The results are made to order, as a real Boolean that breaks a rule depends on a
-/// fault that's meant to be fixed.
+/// fault that's meant to be fixed; BooleanVolumeIssueTests has those.
 /// </summary>
 public class BooleanVolumeTests
 {
@@ -46,8 +46,43 @@ public class BooleanVolumeTests
     }
 
     [Fact]
-    public void An_empty_common_breaks_no_volume_rule() =>
-        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Compound()));
+    public void An_empty_common_of_shapes_apart_or_touching_passes()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 100), Compound()));
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 10), Compound()));
+    }
+
+    [Fact]
+    public void An_empty_common_of_shapes_that_overlap_fires_naming_a_point() =>
+        Fires(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 5), Compound()), "it's empty", "inside both inputs");
+
+    [Fact]
+    public void An_empty_common_of_shapes_that_overlap_by_less_than_their_tolerances_passes() =>
+        // Depth under a thousandth of the size proves nothing
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(10, at: 10 - 1e-3), Compound()));
+
+    [Fact]
+    public void A_cut_that_removed_nothing_fires_if_the_tool_overlaps() =>
+        Fires(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(10)), "it removed nothing", "still in the result");
+
+    [Fact]
+    public void A_cut_that_removed_nothing_passes_if_the_tool_is_apart_or_touching()
+    {
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(10, at: 100), Box(10)));
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(10, at: 10), Box(10)));
+    }
+
+    [Fact]
+    public void A_tiny_cut_within_the_margin_passes_as_the_points_are_gone()
+    {
+        Shape big = Solid.Box(100, 100, 100).Value.Shape;
+        Shape tiny = Solid.Box(0.5, 0.5, 0.5).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(10, 10, 10))));
+        Assert.True(big.Cut(tiny).IsSuccess);
+    }
+
+    [Fact]
+    public void Several_inputs_on_a_side_are_not_held_to_a_point() =>
+        Assert.Null(BooleanVolumes.Check(BooleanVolumeRule.Common, [Box(10)], [Box(10, at: 5), Box(10, at: 100)], Compound()));
 
     [Fact]
     public void A_cut_larger_than_its_object_fires() =>
@@ -64,7 +99,6 @@ public class BooleanVolumeTests
     [Fact]
     public void A_cut_between_the_bounds_passes()
     {
-        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(10)));
         Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(5)));
         Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(20), Compound()));
     }

@@ -35,4 +35,7 @@
     <Compile Include="..\..\..\kernel\tests\Shared\FullCheck\*.cs" Link="Shared\FullCheck\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\..\..\kernel\tests\Shared\BooleanIssueShapes.cs" Link="Shared\BooleanIssueShapes.cs" />
+  </ItemGroup>
 </Project>

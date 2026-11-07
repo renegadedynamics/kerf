@@ -103,4 +103,7 @@
     <Using Include="Kerf.Engine.Foundation.Standard" Static="true" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Shared\BooleanIssueShapes.cs" Link="Shared\BooleanIssueShapes.cs" />
+  </ItemGroup>
 </Project>
