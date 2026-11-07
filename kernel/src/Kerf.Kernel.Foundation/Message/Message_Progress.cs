@@ -51,14 +51,12 @@ internal sealed class ProgressIndicator
 
     internal void Increment(double step)
     {
-        double position;
+        // Reported inside the lock, so that threads' reports arrive one at a time and in order (decision 1903)
         lock (_lock)
         {
             _position = Math.Min(1.0, _position + step);
-            position = _position;
+            _progress?.Report(_position);
         }
-
-        _progress?.Report(position);
     }
 }
 
