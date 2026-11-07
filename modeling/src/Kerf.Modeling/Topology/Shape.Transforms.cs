@@ -96,7 +96,13 @@ internal static class ShapeTransforms
     internal static Shape TransformShape(Shape shape, GeneralTransform3D matrix) =>
         shape.TryAs(out Vertex vertex) && shape.IsVertex()
             ? Vertex.Make(matrix * vertex.Point)
-            : Failures.Get(shape.Transformed(matrix.ToTransform()), () => "transform").Shape;
+            : Failures.Get(shape.Transformed(Rigid(matrix.ToTransform())), () => "transform").Shape;
+
+    // The kernel's ToTransform takes a similarity given as a matrix since its decision 22607; keeping the geometry needs it rigid
+    private static Transform3D Rigid(Transform3D transform) =>
+        Math.Abs(Math.Abs(transform.ScaleFactor) - 1) <= 1e-12
+            ? transform
+            : throw new InvalidOperationException($"A transformation of the shape keeps its geometry, so it must be rigid; this one scales by {transform.ScaleFactor}.");
 
     internal static Shape ToSplines(Shape shape, int degree, double tolerance, bool nurbs)
     {

@@ -5,6 +5,7 @@ using Kerf.Engine.Classification;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Construction;
 using Kerf.Geometry;
 using Kerf.Healing;
@@ -62,6 +63,9 @@ public static class BooleanVolumes
     // result's faces come from one or two faces of an input, and this keeps the classifications to a few thousand
     private const int FaceGrid = 9;
     private const int FacesLooked = 64;
+
+    // A face larger than this isn't a part, but a plane or the like with no bounds (Precision::Infinite is 2e100)
+    private const double UnboundedFace = 1e7;
 
     // How far inside both inputs a point must be, for their size, to prove they overlap
     private const double OverlapDepth = 1e-3;
@@ -278,8 +282,14 @@ public static class BooleanVolumes
         foreach (Face face in result.AllFaces().Concat(others.SelectMany(static o => o.AllFaces())))
         {
             bool ofInput = found >= 0 && !result.AllFaces().Contains(face);
+            // Its own bounds, from its wires; a face with none, such as an infinite plane, has nothing to sample
+            if (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace)))
+            {
+                continue;
+            }
+
             var surface = new FaceSurfaceAdaptor(face);
-            double fromU = surface.FirstUParameter(), toU = surface.LastUParameter(), fromV = surface.FirstVParameter(), toV = surface.LastVParameter();
+            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
             if (!double.IsFinite(fromU + toU + fromV + toV))
             {
                 continue;
@@ -348,8 +358,14 @@ public static class BooleanVolumes
         Point3D first = default;
         foreach (Face face in smaller.AllFaces())
         {
+            // Its own bounds, from its wires; a face with none, such as an infinite plane, has nothing to sample
+            if (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace)))
+            {
+                continue;
+            }
+
             var surface = new FaceSurfaceAdaptor(face);
-            double fromU = surface.FirstUParameter(), toU = surface.LastUParameter(), fromV = surface.FirstVParameter(), toV = surface.LastVParameter();
+            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
             if (!double.IsFinite(fromU + toU + fromV + toV))
             {
                 continue;
