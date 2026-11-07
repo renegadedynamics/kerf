@@ -159,7 +159,7 @@ public static partial class Shape3DExtensions
                     return windowMin;
                 if (iteration == maxIterations)
                     throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
-                // Do these numbers work? If not, try the smaller window. Past the limit they don't, so it isn't asked (decision 22103):
+                // Do these numbers work? If not, try the smaller window. Past the limit they don't, so it isn't asked (decision 1900):
                 // the same halving, so the same answer, without the tries that can't fit
                 if (windowMid >= limit || self.AsShape().Fillet(edges, windowMid).IsFailure)
                     return Search(windowMin, windowMid, iteration + 1);

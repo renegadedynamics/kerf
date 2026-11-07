@@ -1,6 +1,6 @@
 # Unit 12C: fillet limits, for Bento
 
-**Nothing has to change for Bento to build.** `ModelFunctions.Run` already turns the failure into `#VALUE!` with its message. A few cells show something else (decisions 22101 to 22103 in the kernel's `docs/decisions.md`):
+**Nothing has to change for Bento to build.** `ModelFunctions.Run` already turns the failure into `#VALUE!` with its message. A few cells show something else (decisions 1898 to 1900 in the kernel's `docs/decisions.md`):
 
 | Cell | Before | Now |
 |---|---|---|

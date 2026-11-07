@@ -37,7 +37,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
 | Invalid result | #1711 | `FuseEdges` can leave an edge range outside its curve | Read | S to M |
 | Failure on an ordinary shape | #1630 | A pipe of a circle along a planar cubic: no crash, but no pipe, with the default corrected Frenet trihedron, also through `Sweeps.Sweep`. Frenet and discrete both work on it, area 217.81. Why the sweep's approximation fails is not found | Reproduced | M; **for the owner** if the fix is to fall back on another trihedron |
-| Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **Not ported, the owner's decision** (1892, 22104); done another way for straight edges (1847) |
+| Failure on an ordinary shape | #1177, #172 | A fillet that should reach the opposite edge fails; upstream `f713b1305f` and `cbca11e975` do it | Upstream fix | L: 27 files. **Not ported, the owner's decision** (1892, 1901); done another way for straight edges (1847) |
 | Failure on an ordinary shape | corpus: offset/wire_* | 77 BAD: the medial axis gives up on wires, many with circles | Corpus | L. See below |
 | Unintuitive API | #1632 | MakeChamfer doesn't report which contours failed | Read | S |
 | Unintuitive API | #1036 | History differs from maker to maker | Read | M |
@@ -444,7 +444,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | `e177d7e68c` | Modeling - Fix circular wire handling in BRepOffsetAPI_MakeOffset (#1453) | already fixed | Decision 1788: ported |
 | `5eba9aff4f` | Tests - Migrate DRAW tests to Gtests (#1448) | not relevant | Tests |
 | `0f7ab882d5` | Foundation Classes, NCollection - optimize iteration workflow (#1446) | not relevant | Speed of collections |
-| `f713b1305f` | Modeling Algorithms - Enhance fillet and chamfer handling. Part 2 (#1449) | applies | Fillets to the opposite edge, #1177: large. Not ported, the owner's decision (22104) |
+| `f713b1305f` | Modeling Algorithms - Enhance fillet and chamfer handling. Part 2 (#1449) | applies | Fillets to the opposite edge, #1177: large. Not ported, the owner's decision (1901) |
 | `cbca11e975` | Modeling - Enhance fillet and chamfer handling. Part 1 (#1293) | applies | As above |
 | `0d47342863` | Coding, Modeling Data - Clean up dead headers (#1439) | not relevant | Headers |
 | `4c2c356490` | Data Exchange, IGES - Add stream-based I/O support (#1406) | not relevant | IGES |

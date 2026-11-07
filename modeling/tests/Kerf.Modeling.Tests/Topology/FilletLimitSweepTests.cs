@@ -8,7 +8,7 @@ using static Kerf.Modeling.Operations;
 namespace Kerf.Modeling.Tests.Topology;
 
 /// <summary>
-/// A radius swept across each limit, at sizes from 0.01 to 10,000 (decisions 22101 to 22103): below it, within tolerance, just
+/// A radius swept across each limit, at sizes from 0.01 to 10,000 (decisions 1898 to 1900): below it, within tolerance, just
 /// above and far above. Volume and area come from the section of each shape, worked out here from its corners and not from how
 /// the fillet is made, so that a result that merely agrees with its builder doesn't pass.
 /// </summary>

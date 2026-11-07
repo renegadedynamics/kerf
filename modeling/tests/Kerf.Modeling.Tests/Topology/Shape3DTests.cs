@@ -43,7 +43,7 @@ public class FilletFailuresTests
     }
 
     /// <summary>
-    /// Radius 11 on a 20 mm box: the engine gives what OCCT gives, an invalid shape, so it isn't asked (decision 22101), and a
+    /// Radius 11 on a 20 mm box: the engine gives what OCCT gives, an invalid shape, so it isn't asked (decision 1898), and a
     /// cell shows what fits and not a shape that can't be used (decision 1740).
     /// </summary>
     [Fact]
@@ -108,7 +108,7 @@ public class FilletFailuresTests
             Assert.Equal($"The fillet with a radius of {text}" + Advice, failed.Error!.Message);
         else
         {
-            // A radius past half the cube's side: refused from the geometry, where the engine made something invalid (decision 22101)
+            // A radius past half the cube's side: refused from the geometry, where the engine made something invalid (decision 1898)
             Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error!.Code);
             Assert.Contains($"The fillet with a radius of {text} is too large", failed.Error.Message, StringComparison.Ordinal);
             Assert.Contains("the most that fits is 5,", failed.Error.Message, StringComparison.Ordinal);
