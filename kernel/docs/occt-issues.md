@@ -2239,3 +2239,4 @@ Found by unit 12J:
 | `BRepMesh_ModelPreProcessor`, `SeamEdgeAmplifier` | Chooses a seam's pcurve with the curve's first parameter, far off on a line | A cone with no triangles (#572) | fixed (decision 22605) |
 | `IntWalk_IWalking::IsTangentExtCheck` | Close at four points a step away counts as tangent, whatever the sign | A section's closed curve lost, and a wrong Common (#1039) | fixed (decision 22608) |
 | `BOPAlgo_PaveFiller::PutBoundPaveOnCurve` | A curve's end a little off a face takes no vertex, so the curve has no pave block, and is lost | An open section and a Cut that removes nothing (#1659) | fixed (decision 22610); the walk stopping short remains |
+| `BRepTools_GTrsfModification::NewTriangulation` | Tests a scale that's never negative; takes normals through the matrix with its diagonal 1; ignores the face's placement | A mirrored mesh inside out, its normals wrong, a located mesh moved twice | fixed (decision 22612) |

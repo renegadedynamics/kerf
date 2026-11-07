@@ -58,6 +58,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 22612 |
 | #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 22610 |
 | #1039 | A section's closed curve lost between a sphere and a slice at a shallow angle, 86898 for 73353 | 22608 |
 | #1632, #1431 | A chamfer not saying which contours failed; the same 2D corner chamfered twice an internal fault | 22609 |
@@ -440,7 +441,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | `4478114223` | Application Framework - Remove obsolete UTL package (#1474) | not relevant | Not ported |
 | `e4da2bbd16` | Modeling - Modernize BRepGProp_Gauss integration storage (#1473) | not relevant | Storage |
 | `3ed71f8914` | Data Exchange, STEP - add FieldKind enum and fix field handling (#1470) | can't tell | STEP field handling: to compare |
-| `1349657592` | Modeling - Correct BRepTools transformations (#1472) | applies | Transforming triangulations: winding under mirrors and normals. To check against `BRepTools` here; small |
+| `1349657592` | Modeling - Correct BRepTools transformations (#1472) | already fixed | Decision 22612: the general transform of a mesh. `BRepTools_TrsfModification`'s part is the same but for a mesh with a placement of its own, which nothing here makes |
 | `ec6533d50d` | Documentation - Improve Doxygen configuration and build (#1469) | not relevant | Documentation |
 | `4719d5fa98` | Modeling Data - Refactor Geom_OsculatingSurface (#1468) | not relevant | A refactoring |
 | `4c8d3df98d` | Tests - Fix DRAW test migration (#1464) | not relevant | Tests |
