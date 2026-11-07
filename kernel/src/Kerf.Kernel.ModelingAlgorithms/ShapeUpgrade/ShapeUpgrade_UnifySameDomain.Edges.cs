@@ -997,6 +997,12 @@ internal partial class UnifySameDomain
             return false;
         }
 
+        if ((t1 == BSplineCurve || t1 == BezierCurve) && (t2 == BSplineCurve || t2 == BezierCurve)
+            && HidesCorner(ade1, edge1.Orientation == Forward, ade2, edge2.Orientation == Forward))
+        {
+            return false;
+        }
+
         if (lineDirectionOk && t2 == Line)
         {
             // Check that the accumulated deflection does not exceed the linear tolerance
@@ -1019,6 +1025,22 @@ internal partial class UnifySameDomain
         }
 
         return true;
+    }
+
+    // Whether two fitted curves that agree at their shared end turn sharply just behind it. A fit rounds a corner far smaller than
+    // its own spans, so the tangents at the very ends can agree by chance where the curves meet at any angle: equal cylinders nearly
+    // crossing turn within sqrt(2 R d), a few millionths. One spline over such a corner runs at very different speeds either side,
+    // which no projection by parameter follows (decision 1922). So compare where each curve is a little way back from the end.
+    private static bool HidesCorner(EdgeCurveAdaptor ade1, bool forward1, EdgeCurveAdaptor ade2, bool forward2)
+    {
+        const double theShareOfRange = 0.01, theSharpest = 0.1;
+        double first1 = ade1.FirstParameter(), last1 = ade1.LastParameter();
+        double first2 = ade2.FirstParameter(), last2 = ade2.LastParameter();
+        Point3D end1 = ade1.Value(forward1 ? last1 : first1), back1 = ade1.Value(forward1 ? last1 - theShareOfRange * (last1 - first1) : first1 + theShareOfRange * (last1 - first1));
+        Point3D end2 = ade2.Value(forward2 ? first2 : last2), on2 = ade2.Value(forward2 ? first2 + theShareOfRange * (last2 - first2) : last2 - theShareOfRange * (last2 - first2));
+        var chord1 = new Vector3D(back1, end1);
+        var chord2 = new Vector3D(end2, on2);
+        return chord1.Magnitude > Constants.Resolution() && chord2.Magnitude > Constants.Resolution() && chord1.AngleTo(chord2) > theSharpest;
     }
 
     private static bool GetLineEdgePoints(in Edge inpEdge, ref Point3D firstPoint, ref Vector3D directionVec)

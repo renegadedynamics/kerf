@@ -282,4 +282,50 @@ public class BooleanVolumeTests
         Assert.True(plain.IsSuccess);
         Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5), plain.Value.Shape));
     }
+
+    // Two fitted curves meeting at a corner a few millionths across, whose end tangents happened to agree, were merged into one
+    // spline by the clean, and the pcurve projected from it missed half the curve: 0.8% out, valid and a success (decision 1922)
+    [Theory]
+    [InlineData(0.5, -5e-11, 0.0)]
+    [InlineData(0.1, -2e-7, 0.5)]
+    [InlineData(10, -5e-6, 0.5)]
+    public void A_cut_of_equal_radius_nearly_crossing_keeps_its_corner(double radius, double offset, double height)
+    {
+        (Shape cylinder, Shape tool, double common) = Crossing(radius, offset, height);
+        Shape result = cylinder.Cut(tool).Value.Shape;
+        Assert.Equal(Math.PI * radius * radius * 2 * radius - common, result.IntegrateVolume(), 2e-4 * common);
+    }
+
+    // The clean wasn't at fault in these: an edge grazing a face got new vertices either side of the one already touching, once the
+    // touch was longer than a fixed 1e-3, and a fuse lost their common or half a cylinder: up to 16.5% out, valid (decision 1923)
+    [Theory]
+    [InlineData(50, -2e-8, 1.0)]
+    [InlineData(500, -2e-7, 1.0)]
+    [InlineData(1000, 1e-6, 0.0)]
+    public void A_fuse_of_large_equal_cylinders_nearly_crossing_loses_nothing(double radius, double offset, double height)
+    {
+        (Shape cylinder, Shape tool, double common) = Crossing(radius, offset, height);
+        Shape result = cylinder.Fuse(tool).Value.Shape;
+        double both = Math.PI * radius * radius * 6 * radius;
+        Assert.Equal(both - common, result.IntegrateVolume(), 2e-4 * both);
+    }
+
+    // A cylinder of the radius, standing on the origin's plane by half its height, and one twice as long across it with its axis at
+    // height * radius and offset from the first's, with their common part from the geometry
+    private static (Shape Cylinder, Shape Tool, double Common) Crossing(double radius, double offset, double height)
+    {
+        Shape cylinder = Solid.Cylinder(radius, 2 * radius).Value.Shape.Transformed(Transform3D.Translation(new Vector3D(0, 0, -radius))).Value.Shape;
+        var turn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), Direction3D.UnitX), -Math.PI / 2);
+        Shape tool = Solid.Cylinder(radius, 4 * radius).Value.Shape.Transformed(turn).Value.Shape
+            .Transformed(Transform3D.Translation(new Vector3D(offset, -2 * radius, height * radius))).Value.Shape;
+        double z = height * radius, from = Math.Max(-radius, offset - radius), to = Math.Min(radius, offset + radius), middle = (from + to) / 2, half = (to - from) / 2, sum = 0;
+        const int steps = 4000;
+        for (int i = 0; i < steps; i++)
+        {
+            double angle = -Math.PI / 2 + Math.PI * (i + 0.5) / steps, x = middle + half * Math.Sin(angle);
+            double across = Math.Sqrt(Math.Max(0, radius * radius - x * x)), reach = Math.Sqrt(Math.Max(0, radius * radius - (x - offset) * (x - offset)));
+            sum += 2 * across * Math.Max(0, Math.Min(radius, z + reach) - Math.Max(-radius, z - reach)) * half * Math.Cos(angle) * Math.PI / steps;
+        }
+        return (cylinder, tool, sum);
+    }
 }

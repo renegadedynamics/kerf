@@ -2229,3 +2229,12 @@ Found by unit 12C (fillet-design.md, section 8), each a loud failure:
 | `ChFi3d_Builder`, a next face within 0.1 radians | Just below the face's width, by up to about 1e-6 at small angles and 1e-8 at 5 degrees, the fillet comes out invalid. **Since unit 12M the public `Fillet` builds these exactly instead (decision 1910),** and the engine's own remains as it was. Above and below that it's right | `result.invalid`, carrying the shape | leave, until a user meets it: it wants a stage of fillet-design.md's |
 | `ChFi3d_Builder`, a contact line reaching a tangent edge | From the radius where the contact line meets a tangent edge to as much as 1e-5 above it, it fails, though it's right on both sides | `fillet.*` failure at a radius that should work | leave, as above |
 | `BRepOffset_MakeOffset`, a cone with an apex | Offset inwards with round joins, or an inverted cone with either join, gives a compound of faces, called valid, with a volume to 3.7e101 and a box to 3.8 million. With mitres an upright cone is right. Same `BRepOffset::Surface` by reading; native not run | A public success, now a failure holding the shape | Decision 1918; the geometry is left |
+## Found by units 12E and 12G
+
+| What | Where | Status |
+|---|---|---|
+| Two fitted curves meeting at a tiny corner, whose end tangents agree by chance, are glued into a spline with half its length on 1 part in 133 of its parameters. In Kerf, by reading the same code in OCCT (not run on native) | `ShapeUpgrade_UnifySameDomain` | Refused (decision 1922) |
+| Points spread by parameter step over a fast stretch of a spline whose speeds are under the limit of 1500, and the pcurve is 0.27 from the curve, with the status "done" and no larger tolerance | `ShapeConstruct_ProjectCurveOnSurface` | Left: the merge that made it is refused; a check changed `de/step_2/T9` (decision 1922) |
+| `BRepCheck`'s 23 points by parameter don't see such a pcurve: valid at a tolerance of 1e-7 | `BRepCheck_Edge` | Left |
+| `maxDist = 1e4 * tol` for extending a vertex: absolute, where a touch spans sqrt(2 R tol) | `BOPAlgo_PaveFiller::PerformEF` | Scaled by the touch (decision 1923) |
+| `sqMagnFDer < 1e-8` has the fourth power of the size in it, so `JoinWLines` decides by curvature at a large radius and by a polygon at a small one | `IntPatch_PointLine::CurvatureRadiusOfIntersLine` | Left |
