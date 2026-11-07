@@ -108,6 +108,11 @@ internal class TorusRangeSplitter : UVParamRangeSplitter
                     double pasV = paramV.Value(j);
                     if (pasV >= newRangeV.first && pasV < newRangeV.second)
                     {
+                        if ((nodes.Size() & 1023) == 0)
+                        {
+                            parameters.Budget?.Check(nodes.Size());
+                        }
+
                         nodes.Append(new Point2D(pasU, pasV));
                     }
                 }

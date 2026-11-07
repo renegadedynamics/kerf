@@ -47,9 +47,17 @@ internal abstract class TShape : Transient
     }
 
     /// <summary>The child shapes (OCCT: private, read by its friends TopoDS_Iterator and TopoDS_Builder).</summary>
-    internal readonly NCollection_List<Shape> _shapes = new();
+    internal NCollection_List<Shape> _shapes = new();
 
     private ushort _state;
+
+    /// <summary>
+    /// How many levels of compound lie inside this one, or a compsolid: 0 for every other shape and for a compound of
+    /// them (decision 1854). <see cref="Builder.Add"/> keeps it, and refuses more than
+    /// <see cref="Builder.MaxCompoundNesting"/>, as most walks of a shape recurse once a level. It only grows, so after
+    /// a <c>Remove</c> it can overstate, which can't matter at such a depth.
+    /// </summary>
+    internal ushort _compoundNesting;
 
     /// <summary>
     /// The identity hash of shape maps (unit 10J; performance.md's proposal 7): drawn once at creation, in place of
@@ -254,8 +262,7 @@ internal abstract class TShape : Transient
         }
         if (!isWalkNeeded)
         {
-            FreezeRepresentations();
-            Freeze();
+            FreezeOne();
             return;
         }
 
@@ -278,12 +285,18 @@ internal abstract class TShape : Transient
             }
             else
             {
-                TShape tShape = top.TShape;
-                tShape.FreezeRepresentations();
-                tShape.Freeze();
+                top.TShape.FreezeOne();
                 stack.RemoveAt(stack.Count - 1);
             }
         }
+    }
+
+    // Its lists won't grow now, and a kept shape holds them for hours, so they let go of the room they had for growing
+    private void FreezeOne()
+    {
+        _shapes = _shapes.Finished();
+        FreezeRepresentations();
+        Freeze();
     }
 
     /// <summary>
@@ -297,6 +310,6 @@ internal abstract class TShape : Transient
     private struct FreezeFrame(TShape theTShape)
     {
         public readonly TShape TShape = theTShape;
-        public List<Shape>.Enumerator Children = theTShape._shapes.GetEnumerator();
+        public NCollection_List<Shape>.Enumerator Children = theTShape._shapes.GetEnumerator();
     }
 }

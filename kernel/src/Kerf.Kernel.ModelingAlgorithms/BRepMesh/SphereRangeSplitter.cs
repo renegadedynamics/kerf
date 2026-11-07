@@ -47,6 +47,11 @@ internal class SphereRangeSplitter : DefaultRangeSplitter
             double pasU = range1.first + d;
             for (; pasU < stepAndOffset1.second; pasU += stepAndOffset1.first)
             {
+                if ((nodes.Size() & 1023) == 0)
+                {
+                    parameters.Budget?.Check(nodes.Size());
+                }
+
                 nodes.Append(new Point2D(pasU, pasV));
             }
         }

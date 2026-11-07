@@ -26,6 +26,8 @@ public static class Brep
     {
         ArgumentNullException.ThrowIfNull(stream);
         limits ??= ReadLimits.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         Shape shape;
         try

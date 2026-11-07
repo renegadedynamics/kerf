@@ -109,6 +109,9 @@ public static class FilletOperations
     /// <summary>The fillet or chamfer failed without saying why: <c>fillet.failed</c>.</summary>
     public static DiagnosticCode Failed { get; } = new("fillet.failed");
 
+    /// <summary>The size doesn't fit: more than the width of a face beside a straight edge, or just that, where it can't yet be built: <c>fillet.too-large</c>.</summary>
+    public static DiagnosticCode TooLarge { get; } = new("fillet.too-large");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
@@ -147,6 +150,7 @@ public static class FilletOperations
                 fillet.SetContinuity(options.InternalContinuity, options.AngularTolerance);
                 foreach (FilletSpec spec in specs)
                 {
+                    Cancellation.ThrowIfRequested(); // Kerf: finding a contour takes time on a large shape
                     if (spec.EndRadius is { } end)
                     {
                         fillet.Add(spec.Radius, end, spec.Edge);
@@ -161,10 +165,35 @@ public static class FilletOperations
                 {
                     return outcome;
                 }
+
+                // ChFi3d has failed: is it a limit, where a face just disappears? (decision 1847)
+                if (FilletLimits.Fillet(solid, specs, options) is { } limit)
+                {
+                    return limit;
+                }
                 ImmutableArray<Diagnostic> faulty = Faulty(fillet, specs.Length);
+                if (FilletLimits.TooLarge(solid, specs) is { } tooLarge)
+                {
+                    faulty = [tooLarge, .. faulty];
+                }
                 return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
             }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null,
                made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Radius, s.EndRadius ?? 0.0))), "The fillet's result"));
+        }
+
+        /// <summary>
+        /// The most that a radius on these edges can be, from their geometry, without trying: for straight edges between planes
+        /// beside a rectangular face, where the fillet uses up the face (and half of it, with the edge opposite too). No tangent
+        /// fillet fits above it, though other things can stop one sooner, and at it the fillet may not be built. Null if the edges
+        /// say nothing.
+        /// </summary>
+        public double? FilletLimit(IEnumerable<Edge> edges)
+        {
+            ArgumentNullException.ThrowIfNull(edges);
+            Shape solid = shape.AsShape();
+            Edge[] own = [.. edges];
+            Owned(solid, own);
+            return FilletLimits.LargestRadius(solid, own);
         }
 
         /// <summary>The shape with <paramref name="edges"/> chamfered by <paramref name="distance"/> on both faces.</summary>
@@ -214,6 +243,7 @@ public static class FilletOperations
                 chamfer.SetMode(mode);
                 for (int i = 0; i < specs.Length; i++)
                 {
+                    Cancellation.ThrowIfRequested();
                     ChamferSpec spec = specs[i];
                     if (spec.Angle is { } angle)
                     {
@@ -228,8 +258,10 @@ public static class FilletOperations
                         chamfer.Add(spec.Distance, spec.Edge);
                     }
                 }
-                return MakerOutcome.Of(chamfer, range, [solid],
-                                       () => Diagnostic.Error(Failed, $"The chamfer couldn't be built on {specs.Length} edge(s).").WithShapes(specs.Select(s => (Shape)s.Edge)));
+                EngineOutcome outcome = MakerOutcome.Of(chamfer, range, [solid],
+                                                        () => FilletLimits.TooLarge(solid, specs, faces)
+                                                              ?? Diagnostic.Error(Failed, $"The chamfer couldn't be built on {specs.Length} edge(s).").WithShapes(specs.Select(s => (Shape)s.Edge)));
+                return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
                made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result"));
         }

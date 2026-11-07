@@ -139,8 +139,62 @@ public readonly partial struct Placement : IEquatable<Placement>
             return this;
         }
 
+        return MultipliedAt(other, 0);
+    }
+
+    // Kerf: OCCT recurses once for each item of Other, and a shape moved a few thousand times overflows the stack, which
+    // ends the process (decision 1853). Short chains, nearly all of them, stay on the stack; a long one goes in an array.
+    private const int MaxChainRecursion = 64;
+
+    private readonly Placement MultipliedAt(in Placement other, int depth)
+    {
+        if (other.IsIdentity)
+        {
+            return this;
+        }
+
+        if (ProductMemo.TryGet(_items._node!, other._items._node!, out Placement known))
+        {
+            return known;
+        }
+
         // prepend the queue of Other
-        Placement head = Multiplied(other.NextLocation());
+        Placement head = depth < MaxChainRecursion ? MultipliedAt(other.NextLocation(), depth + 1) : MultipliedAlong(other.NextLocation());
+        Placement product = Joined(head, other);
+        ProductMemo.Set(_items._node!, other._items._node!, product);
+        return product;
+    }
+
+    // Kerf: from this length a chain is folded into one datum of the same transformation. Each move of a shape copies the
+    // whole of its chain, so 30,000 moves took 54 s, and 1,024 keeps it linear (decision 1853). Shapes' identity reads
+    // the chain, so a shape moved further than this is no longer the same as one moved back; nothing real gets here.
+    private const int MaxChain = 1024;
+
+    private readonly Placement MultipliedAlong(in Placement other)
+    {
+        var chain = new List<Placement>();
+        for (Placement item = other; !item.IsIdentity; item = item.NextLocation())
+        {
+            chain.Add(item);
+            if (chain.Count + MaxChainRecursion > MaxChain)
+            {
+                chain.Clear();
+                chain.Add(new Placement(other.Transformation));
+                break;
+            }
+        }
+
+        Placement head = this;
+        for (int i = chain.Count - 1; i >= 0; i--)
+        {
+            head = Joined(head, chain[i]);
+        }
+
+        return head;
+    }
+
+    private static Placement Joined(in Placement head, in Placement other)
+    {
         SListOfItemLocation result = head._items;
         // does the head of Other cancel the head of result
 
@@ -222,7 +276,14 @@ public readonly partial struct Placement : IEquatable<Placement>
 
         if (power > 0)
         {
-            return Multiplied(Powered(power - 1));
+            // Kerf: a loop, where OCCT recurses once for each power
+            Placement result = this;
+            for (int i = 1; i < power; i++)
+            {
+                result = Multiplied(result);
+            }
+
+            return result;
         }
         else
         {
@@ -339,6 +400,56 @@ public readonly partial struct Placement : IEquatable<Placement>
     /// <summary>A readable form for logs and the debugger, not a format to parse.</summary>
     public override readonly string ToString()
         => IsIdentity ? "Placement(Identity)" : $"Placement({Transformation})";
+}
+
+/// <summary>
+/// The last few products this thread made (unit 11Q, sixth slice). Placing a shape's sub-shapes multiplies the same two chains
+/// over and over, and each new chain is a node of about 170 bytes that a kept shape then holds: nearly half of a patterned
+/// shape, where 1,158 nodes held 137 distinct chains. A product depends only on its two chains, which never change, so a
+/// shared one reads the same as a new one. Four chains a thread stay alive for the thread's life.
+/// </summary>
+internal static class ProductMemo
+{
+    private const int Size = 4;
+
+    [ThreadStatic]
+    private static Entry[]? s_entries;
+
+    [ThreadStatic]
+    private static int s_next;
+
+    internal static bool TryGet(SListNodeOfItemLocation left, SListNodeOfItemLocation right, out Placement product)
+    {
+        Entry[]? entries = s_entries;
+        if (entries is not null)
+        {
+            foreach (ref readonly Entry entry in entries.AsSpan())
+            {
+                if (ReferenceEquals(entry.Left, left) && ReferenceEquals(entry.Right, right))
+                {
+                    product = entry.Product;
+                    return true;
+                }
+            }
+        }
+
+        product = default;
+        return false;
+    }
+
+    internal static void Set(SListNodeOfItemLocation left, SListNodeOfItemLocation right, in Placement product)
+    {
+        Entry[] entries = s_entries ??= new Entry[Size];
+        entries[s_next] = new Entry(left, right, product);
+        s_next = (s_next + 1) % Size;
+    }
+
+    private readonly struct Entry(SListNodeOfItemLocation left, SListNodeOfItemLocation right, in Placement product)
+    {
+        public readonly SListNodeOfItemLocation Left = left;
+        public readonly SListNodeOfItemLocation Right = right;
+        public readonly Placement Product = product;
+    }
 }
 
 /// <summary>

@@ -263,6 +263,12 @@ internal class StepWriter
         int nb = _themodel.EntityCount;
         for (int i = 1; i <= nb; i++)
         {
+            // Kerf: sending a large model has no progress range (decision 1855)
+            if ((i & 255) == 0)
+            {
+                Cancellation.ThrowIfRequested();
+            }
+
             //    Main list: we don't send Entities that are in a Scope
             //    They will be sent through the Scope that contains them
             if (_thescopebeg is not null)

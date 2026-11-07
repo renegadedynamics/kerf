@@ -162,6 +162,7 @@ internal class Pso
         // Run PSO iterations
         for (int step = 1; step < _nbIter; ++step)
         {
+            Cancellation.ThrowIfRequested(); // Kerf: a swarm for each conic and surface takes seconds (decision 1855)
             minimalVelocity.Init(RealLast());
 
             for (int partIdx = 1; partIdx <= _nbParticles; ++partIdx)

@@ -49,7 +49,7 @@ internal class ParamSet : Transient
         else if (lnval < 0)
         {
             //    ..  External character management  ..
-            FileParameter fp = _thelist.ChangeValue(_thenbpar);
+            ref FileParameter fp = ref _thelist.ChangeValue(_thenbpar);
             fp.Init(val, typ);
             if (nument != 0)
             {
@@ -61,7 +61,7 @@ internal class ParamSet : Transient
             //    ..  Local character management  ..
             //      Register this parameter (OCCT copies <lnval> characters into its page, then a null)
             string copy = lnval < val.Length ? val.Substring(0, lnval) : val;
-            FileParameter fp = _thelist.ChangeValue(_thenbpar);
+            ref FileParameter fp = ref _thelist.ChangeValue(_thenbpar);
             fp.Init(copy, typ);
             if (nument != 0)
             {
@@ -88,6 +88,9 @@ internal class ParamSet : Transient
         return _thenbpar;
     }
 
+    /// <summary>Makes room for the whole reservation at once, when it's known to be used: no growing, and no copies.</summary>
+    public void Reserve() => _thelist.Reserve(_themxpar);
+
     /// <summary>The total count of parameters (including next sets').</summary>
     public int ParamCount => _thenbpar;
 
@@ -105,15 +108,15 @@ internal class ParamSet : Transient
     }
 
     /// <summary>A parameter, by its number, to be changed in place.</summary>
-    public FileParameter ChangeParam(int num)
+    public ref FileParameter ChangeParam(int num)
     {
         if (num > _themxpar)
         {
-            return _thenext!.ChangeParam(num - _themxpar);
+            return ref _thenext!.ChangeParam(num - _themxpar);
         }
         else
         {
-            return _thelist.ChangeValue(num);
+            return ref _thelist.ChangeValue(num);
         }
     }
 

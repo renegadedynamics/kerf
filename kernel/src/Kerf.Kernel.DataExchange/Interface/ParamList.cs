@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2008-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Runtime.InteropServices;
 using Kerf.Engine.Foundation;
 
 namespace Kerf.Engine.Exchange.Framework;
@@ -22,6 +23,9 @@ internal class ParamList : Transient
         _vector = new List<FileParameter>(Math.Max(increment, 0));
     }
 
+    /// <summary>Makes room for <paramref name="capacity"/> elements, when the count is known beforehand.</summary>
+    public void Reserve(int capacity) => _vector.EnsureCapacity(capacity);
+
     /// <summary>The number of elements.</summary>
     public int Length() => _vector.Count;
 
@@ -39,7 +43,7 @@ internal class ParamList : Transient
     {
         int ind = index - 1;
         Grow(ind);
-        _vector[ind] = new FileParameter(value);
+        _vector[ind] = value;
     }
 
     /// <summary>The <paramref name="index"/>-th element.</summary>
@@ -55,24 +59,22 @@ internal class ParamList : Transient
     }
 
     /// <summary>The <paramref name="index"/>-th element, to be changed in place; the list grows if needed.</summary>
-    public FileParameter ChangeValue(int index)
+    public ref FileParameter ChangeValue(int index)
     {
         int ind = index - 1;
         if (ind >= _vector.Count)
         {
-            FileParameter fp = new FileParameter();
             Grow(ind);
-            _vector[ind] = fp;
         }
         if (ind < 0)
         {
             throw new OutOfRangeException("NCollection_DynamicArray::ChangeValue");
         }
-        return _vector[ind];
+        return ref CollectionsMarshal.AsSpan(_vector)[ind];
     }
 
     /// <summary>OCCT's <c>operator()</c>: <see cref="ChangeValue"/>.</summary>
-    public FileParameter this[int index] => ChangeValue(index);
+    public ref FileParameter this[int index] => ref ChangeValue(index);
 
     /// <summary>Removes every element.</summary>
     public void Clear() => _vector.Clear();

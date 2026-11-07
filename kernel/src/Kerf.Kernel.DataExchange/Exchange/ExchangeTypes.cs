@@ -34,7 +34,35 @@ public sealed record ModelNode
     public ShapeMesh? Mesh { get; init; }
 
     /// <summary>An assembly's children; empty for a part.</summary>
-    public ImmutableArray<ModelNode> Children { get; init; } = [];
+    /// <exception cref="ArgumentException">The tree would be nested more than <see cref="MaxNesting"/> deep.</exception>
+    public ImmutableArray<ModelNode> Children
+    {
+        get;
+        init
+        {
+            field = value;
+            int nesting = 0;
+            foreach (ModelNode child in value)
+            {
+                nesting = Math.Max(nesting, child._nesting + 1);
+            }
+
+            if (nesting > MaxNesting)
+            {
+                throw new ArgumentException($"Assemblies are nested more than {MaxNesting} deep.", nameof(value));
+            }
+
+            _nesting = nesting;
+        }
+    } = [];
+
+    /// <summary>
+    /// The most levels of assembly a model can have (decision 1854): the writers recurse once a level, a stack overflow
+    /// ends the process, and on a 1 MB stack they fail at about 120. No real model comes near it.
+    /// </summary>
+    public const int MaxNesting = 64;
+
+    private readonly int _nesting;
 
     /// <summary>True for a part: a shape or a mesh.</summary>
     public bool IsPart => Shape is not null || Mesh is not null;

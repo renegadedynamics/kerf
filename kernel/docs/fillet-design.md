@@ -1,0 +1,181 @@
+# Fillets: where they stop, and what could replace them
+
+*7 November 2026. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here.*
+
+**In short.** The 10 mm case is fixed, without a rewrite (decision 1847). That class of failure is not one failure of ChFi3d's mathematics: ChFi3d computes the right surface and then can't remove a face. **A rewrite of ChFi3d isn't justified yet, but a rolling-ball path that runs only where ChFi3d has failed is,** one analytic stage at a time. Its next stage is circular edges, the largest group among the corpus's fillet failures (8 of 23, 3 of them exactly this limit). Don't port `f713b1305f`.
+
+Everything here says if it's measured, inferred, or from elsewhere. Timings are from a loaded machine.
+
+## 1. How ChFi3d works, and why it fails at a limit
+
+ChFi3d is about 33,000 lines, and with its surface kinds, spines, blend functions and walking about 65,600 (`ChFi3d`, `ChFiKPart`, `ChFiDS`, `BRepBlend`, `Blend`, `BlendFunc`). The steps, for each contour (a chain of tangent edges, the "spine"):
+
+1. **Surfaces.** `PerformSetOfSurf`. For a pair it knows (plane with plane, cylinder or cone, on a straight or circular edge) `ChFiKPart.ComputeData` writes the fillet's surface exactly. For any other pair, `PerformSetOfKGen` walks along a guide line: it finds a first section (`StartSol`, `PerformFirstSection`), then marches, solving for the ball's contact points at each step (`BRepBlend`), and approximates a B-spline through them.
+2. **Trimming to faces.** `SplitKPart` asks a hatcher where the analytic surface's contact lines lie inside each face. The walk does the equivalent with its restriction checks.
+3. **Corners.** `PerformOneCorner` and the others (`Builder_C1`, `_C2`, `_CnCrn`, `FilBuilder_C2`, `_C3`, `ChBuilder_C3`: about 12,300 lines), case by case on how many fillets meet.
+4. **Rebuilding the solid.** The data structure of new surfaces and curves goes to `BOPReconstruction` (Kerf's, in place of OCCT's TopOpeBRepBuild), which trims the old faces against them and assembles a solid.
+
+**The design's assumption is that a fillet's two contact lines lie inside its two faces,** and that each face survives with less of it. Nothing in the steps above has the idea of a face being used up. Contact leaving a face is handled by a further face being found (step 2 of the walk) or by a corner, and not as an event of its own.
+
+### A trace: radius 10 on one edge of a 10 mm cube
+
+Measured, with temporary lines in `SplitKPart`, `StartSol`, `PerformSetOfKPart` (not kept):
+
+| Radius | Step 1 | Hatcher on face 1 | Then | Result |
+|---|---|---:|---|---|
+| 9 | Analytic: plane and plane | 1 domain, 2 points | | 7 faces |
+| 10 - 1e-8 | Analytic | 1 domain, 2 points | | 7 faces, two of them 1e-8 wide |
+| **10** | **Analytic, and right** | **0 domains, 2 points** | `SplitKPart` refuses; on to the walk; `StartSol` finds no start | "no starting solution" |
+| 11 | Analytic | 0 domains, 0 points | The same, rightly | The same message, which is why it says nothing |
+
+So at exactly 10 the surface is right. The contact line lies along the face's far edge, so the hatcher finds it on the boundary, not in a domain, and the code takes that as "not on the face". The walk then tries a problem whose solution sits on the same boundary, and that fails too. Upstream's commit message and its hatching code (below) say the same.
+
+**Two fillets that meet** take another way: both contact lines hatch properly (1 domain each), and nothing faults a contour, but the two leave the face in between with no area, and the operation fails with "couldn't be built on 2 edge(s)". Measured for r = 5 on two parallel edges of a 10 mm face. Where in the rebuild is inferred, not traced.
+
+### A trace on curved faces
+
+Measured, the same way:
+
+| Case | Step 1 | Hatcher | Then | Result |
+|---|---|---:|---|---|
+| Disc, R 10, h 5; rim, r = 4.9 | Analytic: cylinder and plane | 1 domain on each | | 4 faces |
+| Same, **r = 5** (the side is used up) | Analytic | **0 domains, 2 points** | `SplitKPart` refuses; walk; `StartSol` fails | "no starting solution" |
+| Cylinder R 5, h 20; rim, **r = 5** (the top is used up) | Analytic | Its plane side has no curve to hatch: a degenerate contact | | **Works**: 3 faces, right |
+| Ellipse's extrusion, 20 by 10, h 5; rim, r = 4.9 | **Walk**, no analytic case | | | 4 faces |
+| Same, **r = 5** | Walk | | `StartSol` fails | "no starting solution" |
+| Same, r = 5.1 | Walk | | `StartSol` fails | The same |
+
+**So the limit is the same defect on analytic and general surfaces:** the boundary is treated as outside. The one that works, the top used up on a cylinder, works because the contact has collapsed to a point and the code has a case for that.
+
+## 2. What was fixed, and what it shows
+
+Measured: volume, area and validity against the true answer, in `FilletLimitTests`.
+
+| Case | Before | Now |
+|---|---|---|
+| One edge, r = a face's width (cube, 10 by 20 by 30, plate) | Fails | **Exact** |
+| Two fillets meeting (r 5 on a 10 mm face; a plate's end fully rounded) | Fails | **Exact** |
+| Four edges to a cylinder; a hexagon's six; a triangle's three | Fails | **Exact** |
+| A concave edge up to its limit | Fails | **Exact** |
+| Chamfer of a whole width; two meeting; four to a diamond; two lengths | Fails | **Exact** |
+| Above the limit | "no starting solution" | Says what fits |
+| All edges of a cube, r = 5 (a sphere); a bar's (a capsule) | Fails | **Fails**: says it can't be built yet; 4.99999 works |
+| Disc's rim, r = h; both rims, r = h / 2; hemisphere; sphere from a short cylinder | Fails | **Fails**, as before |
+| Hole's rim, r = 10 in a 10 mm plate | Fails | Fails |
+| Cylinder's rim, r = R, one end or both (a dome, a capsule) | Works | Works, unchanged |
+
+**An independent check:** `blend/simple/Q8` is such a case. Through `FilletOperations` it now gives an area of 11957.1. Upstream's reference after `f713b1305f` is 1.19571e+10, at a scale of 1000: the same to the digits it records. **Its result is valid, where upstream's own TODO for that case says it's faulty.** The corpus's status stays BAD, as Draw's `blend` calls the engine's `MakeFillet`, and the fallback isn't in it.
+
+It costs nothing unless ChFi3d has failed: 7.8 ms for r = 10 against 1.1 ms for r = 9, in a loop on a loaded machine.
+
+## 3. What a new approach would look like
+
+**The formulation.** A ball of radius r touches both faces. Its centre lies on the intersection of the two faces' offset surfaces at r. The spine of the fillet is that curve, and the fillet is the envelope of the ball along it. The contact points follow from the centre and the normals. This is what the blending literature calls a rolling-ball blend, and what ChFi3d's walk solves too, though it solves for contacts, not centres.
+
+**What would be new is events as first-class steps.** March along the centre curve, and at each step ask what stops the current contact: 
+
+| Event | What happens | Today |
+|---|---|---|
+| A contact reaches a face's edge, and the next face is tangent | Contact carries on to it | Handled in the walk, as a recovery |
+| It reaches a face's edge, and the next face turns away | Ball rolls on that edge, or the blend stops at a "cliff" | Not done: `f713b1305f` only accepts the exact limit |
+| A whole face has been used up between two contact lines | The face goes | **Not done.** The defect here |
+| Two blends meet on a face | They share an edge, tangent | **Not done** |
+| Ball meets a third face before the spine ends | Trim, or a corner | Partly, case by case |
+| A corner of three blends | A sphere patch, when radii and angles allow, else a filling patch | `_CnCrn`, case by case |
+| Ball can't fit (curvature tighter than r) | Fails, and says where | A walking failure |
+
+Then the result comes from cutting or adding by Boolean, on a tool whose faces are the fillet's: the engine is reliable now (unit 7R's reconstruction is a much smaller piece of the same idea), and it's what decision 1847 does.
+
+**From other kernels' documentation.** Downstream products of commercial kernels describe the same list by name, which gives some confidence it's the right list. NX and T-FLEX CAD give an edge blend's "overflow" three named resolutions: *smooth overflow* (the blend deforms to stay tangent to a rounding it runs over), *cliff edge* (a sharp edge is kept, and the blend is a ball touching one face and supported by the edge), and *notch* (the blend is unchanged and the other element's faces are trimmed to it), tried in that order, and with all off, an overflowing blend fails. None of this is in ChFi3d as such. Those are documents for users. They describe what's done, not how, and I've read no kernel's code.
+
+**From the literature** (titles and places checked; the papers themselves not read for this study):
+
+- Rossignac and Requicha, "Constant-radius blending in solid modelling", *Computers in Mechanical Engineering* 3(1), 1984: the offset formulation.
+- Vida, Martin and Várady, "A survey of blending methods that use parametric surfaces", *Computer-Aided Design* 26(5), 1994.
+- Braid, "Non-local blending of boundary models", *Computer-Aided Design* 29(2), 1997: from the title and its place in the field, the problem of a blend that removes or passes faces. **Worth reading first.**
+- US patent 5,615,317, "Method for blending edges of a geometric object in a computer-aided design system", showed up in the search, and others like it are likely. It's old enough that it has probably lapsed. Someone should look before a general implementation; nothing here depends on it.
+
+## 4. What it would fix, and what it wouldn't
+
+**The list has moved since the brief.** corpus-failures.md counted 37 fillet cases failing or BAD. At this head the groups are **OK 749, BAD 35, FAILED 10, IMPROVEMENT 6, SKIPPED 84 of 884; 45 failing or BAD,** as other units have added cases. Of those, 23 are fillets and 22 are chamfers.
+
+The 23 fillets, sorted by the surfaces beside the first step's edges. **Measured:** the kinds and what the public `Fillet` does on the first step of each, with the case's edges as far as explode's order matches. **Inferred:** the last column.
+
+| Kind | Cases | Public fillet now | Would a rolling ball fix it? |
+|---|---|---|---|
+| **Plane and plane, at a limit, apart** | Q8, bug25478_1 | **Now works** | Done |
+| Plane and plane, at a limit, touching at a vertex | bug32931, bug25478_2 | Fails | Yes, with corners: stage 2 |
+| Plane and plane, another cause | U1 (invalid), bug28354, bug27711_3 | U1 invalid; others work on the first step | U1 perhaps; the others aren't fillet failures |
+| **Cylinder and plane, a circular edge, at a limit** | B2 (r 15, side 15 high), Q3 (1, 1), W7 (10, 10) | Fails | **Yes: stage 3,** as for straight edges |
+| Cylinder and plane, circular, past a limit | U7 (r 3, ledge 2 wide), Y7 (r 12, side 10 high), bug602 (r 20, ledge 4.45) | Fails | Only as a *cliff edge*, a ball running on the edge. Otherwise failing is right, and stage 1 says why |
+| Cylinder and plane, circular, another cause | H4, bug32930 | Fails | Unknown |
+| Mixed, with corners | bug26655 | Fails | Perhaps: stage 4 |
+| Bezier or B-spline | A1, A7, G8 | A1 invalid; A7 fails; G8 is the edge-order gap | Stage 5 at best; G8 no |
+| Evolved radius | K2 | Not tried | Only if it does variable radii |
+| Tori, a fuse | bug28119_1, bug_gh501, bug23902 | Not tried | Unknown |
+
+So of the 23: **2 fixed now; 5 more at exact limits within stages 2 and 3; 3 past a limit that want a new feature, not a fix; 3 that aren't fillet failures at all; and 10 unknown,** a few of which might fall to stage 4 or 5. No claim is stronger than that without trying them. **Of the limit cases, the four upstream's commit changes are exactly B2, Q3, Q8 and W7:** two sets of evidence for the same class.
+
+**The chamfer corners.** 22 cases: 12 `_sequence`, 9 `_complex`, and dist_angle/A1. A rolling ball doesn't apply: a chamfer has no ball, and these fail on corners on open shells, where ChFi3d's curves don't close a loop on a face (corpus-failures.md). They'd need their own treatment, cutting by a plane or ruled tool, which is **simpler than a fillet's** but is its own unit. **None fixed by a rolling ball.** Those that read FAILED are where the port refuses what native makes invalid (decision 1735), which stands.
+
+**Upstream's fillets to the opposite edge (`f713b1305f`, 27 files).** Read from GitHub, not ported. 12 of its source files are TopOpeBRepBuild and TopOpeBRepDS, which Kerf has replaced, so that half is to be done over in `BOPReconstruction`; 5 are ChFi3d (`_0` +131, `SpKP` +148, `_C1` +31); the others are tests. It's the same limit: "Exclude fully consumed faces... Accept tangential contacts while rejecting transversal intersections". **It changes four corpus cases, B2, Q3, Q8 and W7, and all four keep their TODO, now "Faulty shapes":** upstream's own reference says its result is invalid there. So it would take each from failing to invalid, except that Kerf would refuse them, as it does an invalid result. Q8 is now right here without it. **Its reason for being on the list has mostly gone. I recommend not porting it:** that reverses occt-defects.md's advice, which predates this.
+
+**Unit 11T's islands** (its reliability.md, in progress when read):
+
+| Island | Failing | A rolling ball? |
+|---|---|---|
+| An equal tee, filleted where they meet | 514 of 2,508 | **Plausibly:** tangency at the saddle's crossing points is an event. Cylinder and cylinder: stage 4 |
+| Crossing cylinders, all edges | 401 of 401 | Plausibly, as corners. Stage 4 |
+| Fillet on a loft | 39 of 2,194 | Perhaps: general surfaces. Stage 5 |
+| Chamfer on a loft | 946 of 2,194 | No ball. Own unit |
+| Fillets that fail slowly (a box just above its limit 3.4 s; a loft 13.9 s; a pipe 12.5 s) | | **Partly now:** see below |
+
+The box's case could end at once: `FilletLimits` knows from the geometry that it can't fit. **It isn't short-circuited here,** as ChFi3d returning something above the limit would then change; a question for the owner. The loft's and pipe's need a limit on the work in `ApproxAFunction`, which is 11T's question, and a rewrite would have its own version of that.
+
+**What it wouldn't fix.** Files that Draw-lite can't read or scripts counting edges. Anything to do with `ChFi2d`. The tolerance of imported shapes (a rolling ball on a sloppy import fails too). Self-intersecting results from radii larger than local curvature: they'd fail honestly, which is better, but they wouldn't work.
+
+## 5. The size, honestly, in stages
+
+Every stage runs after ChFi3d fails, until stage 6 says otherwise. Each leaves things better and is useful on its own. Sizes are judgements, in lines of production code, from this unit's 670-line `FilletLimits` and from ChFi3d's own. **They could be out by half either way.**
+
+| Stage | What | Size | Gets |
+|---|---|---:|---|
+| 0, **done** | Straight edges between planes, apart, square ends | 670 | The owner's case; Q8; bug25478_1 |
+| 1 | Better messages for rims, as for straight edges; limits for circles | 100 | "the most that fits" on a cylinder |
+| 2 | Corners of planes: spherical patches where three blends of one radius meet; slanted ends. Cube to sphere | 500 to 1,000 | bug32931, bug25478_2. A bar to a capsule |
+| 3 | Circular edges, plane and coaxial cylinder: a revolved tool, the same check by Pappus. Cone likewise | 300 to 600 | **B2, Q3, W7**; disc's rim; full round; hemisphere; sphere |
+| 4 | Any analytic pair: plane, cylinder, cone, sphere, torus, with centre curves from analytic intersections, and tangent chains | 3,000 to 6,000 | The tee, crossing cylinders, perhaps bug26655 |
+| 5 | General surfaces: marched centre curves with events, and fitted surfaces | 8,000 to 15,000 | Lofts, pipes; the hard end |
+| 6 | Replacing ChFi3d: run the new path first. Delete the old only if it never loses | | Maybe 40,000 lines fewer. Not soon |
+
+**Stages 0 to 3 are about 2,000 lines, days of work, and carry almost no risk.** Stage 4 is a real project and may not be needed, depending on what Bento's users hit. Stage 5 is the real rewrite, and there's no evidence yet that it's worth doing: on 28 ordinary fillet and chamfer calls, 27 matched native (corpus-failures.md), and what failed on these lists was mostly at a limit.
+
+**Could it start with the commonest cases and fall back to ChFi3d for the rest? Yes:** this unit is that, and it worked without touching ChFi3d, in a few hours.
+
+## 6. What it risks
+
+**Behind ChFi3d, as stages 0 to 5 are: nothing that works,** by construction, as they run only where it has failed. The remaining risks are: a result that's wrong but passes. So every stage needs a check independent of how it builds. Here it's the volume and area from the geometry, and validity. For stage 4 onwards there's no closed form, so the check would have to be the ball itself: sample points on the fillet, and test that a ball there touches both faces and doesn't enter the solid.
+
+**In front of ChFi3d (stage 6):** the corpus's 995 of 1,044 fillet and chamfer steps that match native today (after decision 1735). A new algorithm has to earn them again.
+
+- **How to compare.** The frozen native recordings give area, validity and face counts for each step, so a step that differs by more than 0.1% in area, or goes invalid, is a finding. Face counts may rightly differ (decision 1847's 5 faces where a hair less gives 7), and surfaces will: exact where ChFi3d approximates, so "same" must not mean the same B-spline.
+- **What's lost.** OCCT's reference figures stop being a check in the strict sense, where the new result is better than they are (J6 is one already, decision 1784). Edge order changes, as it did with the reconstruction (G8, bug27711_3). History has to be rebuilt for each stage, and `Generated` for corners isn't simple.
+- **Bento.** A workbook's fillets would change their face order and possibly count, on a recalculation, if the new path went in front. Behind ChFi3d, only cells that showed an error change.
+
+## 7. Recommendation
+
+1. **No rewrite now.** The owner's case is fixed, and the evidence says the failures are specific.
+2. **After 0.3.0: stages 1 and 3,** with the rims first, as they're the largest group among the corpus's fillet failures and the most ordinary thing a user tries after a box: a disc's edge fully rounded. Then stage 2.
+3. **Don't port `f713b1305f`.**
+4. **Stop there and look.** Stage 4 and beyond should wait for failures from Bento's users that are ChFi3d's own, as beyond-compatibility.md says. By then the event list here will have been tried on small cases, and I'd read Braid first.
+5. **A separate small unit for chamfer corners,** when one of them matters to someone.
+
+## Sources
+
+From documentation and the web, read on 6 and 7 November 2026; I've read no kernel's source other than OCCT's.
+
+- [T-FLEX CAD: overflow processing of edge blends](https://tflex.com/help/eng/T-FLEX%20CAD/17/blendedges_overflowprocessing.htm)
+- [Siemens NX: UF_MODL blend options](https://docs.plm.automation.siemens.com/data_services/resources/nx/11/nx_api/custom/en_US/nxopen_python_ref/NXOpen.UF.ModlFeatures.CreateBlend.html)
+- [Braid 1997 in DBLP](https://dblp.dagstuhl.de/rec/journals/cad/Braid97.html)
+- [US 5,615,317](https://uspto.report/patent/grant/5615317)
+- Upstream's [`f713b1305f`](https://github.com/Open-Cascade-SAS/OCCT/commit/f713b1305f) (#1449), read through GitHub's API.

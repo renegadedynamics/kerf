@@ -32,11 +32,13 @@ internal static class ExchangeTree
     /// <summary>The exceptions a reader throws on bad data (rather than misuse).</summary>
     public static bool IsBadData(Exception e)
         => (Refusal.IsFailure(e) || e is InvalidDataException or FormatException or EndOfStreamException or OverflowException
-                or IndexOutOfRangeException or IOException);
+                or IndexOutOfRangeException or IOException or InsufficientExecutionStackException);
 
     /// <summary>The diagnostic of a reader's exception on bad data.</summary>
     public static Diagnostic BadData(Exception e, string format)
-        => e is InvalidDataException
+        => e is InsufficientExecutionStackException
+            ? Diagnostic.Error(LimitExceeded, $"The {format} data is nested too deep to read: its curves, surfaces or representations refer to each other in too long a chain.")
+            : e is InvalidDataException
             ? Diagnostic.Error(LimitExceeded, $"The {format} data is larger than the limits: {FailureDiagnostics.PublicText(e)}")
             : Diagnostic.Error(Malformed, $"The {format} data couldn't be read: it is malformed or truncated ({FailureDiagnostics.PublicText(e)}).");
 
@@ -137,7 +139,7 @@ internal static class ExchangeTree
     /// </summary>
     public static ModelNode? FromTree(Tree tree, bool productNames, bool meshes)
     {
-        List<ModelNode> roots = [.. tree.Roots.Select(r => FromInstance(r, productNames, meshes))];
+        List<ModelNode> roots = [.. tree.Roots.Select(r => FromInstance(r, productNames, meshes, 0))];
         return roots.Count switch
         {
             0 => null,
@@ -146,8 +148,13 @@ internal static class ExchangeTree
         };
     }
 
-    private static ModelNode FromInstance(Instance instance, bool productNames, bool meshes)
+    private static ModelNode FromInstance(Instance instance, bool productNames, bool meshes, int depth)
     {
+        if (depth > ModelNode.MaxNesting)
+        {
+            throw new InvalidDataException($"Its assemblies are nested more than {ModelNode.MaxNesting} deep.");
+        }
+
         string? name = productNames ? instance.Product.Name ?? instance.Name : instance.DisplayName;
         DocumentProduct product = instance.Product;
         ColorWithAlpha? colour = instance.Attributes.SurfaceColor ?? instance.Attributes.GenericColor ?? instance.Attributes.CurveColor
@@ -161,6 +168,6 @@ internal static class ExchangeTree
                 : ModelNode.Part(placed, name, color);
         }
 
-        return ModelNode.Assembly(product.Components.Select(c => FromInstance(c, productNames, meshes)), name, instance.Location, color);
+        return ModelNode.Assembly(product.Components.Select(c => FromInstance(c, productNames, meshes, depth + 1)), name, instance.Location, color);
     }
 }

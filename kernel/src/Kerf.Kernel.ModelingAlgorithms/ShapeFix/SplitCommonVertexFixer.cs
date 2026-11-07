@@ -60,6 +60,7 @@ internal class SplitCommonVertexFixer : RootFixer
         }
         for (var itf = new Explorer(_shape, ShapeType.Face); itf.More(); itf.Next())
         {
+            Cancellation.ThrowIfRequested(); // Kerf: most of writing a large solid as STEP (decision 1855)
             Shape tmpFace = Context()!.InternalApply(itf.Current());
             Face  f       = ShapeCasts.Face(tmpFace);
             if (f.IsNull)
@@ -84,6 +85,7 @@ internal class SplitCommonVertexFixer : RootFixer
             mapVV.Clear();
             for (int nw1 = 1; nw1 < wires.Length(); nw1++)
             {
+                Cancellation.ThrowIfRequested(); // Kerf: all pairs of a face's wires
                 Wire w1 = ShapeCasts.Wire(wires.Value(nw1));
                 for (int nw2 = nw1 + 1; nw2 <= wires.Length(); nw2++)
                 {

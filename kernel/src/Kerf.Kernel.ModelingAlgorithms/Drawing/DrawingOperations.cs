@@ -66,6 +66,8 @@ public static class DrawingOperations
         }
 
         options ??= DrawingOptions.Default;
+        cancellationToken = Cancellation.Effective(cancellationToken);
+        using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         AlgorithmProjector projector = camera.ToProjector();
         if (options.Method == HiddenLineMethod.Polygonal && camera.Projection == Projection.Perspective)
         {

@@ -1798,6 +1798,7 @@ internal class PolyAlgo : Transient
         int nbFaces = _fMap.Count;
         for (int faceIter = 1; faceIter <= nbFaces; ++faceIter)
         {
+            Cancellation.ThrowIfRequested();
             PolyInternalData aPid = pid[faceIter]!;
             if (aPid is null)
             {
@@ -2538,6 +2539,7 @@ internal class PolyAlgo : Transient
         int nbFaces = _fMap.Count;
         for (int faceIter = 1; faceIter <= nbFaces; ++faceIter)
         {
+            Cancellation.ThrowIfRequested();
             PolyInternalData aPid = pid[faceIter]!;
             if (aPid is null)
             {
@@ -2720,6 +2722,7 @@ internal class PolyAlgo : Transient
         int nbFaces = _fMap.Count;
         for (int faceIter = 1; faceIter <= nbFaces; ++faceIter)
         {
+            Cancellation.ThrowIfRequested();
             PolyInternalData aPid = pid[faceIter]!;
             if (aPid is null)
             {

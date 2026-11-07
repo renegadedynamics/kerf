@@ -23,7 +23,7 @@ internal sealed class ProgressIndicator
 
     public ProgressIndicator(CancellationToken token = default, IProgress<double>? progress = null)
     {
-        _token = token;
+        _token = Cancellation.Effective(token);
         _progress = progress;
     }
 

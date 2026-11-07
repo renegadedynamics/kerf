@@ -144,7 +144,7 @@ public class BRepToolsUntrustedTests
     public void Nested_shapes_are_capped()
     {
         Shape aDeep = new();
-        RunWithStack(() => aDeep = Read(NestedCompounds(global::Kerf.Engine.Exchange.Brep.ShapeSet.MaxShapeNesting - 1)), theStackSize: 4 << 20);
+        RunWithStack(() => aDeep = Read(NestedCompounds(BrepBuilder.MaxCompoundNesting + 1)), theStackSize: 4 << 20);
         Assert.Equal(ShapeType.Compound, aDeep.Type);
         // and can be written back: on 4 MB always; on 1 MB it depends on the JIT's frame sizes (tier-0 frames are
         // larger), so there the writer may stop with its clean InsufficientExecutionStackException, never a crash
@@ -159,26 +159,28 @@ public class BRepToolsUntrustedTests
             {
             }
         });
-        Rejects(NestedCompounds(global::Kerf.Engine.Exchange.Brep.ShapeSet.MaxShapeNesting));
-        Rejects(NestedCompounds(20000));
+        // past the builder's limit (decision 1854), which comes before the reader's own
+        EngineAssert.Throws<ConstructionErrorException>(() => Read(NestedCompounds(BrepBuilder.MaxCompoundNesting + 2)));
+        EngineAssert.Throws<ConstructionErrorException>(() => Read(NestedCompounds(global::Kerf.Engine.Exchange.Brep.ShapeSet.MaxShapeNesting - 1)));
+        EngineAssert.Throws<ConstructionErrorException>(() => Read(NestedCompounds(20000)));
     }
 
     [Fact]
-    public void Writing_a_shape_nested_too_deeply_for_the_stack_throws()
+    public void A_shape_nested_too_deeply_for_the_stack_cannot_be_built()
     {
-        // 100,000 nested compounds, built in code: the writer recurses once per level, and stops before the stack
-        // overflows
-        Shape aShape = TestShapes.Vertex(new Point3D());
+        // the walks of a shape recurse once per level, so it stops at the builder (decision 1854)
         var aB = new BrepBuilder();
-        for (int i = 0; i < 100000; i++)
+        Shape aShape = TestShapes.Vertex(new Point3D());
+        EngineAssert.Throws<ConstructionErrorException>(() =>
         {
-            Compound aC = new();
-            aB.MakeCompound(ref aC);
-            aB.Add(aC, aShape);
-            aShape = aC;
-        }
-
-        RunWithStack(() => Assert.Throws<InsufficientExecutionStackException>(() => BrepTools.Write(aShape, new StringWriter())));
+            for (int i = 0; i < 100000; i++)
+            {
+                Compound aC = new();
+                aB.MakeCompound(ref aC);
+                aB.Add(aC, aShape);
+                aShape = aC;
+            }
+        });
     }
 
     [Fact]
