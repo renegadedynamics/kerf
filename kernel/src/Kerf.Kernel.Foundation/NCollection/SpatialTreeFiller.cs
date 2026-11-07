@@ -50,10 +50,11 @@ internal sealed class SpatialTreeFiller<TheObjType, TheBndType> : IDisposable
     /// Takes effect when the number of items is large (order of 50,000). When true, the maximal randomisation gives a
     /// better balanced tree; when false, the tree is worse balanced but filled faster.
     /// </param>
-    public SpatialTreeFiller(SpatialTree<TheObjType, TheBndType> tree, bool isFullRandom = true)
+    /// <param name="capacity">How many objects are to come, if that's known.</param>
+    public SpatialTreeFiller(SpatialTree<TheObjType, TheBndType> tree, bool isFullRandom = true, int capacity = 0)
     {
         _tree = tree;
-        _seqPtr = new List<ObjBnd>();
+        _seqPtr = new List<ObjBnd>(capacity);
         _isFullRandom = isFullRandom;
     }
 
