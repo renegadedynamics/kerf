@@ -128,6 +128,8 @@ public sealed class DrawCaseProcessTests : IDisposable
     /// <summary>
     /// What bugs/modalg_7/bug31120 asks, asked so that it can fail: the script compares a text, <c>(a-{b})/c</c>, with 0.05
     /// as strings, which is false whatever the figures (occt-issues.md, unit 11P).
+    /// The trend is judged on all twenty readings: to the kilobyte, the script's own list of them can make the first two steps
+    /// 1 kB each, which three readings alone take for a leak, where twenty cycles gain 5 to 6 kB and level off.
     /// </summary>
     [Fact]
     public void Repeating_an_offset_keeps_nothing()
@@ -139,8 +141,8 @@ public sealed class DrawCaseProcessTests : IDisposable
             for {set i 0} {$i < 20} {incr i} {
               mkoffset r w 1 0.5
               lappend listmem [meminfo h]
-              checktrend $listmem 0 256 "Memory leak detected"
             }
+            checktrend $listmem 0 256 "Memory leak detected"
             """);
         DrawCaseRun aRun = new DrawCorpus(myTests).RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds));
         Assert.True(aRun.Status == "OK", aRun.Status + "\n" + aRun.Log);
