@@ -1,0 +1,234 @@
+# Kerf.Modeling: a user guide
+
+Kerf.Modeling is a .NET 10 CAD modelling library: build123d's API, in C#, over Kerf's kernel (a managed port of
+Open CASCADE). This guide gets you from nothing to a part, a mesh and a STEP file, and covers what most often
+trips people up. If you know build123d, [name-map.md](name-map.md) lists every name that changed.
+
+Every example here was compiled and run against Kerf 0.3.0 from nuget.org, and its volumes checked by hand.
+
+## 1. Setting up
+
+You need the .NET 10 SDK (`dotnet --version` shows 10.0 or later). The quickest start is a single C# file, run with
+`dotnet run`: no project file needed.
+
+```csharp
+#:package Kerf.Modeling@0.3.0
+#:property PublishAot=false
+using Kerf;
+using Kerf.Geometry;
+using Kerf.Topology;
+using Kerf.Modeling;
+using static Kerf.Modeling.Operations;
+
+Part plate = new Box(80, 60, 10);
+plate -= new GridLocations(60, 40, 2, 2) * new Cylinder(5, 10);
+Console.WriteLine($"Volume {plate.Volume:F3}");          // 44858.407
+Exporters3D.ExportStep(plate, "plate.step");
+```
+
+Save it as `plate.cs` and run `dotnet run plate.cs`. The first run restores the packages and takes a while; later
+runs are quick.
+
+- `#:property PublishAot=false` stops a file-based app from pulling in the native-compilation package, which isn't
+  needed and gives a NuGet warning.
+- In a project instead: `dotnet add package Kerf.Modeling --version 0.3.0`. It brings the four kernel packages with it.
+- The namespaces: `Kerf` (`Result<T>`, `Diagnostic`), `Kerf.Geometry` (`Point3D`, `Vector3D`, `Direction3D`),
+  `Kerf.Topology` (the kernel's `Shape`, `Face`, `Edge`…), `Kerf.Modeling` (everything in this guide), and
+  `using static Kerf.Modeling.Operations;` so that `Extrude(…)`, `Fillet(…)` and the rest read as in build123d.
+
+## 2. The model in five rules
+
+1. **Algebra mode only.** There's no `BuildPart`/`BuildSketch` builder mode. You combine objects with operators:
+   `a + b` (fuse), `a - b` (cut), `a & b` (common). `Location * shape` places a shape; `locations * shape` copies it
+   to each.
+2. **Shapes never change.** Every operation returns a new shape. `part.Moved(…)`, `part.Rotate(…)`, `WithLabel(…)`
+   are copies; there's no `shape.location = …`.
+3. **Operations that can fail return `Result<T>`.** Fillet, chamfer, offset, loft, sweep, extrude, revolve, draft,
+   thicken, imports and exports return a `Result`, never throw for a geometric failure. Check it (section 6).
+4. **Operators can't return a `Result`,** so `a - b` throws `InvalidOperationException` if the Boolean fails. Use
+   the methods `a.Subtract(b)`, `a.Add(b)` and `a.Common(b)`, which return a `Result<Part>` (or `Sketch`, `Curve`),
+   where a failure is possible and you want to handle it.
+5. **Python names become .NET names:** `fillet` → `Fillet`, `Align.MIN` → `Align.Min`, `edges()` → `Edges()`,
+   `sort_by(Axis.Z)` → `OrderBy(Axis.Z)`, `group_by(Axis.Z)[-1]` → `GroupBy(Axis.Z).Last()`. See
+   [name-map.md](name-map.md).
+
+The three object kinds are `Part` (3D), `Sketch` (2D faces) and `Curve` (1D), as in build123d. `part.Shape` is the
+kernel's shape underneath, when you need the kernel's own API (section 8).
+
+## 3. Making shapes
+
+```csharp
+// Primitives: Box, Cylinder, Sphere, Cone, Torus, Wedge; holes: Hole, CounterBoreHole, CounterSinkHole
+Part block = new Box(40, 30, 20);
+Part withHole = block - new Cylinder(5, 20);            // 24000 - 1570.796 = 22429.204
+
+// A sketch, extruded
+Sketch outline = new Rectangle(50, 20) - new Circle(4);
+Result<Part> bar = Extrude(outline, 8);                 // 7597.876
+
+// A profile on another plane, revolved about Z
+Sketch profile = new Location(Plane.XZ) * new Rectangle(5, 10, align: new Alignment(Align.Min, Align.Min));
+Result<Part> ring = Revolve(profile.Moved(new Location(new Vector3D(10, 0, 0))), Axis.Z);   // π(15² − 10²)·10
+
+// A loft between sections
+Sketch bottom = new Rectangle(20, 20);
+Sketch top = new Location(new Vector3D(0, 0, 30)) * new Circle(6);
+Result<Part> loft = Loft([bottom, top]);
+
+// Patterns: spacing first, then counts
+Part plate = new Box(100, 60, 5) - new GridLocations(40, 40, 3, 2) * new Cylinder(3, 5);   // six holes
+```
+
+Sketch objects: `Rectangle`, `RectangleRounded`, `Circle`, `Ellipse`, `Polygon`, `RegularPolygon`, `Trapezoid`,
+`Triangle`, the `Slot…` family, `Superellipse`. Curves: `Line`, `Polyline`, `CenterArc`, `ThreePointArc`,
+`TangentArc`, `RadiusArc`, `Spline`, `Bezier`, `Helix`, `FilletPolyline` and others, as in build123d.
+
+Objects are centred by default, as in build123d. `align: new Alignment(Align.Min, Align.Min, Align.Min)` puts the
+minimum corner at the origin; `GridLocations(xSpacing, ySpacing, xCount, yCount)` takes the spacing between
+centres, not the overall size.
+
+Options are records, not keyword arguments:
+
+```csharp
+Extrude(face, 10, new ExtrudeOptions { Both = true, Taper = 5 });
+Extrude(face, Until.Next, target);
+Sweep([section], path, new SweepOptions { IsFrenet = true });
+```
+
+## 4. Selecting faces and edges
+
+Selections are lists you filter, order and group, with LINQ alongside:
+
+```csharp
+Part box = new Box(30, 30, 10);
+var topEdges = box.Edges().GroupBy(Axis.Z).Last();       // the four edges at the top
+var vertical = box.Edges().ParallelTo(Axis.Z);           // the four vertical edges
+Face top = box.Faces().OrderBy(Axis.Z).Last();           // the top face
+var circles = part.Edges().Where(GeomType.Circle);
+var longest = part.Edges().OrderBy(ShapeKey.Length).Last();
+var near = part.Faces().Between(Axis.Z, 0, 5);
+```
+
+`Where(GeomType.…)`, `ParallelTo(…)`, `OrderBy(Axis…)` and `OrderBy(ShapeKey…)`, `GroupBy(…)`, `Between(…)` and
+their `Not…`/`…Descending` forms cover build123d's `filter_by`, `sort_by`, `group_by` and `filter_by_position`.
+Ordinary LINQ (`Where(e => e.Length > 5)`, `First()`, `Last()`) works too; `ToShapeList()` makes a list again.
+
+## 5. Fillets, chamfers and shells
+
+```csharp
+Result<Part> rounded = Fillet(box, topEdges, 2);                   // 8900.059
+Result<Part> chamfered = Chamfer(box, vertical, 1.5);              // 9000 − 4 · 1.5²/2 · 10 = 8955
+Result<Part> cup = Offset(box, -1.5, new OffsetOptions { Openings = [top] });   // 9000 − 27 · 27 · 8.5 = 2803.5
+```
+
+Pass the part as the first argument (`Fillet(box, edges, r)`): the edges alone don't know which solid they came
+from. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
+too, with `Kind` (`Arc`, `Intersection`) and `Side` in `OffsetOptions`.
+
+## 6. Results, failures and warnings
+
+An operation that can fail gives a `Result<T>`:
+
+```csharp
+Result<Part> tooBig = Fillet(box, topEdges, 20);
+if (tooBig.IsFailure)
+    Console.WriteLine(tooBig.Error);
+// error modeling.fillet-failed: The fillet with a radius of 20 is too large for these 4 edges: the most that fits is
+// 10, where it uses up the whole width of a face beside the edge. …
+
+if (Fillet(box, topEdges, 2).TryGetValue(out Part? part)) { /* use part */ }
+Part p = Fillet(box, topEdges, 2).Value;    // throws InvalidOperationException, with the error, if it failed
+```
+
+- `IsSuccess`, `IsFailure`, `Value`, `TryGetValue`, `GetValueOrDefault`, `Error` (the first error) and `Diagnostics`
+  (every error and warning). `Map`, `Bind` and LINQ's `from … select` chain results.
+- **Read the error's message:** it says what failed and usually why (here, the largest radius that fits). Its `Code`
+  is stable, for code to test: `modeling.fillet-failed`, `modeling.offset-failed`, `meshing.failed` and so on.
+- **A success can carry warnings** in `Diagnostics`, for example when a result was built a different way from the
+  one asked. Check them when a result matters.
+- **Kerf doesn't report success for a result it knows is wrong.** A Boolean, offset or fillet whose result fails its
+  checks (wrong volume, not a valid solid) is a failure, not a broken shape. `TryGetInvalid` gives the broken shape,
+  if one was made, to look at.
+- `part.IsValid` checks any shape, as build123d's `is_valid`. Check what you import.
+
+## 7. Meshing
+
+Two ways in. For a quick look, the modelling layer's `Triangulate`:
+
+```csharp
+var mesh = rounded.Value.Triangulate(0.05);   // linear deflection 0.05, angular 0.2 rad
+// mesh.Faces[i].Positions, .Normals, .Triangles; mesh.Edges[i].Points; in the order of Faces() and Edges()
+```
+
+`Triangulate` throws `InvalidOperationException` if the shape can't be meshed. **When meshing might fail, or you
+need to know which faces did, use the kernel's mesher,** which returns a `Result`:
+
+```csharp
+using Kerf.Meshing;
+
+Result<Kerf.Meshing.ShapeMesh> result = part.Shape.Mesh(new MeshOptions { LinearDeflection = 0.05, AngularDeflection = 0.3 });
+if (result.IsFailure) Console.WriteLine(result.Error);           // meshing.failed: why
+foreach (var d in result.Diagnostics) Console.WriteLine(d);      // meshing.faces-not-meshed: which faces were left out
+var m = result.Value;                                            // Positions, Normals, Triangles, Faces, Edges
+```
+
+- `Kerf.Modeling` and `Kerf.Meshing` both have a `ShapeMesh`: write `Kerf.Meshing.ShapeMesh` or use `var`.
+- **Deflection is a distance in the model's units,** the most a triangle may be from the surface. Pick it from the
+  part's size: `MeshTolerances.For(part.Shape)` gives 0.1% of the bounding box's diagonal. A tiny deflection on a
+  large part asks for millions of triangles. `MeshOptions.MaxTriangles` (10 million by default) refuses a mesh it
+  expects to go past the limit, as `meshing.too-large`; in 0.3.0 that expectation is an estimate, so a mesh can come
+  out somewhat larger.
+- `MeshOptions { Relative = true }` makes the deflection a proportion of each edge's size, as OCCT's relative mode.
+- Exports mesh for you: `ExportStl`, `ExportGltf` and `Export3mf` take the deflections in their options.
+
+## 8. Import and export
+
+```csharp
+Exporters3D.ExportStep(part, "part.step");
+Exporters3D.ExportStl(part, "part.stl", new StlExportOptions { LinearDeflection = 0.01 });
+Exporters3D.ExportGltf(part, "part.glb", new GltfExportOptions { Binary = true });
+Exporters3D.Export3mf(part, "part.3mf");
+Exporters3D.ExportBrep(part, "part.brep");
+
+Result<ModelShape> step = Importers.ImportStep("part.step");     // assemblies, labels and colours
+Result<Shape> brep = Importers.ImportBrep("part.brep");
+```
+
+Every exporter and importer returns a `Result`. A missing folder or file is `DirectoryNotFoundException` or
+`FileNotFoundException`, as everywhere in .NET; a file past `ImportLimits` (size, nesting) is
+`InvalidDataException`.
+
+## 9. Common mistakes
+
+- **Not checking a `Result`.** `.Value` on a failure throws; use `IsFailure` or `TryGetValue` and print `Error`.
+- **`ShapeMesh` is ambiguous** with both `Kerf.Modeling` and `Kerf.Meshing` imported: qualify it or use `var`.
+- **`Shape` is ambiguous** if another library you use has one: Kerf's is `Kerf.Topology.Shape`.
+- **Points and vectors are different types.** `new Point3D(x, y, z)` for a position, `new Vector3D(x, y, z)` for an
+  offset or direction; tuples don't convert.
+- **`==` on points is exact.** Use `a.IsNear(b)` to compare with a tolerance.
+- **A fillet or chamfer without its part:** `Fillet(edges, r)` works only when the edges came from one part; pass the
+  part first.
+- **Angles are degrees** in objects and operations (`Rotation`, `Revolve`, `Taper`), as in build123d; mesh angular
+  deflections are radians.
+- **Not ported yet:** text, builder mode, SVG and DXF export, `import_svg`. [name-map.md](name-map.md) lists the rest.
+
+## 10. Coming from build123d
+
+```python
+# build123d
+with BuildPart() as p:
+    Box(30, 30, 10)
+    fillet(p.edges().group_by(Axis.Z)[-1], radius=2)
+export_step(p.part, "part.step")
+```
+
+```csharp
+// Kerf.Modeling
+Part box = new Box(30, 30, 10);
+Part part = Fillet(box, box.Edges().GroupBy(Axis.Z).Last(), 2).Value;
+Exporters3D.ExportStep(part, "part.step");
+```
+
+Kerf differs from build123d on purpose where build123d is wrong or unclear; those are listed under "Deliberate
+differences" in [name-map.md](name-map.md). Where a result differs from OCCT's, Kerf's decision log
+(`kernel/docs/decisions.md`) says why.
