@@ -1515,3 +1515,33 @@ What's left of the placements there is 99 MB, 10%: `Tool.CurveOnSurface` and `To
 5. **`MapShapesAndAncestors`' lists made for two:** perhaps half a percent everywhere; low risk, and more allocations where a list grows past two.
 
 **Tested on:** Foundation 2,544, ModelingData 3,346, ModelingAlgorithms 5,793 (9 skipped), DataExchange 366, PublicApi 497, Reliability 41 and Kerf.Modeling 2,251, all passing in Release; and the whole corpus, 17,872 cases four at a time, against `corpus-11e`, after the check's changes and again at the head. Both differ only in `bugs/mesh/bug31461` and `bugs/modalg_7/bug27928`, which already differ on main; the head's run also has `bugs/modalg_5/bug24639` failing its check that parallel beats serial, a time on a loaded machine, and alone it's OK, as in 12P's run.
+
+## The perf search, second round (8 November 2026)
+
+*On a machine shared with the owner: no time here is used for a verdict. Bytes are `GC.GetTotalAllocatedBytes` over each whole case, one case after another in one process; shares are allocation ticks, which sample about every 100 kB and credit a frame the JIT inlines to its caller. Decisions 23401 and 23402.*
+
+**The first round's five ideas, counted over 561 corpus cases** (every twelfth runnable case of the Boolean, blend, offset, pipe, sweep, sewing, healing and STEP groups, with the five slowest; 26.7 GB of ticks):
+
+| Idea | Over the sample | The most in a case or group | Verdict |
+|---|---:|---|---|
+| 1. Boxes of B-spline pcurves' arcs kept | 4.3% of the bytes | `boolean/volumemaker` 17%, `bug25232_9` 11% | **Done** (below) |
+| 2. A representation's placement compared without the product | 0.85% | 11% of `bug26701` and of `boolean/periodicity/A4` | Under the bar |
+| 3. A cache of a few B-spline spans | 1.5% of the samples, 0.6% of the bytes | 3% of a group | Under the bar |
+| 4. `SClassifier`'s edge-face map kept | 0.13% | 0.5% of a case | Under the bar |
+| 5. `MapShapesAndAncestors`' lists made for two | 1.3% for the whole call | 6.1% of `boolean/simplify/A3`, of which a part | Under the bar |
+
+**The arcs bounded again are on frozen curves,** not a Boolean's working copies as the first round took them to be. A cache of every curve's arcs, for the measurement only, and the same cache of frozen curves alone give the same bytes:
+
+| `boolean/volumemaker` (74 cases) and `bug25232_9`, MB | All |
+|---|---:|
+| Before | 17,360 |
+| Every curve's arcs cached (unsafe: measurement only) | 14,630 |
+| Frozen curves' arcs cached, no limit | 14,619 |
+| Kept with the curve, up to 4 arcs | 15,232 |
+| Kept with the curve, up to 64 arcs (decision 23401) | **14,697** |
+
+So a frozen 2D B-spline keeps the boxes of up to 64 arcs, which it can't change: `volumemaker` 9,981 to 8,064 MB (-19%), the 20 cases over 150 MB each 4% to 37% less and 15 of them past 20%, and `bug25232_9` 7,379 to 6,633 MB (-10%). Two small cases rise by a megabyte (`D8`, `E2`), the kept boxes.
+
+Over the 561 cases the same statuses, 26,383 to 25,405 MB (-3.7%), and -0.4% without `volumemaker` and `bug25232_9`: `bug24359` 410 to 335 MB, `boolean/cells_test/B1` 21 to 16; `boolean/simplify/A3` 1,704 to 1,715 MB, a Boolean in parallel whose bytes move by that much between runs.
+
+**Tested on:** Foundation 2,544, ModelingData 3,376, ModelingAlgorithms 5,871 (9 skipped), DataExchange 444 (2 skipped), PublicApi 541, Reliability 41 and Kerf.Modeling 2,251, all passing in Release; and the whole corpus, 17,872 cases four at a time, against `corpus-11e`: only main's two (`bugs/mesh/bug31461`, `bugs/modalg_7/bug27928`) and `bugs/modalg_5/bug24639`'s check that parallel beats serial, a time on a loaded machine, which passes alone.
