@@ -324,7 +324,7 @@ Units 12A and 12B (decisions 1894 and 1895) add no shared state: `PlanarFaceMass
 Unit 12D (decisions 1896 and 1897) adds no shared state to Kerf. The rig's `FirstLoad` runs once, before `Main`, on one thread. On Bento's branch, `SharedLibraryContext`'s table of contexts is read and written only under its lock, and each context's own table never changes once made.
 Units 12K to 12M (decisions 1904 to 1911) add no shared state: `FilletLimits`'s tools, `Neighbours` and `Mitre` are local to the call, its Gauss points are constant arrays read only, and its Booleans and `UnifySameDomain` run on the caller's thread, on copies (`SetNonDestructive`, `SetSafeInputMode`).
 
-Unit 12V (decision 23801) adds no shared state: `FilletLimits.Bends`, its `Neighbours` and the bends it finds are local to one chamfer's call, read from that call's `MakeChamfer` and frozen shapes.
+Unit 12V (decision 23801) adds no shared state: `FilletLimits.Bends`, its `Neighbours` and the bends it finds are local to one chamfer's call, read from that call's `MakeChamfer` and frozen shapes (decisions 23801 to 23803); `ChamferLimit` makes its own `MakeChamfer`, and `MaxChamfer`'s search keeps its window in locals.
 
 Unit 12C (decisions 1898 to 1901) adds no shared state: `FilletLimits.Judge` and its `Neighbours` are local to the call, on frozen shapes, `WellApart` is a constant, and `MaxFillet` holds its limit in a local.
 

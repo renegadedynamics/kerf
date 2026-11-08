@@ -42,7 +42,7 @@ public sealed record FilletOptions
   contour failed. Today the modelling layer reads `NbFaultyContours`, `FaultyContour`, `StripeStatus` to say which
   edges failed; that becomes the diagnostics' shapes.
 - **At a limit** (decision 1847): straight edges between planes, where a face just disappears, are built after ChFi3d fails; `FilletLimit(edges)` gives the largest radius they can take, and a size that doesn't fit fails with `fillet.too-large`, saying what does. A radius within the shape's tolerance of that is that, and one above it fails at once, without trying (decision 1898), unless the next face is within what ChFi3d calls tangent, where there's no limit (1899).
-- **A chamfer past a bend** (decision 23801): a length on a plane past the tightest convex circle or ellipse of an edge in it, on the contour ChFi3d carries the edges round, fails with `fillet.too-large` before anything is built, saying what fits. At it, ChFi3d is asked, and a failure says the edge closes to a point.
+- **A chamfer past a bend** (decision 23801): a length on a plane past the tightest convex circle or ellipse of an edge in it, on the contour ChFi3d carries the edges round, fails with `fillet.too-large` before anything is built, saying what fits. At it, ChFi3d is asked, and a failure says the edge closes to a point. `ChamferLimit(edges)` gives the least of that and a face's width (decision 23803).
 - 2D fillets and chamfers return the face; their history maps each vertex to the new edge (`Generated(vertex)`).
 
 ## Examples

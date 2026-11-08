@@ -8,4 +8,6 @@
 | The same by a length and an angle | Sometimes a shape, valid to the check but wrong | `#VALUE!` with the same message |
 | A chamfer exactly at such a radius | `#VALUE!` with the engine's failure | `#VALUE!` saying the edge closes to a point there: try a slightly smaller length |
 
+**New:** `MaxChamfer(edges)`, beside `MaxFillet`, if Bento wants a cell for it; nothing uses it yet.
+
 **To check by hand:** search Bento's samples for a chamfer by a length and an angle on a rounded outline whose length on the outline's face is more than its corners' radius. Such a cell gave a shape before and gives `#VALUE!` now; the shape was wrong.

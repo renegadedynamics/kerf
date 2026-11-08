@@ -1,3 +1,4 @@
+using Kerf.Fillets;
 using Kerf.Modeling;
 using Kerf.Topology;
 using static Kerf.Modeling.Operations;
@@ -56,6 +57,52 @@ public class ChamferLimitTests
         Result<Part> made = Chamfer(box, box.Faces().OrderBy(f => f.Center().Z).Last().Edges(), 5);
         Assert.True(made.TryGetInvalid(out _));
         Assert.EndsWith("isn't valid: Not closed. The chamfer couldn't be built at a length of 5: try a smaller one.", made.Error!.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MaxChamfer_takes_the_limit_where_it_builds_and_searches_below_it_where_it_doesnt()
+    {
+        // A box's edge: the width of a face, 10, built; a disc's rim: its radius, the top closing to a point, built
+        var box = new Box(10, 10, 10);
+        Edge edge = box.Edges().First(e => Math.Abs(e.TangentAt(0.5).Z) > 0.5);
+        Assert.Equal(10, box.AsShape().ChamferLimit([edge]));
+        Assert.Equal(10, box.MaxChamfer([edge]));
+        var disc = new Cylinder(5, 10);
+        Edge rim = disc.Edges().OrderBy(e => e.Center().Z).Last();
+        Assert.Equal(5, disc.MaxChamfer([rim]));
+
+        // The prism: 1.7 doesn't build, so the halving below it, as MaxFillet's, to within 0.1 of one that works
+        Part prism = Prism();
+        ShapeList<Edge> outline = Outline(prism);
+        Assert.Equal(1.7, prism.AsShape().ChamferLimit(outline));
+        double most = prism.MaxChamfer(outline);
+        Assert.InRange(most, 1.7 - 0.11, 1.7);
+        Assert.True(Chamfer(prism, outline, most).IsSuccess);
+    }
+
+    [Fact]
+    public void MaxChamfer_doesnt_try_past_the_limit()
+    {
+        // The prism's search, counted: the limit, then halvings of (0, 116.6), none at or past 1.7 asked of ChFi3d
+        Part prism = Prism();
+        ShapeList<Edge> outline = Outline(prism);
+        var asked = new List<double>();
+        bool Works(double d)
+        {
+            asked.Add(d);
+            return prism.AsShape().Chamfer(outline, d).IsSuccess;
+        }
+        double window = 2 * prism.Bounds().Diagonal;
+        double most = Shape3DExtensions.Largest(1.7, Works, window, 0.1, 10);
+        Assert.Equal(prism.MaxChamfer(outline), most);
+        Assert.Equal(1.7, asked[0]);
+        Assert.All(asked.Skip(1), d => Assert.True(d < 1.7));
+        int withLimit = asked.Count;
+
+        // Without it, the same answer from more tries, each past 1.7 refused at once by the chamfer itself
+        asked.Clear();
+        Assert.Equal(most, Shape3DExtensions.Largest(null, Works, window, 0.1, 10));
+        Assert.True(asked.Count > withLimit);
     }
 
     [Fact]

@@ -235,6 +235,32 @@ public static class FilletOperations
             return FilletLimits.LargestRadius(solid, own);
         }
 
+        /// <summary>
+        /// The most that one length on both faces of these edges can be, from their geometry, without trying: the tightest convex
+        /// circle or ellipse of an edge in a plane beside them, on the chain of tangent edges they're chamfered round, which
+        /// <c>Chamfer</c> refuses past at once (decision 23801), and the width of a face beside straight edges and rims, as for
+        /// <c>FilletLimit</c>, past which the chamfer fails. Other things can stop a chamfer sooner, and at it the chamfer may
+        /// not be built. Null if the edges say nothing.
+        /// </summary>
+        public double? ChamferLimit(IEnumerable<Edge> edges)
+        {
+            ArgumentNullException.ThrowIfNull(edges);
+            Shape solid = shape.AsShape();
+            Edge[] own = [.. edges];
+            Owned(solid, own);
+            ChamferSpec[] specs = [.. own.Select(static e => new ChamferSpec(e, 1))];
+            var chamfer = new MakeChamfer(solid);
+            foreach (Edge edge in own)
+            {
+                chamfer.Add(1, edge);
+            }
+            Face[] faces = [.. own.Select(e => FirstFaceOf(solid, e))];
+            IReadOnlyList<FilletLimits.Bend> bends = FilletLimits.Bends(solid, chamfer, specs, faces, ChamferOptions.Default);
+            double? bend = bends.Count > 0 ? Math.Round(bends.Min(static b => b.Radius), 9) : null;
+            double? width = FilletLimits.LargestChamfer(solid, own);
+            return bend is { } b && width is { } w ? Math.Min(b, w) : bend ?? width;
+        }
+
         /// <summary>The shape with <paramref name="edges"/> chamfered by <paramref name="distance"/> on both faces.</summary>
         public Result<Built<Shape>> Chamfer(IEnumerable<Edge> edges, double distance, ChamferOptions? options = null,
                                             IProgress<double>? progress = null, CancellationToken cancellationToken = default)
