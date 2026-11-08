@@ -2251,3 +2251,11 @@ Found by unit 12J:
 | `BOPAlgo_PaveFiller::PutBoundPaveOnCurve` | A curve's end a little off a face takes no vertex, so the curve has no pave block, and is lost | An open section and a Cut that removes nothing (#1659) | fixed (decision 1935); the walk stopping short remains |
 | `BRepTools_GTrsfModification::NewTriangulation` | Tests a scale that's never negative; takes normals through the matrix with its diagonal 1; ignores the face's placement | A mirrored mesh inside out, its normals wrong, a located mesh moved twice | fixed (decision 1936) |
 | `BRepOffset_MakeOffset`, a cone with an apex | Offset inwards with round joins, or an inverted cone with either join, gives a compound of faces, called valid, with a volume to 3.7e101 and a box to 3.8 million. With mitres an upright cone is right. Same `BRepOffset::Surface` by reading; native not run | A public success, now a failure holding the shape; an upright cone's round joins are retried with mitres, which are right there | Decisions 1918 and 1938; the geometry is left, and the inverted cone still fails |
+
+## Found by unit 12S
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `BRepFill_OffsetWire::Perform`, `CheckBadEdges` | An edge curving tighter than the offset is replaced by a polyline of deflection `0.01 * |offset|`, whose chords lie inside the curve | An inward offset past a curve's sharpest bend up to 1% of the distance off, silently: an ellipse 10 by 5 at -3, 39.556 for 40.035 | **open**, for the owner (decision 1959) |
+| `BRepFill_OffsetWire::MakeOffset` | A B-spline edge with a kink (C0) inside it goes to `Geom2d_OffsetCurve`, which refuses it | "Offset on C0 curve": 39 of the 77 offset/wire_* failures, OCCT's known ones; splitting first rescues 4 | leave (decision 1958) |
+| `BRepOffsetAPI_MakeOffset`, the tangent join | Not a 2D join OCCT documents; by reading, the code tests `== Arc` in some places and `== Intersection` in others, so the tangent join takes neither branch in some | Nothing outwards from a triangle or star; mitres' results elsewhere | **open**, for the owner (decision 1960) |

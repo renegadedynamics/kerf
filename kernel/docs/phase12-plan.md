@@ -72,7 +72,7 @@ Fitted around the rest.
 |---|---|
 | **12Q** Coverage floor (11I) | Hand-written engine packages over the floor, by real tests |
 | **12R** Tests of their own (11J) | A direct call and a checked result, area by area |
-| **12S** 2D offsets | The survey |
+| **12S** 2D offsets: **done** (decisions 1956 to 1960) | The survey: [offset2d-survey.md](offset2d-survey.md). The 77 are OCCT's known failures on B-spline outlines, none the medial axis; Bento's profiles right in a sweep of 1,914, but for an inward offset past a curve's sharpest bend (up to 1% off, for the owner). Fixed: an offset that closes up or splits fails saying so, or keeps its pieces, where it threw or gave an empty sketch |
 
 ## Not in this phase
 
