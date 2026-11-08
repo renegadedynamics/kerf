@@ -49,6 +49,16 @@ public class ChamferLimitTests
     }
 
     [Fact]
+    public void A_broken_result_says_the_chamfer_couldnt_be_built_at_its_length()
+    {
+        // Not past a bend, so left to the check: a cube's top at 5, where ChFi3d makes something not closed
+        var box = new Box(10, 10, 10);
+        Result<Part> made = Chamfer(box, box.Faces().OrderBy(f => f.Center().Z).Last().Edges(), 5);
+        Assert.True(made.TryGetInvalid(out _));
+        Assert.EndsWith("isn't valid: Not closed. The chamfer couldn't be built at a length of 5: try a smaller one.", made.Error!.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_shorthand_throws_the_same()
     {
         Part prism = Prism();

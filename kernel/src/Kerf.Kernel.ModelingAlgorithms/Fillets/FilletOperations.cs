@@ -313,6 +313,12 @@ public static class FilletOperations
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
                made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result"));
 
+            // What ChFi3d made is broken: say it's the chamfer at this length that couldn't be built, not only what's wrong with it
+            if (done.TryGetInvalid(out Built<Shape>? invalid) && done.Error is { } error)
+            {
+                ImmutableArray<Diagnostic> all = done.Diagnostics;
+                return Result<Built<Shape>>.Invalid(invalid, all.Replace(error, error with { Message = $"{error.Message} {CouldNotBuild(specs)}" }));
+            }
             return done;
         }
     }
@@ -438,6 +444,16 @@ public static class FilletOperations
     // faulty contour with its own status and edges
     // A tolerance a fillet or chamfer's result could need: its largest size, or what its input already had
     private static double ToleranceLimit(Shape solid, double size) => Math.Max(size, Validity.LargestTolerance(solid));
+
+    // What a broken chamfer's result means for the caller: it couldn't be built at its length, so a smaller one may do
+    private static string CouldNotBuild(ChamferSpec[] specs)
+    {
+        double longest = specs.Max(static s => Math.Max(s.Distance, s.Distance2 ?? 0.0));
+        string length = specs.All(s => s.Distance == specs[0].Distance && s.Angle is null && (s.Distance2 ?? s.Distance) == s.Distance)
+            ? $"a length of {specs[0].Distance.ToString("G6", System.Globalization.CultureInfo.CurrentCulture)}"
+            : $"these lengths, the longest {longest.ToString("G6", System.Globalization.CultureInfo.CurrentCulture)}";
+        return $"The chamfer couldn't be built at {length}: try a smaller one.";
+    }
 
     // Which edges a chamfer failed on, as a fillet says, and why, where it knows (#1632); otherwise all it was given
     private static Diagnostic ChamferFailure(MakeChamfer chamfer, ChamferSpec[] specs)

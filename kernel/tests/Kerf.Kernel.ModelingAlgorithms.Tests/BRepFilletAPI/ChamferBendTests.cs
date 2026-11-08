@@ -188,6 +188,17 @@ public class ChamferBendTests
     }
 
     [Fact]
+    public void A_broken_result_says_the_chamfer_couldnt_be_built_at_its_length()
+    {
+        // A cube's top at 5, where the two pairs meet across it: ChFi3d makes something not closed, which the check catches
+        Shape cube = Solid.Box(10, 10, 10).Value.Shape;
+        Result<Built<Shape>> made = cube.Chamfer(Top(cube, 10).AllEdges(), 5);
+        Assert.True(made.TryGetInvalid(out _));
+        Assert.Equal("result.invalid", made.Error!.Code.Value);
+        Assert.EndsWith("The chamfer couldn't be built at a length of 5: try a smaller one.", made.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_chamfer_by_its_throat_or_unchecked_isnt_refused_here()
     {
         // A throat isn't measured along the face; and a caller who leaves the check out has asked for what ChFi3d makes
