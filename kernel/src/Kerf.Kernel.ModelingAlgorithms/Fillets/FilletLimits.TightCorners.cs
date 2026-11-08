@@ -364,7 +364,7 @@ internal static partial class FilletLimits
             {
                 if (Meet(loop[(i + n - 1) % n], a, loop[(i + 1) % n]) is not { } apex)
                 {
-                    why = "the lines beside a tight arc are parallel";
+                    why = "the face is too narrow: the lines beside a tight arc are parallel, and their insets never meet";
                     return null;
                 }
                 piece.Apex = apex;

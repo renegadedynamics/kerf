@@ -284,6 +284,82 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
         Right(holed.Chamfer(top, 3, Collapse), expected);
     }
 
+    // A profile of lines and arcs in z = 0, extruded 10 up
+    private static Shape Extruded(params Edge[] edges)
+    {
+        Face face = Face.FromWire(Wire.FromEdges(edges).Value, onlyPlane: true).Value;
+        return face.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+    }
+
+    private static Circle3D CircleAt(double x, double y, double r) => new(new Frame3D(new Point3D(x, y, 0), Direction3D.D.Z), r);
+
+    private static void RefusedFor(Shape shape, double length, string why)
+    {
+        Result<Built<Shape>> made = shape.Chamfer([.. Top(shape, 10).AllEdges()], length, Collapse);
+        Assert.False(made.IsSuccess);
+        Assert.Equal(FilletOperations.TooLarge, made.Error!.Code);
+        Assert.Contains(why, made.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_tight_arc_beside_another_arc_is_refused()
+    {
+        // A circle of 20 with a flat at y = -15, its two corners rounded to 1.5: each small arc between the flat and the big arc
+        double a = Math.Asin(0.75);
+        Point3D right = new(20 * Math.Cos(a), -15, 0), left = new(-20 * Math.Cos(a), -15, 0);
+        Face d = Face.FromWire(Wire.FromEdges([Edge.Arc(CircleAt(0, 0, 20), -a, Math.PI + a).Value, Edge.Line(left, right).Value]).Value, onlyPlane: true).Value;
+        Face rounded = d.Fillet2D([.. d.AllVertices()], 1.5).Value.Shape;
+        Shape shape = rounded.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+        RefusedFor(shape, 2, "a tight arc is beside another arc");
+
+        // Short of the small arcs' radius, nothing is tight, and the algorithm builds it as before
+        Assert.Equal(shape.Chamfer([.. Top(shape, 10).AllEdges()], 1).IsSuccess, shape.Chamfer([.. Top(shape, 10).AllEdges()], 1, Collapse).IsSuccess);
+    }
+
+    [Fact]
+    public void A_sharp_corner_beside_an_arc_is_refused()
+    {
+        // A square of 10 clipped by a circle of 6.5: four arcs, each meeting its lines at a sharp corner
+        double h = Math.Sqrt(6.5 * 6.5 - 25), t = Math.Atan2(h, 5);
+        var edges = new List<Edge>();
+        for (int i = 0; i < 4; i++)
+        {
+            double turn = i * Math.PI / 2;
+            Point3D P(double angle) => new(6.5 * Math.Cos(angle), 6.5 * Math.Sin(angle), 0);
+            edges.Add(Edge.Line(P(turn - t), P(turn + t)).Value);
+            edges.Add(Edge.Arc(CircleAt(0, 0, 6.5), turn + t, turn + Math.PI / 2 - t).Value);
+        }
+        RefusedFor(Extruded([.. edges]), 6.6, "a corner beside an arc is sharp");
+    }
+
+    [Fact]
+    public void A_slot_too_narrow_for_its_ends()
+    {
+        // A slot 20 long of radius 3: its ends' insets past 3 are parallel lines that never meet
+        Edge[] slot =
+        [
+            Edge.Line(new Point3D(0, -3, 0), new Point3D(20, -3, 0)).Value,
+            Edge.Arc(CircleAt(20, 0, 3), -Math.PI / 2, Math.PI / 2).Value,
+            Edge.Line(new Point3D(20, 3, 0), new Point3D(0, 3, 0)).Value,
+            Edge.Arc(CircleAt(0, 0, 3), Math.PI / 2, 3 * Math.PI / 2).Value,
+        ];
+        RefusedFor(Extruded(slot), 3.5, "too narrow");
+    }
+
+    [Fact]
+    public void A_hole_in_the_chamfers_way_fails_the_check_and_nothing_is_built()
+    {
+        // A hole of radius 0.5, 1.5 in from a side: the chamfer of 3 would run through it, which the outline doesn't know
+        Shape prism = Prism(40, 30, 30, 1.7);
+        Shape drilled = prism.Cut(Solid.Cylinder(0.5, 30, new Frame3D(new Point3D(1.5, 15, 0), Direction3D.D.Z)).Value.Shape).Value.Shape;
+        Edge[] loop = [.. Top(drilled, 30).OuterWire.AllEdges()];
+        Assert.Equal(8, loop.Length);
+        Result<Built<Shape>> made = drilled.Chamfer(loop, 3, Collapse);
+        Assert.False(made.IsSuccess);
+        Assert.Equal(FilletOperations.Failed, made.Error!.Code);
+        Assert.Contains("couldn't be built", made.Error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Concave_arcs_never_collapse()
     {
