@@ -7,7 +7,7 @@ namespace Kerf.Modeling.Tests.Topology;
 
 /// <summary>
 /// A chamfer longer than the tightest convex arc in a face beside its edges is refused before it's built, saying what fits
-/// (decision 23801). The case reported: a prism with corners of 1.7, its end's whole outline chamfered.
+/// (decision 1985). The case reported: a prism with corners of 1.7, its end's whole outline chamfered.
 /// </summary>
 public class ChamferLimitTests
 {

@@ -1,6 +1,6 @@
 # Unit 12V: chamfer limits, for Bento
 
-**Nothing has to change for Bento to build.** `ModelFunctions.Run` already turns the failure into `#VALUE!` with its message. A few cells show something else (decision 23801 in the kernel's `docs/decisions.md`):
+**Nothing has to change for Bento to build.** `ModelFunctions.Run` already turns the failure into `#VALUE!` with its message. A few cells show something else (decision 1985 in the kernel's `docs/decisions.md`):
 
 | Cell | Before | Now |
 |---|---|---|

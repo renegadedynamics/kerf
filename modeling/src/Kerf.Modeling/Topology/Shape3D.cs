@@ -63,7 +63,7 @@ public static partial class Shape3DExtensions
                 specs.Add(new ChamferSpec(edge, length, distance2, ReferenceFace: topoFace));
             }
             var chamfered = self.AsShape().Chamfer(specs);
-            // A broken result's error already says the chamfer couldn't be built at its length (decision 23801)
+            // A broken result's error already says the chamfer couldn't be built at its length (decision 1985)
             if (!chamfered.TryGetValue(out var built))
                 throw Failures.Expected(ModelingDiagnostics.ChamferFailed,
                                         Shape3DExtensions.TooLargeMessage(chamfered.Diagnostics)
