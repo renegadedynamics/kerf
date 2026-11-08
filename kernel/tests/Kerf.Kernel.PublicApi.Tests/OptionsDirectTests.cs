@@ -4,6 +4,7 @@ using System.Text;
 using Kerf.Booleans;
 using Kerf.Construction;
 using Kerf.Exchange;
+using Kerf.Fillets;
 using Kerf.Geometry;
 using Kerf.Measurement;
 using Kerf.Offsets;
@@ -270,5 +271,48 @@ public class OptionsDirectTests
         ModelNode aRenamed = aBody with { Name = "Frame" };
         Assert.Equal("Frame", aRenamed.Name);
         Assert.Equal("Body", aBody.Name);
+    }
+
+    public static TheoryData<string> Built() => ["swept", "filleted", "varying fillet", "fused"];
+
+    private static Shape BuiltOf(string theName)
+    {
+        switch (theName)
+        {
+            case "swept":
+            {
+                // a circle swept along a helix: B-spline faces throughout
+                Wire aProfile = Wire.FromEdges([Edge.Circle(new Circle3D(new Frame3D(new Point3D(5, 0, 0), Direction3D.UnitY), 0.5)).Value]).Value;
+                return Sweeps.Sweep(aProfile, Sweeps.Helix(5, 4, 8).Value).Value.Shape;
+            }
+            case "filleted":
+            {
+                Solid aBox = Solid.Box(10, 10, 10).Value;
+                return aBox.Fillet([.. aBox.AllEdges()], 1).Value.Shape;
+            }
+            case "varying fillet":
+            {
+                Solid aBox = Solid.Box(10, 10, 10).Value;
+                return FilletOperations.Fillet(aBox, [new FilletSpec(aBox.AllEdges()[0], 1, EndRadius: 2)]).Value.Shape;
+            }
+            default:
+            {
+                Solid aBox = Solid.Box(10, 10, 10).Value;
+                Solid aRod = Solid.Cylinder(2, 20, new Frame3D(new Point3D(5, 5, 5), Direction3D.UnitX)).Value;
+                return aBox.Fuse(aRod).Value.Shape;
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Built))]
+    public void A_built_solid_written_and_read_keeps_its_volume_and_area(string theName)
+    {
+        Shape aShape = BuiltOf(theName);
+        double aVolume = aShape.IntegrateVolume(), anArea = aShape.IntegrateArea();
+        Result<ModelNode> aRead = Step.Read(Stream(StepText(aShape)));
+        Assert.True(aRead.IsSuccess, aRead.Error?.Message);
+        Assert.Equal(aVolume, aRead.Value.Shape!.Value.IntegrateVolume(), Math.Abs(aVolume) * 1e-6);
+        Assert.Equal(anArea, aRead.Value.Shape!.Value.IntegrateArea(), anArea * 1e-6);
     }
 }
