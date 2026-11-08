@@ -407,6 +407,12 @@ public static partial class Shape1DExtensions
             if (pieces.Count != 1)
                 throw OneD.Pieces(pieces, distance);
             var offsetWire = pieces[0];
+            // At the distance where a closed curve closes up, the kernel can give an open wire flagged as closed (a spline
+            // blob at -9, unit 12T): not an offset of the curve, so a failure, not a success or a face that can't be made
+            if (line.IsClosed && !offsetWire.IsClosed)
+                throw Failures.Expected(ModelingDiagnostics.OffsetFailed,
+                                        $"The offset by {Formatting.Number(distance)} in the plane failed: the offset of a closed curve came out open.",
+                                        offsetted.Diagnostics);
             if (asBSpline)
                 offsetWire = OneD.OffsetCurvesToBSplines(offsetWire);
 

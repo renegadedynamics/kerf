@@ -49,7 +49,8 @@ internal sealed class OffsetWire
     private readonly IndexedMap<Shape, NCollection_List<Shape>> _map = new(EqualityComparer<Shape>.Default);
     private readonly BisectingLocus _bilo = new();
     private readonly LinkTopoBilo _link = new();
-    private readonly Dictionary<Shape, Shape> _mapSpine = new(ShapeHasher.Instance);
+    // Not readonly: Perform's finer polylines rewrite a copy, kept only if they work (decision 23601)
+    private Dictionary<Shape, Shape> _mapSpine = new(ShapeHasher.Instance);
     // OCCT leaves myCallGen uninitialised until Perform; PerformWithBiLo alone reads it in GeneratedShapes, where an
     // empty myMapSpine makes its value irrelevant (occt-issues.md, 5O2)
     private bool _callGen;
@@ -436,130 +437,33 @@ internal sealed class OffsetWire
                 return;
             }
 
-            Face oldWorkSpain = _workSpine;
-
             NCollection_List<Shape> badEdges = new();
             CheckBadEdges(_workSpine, offset, _bilo, _link, badEdges);
 
             if (!badEdges.IsEmpty())
             {
-                // Modification of myWorkSpine;
-                Substitution subst = new();
-                NCollection_List<Shape>.Iterator it = new(badEdges);
-                NCollection_List<Shape> aL = new();
-                double defl = .01 * Math.Abs(offset);
-                NCollection_Sequence<double> parameters = new();
-                NCollection_Sequence<Point3D> points = new();
-
-                for (; it.More(); it.Next())
+                // Kerf: OCCT's polyline has a deflection of 0.01 of the offset, and its chords lie inside the curve,
+                // putting the offset up to 1% of the distance too far in. A tenth of that keeps it within 0.1%, for about
+                // 3 times the edges; where the medial axis of the finer polyline fails, OCCT's is used, as before
+                // (decision 23601). The first try works on a copy of the spine's map, which it rewrites
+                Face oldWorkSpine = _workSpine;
+                Dictionary<Shape, Shape> mapSpine = _mapSpine;
+                _mapSpine = new Dictionary<Shape, Shape>(mapSpine, ShapeHasher.Instance);
+                bool done;
+                try
                 {
-                    aL.Clear();
-                    parameters.Clear();
-                    points.Clear();
-                    Shape e = it.Value();
-
-                    Exploration.Vertices(ShapeCasts.Edge(e), out Vertex vf, out Vertex vl);
-
-                    Curve3D? g3d = Tool.Curve(ShapeCasts.Edge(e), out double f, out double l);
-                    CurveAdaptor ac = new(g3d!, f, l);
-
-                    PerformCurve(parameters, points, ac, defl, f, l, global::Kerf.Engine.Foundation.Precision.Confusion(), 2);
-
-                    int nPnts = points.Length();
-                    if (nPnts > 2)
-                    {
-                        Vertex fv = vf;
-                        Vertex lv;
-                        Edge newE;
-                        int np;
-                        for (np = 2; np < nPnts; np++)
-                        {
-                            Point3D lp = points[np];
-                            lv = new LibraryMakeVertex(lp).InternalVertex();
-                            newE = new LibraryMakeEdge(fv, lv).InternalEdge();
-                            aL.Append(newE);
-                            fv = lv;
-                        }
-                        lv = vl;
-                        newE = new LibraryMakeEdge(fv, lv).InternalEdge();
-                        aL.Append(newE);
-                    }
-                    else
-                    {
-                        Edge newE = new LibraryMakeEdge(vf, vl).InternalEdge();
-                        aL.Append(newE);
-                    }
-                    // Update myMapSpine
-                    if (_mapSpine.ContainsKey(e))
-                    {
-                        NCollection_List<Shape>.Iterator newit = new(aL);
-                        for (; newit.More(); newit.Next())
-                        {
-                            Edge newEdge = ShapeCasts.Edge(newit.Value());
-                            _mapSpine[newEdge] = _mapSpine.GetValue(e);
-                            EdgeVertices(newEdge, out Vertex newV1, out Vertex newV2);
-                            if (!_mapSpine.ContainsKey(newV1))
-                            {
-                                _mapSpine[newV1] = _mapSpine.GetValue(e);
-                            }
-                            if (!_mapSpine.ContainsKey(newV2))
-                            {
-                                _mapSpine[newV2] = _mapSpine.GetValue(e);
-                            }
-                        }
-                        _mapSpine.Remove(e);
-                    }
-                    ///////////////////
-                    subst.Substitute(e, aL);
+                    done = PerformOnPolylines(badEdges, offset, alt, .001) && (_isOpenResult || AllWiresClosed(_shape));
                 }
-
-                Dictionary<Shape, NCollection_List<Shape>> wwmap = new(ShapeHasher.Instance);
-                Iterator itws = new(_workSpine);
-                for (; itws.More(); itws.Next())
+                catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
+                                                    && exception is not ImmutableObjectException)
                 {
-                    Shape wire = itws.Value();
-                    subst.Build(wire);
-                    if (subst.IsCopied(wire))
-                    {
-                        Wire newWire = ShapeCasts.Wire(subst.InternalCopy(wire).First());
-                        newWire.Closed(wire.ClosedFlag);
-                        NCollection_List<Shape> lw = new();
-                        lw.Append(newWire);
-                        wwmap[wire] = lw;
-                    }
+                    done = false;
                 }
-                subst.Clear();
-                foreach (KeyValuePair<Shape, NCollection_List<Shape>> itmap in wwmap)
+                if (!done)
                 {
-                    subst.Substitute(itmap.Key, itmap.Value);
-                }
-
-                subst.Build(_workSpine);
-
-                if (subst.IsCopied(_workSpine))
-                {
-                    _workSpine = ShapeCasts.Face(subst.InternalCopy(_workSpine).First());
-
-                    MedialAxisExplorer newExp = new();
-                    newExp.Perform(_workSpine);
-                    BisectingLocus newBilo = new();
-                    LinkTopoBilo newLink = new();
-                    newBilo.Compute(newExp, 1, MedialSide.Left, _joinType, _isOpenResult);
-
-                    if (!newBilo.IsDone)
-                    {
-                        _shape.Nullify();
-                        _isDone = false;
-                        return;
-                    }
-
-                    newLink.Perform(newExp, newBilo);
-                    PerformWithBiLo(_workSpine, offset, newBilo, newLink, _joinType, alt);
-                    _workSpine = oldWorkSpain;
-                }
-                else
-                {
-                    PerformWithBiLo(_workSpine, offset, _bilo, _link, _joinType, alt);
+                    _mapSpine = mapSpine;
+                    _workSpine = oldWorkSpine;
+                    PerformOnPolylines(badEdges, offset, alt, .01);
                 }
             }
             else
@@ -594,6 +498,146 @@ internal sealed class OffsetWire
                 }
             }
         }
+    }
+
+    // The parallel of the spine with the bad edges replaced by polylines of a deflection of `deflection` times the offset;
+    // whether it was done
+    private bool PerformOnPolylines(NCollection_List<Shape> badEdges, double offset, double alt, double deflection)
+    {
+        // Modification of myWorkSpine;
+        Substitution subst = new();
+        NCollection_List<Shape>.Iterator it = new(badEdges);
+        NCollection_List<Shape> aL = new();
+        double defl = deflection * Math.Abs(offset);
+        NCollection_Sequence<double> parameters = new();
+        NCollection_Sequence<Point3D> points = new();
+
+        for (; it.More(); it.Next())
+        {
+            aL.Clear();
+            parameters.Clear();
+            points.Clear();
+            Shape e = it.Value();
+
+            Exploration.Vertices(ShapeCasts.Edge(e), out Vertex vf, out Vertex vl);
+
+            Curve3D? g3d = Tool.Curve(ShapeCasts.Edge(e), out double f, out double l);
+            CurveAdaptor ac = new(g3d!, f, l);
+
+            PerformCurve(parameters, points, ac, defl, f, l, global::Kerf.Engine.Foundation.Precision.Confusion(), 2);
+
+            int nPnts = points.Length();
+            if (nPnts > 2)
+            {
+                Vertex fv = vf;
+                Vertex lv;
+                Edge newE;
+                int np;
+                for (np = 2; np < nPnts; np++)
+                {
+                    Point3D lp = points[np];
+                    lv = new LibraryMakeVertex(lp).InternalVertex();
+                    newE = new LibraryMakeEdge(fv, lv).InternalEdge();
+                    aL.Append(newE);
+                    fv = lv;
+                }
+                lv = vl;
+                newE = new LibraryMakeEdge(fv, lv).InternalEdge();
+                aL.Append(newE);
+            }
+            else
+            {
+                Edge newE = new LibraryMakeEdge(vf, vl).InternalEdge();
+                aL.Append(newE);
+            }
+            // Update myMapSpine
+            if (_mapSpine.ContainsKey(e))
+            {
+                NCollection_List<Shape>.Iterator newit = new(aL);
+                for (; newit.More(); newit.Next())
+                {
+                    Edge newEdge = ShapeCasts.Edge(newit.Value());
+                    _mapSpine[newEdge] = _mapSpine.GetValue(e);
+                    EdgeVertices(newEdge, out Vertex newV1, out Vertex newV2);
+                    if (!_mapSpine.ContainsKey(newV1))
+                    {
+                        _mapSpine[newV1] = _mapSpine.GetValue(e);
+                    }
+                    if (!_mapSpine.ContainsKey(newV2))
+                    {
+                        _mapSpine[newV2] = _mapSpine.GetValue(e);
+                    }
+                }
+                _mapSpine.Remove(e);
+            }
+            ///////////////////
+            subst.Substitute(e, aL);
+        }
+
+        Dictionary<Shape, NCollection_List<Shape>> wwmap = new(ShapeHasher.Instance);
+        Iterator itws = new(_workSpine);
+        for (; itws.More(); itws.Next())
+        {
+            Shape wire = itws.Value();
+            subst.Build(wire);
+            if (subst.IsCopied(wire))
+            {
+                Wire newWire = ShapeCasts.Wire(subst.InternalCopy(wire).First());
+                newWire.Closed(wire.ClosedFlag);
+                NCollection_List<Shape> lw = new();
+                lw.Append(newWire);
+                wwmap[wire] = lw;
+            }
+        }
+        subst.Clear();
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> itmap in wwmap)
+        {
+            subst.Substitute(itmap.Key, itmap.Value);
+        }
+
+        subst.Build(_workSpine);
+
+        if (subst.IsCopied(_workSpine))
+        {
+            Face oldWorkSpain = _workSpine;
+            _workSpine = ShapeCasts.Face(subst.InternalCopy(_workSpine).First());
+
+            MedialAxisExplorer newExp = new();
+            newExp.Perform(_workSpine);
+            BisectingLocus newBilo = new();
+            LinkTopoBilo newLink = new();
+            newBilo.Compute(newExp, 1, MedialSide.Left, _joinType, _isOpenResult);
+
+            if (!newBilo.IsDone)
+            {
+                _shape.Nullify();
+                _isDone = false;
+                return false;
+            }
+
+            newLink.Perform(newExp, newBilo);
+            PerformWithBiLo(_workSpine, offset, newBilo, newLink, _joinType, alt);
+            _workSpine = oldWorkSpain;
+        }
+        else
+        {
+            PerformWithBiLo(_workSpine, offset, _bilo, _link, _joinType, alt);
+        }
+        return _isDone;
+    }
+
+    // Whether every wire of the parallel is closed, by its flag (OCCT's check) and by its vertices: the finer polyline
+    // can give, where an offset closes up, an open piece flagged closed (decisions 23601 and 23602)
+    private static bool AllWiresClosed(in Shape shape)
+    {
+        for (Explorer exp = new(shape, ShapeType.Wire); exp.More(); exp.Next())
+        {
+            if (!exp.Current().ClosedFlag || !Tool.IsClosed(exp.Current()))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     // The parallel at distance 0: the wires of the spine, moved by the altitude.

@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A 2D offset inwards past a curve's sharpest bend is within 0.1% of the distance,** where it was up to 1% too far in, silently, as in OCCT: the polyline that stands in for such an edge is drawn to 0.001 of the distance, with about 3 times its edges, and to OCCT's 0.01 where the finer one fails (decision 23601). Nothing else changes.
 - **Large `mkvolume`-style Booleans allocate up to a third less** (19% over the corpus's cases), with the same shapes: a frozen 2D B-spline keeps the boxes of the arcs it was bounded over (decision 1975).
 - **A STEP file past the reader's limits fails as `exchange.limit-exceeded`,** as documented, where it was `exchange.failed` (decision 1965).
 - **A STEP solid written as a faceted B-rep with voids is read with its voids,** from any file; they were lost (decision 1963).

@@ -351,16 +351,55 @@ public sealed class DrawCorpus(string theTestsDirectory)
         {
             aStatus = "OK (intended difference: " + anIntended.Reason + ")";
         }
+        else if (aStatus.StartsWith("FAILED", StringComparison.Ordinal) && KnownDifferences.TryGetValue(theCase.Id, out var aKnown)
+                 && aText.Contains(aKnown.Figure, StringComparison.Ordinal))
+        {
+            aStatus = "BAD (known difference: " + aKnown.Reason + ")";
+        }
 
         return new DrawCaseRun(theCase, aStatus, aText);
     }
+
+    /// <summary>
+    /// The cases a deliberate change moves from one wrong answer, or none, to another, not yet judged (decision 23601): BAD,
+    /// with the reason, while the log shows the figure, so that any further change shows.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, (string Reason, string Figure)> KnownDifferences =
+        new Dictionary<string, (string, string)>(StringComparer.Ordinal)
+        {
+            // OCCT's offset closes up; the finer polyline leaves a 3-edge remnant whose face is faulty
+            ["offset/wire_closed_inside_0_075/D4"] = ("a faulty remnant where OCCT's offset closes up (decision 23601)", "The length is 0.394065"),
+            // OCCT can't build it (TODO OCC23748); the finer polyline does, shorter than the script's figure
+            ["offset/wire_unclosed_outside_0_075/A1"] = ("built where OCCT fails (TODO OCC23748), 10.60 for the script's 11.69 (decision 23601)",
+                                                         "The length of result shape is 10.6026, expected 11.6898"),
+            // OCCT's result is faulty (TODO OCC23748); so is this one, 2% longer
+            ["offset/wire_unclosed_outside_0_075/A9"] = ("faulty as OCCT's (TODO OCC23748), 2% longer (decision 23601)",
+                                                         "The length of result shape is 79361, expected 77744.9"),
+        };
+
+    // Before IntendedDifferences, which reads them as it's initialised
+    private static readonly string[] FinerOffsetPolylineCases =
+    [
+        "offset/wire_closed_inside_0_025/D2", "offset/wire_closed_inside_0_075/C5", "offset/wire_closed_inside_0_075/C6",
+        "offset/wire_closed_outside_0_005/I8", "offset/wire_closed_outside_0_075/A4", "offset/wire_closed_outside_0_075/A5",
+        "offset/wire_unclosed_outside_0_005/B6", "offset/wire_unclosed_outside_0_025/A2", "offset/wire_unclosed_outside_0_025/A3",
+        "offset/wire_unclosed_outside_0_025/B2", "offset/wire_unclosed_outside_0_025/B3", "offset/wire_unclosed_outside_0_025/B6",
+        "offset/wire_unclosed_outside_0_025/C4", "offset/wire_unclosed_outside_0_075/A2", "offset/wire_unclosed_outside_0_075/A3",
+        "offset/wire_unclosed_outside_0_075/B1", "offset/wire_unclosed_outside_0_075/B2", "offset/wire_unclosed_outside_0_075/B3",
+        "offset/wire_unclosed_outside_0_075/B4", "offset/wire_unclosed_outside_0_075/B5", "offset/wire_unclosed_outside_0_075/B6",
+        "offset/wire_unclosed_outside_0_075/C4", "bugs/modalg_4/bug7668", "bugs/modalg_6/bug6768",
+    ];
+
+    private static readonly Regex OffsetCountError =
+        new(@"^Error : (The resulting shape is WRONG because it must contain \d+ (vertexes|edges) instead of \d+"
+            + @"| is WRONG because number of (VERTEX|EDGE|SHAPE) entities in shape ""[^""]*"" is \d+)$", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// The cases whose OCCT reference a deliberate fix changes (phase10-plan.md 3.3): OCCT's check fails on the port's
     /// log, which shows the corrected behaviour instead; such a case is OK, with the reason.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, (string Reason, Func<string, bool> IsPortsBehaviour)> IntendedDifferences =
-        WithMassReferences(new Dictionary<string, (string, Func<string, bool>)>(StringComparer.Ordinal)
+        WithFinerOffsetPolylines(WithMassReferences(new Dictionary<string, (string, Func<string, bool>)>(StringComparer.Ordinal)
         {
             // OCCT's script requires tuyau's "cannot make a surface": GeomFill_Pipe gave up between two sections on a
             // path the corrected Frenet trihedron corrects; the pipe is built, and tuyau reports its accuracy
@@ -384,7 +423,27 @@ public sealed class DrawCorpus(string theTestsDirectory)
             ["lowalgos/intss/bug26684_1"] = ("a sphere touching a torus along a circle is analytic (decision 1818)",
                                              theLog => theLog.Contains("Reached tolerance = 4.96", StringComparison.Ordinal)
                                                        && theLog.Contains("e-15 is not equal to expected 1.4915699300398263e-07", StringComparison.Ordinal)),
-        });
+        }));
+
+    // The 2D offset's cases whose script counts the vertices and edges of OCCT's result, which a finer polyline for an edge
+    // curving tighter than the distance changes (decision 23601): the result is otherwise as checked, closed where it
+    // should be and of the script's length, nothing faulty, and the counts are the only errors
+    private static Dictionary<string, (string, Func<string, bool>)> WithFinerOffsetPolylines(Dictionary<string, (string, Func<string, bool>)> theCases)
+    {
+        foreach (string anId in FinerOffsetPolylineCases)
+        {
+            theCases[anId] = ("OCCT's script counts the edges of its coarser polyline for a curve tighter than the distance (decision 23601)",
+                              theLog =>
+                              {
+                                  string[] anErrors = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => l.Contains("Error", StringComparison.Ordinal))];
+                                  return anErrors.Length > 0 && anErrors.All(l => OffsetCountError.IsMatch(l))
+                                         && !theLog.Contains("Faulty", StringComparison.Ordinal)
+                                         && !theLog.Contains("has self-intersection", StringComparison.Ordinal);
+                              });
+        }
+
+        return theCases;
+    }
 
     private static Dictionary<string, (string, Func<string, bool>)> WithMassReferences(Dictionary<string, (string, Func<string, bool>)> theCases)
     {
