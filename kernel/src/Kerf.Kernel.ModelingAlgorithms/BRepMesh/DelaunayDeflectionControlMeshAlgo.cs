@@ -24,8 +24,9 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     private double _maxSqDeflection;
     private double _sqMinSize;
     private bool _isAllDegenerated;
-    // OCCT's map of the node pairs already checked, which it keeps from one pass to the next: here, a pass's own are marked
-    // by their links' indices, and the map holds those of the passes before, made only when a pass inserts nodes (decision 23701)
+    // OCCT's map of the node pairs already checked, which it keeps from one pass to the next: here the first pass marks its
+    // links by their indices, and the map is made from them only when that pass inserts nodes, for the passes after it to
+    // use as OCCT's (decision 23701)
     private HashSet<OrientedEdge>? _couplesMap;
     private LinkMarks? _passLinks;
     private NCollection_List<Point2D>? _controlNodes;
@@ -93,7 +94,11 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 break;
             }
             // Iterate on current triangles
-            _passLinks.Reset(GetStructure().LinkCount);
+            if (_couplesMap is null)
+            {
+                _passLinks.Reset(GetStructure().LinkCount);
+            }
+
             NCollection_PackedMapOfInteger.Iterator triangleIt = new(GetStructure().ElementsOfDomain());
             for (; triangleIt.More(); triangleIt.Next())
             {
@@ -101,7 +106,7 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 SplitTriangleGeometry(triangle);
             }
 
-            if (!_controlNodes.IsEmpty())
+            if (_couplesMap is null && !_controlNodes.IsEmpty())
             {
                 KeepPassLinks();
             }
@@ -119,12 +124,12 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
         }
     }
 
-    // Adds the node pairs of the links this pass marked to those of the passes before, before the structure changes
+    // Makes the map of the node pairs of the links the first pass marked, before the structure changes
     private void KeepPassLinks()
     {
         DataStructureOfDelaun structure = GetStructure();
         int linkCount = structure.LinkCount;
-        _couplesMap ??= new HashSet<OrientedEdge>(linkCount);
+        _couplesMap = new HashSet<OrientedEdge>(2 * linkCount);
         for (int index = 1; index <= linkCount; index++)
         {
             if (_passLinks!.IsMarked(index))
@@ -301,8 +306,7 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 lastVertex = nodesIndices[i];
             }
 
-            if (_passLinks!.Add(Math.Abs(triangleEdges[i]))
-                && (_couplesMap is null || !_couplesMap.Contains(new OrientedEdge(firstVertex, lastVertex))))
+            if (_couplesMap is null ? _passLinks!.Add(Math.Abs(triangleEdges[i])) : _couplesMap.Add(new OrientedEdge(firstVertex, lastVertex)))
             {
                 Xy midPnt2d = (nodesInfo[i].Point2d + nodesInfo[j].Point2d) / 2.0;
 
