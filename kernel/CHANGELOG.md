@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **Meshing allocates less on large faces:** 28% less over `data/occ`, 36% on `terrain.brep` and three quarters on a fine sphere, with the same meshes (decision 23004).
 - **`MeshOptions.ControlAllSurfaces` has gone** (a breaking change): the mesh now keeps to the deflection on every kind of surface without it, at an absolute deflection, with no more triangles, where the option added up to 81% and made cones 2.6 times out (decision 23002). Remove it from an initialiser; nothing else changes.
 - **A sphere's mesh keeps to the deflection asked,** at an absolute deflection: it could be twice out, silently, and now keeps within it with the same triangles, or a few more where grid nodes beside the seam were lost (decision 23001). A relative deflection keeps OCCT's mesh.
 - **A mesh in which no face could be meshed fails,** `meshing.failed`, carrying the mesh with its edges' polylines from `TryGetInvalid`, where it reported success with a warning (decision 23003). Some faces left unmeshed is still a success with `meshing.faces-not-meshed`.
