@@ -2750,60 +2750,29 @@ internal static class StepToGeom
             { dx * dy * cm1 + dz * sa, dy * dy * cm1 + ca, dy * dz * cm1 - dx * sa },
             { dx * dz * cm1 - dy * sa, dy * dz * cm1 + dx * sa, dz * dz * cm1 + ca } };
 
-        // aRotMat[1][3] equals SIN(pitch_angle)
-        if (Math.Abs(Math.Abs(rotMat[0, 2] - 1.0)) < global::Kerf.Engine.Foundation.Precision.Confusion())
+        // Kerf: the matrix is Rx(roll)·Ry(pitch)·Rz(yaw), so its [1][3] is sin(pitch). OCCT tests |[1][3] - 1| for a
+        // right-angled pitch, so missed -PI/2; turned yaw by PI where its atan2, already in all four quadrants, was
+        // right; and never computed roll, leaving it 0, so any rotation about an axis off the coordinate axes came back
+        // as another rotation (decision 23108).
+        if (Math.Abs(Math.Abs(rotMat[0, 2]) - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            // |aPitch| = PI/2
-            if (Math.Abs(rotMat[0, 2] - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
-            {
-                pitch = Math.PI / 2;
-            }
-            else
-            {
-                pitch = -Math.PI / 2;
-            }
-            // In this case, only the sum or difference of roll and yaw angles
-            // is relevant and can be evaluated from the matrix.
-            // According to IP "rectangular pitch angle" for ypr_rotation,
-            // the roll angle is set to zero.
+            // |pitch| = PI/2: only yaw plus or minus roll is fixed by the matrix ([2][1] and [2][2] are its sine and
+            // cosine); as the IP for "rectangular pitch angle" of ypr_rotation has it, roll is 0
+            pitch = rotMat[0, 2] > 0.0 ? Math.PI / 2 : -Math.PI / 2;
             roll = 0.0;
             yaw = Math.Atan2(rotMat[1, 0], rotMat[1, 1]);
-            // result of ATAN is in the range[-PI / 2, PI / 2].
-            // Here all four quadrants are needed.
-
-            if (rotMat[1, 1] < 0.0)
-            {
-                if (yaw <= 0.0)
-                {
-                    yaw = yaw + Math.PI;
-                }
-                else
-                {
-                    yaw = yaw - Math.PI;
-                }
-            }
         }
         else
         {
-            // COS (pitch_angle) not equal to zero
+            // cos(pitch) > 0: yaw from the first row, roll from the last column
             yaw = Math.Atan2(-rotMat[0, 1], rotMat[0, 0]);
-
-            if (rotMat[0, 0] < 0.0)
-            {
-                if (yaw < 0.0 || Math.Abs(yaw) < global::Kerf.Engine.Foundation.Precision.Angular())
-                {
-                    yaw = yaw + Math.PI;
-                }
-                else
-                {
-                    yaw = yaw - Math.PI;
-                }
-            }
+            roll = Math.Atan2(-rotMat[1, 2], rotMat[2, 2]);
             double sy = Math.Sin(yaw);
             double cy = Math.Cos(yaw);
             double aSR = Math.Sin(roll);
             double cr = Math.Cos(roll);
 
+            // cos(pitch), from whichever of the four is best conditioned
             if (Math.Abs(sy) > Math.Abs(cy) && Math.Abs(sy) > Math.Abs(aSR) && Math.Abs(sy) > Math.Abs(cr))
             {
                 cm1 = -rotMat[0, 1] / sy;
