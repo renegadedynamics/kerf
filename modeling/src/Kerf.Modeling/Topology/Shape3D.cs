@@ -121,7 +121,7 @@ public static partial class Shape3DExtensions
                 }
                 catch (Exception e) when (e is not OutOfMemoryException and not OperationCanceledException)
                 {
-                    // Diagnostics mustn't mask the kernel's failure (nor running out of memory, nor a cancel: decision 22802)
+                    // Diagnostics mustn't mask the kernel's failure (nor running out of memory, nor a cancel: decision 1943)
                 }
                 // What doesn't fit says so, and with several edges, which of them the algorithm failed on
                 string message = Shape3DExtensions.TooLargeMessage(filleted.Diagnostics) is { } tooLarge
