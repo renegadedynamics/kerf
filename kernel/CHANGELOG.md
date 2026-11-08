@@ -9,8 +9,8 @@ version may break the API.
 - **A STEP solid written as a faceted B-rep with voids is read with its voids,** from any file; they were lost (decision 1963).
 - **The box of a half-infinite parabola or hyperbola, or of a ray not along an axis, holds it:** it was open on the wrong sides (decision 1964).
 - **A STEP spline with fewer poles than its degree needs, or a surface of a degree out of range, is an entity not translated,** where reading it threw (decision 1966).
-- **A validity check of a placed, meshed shape allocates about half as much,** with the same verdicts: it no longer composes placements it doesn't read (decision 23301).
-- **Shape healing allocates 3.5% less in `ShapeFix` and 1.7% less on a STEP import,** with the same shapes: a wire's 2D intersections make only the intersector they use (decision 23303).
+- **A validity check of a placed, meshed shape allocates about half as much,** with the same verdicts: it no longer composes placements it doesn't read (decision 1971).
+- **Shape healing allocates 3.5% less in `ShapeFix` and 1.7% less on a STEP import,** with the same shapes: a wire's 2D intersections make only the intersector they use (decision 1973).
 - **A Boolean's check that searches on B-spline edges is about a third cheaper** (decision 1950): a curve keeps its values at the ends of its range, the same values as before.
 - **`ThickSolid` is checked and retried as `Offset` and `Hollow` are:** a cone with its apex, inwards with round joins, is made with mitres and says so, and an offset that comes out nonsense fails, holding the shape (decision 1947). `OffsetVolumes.Check` is public, as `BooleanVolumes.Check` is. **A hollow solid made outwards that fills the solid it was made around fails** (decision 1948).
 - **Meshing allocates less on large faces:** 28% less over `data/occ`, 36% on `terrain.brep` and three quarters on a fine sphere, with the same meshes (decision 1955).
