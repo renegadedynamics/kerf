@@ -1445,3 +1445,26 @@ Counted, not timed: the machine was shared with the owner and another helper, an
 | 36, extrude until, +3.6 MB (31.7 to 35.3, decision 1887) | Decision 1881's check that a fuse as large as both its inputs didn't lose an overlap. The inputs touch along a curved face, so their boxes overlap deeply and the grid's points are all classified | 371 classifications, 3.56 MB a recalculation on the thread; switched off, 36.3 to 33.0 MB on the last pass | Left: the price of catching a silent wrong fuse, about 10% of one example |
 | A thick solid, +2.2% (79.1 to 80.8 MB) | Decision 1885's walked curves for equal cylinders whose axes missed by 7e-15, rounding, on one part's pipes | That part 11.4 to 16.8 MB; bisected to 989e1a577 | **Fixed** (decision 1941): the row 80.0 to 74 MB, the part back to 11.4 |
 | `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB | Each thread keeps its own `MeshWorkStorage`, so the bytes depend on which threads mesh which faces; the rig keeps the last run's | 31 runs in one process: 5.66 to 9.64 MB parallel, 5.55 to 5.61 serial; 24 sets made | Left: larger shapes' parallel meshes are within 1% and 9% of serial |
+
+## Unit 12P: the slowest list again
+
+*8 November 2026, on a machine shared with the owner and another helper: times are from a loaded machine, and the figures that count are samples and bytes. Decisions 22904 and 22905.*
+
+**Alone, the corpus's slowest cases take a fraction of their time in a pass.** One process, one case after another (`ZzP12pProbe`, a throwaway test; processor time and bytes for the whole process):
+
+| Case | Wall | Processor | Bytes | Where it goes | Verdict |
+|---|---:|---:|---:|---|---|
+| `bugs/modalg_5/bug25232_9` | 11.6 s | 12.8 s | 7,557 MB | `mkvolume` of 63 planes and a sphere into 9,832 solids: `MakerVolume` 34% of samples, 69% of bytes; `checkshape` 26% of bytes. `BSplineCurve2dBounds.Box` copies a whole pcurve and segments it to bound an arc, 896 MB (12%), as OCCT does | Large by nature; the box a candidate (below) |
+| `bugs/modalg_7/bug32444` | 7.8 s | 8.9 s | 2,583 MB | A sweep's corner trimming: its Booleans' edge-face 26% and face-face 15% of samples | Hard, spread out |
+| `boolean/simplify/A3` | 5.0 s | 7.4 s | 1,759 MB | The Boolean's filler 23%, building 13%, `UnifySameDomain` 10% | Spread out |
+| `bugs/modalg_1/buc60462_2` | 4.1 s | 6.0 s | 534 MB | The fuse; Draw-lite runs no check of volume | Below |
+| `bugs/modalg_6/bug26701` | 2.2 s | 2.6 s | 1,761 MB | The filler 21% of samples; `checkshape` 64% of bytes, of which composing placements in `VertexCheck.InContext` 924 MB (52%) | A candidate (below) |
+| `bugs/modalg_7/bug28119_1` | 1.3 s | 1.7 s | 225 MB | BAD, as before | Nothing to do |
+
+**`buc60462_2`'s check of volume** (decision 1937's 10 s), through `BooleanVolumes.Check` alone: 8.5 and 7.8 s, 133 MB a check. 99.5% of its samples are decision 1881's grid, 343 points classified against each input; the classifier's ray asks each edge it passes near for its nearest point (`ExtCC`, `GlobOptMin`, Newton). **A quarter of those samples were a B-spline evaluated at the very end of its range**, again and again, as Newton clamps to it. Kept now (decision 22904): **5,958 samples to 3,858 (-35%)**, the same bytes. What's left: Newton 68%, rebuilding the one-span cache 15.5%.
+
+#### Candidates, not done
+
+- **A cache of a few spans** for a B-spline adaptor: 15.5% of what's left of that check. The span must still be the one `LocateParameter` gives, so the same coefficients are used; a new cache allocates where a rebuild doesn't, so bytes go up a little where an adaptor walks along a curve.
+- **The placements in a validity check** (`bug26701`): `(eloc * loc).Predivided(vloc)` for each vertex, each of its edges and each representation, half of that case's bytes. A shape's identity reads its chain, so a shortcut has to give the very chain the product does.
+- **The box of a pcurve's arc** (`bug25232_9`): the segmented poles without the copy, if they come out the same.

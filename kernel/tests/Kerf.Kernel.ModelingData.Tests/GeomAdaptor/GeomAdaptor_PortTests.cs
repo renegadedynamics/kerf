@@ -36,6 +36,34 @@ public class GeomAdaptor_PortTests
         Assert.True(aDUV.IsEqual(aSDUV, 1e-12, 1e-12));
     }
 
+    // A B-spline's values at the ends of the range are kept (unit 12P): asked again, the same to the last bit as the curve's own
+    // local evaluation there; on the same curve with another range, the new ends' values
+    [Fact]
+    public void A_BSplines_ends_are_the_curves_own_local_values_however_often_asked()
+    {
+        BSplineCurve3D aCurve = Cubic();
+        var anAdaptor = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(aCurve, 0.25, 0.75);
+        foreach ((double aFirst, double aLast) in new[] { (0.25, 0.75), (0.25, 0.75), (0.5, 0.75) })
+        {
+            anAdaptor.Load(aCurve, aFirst, aLast);
+            foreach ((double U, int aFrom, int aTo) in new[] { (aFirst, aFirst < 0.5 ? 1 : 2, aFirst < 0.5 ? 2 : 3), (aLast, 2, 3) })
+            {
+                aCurve.LocalD2(U, aFrom, aTo, out Point3D aP, out Vector3D aV1, out Vector3D aV2);
+                for (int i = 0; i < 3; i++)
+                {
+                    anAdaptor.D2(U, out Point3D aP2, out Vector3D aV12, out Vector3D aV22);
+                    anAdaptor.D1(U, out Point3D aP1, out Vector3D aV11);
+                    Assert.Equal(aP, aP2);
+                    Assert.Equal(aV1, aV12);
+                    Assert.Equal(aV2, aV22);
+                    Assert.Equal(aP.X, anAdaptor.Value(U).X, 15);
+                    Assert.Equal(aP.Y, aP1.Y, 15);
+                    Assert.Equal(aV1.Z, aV11.Z, 15);
+                }
+            }
+        }
+    }
+
     [Fact]
     public void SurfaceOfRevolution_Recognises_Elementary_Surfaces()
     {
