@@ -216,6 +216,91 @@ public readonly partial struct Placement : IEquatable<Placement>
         return new Placement(result);
     }
 
+    [ThreadStatic]
+    private static ItemLocation[]? s_productItems;
+
+    /// <summary>
+    /// <c>(left * right).Transformation</c>, the same bits, without building the product's chain.
+    /// </summary>
+    /// <remarks>
+    /// Kerf: a validity check asks for the transformation of an edge's placement times a representation's, for each
+    /// edge and representation, and each product was a new node of about 170 bytes (a placed, meshed compound's check,
+    /// bug26701). A chain's transformation depends only on its items: each node's is its own item's, premultiplied by its
+    /// tail's. So this joins <paramref name="right"/>'s items onto <paramref name="left"/>'s as <see cref="Multiplied"/>
+    /// does, deepest first, cancelling a datum that meets itself, and folds the transformations in the same order, on a
+    /// scratch stack. A chain as long as <see cref="MaxChainRecursion"/>, which <see cref="Multiplied"/> treats apart,
+    /// takes the product itself.
+    /// </remarks>
+    internal static Transform3D ProductTransformation(in Placement left, in Placement right)
+    {
+        if (right.IsIdentity)
+        {
+            return left.Transformation;
+        }
+
+        if (left.IsIdentity)
+        {
+            return right.Transformation;
+        }
+
+        int count = 0;
+        for (SListOfItemLocation it = right._items; it.More(); it.Next())
+        {
+            if (++count >= MaxChainRecursion)
+            {
+                return left.Multiplied(right).Transformation;
+            }
+        }
+
+        // right's items, head first, at [0, count); the product's new items above them, as a stack
+        ItemLocation[] items = s_productItems ??= new ItemLocation[2 * MaxChainRecursion];
+        int n = 0;
+        for (SListOfItemLocation it = right._items; it.More(); it.Next())
+        {
+            items[n++] = it.Value();
+        }
+
+        SListOfItemLocation below = left._items;
+        int top = count;
+        for (int i = count - 1; i >= 0; i--)
+        {
+            Datum3D datum = items[i]._datum;
+            int power = items[i]._power;
+            if (top > count)
+            {
+                if (items[top - 1]._datum == datum)
+                {
+                    power += items[top - 1]._power;
+                    top--;
+                }
+            }
+            else if (!below.IsEmpty && below.Value()._datum == datum)
+            {
+                power += below.Value()._power;
+                below.ToTail();
+            }
+
+            if (power != 0)
+            {
+                var item = new ItemLocation(datum, power);
+                if (top > count)
+                {
+                    item._trsf = item._trsf.PreMultiplied(items[top - 1]._trsf);
+                }
+                else if (!below.IsEmpty)
+                {
+                    item._trsf = item._trsf.PreMultiplied(below.Value()._trsf);
+                }
+
+                items[top++] = item;
+            }
+        }
+
+        Transform3D result = top > count ? items[top - 1]._trsf : below.IsEmpty ? THE_IDENTITY_TRSF : below.Value()._trsf;
+        Array.Clear(items, 0, Math.Max(top, count));
+        return result;
+    }
+
     /// <summary>The composition, as <see cref="Multiplied"/>.</summary>
     public static Placement operator *(in Placement left, in Placement right)
         => left.Multiplied(right);

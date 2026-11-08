@@ -1466,5 +1466,52 @@ Counted, not timed: the machine was shared with the owner and another helper, an
 #### Candidates, not done
 
 - **A cache of a few spans** for a B-spline adaptor: 15.5% of what's left of that check. The span must still be the one `LocateParameter` gives, so the same coefficients are used; a new cache allocates where a rebuild doesn't, so bytes go up a little where an adaptor walks along a curve.
-- **The placements in a validity check** (`bug26701`): `(eloc * loc).Predivided(vloc)` for each vertex, each of its edges and each representation, half of that case's bytes. A shape's identity reads its chain, so a shortcut has to give the very chain the product does.
-- **The box of a pcurve's arc** (`bug25232_9`): the segmented poles without the copy, if they come out the same.
+- **The placements in a validity check** (`bug26701`): `(eloc * loc).Predivided(vloc)` for each vertex, each of its edges and each representation, half of that case's bytes. A shape's identity reads its chain, so a shortcut has to give the very chain the product does. **Done** by composing only where read, and taking a product's transformation without its chain: -48% (decision 1971, "The perf search").
+- **The box of a pcurve's arc** (`bug25232_9`): the segmented poles without the copy, if they come out the same. Measured since: the copy is 3% of the case and the segmentation 9% ("The perf search").
+
+## The perf search (8 November 2026)
+
+*On a machine shared with the owner and another helper: no time here is worth more than a sign, and none is used for a verdict. Bytes are `GC.GetTotalAllocatedBytes` over a case, or the benchmarks' own figures; shares are allocation ticks, which sample about every 100 kB. Decisions 1971 to 1973.*
+
+**What Bento's examples spend now, against the rig's baseline (f5a7bd7a2):** the same bytes, 122.2 MB a recalculation against 122.1 at f5a7bd7a2 built the same way, every example within a megabyte of it, which is the noise between runs, and with the same results. Nothing new reaches the top ten sites by bytes; the order moves within sampling. The Boolean's filler is 29.6% of the bytes, the mesher 25.6%, healing 9.4%, offsets 8.3%, construction 7.8%, and the checks together about 12%: the validity check 8.1%, `BooleanVolumes.Check` 3.5% (of which decision 1881's grid 2.7%), `OffsetVolumes.Check` 0.3%. **One thing is new in samples, not bytes:** extrude until's half torus now meshes through the deflection guard of decision 1929 (a torus at an absolute deflection), and the mesher's share of that example's samples rose from 17% to 28%, with the same 4,156 triangles. On this machine that can't be told from the load: for the quiet run. The sweep of dead circles (decision 1955) isn't it: switched off, no difference.
+
+**The validity check of a placed, meshed shape composed placements it never read,** half of `bug26701`'s bytes (decision 1971). Two changes, each the same result by construction:
+
+| `bugs/modalg_6/bug26701`, the whole case | Bytes | |
+|---|---:|---:|
+| Before | 1,815 and 1,799 MB | |
+| A vertex's placement on a representation composed only where it's read | 1,136 and 1,119 MB | -37% |
+| An edge's polygons placed by the product's transformation, without its chain | 958 and 923 MB | **-48% in all** |
+
+What's left of the placements there is 99 MB, 10%: `Tool.CurveOnSurface` and `Tool.CurveOnPlane` compose a placement to compare a representation's with, which a comparison against the product's items, as `ProductTransformation` folds them, could do without the chain. Not done: 7% of one case.
+
+**Shape healing made what it never used** (decision 1973). Two changes, each under the bar alone and over it together for ShapeFix, an operation over many different files:
+
+| The healing suite's 289 files, bytes | ShapeFix | STEP import with healing |
+|---|---:|---:|
+| Before | 1,439 MB | 2,895 MB |
+| A wire's 2D intersection makes only the sub-intersector it uses | 1,389 MB (-3.5%) | 2,845 MB (-1.7%) |
+| A one-shot orientation of a shell builds no tree of its edges | **Reverted before merging** (it would have given 1,357 MB, -5.7% with the row above) | (2,812 MB) |
+
+`IntCurveCurveGen` (OCCT's `Geom2dInt_GInter`) made its three sub-intersectors, each with sequences of its own, for every pair of edges a wire's check intersects, and a pair uses one. A classifier made to orient a shell and dropped filled the map and box tree of its edges and vertices, which the point at infinity never reads. The Booleans suites, MB per Boolean: 6.30 to 6.23 complex, 4.34 to 4.25 simple. Allocation ticks had put the tree at 8.6% of ShapeFix, as the JIT inlines the faces' intersectors into `InitShape` and the ticks fall to it: bytes measured whole are what decide.
+
+**Looked at, measured, and under the bar** (decision 1972):
+
+| Where | What it is | Measured | Verdict |
+|---|---|---|---|
+| `bug25232_9`, 7.6 GB | The box of a pcurve's arc segments a copy of the curve: 912 MB, 12% of the case. 72,314 segmentations of only 6,864 different curves and ranges | The copy is 245 MB of that (3%); the segmentation itself 647 MB | A cache per curve would take most of it, but 4,576 of the 4,621 curves are a Boolean's working copies, which can change: under the bar, and not plainly safe |
+| STEP import with healing | `GenExtPS`'s grids for projecting points, 12% of the import | 3,384 grids for 3,282 surfaces | One a surface, as OCCT: nothing repeated |
+| Every Boolean and fix | `Tool.IsClosed` composes a placement before looking for a pair of pcurves, which most edges haven't got | The healing suites' bytes the same (2,895.2 and 2,896.0 MB) | Not in |
+| `bug26701` | A vertex's check on a face composes the face's placement with no points to place | No change | Not in |
+| Bento | `MapShapesAndAncestors`, 2.4% to 2.6% of the bytes everywhere; its lists start at four | A capacity of two would save perhaps a fifth of it | Under the bar |
+| Bento | Decision 1881's grid in extrude until, 3.2 MB a pass, 9% of the example | Its classifications are spread: no site over 5% of them. Against the extrusion first, the example takes 8 MB more | Under the bar; the order is right as it is |
+
+**Ideas not tried, by likely gain and then risk:**
+
+1. **A box of a pcurve's arc kept for a Boolean's working curves** (`bug25232_9` 12%, through `AddUVBounds` in `BuilderSolid`, the checks and the classifiers): only frozen curves can keep it themselves, and in a Boolean most aren't, so the Boolean would keep the boxes of its working copies, and drop one when it changes a pcurve. Large on large Booleans; medium risk.
+2. **Comparing a representation's placement with a product without building it** (`Tool.CurveOnSurface`, `Tool.CurveOnPlane`): 7% of `bug26701`, and every placed shape a little; low risk with a bit-for-bit test as `ProductTransformation` has.
+3. **A cache of a few B-spline spans** (12P's): 15.5% of `buc60462_2`'s check; medium risk, bytes up a little.
+4. **`SClassifier.Perform`'s edge-face map kept by the classifier,** which builds it for every point: 5% of decision 1881's classification bytes, and every classifier asked many points (the Booleans' `BuilderSolid`); low risk.
+5. **`MapShapesAndAncestors`' lists made for two:** perhaps half a percent everywhere; low risk, and more allocations where a list grows past two.
+
+**Tested on:** Foundation 2,544, ModelingData 3,346, ModelingAlgorithms 5,793 (9 skipped), DataExchange 366, PublicApi 497, Reliability 41 and Kerf.Modeling 2,251, all passing in Release; and the whole corpus, 17,872 cases four at a time, against `corpus-11e`, after the check's changes and again at the head. Both differ only in `bugs/mesh/bug31461` and `bugs/modalg_7/bug27928`, which already differ on main; the head's run also has `bugs/modalg_5/bug24639` failing its check that parallel beats serial, a time on a loaded machine, and alone it's OK, as in 12P's run.

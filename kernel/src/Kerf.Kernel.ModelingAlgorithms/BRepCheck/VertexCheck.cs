@@ -151,14 +151,16 @@ internal class VertexCheck : ResultCheck
                 {
                     // For each CurveRepresentation, the provided parameter is checked
                     CurveRepresentation cr = curves.ItemAt(icr);
-                    Placement loc = cr.Location();
-                    Placement l = (eloc * loc).Predivided(_shape.Placement);
 
+                    // Kerf: the placement of the representation relative to the vertex is composed only where it's read,
+                    // as OCCT composes it for every representation, polygons included: each product is a new node of the
+                    // chain, half of a check's bytes on a placed, meshed compound (bug26701)
                     if (cr.IsCurve3D)
                     {
                         Curve3D? c = cr.Curve3D();
                         if (c is not null) // edge non degenerated
                         {
+                            Placement l = (eloc * cr.Location()).Predivided(_shape.Placement);
                             for (int ipr = 0; ipr < points.Extent(); ++ipr)
                             {
                                 PointRepresentation pr = points.ItemAt(ipr);
@@ -208,6 +210,7 @@ internal class VertexCheck : ResultCheck
                             pc2 = cr.PCurve2();
                         }
 
+                        Placement l = points.Extent() > 0 ? (eloc * cr.Location()).Predivided(_shape.Placement) : default;
                         for (int ipr = 0; ipr < points.Extent(); ++ipr)
                         {
                             PointRepresentation pr = points.ItemAt(ipr);
