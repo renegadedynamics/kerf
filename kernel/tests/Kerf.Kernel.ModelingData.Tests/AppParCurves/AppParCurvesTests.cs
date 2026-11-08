@@ -639,12 +639,22 @@ public class AppParCurvesTests
     }
 
     [Fact]
-    public void Function_InteriorConstraintsWithMixedDimensions_ReadOutOfBounds()
+    public void Gradient_with_an_interior_point_on_a_line_of_3d_and_2d_points_holds_it_on_both()
     {
-        // OCCT reads the 2d points of a mixed line at the curve index (occt-issues.md); the port's range check throws
-        AppParCurves_TestLine aLine = Helix(10, out double[] aParams);
-        var aConstraints = Constraints((1, PassPoint), (5, PassPoint), (10, PassPoint));
-        EngineAssert.ThrowsAny<OutOfRangeException>(() => new Function(aLine, 1, 10, aConstraints, Vector(aParams), 4));
+        // OCCT read the 2d points of a mixed line at the curve index, out of range (decision 23109): the interior
+        // passing point is held by the 3d curve and the 2d one
+        AppParCurves_TestLine aLine = Helix(15, out double[] aParams);
+        math_Vector U = Vector(aParams);
+        var aConstraints = Constraints((1, PassPoint), (8, PassPoint), (15, PassPoint));
+        Gradient aGrad = new(aLine, 1, 15, aConstraints, U, 6, 1e-3, 1e-3, 50);
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = aGrad.Value();
+        Assert.Equal(2, aCurve.NbCurves());
+        Assert.True(aGrad.MaxError3d() < 1e-2, $"MaxError3d {aGrad.MaxError3d()}");
+        Assert.True(aGrad.MaxError2d() < 1e-2, $"MaxError2d {aGrad.MaxError2d()}");
+        aCurve.Value(1, U[8], out Point3D aP);
+        Assert.True(aP.DistanceTo(aLine.P3d[7][0]) < 1e-6);
+        aCurve.Value(2, U[8], out Point2D aQ);
+        Assert.True(aQ.DistanceTo(aLine.P2d[7][0]) < 1e-6);
     }
 
     [Fact]
