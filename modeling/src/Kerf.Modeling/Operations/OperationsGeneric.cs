@@ -128,22 +128,27 @@ public static partial class Operations
     /// <summary>
     /// The 3D object the edges were taken from, with the edges chamfered: <paramref name="length"/> on one side and
     /// <paramref name="length2"/> (or the length that makes <paramref name="angle"/> degrees) on the other, measured on
-    /// <paramref name="reference"/> if given (which the edges must belong to).
+    /// <paramref name="reference"/> if given (which the edges must belong to). Past a convex arc whose radius is no more
+    /// than the length on its face, it's refused, unless <paramref name="options"/> say to collapse such corners
+    /// (<see cref="ChamferOptions.TightCorners"/>).
     /// </summary>
     /// <exception cref="ArgumentException">
     /// No edges are given, they weren't taken from a 3D object, both <paramref name="length2"/> and <paramref name="angle"/>
     /// are given, or <paramref name="reference"/> is given without either.
     /// </exception>
-    public static Result<Part> Chamfer(IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
-        Failures.Try(() => (Part)ChamferCore(TargetOf(edges, "chamfer"), edges.Select(e => (Shape)e), length, length2, angle, reference));
+    public static Result<Part> Chamfer(IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null,
+                                       ChamferOptions? options = null) =>
+        Failures.Try(() => (Part)ChamferCore(TargetOf(edges, "chamfer"), edges.Select(e => (Shape)e), length, length2, angle, reference, options));
 
-    /// <summary>The edges of <paramref name="target"/> chamfered (see <see cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?)"/>).</summary>
-    public static Result<Part> Chamfer(Shape target, IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
-        Failures.Try(() => (Part)ChamferCore(target, edges.Select(e => (Shape)e), length, length2, angle, reference));
+    /// <summary>The edges of <paramref name="target"/> chamfered (see <see cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?, ChamferOptions?)"/>).</summary>
+    public static Result<Part> Chamfer(Shape target, IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null,
+                                       ChamferOptions? options = null) =>
+        Failures.Try(() => (Part)ChamferCore(target, edges.Select(e => (Shape)e), length, length2, angle, reference, options));
 
-    /// <inheritdoc cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?)"/>
-    public static Result<Part> Chamfer(Shape target, Edge edge, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
-        Chamfer(target, [edge], length, length2, angle, reference);
+    /// <inheritdoc cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?, ChamferOptions?)"/>
+    public static Result<Part> Chamfer(Shape target, Edge edge, double length, double? length2 = null, double? angle = null, Face? reference = null,
+                                       ChamferOptions? options = null) =>
+        Chamfer(target, [edge], length, length2, angle, reference, options);
 
     /// <summary>
     /// The 2D object (a Sketch), sheet (a Shell) or 1D object (a Wire) the vertices were taken from, with the corners at
@@ -166,7 +171,8 @@ public static partial class Operations
     public static Result<ModelShape> Chamfer(Shape target, Vertex vertex, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
         Chamfer(target, [vertex], length, length2, angle, reference);
 
-    private static ModelShape ChamferCore(Shape target, IEnumerable<Shape> objects, double length, double? length2, double? angle, Shape? reference)
+    private static ModelShape ChamferCore(Shape target, IEnumerable<Shape> objects, double length, double? length2, double? angle, Shape? reference,
+                                          ChamferOptions? options = null)
     {
         using var log = HistoryLog.Open();
         // Python's truthiness: a zero length2 or angle counts as not given
@@ -204,7 +210,7 @@ public static partial class Operations
             {
                 if (!objectList.All(o => o.IsEdge()))
                     throw new ArgumentException("3D chamfer operation takes only Edges");
-                var newPart = TopoUtil.As3D(target).Chamfer(length, distance2, objectList.Select(o => (Edge)o), referenceFace);
+                var newPart = TopoUtil.As3D(target).Chamfer(length, distance2, objectList.Select(o => (Edge)o), referenceFace, options);
                 return new Part([newPart]).MadeBy(ModelHistory.Of([newPart]));
             }
             case 2:

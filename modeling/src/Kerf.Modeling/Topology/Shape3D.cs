@@ -33,14 +33,15 @@ public static partial class Shape3DExtensions
 
         /// <summary>
         /// The edges of this shape chamfered by <paramref name="length"/> (and <paramref name="length2"/> on the other side, for an
-        /// asymmetric chamfer), measured on <paramref name="face"/> if given (which the edges must belong to).
+        /// asymmetric chamfer), measured on <paramref name="face"/> if given (which the edges must belong to), and past tight
+        /// corners as <paramref name="options"/> say.
         /// </summary>
         /// <exception cref="ArgumentException">An edge isn't on the face.</exception>
         /// <exception cref="InvalidOperationException">
         /// The chamfer can't be made: the shorthand's failure; <see cref="Operations.Chamfer(IEnumerable{Edge},
-        /// double, double?, double?, Face?)"/> returns it as a result, with the code <see cref="ModelingDiagnostics.ChamferFailed"/>.
+        /// double, double?, double?, Face?, Operations.ChamferOptions?)"/> returns it as a result, with the code <see cref="ModelingDiagnostics.ChamferFailed"/>.
         /// </exception>
-        public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null)
+        public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null, Operations.ChamferOptions? options = null)
         {
             var edges = edgeList.ToList();
             if (face is { } onFace)
@@ -62,7 +63,8 @@ public static partial class Shape3DExtensions
                 // BRepFilletAPI_MakeChamfer's Add of two distances on the face
                 specs.Add(new ChamferSpec(edge, length, distance2, ReferenceFace: topoFace));
             }
-            var chamfered = self.AsShape().Chamfer(specs);
+            var kernelOptions = options?.TightCorners == TightCorners.Collapse ? new ChamferOptions { TightCorners = Kerf.Fillets.TightCorners.Collapse } : null;
+            var chamfered = self.AsShape().Chamfer(specs, kernelOptions);
             if (!chamfered.TryGetValue(out var built))
                 throw Failures.Expected(ModelingDiagnostics.ChamferFailed,
                                         Shape3DExtensions.TooLargeMessage(chamfered.Diagnostics) ?? "The chamfer failed; try a smaller length.", chamfered);
