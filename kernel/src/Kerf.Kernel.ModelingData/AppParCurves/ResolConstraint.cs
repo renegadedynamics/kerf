@@ -516,7 +516,10 @@ internal class ResolConstraint<MultiLine, ToolLine>
         int nb2d = ToolLine.NbP2d(ssp);
         cCol = nb3d * 3 + nb2d * 2;
 
-        return cCol * incPass + incTan * (cCol - 1) + 3 * incCurv;
+        // Kerf: OCCT counts three rows for each curvature point, but its equations for them are commented out, so the
+        // rows stay zero, the system is singular and any curvature point failed (NotDone). A curvature point is
+        // constrained as the tangency it also is (decision 23107).
+        return cCol * incPass + incTan * (cCol - 1);
     }
 
     /// <summary>The number of unknowns: the coordinates of every pole.</summary>

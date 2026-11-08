@@ -699,4 +699,63 @@ public class AppParCurvesTests
         Assert.True(aGiven.IsDone);
         AssertSamePoles(aRef, aGiven.Value(), 1e-9);
     }
+    // The helix, 3d only, with its true tangents and curvature vectors at the interior points asked for (unit 12Q)
+    private static AppParCurves_TestLine HelixWithDerivatives(int theNb, out double[] theParams, params int[] theAt)
+    {
+        AppParCurves_TestLine aLine = Helix(theNb, out theParams, 0);
+        foreach (int anIndex in theAt)
+        {
+            double t = theParams[anIndex - 1];
+            aLine.Tangents[anIndex] = ([new Vector3D(-2.5 * Math.Sin(2.5 * t), 2.5 * Math.Cos(2.5 * t), 0.8)], []);
+            aLine.Curvatures[anIndex] = ([new Vector3D(-6.25 * Math.Cos(2.5 * t), -6.25 * Math.Sin(2.5 * t), 0)], []);
+        }
+        return aLine;
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Gradient_with_an_interior_tangency_or_curvature_keeps_it_while_the_parameters_move(int theOrder)
+    {
+        // the optimiser moves the parameters, and with them the constraint's derivative: at the end the curve still
+        // passes the constrained point along its tangent
+        AppParCurves_TestLine aLine = HelixWithDerivatives(15, out double[] aParams, 8);
+        for (int i = 1; i < 14; i++)
+        {
+            aParams[i] += 0.02 * Math.Sin(3 * aParams[i]); // off the true ones, for the optimiser to move
+        }
+        math_Vector U = Vector(aParams);
+        var aConstraints = Constraints((1, PassPoint), (8, theOrder == 1 ? TangencyPoint : CurvaturePoint), (15, PassPoint));
+        Gradient aGrad = new(aLine, 1, 15, aConstraints, U, 6, 1e-4, 1e-4, 30);
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = aGrad.Value();
+        Assert.True(aGrad.MaxError3d() < 1e-2, $"MaxError3d {aGrad.MaxError3d()}");
+        Assert.True(aGrad.AverageError() <= aGrad.MaxError3d());
+
+        aCurve.D1(1, U[8], out Point3D aP, out Vector3D aV);
+        Assert.True(aP.DistanceTo(aLine.P3d[7][0]) < 1e-6, $"off the point by {aP.DistanceTo(aLine.P3d[7][0])}");
+        Vector3D aTangent = aLine.Tangents[8].V3d[0];
+        Assert.True(aV.Crossed(aTangent).Magnitude < 1e-6 * aV.Magnitude * aTangent.Magnitude, "off the tangent");
+        Assert.Equal(0.0, U[1]);
+        Assert.Equal(1.0, U[15]);
+    }
+
+    [Fact]
+    public void Resolved_tangency_at_the_ends_and_curvature_inside_hold_on_the_curve_as_tangency()
+    {
+        AppParCurves_TestLine aLine = HelixWithDerivatives(15, out double[] aParams, 1, 8, 15);
+        math_Vector U = Vector(aParams);
+        LeastSquare aLSQ = new(aLine, 1, 15, PassPoint, PassPoint, U, 7);
+        global::Kerf.Engine.Approximation.MultiCurve aCurve = aLSQ.BezierValue();
+        var aConstraints = Constraints((1, TangencyPoint), (8, CurvaturePoint), (15, TangencyPoint));
+        ResolConstraint aResol = new(aLine, aCurve, 1, 15, aConstraints, aLSQ.FunctionMatrix(), aLSQ.DerivativeFunctionMatrix());
+        Assert.True(aResol.IsDone);
+        foreach (int k in new[] { 1, 8, 15 })
+        {
+            aCurve.D1(1, aParams[k - 1], out Point3D aP, out Vector3D aV);
+            Assert.True(aP.DistanceTo(aLine.P3d[k - 1][0]) < 1e-8, $"point {k}");
+            Assert.True(aV.Crossed(aLine.Tangents[k].V3d[0]).Magnitude < 1e-8 * aV.Magnitude * aLine.Tangents[k].V3d[0].Magnitude, $"tangent {k}");
+        }
+        // three passing points and three tangencies, 3 and 2 conditions each; the curvature point adds none (decision 23107)
+        Assert.Equal((3 * 3) + (3 * 2), aResol.ConstraintMatrix().RowNumber());
+    }
 }
