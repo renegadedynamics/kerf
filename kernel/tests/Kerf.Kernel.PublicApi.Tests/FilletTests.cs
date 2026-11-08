@@ -122,11 +122,17 @@ public class FilletTests
         // OCCT #1632: a chamfer had no way to say which contours failed
         Shape cut = Solid.Sphere(5).Value.Shape.Cut(Solid.Box(5, 5, 5).Value.Shape).Value.Shape;
         Edge[] edges = [.. cut.AllEdges().Where(static e => !e.IsDegenerated)];
-        Result<Built<Shape>> chamfer = cut.Chamfer(edges, 6);
+        Result<Built<Shape>> chamfer = cut.Chamfer(edges, 2);
         Assert.True(chamfer.IsFailure);
-        Assert.Equal(new DiagnosticCode("fillet.no-starting-solution"), chamfer.Error!.Code);
+        Assert.Equal(new DiagnosticCode("fillet.failed"), chamfer.Error!.Code);
         Assert.InRange(chamfer.Error.Shapes.Length, 1, edges.Length);
         Assert.All(chamfer.Error.Shapes, shape => Assert.Contains(edges, edge => edge.IsSame(shape.As<Edge>())));
+
+        // Past the cut faces' quarter circles of 5 it's refused before ChFi3d, naming those three (decision 23801)
+        Result<Built<Shape>> past = cut.Chamfer(edges, 6);
+        Assert.Equal(new DiagnosticCode("fillet.too-large"), past.Error!.Code);
+        Assert.Contains("the most that fits is 5,", past.Error.Message, StringComparison.Ordinal);
+        Assert.Equal(3, past.Error.Shapes.Length);
     }
 
     [Fact]

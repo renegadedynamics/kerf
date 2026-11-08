@@ -277,7 +277,7 @@ public static class FilletOperations
                 _ => throw new ArgumentOutOfRangeException(nameof(options), options.Mode, "An unknown chamfer mode."),
             };
             ChamferSpec[] specs = given;
-            return EngineOperation.Run<Shape>(range =>
+            Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
             {
                 var chamfer = new MakeChamfer(solid);
                 chamfer.SetMode(mode);
@@ -298,12 +298,22 @@ public static class FilletOperations
                         chamfer.Add(spec.Distance, spec.Edge);
                     }
                 }
+                // Where the contour bends in a plane beside it, past its tightest radius nothing valid can be built (decision 23801):
+                // refused before ChFi3d, which otherwise made something broken, or wrong. The contours are found by now, without building
+                IReadOnlyList<FilletLimits.Bend> bends = FilletLimits.Bends(solid, chamfer, specs, faces, options);
+                if (options.CheckResult && FilletLimits.TooTight(bends, specs) is { } refused)
+                {
+                    return new EngineOutcome(false, static () => default, Failure: refused, MoreFailures: [refused]);
+                }
                 EngineOutcome outcome = MakerOutcome.Of(chamfer, range, [solid],
                                                         () => (FilletLimits.Judge(solid, specs, options) is { } fit ? FilletLimits.TooLarge(fit, specs) : FilletLimits.TooLarge(solid, specs, faces, options))
+                                                              ?? FilletLimits.AtBend(bends, specs)
                                                               ?? ChamferFailure(chamfer, specs));
                 return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
                made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result"));
+
+            return done;
         }
     }
 
