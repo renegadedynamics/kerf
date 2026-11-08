@@ -67,7 +67,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 | #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 1931 |
 | #572 | A cone from a STEP file with no triangles | 1930 |
 | #1444 | A thin torus's mesh 1.42 from the surface for 0.45 asked | 1929 |
-| A sphere | A sphere's mesh up to twice its deflection, from the scaling of its parameters; now within it with the grid's own triangles | 23001 |
+| A sphere | A sphere's mesh up to twice its deflection, from the scaling of its parameters; now within it with the grid's own triangles | 1953 |
 | `53706f78a8` | A loft's rational section changing shape, for weights that agree part way through being scaled | 1928 |
 | Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 1927 |
 | #1123 | A minimum distance of 0.083 between parts that intersect | 1926 |

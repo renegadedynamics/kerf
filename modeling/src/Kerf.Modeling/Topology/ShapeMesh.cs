@@ -7,7 +7,7 @@ namespace Kerf.Modeling;
 /// </summary>
 /// <remarks>
 /// At an absolute deflection the mesh keeps within <see cref="Linear"/> of every kind of surface, measured from the
-/// surface over <c>data/occ</c>, spheres, tori, cylinders, cones and Bento's examples (the kernel's decision 23002). It is
+/// surface over <c>data/occ</c>, spheres, tori, cylinders, cones and Bento's examples (the kernel's decision 1954). It is
 /// measured, not proved: a face the survey didn't meet could stray. Relative to each edge's size, the faces keep OCCT's
 /// meshes.
 /// </remarks>
