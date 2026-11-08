@@ -265,6 +265,25 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
         Assert.Contains("uses up a face beside the loop", made.Error!.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>A rounded rectangular hole W by H, corners r, chamfered a and b: its section is the hole grown by λ a, as its corners
+    /// curve away from the material, so what's removed is b times the mean of (W + 2t)(H + 2t) - (4 - π)(r + t)², less the hole, over
+    /// t from 0 to a.</summary>
+    private static double RemovedFromHole(double w, double h, double r, double a, double b) =>
+        b * ((w + h) * a + 4 * a * a / 3 - (4 - Math.PI) * (r * a + a * a / 3));
+
+    [Fact]
+    public void An_outline_and_its_hole_together()
+    {
+        // The outline's corners collapse; the hole's, concave, don't, but its loop is built in the same Boolean
+        Shape outer = Prism(60, 50, 20, 1.7);
+        Shape hole = Prism(20, 20, 20, 1.7).Moved(Transform3D.Translation(new Vector3D(20, 15, 0)));
+        Shape holed = outer.Cut(hole).Value.Shape;
+        Edge[] top = [.. Top(holed, 20).AllEdges()];
+        Assert.Equal(16, top.Length);
+        double expected = PrismVolume(60, 50, 20, 1.7) - PrismVolume(20, 20, 20, 1.7) - Removed(60, 50, 1.7, 3, 3) - RemovedFromHole(20, 20, 1.7, 3, 3);
+        Right(holed.Chamfer(top, 3, Collapse), expected);
+    }
+
     [Fact]
     public void Concave_arcs_never_collapse()
     {

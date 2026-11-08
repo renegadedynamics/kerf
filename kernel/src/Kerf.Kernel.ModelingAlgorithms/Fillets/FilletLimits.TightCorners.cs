@@ -402,7 +402,7 @@ internal static partial class FilletLimits
 
         // Turned inside out, or crossing itself: the face is too narrow
         double outline = SectionArea(loop, a, 0), top = SectionArea(loop, a, 1);
-        if (Math.Sign(top) != Math.Sign(outline) || Math.Abs(top) >= Math.Abs(outline))
+        if (Math.Sign(top) != Math.Sign(outline) || outline - top <= 0) // Material on the left: an outline shrinks, a hole grows
         {
             why = "the face is too narrow for the inset";
             return null;
