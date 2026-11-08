@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **Chamfer past tight corners:** `Chamfer(…, options: new ChamferOptions { TightCorners = TightCorners.Collapse })` chamfers a rounded prism's end, or a housing's, by more than its corners' radius, letting each corner collapse to a point, where it was refused and needed a hull or loft by hand (kernel decision 23901). Off by default; below the corners' radius it changes nothing. A Kerf addition: build123d has nothing like it.
 - **`Kind.Tangent` has gone** (a breaking change): an offset's kind is `Kind.Arc` or `Kind.Intersection`. In a 2D offset the tangent join gave the intersection join's result or nothing at all, and `Offset3D`, `Hollow` and a solid's `Offset` threw on it (kernel decision 1982). Use `Kind.Intersection`.
 - **An ellipse or spline offset inwards past its sharpest bend is within 0.1% of the distance,** where it was up to 1% off, silently (kernel decision 1980). **A closed curve whose offset comes out open fails** as `modeling.offset-failed`, where `Operations.Offset` threw (decision 1981).
 - **`Importers.ImportStep` past `ImportLimits.MaxBytes` or `MaxEntities` fails as `exchange.limit-exceeded`,** as documented and as BREP does, where it was `exchange.failed` (kernel decision 1965).

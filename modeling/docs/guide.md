@@ -122,7 +122,23 @@ Result<Part> cup = Offset(box, -1.5, new OffsetOptions { Openings = [top] });   
 ```
 
 Pass the part as the first argument (`Fillet(box, edges, r)`): the edges alone don't know which solid they came
-from. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
+from.
+
+**Chamfers past tight corners** (a Kerf addition: build123d and OCCT have nothing like it). A chamfer longer than the
+radius of a convex arc on its face can't step that arc in, and is refused. With
+`new ChamferOptions { TightCorners = TightCorners.Collapse }` the corner collapses to a point instead: the straight
+edges' insets meet, and the chamfer over the arc is a cone from there, tangent to the planes beside it, as the convex
+hull a user would otherwise build by hand. It's built for whole loops of a planar face of lines and arcs, their sides
+square to it (the end of a rounded prism or a housing), and refused, saying why, otherwise:
+
+```csharp
+Part body = Fillet(new Box(40, 30, 30), new Box(40, 30, 30).Edges().ParallelTo(Axis.Z), 1.7).Value;
+var end = body.Edges().GroupBy(Axis.Z).Last();
+Result<Part> refused = Chamfer(body, end, 3);                        // longer than the 1.7 corners
+Result<Part> past = Chamfer(body, end, 3, options: new ChamferOptions { TightCorners = TightCorners.Collapse });   // 35336.538
+```
+
+Below every corner's radius the option changes nothing. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
 too, with `Kind` (`Arc`, `Intersection`) and `Side` in `OffsetOptions`.
 
 ## 6. Results, failures and warnings

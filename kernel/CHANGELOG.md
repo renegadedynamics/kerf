@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **`ChamferOptions.TightCorners = TightCorners.Collapse` chamfers past corners tighter than the chamfer:** on a whole loop of a planar face of lines and arcs, its sides square to it, a convex arc whose radius is no more than the length on that face collapses to the point where the straight insets beside it meet, and the chamfer over it is the oblique cone from there, tangent to its neighbours; checked against the volume and area the outline gives (decision 23901, `docs/chamfer-corners.md`). Off by default, and then nothing changes; other cases with such a corner are refused, saying why.
 - **Meshing allocates 5% less over `data/occ`, and up to 11% less on shapes with tori and spheres, and its angular check estimates each node's normal once,** with the same meshes: the checks of deviation no longer grow a set of node pairs (decisions 1977, 1978).
 - **A 2D offset inwards past a curve's sharpest bend is within 0.1% of the distance,** where it was up to 1% too far in, silently, as in OCCT: the polyline that stands in for such an edge is drawn to 0.001 of the distance, with about 3 times its edges, and to OCCT's 0.01 where the finer one fails (decision 1980). Nothing else changes.
 - **Large `mkvolume`-style Booleans allocate up to a third less** (19% over the corpus's cases), with the same shapes: a frozen 2D B-spline keeps the boxes of the arcs it was bounded over (decision 1975).

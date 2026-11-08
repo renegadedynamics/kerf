@@ -89,7 +89,7 @@ isn't built.
 | The face too narrow for the insets | E is empty or turns inside out (a side of zero length or less), or its sides cross | **Refused**, saying so |
 | Two-distance chamfers | All of the above with a on F and b on S: only a, the distance on the face whose outline has the arcs, decides what collapses. b > r with a < r collapses nothing | **Yes** |
 | Distance and angle | Two distances: with S square to F, the angle α from the reference face gives the other distance as the reference's times tan α | **Yes** |
-| Constant throat, with or without penetration | The throat isn't measured on the faces | **Refused** |
+| Constant throat, with or without penetration | The throat isn't measured on the faces | **Not read:** the option leaves it to ChFi3d, as before |
 | The side face not square to F (a draft), or not a plane or such a cylinder | Not read | **Refused** |
 | Edges that aren't whole loops of one planar face | Not read: a chain that stops has ends of ChFi3d's kind | **Refused** |
 | The chamfer as deep as the side face, or deeper | Uses up the side | **Refused** |
@@ -154,7 +154,7 @@ A(1/2) is the area of the rectangle (W - r - a) by (H - r - a) grown by r / 2, a
 ## 5. What it doesn't do
 
 The cases refused above; outlines of B-splines or ellipses; the side faces drafted; open chains; chamfers of several faces'
-loops at once. A tight arc beside a convex arc is the next to build, if a user brings one: its geometry is above.
+loops at once (several loops of one face, an outline and its holes, are built, each with its own tool, in one Boolean). A tight arc beside a convex arc is the next to build, if a user brings one: its geometry is above.
 
 ## Sources
 
