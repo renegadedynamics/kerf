@@ -36,7 +36,7 @@ internal class DefaultMeshAlgoFactory : MeshAlgoFactory
             case SurfaceKind.Sphere:
                 return parameters.EnableControlSurfaceDeflectionAllSurfaces
                          ? new DelaunayDeflectionControlMeshAlgo<SphereRangeSplitter>()
-                         : new DelaunayNodeInsertionMeshAlgo<SphereRangeSplitter>();
+                         : parameters.Relative ? new DelaunayNodeInsertionMeshAlgo<SphereRangeSplitter>() : new SphereDeflectionMeshAlgo();
 
             case SurfaceKind.Cylinder:
                 return parameters.EnableControlSurfaceDeflectionAllSurfaces

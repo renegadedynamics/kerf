@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Booleans;
 using Kerf.Construction;
 using Kerf.Exchange;
 using Kerf.Geometry;
@@ -71,6 +72,25 @@ public class MeshingTests
         ShapeMesh plain = Solid.Torus(10, 2).Value.Shape.Mesh(new MeshOptions { LinearDeflection = 0.281, AngularDeflection = 0.5 }).Value;
         Assert.Equal(2 * 26 * 26, plain.TriangleCount);
         Assert.InRange(Deviation(plain), 0, 0.281);
+    }
+
+    [Fact]
+    public void A_spheres_mesh_keeps_to_the_deflection_asked_with_the_grids_triangles()
+    {
+        // Decision 1953: 1.70 times the deflection beside the seam, and twice it at the equator at a finer one, where
+        // Delaunay took a length along u as 0.64 of what it is; the same 306 and 2,022 triangles now keep within it
+        Shape sphere = Solid.Sphere(10).Value.Shape;
+        ShapeMesh coarse = sphere.Mesh(new MeshOptions { LinearDeflection = 0.354, AngularDeflection = 0.5 }).Value;
+        Assert.Equal(306, coarse.TriangleCount);
+        Assert.InRange(Deviation(coarse), 0, 0.354);
+
+        ShapeMesh fine = sphere.Mesh(new MeshOptions { LinearDeflection = 0.05, AngularDeflection = 0.2 }).Value;
+        Assert.Equal(2022, fine.TriangleCount);
+        Assert.InRange(Deviation(fine), 0, 0.05);
+
+        // A sphere's part on a box: 1.55 times out before
+        Shape part = Solid.Box(20, 20, 20).Value.Shape.Fuse(Solid.Sphere(6, new Frame3D(new Point3D(10, 10, 10), new Direction3D(0, 0, 1))).Value.Shape).Value.Shape;
+        Assert.InRange(Deviation(part.Mesh(new MeshOptions { LinearDeflection = 0.1, AngularDeflection = 0.5 }).Value), 0, 0.1);
     }
 
     [Fact]

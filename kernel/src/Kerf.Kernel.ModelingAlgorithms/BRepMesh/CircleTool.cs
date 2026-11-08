@@ -31,7 +31,7 @@ internal sealed class CircleTool
     public CircleTool()
     {
         _tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        _cellFilter = new CellFilter<CircleInspector, int, Xy>(10.0);
+        _cellFilter = new CellFilter<CircleInspector, int, Xy>(10.0) { Dead = IsDeleted };
         _selector = new CircleInspector(_tolerance, 64);
     }
 
@@ -39,7 +39,7 @@ internal sealed class CircleTool
     public CircleTool(int reservedSize, MeshWorkList<MeshCircle>? circles = null)
     {
         _tolerance = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        _cellFilter = new CellFilter<CircleInspector, int, Xy>(10.0);
+        _cellFilter = new CellFilter<CircleInspector, int, Xy>(10.0) { Dead = IsDeleted };
         _selector = new CircleInspector(_tolerance, Max(reservedSize, 64), circles);
     }
 
@@ -196,7 +196,13 @@ internal sealed class CircleTool
         _selector.Bind(index, nullCir);
     }
 
-    /// <summary>Marks the circle of the given index deleted (radius -1); the cells purge it when they meet it.</summary>
+    // Kerf: whether the circle of the index is deleted, for the cells' sweep (decision 1955)
+    private bool IsDeleted(int index) => _selector.Circle(index).Radius() < 0.0;
+
+    /// <summary>
+    /// Marks the circle of the given index deleted (radius -1); the cells purge it when a search meets it, or sweep it out
+    /// before they would grow (decision 1955).
+    /// </summary>
     public void Delete(int index)
     {
         ref MeshCircle circle = ref _selector.Circle(index);
@@ -232,7 +238,7 @@ internal sealed class CircleTool
 
         _cellFilter.Add(index, minPnt, maxPnt);
         _selector.Bind(index, cirle);
-        if (_cellFilter.NodeCount > _proportionCheckAt)
+        if (_cellFilter.AddedCount > _proportionCheckAt)
         {
             CheckProportion();
         }
@@ -244,10 +250,10 @@ internal sealed class CircleTool
     {
         int circles = _selector.Circles().Count;
         long limit = EntriesFloor + (long)EntriesPerCircle * circles;
-        if (_cellFilter.NodeCount > limit)
+        if (_cellFilter.AddedCount > limit)
         {
             throw new Tools.MeshFaceRefusedException(
-                $"{_cellFilter.NodeCount} circles in cells for {circles} triangles: the face's surface or range is out of proportion to its mesh");
+                $"{_cellFilter.AddedCount} circles in cells for {circles} triangles: the face's surface or range is out of proportion to its mesh");
         }
 
         _proportionCheckAt = limit;

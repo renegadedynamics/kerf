@@ -48,6 +48,7 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 | lowalgos/extss/bug29712_44 | The script's mistake; native gives 0 too (decision 1309) |
 | bugs/modalg_7/bug27928 | Unit 12G's reach for a grazing edge (decision 1923) takes a tiny edge of the section `r4`: 12 vertices and 18 edges for 13 and 19. Everything else the script checks passes. A deliberate change, for the owner |
 | bugs/heal/bug29382_3 | Native gives the same 6 vertices (occt-issues.md) |
+| bugs/mesh/bug31461 | Unit 12O's sphere (decision 1953): `psphere s 10` at 0.01 has 10,150 triangles and 5,127 nodes for 10,108 and 5,106. Native's scaling of the parameters loses 21 of the grid's nodes beside the seam, one a row; Kerf keeps them. Both are within the deflection; the script's other two counts pass. A deliberate change |
 | bugs/modalg_7/bug26034 | Native, with exceptions compiled in, gives the same warning (unit 7W) |
 | chamfer/dist_angle_sequence/A5, chamfer/equal_dist_sequence/A5 | Native's result is invalid at step 15 too. The port's is invalid with far fewer faces: see "Faces lost silently" |
 | chamfer/dist_dist_sequence/B9, chamfer/equal_dist_sequence/B9 | Native's result is invalid at step 2 too, and the same |

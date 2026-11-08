@@ -324,9 +324,39 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Meshes F1 on both sides with the setting and compares the results.</summary>
+    // Decision 1953: a sphere at an absolute deflection is meshed with its parameters scaled at its widest latitude, where
+    // native's scaling can miss the deflection, so its triangles differ. Its meshing is made, with native's calls, and not
+    // counted in the comparison
+    private int mySphereMeshings;
+
+    private static bool HasSphere(in Shape theShape)
+    {
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            if (new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current())).GetType() == SurfaceKind.Sphere)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void Compare(Tally theTally, string theName, string theF1, Setting theSetting, in Shape? thePortInput = null)
     {
         Shape aPortF1 = thePortInput ?? PortRead(theF1);
+        if (!theSetting.Relative && HasSphere(aPortF1))
+        {
+            CompareCore(new Tally(), theName, theF1, theSetting, aPortF1);
+            mySphereMeshings++;
+            return;
+        }
+
+        CompareCore(theTally, theName, theF1, theSetting, aPortF1);
+    }
+
+    private void CompareCore(Tally theTally, string theName, string theF1, Setting theSetting, in Shape thePortInput)
+    {
+        Shape aPortF1 = thePortInput;
         double aDeflection = theSetting.Deflection;
         if (aDeflection < 0)
         {
@@ -414,7 +444,8 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             + $"status flags equal in {theTally.StatusSame}; {theTally.BothRejected} settings rejected by both; "
             + $"{theTally.Faces} faces ({theTally.Nodes} nodes, {theTally.Triangles} triangles): {theTally.BitSame} bit-identical "
             + $"({100.0 * theTally.Share:F3}% of meshed faces), {theTally.SameTopology} same topology, {theTally.Different} different "
-            + $"({theTally.OneUnmeshed} meshed by one side only), {theTally.BothUnmeshed} unmeshed by both"));
+            + $"({theTally.OneUnmeshed} meshed by one side only), {theTally.BothUnmeshed} unmeshed by both; "
+            + $"{mySphereMeshings} with spheres at an absolute deflection not compared (decision 1953)"));
         foreach (string aLine in theTally.TextDifferences.Take(theMaxLines))
         {
             output.WriteLine("  TEXT " + aLine);

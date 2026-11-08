@@ -38,7 +38,8 @@ public static class Mesher
         /// </summary>
         /// <returns>The mesh, with a warning (<see cref="FacesNotMeshed"/>) if some faces couldn't be meshed; or a
         /// failure (<see cref="MeshFailed"/>, <see cref="TooLarge"/>, or the engine's error); or a failure
-        /// (<see cref="FacesRefused"/>) carrying the mesh of the other faces.</returns>
+        /// (<see cref="FacesRefused"/>) carrying the mesh of the other faces; or, if no face could be meshed, a failure
+        /// (<see cref="MeshFailed"/>) carrying the mesh, with its edges' polylines and no triangles.</returns>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
         public Result<ShapeMesh> Mesh(MeshOptions? options = null, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
@@ -91,6 +92,12 @@ public static class Mesher
 
             if ((status & (int)Engine.Meshing.Model.StatusModel.Failure) != 0)
             {
+                if (mesh.TriangleCount == 0)
+                {
+                    // Not one face meshed: an invalid result, never a success (decision 1742), carrying the edges' polylines
+                    return Result<ShapeMesh>.Invalid(mesh, Diagnostic.Error(MeshFailed, "No face could be meshed: the mesh has no triangles."));
+                }
+
                 return Result<ShapeMesh>.Success(mesh, [Diagnostic.Warning(FacesNotMeshed, "Some faces couldn't be meshed: they have no triangles.")]);
             }
 
