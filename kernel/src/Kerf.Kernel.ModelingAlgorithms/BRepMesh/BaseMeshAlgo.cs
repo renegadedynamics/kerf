@@ -51,7 +51,7 @@ internal abstract class BaseMeshAlgo : MeshAlgo
         {
             _dFace = dFace;
             _parameters = parameters;
-            _structure = new DataStructureOfDelaun(storage: MeshWorkStorage.Rent()) { CirclesInProportion = true };
+            _structure = new DataStructureOfDelaun(storage: MeshWorkStorage.Rent()) { InProportion = true };
             if (parameters.Budget is { } budget)
             {
                 _structure.MaxCircleEntries = budget.MaxCircleEntries;

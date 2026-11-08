@@ -58,9 +58,10 @@ internal sealed class CircleTool
     /// 22801). A circle is entered in every cell it covers, and a range or surface damaged to 1e17 makes cells so small
     /// beside the circles that 200 triangles took 54 million entries, 400 MB, and then all the memory there was. A mesh
     /// that isn't damaged was measured at no more than 360 for each circle past the first 16,384 entries, over the
-    /// corpus's meshes (33 million entries at most, 117 a circle).
+    /// corpus's meshes (33 million entries at most, 117 a circle). The floor is what a refused face may take, about 450 MB
+    /// at the peak; at a quarter of it, two damaged files that main meshed in seconds were refused, and one still is.
     /// </summary>
-    internal const int EntriesFloor = 1 << 22, EntriesPerCircle = 1024;
+    internal const int EntriesFloor = 1 << 24, EntriesPerCircle = 1024;
 
     private long _proportionCheckAt = long.MaxValue;
 

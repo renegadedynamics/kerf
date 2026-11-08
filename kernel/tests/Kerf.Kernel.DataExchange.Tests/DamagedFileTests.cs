@@ -54,12 +54,33 @@ public class DamagedFileTests
 
         Result<ShapeMesh> mesh = read.Value.Mesh(new MeshOptions { Parallel = false });
 
-        // Before, 1 GB and more, then out of memory; now under 200 MB
-        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, 500_000_000);
+        // Before, 1 GB and more, then out of memory; now under 600 MB, most of it the circles in cells up to their floor
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, 800_000_000);
         Assert.False(mesh.IsSuccess);
         Assert.Equal(Mesher.FacesRefused, mesh.Error!.Code);
         Assert.True(mesh.TryGetInvalid(out ShapeMesh? rest));
         Assert.True(rest.TriangleCount > 0);
+    }
+
+    // A loft damaged to 1e300: its frontier's walks went on for hours and couldn't be cancelled (decision 22803)
+    [Fact]
+    public async Task A_mesh_of_a_loft_damaged_to_1e300_can_be_stopped()
+    {
+        using Stream resource = typeof(DamagedFileTests).Assembly.GetManifestResourceStream("DamagedFiles.78-loft.brep")!;
+        Result<Shape> read = Brep.Read(resource);
+        Assert.True(read.IsSuccess);
+        using var source = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        Task task = Task.Run(() =>
+        {
+            try
+            {
+                _ = read.Value.Mesh(new MeshOptions { Parallel = false }, cancellationToken: source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
+        await task.WaitAsync(TimeSpan.FromSeconds(60));
     }
 
     [Fact]
