@@ -112,10 +112,11 @@ internal sealed class MakeFacetedBrep : ExportRoot
                     var name = new TCollection_HAsciiString("");
                     _facetedBrep.Init(name, cShell);
                     _done = true;
-                    if (stepB.TessellatedValue() is null) // OCCT: inverted test, reads the null tessellated shell
+                    // Kerf: OCCT tests for no tessellated shell and then reads it, so every solid failed; a tessellated
+                    // shell, when there is one, becomes the tessellated solid, as the shell's form does (decision 23102)
+                    if (stepB.TessellatedValue() is TessellatedShell tessShell)
                     {
                         var tessSolid = new TessellatedSolid();
-                        TessellatedShell tessShell = stepB.TessellatedValue() as TessellatedShell;
                         var tessName = new TCollection_HAsciiString("");
                         var items = new NCollection_HArray1<TessellatedStructuredItem>(1, tessShell.NbItems());
                         for (int i = 1; i <= tessShell.NbItems(); ++i)

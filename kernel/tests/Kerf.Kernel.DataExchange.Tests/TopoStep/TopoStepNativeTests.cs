@@ -193,6 +193,10 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
                 // checks a cone's semi-angle read back in either unit).
                 int aBefore = aFileDiffs.Count;
                 aFileDiffs = aFileDiffs.Where(d => !IsConeInDegrees(d.Native, d.Port, aDump)).ToList();
+                // Decision 23102: native's faceted B-rep of a solid reads the tessellated shell it has just found to be
+                // null (EXC); the port's writes the faceted B-rep
+                aFileDiffs = aFileDiffs.Where(d => !(d.Native.StartsWith("C fb-solid ", StringComparison.Ordinal) && d.Native.EndsWith(" EXC", StringComparison.Ordinal)
+                                                     && d.Port.Contains(" #1 = FACETED_BREP(", StringComparison.Ordinal))).ToList();
                 anIntended += aBefore - aFileDiffs.Count;
             }
             aSame += aBlock.Lines.Count - aFileDiffs.Count;
@@ -210,7 +214,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
         }
 
         output.WriteLine($"{aRun} of {aBlocks.Count} shapes compared, {aConv} conversions, {aSame} identical (with {anIntended} "
-                         + $"cones' semi-angles in degrees), {aDiffs.Count} different");
+                         + $"cones' semi-angles in degrees and faceted solids native couldn't write), {aDiffs.Count} different");
         foreach (string aDiff in aDiffs.Take(60))
         {
             output.WriteLine(aDiff);

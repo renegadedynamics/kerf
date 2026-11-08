@@ -113,7 +113,9 @@ internal sealed class MakeFacetedBrepAndBrepWithVoids : ExportRoot
             for (int i = 1; i <= n; i++)
             {
                 ocShell = new StepOrientedClosedShell();
-                ocShell.Init(name, s.Value(i) as StepClosedShell, true);
+                // Kerf: a void faces into the solid, as MakeBrepWithVoids writes it; OCCT wrote it facing out
+                // (decision 23103)
+                ocShell.Init(name, s.Value(i) as StepClosedShell, false);
                 voids.SetValue(i, ocShell);
             }
 
