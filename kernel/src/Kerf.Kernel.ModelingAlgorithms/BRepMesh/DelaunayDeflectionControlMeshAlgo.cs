@@ -24,8 +24,17 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     private double _maxSqDeflection;
     private double _sqMinSize;
     private bool _isAllDegenerated;
+    // OCCT's map of the node pairs already checked, which it keeps from one pass to the next: here the first pass marks its
+    // links by their indices, and the map is made from them only when that pass inserts nodes, for the passes after it to
+    // use as OCCT's (decision 1977)
     private HashSet<OrientedEdge>? _couplesMap;
+    private LinkMarks? _passLinks;
     private NCollection_List<Point2D>? _controlNodes;
+    // Kerf: each node's normal for the angular check, estimated when a link first needs it, as OCCT estimates it again for
+    // each of the node's links; 0 not yet, 1 estimated, 2 not estimable (decision 1978). From the shared pool, returned at the end.
+    private Direction3D[] _normals = [];
+    private byte[] _normalStates = [];
+    private int _normalsCapacity;
     private CircleTool? _circles;
 
     /// <summary>An algorithm.</summary>
@@ -66,7 +75,8 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     protected virtual void OptimizeMesh(Delaun mesher, ProgressRange range)
     {
         _sqMinSize = GetParameters().MinSize * GetParameters().MinSize;
-        _couplesMap = new HashSet<OrientedEdge>(); // OCCT preallocates 3 * ElementsOfDomain().Extent() buckets
+        _couplesMap = null;
+        _passLinks = new LinkMarks();
         _controlNodes = new NCollection_List<Point2D>();
         _circles = mesher.Circles();
 
@@ -89,6 +99,11 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 break;
             }
             // Iterate on current triangles
+            if (_couplesMap is null)
+            {
+                _passLinks.Reset(GetStructure().LinkCount);
+            }
+
             NCollection_PackedMapOfInteger.Iterator triangleIt = new(GetStructure().ElementsOfDomain());
             for (; triangleIt.More(); triangleIt.Next())
             {
@@ -96,15 +111,40 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 SplitTriangleGeometry(triangle);
             }
 
+            if (_couplesMap is null && !_controlNodes.IsEmpty())
+            {
+                KeepPassLinks();
+            }
+
             isInserted = InsertNodes(_controlNodes, mesher, ps.Next());
         }
 
+        ReturnNormals();
+
         _couplesMap = null;
+        _passLinks = null;
         _controlNodes = null;
 
         if (!(_maxSqDeflection < 0.0))
         {
             GetDFace().SetDeflection(Math.Sqrt(_maxSqDeflection));
+        }
+    }
+
+    // Makes the map of the node pairs of the links the first pass marked, before the structure changes
+    private void KeepPassLinks()
+    {
+        DataStructureOfDelaun structure = GetStructure();
+        int linkCount = structure.LinkCount;
+        _couplesMap = new HashSet<OrientedEdge>(2 * linkCount);
+        for (int index = 1; index <= linkCount; index++)
+        {
+            if (_passLinks!.IsMarked(index))
+            {
+                MeshEdge link = structure.GetLink(index);
+                int first = link.FirstNode(), last = link.LastNode();
+                _couplesMap.Add(first < last ? new OrientedEdge(first, last) : new OrientedEdge(last, first));
+            }
         }
     }
 
@@ -184,7 +224,7 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                     (nodesInfo[0].Point2d + nodesInfo[1].Point2d + nodesInfo[2].Point2d) / 3.0;
 
                 UsePoint(center2d, new NormalDeviation(new Point3D(nodesInfo[0].Point), normal));
-                SplitLinks(nodesInfo, nodexIndices);
+                SplitLinks(nodesInfo, nodexIndices, triangle._edges);
             }
         }
     }
@@ -249,7 +289,7 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     }
 
     // Computes deflection of midpoints of triangles links.
-    private void SplitLinks(ReadOnlySpan<TriangleNodeInfo> nodesInfo, ReadOnlySpan<int> nodesIndices)
+    private void SplitLinks(ReadOnlySpan<TriangleNodeInfo> nodesInfo, ReadOnlySpan<int> nodesIndices, Triangle.Int3 triangleEdges)
     {
         // Check deflection at triangle links
         for (int i = 0; i < 3; ++i)
@@ -273,7 +313,7 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 lastVertex = nodesIndices[i];
             }
 
-            if (_couplesMap!.Add(new OrientedEdge(firstVertex, lastVertex)))
+            if (_couplesMap is null ? _passLinks!.Add(Math.Abs(triangleEdges[i])) : _couplesMap.Add(new OrientedEdge(firstVertex, lastVertex)))
             {
                 Xy midPnt2d = (nodesInfo[i].Point2d + nodesInfo[j].Point2d) / 2.0;
 
@@ -281,7 +321,7 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 {
                     if (!RejectSplitLinksForMinSize(nodesInfo[i], nodesInfo[j], midPnt2d))
                     {
-                        if (!CheckLinkEndsForAngularDeviation(nodesInfo[i], nodesInfo[j], midPnt2d))
+                        if (!CheckLinkEndsForAngularDeviation(nodesInfo[i], nodesIndices[i], nodesInfo[j], nodesIndices[j]))
                         {
                             _controlNodes!.Append(new Point2D(midPnt2d));
                         }
@@ -303,16 +343,10 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     }
 
     // Checks the given point (located between the given nodes) for specified angular deviation.
-    private bool CheckLinkEndsForAngularDeviation(in TriangleNodeInfo nodeInfo1,
-                                                  in TriangleNodeInfo nodeInfo2,
-                                                  in Xy midPoint)
+    private bool CheckLinkEndsForAngularDeviation(in TriangleNodeInfo nodeInfo1, int node1,
+                                                  in TriangleNodeInfo nodeInfo2, int node2)
     {
-        _ = midPoint;
-        Direction3D norm1 = new(), norm2 = new();
-        Surface surf = GetDFace().GetSurface().GeomSurfaceOriginal()!;
-
-        if ((global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo1.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref norm1) == 0)
-            && (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo2.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref norm2) == 0))
+        if (NodeNormal(nodeInfo1, node1, out Direction3D norm1) && NodeNormal(nodeInfo2, node2, out Direction3D norm2))
         {
             double angle = norm1.AngleTo(norm2);
             if (angle > GetParameters().AngleInterior)
@@ -322,6 +356,57 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
         }
 
         return true;
+    }
+
+    // The surface's normal at the node, as GeomLib.NormEstim estimates it at its parameters, which don't change; false if
+    // it can't be estimated. Estimated once, where OCCT estimates it for each of the node's links (decision 1978).
+    private bool NodeNormal(in TriangleNodeInfo nodeInfo, int node, out Direction3D normal)
+    {
+        if (node >= _normalsCapacity)
+        {
+            GrowNormals(node);
+        }
+
+        byte state = _normalStates[node];
+        if (state == 0)
+        {
+            Direction3D estimate = new();
+            Surface surf = GetDFace().GetSurface().GeomSurfaceOriginal()!;
+            state = global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref estimate) == 0 ? (byte)1 : (byte)2;
+            _normals[node] = estimate;
+            _normalStates[node] = state;
+        }
+
+        normal = _normals[node];
+        return state == 1;
+    }
+
+    private void GrowNormals(int node)
+    {
+        int size = Math.Max(node + 1, GetStructure().NodeCount + 1);
+        Direction3D[] normals = System.Buffers.ArrayPool<Direction3D>.Shared.Rent(size);
+        byte[] states = System.Buffers.ArrayPool<byte>.Shared.Rent(size);
+        int capacity = Math.Min(normals.Length, states.Length);
+        Array.Copy(_normals, normals, _normalsCapacity);
+        Array.Copy(_normalStates, states, _normalsCapacity);
+        Array.Clear(states, _normalsCapacity, capacity - _normalsCapacity);
+        ReturnNormals();
+        _normals = normals;
+        _normalStates = states;
+        _normalsCapacity = capacity;
+    }
+
+    private void ReturnNormals()
+    {
+        if (_normalStates.Length > 0)
+        {
+            System.Buffers.ArrayPool<Direction3D>.Shared.Return(_normals);
+            System.Buffers.ArrayPool<byte>.Shared.Return(_normalStates);
+        }
+
+        _normals = [];
+        _normalStates = [];
+        _normalsCapacity = 0;
     }
 
     // Returns 3d point corresponding to the given one in 2d space.

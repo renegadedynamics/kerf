@@ -46,7 +46,7 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
         double minSize = GetParameters().MinSize;
         double sqMinSize = minSize * minSize;
         double angle = GetParameters().AngleInterior;
-        var links = new HashSet<OrientedEdge>();
+        var links = new LinkMarks();
         var nodes = new NCollection_List<Point2D>();
         Span<int> indices = stackalloc int[3];
         Span<Point3D> points = stackalloc Point3D[3];
@@ -64,7 +64,7 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
             }
 
             worst = -1;
-            links.Clear();
+            links.Reset(GetStructure().LinkCount);
             nodes.Clear();
             for (NCollection_PackedMapOfInteger.Iterator it = new(GetStructure().ElementsOfDomain()); it.More(); it.Next())
             {
@@ -100,7 +100,8 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
                     }
                 }
 
-                // Its links, each once: the chord's middle is its furthest point from the sphere
+                // Its links, each once (a link's index is its pair of nodes while the structure doesn't change): the chord's
+                // middle is its furthest point from the sphere
                 Triangle.Int3 edges = triangle._edges;
                 for (int i = 0; i < 3; i++)
                 {
@@ -110,7 +111,7 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
                     }
 
                     int j = (i + 1) % 3;
-                    if (!links.Add(new OrientedEdge(Math.Min(indices[i], indices[j]), Math.Max(indices[i], indices[j]))))
+                    if (!links.Add(Math.Abs(edges[i])))
                     {
                         continue;
                     }
