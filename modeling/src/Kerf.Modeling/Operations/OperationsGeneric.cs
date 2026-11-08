@@ -427,6 +427,21 @@ public static partial class Operations
     public static Result<ModelShape> Offset(IEnumerable<Shape> objects, double amount, OffsetOptions? options = null) =>
         Failures.TryWarned(null, () => OffsetOrThrow(objects, amount, options));
 
+    // A face's boundary loop offset in its plane: one wire, none when it closes up, or the pieces it splits into
+    private static List<Wire> OffsetLoop(Wire loop, double amount, Kind kind, double? minEdgeLength)
+    {
+        List<Wire> wires;
+        try
+        {
+            wires = [AsWire(loop.Offset2D(amount, kind).AsShape())];
+        }
+        catch (InvalidOperationException e) when (OneD.PiecesOf(e) is { } pieces)
+        {
+            wires = [.. pieces.Select(OneD.OffsetCurvesToBSplines)];
+        }
+        return minEdgeLength is { } min ? [.. wires.Select(w => w.FixDegenerateEdges(min))] : wires;
+    }
+
     internal static ModelShape OffsetOrThrow(IEnumerable<Shape> objects, double amount, OffsetOptions? options)
     {
         options ??= OffsetOptions.Default;
@@ -467,41 +482,42 @@ public static partial class Operations
         }
 
         var newFaces = new List<Shape>();
+        int closedUp = 0;
         foreach (var face in faces)
         {
-            var outerWire = AsWire(face.OuterWire().Offset2D(amount, kind).AsShape());
-            if (minEdgeLength is { } outerMin)
-                outerWire = outerWire.FixDegenerateEdges(outerMin);
-            var innerWires = new List<Wire>();
-            foreach (var innerWire in face.InnerWires())
+            // An outer wire offset inwards may close up (the face goes) or split at a waist (a face for each piece); a hole
+            // may close up (it goes) or split (each piece is cut away). Any other failure is the offset's (unit 12S: it was
+            // taken for a hole closing up, and the hole silently left out)
+            var outerWires = OffsetLoop(face.OuterWire(), amount, kind, minEdgeLength);
+            var innerWires = face.InnerWires().SelectMany(w => OffsetLoop(w, -amount, kind, minEdgeLength)).ToList();
+            int before = newFaces.Count;
+            foreach (var outerWire in outerWires)
             {
-                try
+                // Inner wires may go beyond the outer wire, so they're cut away as faces
+                var newFace = Face.Make(outerWire);
+                if ((newFace.NormalAt() - face.NormalAt()).Magnitude > 0.001)
+                    newFace = (Face)(-newFace);
+                if (innerWires.Count > 0)
                 {
-                    var offsetWire = AsWire(innerWire.Offset2D(-amount, kind).AsShape());
-                    innerWires.Add(minEdgeLength is { } innerMin ? offsetWire.FixDegenerateEdges(innerMin) : offsetWire);
-                }
-                catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException)
-                {
-                    // The hole closed up
-                }
-            }
-
-            // Inner wires may go beyond the outer wire, so they're cut away as faces
-            var newFace = Face.Make(outerWire);
-            if ((newFace.NormalAt() - face.NormalAt()).Magnitude > 0.001)
-                newFace = (Face)(-newFace);
-            if (innerWires.Count > 0)
-            {
-                var subtraction = newFace.Cut(innerWires.Select(w => Face.Make(w)));
-                // build123d would fail here on a cut into several pieces (it asks the face, not the result, to unwrap
-                // itself); the pieces are kept instead
-                if (subtraction.IsCompound())
+                    // build123d would fail here on a cut into several pieces (it asks the face, not the result, to unwrap
+                    // itself); the pieces are kept instead, and a cut that leaves nothing leaves no face
+                    var subtraction = newFace.Cut(innerWires.Select(w => Face.Make(w)));
                     newFaces.AddRange(subtraction.Faces().Select(f => (Shape)f));
+                }
                 else
-                    newFaces.Add(subtraction);
+                    newFaces.Add(newFace);
             }
-            else
-                newFaces.Add(newFace);
+            if (newFaces.Count == before)
+                closedUp++;
+        }
+        if (closedUp > 0)
+        {
+            // Nothing left is a failure, as for a curve; a face of several that closes up is left out, with a warning
+            if (closedUp == faces.Count && edges.Count == 0 && solids.Count == 0)
+                throw Failures.Expected(ModelingDiagnostics.OffsetFailed,
+                                        $"The offset by {Formatting.Number(amount)} in the plane leaves nothing: the shape closes up at that distance.");
+            Warnings.Warn(Diagnostic.Warning(ModelingDiagnostics.OffsetFailed,
+                                             $"{closedUp} of the {faces.Count} faces close up when offset by {Formatting.Number(amount)} and are left out."));
         }
 
         var newWires = new List<Shape>();
