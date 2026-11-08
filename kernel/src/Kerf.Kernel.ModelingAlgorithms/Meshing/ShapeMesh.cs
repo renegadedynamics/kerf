@@ -57,13 +57,6 @@ public sealed record MeshOptions
     public bool InternalVertices { get; init; } = true;
 
     /// <summary>
-    /// Whether the mesher also checks the distance from the surface on elementary surfaces such as tori and spheres, which
-    /// it otherwise leaves to its grid of nodes. Long, thin faces then keep nearer to <see cref="LinearDeflection"/>, at the
-    /// cost of more triangles (39% on a filleted bottle), though it isn't a guaranteed maximum.
-    /// </summary>
-    public bool ControlAllSurfaces { get; init; }
-
-    /// <summary>
     /// The linear deflection for edges the mesher leaves without a polygon (edges of no face: wires, a compound's free
     /// edges), which <see cref="ShapeMesh"/> discretises itself; null for <see cref="LinearDeflection"/>.
     /// </summary>
@@ -83,7 +76,6 @@ public sealed record MeshOptions
             Relative = Relative,
             InParallel = Parallel,
             InternalVerticesMode = InternalVertices,
-            EnableControlSurfaceDeflectionAllSurfaces = ControlAllSurfaces,
             Budget = new Engine.Meshing.Tools.MeshBudget(MaxTriangles),
         };
         if (MinSize > 0)

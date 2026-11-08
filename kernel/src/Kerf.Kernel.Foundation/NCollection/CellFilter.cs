@@ -100,6 +100,8 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     private CellFilterNode<TTarget>[] _nodes = [];
     private int _nodeCount;
     private int _firstFree = -1;
+    private int _freeCount;
+    private long _added;
     // Optional: the cells of a known 2D window in one array, each the position of its first node plus one, 0 for no cell. A
     // circle of the mesher can cover thousands of cells, and looking each up in the dictionary was most of the cost of adding it
     private const int LargestWindow = 1 << 22;
@@ -152,6 +154,7 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     /// <summary>Adds a target for further search at a point (into only one cell).</summary>
     public void Add(TTarget target, TPoint pnt)
     {
+        EnsureRoom(1);
         ComputeIndex(pnt, _index);
         this.Add(_index, target);
     }
@@ -165,6 +168,17 @@ internal class CellFilter<TInspector, TTarget, TPoint>
         // get cells range by minimal and maximal coordinates
         ComputeIndex(pntMin, _indexMin);
         ComputeIndex(pntMax, _indexMax);
+        if (Dead is not null)
+        {
+            long cells = 1;
+            for (int i = 0; i < _dim; i++)
+            {
+                cells *= Math.Max(0L, (long)_indexMax[i] - _indexMin[i] + 1);
+            }
+
+            EnsureRoom(cells);
+        }
+
         _indexMin.CopyTo(_index, 0);
         if (_window is not null && WindowCell(_indexMin[0], _indexMin[1]) >= 0 && WindowCell(_indexMax[0], _indexMax[1]) >= 0)
         {
@@ -279,6 +293,8 @@ internal class CellFilter<TInspector, TTarget, TPoint>
 
         _nodeCount = 0;
         _firstFree = -1;
+        _freeCount = 0;
+        _added = 0;
     }
 
     /// <summary>
@@ -303,15 +319,31 @@ internal class CellFilter<TInspector, TTarget, TPoint>
     /// several times (decision 1942).</summary>
     internal int NodeCount => _nodeCount;
 
+    /// <summary>
+    /// Kerf: how many targets in cells it has taken since the last reset, one in several cells counted several times, and
+    /// those since swept or purged still counted (decisions 1942 and 1955): the measure of how far circles reach beyond
+    /// their cells, which a sweep doesn't lower.
+    /// </summary>
+    internal long AddedCount => _added;
+
     /// <summary>Kerf: how many targets in cells it may hold, counting one in several cells several times (decision 1856).</summary>
     internal int MaxNodes { get; set; } = int.MaxValue;
 
+    /// <summary>
+    /// Kerf: which targets are dead, ones a search purges when it meets them (decision 1955). With it, the nodes of dead
+    /// targets are swept from every cell before the array of nodes would grow, so a cell no search reaches again doesn't keep
+    /// them; the array grows only if the sweep frees less than a quarter of it. The live nodes keep their order in each cell.
+    /// </summary>
+    internal Func<TTarget, bool>? Dead { get; set; }
+
     private int NewNode(TTarget target, int next)
     {
+        _added++;
         int node = _firstFree;
         if (node >= 0)
         {
             _firstFree = _nodes[node].Next;
+            _freeCount--;
         }
         else
         {
@@ -333,8 +365,102 @@ internal class CellFilter<TInspector, TTarget, TPoint>
         return node;
     }
 
+    // Kerf: before adding a target to cells, sweeps the dead targets out if the free nodes wouldn't hold it; if that
+    // frees less than a quarter of the array, grows it now, so that the next sweep is as far off as the next growth would
+    // have been (decision 1955). Never while a cell's list is being changed: a sweep can free any node and drop any cell
+    private void EnsureRoom(long count)
+    {
+        if (Dead is null || _nodes.Length < 1024 || _freeCount + (long)(_nodes.Length - _nodeCount) >= count)
+        {
+            return;
+        }
+
+        Sweep();
+        if (_freeCount < _nodes.Length / 4 && _nodes.Length < MaxNodes)
+        {
+            Array.Resize(ref _nodes, Math.Max(16, _nodes.Length * 2));
+        }
+    }
+
+    // Unlinks the dead targets' nodes from every cell, freeing them; returns how many
+    private int Sweep()
+    {
+        Func<TTarget, bool> dead = Dead!;
+        int freed = 0;
+        if (_window is not null)
+        {
+            for (int cell = 0; cell < _window.Length; cell++)
+            {
+                if (_window[cell] > 0)
+                {
+                    _window[cell] = SweepList(_window[cell] - 1, dead, ref freed) + 1;
+                }
+            }
+        }
+
+        List<CellKey>? empty = null;
+        foreach (KeyValuePair<CellKey, int> pair in _cells)
+        {
+            int first = SweepList(pair.Value, dead, ref freed);
+            if (first != pair.Value)
+            {
+                if (first < 0)
+                {
+                    (empty ??= []).Add(pair.Key);
+                }
+                else
+                {
+                    System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrNullRef(_cells, pair.Key) = first;
+                }
+            }
+        }
+
+        if (empty is not null)
+        {
+            foreach (CellKey key in empty)
+            {
+                _cells.Remove(key);
+            }
+        }
+
+        return freed;
+    }
+
+    // Unlinks the dead targets' nodes from a cell's list; returns its new first node
+    private int SweepList(int first, Func<TTarget, bool> dead, ref int freed)
+    {
+        int prev = -1;
+        for (int node = first; node >= 0;)
+        {
+            int next = _nodes[node].Next;
+            if (dead(_nodes[node].Object))
+            {
+                if (prev >= 0)
+                {
+                    _nodes[prev].Next = next;
+                }
+                else
+                {
+                    first = next;
+                }
+
+                FreeNode(node);
+                freed++;
+            }
+            else
+            {
+                prev = node;
+            }
+
+            node = next;
+        }
+
+        return first;
+    }
+
     private void FreeNode(int node)
     {
+        _freeCount++;
         _nodes[node].Object = default!;
         _nodes[node].Next = _firstFree;
         _firstFree = node;
