@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Text;
+using Kerf.Booleans;
 using Kerf.Construction;
 using Kerf.Exchange;
 using Kerf.Geometry;
@@ -187,5 +188,53 @@ public class OptionsDirectTests
         Assert.True(aRead.IsSuccess, aRead.Error?.Message);
         double k = theUnit.Millimetres(), aVolume = 6000 * k * k * k;
         Assert.Equal(aVolume, aRead.Value.Shape!.Value.IntegrateVolume(), aVolume * 1e-9);
+    }
+
+    public static TheoryData<string> Solids() => ["cone", "sphere", "torus", "half cone", "ring", "lofted", "holed"];
+
+    private static (Shape Shape, double Volume) SolidOf(string theName)
+    {
+        switch (theName)
+        {
+            case "cone":
+                return (Solid.Cone(5, 0, 12).Value.Shape, Math.PI * 25 * 12 / 3);
+            case "sphere":
+                return (Solid.Sphere(3).Value.Shape, 4.0 / 3 * Math.PI * 27);
+            case "torus":
+                return (Solid.Torus(10, 2).Value.Shape, 2 * Math.PI * Math.PI * 10 * 4);
+            case "half cone":
+                return (Solid.Cone(5, 2, 10, Math.PI).Value.Shape, Math.PI * 10 / 3 * (25 + 10 + 4) / 2);
+            case "ring":
+            {
+                // a square section 1 by 1 at radius 5 to 6, turned all the way round: Pappus at 5.5
+                Face aSection = Face.FromWire(Wire.Polygon([new(5, 0, 0), new(6, 0, 0), new(6, 0, 1), new(5, 0, 1)], closed: true).Value).Value;
+                return (aSection.Revolve(Axis3D.ZAxis).Value.Shape, 2 * Math.PI * 5.5);
+            }
+            case "lofted":
+            {
+                // squares of 4 and 2, 6 apart: a frustum of a pyramid
+                Wire aBottom = Wire.Polygon([new(0, 0, 0), new(4, 0, 0), new(4, 4, 0), new(0, 4, 0)], closed: true).Value;
+                Wire aTop = Wire.Polygon([new(1, 1, 6), new(3, 1, 6), new(3, 3, 6), new(1, 3, 6)], closed: true).Value;
+                return (Sweeps.Loft([aBottom, aTop], new LoftOptions { MakeSolid = true, Ruled = true }).Value.Shape, 6.0 / 3 * (16 + 8 + 4));
+            }
+            default:
+            {
+                Solid aBlock = Solid.Box(10, 10, 10).Value;
+                Solid aHole = Solid.Cylinder(2, 20, new Frame3D(new Point3D(5, 5, -5), Direction3D.UnitZ)).Value;
+                return (aBlock.Cut(aHole).Value.Shape, 1000 - (Math.PI * 4 * 10));
+            }
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Solids))]
+    public void A_solid_written_and_read_keeps_its_volume(string theName)
+    {
+        // apexes, poles, seams and holes go through STEP's degenerate edges, vertex loops and inner loops
+        (Shape aShape, double aVolume) = SolidOf(theName);
+        Assert.Equal(aVolume, aShape.IntegrateVolume(), aVolume * 1e-6);
+        Result<ModelNode> aRead = Step.Read(Stream(StepText(aShape)));
+        Assert.True(aRead.IsSuccess, aRead.Error?.Message);
+        Assert.Equal(aVolume, aRead.Value.Shape!.Value.IntegrateVolume(), aVolume * 1e-6);
     }
 }
