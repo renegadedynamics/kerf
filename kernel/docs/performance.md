@@ -1491,7 +1491,7 @@ What's left of the placements there is 99 MB, 10%: `Tool.CurveOnSurface` and `To
 |---|---:|---:|
 | Before | 1,439 MB | 2,895 MB |
 | A wire's 2D intersection makes only the sub-intersector it uses | 1,389 MB (-3.5%) | 2,845 MB (-1.7%) |
-| A one-shot orientation of a shell builds no tree of its edges | **Reverted before merging** (it would have given 1,357 MB, -5.7% with the row above) | (2,812 MB) |
+| A one-shot orientation of a shell builds no tree of its edges (reverted, then reinstated by the owner: decision 23501) | **1,357 MB (-5.7%)** | **2,812 MB (-2.9%)** |
 
 `IntCurveCurveGen` (OCCT's `Geom2dInt_GInter`) made its three sub-intersectors, each with sequences of its own, for every pair of edges a wire's check intersects, and a pair uses one. A classifier made to orient a shell and dropped filled the map and box tree of its edges and vertices, which the point at infinity never reads. The Booleans suites, MB per Boolean: 6.30 to 6.23 complex, 4.34 to 4.25 simple. Allocation ticks had put the tree at 8.6% of ShapeFix, as the JIT inlines the faces' intersectors into `InitShape` and the ticks fall to it: bytes measured whole are what decide.
 
