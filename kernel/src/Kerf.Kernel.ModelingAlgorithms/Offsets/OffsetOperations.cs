@@ -82,25 +82,8 @@ public static class OffsetOperations
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             NonZero(distance, nameof(distance));
-            Result<Built<Shape>> made = OffsetShape(s, distance, options, progress, cancellationToken);
-            if (!options.CheckResult)
-            {
-                return made;
-            }
-            Diagnostic? wrong = null;
-            if (made.TryGetValue(out Built<Shape>? built)
-                && (wrong = OffsetVolumes.Check(s, distance, options.Join, built.Shape, "The offset's result")) is null)
-            {
-                return made;
-            }
-            if (MitredInstead(s, options, cancellationToken) is { } mitred
-                && OffsetShape(s, distance, mitred, null, cancellationToken) is var retried
-                && retried.TryGetValue(out Built<Shape>? other)
-                && OffsetVolumes.Check(s, distance, mitred.Join, other.Shape, "The offset's result") is null)
-            {
-                return Result<Built<Shape>>.Success(other, [.. retried.Diagnostics, JoinWarning(wrong ?? made.Error!)]);
-            }
-            return wrong is null ? made : Result<Built<Shape>>.Invalid(built!, wrong, made.Diagnostics);
+            return Checked(s, distance, options, "The offset's result", isWall: false, reversed: false,
+                           (o, p) => OffsetShape(s, distance, o, p, cancellationToken), progress, cancellationToken);
         }
 
         /// <summary>A face or shell made a solid of <paramref name="thickness"/> (along its normal when positive).</summary>
@@ -132,7 +115,8 @@ public static class OffsetOperations
         /// <summary>
         /// The shape made a thick solid: its faces offset by <paramref name="thickness"/> with <paramref name="openings"/>
         /// (its own faces) left open (OCCT's <c>BRepOffsetAPI_MakeThickSolid</c>): <c>Hollow</c> for any shape, the result
-        /// whatever OCCT makes.
+        /// whatever OCCT makes. With no openings it's the offset, turned inside out when <paramref name="thickness"/> is positive,
+        /// as OCCT has it. Of a solid it's checked and retried as <c>Offset</c> and <c>Hollow</c> are (decisions 1918 and 1938).
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null, or an opening isn't one of its faces.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="thickness"/> is zero.</exception>
@@ -145,13 +129,9 @@ public static class OffsetOperations
             MakerOutcome.NotNull(s, nameof(shape));
             NonZero(thickness, nameof(thickness));
             NCollection_List<Shape> faces = Openings(s, openings);
-            return EngineOperation.Run<Shape>(range =>
-            {
-                var thick = new MakeThickSolid();
-                thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
-                                           options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
-                return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
-            }, Failure, progress, cancellationToken, options.CheckResult ? "The thick solid" : null);
+            // With no openings it's the offset, turned inside out when outwards (OCCT's MakeThickSolid); with them, a wall
+            return Checked(s, thickness, options, "The thick solid", isWall: !faces.IsEmpty(), reversed: faces.IsEmpty() && thickness > 0,
+                           (o, p) => Thick<Shape>(s, faces, thickness, o, "The thick solid", p, cancellationToken), progress, cancellationToken);
         }
 
         /// <summary>A planar wire or face offset by <paramref name="distance"/> in its plane (outwards when positive).</summary>
@@ -224,25 +204,43 @@ public static class OffsetOperations
                 }
                 faces.Append(face);
             }
-            Result<Built<Solid>> made = HollowSolid(s, faces, thickness, options, progress, cancellationToken);
-            if (!options.CheckResult)
-            {
-                return made;
-            }
-            Diagnostic? wrong = null;
-            if (made.TryGetValue(out Built<Solid>? built)
-                && (wrong = OffsetVolumes.Check(s, thickness, options.Join, built.Shape.AsShape(), "The hollow solid", isWall: true)) is null)
-            {
-                return made;
-            }
-            if (MitredInstead(s, options, cancellationToken) is { } mitred
-                && HollowSolid(s, faces, thickness, mitred, null, cancellationToken) is var retried
-                && retried.TryGetValue(out Built<Solid>? other)
-                && OffsetVolumes.Check(s, thickness, mitred.Join, other.Shape.AsShape(), "The hollow solid", isWall: true) is null)
-            {
-                return Result<Built<Solid>>.Success(other, [.. retried.Diagnostics, JoinWarning(wrong ?? made.Error!)]);
-            }
-            return wrong is null ? made : Result<Built<Solid>>.Invalid(built!, wrong, made.Diagnostics);
+            return Checked(s, thickness, options, "The hollow solid", isWall: true, reversed: false,
+                           (o, p) => Thick<Solid>(s, faces, thickness, o, "The hollow solid", p, cancellationToken), progress, cancellationToken);
+        }
+    }
+
+    // Decision 1918's check of size and decision 1938's retry with mitres, for every offset of a solid: what build makes with the
+    // options, checked unless they say not to, and made again with mitred joins if round ones failed at an apex. The retry counts
+    // only if it passes every check the first had; otherwise the first failure stands, holding its shape. Reversed: the result
+    // is the offset turned inside out, so it's checked the right way out.
+    private static Result<Built<T>> Checked<T>(Shape input, double distance, OffsetOptions options, string what, bool isWall, bool reversed,
+                                               Func<OffsetOptions, IProgress<double>?, Result<Built<T>>> build,
+                                               IProgress<double>? progress, CancellationToken cancellationToken)
+        where T : struct, IShape<T>
+    {
+        Result<Built<T>> made = build(options, progress);
+        if (!options.CheckResult)
+        {
+            return made;
+        }
+        Diagnostic? wrong = null;
+        if (made.TryGetValue(out Built<T>? built) && (wrong = Wrong(built, options.Join)) is null)
+        {
+            return made;
+        }
+        if (MitredInstead(input, options, cancellationToken) is { } mitred
+            && build(mitred, null) is var retried
+            && retried.TryGetValue(out Built<T>? other)
+            && Wrong(other, mitred.Join) is null)
+        {
+            return Result<Built<T>>.Success(other, [.. retried.Diagnostics, JoinWarning(wrong ?? made.Error!)]);
+        }
+        return wrong is null ? made : Result<Built<T>>.Invalid(built!, wrong, made.Diagnostics);
+
+        Diagnostic? Wrong(Built<T> result, JoinKind join)
+        {
+            Shape shape = result.Shape.AsShape();
+            return OffsetVolumes.Check(input, distance, join, reversed ? shape.Reversed() : shape, what, isWall);
         }
     }
 
@@ -256,15 +254,17 @@ public static class OffsetOperations
             return MakerOutcome.Done(offset, [s], () => StatusDiagnostics.ToDiagnostic(offset.MakeOffset().Error()));
         }, Failure, progress, cancellationToken, options.CheckResult ? "The offset's result" : null);
 
-    private static Result<Built<Solid>> HollowSolid(Solid s, NCollection_List<Shape> faces, double thickness, OffsetOptions options,
-                                                    IProgress<double>? progress, CancellationToken cancellationToken) =>
-        EngineOperation.Run<Solid>(range =>
+    // OCCT's thick solid, of the type asked for: a hollow solid is a solid, a thick solid whatever OCCT makes
+    private static Result<Built<T>> Thick<T>(Shape s, NCollection_List<Shape> faces, double thickness, OffsetOptions options, string what,
+                                             IProgress<double>? progress, CancellationToken cancellationToken)
+        where T : struct, IShape<T> =>
+        EngineOperation.Run<T>(range =>
         {
             var thick = new MakeThickSolid();
             thick.MakeThickSolidByJoin(s, faces, thickness, options.Tolerance, options.Mode, options.Intersection,
                                        options.SelfIntersection, options.Join, options.RemoveInternalEdges, range);
             return MakerOutcome.Done(thick, [s], () => StatusDiagnostics.ToDiagnostic(thick.MakeOffset().Error()));
-        }, Failure, progress, cancellationToken, options.CheckResult ? "The hollow solid" : null);
+        }, Failure, progress, cancellationToken, options.CheckResult ? what : null);
 
     // Round joins at an apex can fail, or give nonsense, where mitres give the right solid (decision 1938): the options to try again
     // with, or null. Moved inwards, past a convex edge, the two joins make the same solid.

@@ -164,7 +164,7 @@ namespace Kerf.Kernel.Benchmarks
                 Shape aPortInput = Cases.PortRead(aCase.F1);
                 foreach (bool isParallel in new[] { false, true })
                 {
-                    long anAllocated = 0;
+                    // The bytes are a median too: a parallel mesh's depend on which threads take which faces (decision 1940)
                     double[] aPort = Measure(() =>
                     {
                         long aBytes = GC.GetTotalAllocatedBytes(true);
@@ -173,9 +173,9 @@ namespace Kerf.Kernel.Benchmarks
                         long t1 = Stopwatch.GetTimestamp();
                         global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, aCase.Deflection, Cases.Angle);
                         long t2 = Stopwatch.GetTimestamp();
-                        anAllocated = GC.GetTotalAllocatedBytes(true) - aBytes;
-                        return [Ms(t1 - t0), Ms(t2 - t1), Ms(t2 - t0)];
+                        return [Ms(t1 - t0), Ms(t2 - t1), Ms(t2 - t0), GC.GetTotalAllocatedBytes(true) - aBytes];
                     });
+                    double anAllocated = aPort[3];
                     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                         $"| {aCase.Name} | {aCase.Faces} | {(isParallel ? "parallel" : "serial")} | {aPort[0]:F2} | {aPort[1]:F2} | {aPort[2]:F2} "
                         + $"| {anAllocated / 1048576.0:F1} |"));

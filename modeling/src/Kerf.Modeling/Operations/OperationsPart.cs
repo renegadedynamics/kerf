@@ -284,7 +284,7 @@ public static partial class Operations
             }
             catch (Exception e) when (e is not OperationCanceledException and not OutOfMemoryException)
             {
-                // Kerf: running out of memory isn't a recovery that failed (decision 22802)
+                // Kerf: running out of memory isn't a recovery that failed (decision 1943)
                 throw Failures.Invalid(unrecovered, unrecovered.Validate(), "The loft's result", "It couldn't be recovered.");
             }
         }

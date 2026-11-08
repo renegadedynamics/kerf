@@ -15,8 +15,10 @@ namespace Kerf.Offsets;
 /// Moving every face inwards can only remove material, and outwards can only add it, so the result's volume is on one side of
 /// the input's. Its box lies inside the input's box grown by the distance, by a factor that allows for a loose box and for the
 /// point of a mitre: an apex of half-angle 0.1 degrees moves 573 times the distance. There's no rule for what isn't a solid.
+/// Public, as <c>BooleanVolumes</c> is, for <c>Kerf.Modeling</c>, on the public API alone, which repairs an invalid offset and
+/// then checks what the repair made.
 /// </remarks>
-internal static class OffsetVolumes
+public static class OffsetVolumes
 {
     // As BooleanVolumes measures, for the same reason (decision 1802)
     private static readonly MassOptions Measured = new() { Tolerance = 1e-6 };
@@ -86,6 +88,12 @@ internal static class OffsetVolumes
             return Wrong(what, FormattableString.Invariant($"moved outwards it can't hold less, and its volume is {after:G6} from {before:G6}"));
         }
 
+        // A wall made outwards lies outside its input, which is its cavity: a point well inside the input can't be in it
+        if (distance > 0 && isWall && FillsItsCavity(input, distance, result))
+        {
+            return Wrong(what, "made outwards it fills the solid it was made around");
+        }
+
         double reach = LooseBox * inputBox.Min.DistanceTo(inputBox.Max)
                + Math.Abs(distance) * (distance < 0 ? 1 : join == JoinKind.Arc ? GrowthOfArc : GrowthOfMitre);
         if (resultBox.Min.X < inputBox.Min.X - reach || resultBox.Min.Y < inputBox.Min.Y - reach || resultBox.Min.Z < inputBox.Min.Z - reach
@@ -95,6 +103,15 @@ internal static class OffsetVolumes
         }
 
         return null;
+    }
+
+    // The input's centre of mass, if it's inside the input by more than half the distance, inside the wall too: a proof the wall is
+    // wrong. A centre that isn't well inside (a ring's) proves nothing.
+    private static bool FillsItsCavity(Shape input, double distance, Shape wall)
+    {
+        Point3D centre = input.MassProperties(Dimension.Volume, Measured).CentreOfMass;
+        double depth = distance / 2;
+        return input.ClassifyPoint(centre, depth) == Containment.In && wall.ClassifyPoint(centre, depth) == Containment.In;
     }
 
     private static Diagnostic Wrong(string what, string why) => Diagnostic.Error(DiagnosticCode.InvalidResult, $"{what} is wrong: {why}.");

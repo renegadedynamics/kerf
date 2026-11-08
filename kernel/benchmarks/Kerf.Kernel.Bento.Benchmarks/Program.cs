@@ -384,7 +384,7 @@ if (copies > 0)
     var roundPauses = new double[3];
     var roundCpu = new double[3];
     var roundContentions = new long[3];
-    long roundBytes = 0;
+    var roundBytes = new long[3];
     int mismatches = 0;
     long slowestTicks = 0;
     using Process self = Process.GetCurrentProcess();
@@ -420,7 +420,7 @@ if (copies > 0)
             }
         });
         rounds[round] = clock.Elapsed.TotalMilliseconds;
-        roundBytes = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+        roundBytes[round] = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
         roundPauses[round] = (GC.GetTotalPauseDuration() - pausedBefore).TotalMilliseconds;
         self.Refresh();
         roundCpu[round] = (self.TotalProcessorTime - cpuBefore).TotalMilliseconds;
@@ -428,7 +428,7 @@ if (copies > 0)
     }
     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
         $"parallel: {copies} copies of every example on {Environment.ProcessorCount} processors, median round {rounds.Order().ElementAt(1):F1} ms "
-        + $"({medianSum * copies:F1} ms of serial work), {roundBytes / 1048576.0:F1} MB a round, {mismatches} results differing from the serial run"));
+        + $"({medianSum * copies:F1} ms of serial work), {roundBytes.Order().ElementAt(1) / 1048576.0:F1} MB a round (the median), {mismatches} results differing from the serial run"));
     double medianRound = rounds.Order().ElementAt(1);
     self.Refresh();
     double peakMB = self.PeakWorkingSet64 / 1048576.0;
@@ -438,7 +438,8 @@ if (copies > 0)
     BenchRows.Add("parallel", roundName, "round ms", medianRound);
     BenchRows.Add("parallel", roundName, "serial work ms", medianSum * copies);
     BenchRows.Add("parallel", roundName, "speed-up x", medianSum * copies / medianRound);
-    BenchRows.Add("parallel", roundName, "alloc MB", roundBytes / 1048576.0);
+    // The median round's bytes, as for its time: what a parallel round allocates depends on which threads take which models
+    BenchRows.Add("parallel", roundName, "alloc MB", roundBytes.Order().ElementAt(1) / 1048576.0);
     BenchRows.Add("parallel", roundName, "collector's pause in a round ms", roundPauses.Order().ElementAt(1));
     BenchRows.Add("parallel", roundName, "slowest one model in any round ms", slowestTicks * 1000.0 / Stopwatch.Frequency);
     BenchRows.Add("parallel", roundName, "processor time in a round ms", roundCpu.Order().ElementAt(1));

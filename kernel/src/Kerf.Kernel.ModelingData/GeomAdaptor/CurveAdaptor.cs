@@ -69,6 +69,39 @@ internal class CurveAdaptor : CurveAdaptorBase
 
         /// <summary>Evaluation representation descriptor (shared with the curve: don't modify).</summary>
         public RepCurveDesc.Base? EvalRep;
+
+        /// <summary>
+        /// What the ends of the range evaluated to, kept (unit 12P): a search clamped to the range asks for the same end again
+        /// and again, and each time the curve's local evaluation, which no cache serves, gave the same value.
+        /// </summary>
+        public RangeEnd AtFirst, AtLast;
+    }
+
+    /// <summary>A B-spline's values at one end of the range, for each order asked for there, and the parameter they're at.</summary>
+    internal struct RangeEnd
+    {
+        public double U;
+        public int Known;
+        public Point3D D0;
+        public Curve3D.ResD1 D1;
+        public Curve3D.ResD2 D2;
+
+        /// <summary>Whether the order's values are kept for <paramref name="u"/>; if the parameter has moved, none are.</summary>
+        public bool Has(double u, int order)
+        {
+            if (Known != 0 && U != u)
+            {
+                Known = 0;
+            }
+            return (Known & (1 << order)) != 0;
+        }
+
+        /// <summary>The order's values are now kept for <paramref name="u"/>.</summary>
+        public void Kept(double u, int order)
+        {
+            U = u;
+            Known |= 1 << order;
+        }
     }
 
     private Curve3D? _curve;
@@ -745,7 +778,13 @@ internal class CurveAdaptor : CurveAdaptorBase
                 BSplineData bSplData = (BSplineData)_curveData!;
                 if (IsBoundary(U, out int start, out int finish))
                 {
-                    bSplData.Curve.LocalD0(U, start, finish, out p);
+                    ref RangeEnd end = ref U == _first ? ref bSplData.AtFirst : ref bSplData.AtLast;
+                    if (!end.Has(U, 0))
+                    {
+                        bSplData.Curve.LocalD0(U, start, finish, out end.D0);
+                        end.Kept(U, 0);
+                    }
+                    p = end.D0;
                 }
                 else
                 {
@@ -832,7 +871,13 @@ internal class CurveAdaptor : CurveAdaptorBase
                 BSplineData bSplData = (BSplineData)_curveData!;
                 if (IsBoundary(U, out int start, out int finish))
                 {
-                    bSplData.Curve.LocalD1(U, start, finish, out result.Point, out result.D1);
+                    ref RangeEnd end = ref U == _first ? ref bSplData.AtFirst : ref bSplData.AtLast;
+                    if (!end.Has(U, 1))
+                    {
+                        bSplData.Curve.LocalD1(U, start, finish, out end.D1.Point, out end.D1.D1);
+                        end.Kept(U, 1);
+                    }
+                    result = end.D1;
                 }
                 else
                 {
@@ -921,7 +966,13 @@ internal class CurveAdaptor : CurveAdaptorBase
                 BSplineData bSplData = (BSplineData)_curveData!;
                 if (IsBoundary(U, out int start, out int finish))
                 {
-                    bSplData.Curve.LocalD2(U, start, finish, out result.Point, out result.D1, out result.D2);
+                    ref RangeEnd end = ref U == _first ? ref bSplData.AtFirst : ref bSplData.AtLast;
+                    if (!end.Has(U, 2))
+                    {
+                        bSplData.Curve.LocalD2(U, start, finish, out end.D2.Point, out end.D2.D1, out end.D2.D2);
+                        end.Kept(U, 2);
+                    }
+                    result = end.D2;
                 }
                 else
                 {
