@@ -61,7 +61,7 @@ Ongoing, to the owner's bar.
 | Unit | What |
 |---|---|
 | **12N** Unexplained rises: **explained** (decisions 1938 to 1941) | Extrude until's +3.6 MB, a thick solid's +2.2%, and `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB. The thick solid's is fixed (rounding taken as crossing, decision 1941); extrude until's is decision 1881's check and the mesh's the rig's noise, both under the bar. With it, decision 1918's cone: round joins at an apex retried with mitres |
-| **12O** The mesher (11O) | Meet the deflection at a sensible triangle count, so that `ControlAllSurfaces` can go altogether (decision 1680) |
+| **12O** The mesher (11O): **done, and the flag has gone** (decisions 23001 to 23004) | Meet the deflection at a sensible triangle count, so that `ControlAllSurfaces` can go altogether (decision 1680). Measured from the surface over `data/occ`, Bento's examples and spheres, tori, cylinders and cones: only spheres still missed it, up to 2.06 times, from the scaling of their parameters. Now within it everywhere at an absolute deflection with the grid's own triangles (worst: a torus 0.98); the flag added triangles and made cones 2.6 times out, so it went. A mesh with no face meshed fails; `Delaun`'s dead circles are swept, 28% less allocated over `data/occ`. Left: a relative deflection keeps OCCT's misses |
 | **12P** Wasteful cases (11Q) | Down the slowest list: the corpus's slowest cases, the rig's slowest suites and Bento's examples |
 
 ## 5. Tests and surveys
