@@ -182,6 +182,12 @@ internal static class StepToGeom
     /// <summary>Converts a bounded_curve (B-splines, Bezier, uniform and quasi-uniform curves, trimmed curves, polylines).</summary>
     public static BoundedCurve3D? MakeBoundedCurve(StepBoundedCurve sc, in Factors localFactors)
     {
+        // Kerf: fewer poles than the degree needs is no curve; OCCT made a quasi-uniform curve's knots for it, failing on
+        // a negative count (decision 1966)
+        if (sc is StepBSplineCurve spline && spline.Degree() >= 1 && spline.NbControlPointsList() <= spline.Degree())
+        {
+            return null;
+        }
         if (sc is StepBSplineCurveWithKnotsAndRationalBSplineCurve)
         {
             return MakeBSplineCurve(sc as StepBSplineCurveWithKnotsAndRationalBSplineCurve, localFactors);
@@ -404,6 +410,15 @@ internal static class StepToGeom
     /// <summary>Converts a bounded_surface (B-splines, Bezier, uniform and quasi-uniform surfaces, rectangular trimmed surfaces).</summary>
     public static BoundedSurface? MakeBoundedSurface(StepBoundedSurface ss, in Factors localFactors)
     {
+        // Kerf: a spline of a degree out of range, or with fewer poles than its degree needs, is no surface, as a curve
+        // of one is none; OCCT made knots for it, failing on a negative count, or let Geom_BSplineSurface throw
+        // (decision 1966)
+        if (ss is StepBSplineSurface spline
+            && (spline.UDegree() < 1 || spline.UDegree() > BSplineSurface.MaxDegree || spline.VDegree() < 1 || spline.VDegree() > BSplineSurface.MaxDegree
+                || spline.NbControlPointsListI() <= spline.UDegree() || spline.NbControlPointsListJ() <= spline.VDegree()))
+        {
+            return null;
+        }
         if (ss is StepBSplineSurfaceWithKnotsAndRationalBSplineSurface)
         {
             return MakeBSplineSurface(ss as StepBSplineSurfaceWithKnotsAndRationalBSplineSurface, localFactors);
@@ -930,6 +945,11 @@ internal static class StepToGeom
 
         int uDeg = bs.UDegree();
         int vDeg = bs.VDegree();
+        // Kerf: a degree out of range is no surface, as for curves; OCCT let Geom_BSplineSurface throw (decision 1966)
+        if (uDeg < 1 || uDeg > BSplineSurface.MaxDegree || vDeg < 1 || vDeg > BSplineSurface.MaxDegree)
+        {
+            return null;
+        }
         int nuPoles = bs.NbControlPointsListI();
         int nvPoles = bs.NbControlPointsListJ();
         NCollection_HArray2<StepCartesianPoint> controlPointsList = bs.ControlPointsList();
@@ -2730,60 +2750,29 @@ internal static class StepToGeom
             { dx * dy * cm1 + dz * sa, dy * dy * cm1 + ca, dy * dz * cm1 - dx * sa },
             { dx * dz * cm1 - dy * sa, dy * dz * cm1 + dx * sa, dz * dz * cm1 + ca } };
 
-        // aRotMat[1][3] equals SIN(pitch_angle)
-        if (Math.Abs(Math.Abs(rotMat[0, 2] - 1.0)) < global::Kerf.Engine.Foundation.Precision.Confusion())
+        // Kerf: the matrix is Rx(roll)·Ry(pitch)·Rz(yaw), so its [1][3] is sin(pitch). OCCT tests |[1][3] - 1| for a
+        // right-angled pitch, so missed -PI/2; turned yaw by PI where its atan2, already in all four quadrants, was
+        // right; and never computed roll, leaving it 0, so any rotation about an axis off the coordinate axes came back
+        // as another rotation (decision 1968).
+        if (Math.Abs(Math.Abs(rotMat[0, 2]) - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            // |aPitch| = PI/2
-            if (Math.Abs(rotMat[0, 2] - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
-            {
-                pitch = Math.PI / 2;
-            }
-            else
-            {
-                pitch = -Math.PI / 2;
-            }
-            // In this case, only the sum or difference of roll and yaw angles
-            // is relevant and can be evaluated from the matrix.
-            // According to IP "rectangular pitch angle" for ypr_rotation,
-            // the roll angle is set to zero.
+            // |pitch| = PI/2: only yaw plus or minus roll is fixed by the matrix ([2][1] and [2][2] are its sine and
+            // cosine); as the IP for "rectangular pitch angle" of ypr_rotation has it, roll is 0
+            pitch = rotMat[0, 2] > 0.0 ? Math.PI / 2 : -Math.PI / 2;
             roll = 0.0;
             yaw = Math.Atan2(rotMat[1, 0], rotMat[1, 1]);
-            // result of ATAN is in the range[-PI / 2, PI / 2].
-            // Here all four quadrants are needed.
-
-            if (rotMat[1, 1] < 0.0)
-            {
-                if (yaw <= 0.0)
-                {
-                    yaw = yaw + Math.PI;
-                }
-                else
-                {
-                    yaw = yaw - Math.PI;
-                }
-            }
         }
         else
         {
-            // COS (pitch_angle) not equal to zero
+            // cos(pitch) > 0: yaw from the first row, roll from the last column
             yaw = Math.Atan2(-rotMat[0, 1], rotMat[0, 0]);
-
-            if (rotMat[0, 0] < 0.0)
-            {
-                if (yaw < 0.0 || Math.Abs(yaw) < global::Kerf.Engine.Foundation.Precision.Angular())
-                {
-                    yaw = yaw + Math.PI;
-                }
-                else
-                {
-                    yaw = yaw - Math.PI;
-                }
-            }
+            roll = Math.Atan2(-rotMat[1, 2], rotMat[2, 2]);
             double sy = Math.Sin(yaw);
             double cy = Math.Cos(yaw);
             double aSR = Math.Sin(roll);
             double cr = Math.Cos(roll);
 
+            // cos(pitch), from whichever of the four is best conditioned
             if (Math.Abs(sy) > Math.Abs(cy) && Math.Abs(sy) > Math.Abs(aSR) && Math.Abs(sy) > Math.Abs(cr))
             {
                 cm1 = -rotMat[0, 1] / sy;

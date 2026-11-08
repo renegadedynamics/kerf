@@ -4,6 +4,7 @@ using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Step;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
@@ -252,8 +253,9 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
 
         List<Block> aBlocks = Recording("STEPControl.stepctlrec-write.txt.gz", "W ");
         string? aDump = Environment.GetEnvironmentVariable("KERF_STEPCTL_DUMP");
-        int aCase = 0, aSame = 0;
+        int aCase = 0, aSame = 0, aVoids = 0;
         var aDifferent = new List<string>();
+        List<string> aManifold = [];
         foreach ((string aName, Shape aShape) in aShapes)
         {
             string aBefore = BRepTextOf(aShape);
@@ -293,9 +295,33 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
                     Block aNative = aBlocks[aCase++];
                     var aNativeLines = new List<string> { aNative.Name };
                     aNativeLines.AddRange(aNative.Lines);
+                    if (aMode == ModelType.ManifoldSolidBrep)
+                    {
+                        aManifold = aLines.Select(l => l.Replace(" ManifoldSolidBrep ", " BrepWithVoids ", StringComparison.Ordinal)).ToList();
+                    }
                     if (aLines.SequenceEqual(aNativeLines, StringComparer.Ordinal))
                     {
                         aSame++;
+                    }
+                    // Attributed (decision 1963): native's writer refuses BrepWithVoids as unknown (2); the port's writes
+                    // these shapes, which have no voids, as the manifold solid B-reps of that mode, byte for byte
+                    else if (aMode == ModelType.BrepWithVoids && aNativeLines.Count == 1 && aNativeLines[0] == aHead + "2"
+                             && aLines.SequenceEqual(aManifold, StringComparer.Ordinal))
+                    {
+                        aVoids++;
+                    }
+                    // ... and refuses what has no solid (3), as for its faceted modes
+                    else if (aMode == ModelType.BrepWithVoids && aNativeLines.Count == 1 && aNativeLines[0] == aHead + "2"
+                             && aLines.Count == 1 && aLines[0] == aHead + "3" && !new Explorer(aShape, ShapeType.Solid).More())
+                    {
+                        aVoids++;
+                    }
+                    // Attributed (decision 1962): native's faceted B-rep of a solid reads a tessellated shell it has just
+                    // found to be null, so every solid failed (3); the port's writes a solid of planes
+                    else if (aMode == ModelType.FacetedBrep && aNativeLines.Count == 1 && aNativeLines[0] == aHead + "3"
+                             && aLines[0].StartsWith(aHead + "1 ", StringComparison.Ordinal) && AllPlanes(aShape))
+                    {
+                        aVoids++;
                     }
                     else
                     {
@@ -306,12 +332,12 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
             Assert.Equal(aBefore, BRepTextOf(aShape)); // the writer never changes its input
         }
         Assert.Equal(aBlocks.Count, aCase);
-        output.WriteLine($"{aCase} writes: {aSame} as native");
-        Assert.Equal(708, aSame);
+        output.WriteLine($"{aCase} writes: {aSame} as native, {aVoids} B-reps with voids and faceted ones attributed");
         foreach (string aLine in aDifferent)
         {
             output.WriteLine(aLine);
         }
+        Assert.Equal(708, aSame + aVoids);
         Assert.DoesNotContain(aDifferent, d => !KnownWriteDifferences.Contains(d.Split(':')[0]));
     }
 
@@ -328,6 +354,18 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         "assembly_of_bottle.brep AP203 AsIs", "assembly_of_bottle.brep AP203 ManifoldSolidBrep",
         "assembly_of_bottle.brep AP203 ShellBasedSurfaceModel", "assembly_of_bottle.brep AP203 GeometricCurveSet",
     };
+
+    private static bool AllPlanes(in Shape theShape)
+    {
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            if (Tool.Surface(ShapeCasts.Face(anExp.Current())) is not PlaneSurface)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private static string BRepTextOf(in Shape theShape)
     {

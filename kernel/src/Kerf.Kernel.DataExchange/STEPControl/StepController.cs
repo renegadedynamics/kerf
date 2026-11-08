@@ -440,7 +440,8 @@ internal class StepController : Controller
     public override ReturnStatus TransferWriteShape(Shape shape, FinderProcess fp, InterfaceModel model,
                                                              int modeshape = 0, ProgressRange progress = default)
     {
-        if (modeshape < 0 || modeshape > 4)
+        // Kerf: OCCT stops at 4, so the actor's B-reps with voids (5 and 6) are never written (decision 1963)
+        if (modeshape < 0 || modeshape > 6)
         {
             return ReturnStatus.RetError;
         }

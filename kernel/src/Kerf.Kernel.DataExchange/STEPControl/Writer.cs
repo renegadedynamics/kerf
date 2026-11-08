@@ -144,6 +144,13 @@ internal class Writer
             case ModelType.GeometricCurveSet:
                 mws = 4;
                 break;
+            // Kerf: the actor writes these two (its modes 5 and 6), but OCCT's writer refuses them as unknown (decision 1963)
+            case ModelType.BrepWithVoids:
+                mws = 5;
+                break;
+            case ModelType.FacetedBrepAndBrepWithVoids:
+                mws = 6;
+                break;
             default:
                 break;
         }

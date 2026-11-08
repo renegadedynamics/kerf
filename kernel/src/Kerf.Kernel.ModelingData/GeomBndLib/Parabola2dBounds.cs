@@ -39,60 +39,33 @@ internal sealed class Parabola2dBounds : Curve2dBounds.ICurve2dEvaluator
     public static Box2d Box(in Parabola2D parab, double u1, double u2, double tol)
     {
         Box2d box = new();
-        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u1))
+        // Kerf: one end infinite, as the 3D form (decision 1964)
+        if (InfiniteHelpers.HalfInfinite(u1, u2, out double finite, out int towards))
         {
-            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
+            box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(finite, parab));
+            AddCoordinateExtrema(parab, towards < 0 ? double.NegativeInfinity : finite, towards < 0 ? finite : double.PositiveInfinity, ref box);
+            Xy xDir = parab.Axis.XDirection.XY(), yDir = parab.Axis.YDirection.XY();
+            InfiniteHelpers.OpenAlong(new Xy(xDir.X() != 0.0 ? xDir.X() : towards * yDir.X(), xDir.Y() != 0.0 ? xDir.Y() : towards * yDir.Y()), ref box);
+            box.Enlarge(tol);
+            return box;
+        }
+        // both ends infinite: the whole curve, open on every side, as OCCT has it; the same end twice is no arc
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u1))
+        {
+            if ((u1 < 0.0) == (u2 < 0.0))
             {
                 throw new FailureException("GeomBndLib_Parabola2d::Box - bad parameter");
-            }
-            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
-            {
-                box.OpenXmax();
-                box.OpenYmax();
-            }
-            else
-            {
-                box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, parab));
             }
             box.OpenXmin();
             box.OpenYmin();
-        }
-        else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u1))
-        {
-            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
-            {
-                box.OpenXmin();
-                box.OpenYmin();
-            }
-            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
-            {
-                throw new FailureException("GeomBndLib_Parabola2d::Box - bad parameter");
-            }
-            else
-            {
-                box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, parab));
-            }
             box.OpenXmax();
             box.OpenYmax();
         }
         else
         {
             box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u1, parab));
-            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
-            {
-                box.OpenXmin();
-                box.OpenYmin();
-            }
-            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
-            {
-                box.OpenXmax();
-                box.OpenYmax();
-            }
-            else
-            {
-                box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, parab));
-                AddCoordinateExtrema(parab, u1, u2, ref box);
-            }
+            box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, parab));
+            AddCoordinateExtrema(parab, u1, u2, ref box);
         }
         box.Enlarge(tol);
         return box;

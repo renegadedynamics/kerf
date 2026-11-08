@@ -307,6 +307,17 @@ internal class ActorWrite : ActorOfFinderProcess
         }
     }
 
+    // Kerf: the shells directly under a solid, its outer one and its voids
+    private static int ShellCount(in Shape solid)
+    {
+        int count = 0;
+        for (Iterator it = new Iterator(solid); it.More(); it.Next())
+        {
+            count += it.Value().Type == ShapeType.Shell ? 1 : 0;
+        }
+        return count;
+    }
+
     public ModelType Mode()
     {
         switch (ModeTrans())
@@ -437,6 +448,18 @@ internal class ActorWrite : ActorOfFinderProcess
                 if (curv is null || !curv.IsKind(typeof(LineCurve3D)))
                 {
                     return false;
+                }
+            }
+            // Kerf: a faceted B-rep is one closed shell, so OCCT wrote a solid's outer shell alone and lost its voids
+            // without a word; FacetedBrepAndBrepWithVoids holds them (decision 1963)
+            if (mymode == ModelType.FacetedBrep)
+            {
+                for (Explorer fsol = new Explorer(theShape, ShapeType.Solid); fsol.More(); fsol.Next())
+                {
+                    if (ShellCount(fsol.Current()) > 1)
+                    {
+                        return false;
+                    }
                 }
             }
         }
@@ -1055,7 +1078,19 @@ internal class ActorWrite : ActorOfFinderProcess
                     }
                 case ModelType.BrepWithVoids:
                     {
-                        if (shape.Type == ShapeType.Solid)
+                        // Kerf: a solid without voids is a manifold solid B-rep, as in that mode; OCCT wrote nothing for
+                        // it (decision 1963)
+                        if (shape.Type == ShapeType.Solid && ShellCount(shape) == 1)
+                        {
+                            ManifoldSolidBrepMaker mkManifoldSolidBrep = new ManifoldSolidBrepMaker(ShapeCasts.Solid(shape), fp, localFactors, ps1.Next());
+                            mkManifoldSolidBrep.Tolerance() = tol;
+                            if (mkManifoldSolidBrep.IsDone)
+                            {
+                                item = mkManifoldSolidBrep.Value();
+                                itemTess = mkManifoldSolidBrep.TessellatedValue();
+                            }
+                        }
+                        else if (shape.Type == ShapeType.Solid)
                         {
                             Solid solid = ShapeCasts.Solid(shape);
                             MakeBrepWithVoids mkBRepWithVoids = new MakeBrepWithVoids(solid, fp, localFactors, ps1.Next());
@@ -1113,7 +1148,18 @@ internal class ActorWrite : ActorOfFinderProcess
                             }
                             return binder;
                         }
-                        if (shape.Type == ShapeType.Solid)
+                        // Kerf: a solid without voids is a faceted B-rep (decision 1963)
+                        if (shape.Type == ShapeType.Solid && ShellCount(shape) == 1)
+                        {
+                            MakeFacetedBrep mkFacetedBrep = new MakeFacetedBrep(ShapeCasts.Solid(shape), fp, localFactors, ps1.Next());
+                            mkFacetedBrep.Tolerance() = tol;
+                            if (mkFacetedBrep.IsDone)
+                            {
+                                item = mkFacetedBrep.Value();
+                                itemTess = mkFacetedBrep.TessellatedValue();
+                            }
+                        }
+                        else if (shape.Type == ShapeType.Solid)
                         {
                             Solid solid = ShapeCasts.Solid(shape);
                             MakeFacetedBrepAndBrepWithVoids mkFacetedBrepAndBrepWithVoids =
@@ -1298,6 +1344,13 @@ internal class ActorWrite : ActorOfFinderProcess
                     shapeRep = new StepAdvancedBrepShapeRepresentation();
                     break;
                 case ModelType.FacetedBrep:
+                    shapeRep = new StepFacetedBrepShapeRepresentation();
+                    break;
+                // Kerf: OCCT has no representation for these two, so their B-reps were dropped (decision 1963)
+                case ModelType.BrepWithVoids:
+                    shapeRep = new StepAdvancedBrepShapeRepresentation();
+                    break;
+                case ModelType.FacetedBrepAndBrepWithVoids:
                     shapeRep = new StepFacetedBrepShapeRepresentation();
                     break;
                 // NOTE: STEPControl_AsIs mode is normally used to transfer non-manifold topology.

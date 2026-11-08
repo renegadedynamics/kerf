@@ -314,6 +314,15 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
                 string aCase = $"{aName} {aPortMode}";
                 (int Status, string Text, string File) aNative = NativeWrite(aFile, aNativeMode);
                 (int Status, string Text, string File) aPort = PortWrite(aFile, aPortMode);
+                if (aPortMode == ModelType.BrepWithVoids && aNative.Status == (int)ReturnStatus.RetError && aPort.Status == (int)ReturnStatus.RetDone)
+                {
+                    // native's writer refuses its own mode 5 as unknown; the port writes it (decision 1963). With no
+                    // native file to compare (and no native call to make, as the calls are replayed), the port's file
+                    // must read back as the same shape as its manifold B-rep's
+                    Count("write", aCase, "free");
+                    Count("voids->manifold", aCase, CompareReads(PortRead(PortWrite(aFile, ModelType.ManifoldSolidBrep).File), PortRead(aPort.File)));
+                    continue;
+                }
                 if (aNative.Status != aPort.Status)
                 {
                     Count("write", aCase, $"status: native {aNative.Status}, port {aPort.Status}");

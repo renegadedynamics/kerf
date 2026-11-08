@@ -185,9 +185,9 @@ internal class Function<MultiLine, ToolLine> : MultipleVarFunctionWithGradient
                     }
                     else
                     {
-                        // OCCT: TabP2d(j) where j - nb3d is meant; out of range for a line with 3d and 2d points
-                        // (unchecked in OCCT; the port throws)
-                        tabP2d[j].Coord(out _ptlx[i, j], out _ptly[i, j]);
+                        // Kerf: the 2d curve j - nb3d's point; OCCT's TabP2d(j) is out of range for a line with 3d and
+                        // 2d points (decision 1969)
+                        tabP2d[j - nb3d].Coord(out _ptlx[i, j], out _ptly[i, j]);
                     }
                 }
             }
