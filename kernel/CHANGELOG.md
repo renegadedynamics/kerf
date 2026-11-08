@@ -5,7 +5,7 @@ version may break the API.
 
 ## Unreleased
 
-- **Meshing allocates 5% less over `data/occ`, and up to 11% less on shapes with tori and spheres, and its angular check estimates each node's normal once,** with the same meshes: the checks of deviation no longer grow a set of node pairs (decisions 23701, 23702).
+- **Meshing allocates 5% less over `data/occ`, and up to 11% less on shapes with tori and spheres, and its angular check estimates each node's normal once,** with the same meshes: the checks of deviation no longer grow a set of node pairs (decisions 1977, 1978).
 - **Large `mkvolume`-style Booleans allocate up to a third less** (19% over the corpus's cases), with the same shapes: a frozen 2D B-spline keeps the boxes of the arcs it was bounded over (decision 1975).
 - **A STEP file past the reader's limits fails as `exchange.limit-exceeded`,** as documented, where it was `exchange.failed` (decision 1965).
 - **A STEP solid written as a faceted B-rep with voids is read with its voids,** from any file; they were lost (decision 1963).
