@@ -78,10 +78,19 @@ internal static class StepFileReader
         }
     }
 
+    /// <summary>
+    /// Kerf (decision 23105): the limit the last parse on this thread stopped at, or null. A failed read leaves no model
+    /// to carry it, so the public reader asks here to tell a refused file from a malformed one. Per thread, as a read
+    /// runs on one: nothing is shared.
+    /// </summary>
+    [ThreadStatic]
+    internal static string? s_lastExceededLimit;
+
     private static int ReadStream(string name, Stream aStreamPtr, StepModel stepModel, StepProtocol protocol,
                                   FileRecognizer recogHeader, FileRecognizer recogData,
                                   ProgressRange range, ParserReadLimits? limits)
     {
+        s_lastExceededLimit = null;
         // OCCT_DEBUG's chronometer (CHRONOMESURE) left out
         using Messenger.StreamBuffer sout = global::Kerf.Engine.Foundation.Message.SendTrace();
         sout.Append("      ...    Step File Reading : '").Append(name).Append("'");
@@ -95,6 +104,7 @@ internal static class StepFileReader
             letat = parser.Parse();
             if (letat != 0)
             {
+                s_lastExceededLimit = parser.ExceededLimit;
                 StepFile_Interrupt(fileDataModel.GetLastError(), true);
                 return 1;
             }
