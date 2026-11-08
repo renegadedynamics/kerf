@@ -162,11 +162,14 @@ public enum Keep
 #pragma warning restore CS1591
 }
 
-/// <summary>Offset corner transition.</summary>
+/// <summary>
+/// An offset's corners: rounded or mitred. build123d's <c>Kind.TANGENT</c> has no counterpart: in 2D it gave the mitre's
+/// result or nothing, and 3D offsets take only these two (kernel decision 23603).
+/// </summary>
 public enum Kind
 {
 #pragma warning disable CS1591
-    Arc, Intersection, Tangent,
+    Arc, Intersection,
 #pragma warning restore CS1591
 }
 

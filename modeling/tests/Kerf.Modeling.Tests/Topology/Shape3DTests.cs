@@ -238,7 +238,7 @@ public class Shape3DTests
         shellBox = Solid.MakeBox(1, 1, 1).Hollow([], thickness: 0.1, kind: Kind.Intersection);
         Check.AlmostEqual(Math.Pow(1.2, 3) - 1, shellBox.Volume, 5);
 
-        Assert.Throws<ArgumentException>(() => Solid.MakeBox(1, 1, 1).Hollow([], thickness: 0.1, kind: Kind.Tangent));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Solid.MakeBox(1, 1, 1).Hollow([], thickness: 0.1, kind: (Kind)2));
     }
 
     [Fact]

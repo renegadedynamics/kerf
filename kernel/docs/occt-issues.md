@@ -2278,6 +2278,6 @@ Found by unit 12J:
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| `BRepFill_OffsetWire::Perform`, `CheckBadEdges` | An edge curving tighter than the offset is replaced by a polyline of deflection `0.01 * |offset|`, whose chords lie inside the curve | An inward offset past a curve's sharpest bend up to 1% of the distance off, silently: an ellipse 10 by 5 at -3, 39.556 for 40.035 | **open**, for the owner (decision 1959) |
+| `BRepFill_OffsetWire::Perform`, `CheckBadEdges` | An edge curving tighter than the offset is replaced by a polyline of deflection `0.01 * |offset|`, whose chords lie inside the curve | An inward offset past a curve's sharpest bend up to 1% of the distance off, silently: an ellipse 10 by 5 at -3, 39.556 for 40.035 | **fixed**: the deflection is 0.001 of the offset, within 0.1% of it, OCCT's where that fails (decision 1980) |
 | `BRepFill_OffsetWire::MakeOffset` | A B-spline edge with a kink (C0) inside it goes to `Geom2d_OffsetCurve`, which refuses it | "Offset on C0 curve": 39 of the 77 offset/wire_* failures, OCCT's known ones; splitting first rescues 4 | leave (decision 1958) |
 | `BRepOffsetAPI_MakeOffset`, the tangent join | Not a 2D join OCCT documents; by reading, the code tests `== Arc` in some places and `== Intersection` in others, so the tangent join takes neither branch in some | Nothing outwards from a triangle or star; mitres' results elsewhere | **open**, for the owner (decision 1960) |

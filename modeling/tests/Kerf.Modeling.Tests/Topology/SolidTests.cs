@@ -322,7 +322,7 @@ public class SolidTests
 
     [Fact]
     public void Offset3D() =>
-        Assert.Throws<ArgumentException>(() => Solid.MakeBox(1, 1, 1).Offset3D(null, 0.1, kind: Kind.Tangent));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Solid.MakeBox(1, 1, 1).Offset3D(null, 0.1, kind: (Kind)2));
 
     [Fact]
     public void Revolve()
