@@ -25,11 +25,16 @@ public static class Warnings
     /// </code></example>
     public static WarningScope Capture() => Current.Value = new WarningScope(Current.Value, scope => Current.Value = scope);
 
-    internal static void Warn(string message)
+    internal static void Warn(string message) => Warn(message, null);
+
+    /// <summary>A kernel's warning, keeping its code for an operation that returns a result.</summary>
+    internal static void Warn(Diagnostic warning) => Warn(warning.Message, warning.Code);
+
+    private static void Warn(string message, DiagnosticCode? code)
     {
         Trace.TraceWarning(message);
         for (var scope = Current.Value; scope is not null; scope = scope.Parent)
-            scope.Add(message);
+            scope.Add(message, code);
     }
 }
 
@@ -37,7 +42,7 @@ public static class Warnings
 public sealed class WarningScope : IDisposable
 {
     private readonly Action<WarningScope?> _restore;
-    private readonly List<string> _messages = [];
+    private readonly List<(string Message, DiagnosticCode? Code)> _raised = [];
     private bool _disposed;
 
     internal WarningScope(WarningScope? parent, Action<WarningScope?> restore) => (Parent, _restore) = (parent, restore);
@@ -49,16 +54,26 @@ public sealed class WarningScope : IDisposable
     {
         get
         {
-            lock (_messages)
-                return [.. _messages];
+            lock (_raised)
+                return [.. _raised.Select(r => r.Message)];
+        }
+    }
+
+    /// <summary>The warnings so far, each with its code if it came from the kernel with one.</summary>
+    internal IReadOnlyList<(string Message, DiagnosticCode? Code)> Raised
+    {
+        get
+        {
+            lock (_raised)
+                return [.. _raised];
         }
     }
 
     // Tasks started in the scope may warn from several threads at once
-    internal void Add(string message)
+    internal void Add(string message, DiagnosticCode? code)
     {
-        lock (_messages)
-            _messages.Add(message);
+        lock (_raised)
+            _raised.Add((message, code));
     }
 
     /// <summary>Ends the scope: later warnings go to the enclosing one, if any.</summary>

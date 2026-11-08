@@ -102,6 +102,58 @@ public class SilentResultTests
         Assert.Equal("result.invalid", hollow.Error!.Code.Value);
     }
 
+    // ThickSolid, which Kerf.Modeling's Offset3D and Hollow call, had neither check nor retry: with no openings, the cone inwards
+    // with round joins was a success holding a compound with no solid in it
+    [Theory]
+    [InlineData(-0.5, 192.9331)]
+    [InlineData(-1, 107.7566)]
+    public void A_thick_solid_of_a_cone_inwards_is_made_with_mitres_and_says_so(double thickness, double volume)
+    {
+        Result<Built<Shape>> thick = Solid.Cone(5, 0, 12).Value.Shape.ThickSolid([], thickness);
+
+        Assert.True(thick.IsSuccess, thick.Error?.Message);
+        Assert.Equal(volume, thick.Value.Shape.IntegrateVolume(Measured), 0.001);
+        Assert.Contains(thick.Diagnostics, d => d.Code == OffsetOperations.JoinChanged);
+    }
+
+    // Outwards with no openings OCCT's thick solid is the offset turned inside out, so its volume is negative, and right
+    [Fact]
+    public void A_thick_solid_outwards_is_checked_the_right_way_out()
+    {
+        Result<Built<Shape>> thick = Solid.Cone(5, 0, 12).Value.Shape.ThickSolid([], 1);
+
+        Assert.True(thick.IsSuccess, thick.Error?.Message);
+        Assert.Equal(-669.666, thick.Value.Shape.IntegrateVolume(Measured), 0.01);
+        Assert.DoesNotContain(thick.Diagnostics, d => d.Code == OffsetOperations.JoinChanged);
+    }
+
+    [Fact]
+    public void A_thick_solid_of_the_inverted_cone_inwards_fails()
+    {
+        Solid cone = Solid.Cone(0, 5, 12).Value.Shape;
+        Face top = cone.AllFaces().First(f => f.TryGetSurface(out Surface? s) && s is PlaneSurface);
+
+        foreach (Result<Built<Shape>> thick in new[] { cone.ThickSolid([], -1), cone.ThickSolid([top], -1) })
+        {
+            Assert.False(thick.IsSuccess);
+            Assert.Equal("result.invalid", thick.Error!.Code.Value);
+            Assert.True(thick.TryGetInvalid(out _));
+        }
+    }
+
+    // A wall made outwards lies outside its input: one that holds the input's centre is wrong, as the inverted cone's hollow
+    // with mitres outwards was once repaired into the cone itself
+    [Fact]
+    public void A_wall_made_outwards_that_fills_its_input_is_wrong()
+    {
+        Solid cone = Solid.Cone(0, 5, 12).Value.Shape;
+
+        Assert.NotNull(OffsetVolumes.Check(cone, 1, JoinKind.Intersection, cone, "The hollow solid", isWall: true));
+        Solid upright = Solid.Cone(5, 0, 12).Value.Shape;
+        Face bottom = upright.AllFaces().First(f => f.TryGetSurface(out Surface? s) && s is PlaneSurface);
+        Assert.True(upright.Hollow([bottom], 1).IsSuccess);
+    }
+
     [Theory]
     [InlineData(-1, 107.757)] // by similar triangles: the cone's inscribed sphere has a radius of 10/3
     [InlineData(-2, 20.106)]
