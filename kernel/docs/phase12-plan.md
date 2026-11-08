@@ -50,6 +50,7 @@ judgements, and could be out by half either way.**
 | **12K** Rims (stage 1): **done** (177 lines; decision 1904) | Better messages, as for straight edges; limits for circles | 100 | "The most that fits" on a cylinder |
 | **12L** Circular edges (stage 3): **done** (290 lines; decisions 1905 to 1907) | Plane and coaxial cylinder or cone: a revolved tool, the same check by Pappus | 300 to 600 | B2, Q3, W7; a disc's rim; full rounds; hemispheres |
 | **12M** Corners (stage 2): **done** (about 600 lines; decisions 1908 to 1911) | Spherical patches where three blends of one radius meet; slanted ends | 500 to 1,000 | Cube to sphere; bar to capsule; bug32931, bug25478_2 |
+| **12V** Chamfer limits: **done** (about 280 lines; decisions 1985 to 1987; `MaxChamfer` added) | A chamfer past the tightest convex arc or ellipse in a plane beside its edges, proved not to fit, refused before ChFi3d, on the chain ChFi3d carries it round and by the length on that face. The one case here asked before ChFi3d, not after it fails | 100 | "The most that fits" on a rounded outline; 33 of 132 runs past a limit, all by a length and an angle, had come back valid but wrong |
 
 **Then stop and look.** General-surface fillets (stages 4 and 5) and replacing ChFi3d (stage 6) wait for failures from
 Bento's users that justify them.

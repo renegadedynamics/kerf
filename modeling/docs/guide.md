@@ -122,7 +122,13 @@ Result<Part> cup = Offset(box, -1.5, new OffsetOptions { Openings = [top] });   
 ```
 
 Pass the part as the first argument (`Fillet(box, edges, r)`): the edges alone don't know which solid they came
-from. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
+from. **A chamfer can't be longer than the tightest convex arc in a face beside its edges:** on that face
+its edge is the outline stepped in by the length, and past the arc's radius that closes up and crosses itself. So
+`Chamfer` refuses such a length at once, saying what fits (`modeling.chamfer-failed`: "… the most that fits is 1.7,
+the radius of the tightest convex arc in a face beside them …"), as `Fillet` does for a radius wider than a face.
+With two lengths, or a length and an angle, it's the length on that face that counts. A chain of tangent edges is
+chamfered all round, so one straight edge of a rounded outline is held to the arcs too. `MaxChamfer(edges)`, as
+`MaxFillet`, finds the largest single length that builds. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
 too, with `Kind` (`Arc`, `Intersection`) and `Side` in `OffsetOptions`.
 
 ## 6. Results, failures and warnings
