@@ -167,4 +167,49 @@ public class STEPConstructPartLawsTests
         Assert.Equal(6000, aProps.Mass(), 6);
         Assert.True(StepConstruct.FindShape(aProcess, new StepManifoldSolidBrep()).IsNull);
     }
+
+    [Theory]
+    [InlineData(1, "INCH")]
+    [InlineData(2, ".MILLI.")]
+    [InlineData(4, "FOOT")]
+    [InlineData(5, "MILE")]
+    [InlineData(6, "SI_UNIT($,.METRE.)")]
+    [InlineData(7, ".KILO.")]
+    [InlineData(8, "MIL")]
+    [InlineData(9, ".MICRO.")]
+    [InlineData(10, ".CENTI.")]
+    [InlineData(11, "MICROINCH")]
+    public void A_box_written_in_any_unit_of_the_writer_reads_back_its_size(int theUnit, string theMarker)
+    {
+        // the writer converts millimetres to the file's unit and the reader back: the box is 6000 again
+        var aWriter = new Writer();
+        aWriter.WS()!.Statics().SetIVal("write.step.unit", theUnit);
+        Assert.Equal(ReturnStatus.RetDone, aWriter.Transfer(new MakeBox(10, 20, 30).Shape(), ModelType.AsIs));
+        using var aStream = new MemoryStream();
+        aWriter.WriteStream(aStream);
+        string aText = Encoding.ASCII.GetString(aStream.ToArray());
+        Assert.Contains(theMarker, aText);
+        var aReader = new StepReader();
+        Assert.Equal(ReturnStatus.RetDone, aReader.ReadStream("unit.stp", new MemoryStream(aStream.ToArray())));
+        aReader.TransferRoots();
+        var aProps = new Properties();
+        MassPropertiesBuilder.VolumeProperties(aReader.OneShape(), aProps);
+        Assert.Equal(6000, aProps.Mass(), 6000 * 1e-9);
+    }
+
+    [Fact]
+    public void Each_si_prefix_is_its_power_of_ten()
+    {
+        (SiPrefix Prefix, int Power)[] aPrefixes =
+        [
+            (SiPrefix.SpExa, 18), (SiPrefix.SpPeta, 15), (SiPrefix.SpTera, 12), (SiPrefix.SpGiga, 9), (SiPrefix.SpMega, 6),
+            (SiPrefix.SpKilo, 3), (SiPrefix.SpHecto, 2), (SiPrefix.SpDeca, 1), (SiPrefix.SpDeci, -1), (SiPrefix.SpCenti, -2),
+            (SiPrefix.SpMilli, -3), (SiPrefix.SpMicro, -6), (SiPrefix.SpNano, -9), (SiPrefix.SpPico, -12), (SiPrefix.SpFemto, -15),
+            (SiPrefix.SpAtto, -18),
+        ];
+        foreach ((SiPrefix aPrefix, int aPower) in aPrefixes)
+        {
+            Assert.Equal(Math.Pow(10, aPower), UnitContext.ConvertSiPrefix(aPrefix), Math.Pow(10, aPower) * 1e-12);
+        }
+    }
 }

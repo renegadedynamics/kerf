@@ -123,7 +123,8 @@ public static class Step
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         ReadLimits limits = options.Limits;
-        var stepLimits = new ParserReadLimits { MaxFileSize = limits.MaxBytes, MaxRecords = limits.MaxEntities, MaxDepth = limits.MaxDepth };
+        var report = new ParserLimitReport();
+        var stepLimits = new ParserReadLimits { MaxFileSize = limits.MaxBytes, MaxRecords = limits.MaxEntities, MaxDepth = limits.MaxDepth, Report = report };
         var reader = new CafReader();
         reader.SetColorMode(true);
         reader.SetNameMode(true);
@@ -141,7 +142,7 @@ public static class Step
             var status = reader.ReadStream(name, stream, indicator.Start(), stepLimits);
             cancellationToken.ThrowIfCancellationRequested();
             // Kerf: the parser's limits refuse the data as such, not as a failure to read it (decision 23105)
-            if (status != ReturnStatus.RetDone && global::Kerf.Engine.Exchange.Step.Parser.StepFileReader.s_lastExceededLimit is { } limit)
+            if (status != ReturnStatus.RetDone && report.Exceeded is { } limit)
             {
                 return Result<ModelNode>.Failure(Diagnostic.Error(ExchangeTree.LimitExceeded, $"The STEP data is larger than the limits: its {limit} is above the limit."));
             }
