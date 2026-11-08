@@ -113,8 +113,9 @@ chamfer's lower edge to F's plane, and its top in F's plane. The faces are made 
 chamfer faces are carried on below the contact so that they cross the side faces rather than touch them along a line, and
 the walls stand outside the solid, as the rulings run outwards below the contact. The top lies in F's plane, the only
 coincidence, of the kind Booleans handle every day: it can't stand above F, as the oblique cone's apex is on F and the cone
-can't be carried past it. m is half the smaller of b and what the side faces have left below the contact, so the tool never
-reaches whatever is beyond the side face's foot.
+can't be carried past it. m is half the smaller of b and what the side faces have left below the contact (read from their
+vertices), so the tool stays above their feet; anything it cuts that it shouldn't, such as a hole in the face too near the
+loop, misses the check and the chamfer isn't built.
 
 Every corner of the loop is built so, also those that don't collapse (as right cones, exact, as B-splines of the same kind),
 since the one tool has to run all round: so a loop with any tight corner is built here, all of it.
