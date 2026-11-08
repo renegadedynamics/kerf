@@ -1,10 +1,18 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Text;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Exchange.Framework.Selection;
+using Kerf.Engine.Exchange.Step;
 using Kerf.Engine.Exchange.Step.Basic;
 using Kerf.Engine.Exchange.Step.Construct;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
+using Kerf.Geometry;
+using Kerf.Topology;
 using static Kerf.Engine.Exchange.Step.Parameters.WriteMode_StepSchema;
 
 namespace Kerf.Kernel.DataExchange.Tests.STEPControl;
@@ -122,5 +130,41 @@ public class STEPConstructPartLawsTests
         aRead.ReadSDR(null!);
         Assert.False(aRead.IsDone);
         Assert.Null(aRead.SRValue());
+    }
+
+    [Fact]
+    public void A_shape_written_is_found_as_its_entity_and_an_entity_read_as_its_shape()
+    {
+        Shape aBox = new MakeBox(10, 20, 30).Shape();
+        var aWriter = new Writer();
+        Assert.Equal(ReturnStatus.RetDone, aWriter.Transfer(aBox, ModelType.AsIs));
+        var aFinder = aWriter.WS()!.TransferWriter()!.FinderProcess()!;
+        Assert.IsType<StepManifoldSolidBrep>(StepConstruct.FindEntity(aFinder, aBox));
+        Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
+        Assert.IsType<StepAdvancedFace>(StepConstruct.FindEntity(aFinder, aFace));
+        // moved, the box isn't what was written; asked with its placement, it's found unmoved, and the placement says so
+        Shape aMoved = aBox.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(1, 0, 0))));
+        Assert.Null(StepConstruct.FindEntity(aFinder, aMoved));
+        Placement aLoc = new();
+        Assert.IsType<StepManifoldSolidBrep>(StepConstruct.FindEntity(aFinder, aMoved, ref aLoc));
+        Assert.True(aLoc.IsIdentity);
+
+        using var aStream = new MemoryStream();
+        aWriter.WriteStream(aStream);
+        var aReader = new StepReader();
+        Assert.Equal(ReturnStatus.RetDone, aReader.ReadStream("box.stp", new MemoryStream(aStream.ToArray())));
+        aReader.TransferRoots();
+        var aProcess = aReader.WS()!.TransferReader()!.TransientProcess()!;
+        var aModel = aReader.WS()!.Model()!;
+        StepManifoldSolidBrep? aBrep = null;
+        for (int i = 1; i <= aModel.EntityCount && aBrep is null; i++)
+        {
+            aBrep = aModel.Value(i) as StepManifoldSolidBrep;
+        }
+        Shape aRead = StepConstruct.FindShape(aProcess, aBrep!);
+        var aProps = new Properties();
+        MassPropertiesBuilder.VolumeProperties(aRead, aProps);
+        Assert.Equal(6000, aProps.Mass(), 6);
+        Assert.True(StepConstruct.FindShape(aProcess, new StepManifoldSolidBrep()).IsNull);
     }
 }
