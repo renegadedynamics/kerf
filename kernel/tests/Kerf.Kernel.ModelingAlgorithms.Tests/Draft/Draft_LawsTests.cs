@@ -345,4 +345,40 @@ public class Draft_LawsTests
         }
         Assert.Equal(DraftErrorStatus.FaceRecomputation, aDraft.Status());
     }
+
+    [Theory]
+    [InlineData(5.0)]
+    [InlineData(-3.0)]
+    public void A_drafted_side_is_at_its_angle_to_the_direction(double theDegrees)
+    {
+        // a side of the box, square to the direction, is at 0; drafted by a, it's at a, one way or the other
+        Shape aBox = new MakeBox(10, 10, 10).Shape();
+        Face aSide = PlaneWithNormal(aBox, new Direction3D(1, 0, 0));
+        Assert.Equal(0, DraftTools.Angle(aSide, Up), 12);
+        Assert.Equal(Math.PI / 2, Math.Abs(DraftTools.Angle(PlaneWithNormal(aBox, Up), Up)), 12);
+        double a = theDegrees * Math.PI / 180;
+        Shape aResult = Draft(aBox, (aSide, a, Floor));
+        Face aDrafted = Faces(aResult).Single(f => Tool.Surface(f) is PlaneSurface aP && Math.Abs(aP.Plane.Axis.Direction.Z) > 1e-6 && Math.Abs(aP.Plane.Axis.Direction.Z) < 0.5);
+        Assert.Equal(Math.Abs(a), Math.Abs(DraftTools.Angle(aDrafted, Up)), 12);
+        // a cylinder along the direction is at 0; the cone a drafted cylinder becomes, at the draft's angle
+        Shape aCylinder = new ApiMakeCylinder(5, 10).Shape();
+        Assert.Equal(0, DraftTools.Angle(Lateral(aCylinder), Up), 12);
+        var aDraft = new DraftAngle(aCylinder);
+        aDraft.Add(Lateral(aCylinder), Up, a, Floor);
+        aDraft.Build();
+        Assert.Equal(Math.Abs(a), Math.Abs(DraftTools.Angle(Lateral(aDraft.Shape()), Up)), 9);
+    }
+
+    [Fact]
+    public void An_angle_is_only_for_planes_and_for_cylinders_and_cones_along_the_direction()
+    {
+        Face aSphere = Faces(new MakeSphere(5).Shape()).First();
+        Assert.Throws<DomainErrorException>(() => DraftTools.Angle(aSphere, Up));
+        Face aCylinder = Lateral(new ApiMakeCylinder(5, 10).Shape());
+        Assert.Throws<DomainErrorException>(() => DraftTools.Angle(aCylinder, new Direction3D(1, 0, 0)));
+        Face aCone = Lateral(new ApiMakeCone(5, 2, 10).Shape());
+        Assert.Throws<DomainErrorException>(() => DraftTools.Angle(aCone, new Direction3D(0, 1, 0)));
+        // a cone's side leans by its half angle, atan(3/10)
+        Assert.Equal(Math.Atan(0.3), Math.Abs(DraftTools.Angle(aCone, Up)), 9);
+    }
 }
