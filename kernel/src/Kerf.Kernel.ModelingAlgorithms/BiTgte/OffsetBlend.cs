@@ -68,6 +68,8 @@ internal sealed class OffsetBlend
     private readonly Analyse _analyse = new();
     private IndexedSet<Shape> _centers = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Offset> _mapSF = new(ShapeHasher.Instance);
+    // Kerf: the centre line each cut piece in _centers comes from, which the AsDes knows and the piece doesn't
+    private readonly Dictionary<Shape, Shape> _centerOfCut = new(ShapeHasher.Instance);
     private readonly ShapeImage _initOffsetFace = new();
     private readonly ShapeImage _image = new();
     private readonly ShapeImage _imageOffset = new();
@@ -686,6 +688,7 @@ internal sealed class OffsetBlend
         _stopFaces.Clear();
         _analyse.Clear();
         _asDes.Clear();
+        _centerOfCut.Clear();
         _nbBranches = -1;
         _done = false;
         _overlay = null;
@@ -998,7 +1001,7 @@ internal sealed class OffsetBlend
     /// <summary>The first support shape of the blending surface of index <paramref name="index"/>.</summary>
     public Shape SupportShape1(int index)
     {
-        Edge curE = ShapeCasts.Edge(_centers[index - 1]);
+        Edge curE = CenterLine(index);
 
         NCollection_List<Shape> l = _asDes.Ascendant(curE);
 
@@ -1015,7 +1018,7 @@ internal sealed class OffsetBlend
     /// <summary>The second support shape of the blending surface of index <paramref name="index"/>.</summary>
     public Shape SupportShape2(int index)
     {
-        Edge curE = ShapeCasts.Edge(_centers[index - 1]);
+        Edge curE = CenterLine(index);
 
         NCollection_List<Shape> l = _asDes.Ascendant(curE);
 
@@ -1025,6 +1028,14 @@ internal sealed class OffsetBlend
         Face f2 = ShapeCasts.Face(l.Last());
         Shape or2 = _initOffsetFace.ImageFrom(f2);
         return Published(or2);
+    }
+
+    // Kerf: the centre line of a tube as the AsDes has it. OCCT asks it of the cut piece, which it never holds, so its
+    // SupportShape1, SupportShape2 and ContactType fail on every tube (decision 23101).
+    private Edge CenterLine(int index)
+    {
+        Shape center = _centers[index - 1];
+        return ShapeCasts.Edge(_centerOfCut.TryGetValue(center, out Shape whole) ? whole : center);
     }
 
     // Kerf: a shape of the run as it stands in the result (the caller's own where unchanged), frozen.
@@ -1986,6 +1997,7 @@ internal sealed class OffsetBlend
                 Offset anOffset = new(curCutE, e1, e2, -_radius, e1f, e1l, _nubs, _tol, C2);
                 _mapSF[curCutE] = anOffset;
                 _centers.Add(curCutE);
+                _centerOfCut[curCutE] = curE;
                 b.Add(co, curCutE);
 
                 Face tuyo = anOffset.InternalFace();

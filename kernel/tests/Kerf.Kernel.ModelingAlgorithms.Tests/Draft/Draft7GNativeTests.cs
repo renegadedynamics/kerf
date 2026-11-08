@@ -263,6 +263,22 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                 }
             }
 
+            // Attributed (decision 23101): native's ContactType fails on every tube, asking the AsDes of a cut piece of its
+            // centre line, which it never holds; the port's names the faces (FaceEdge, 1), so it goes on to the first
+            // corner, whose centre is a vertex (TopoDS::Edge), or to the end and the shape native never reached
+            if (w[0] == "ROLL" && aNative.Count == 1 && aNative[0].Head.EndsWith(" THROW Standard_NoSuchObject", StringComparison.Ordinal))
+            {
+                string aSurfaces = aNative[0].Head[..^" THROW Standard_NoSuchObject".Length];
+                Assert.StartsWith(aSurfaces, aPort[0].Head, StringComparison.Ordinal);
+                string aRest = aPort[0].Head[aSurfaces.Length..];
+                bool isEnded = aRest.EndsWith(" THROW Standard_TypeMismatch", StringComparison.Ordinal);
+                string aTypes = isEnded ? aRest[..^" THROW Standard_TypeMismatch".Length] : aRest;
+                Assert.All(aTypes.Split(' ', StringSplitOptions.RemoveEmptyEntries), t => Assert.Equal("1", t));
+                Assert.True(isEnded || (aPort.Count == 2 && aPort[1].Head == "DONE 1"), string.Join(" / ", aPort.Select(p => p.Head)));
+                aTally.Attributed++;
+                continue;
+            }
+
             // native's records against the port's: the same keywords, statuses and results
             int aCount = Math.Min(aNative.Count, aPort.Count);
             if (aNative.Count > 0 && aNative[^1].Head.StartsWith("THROW", StringComparison.Ordinal)
