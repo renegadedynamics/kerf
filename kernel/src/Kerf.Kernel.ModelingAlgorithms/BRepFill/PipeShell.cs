@@ -913,7 +913,9 @@ internal sealed class PipeShell : Transient
             Solid solid = new();
             bs.MakeSolid(ref solid);
             bs.Add(solid, ShapeCasts.Shell(_shape));
-            if (SolidClassifier.InfinitePointState(solid, global::Kerf.Engine.Foundation.Precision.Confusion()) == In)
+            SolidClassifier sc = new(solid);
+            sc.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
+            if (sc.State() == In)
             {
                 bs.MakeSolid(ref solid);
                 _shape.Reverse();

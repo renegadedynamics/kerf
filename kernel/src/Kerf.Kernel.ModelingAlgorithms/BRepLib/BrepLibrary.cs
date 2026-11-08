@@ -2062,12 +2062,13 @@ internal static partial class BrepLibrary
     internal static bool OrientClosedSolid(ref Solid solid)
     {
         // Set material inside the solid
-        Containment where = SolidClassifier.InfinitePointState(solid, Kerf.Engine.Foundation.Precision.Confusion());
-        if (where == In)
+        var where = new SolidClassifier(solid);
+        where.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
+        if (where.State() == In)
         {
             solid.Reverse();
         }
-        else if (where == On || where == Unknown)
+        else if (where.State() == On || where.State() == Unknown)
         {
             return false;
         }

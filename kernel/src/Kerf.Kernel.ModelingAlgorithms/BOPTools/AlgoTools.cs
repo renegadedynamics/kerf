@@ -2295,9 +2295,11 @@ internal static partial class AlgoTools
     {
         double tolS;
         Containment state;
+        SolidClassifier sc = new(aSolid);
         //
         tolS = 1.0e-7;
-        state = SolidClassifier.InfinitePointState(aSolid, tolS);
+        sc.PerformInfinitePoint(tolS);
+        state = sc.State();
         return state == In;
     }
 }

@@ -43,8 +43,6 @@ internal class SolidExplorer
         new(ShapeHasher.Instance);
     private readonly SpatialTree<int, Box> _tree = new();
     private readonly IndexedSet<Shape> _mapEV = new(ShapeHasher.Instance);
-    // Kerf: whether the edges and vertices and their tree are filled; see InitShape
-    private bool _treeFilled;
 
     /// <summary>
     /// A point <paramref name="APoint_"/> in the face <paramref name="_face"/>: <paramref name="param_"/>, in ]0, 1[,
@@ -224,9 +222,9 @@ internal class SolidExplorer
     {
         // first find if the point is near an edge/vertex
         Point3D p3d = surf.Value(p2d.X, p2d.Y);
-        var selectorPoint = new BndBoxTreeSelectorPoint(GetMapEV());
+        var selectorPoint = new BndBoxTreeSelectorPoint(_mapEV);
         selectorPoint.SetCurrentPoint(p3d);
-        int selsVE = GetTree().Select(selectorPoint);
+        int selsVE = _tree.Select(selectorPoint);
         if (selsVE > 0)
         {
             // The point is inside the tolerance area of vertices/edges => return ON state.
@@ -867,20 +865,6 @@ internal class SolidExplorer
         InitShape(s);
     }
 
-    /// <summary>
-    /// An explorer of <paramref name="s"/> for a classifier that only classifies the point at infinity, which reads
-    /// only the faces' intersectors: the edges and vertices and their tree are left until something asks for them.
-    /// </summary>
-    /// <remarks>
-    /// Kerf: they were half of a shell's orientation in shape healing (performance.md, "The perf search"). Filled then, they
-    /// are what they would have been, as long as the shape hasn't changed since, which is why only a classifier that's used
-    /// at once and dropped is made this way (<see cref="SolidClassifier.InfinitePointState"/>).
-    /// </remarks>
-    internal SolidExplorer(in Shape s, bool fillTree)
-    {
-        InitShape(s, fillTree);
-    }
-
     /// <summary>Forgets the faces' intersectors (OCCT's Destroy, also called by its destructor).</summary>
     public void Destroy()
     {
@@ -891,13 +875,10 @@ internal class SolidExplorer
     /// Loads the shape <paramref name="s"/>: an intersector for each face, and the tree of the boxes of the edges
     /// and vertices of its FORWARD and REVERSED faces and edges (degenerated edges left out).
     /// </summary>
-    public void InitShape(in Shape s) => InitShape(s, true);
-
-    private void InitShape(in Shape s, bool fillTree)
+    public void InitShape(in Shape s)
     {
         _mapEV.Clear();
         _tree.Clear();
-        _treeFilled = false;
 
         _shape = s;
         _firstFace = 0;
@@ -916,17 +897,6 @@ internal class SolidExplorer
             _mapOfInter[face] = ptr;
             _reject = false; //-- at least one face in the solid
         }
-
-        if (fillTree)
-        {
-            FillTree();
-        }
-    }
-
-    // The map of the edges and vertices and the tree of their boxes, as OCCT's InitShape fills them
-    private void FillTree()
-    {
-        _treeFilled = true;
 
         // since the internal/external parts should be avoided in tree filler,
         // there is no need to add these parts in the EV map as well
@@ -1041,24 +1011,8 @@ internal class SolidExplorer
     public Shape GetShape() => (_shape);
 
     /// <summary>The tree of the boxes of the edges and vertices (objects are indices in <see cref="GetMapEV"/>).</summary>
-    public SpatialTree<int, Box> GetTree()
-    {
-        if (!_treeFilled)
-        {
-            FillTree();
-        }
-
-        return _tree;
-    }
+    public SpatialTree<int, Box> GetTree() => _tree;
 
     /// <summary>The edges and vertices of the shape.</summary>
-    public IndexedSet<Shape> GetMapEV()
-    {
-        if (!_treeFilled)
-        {
-            FillTree();
-        }
-
-        return _mapEV;
-    }
+    public IndexedSet<Shape> GetMapEV() => _mapEV;
 }

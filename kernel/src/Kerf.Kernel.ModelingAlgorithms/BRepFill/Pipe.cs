@@ -904,7 +904,9 @@ internal sealed class Pipe
             result.Closed(true);
             bs.Add(solid, ShapeCasts.Shell(result));
 
-            if (SolidClassifier.InfinitePointState(solid, global::Kerf.Engine.Foundation.Precision.Confusion()) == In)
+            SolidClassifier sc = new(solid);
+            sc.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
+            if (sc.State() == In)
             {
                 bs.MakeSolid(ref solid);
                 Shape localShape = result.Reversed();

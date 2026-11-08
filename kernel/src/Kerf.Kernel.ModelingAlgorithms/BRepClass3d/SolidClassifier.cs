@@ -47,29 +47,6 @@ internal class SolidClassifier : SClassifier
         _isaholeinspace = false;
     }
 
-    // Kerf: a classifier of the explorer given
-    private SolidClassifier(SolidExplorer explorer)
-    {
-        _aSolidLoaded = true;
-        _explorer = explorer;
-        _isaholeinspace = false;
-    }
-
-    /// <summary>
-    /// The state of the point at infinity in <paramref name="s"/>, as a new classifier's <see cref="PerformInfinitePoint"/>
-    /// then <see cref="SClassifier.State"/> give it: IN for a hole in space, OUT for a finite solid.
-    /// </summary>
-    /// <remarks>
-    /// Kerf: for a shape's orientation, where a classifier is made, asked this once and dropped. That question reads only
-    /// the faces' intersectors, so the edges' and vertices' tree isn't built (performance.md, "The perf search").
-    /// </remarks>
-    internal static Containment InfinitePointState(in Shape s, double tol)
-    {
-        var classifier = new SolidClassifier(new SolidExplorer(s, fillTree: false));
-        classifier.PerformInfinitePoint(tol);
-        return classifier.State();
-    }
-
     /// <summary>Classifies the point <paramref name="p"/> with the tolerance <paramref name="tol"/> in the shape <paramref name="s"/>.</summary>
     public SolidClassifier(in Shape s, in Point3D p, double tol)
     {
