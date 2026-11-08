@@ -8,6 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Evaluation;
 using Kerf.Engine.Geometry.Objects;
+using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine;
 using static Kerf.Engine.Geometry.BSplKnotDistribution;
 using static Kerf.Geometry.Continuity;
@@ -46,6 +47,55 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     private Continuity _smooth = C0;
     private double _maxDerivInv = 0.0;
     private bool _maxDerivInvOk = false;
+    private ArcBox? _arcBoxes;
+
+    /// <summary>
+    /// The box of the poles of this curve segmented to [First, Last], before it is enlarged, and the boxes kept before
+    /// it.
+    /// </summary>
+    internal sealed record ArcBox(double First, double Last, Box2d Box, ArcBox? Older, int Count);
+
+    /// <summary>The most arcs whose boxes a frozen curve keeps (<see cref="KeepArcBox"/>).</summary>
+    private const int MaxArcBoxes = 64;
+
+    /// <summary>
+    /// The box kept for the arc [<paramref name="first"/>, <paramref name="last"/>] of this frozen curve, or null.
+    /// </summary>
+    /// <remarks>
+    /// Kerf: bounding an arc of a B-spline segments a copy of it (<c>BSplineCurve2dBounds.Box</c>), and a Boolean of
+    /// many faces bounds the same pcurve's arc again and again: 72,314 segmentations of 6,864 arcs in bug25232_9. A
+    /// frozen curve can't change, so the poles a segmentation gives, and their box, are always the same: the box is
+    /// kept with the curve. The kept boxes are a list whose nodes never change, so a thread reading it sees whole ones;
+    /// two threads keeping a box at once may lose one, which is only a box made again.
+    /// </remarks>
+    internal Box2d? KeptArcBox(double first, double last)
+    {
+        for (ArcBox? a = Volatile.Read(ref _arcBoxes); a is not null; a = a.Older)
+        {
+            // the very bits, so that -0.0 isn't taken for 0.0
+            if (BitConverter.DoubleToInt64Bits(a.First) == BitConverter.DoubleToInt64Bits(first)
+                && BitConverter.DoubleToInt64Bits(a.Last) == BitConverter.DoubleToInt64Bits(last))
+            {
+                return a.Box;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Keeps the box of an arc of this frozen curve, up to <see cref="MaxArcBoxes"/> of them.</summary>
+    internal void KeepArcBox(double first, double last, in Box2d box)
+    {
+        if (!IsFrozen)
+        {
+            return;
+        }
+        ArcBox? kept = Volatile.Read(ref _arcBoxes);
+        int count = kept is null ? 0 : kept.Count;
+        if (count < MaxArcBoxes)
+        {
+            Volatile.Write(ref _arcBoxes, new ArcBox(first, last, box, kept, count + 1));
+        }
+    }
 
     /// <summary>True if an evaluation representation is attached.</summary>
     internal bool HasEvalRepresentation => _evalRep is not null;
