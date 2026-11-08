@@ -174,7 +174,7 @@ internal static class Failures
             return Expected(code, message, kernel.Diagnostics);
         var diagnostics = kernel.Diagnostics;
         var error = diagnostics.First(d => d.IsError);
-        return Failed(diagnostics.Replace(error, error with { Message = $"{error.Message} {message}" })).Carrying(kernel);
+        return Failed(message.Length == 0 ? diagnostics : diagnostics.Replace(error, error with { Message = $"{error.Message} {message}" })).Carrying(kernel);
     }
 
     /// <summary>

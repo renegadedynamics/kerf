@@ -239,6 +239,32 @@ public static class FilletOperations
             return FilletLimits.LargestRadius(solid, own);
         }
 
+        /// <summary>
+        /// The most that one length on both faces of these edges can be, from their geometry, without trying: the tightest convex
+        /// circle or ellipse of an edge in a plane beside them, on the chain of tangent edges they're chamfered round, which
+        /// <c>Chamfer</c> refuses past at once (decision 1985), and the width of a face beside straight edges and rims, as for
+        /// <c>FilletLimit</c>, past which the chamfer fails. Other things can stop a chamfer sooner, and at it the chamfer may
+        /// not be built. Null if the edges say nothing.
+        /// </summary>
+        public double? ChamferLimit(IEnumerable<Edge> edges)
+        {
+            ArgumentNullException.ThrowIfNull(edges);
+            Shape solid = shape.AsShape();
+            Edge[] own = [.. edges];
+            Owned(solid, own);
+            ChamferSpec[] specs = [.. own.Select(static e => new ChamferSpec(e, 1))];
+            var chamfer = new MakeChamfer(solid);
+            foreach (Edge edge in own)
+            {
+                chamfer.Add(1, edge);
+            }
+            Face[] faces = [.. own.Select(e => FirstFaceOf(solid, e))];
+            IReadOnlyList<FilletLimits.Bend> bends = FilletLimits.Bends(solid, chamfer, specs, faces, ChamferOptions.Default);
+            double? bend = bends.Count > 0 ? Math.Round(bends.Min(static b => b.Radius), 9) : null;
+            double? width = FilletLimits.LargestChamfer(solid, own);
+            return bend is { } b && width is { } w ? Math.Min(b, w) : bend ?? width;
+        }
+
         /// <summary>The shape with <paramref name="edges"/> chamfered by <paramref name="distance"/> on both faces.</summary>
         public Result<Built<Shape>> Chamfer(IEnumerable<Edge> edges, double distance, ChamferOptions? options = null,
                                             IProgress<double>? progress = null, CancellationToken cancellationToken = default)
@@ -281,7 +307,7 @@ public static class FilletOperations
                 _ => throw new ArgumentOutOfRangeException(nameof(options), options.Mode, "An unknown chamfer mode."),
             };
             ChamferSpec[] specs = given;
-            return EngineOperation.Run<Shape>(range =>
+            Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
             {
                 // Past a tight corner, where asked: collapsed, beside ChFi3d, which isn't asked (decision 23901)
                 if (FilletLimits.CollapseTightCorners(solid, specs, faces, options) is { } collapsed)
@@ -307,12 +333,28 @@ public static class FilletOperations
                         chamfer.Add(spec.Distance, spec.Edge);
                     }
                 }
+                // Where the contour bends in a plane beside it, past its tightest radius nothing valid can be built (decision 1985):
+                // refused before ChFi3d, which otherwise made something broken, or wrong. The contours are found by now, without building
+                IReadOnlyList<FilletLimits.Bend> bends = FilletLimits.Bends(solid, chamfer, specs, faces, options);
+                if (options.CheckResult && FilletLimits.TooTight(bends, specs) is { } refused)
+                {
+                    return new EngineOutcome(false, static () => default, Failure: refused, MoreFailures: [refused]);
+                }
                 EngineOutcome outcome = MakerOutcome.Of(chamfer, range, [solid],
                                                         () => (FilletLimits.Judge(solid, specs, options) is { } fit ? FilletLimits.TooLarge(fit, specs) : FilletLimits.TooLarge(solid, specs, faces, options))
+                                                              ?? FilletLimits.AtBend(bends, specs)
                                                               ?? ChamferFailure(chamfer, specs));
                 return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
                made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result"));
+
+            // What ChFi3d made is broken: say it's the chamfer at this length that couldn't be built, not only what's wrong with it
+            if (done.TryGetInvalid(out Built<Shape>? invalid) && done.Error is { } error)
+            {
+                ImmutableArray<Diagnostic> all = done.Diagnostics;
+                return Result<Built<Shape>>.Invalid(invalid, all.Replace(error, error with { Message = $"{error.Message} {CouldNotBuild(specs)}" }));
+            }
+            return done;
         }
     }
 
@@ -437,6 +479,16 @@ public static class FilletOperations
     // faulty contour with its own status and edges
     // A tolerance a fillet or chamfer's result could need: its largest size, or what its input already had
     private static double ToleranceLimit(Shape solid, double size) => Math.Max(size, Validity.LargestTolerance(solid));
+
+    // What a broken chamfer's result means for the caller: it couldn't be built at its length, so a smaller one may do
+    private static string CouldNotBuild(ChamferSpec[] specs)
+    {
+        double longest = specs.Max(static s => Math.Max(s.Distance, s.Distance2 ?? 0.0));
+        string length = specs.All(s => s.Distance == specs[0].Distance && s.Angle is null && (s.Distance2 ?? s.Distance) == s.Distance)
+            ? $"a length of {specs[0].Distance.ToString("G6", System.Globalization.CultureInfo.CurrentCulture)}"
+            : $"these lengths, the longest {longest.ToString("G6", System.Globalization.CultureInfo.CurrentCulture)}";
+        return $"The chamfer couldn't be built at {length}: try a smaller one.";
+    }
 
     // Which edges a chamfer failed on, as a fillet says, and why, where it knows (#1632); otherwise all it was given
     private static Diagnostic ChamferFailure(MakeChamfer chamfer, ChamferSpec[] specs)

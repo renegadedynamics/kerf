@@ -122,7 +122,13 @@ Result<Part> cup = Offset(box, -1.5, new OffsetOptions { Openings = [top] });   
 ```
 
 Pass the part as the first argument (`Fillet(box, edges, r)`): the edges alone don't know which solid they came
-from. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
+from. **A chamfer can't be longer than the tightest convex arc in a face beside its edges:** on that face
+its edge is the outline stepped in by the length, and past the arc's radius that closes up and crosses itself. So
+`Chamfer` refuses such a length at once, saying what fits (`modeling.chamfer-failed`: "… the most that fits is 1.7,
+the radius of the tightest convex arc in a face beside them …"), as `Fillet` does for a radius wider than a face.
+With two lengths, or a length and an angle, it's the length on that face that counts. A chain of tangent edges is
+chamfered all round, so one straight edge of a rounded outline is held to the arcs too. `MaxChamfer(edges)`, as
+`MaxFillet`, finds the largest single length that builds. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
 too, with `Kind` (`Arc`, `Intersection`) and `Side` in `OffsetOptions`.
 
 **Chamfers past tight corners** (a Kerf addition: build123d and OCCT have nothing like it). A chamfer longer than the
@@ -140,7 +146,9 @@ Result<Part> refused = Chamfer(body, end, 3);                        // longer t
 Result<Part> past = Chamfer(body, end, 3, options: new ChamferOptions { TightCorners = TightCorners.Collapse });   // 35336.538
 ```
 
-Below every corner's radius the option changes nothing.
+Below every corner's radius the option changes nothing. `MaxChamfer` and the kernel's `ChamferLimit` take no options
+and give the default's limit, the arcs' radius; with `Collapse` the arcs set no limit, and what fits is set by the
+face's width, which they don't work out.
 
 ## 6. Results, failures and warnings
 
@@ -236,6 +244,24 @@ string front = Svg.WriteToString(part.Shape.ProjectLines(Camera.Front).Value,
 - `DrawingOptions` chooses the method (exact, or the faster polygonal one) and whether hidden lines are computed at all.
 - `DrawingOperations.ProjectLines(shapes, camera)` draws several shapes together, each hiding the others' lines.
 - DXF export isn't available.
+
+### Pictures: shaded PNG
+
+```csharp
+using Kerf.Drawing;
+using Kerf.Meshing;
+
+var mesh = part.Shape.Mesh(Renderer.DefaultMeshOptions(part.Shape)).Value;
+var scene = new Scene(new SceneItem(mesh), new SceneItem(pinMesh, new Color(0.2, 0.4, 0.8)));
+Result<RgbaImage> image = Renderer.Render(scene, Camera.Isometric, new RenderOptions { Width = 640, Height = 480 });
+using (var file = File.Create("part.png"))
+    Console.WriteLine(Png.Write(image.Value, file));
+```
+
+- A `SceneItem` has a colour, colours for single faces (`WithFaceColor`) and a `Transform`.
+- `RenderOptions` sets the size, the background (an opacity of 0 makes it transparent), flat or smooth shading, the
+  lights and which edges are drawn over the faces.
+- Faces are opaque: there's no transparency yet.
 
 ## 9. Common mistakes
 

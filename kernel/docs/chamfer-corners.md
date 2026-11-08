@@ -131,7 +131,13 @@ isn't, it refuses, saying which part isn't built yet. Where no corner is tight i
 convex arc of the loop whose radius is no more than the distance on its face plus the shape's tolerance there, so a length
 within tolerance of the radius is built here too, exactly, as the right cone it is.
 
-`Refuse` is everything as it was: ChFi3d, and unit 12V's refusal.
+`Refuse` is everything as it was: ChFi3d, and unit 12V's refusal (decision 1985). With `Collapse`, the collapse is asked
+first, inside the same operation, so 12V's refusal is reached only where no corner is tight or the option is off.
+
+**`MaxChamfer` and `ChamferLimit`** (unit 12V, decision 1987) take no options and give the default's limit: the tightest
+convex arc's radius, or a face's width. With `Collapse` a tight arc sets no limit; the most that fits is then where a
+straight edge's inset is used up or the face is too narrow, which they don't compute. They're left as they are
+(decision 23905).
 
 ## 4. The check
 

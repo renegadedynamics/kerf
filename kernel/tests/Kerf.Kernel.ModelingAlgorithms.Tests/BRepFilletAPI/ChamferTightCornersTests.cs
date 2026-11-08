@@ -101,7 +101,16 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
     public void Without_the_option_past_the_corners_radius_nothing_is_built()
     {
         Shape prism = Prism(40, 30, 30, 1.7);
-        Assert.False(prism.Chamfer([.. Top(prism, 30).AllEdges()], 2).IsSuccess);
+        Result<Built<Shape>> refused = prism.Chamfer([.. Top(prism, 30).AllEdges()], 2);
+        Assert.False(refused.IsSuccess);
+
+        // Unit 12V's refusal before building, as it was; with the option, the collapse runs before it
+        Assert.Equal(FilletOperations.TooLarge, refused.Error!.Code);
+        Assert.Contains("the most that fits is 1.7", refused.Error.Message, StringComparison.Ordinal);
+        Assert.True(prism.Chamfer([.. Top(prism, 30).AllEdges()], 2, Collapse).IsSuccess);
+
+        // The limit is the default's: with the option, the arcs set none
+        Assert.Equal(1.7, prism.ChamferLimit([.. Top(prism, 30).AllEdges()])!.Value, 1e-9);
     }
 
     [Fact]
