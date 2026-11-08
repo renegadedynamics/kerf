@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`MeshTolerances.ControlAllSurfaces` has gone** (a breaking change): a mesh keeps to `Linear` on every kind of surface without it, by default, with no more triangles (kernel decision 23002). Remove it from a constructor or `with`; nothing else changes.
 - **`Solid.Extrude` along the profile's plane and `Solid.MakeLoft` of sections in one plane now fail,** where they gave a solid of no volume.
 - **A loft whose recovery runs out of memory says so,** rather than that it couldn't be recovered (kernel decision 22802).
 - **Round all of a cube's edges to half its side and get a sphere, all of a bar's for a capsule,** and likewise slanted ends, a chain round a top, and an L's top. `MaxFillet` gives the radius that just fits, where it gave a little less.

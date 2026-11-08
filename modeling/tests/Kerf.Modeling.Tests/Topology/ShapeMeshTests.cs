@@ -255,15 +255,6 @@ public class ShapeMeshTests
     }
 
     [Fact]
-    public void ControllingAllSurfacesIsOffUnlessAskedFor()
-    {
-        var box = new Box(1, 1, 1);
-        var tolerances = MeshTolerances.For(box);
-        Assert.False(tolerances.ControlAllSurfaces);
-        Assert.True(box.Triangulate(tolerances with { ControlAllSurfaces = true }).Tolerances.ControlAllSurfaces);
-    }
-
-    [Fact]
     public void APartIsALeaf()
     {
         var tree = new Box(1, 1, 1).Moved(new Location(new Point3D(1.0, 2.0, 3.0))).TriangulateTree();

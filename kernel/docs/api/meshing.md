@@ -24,7 +24,6 @@ public sealed record MeshOptions
     public double MinSize { get; init; }
     public long MaxTriangles { get; init; } = 10_000_000;     // more fails with meshing.too-large
     public bool InternalVertices { get; init; } = true;
-    public bool ControlAllSurfaces { get; init; }
 }
 
 /// <summary>A shape's mesh in flat buffers: what viewers and exporters read.</summary>
