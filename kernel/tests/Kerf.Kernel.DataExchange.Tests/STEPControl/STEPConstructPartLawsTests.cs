@@ -7,6 +7,7 @@ using Kerf.Engine.Exchange.Step;
 using Kerf.Engine.Exchange.Step.Basic;
 using Kerf.Engine.Exchange.Step.Construct;
 using Kerf.Engine.Exchange.Step.Data;
+using Kerf.Engine.Exchange.Step.Geometry;
 using Kerf.Engine.Exchange.Step.Shapes;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
@@ -211,5 +212,67 @@ public class STEPConstructPartLawsTests
         {
             Assert.Equal(Math.Pow(10, aPower), UnitContext.ConvertSiPrefix(aPrefix), Math.Pow(10, aPower) * 1e-12);
         }
+    }
+
+    [Theory]
+    [InlineData(1, "automotive_design", 1997, "committee draft", "core data for automotive mechanical design processes")]
+    [InlineData(2, "automotive_design", 1998, "draft international standard", "core data for automotive mechanical design processes")]
+    [InlineData(3, "config_control_design", 1994, "international standard", "configuration controlled 3D designs of mechanical parts and assemblies")]
+    [InlineData(4, "automotive_design", 2000, "international standard", "core data for automotive mechanical design processes")]
+    [InlineData(5, "ap242_managed_model_based_3d_engineering", 2013, "international standard", "Managed model based 3d engineering")]
+    public void Each_schema_has_its_protocol(int theSchema, string theName, int theYear, string theStatus, string theApplication)
+    {
+        var aModel = new StepModel();
+        aModel.InternalParameters.WriteSchema = (Kerf.Engine.Exchange.Step.Parameters.WriteMode_StepSchema)theSchema;
+        var aTool = new ContextTool(aModel);
+        // with none in the model, there's none until it's added, and the defaults stand
+        Assert.Null(aTool.GetAPD());
+        Assert.Equal(1998, aTool.GetACyear());
+        Assert.Equal("", aTool.GetACschemaName().ToCString());
+        Assert.Equal("", aTool.GetACname().ToCString());
+        aTool.AddAPD();
+        Assert.Equal(theName, aTool.GetACschemaName().ToCString());
+        Assert.Equal(theYear, aTool.GetACyear());
+        Assert.Equal(theStatus, aTool.GetACstatus().ToCString());
+        Assert.Equal(theApplication, aTool.GetACname().ToCString());
+        Assert.Equal(theSchema == 3, aTool.IsAP203);
+        Assert.Equal(theName == "automotive_design", aTool.IsAP214);
+        Assert.Equal(theSchema == 5, aTool.IsAP242);
+        aTool.SetACname(new TCollection_HAsciiString("Kerf"));
+        aTool.SetACstatus(new TCollection_HAsciiString("draft"));
+        aTool.SetACschemaName(new TCollection_HAsciiString("my_schema"));
+        aTool.SetACyear(2026);
+        Assert.Equal(("Kerf", "draft", "my_schema", 2026), (aTool.GetACname().ToCString(), aTool.GetACstatus().ToCString(), aTool.GetACschemaName().ToCString(), aTool.GetACyear()));
+        Assert.False(aTool.IsAP203 || aTool.IsAP214 || aTool.IsAP242);
+        // the default axis is the world's
+        StepAxis2Placement3d anAxis = aTool.GetDefaultAxis();
+        Assert.Equal(0, anAxis.Location().CoordinatesValue(1));
+        Assert.Same(anAxis, aTool.GetDefaultAxis());
+    }
+
+    [Fact]
+    public void An_assembly_position_is_a_level_and_an_index_on_it()
+    {
+        var aTool = new ContextTool(new StepModel());
+        Assert.Equal((0, 0), (aTool.Level(), aTool.Index()));
+        aTool.NextIndex();
+        Assert.Equal(0, aTool.Index());
+        aTool.NextLevel();
+        aTool.NextIndex();
+        aTool.NextIndex();
+        Assert.Equal((1, 3), (aTool.Level(), aTool.Index()));
+        aTool.NextLevel();
+        aTool.SetIndex(7);
+        aTool.PrevIndex();
+        Assert.Equal((2, 6), (aTool.Level(), aTool.Index()));
+        aTool.PrevLevel();
+        Assert.Equal((1, 3), (aTool.Level(), aTool.Index()));
+        aTool.SetLevel(4);
+        Assert.Equal((4, 1), (aTool.Level(), aTool.Index()));
+        aTool.SetLevel(1);
+        Assert.Equal((1, 3), (aTool.Level(), aTool.Index()));
+        aTool.SetLevel(0);
+        aTool.PrevLevel();
+        Assert.Equal((0, 0), (aTool.Level(), aTool.Index()));
     }
 }
