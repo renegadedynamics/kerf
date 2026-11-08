@@ -1,7 +1,8 @@
 # Kerf.Modeling
 
 A .NET 10 modelling library derived from [build123d](https://github.com/gumyr/build123d), the Python CAD library, over
-Kerf's kernel. See [docs/design.md](docs/design.md) for the design and
+Kerf's kernel. **To use it, start with [docs/guide.md](docs/guide.md)**, the user guide; coming from build123d,
+[docs/name-map.md](docs/name-map.md) lists the names that changed. See [docs/design.md](docs/design.md) for the design and
 [docs/one-set-of-shapes.md](docs/one-set-of-shapes.md) for how it sits on the kernel's shapes.
 
 ```csharp
