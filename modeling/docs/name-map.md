@@ -169,7 +169,8 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 - Text (`Compound.make_text`, fonts and the `Text` object): phase 7.
 - Builder mode (`BuildLine`, `BuildSketch`, `BuildPart` and the objects' and operations' builder behaviour): phase 5.
 - `export_obj`, `export_to_pcbway`, `Mesher` as a class (its metadata, `read`, STL through lib3mf), `import_svg` and
-  the 2D exporters (SVG, DXF); STEP's names, colours and assemblies natively (XCAF isn't bound); the glTF
+  the 2D exporters as classes (`ExportSVG`, `ExportDXF`; for SVG, the kernel's `Kerf.Drawing` projects hidden lines
+  and writes SVG, guide.md section 8); STEP's names, colours and assemblies natively (XCAF isn't bound); the glTF
   export's UVs and PBR materials.
 
 ## Deliberate differences

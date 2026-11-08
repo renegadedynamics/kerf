@@ -198,6 +198,28 @@ Every exporter and importer returns a `Result`. A missing folder or file is `Dir
 `FileNotFoundException`, as everywhere in .NET; a file past `ImportLimits` (size, nesting) is
 `InvalidDataException`.
 
+### Drawings: hidden lines and SVG
+
+build123d's `ExportSVG` class isn't ported, but the kernel's `Kerf.Drawing` does the same job: a hidden-line
+projection of any shape through a camera, written as SVG with the hidden lines in their own dashed layer.
+
+```csharp
+using Kerf.Drawing;
+
+Result<LineDrawing> drawing = part.Shape.ProjectLines(Camera.Isometric);   // or Top, Front, Right, Camera.LookAt(...)
+using (var file = File.Create("part.svg"))
+    Console.WriteLine(Svg.Write(drawing.Value, file));                       // a Result
+
+string front = Svg.WriteToString(part.Shape.ProjectLines(Camera.Front).Value,
+                                 new SvgOptions { IncludeHidden = false, Margin = 2 });
+```
+
+- The page is full size in millimetres with a 5 mm margin unless `SvgOptions` says otherwise (`PageWidth`,
+  `PageHeight`, `Scale`, `Unit`, `VisibleStyle`, `HiddenStyle`, `Background`).
+- `DrawingOptions` chooses the method (exact, or the faster polygonal one) and whether hidden lines are computed at all.
+- `DrawingOperations.ProjectLines(shapes, camera)` draws several shapes together, each hiding the others' lines.
+- DXF export isn't available.
+
 ## 9. Common mistakes
 
 - **Not checking a `Result`.** `.Value` on a failure throws; use `IsFailure` or `TryGetValue` and print `Error`.
@@ -210,7 +232,7 @@ Every exporter and importer returns a `Result`. A missing folder or file is `Dir
   part first.
 - **Angles are degrees** in objects and operations (`Rotation`, `Revolve`, `Taper`), as in build123d; mesh angular
   deflections are radians.
-- **Not ported yet:** text, builder mode, SVG and DXF export, `import_svg`. [name-map.md](name-map.md) lists the rest.
+- **Not ported yet:** text, builder mode, DXF export, `import_svg`. SVG drawings come from `Kerf.Drawing` (section 8). [name-map.md](name-map.md) lists the rest.
 
 ## 10. Coming from build123d
 
