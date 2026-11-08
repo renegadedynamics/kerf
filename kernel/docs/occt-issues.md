@@ -2281,3 +2281,9 @@ Found by unit 12J:
 | `BRepFill_OffsetWire::Perform`, `CheckBadEdges` | An edge curving tighter than the offset is replaced by a polyline of deflection `0.01 * |offset|`, whose chords lie inside the curve | An inward offset past a curve's sharpest bend up to 1% of the distance off, silently: an ellipse 10 by 5 at -3, 39.556 for 40.035 | **fixed**: the deflection is 0.001 of the offset, within 0.1% of it, OCCT's where that fails (decision 1980) |
 | `BRepFill_OffsetWire::MakeOffset` | A B-spline edge with a kink (C0) inside it goes to `Geom2d_OffsetCurve`, which refuses it | "Offset on C0 curve": 39 of the 77 offset/wire_* failures, OCCT's known ones; splitting first rescues 4 | leave (decision 1958) |
 | `BRepOffsetAPI_MakeOffset`, the tangent join | Not a 2D join OCCT documents; by reading, the code tests `== Arc` in some places and `== Intersection` in others, so the tangent join takes neither branch in some | Nothing outwards from a triangle or star; mitres' results elsewhere | **open**, for the owner (decision 1960) |
+
+## Found by unit 12X
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `BRepBuilderAPI_Sewing::SameParameterEdge` through `BRepTools_ReShape::Apply` (Kerf's `ReShape.ApplyImpl`) | The reshape recurses (the trace has `ApplyImpl` 990 frames deep, cut off there), and sewing about a thousand triangles overflowed the stack, which ends the process and cannot be caught; the cause of the depth is not yet read | 0.3.0's `ConvexPolyhedron` of 2,000 points (about 1,000 triangles sewn) | **open**, for the owner: `ConvexPolyhedron` no longer sews (decision 24003), but `Shell.Make` of many faces still can |

@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **`Shell.FromPolygons`** builds a shell of planar polygons that share their corners and edges, with nothing sewn (decision 24003).
 - **Meshing allocates 5% less over `data/occ`, and up to 11% less on shapes with tori and spheres, and its angular check estimates each node's normal once,** with the same meshes: the checks of deviation no longer grow a set of node pairs (decisions 1977, 1978).
 - **A 2D offset inwards past a curve's sharpest bend is within 0.1% of the distance,** where it was up to 1% too far in, silently, as in OCCT: the polyline that stands in for such an edge is drawn to 0.001 of the distance, with about 3 times its edges, and to OCCT's 0.01 where the finer one fails (decision 1980). Nothing else changes.
 - **Large `mkvolume`-style Booleans allocate up to a third less** (19% over the corpus's cases), with the same shapes: a frozen 2D B-spline keeps the boxes of the arcs it was bounded over (decision 1975).

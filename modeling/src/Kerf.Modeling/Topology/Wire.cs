@@ -397,8 +397,11 @@ public static partial class WireExtensions
         public static Wire MakePolygon(IEnumerable<Point3D> vertices, bool close = true)
         {
             var vectors = vertices.ToList();
-            if ((vectors[0] - vectors[^1]).Magnitude > Constants.Tolerance && close)
+            var gap = (vectors[0] - vectors[^1]).Magnitude;
+            if (gap > Constants.Tolerance && close)
                 vectors.Add(vectors[0]);
+            else if (gap > 0 && close && vectors.Count > 2)
+                vectors[^1] = vectors[0];   // ends within tolerance close at the first point, not left open (decision 24002)
             var points = vectors.Select(v => v).ToArray();
             return Failures.Get(Wire.Polygon(points), () => "polygon");
         }

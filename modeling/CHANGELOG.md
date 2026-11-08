@@ -5,6 +5,8 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`ConvexPolyhedron` gives a valid solid for any points whose hull has volume, with one face for each flat side,** where points 1e-7 to 1e-6 apart, or a side with a run of close points, threw. It's about 50 times quicker on a few hundred points, and no longer crashes on a few thousand. Points closer than 1e-6 count as one. A set with no volume throws `ArgumentException` saying why; **`Operations.MakeConvexPolyhedron`** returns the same as a `Result<Part>`, failing with `modeling.hull-failed` (kernel decisions 24001 and 24004).
+- **`Wire.MakePolygon(…, close: true)` closes a polygon whose ends are within 1e-6,** where ends 1e-7 to 1e-6 apart gave an open wire (kernel decision 24002).
 - **`Kind.Tangent` has gone** (a breaking change): an offset's kind is `Kind.Arc` or `Kind.Intersection`. In a 2D offset the tangent join gave the intersection join's result or nothing at all, and `Offset3D`, `Hollow` and a solid's `Offset` threw on it (kernel decision 1982). Use `Kind.Intersection`.
 - **An ellipse or spline offset inwards past its sharpest bend is within 0.1% of the distance,** where it was up to 1% off, silently (kernel decision 1980). **A closed curve whose offset comes out open fails** as `modeling.offset-failed`, where `Operations.Offset` threw (decision 1981).
 - **`Importers.ImportStep` past `ImportLimits.MaxBytes` or `MaxEntities` fails as `exchange.limit-exceeded`,** as documented and as BREP does, where it was `exchange.failed` (kernel decision 1965).

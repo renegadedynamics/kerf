@@ -337,6 +337,72 @@ public static class ShapeFactory
         }
     }
 
+    extension(Shell)
+    {
+        /// <summary>
+        /// The shell of planar polygons that share their corners (Kerf addition, decision 24003): one vertex for each
+        /// point used, one straight edge for each pair of corners next to each other, used by every polygon that has
+        /// it, so nothing is sewn. Each polygon lies on its plane, its corners in order anticlockwise about the plane's
+        /// normal, which is the face's (taken as given: a polygon running the wrong way isn't turned round); corners within
+        /// the edges' tolerance (1e-7) of the plane. The result is checked, so a polygon crossing itself fails.
+        /// </summary>
+        /// <param name="points">The corners, by index.</param>
+        /// <param name="polygons">Each face's plane and its corners, as indices into <paramref name="points"/>.</param>
+        /// <exception cref="ArgumentException">A polygon has fewer than three corners, or an index is out of range.</exception>
+        public static Result<Shell> FromPolygons(IReadOnlyList<Point3D> points, IEnumerable<(Plane3D Plane, int[] Corners)> polygons)
+        {
+            ArgumentNullException.ThrowIfNull(points);
+            ArgumentNullException.ThrowIfNull(polygons);
+            var list = polygons.ToList();
+            foreach (var (_, corners) in list)
+            {
+                if (corners is not { Length: >= 3 })
+                {
+                    throw new ArgumentException("A polygon needs at least three corners.", nameof(polygons));
+                }
+                if (corners.Any(i => i < 0 || i >= points.Count))
+                {
+                    throw new ArgumentException("A corner's index is out of range.", nameof(polygons));
+                }
+            }
+            return Validity.Checked(Guarded<Shell>(() =>
+            {
+                var vertices = new Dictionary<int, Vertex>();
+                Vertex VertexAt(int i) => vertices.TryGetValue(i, out Vertex v) ? v : vertices[i] = new MakeVertex(points[i]).Vertex();
+                // Each edge once, from its lower index to its higher; a polygon running the other way uses it reversed
+                var edges = new Dictionary<(int, int), Edge>();
+                var faces = new List<Shape>(list.Count);
+                foreach (var (plane, corners) in list)
+                {
+                    var wireEdges = new List<Shape>(corners.Length);
+                    for (int k = 0; k < corners.Length; k++)
+                    {
+                        int a = corners[k], b = corners[(k + 1) % corners.Length];
+                        var key = (Math.Min(a, b), Math.Max(a, b));
+                        if (!edges.TryGetValue(key, out Edge edge))
+                        {
+                            var maker = new MakeEdge(VertexAt(key.Item1), VertexAt(key.Item2));
+                            if (!maker.IsDone)
+                            {
+                                return Result<Shell>.Failure(StatusDiagnostics.ToDiagnostic(maker.Error()) ?? Failed("edge"));
+                            }
+                            edges[key] = edge = maker.Edge();
+                        }
+                        wireEdges.Add(a < b ? edge : edge.Reversed());
+                    }
+                    // The wire runs as given: OCCT's check of which side is inside can misjudge a thin polygon near its plane
+                    var face = new MakeFace(plane, Builder.MakeWire(wireEdges), inside: false);
+                    if (!face.IsDone)
+                    {
+                        return Result<Shell>.Failure(StatusDiagnostics.ToDiagnostic(face.Error()) ?? Failed("face"));
+                    }
+                    faces.Add(face.Face());
+                }
+                return Builder.MakeShell(faces);
+            }), true, "The shell");
+        }
+    }
+
     extension(Solid)
     {
         /// <summary>The solid bounded by <paramref name="shells"/> (the first the outer, the others cavities).</summary>

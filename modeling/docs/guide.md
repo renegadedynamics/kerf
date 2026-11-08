@@ -75,6 +75,10 @@ Sketch bottom = new Rectangle(20, 20);
 Sketch top = new Location(new Vector3D(0, 0, 30)) * new Circle(6);
 Result<Part> loft = Loft([bottom, top]);
 
+// The convex hull of points: one face for each flat side (points closer than 1e-6 count as one)
+Part hull = new ConvexPolyhedron(points);
+Result<Part> checkedHull = MakeConvexPolyhedron(points);   // modeling.hull-failed if the points are flat or too few
+
 // Patterns: spacing first, then counts
 Part plate = new Box(100, 60, 5) - new GridLocations(40, 40, 3, 2) * new Cylinder(3, 5);   // six holes
 ```

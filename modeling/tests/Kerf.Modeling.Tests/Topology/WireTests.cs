@@ -84,6 +84,23 @@ public class WireTests
         Check.AlmostEqual(319.9612, Face.Make(hullWire).Area, 4);
     }
 
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(1e-8)]
+    [InlineData(1e-7)]
+    [InlineData(5e-7)]
+    [InlineData(1e-6)]
+    public void MakePolygon_EndsWithinToleranceClose(double gap)
+    {
+        // Decision 24002: ends 1e-7 to 1e-6 apart were taken as closed but not closed, so the wire was open
+        var wire = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(0, 1, 0), new Point3D(gap, 0, 0)]);
+        Assert.True(wire.IsClosed);
+        Assert.Equal(3, wire.Edges().Count);
+        Assert.Equal(0.5, Face.Make(wire).Area, 12);
+        // Not closed when asked not to be
+        Assert.False(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(0, 1, 0), new Point3D(0.5, 0.5, 0)], close: false).IsClosed);
+    }
+
     [Fact]
     public void FixDegenerateEdges() =>
         Assert.Throws<InvalidOperationException>(() => default(Wire).FixDegenerateEdges(0.1));
