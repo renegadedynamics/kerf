@@ -5,6 +5,10 @@ version may break the API.
 
 ## Unreleased
 
+- **A mesh of a damaged face fails, carrying the rest, instead of taking all the memory:** `meshing.faces-refused`, with the other faces' mesh from `TryGetInvalid`; glTF, 3MF and OBJ writes fail with `exchange.write-failed`. Six damaged files that ran out of 1.5 GB now fail in under a second, and a loft whose mesh couldn't be cancelled for hours can be (decisions 22801 and 22803). OBJ no longer lets a mesh past `MaxTriangles` out as an internal exception.
+- **Running out of memory, or a cancel, is no longer turned into an ordinary failure** in a mesh, a loft's recovery or a fillet's message (decision 22802).
+- **More loops a damaged parameter could keep going for ever now fail** (decision 22804).
+
 - **An offset that comes out nonsense now fails, holding the shape:** a cone with its apex offset inwards reported success with a volume of 3.7e101 (decision 1918). With `Join = JoinKind.Intersection` an upright cone gives the right answer.
 - **`Face.FromSurface` with bounds off the surface fails,** where it reported success (decision 1919).
 - **STEP names that aren't ASCII are written as the format's directives,** not raw UTF-8, and read back the same (OCCT #1686, decision 1920).
