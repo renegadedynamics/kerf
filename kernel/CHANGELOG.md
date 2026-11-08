@@ -5,10 +5,10 @@ version may break the API.
 
 ## Unreleased
 
-- **A STEP file past the reader's limits fails as `exchange.limit-exceeded`,** as documented, where it was `exchange.failed` (decision 23105).
-- **A STEP solid written as a faceted B-rep with voids is read with its voids,** from any file; they were lost (decision 23103).
-- **The box of a half-infinite parabola or hyperbola, or of a ray not along an axis, holds it:** it was open on the wrong sides (decision 23104).
-- **A STEP spline with fewer poles than its degree needs, or a surface of a degree out of range, is an entity not translated,** where reading it threw (decision 23106).
+- **A STEP file past the reader's limits fails as `exchange.limit-exceeded`,** as documented, where it was `exchange.failed` (decision 1965).
+- **A STEP solid written as a faceted B-rep with voids is read with its voids,** from any file; they were lost (decision 1963).
+- **The box of a half-infinite parabola or hyperbola, or of a ray not along an axis, holds it:** it was open on the wrong sides (decision 1964).
+- **A STEP spline with fewer poles than its degree needs, or a surface of a degree out of range, is an entity not translated,** where reading it threw (decision 1966).
 - **A Boolean's check that searches on B-spline edges is about a third cheaper** (decision 1950): a curve keeps its values at the ends of its range, the same values as before.
 - **`ThickSolid` is checked and retried as `Offset` and `Hollow` are:** a cone with its apex, inwards with round joins, is made with mitres and says so, and an offset that comes out nonsense fails, holding the shape (decision 1947). `OffsetVolumes.Check` is public, as `BooleanVolumes.Check` is. **A hollow solid made outwards that fills the solid it was made around fails** (decision 1948).
 - **Meshing allocates less on large faces:** 28% less over `data/occ`, 36% on `terrain.brep` and three quarters on a fine sphere, with the same meshes (decision 1955).
