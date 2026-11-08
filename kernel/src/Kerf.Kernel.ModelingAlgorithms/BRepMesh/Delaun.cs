@@ -140,7 +140,6 @@ internal sealed class Delaun
     /// <summary>Sets up the circles' cells from the structure's nodes and fills them with its triangles.</summary>
     public void InitCirclesTool(int cellsCountU, int cellsCountV)
     {
-        _circles.SetMaxEntries(_meshData!.MaxCircleEntries);
         Box2d box = new();
         for (int nodeIt = 1; nodeIt <= _meshData!.NodeCount; ++nodeIt)
         {
@@ -491,6 +490,10 @@ internal sealed class Delaun
             scaler = 7;
         }
 
+        // Kerf: the limits on the circles in cells, here so that every path that sets the cells up has them (decisions 1856
+        // and 22801: Perform's didn't, and it's the one a face's mesh takes)
+        _circles.SetMaxEntries(_meshData.MaxCircleEntries);
+        _circles.LimitToProportion(_meshData.InProportion);
         _circles.SetMinMaxSize(new Xy(minX, minY), new Xy(maxX, maxY));
         _circles.SetCellSize(deltaX / Math.Max(cellsCountU, scaler),
                               deltaY / Math.Max(cellsCountV, scaler));
@@ -1219,6 +1222,17 @@ internal sealed class Delaun
         }
     }
 
+    /// <summary>
+    /// Kerf: how much a face's frontier walks may do, counted as the polygon's length at each step (each step checks the
+    /// next link against the whole polygon), whatever the face, and how much more for each link (decision 1944). A loft
+    /// damaged to 1e300 had 45,064 frontier links, each walked against polygons of up to 25,000, for hours. Over the
+    /// corpus's meshes the most was 131,144 for 487 links, and damaged files that finished took up to 56 million.
+    /// </summary>
+    internal const long PolygonWorkFloor = 1L << 33, PolygonWorkPerLink = 1 << 16;
+
+    private long _polygonWork;
+    private int _polygonSteps;
+
     private bool MeshLeftPolygonOf(int startEdgeId, bool isForward, NCollection_PackedMapOfInteger? skipped = null)
     {
         if (skipped is not null && skipped.Contains(startEdgeId))
@@ -1270,6 +1284,18 @@ internal sealed class Delaun
         int firstNode = startNode;
         while (pivotNode != firstNode)
         {
+            // Kerf: each walk ends, but a face of tens of thousands of links could walk for hours (decision 1944)
+            _polygonWork += polygon.Length();
+            if ((++_polygonSteps & 63) == 0)
+            {
+                Cancellation.ThrowIfRequested();
+                if (_meshData!.InProportion && _polygonWork > PolygonWorkFloor + PolygonWorkPerLink * _meshData.LinkCount)
+                {
+                    throw new Tools.MeshFaceRefusedException(
+                        $"The frontier's walks took {_polygonWork} steps for {_meshData.LinkCount} links: the face's surface or range is out of proportion to its mesh");
+                }
+            }
+
             B2d nextLinkBndBox = new();
             Vector2D nextLinkDir = new();
             int nextPivotNode = 0;

@@ -956,6 +956,8 @@ internal partial class FaceFace
 
         while (Math.Abs(x1 - x2) > eps)
         {
+            // Kerf: the section stops moving once the spacing of doubles is wider than eps (decision 1945)
+            double aWas = a, bWas = b;
             if (f1 > f2)
             {
                 b = x2;
@@ -971,6 +973,10 @@ internal partial class FaceFace
                 f1 = f2;
                 x2 = a + cf * (b - a);
                 f2 = MaxDistance(c, x2, projPS);
+            }
+            if (a == aWas && b == bWas)
+            {
+                break;
             }
         }
         //

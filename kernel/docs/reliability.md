@@ -238,13 +238,55 @@ Measured through `Kerf.Modeling`, on a loaded machine: 18 radii from 0.01 to 10,
 
 **The check by points** (decision 1924) fired once in the sweep, rightly, and found no false failure there or in the corpus. It was reverted, not merged, for its cost.
 
+## 4d. Section 2's loose ends (12H2, decisions 1942 to 1946)
+
+**Meshes that ran out of memory.** Of decision 1917's sweep, 6 BREP files. What grew, measured: a cone's seam split one point at a time over a range damaged to 1e17 or 2^31 (2 files), and faces whose cells were so small beside their triangles' circles that 209 triangles held 54 million circles in cells (4 files). A face may now hold 16,777,216 circles in cells and 1,024 more for each triangle, and a seam no more points than the mesh may have; past that the face is refused and the mesh fails with `meshing.faces-refused`, carrying the other faces. Decision 1856's cap on the circles had never applied to a face's own triangulation, and now does.
+
+| | Before | Now |
+|---|---|---|
+| The 6 files | Out of a 1.5 GB heap | Refused in 0.1 to 0.3 s, peak 40 MB (seams) to 470 MB (circles) |
+| The corpus's meshes (1,087 cases) | | No status changed; the most was 33 million circles in cells, 117 a triangle |
+
+**A hang the sweep found.** A loft damaged to 1e300 meshed for over 5 minutes through a cancel at 10 s, in the frontier's polygon walks: 45,064 links, each walk checked against a polygon of up to 25,000. Each walk ends, so it's hours, not for ever. The walks now see a cancel, and a face is refused past about 8.6 billion steps and 65,536 for each link (a bound 500 times lower refused 5 damaged files that main meshed in 1 to 10 s): 37 s for that file, on a loaded machine with a 6 GB heap. With a 1.5 GB heap it still runs out of memory first, as an exception, and so does one more like it: the circles of deleted triangles stay in their cells until a search meets them. **Left:** purging them as the cells grow.
+
+**A cancel that took two minutes.** A torus whose range was damaged to 1e300 or 1e9 added the box of four billion eighths of a turn before the mesh could see a cancel: 137 s and 85 s on main. A turn is now enough, as the eighths repeat: 15 ms and 0.6 s, the same box.
+
+**Catches of running out of memory:** 3 let it through and now don't (decision 1943).
+
+**The loops** (decision 1945): 1,332 `while` and `do` loops outside Draw-lite, sorted by a script.
+
+| Kind | Loops | Read |
+|---|---:|---|
+| Over an iterator | 274 | Bounded by the collection |
+| Emptying a collection | 55 | Bounded by the collection, by the script's sort; not each read |
+| Counting to a bound | 386 | Bounded by the count |
+| Down a linked list | 28 | Bounded by the list |
+| The rest | 589 | About 110 read, first where a user's input reaches: the readers, meshing, curves and surfaces, Booleans' intersections, healing, Kerf.Modeling |
+
+Of those read, 13 could spin or ran for minutes, and are bounded: the walk and the torus above (measured), and by reading three loops that step a parameter a period at a time and that 12H's search missed, four bisections that stop moving once a parameter's spacing is wider than their tolerance (a parameter past about 1e16), and a step correction that a point that isn't a number shrinks for ever. The readers' loops were already guarded. **Left: about 480,** most in the intersection walkers (120 in IntPatch, IntWalk and BRepBlend, behind decision 1884's count and cancellation) and HLR, and ChFi3d's spine walk, which a chain of tangent edges looping back short of its start could keep growing (by reading, not built).
+
+**The damaged-file sweep again,** BREP only, the first 3,000 cases' seeds, a 1.5 GB heap and a cancel at 10 s, on a loaded machine: 
+
+| Outcome | Now | On main, the same files |
+|---|---:|---|
+| Meshed | 714 | 715: those, and 1438 (below) |
+| Refused, carrying the rest (`meshing.faces-refused`) | 7 | 6 out of memory, as an exception, in 0.4 to 2 s; 1438 meshed |
+| An engine failure | 19 | the same |
+| Cancelled at 10 s | 10, each stopped within 0.7 s of the cancel | 9 cancelled, 2 of them taking 20 s and 77 s; 1 not stopped (78) |
+| Out of memory, as an exception | 2 (846 and 1822, lofts damaged to 1e300) | not stopped within 150 s |
+| Not stopped within 150 s | 0 | 3 (78, 846, 1822) |
+
+**The false failure:** case 1438, a loft with a pole moved to 1e9, which main meshed in 4.8 s and is now refused.
+
+**The edge-order cases** (decision 1946): as decision 1738 left them.
+
 ## 5. What's left
 
 - **For unit 11Q:** writing a large solid to STEP spends about 85% of its time in shape processing, nearly all of it `SplitCommonVertexFixer` and the check. That fixer goes over all pairs of a face's wires and makes an `ExtendWireData` for each pair, so a face of 3,600 holes costs seconds, to find vertices shared between wires, which it could do with one map. From one trace of `write-plate 60`, 6.3 s.
 - **Bento's line** in `ModelFunctions.Run`. Nothing above about cells helps until then.
 - **Island 1:** radius 500 is better and not done, and radii of 0.05 and under are up to 0.79% out near a tolerance's offset (section 4c).
 - **Fillets that fail slowly,** if anyone wants them to fail quickly. A question below.
-- **`while` and `do` loops other than those stepping a parameter** still weren't read; the sweep of section 4b is what stands in for that. **A mesh can still run out of memory** on a damaged file, as an exception (3 in 1,000).
+- **About 480 `while` and `do` loops not read** (section 4d), most in the intersection walkers and HLR. **A mesh of a face of tens of thousands of nodes damaged to 1e300** still reaches 3.7 GB before it's refused, as the circles of deleted triangles stay in their cells until a search meets them (section 4d); it can be cancelled.
 - **An unknown stack overflow** in code not walked here can still end the process. The tests cover what could be found by building deep input, not every recursion.
 
 **Tested on:** Reliability 35, Foundation 2,533, ModelingData 3,338, PublicApi 400, DataExchange 348, ModelingAlgorithms 5,712 (9 skipped), DrawLite 737, Kerf.Modeling 2,097, all passing; `KERF_CORPUS_FULL=1` on the fillet, Boolean, STEP, STEP-CAF, offset and hidden-line corpus classes, 23 tests passing in 18 minutes. The full corpus wasn't run.

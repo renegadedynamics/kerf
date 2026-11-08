@@ -678,7 +678,8 @@ internal class EdgeEdge
                             dt = Resolution(curve, curveType, resCoeff, dist);
                         }
                     }
-                    tb += c * dt;
+                    // Kerf: a step too small to move a large parameter (decision 1945)
+                    tb = global::Kerf.Engine.Foundation.StepLimit.Moved(tb, tb + c * dt);
                 }
                 else
                 {
@@ -712,7 +713,13 @@ internal class EdgeEdge
                 diff = tIn - tOut;
                 while (Math.Abs(diff) > pTol)
                 {
+                    // Kerf: the bisection stops moving once the parameters' spacing is wider than the tolerance (decision 1945)
                     tb = tOut + diff * cf;
+                    if (tb == tOut || tb == tIn)
+                    {
+                        break;
+                    }
+
                     bac.D0(tb, out p);
                     if (cBx.IsOut(p))
                     {

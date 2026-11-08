@@ -331,7 +331,7 @@ internal class ExternRefs : ConstructTool
             }
             return Path.GetFullPath(relFilePath, Path.GetFullPath(dirPath));
         }
-        catch (Exception)
+        catch (Exception e) when (e is not OutOfMemoryException) // Kerf: decision 1943
         {
             return "";
         }
@@ -343,7 +343,7 @@ internal class ExternRefs : ConstructTool
         {
             return File.Exists(path);
         }
-        catch (Exception)
+        catch (Exception e) when (e is not OutOfMemoryException) // Kerf: decision 1943
         {
             return false;
         }

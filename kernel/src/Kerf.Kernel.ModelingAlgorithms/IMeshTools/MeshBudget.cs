@@ -11,6 +11,7 @@ namespace Kerf.Engine.Meshing.Tools;
 internal sealed class MeshBudget(long maxTriangles)
 {
     private long _committed;
+    private int _refusedFaces;
 
     /// <summary>Stops if a face of this many nodes, about two triangles each, can't fit in what's left.</summary>
     /// <exception cref="MeshTooLargeException">It can't.</exception>
@@ -35,7 +36,23 @@ internal sealed class MeshBudget(long maxTriangles)
 
     /// <summary>A face's mesh is finished, with this many triangles.</summary>
     public void Commit(int triangles) => Interlocked.Add(ref _committed, triangles);
+
+    /// <summary>Whether a face of this many nodes, about two triangles each, fits in what's left; false for NaN.</summary>
+    public bool Fits(double nodes) => Volatile.Read(ref _committed) + 2 * nodes <= maxTriangles;
+
+    /// <summary>A face was refused and left without triangles (decision 1942); the rest of the mesh carries on.</summary>
+    public void RefuseFace() => Interlocked.Increment(ref _refusedFaces);
+
+    /// <summary>How many faces were refused.</summary>
+    public int RefusedFaces => Volatile.Read(ref _refusedFaces);
 }
+
+/// <summary>
+/// A face's mesh would take far more memory than its triangles justify, from a surface or range out of proportion to
+/// the face, as a damaged number in a file makes (decision 1942). Not a failure of the engine's kind, so no catch of
+/// those turns it into a face that fails without saying so: <see cref="BaseMeshAlgo"/> fails the face and counts it.
+/// </summary>
+internal sealed class MeshFaceRefusedException(string message) : Exception(message);
 
 /// <summary>
 /// A mesh would pass <see cref="Kerf.Meshing.MeshOptions.MaxTriangles"/>. Not a failure of the engine's kind: a face's

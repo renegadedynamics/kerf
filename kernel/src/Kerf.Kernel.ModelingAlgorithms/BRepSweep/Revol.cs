@@ -75,7 +75,8 @@ internal sealed class Revol
     private static double Angle(double D)
     {
         double d = Math.Abs(D);
-        while (d > (2 * Math.PI + global::Kerf.Engine.Foundation.Precision.Angular()))
+        // Kerf: a turn at a time, so an angle of 1e17 never got there (decision 1945)
+        for (int aStep = 0; d > (2 * Math.PI + global::Kerf.Engine.Foundation.Precision.Angular()); global::Kerf.Engine.Foundation.StepLimit.Next(ref aStep))
         {
             d = d - 2 * Math.PI;
         }
