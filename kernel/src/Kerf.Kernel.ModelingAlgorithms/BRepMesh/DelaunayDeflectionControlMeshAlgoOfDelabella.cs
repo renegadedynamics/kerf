@@ -23,7 +23,10 @@ internal class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Del
     private double _maxSqDeflection;
     private double _sqMinSize;
     private bool _isAllDegenerated;
+    // OCCT's map of the node pairs already checked, which it keeps from one pass to the next: here, a pass's own are marked
+    // by their links' indices, and the map holds those of the passes before, made only when a pass inserts nodes (decision 23701)
     private HashSet<OrientedEdge>? _couplesMap;
+    private LinkMarks? _passLinks;
     private NCollection_List<Point2D>? _controlNodes;
     private CircleTool? _circles;
 
@@ -62,7 +65,8 @@ internal class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Del
     protected virtual void OptimizeMesh(Delaun mesher, ProgressRange range)
     {
         _sqMinSize = GetParameters().MinSize * GetParameters().MinSize;
-        _couplesMap = new HashSet<OrientedEdge>(); // OCCT preallocates 3 * ElementsOfDomain().Extent() buckets
+        _couplesMap = null;
+        _passLinks = new LinkMarks();
         _controlNodes = new NCollection_List<Point2D>();
         _circles = mesher.Circles();
 
@@ -85,6 +89,7 @@ internal class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Del
                 break;
             }
             // Iterate on current triangles
+            _passLinks.Reset(GetStructure().LinkCount);
             NCollection_PackedMapOfInteger.Iterator triangleIt = new(GetStructure().ElementsOfDomain());
             for (; triangleIt.More(); triangleIt.Next())
             {
@@ -92,15 +97,38 @@ internal class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Del
                 SplitTriangleGeometry(triangle);
             }
 
+            if (!_controlNodes.IsEmpty())
+            {
+                KeepPassLinks();
+            }
+
             isInserted = InsertNodes(_controlNodes, mesher, ps.Next());
         }
 
         _couplesMap = null;
+        _passLinks = null;
         _controlNodes = null;
 
         if (!(_maxSqDeflection < 0.0))
         {
             GetDFace().SetDeflection(Math.Sqrt(_maxSqDeflection));
+        }
+    }
+
+    // Adds the node pairs of the links this pass marked to those of the passes before, before the structure changes
+    private void KeepPassLinks()
+    {
+        DataStructureOfDelaun structure = GetStructure();
+        int linkCount = structure.LinkCount;
+        _couplesMap ??= new HashSet<OrientedEdge>(linkCount);
+        for (int index = 1; index <= linkCount; index++)
+        {
+            if (_passLinks!.IsMarked(index))
+            {
+                MeshEdge link = structure.GetLink(index);
+                int first = link.FirstNode(), last = link.LastNode();
+                _couplesMap.Add(first < last ? new OrientedEdge(first, last) : new OrientedEdge(last, first));
+            }
         }
     }
 
@@ -180,7 +208,7 @@ internal class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Del
                     (nodesInfo[0].Point2d + nodesInfo[1].Point2d + nodesInfo[2].Point2d) / 3.0;
 
                 UsePoint(center2d, new NormalDeviation(new Point3D(nodesInfo[0].Point), normal));
-                SplitLinks(nodesInfo, nodexIndices);
+                SplitLinks(nodesInfo, nodexIndices, triangle._edges);
             }
         }
     }
@@ -245,7 +273,7 @@ internal class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Del
     }
 
     // Computes deflection of midpoints of triangles links.
-    private void SplitLinks(ReadOnlySpan<TriangleNodeInfo> nodesInfo, ReadOnlySpan<int> nodesIndices)
+    private void SplitLinks(ReadOnlySpan<TriangleNodeInfo> nodesInfo, ReadOnlySpan<int> nodesIndices, Triangle.Int3 triangleEdges)
     {
         // Check deflection at triangle links
         for (int i = 0; i < 3; ++i)
@@ -269,7 +297,8 @@ internal class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Del
                 lastVertex = nodesIndices[i];
             }
 
-            if (_couplesMap!.Add(new OrientedEdge(firstVertex, lastVertex)))
+            if (_passLinks!.Add(Math.Abs(triangleEdges[i]))
+                && (_couplesMap is null || !_couplesMap.Contains(new OrientedEdge(firstVertex, lastVertex))))
             {
                 Xy midPnt2d = (nodesInfo[i].Point2d + nodesInfo[j].Point2d) / 2.0;
 
