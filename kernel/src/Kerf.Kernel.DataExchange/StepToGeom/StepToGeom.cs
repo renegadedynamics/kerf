@@ -182,6 +182,12 @@ internal static class StepToGeom
     /// <summary>Converts a bounded_curve (B-splines, Bezier, uniform and quasi-uniform curves, trimmed curves, polylines).</summary>
     public static BoundedCurve3D? MakeBoundedCurve(StepBoundedCurve sc, in Factors localFactors)
     {
+        // Kerf: fewer poles than the degree needs is no curve; OCCT made a quasi-uniform curve's knots for it, failing on
+        // a negative count (decision 23106)
+        if (sc is StepBSplineCurve spline && spline.Degree() >= 1 && spline.NbControlPointsList() <= spline.Degree())
+        {
+            return null;
+        }
         if (sc is StepBSplineCurveWithKnotsAndRationalBSplineCurve)
         {
             return MakeBSplineCurve(sc as StepBSplineCurveWithKnotsAndRationalBSplineCurve, localFactors);
@@ -404,6 +410,15 @@ internal static class StepToGeom
     /// <summary>Converts a bounded_surface (B-splines, Bezier, uniform and quasi-uniform surfaces, rectangular trimmed surfaces).</summary>
     public static BoundedSurface? MakeBoundedSurface(StepBoundedSurface ss, in Factors localFactors)
     {
+        // Kerf: a spline of a degree out of range, or with fewer poles than its degree needs, is no surface, as a curve
+        // of one is none; OCCT made knots for it, failing on a negative count, or let Geom_BSplineSurface throw
+        // (decision 23106)
+        if (ss is StepBSplineSurface spline
+            && (spline.UDegree() < 1 || spline.UDegree() > BSplineSurface.MaxDegree || spline.VDegree() < 1 || spline.VDegree() > BSplineSurface.MaxDegree
+                || spline.NbControlPointsListI() <= spline.UDegree() || spline.NbControlPointsListJ() <= spline.VDegree()))
+        {
+            return null;
+        }
         if (ss is StepBSplineSurfaceWithKnotsAndRationalBSplineSurface)
         {
             return MakeBSplineSurface(ss as StepBSplineSurfaceWithKnotsAndRationalBSplineSurface, localFactors);
@@ -930,6 +945,11 @@ internal static class StepToGeom
 
         int uDeg = bs.UDegree();
         int vDeg = bs.VDegree();
+        // Kerf: a degree out of range is no surface, as for curves; OCCT let Geom_BSplineSurface throw (decision 23106)
+        if (uDeg < 1 || uDeg > BSplineSurface.MaxDegree || vDeg < 1 || vDeg > BSplineSurface.MaxDegree)
+        {
+            return null;
+        }
         int nuPoles = bs.NbControlPointsListI();
         int nvPoles = bs.NbControlPointsListJ();
         NCollection_HArray2<StepCartesianPoint> controlPointsList = bs.ControlPointsList();
