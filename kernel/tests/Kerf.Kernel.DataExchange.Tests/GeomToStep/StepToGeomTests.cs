@@ -212,4 +212,97 @@ public sealed class StepToGeomTests
         Transform3D U = new Transform3D();
         Assert.False(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTransformation3d(aNoOrigin, ref U));
     }
+
+    private static NCollection_HArray1<StepTrimmingSelect> Trim(params object[] theValues)
+    {
+        var aTrim = new NCollection_HArray1<StepTrimmingSelect>(1, theValues.Length);
+        for (int i = 0; i < theValues.Length; i++)
+        {
+            var aSelect = new StepTrimmingSelect();
+            if (theValues[i] is double aParameter)
+            {
+                aSelect.SetParameterValue(aParameter);
+            }
+            else
+            {
+                aSelect.SetValue((StepCartesianPoint)theValues[i]);
+            }
+            aTrim.SetValue(i + 1, aSelect);
+        }
+        return aTrim;
+    }
+
+    private static StepCircle Circle(double theRadius, bool theWithRef = true)
+    {
+        var aCircle = new StepCircle();
+        aCircle.Init(Name(), Select(theWithRef ? Placement(Direction(0, 0, 1), Direction(1, 0, 0)) : Placement(Direction(0, 0, 1))), theRadius);
+        return aCircle;
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_circle_trimmed_by_points_runs_between_them(bool theCartesian)
+    {
+        StepTrimmingPreference thePreference = theCartesian ? StepTrimmingPreference.TpCartesian : StepTrimmingPreference.TpUnspecified;
+        // the circle of radius 10 about (1, 2, 3), from its point on X to its point on Y: a quarter turn
+        var T = new StepTrimmedCurve();
+        T.Init(Name(), Circle(10), Trim(Point(11, 2, 3)), Trim(Point(1, 12, 3)), true, thePreference);
+        TrimmedCurve3D? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTrimmedCurve(T);
+        Assert.NotNull(G);
+        Assert.Equal(0, G.FirstParameter, 1e-9);
+        Assert.Equal(M_PI / 2, G.LastParameter, 1e-9);
+        Assert.True(G.Value(G.LastParameter).DistanceTo(new Point3D(1, 12, 3)) < 1e-9);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_circle_with_no_reference_direction_trimmed_by_parameters_is_whole(bool theSense)
+    {
+        // with no X direction the parameters mean nothing: the whole circle, in the sense asked
+        var T = new StepTrimmedCurve();
+        T.Init(Name(), Circle(10, false), Trim(30.0), Trim(60.0), theSense, StepTrimmingPreference.TpParameter);
+        TrimmedCurve3D? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTrimmedCurve(T, Inches);
+        Assert.NotNull(G);
+        Assert.Equal(2 * M_PI, Math.Abs(G.LastParameter - G.FirstParameter), 1e-12);
+        // its points: the whole circle, from one end round to the other
+        Assert.True(G.Value(G.FirstParameter).DistanceTo(G.Value(G.LastParameter)) < 1e-9);
+    }
+
+    [Fact]
+    public void A_line_trimmed_by_parameters_counts_them_in_its_vector()
+    {
+        // from (1, 2, 3) along a vector of length 2 in X: parameters 1 and 3 are 2 and 6 along it
+        var aVector = new StepVector();
+        aVector.Init(Name(), Direction(1, 0, 0), 2);
+        var aLine = new StepLine();
+        aLine.Init(Name(), Point(1, 2, 3), aVector);
+        var T = new StepTrimmedCurve();
+        T.Init(Name(), aLine, Trim(1.0), Trim(3.0), true, StepTrimmingPreference.TpParameter);
+        TrimmedCurve3D? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTrimmedCurve(T);
+        Assert.NotNull(G);
+        Assert.True(G.Value(G.FirstParameter).DistanceTo(new Point3D(3, 2, 3)) < 1e-12);
+        Assert.True(G.Value(G.LastParameter).DistanceTo(new Point3D(7, 2, 3)) < 1e-12);
+        // and by points, wherever the vector's length
+        var P = new StepTrimmedCurve();
+        P.Init(Name(), aLine, Trim(Point(2, 2, 3)), Trim(Point(5, 2, 3)), true, StepTrimmingPreference.TpCartesian);
+        TrimmedCurve3D? H = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTrimmedCurve(P);
+        Assert.Equal(3, H!.LastParameter - H.FirstParameter, 1e-12);
+    }
+
+    [Fact]
+    public void An_ellipse_trimmed_by_parameters_is_turned_with_its_axes()
+    {
+        // its first semi-axis the smaller: the axes are swapped, so its parameters move by a quarter turn
+        var E = new StepEllipse();
+        E.Init(Name(), Select(Placement(Direction(0, 0, 1), Direction(1, 0, 0))), 2, 5);
+        var T = new StepTrimmedCurve();
+        T.Init(Name(), E, Trim(0.0), Trim(90.0), true, StepTrimmingPreference.TpParameter);
+        TrimmedCurve3D? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTrimmedCurve(T, new Factors().InitializedFactors(1.0, M_PI / 180.0, 1.0));
+        Assert.NotNull(G);
+        // STEP's parameter 0 is on its first axis (X, at 2): the point (3, 2, 3); 90 degrees on the second (Y, at 5)
+        Assert.True(G.Value(G.FirstParameter).DistanceTo(new Point3D(3, 2, 3)) < 1e-9, G.Value(G.FirstParameter).ToString());
+        Assert.True(G.Value(G.LastParameter).DistanceTo(new Point3D(1, 7, 3)) < 1e-9, G.Value(G.LastParameter).ToString());
+    }
 }
