@@ -168,4 +168,24 @@ public class OptionsDirectTests
         Assert.Equal(1e-5, new OffsetOptions { Tolerance = 1e-5 }.Tolerance);
         Assert.True(new OffsetOptions { Intersection = true, SelfIntersection = true, RemoveInternalEdges = true } is { Intersection: true, SelfIntersection: true, RemoveInternalEdges: true });
     }
+
+    [Theory]
+    [InlineData(LengthUnit.Millimetre, ".MILLI.")]
+    [InlineData(LengthUnit.Micrometre, ".MICRO.")]
+    [InlineData(LengthUnit.Centimetre, ".CENTI.")]
+    [InlineData(LengthUnit.Metre, "SI_UNIT($,.METRE.)")]
+    [InlineData(LengthUnit.Inch, "INCH")]
+    [InlineData(LengthUnit.Foot, "FOOT")]
+    public void A_shape_written_in_a_unit_reads_back_in_millimetres_by_its_factor(LengthUnit theUnit, string theMarker)
+    {
+        // the unit is the shape's: the box's 10 by 20 by 30 are written as so many of it, and read back in millimetres,
+        // so its volume grows by the cube of the unit's millimetres
+        string aText = StepText(Fixtures.Box(), new StepWriteOptions { Unit = theUnit });
+        Assert.Equal(theUnit, new StepWriteOptions { Unit = theUnit }.Unit);
+        Assert.Contains(theMarker, aText);
+        Result<ModelNode> aRead = Step.Read(Stream(aText));
+        Assert.True(aRead.IsSuccess, aRead.Error?.Message);
+        double k = theUnit.Millimetres(), aVolume = 6000 * k * k * k;
+        Assert.Equal(aVolume, aRead.Value.Shape!.Value.IntegrateVolume(), aVolume * 1e-9);
+    }
 }
