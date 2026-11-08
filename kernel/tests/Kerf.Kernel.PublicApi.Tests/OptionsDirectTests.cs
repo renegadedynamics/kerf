@@ -237,4 +237,38 @@ public class OptionsDirectTests
         Assert.True(aRead.IsSuccess, aRead.Error?.Message);
         Assert.Equal(aVolume, aRead.Value.Shape!.Value.IntegrateVolume(), aVolume * 1e-6);
     }
+
+    [Fact]
+    public void A_model_built_by_its_properties_is_written_and_read_as_built()
+    {
+        // an assembly, made field by field, 100 along X, of a red box and a cylinder: STEP keeps the names, the colour,
+        // where each is, and their volumes
+        var aRed = new Color(1, 0, 0);
+        var aBody = new ModelNode { Name = "Body", Color = aRed, Shape = Fixtures.Box() };
+        var aLid = new ModelNode { Name = "Lid", Shape = Fixtures.Cylinder() };
+        var aPlacement = new Placement(Transform3D.Translation(new Vector3D(100, 0, 0)));
+        var anAssembly = new ModelNode { Name = "Pair", Placement = aPlacement, Children = [aBody, aLid] };
+        Assert.Equal(aPlacement, anAssembly.Placement);
+        Assert.Equal(new Placement(), aBody.Placement);
+        Assert.Null(aBody.Mesh);
+        Assert.False(anAssembly.IsPart);
+        var aStream = new MemoryStream();
+        Assert.True(Step.Write(anAssembly, aStream).IsSuccess);
+        aStream.Position = 0;
+        ModelNode aRead = Step.Read(aStream).Value;
+        // a placed root goes in a product of its own, as STEP places a component in its parent; within it, the pair
+        ModelNode aPair = aRead.Name == "Pair" ? aRead : Assert.Single(aRead.Children);
+        Assert.Equal("Pair", aPair.Name);
+        Assert.Equal(2, aPair.Children.Length);
+        ModelNode aReadBody = aPair.Children.Single(c => c.Name == "Body");
+        Assert.Equal(aRed, aReadBody.Color);
+        Shape aAll = aRead.ToShape();
+        Assert.Equal(6000 + Fixtures.Cylinder().IntegrateVolume(), aAll.IntegrateVolume(), 1e-3);
+        // the cylinder of radius 5 about the origin, moved 100 along X, is the leftmost
+        Assert.Equal(95, aAll.BoundingBox(optimal: true).Min.X, 1e-6);
+        // a node changed by `with` is another node
+        ModelNode aRenamed = aBody with { Name = "Frame" };
+        Assert.Equal("Frame", aRenamed.Name);
+        Assert.Equal("Body", aBody.Name);
+    }
 }
