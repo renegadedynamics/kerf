@@ -7,82 +7,72 @@ an assertion: a filter against tests that only call, not a proof that this membe
 An override counts when its base's declaration is named, since C# names the least derived one. The Draw-lite
 harness isn't a test assembly, so what only its commands name doesn't count.
 
-Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct test 250. From 11,612 test methods. Not measured: 32 abstract, 814 compiler-written, 23 overrides of `object`'s members on classes (the IL can't show them).
+Measured: 4,526 members; called directly 4,319; of them checked 4,317; no direct test 207. From 12,052 test methods. Not measured: 32 abstract, 813 compiler-written, 23 overrides of `object`'s members on classes (the IL can't show them).
 
 | Assembly | Members | Direct | Checked | No direct test |
 |---|---:|---:|---:|---:|
-| Kerf.Kernel.Foundation | 1,274 | 1,233 | 1,233 | 41 |
+| Kerf.Kernel.Foundation | 1,281 | 1,243 | 1,242 | 38 |
 | Kerf.Kernel.ModelingData | 1,012 | 1,002 | 1,002 | 10 |
-| Kerf.Kernel.ModelingAlgorithms | 802 | 665 | 660 | 137 |
-| Kerf.Kernel.DataExchange | 117 | 58 | 58 | 59 |
-| Kerf.Modeling | 1,258 | 1,255 | 1,255 | 3 |
+| Kerf.Kernel.ModelingAlgorithms | 846 | 719 | 719 | 127 |
+| Kerf.Kernel.DataExchange | 117 | 90 | 90 | 27 |
+| Kerf.Modeling | 1,270 | 1,265 | 1,264 | 5 |
 
 | Namespace | Members | Direct | Checked | No direct test |
 |---|---:|---:|---:|---:|
-| `Kerf` | 70 | 69 | 69 | 1 |
-| `Kerf.Booleans` | 31 | 31 | 31 | 0 |
-| `Kerf.Construction` | 172 | 170 | 170 | 2 |
-| `Kerf.Drawing` | 149 | 92 | 87 | 57 |
-| `Kerf.Exchange` | 117 | 58 | 58 | 59 |
-| `Kerf.Features` | 23 | 16 | 16 | 7 |
-| `Kerf.Fillets` | 46 | 46 | 46 | 0 |
-| `Kerf.Geometry` | 1,960 | 1,872 | 1,872 | 88 |
-| `Kerf.Healing` | 115 | 109 | 109 | 6 |
-| `Kerf.Measurement` | 70 | 55 | 55 | 15 |
-| `Kerf.Meshing` | 54 | 54 | 54 | 0 |
-| `Kerf.Modeling` | 1,258 | 1,255 | 1,255 | 3 |
-| `Kerf.Offsets` | 27 | 22 | 22 | 5 |
+| `Kerf` | 77 | 75 | 75 | 2 |
+| `Kerf.Booleans` | 35 | 34 | 34 | 1 |
+| `Kerf.Construction` | 185 | 177 | 177 | 8 |
+| `Kerf.Drawing` | 149 | 124 | 124 | 25 |
+| `Kerf.Exchange` | 117 | 90 | 90 | 27 |
+| `Kerf.Features` | 25 | 16 | 16 | 9 |
+| `Kerf.Fillets` | 52 | 49 | 49 | 3 |
+| `Kerf.Geometry` | 1,960 | 1,876 | 1,875 | 84 |
+| `Kerf.Healing` | 125 | 110 | 110 | 15 |
+| `Kerf.Measurement` | 71 | 57 | 57 | 14 |
+| `Kerf.Meshing` | 56 | 53 | 53 | 3 |
+| `Kerf.Modeling` | 1,270 | 1,265 | 1,264 | 5 |
+| `Kerf.Offsets` | 33 | 29 | 29 | 4 |
 | `Kerf.Topology` | 371 | 364 | 364 | 7 |
+
+## `Kerf.Booleans.BooleanOptions`
+
+- `get_CheckResult()`
+
+## `Kerf.Cancellation`
+
+- `get_Current()`
 
 ## `Kerf.Color`
 
 - `Equals(Color)`
 
+## `Kerf.Construction.ExtrudeOptions`
+
+- `get_CheckResult()`
+
 ## `Kerf.Construction.FillBoundary`
 
 - `set_Support(Face?)`
 
+## `Kerf.Construction.FillOptions`
+
+- `get_CheckResult()`
+- `set_CheckResult(Boolean)`
+
+## `Kerf.Construction.LoftOptions`
+
+- `get_CheckResult()`
+
 ## `Kerf.Construction.SweepOptions`
 
+- `get_CheckResult()`
+- `get_TryOtherFrames()`
 - `set_Transition(TransitionMode)`
-
-## `Kerf.Drawing.Camera`
-
-- `.ctor()`
-- `get_Distance()`
-- `get_Eye()`
-- `get_Projection()`
-- `get_Target()`
-- `get_ViewFrame()`
-- `set_Target(Point3D)`
 
 ## `Kerf.Drawing.DirectionalLight`
 
 - `get_Direction()`
 - `get_Intensity()`
-
-## `Kerf.Drawing.DrawingOptions`
-
-- `get_Default()`
-- `get_IncludeHidden()`
-- `get_IsoLineCount()`
-- `get_Mesh()`
-- `get_Method()`
-- `get_Tolerance()`
-
-## `Kerf.Drawing.DrawnEdge`
-
-- `get_IsVisible()`
-
-## `Kerf.Drawing.LineStyle`
-
-- `get_Color()`
-- `get_Dashes()`
-- `get_Hidden()`
-- `get_Visible()`
-- `get_Width()`
-- `set_Color(Color)` (called, no assertion reached)
-- `set_Dashes(ImmutableArray<Double>)`
 
 ## `Kerf.Drawing.PngOptions`
 
@@ -122,32 +112,6 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 - `set_FaceColors(ImmutableDictionary<Int32, Color>)`
 - `set_Mesh(ShapeMesh)`
 
-## `Kerf.Drawing.SvgOptions`
-
-- `get_Background()`
-- `get_Decimals()`
-- `get_Default()`
-- `get_HiddenStyle()`
-- `get_IncludeHidden()`
-- `get_Margin()`
-- `get_PageHeight()`
-- `get_PageWidth()`
-- `get_Scale()`
-- `get_Tolerance()`
-- `get_Unit()`
-- `get_VisibleStyle()`
-- `set_Background(Color?)` (called, no assertion reached)
-- `set_Scale(Double?)` (called, no assertion reached)
-- `set_Tolerance(Double)` (called, no assertion reached)
-- `set_VisibleStyle(LineStyle)` (called, no assertion reached)
-
-## `Kerf.Exchange.BrepWriteOptions`
-
-- `get_Binary()`
-- `get_Default()`
-- `get_WithNormals()`
-- `get_WithTriangles()`
-
 ## `Kerf.Exchange.GltfReadOptions`
 
 - `.ctor()`
@@ -169,14 +133,7 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 
 ## `Kerf.Exchange.ModelNode`
 
-- `.ctor()`
-- `get_Placement()`
-- `set_Children(ImmutableArray<ModelNode>)`
-- `set_Color(Color?)`
 - `set_Mesh(ShapeMesh)`
-- `set_Name(String)`
-- `set_Placement(Placement)`
-- `set_Shape(Shape?)`
 
 ## `Kerf.Exchange.ObjWriteOptions`
 
@@ -185,39 +142,6 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 - `get_Normals()`
 - `get_Scale()`
 - `get_YUp()`
-
-## `Kerf.Exchange.ReadLimits`
-
-- `get_MaxDepth()`
-- `get_MaxEntities()`
-- `get_MaxNodes()`
-- `get_MaxTriangles()`
-- `set_MaxDepth(Int32)`
-- `set_MaxEntities(Int32)`
-- `set_MaxNodes(Int32)`
-- `set_MaxTriangles(Int64)`
-
-## `Kerf.Exchange.Step`
-
-- `Read(String, StepReadOptions, IProgress<Double>, CancellationToken)`
-
-## `Kerf.Exchange.StepReadOptions`
-
-- `get_Default()`
-- `get_ExternalReferences()`
-- `get_Heal()`
-- `get_Limits()`
-- `get_ProductNames()`
-- `set_ExternalReferences(Boolean)`
-- `set_Limits(ReadLimits)`
-
-## `Kerf.Exchange.StepWriteOptions`
-
-- `get_Precision()`
-- `get_Schema()`
-- `get_Unit()`
-- `get_WritePcurves()`
-- `set_WritePcurves(Boolean)`
 
 ## `Kerf.Exchange.StlReadOptions`
 
@@ -238,16 +162,27 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 
 ## `Kerf.Features.ExtrudeUntilOptions`
 
+- `get_CheckResult()`
 - `get_Face()`
 - `get_Fuse()`
 - `get_Height()`
 - `get_Until()`
+- `set_CheckResult(Boolean)`
 - `set_Face(Face?)`
 - `set_Fuse(Boolean)`
 
 ## `Kerf.Features.SplitFacesResult`
 
 - `.ctor(Shape, ShapeHistory, ImmutableArray<Face>, ImmutableArray<Face>)`
+
+## `Kerf.Fillets.ChamferOptions`
+
+- `get_CheckResult()`
+- `set_CheckResult(Boolean)`
+
+## `Kerf.Fillets.FilletOptions`
+
+- `get_CheckResult()`
 
 ## `Kerf.Geometry.ApproximationOptions`
 
@@ -263,12 +198,6 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 ## `Kerf.Geometry.BSplineCurve2D`
 
 - `get_MaxDegree()`
-
-## `Kerf.Geometry.BoundingBox`
-
-- `Equals(BoundingBox)`
-- `op_Equality(BoundingBox, BoundingBox)`
-- `op_Inequality(BoundingBox, BoundingBox)`
 
 ## `Kerf.Geometry.ConversionOptions`
 
@@ -344,7 +273,7 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 - `Reversed()`
 - `Scaled(Point3D, Double)`
 - `Translated(Point3D, Point3D)`
-- `WithDirection(Direction3D)`
+- `WithDirection(Direction3D)` (called, no assertion reached)
 - `WithLocation(Point3D)`
 - `WithPosition(Axis3D)`
 - `op_Equality(Line3D, Line3D)`
@@ -415,20 +344,38 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 - `op_Equality(Vector3D, Vector3D)`
 - `op_Inequality(Vector3D, Vector3D)`
 
+## `Kerf.Healing.BSplineApproximationOptions`
+
+- `get_CheckResult()`
+
+## `Kerf.Healing.BSplineConversionOptions`
+
+- `get_CheckResult()`
+- `set_CheckResult(Boolean)`
+
 ## `Kerf.Healing.SewOptions`
 
+- `get_CheckResult()`
 - `get_Tolerance()`
+- `set_CheckResult(Boolean)`
 
 ## `Kerf.Healing.UnifyOptions`
 
+- `get_CheckResult()`
 - `set_AllowInternalEdges(Boolean)`
 - `set_ConcatBSplines(Boolean)`
 
 ## `Kerf.Healing.ValidationReport`
 
 - `.ctor()`
+- `ToDiagnostic(String)`
 - `set_IsValid(Boolean)`
 - `set_Problems(ImmutableArray<ShapeProblem>)`
+
+## `Kerf.Healing.WireframeFixOptions`
+
+- `get_CheckResult()`
+- `set_CheckResult(Boolean)`
 
 ## `Kerf.Measurement.DistanceResult`
 
@@ -445,10 +392,6 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 
 - `.ctor(Point3D, Double, Face, Double, Double, Containment)`
 
-## `Kerf.Measurement.MassOptions`
-
-- `get_Tolerance()`
-
 ## `Kerf.Measurement.MassProperties`
 
 - `.ctor()`
@@ -460,6 +403,24 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 - `set_PrincipalMoments(ValueTuple<Double, Double, Double>)`
 - `set_StaticMoments(Vector3D)`
 
+## `Kerf.Meshing.MeshOptions`
+
+- `get_MaxTriangles()`
+- `set_MaxTriangles(Int64)`
+
+## `Kerf.Meshing.Mesher`
+
+- `get_TooLarge()`
+
+## `Kerf.Modeling.ColorExtensions`
+
+- `get_White()` (called, no assertion reached)
+
+## `Kerf.Modeling.EdgeExtensions`
+
+- `FindIntersections(Edge, Axis, Double)`
+- `FindIntersections(Edge, Double)`
+
 ## `Kerf.Modeling.ModelShape`
 
 - `op_Explicit(ModelShape)`
@@ -469,13 +430,15 @@ Measured: 4,463 members; called directly 4,213; of them checked 4,208; no direct
 - `Equals(Selector)`
 - `get_Of()`
 
+## `Kerf.Offsets.Offset2DOptions`
+
+- `get_CheckResult()`
+- `set_CheckResult(Boolean)`
+
 ## `Kerf.Offsets.OffsetOptions`
 
-- `set_Intersection(Boolean)`
-- `set_Mode(OffsetMode)`
-- `set_RemoveInternalEdges(Boolean)`
-- `set_SelfIntersection(Boolean)`
-- `set_Tolerance(Double)`
+- `get_CheckResult()`
+- `set_CheckResult(Boolean)`
 
 ## `Kerf.Topology.CompSolid`
 
