@@ -95,6 +95,11 @@ internal static class StepFileReader
             letat = parser.Parse();
             if (letat != 0)
             {
+                // Kerf: the limit reached, for the caller who asked (decision 1965)
+                if (limits?.Report is { } report && parser.ExceededLimit is { } exceeded)
+                {
+                    report.Exceeded = exceeded;
+                }
                 StepFile_Interrupt(fileDataModel.GetLastError(), true);
                 return 1;
             }

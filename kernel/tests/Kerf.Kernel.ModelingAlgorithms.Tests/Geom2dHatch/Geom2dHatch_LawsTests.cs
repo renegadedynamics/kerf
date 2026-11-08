@@ -259,4 +259,39 @@ public class Geom2dHatch_LawsTests
         Assert.False(aDefault.IsDone());
         Assert.Equal(0, aDefault.PointCount);
     }
+
+    [Fact]
+    public void A_hatching_lying_wholly_along_an_edge_is_that_edge_with_segments_kept()
+    {
+        // from the edge's start to its end: the hatching begins and ends in the segment
+        Hatcher2D aHatcher = NewHatcher(true, true);
+        AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
+        int aH = aHatcher.AddHatching(Chord(0, 0, 1, 0, 1));
+        AssertDomains(Domains(aHatcher, aH), 0, 1);
+    }
+
+    [Theory]
+    [InlineData(0.25)]
+    [InlineData(0.5)]
+    public void A_hatching_starting_inside_an_edge_runs_along_it_to_its_end(double theStart)
+    {
+        // from inside the bottom edge, along it and on past the corner: the segment's part from the start
+        Hatcher2D aHatcher = NewHatcher(true, true);
+        AddPolygon(aHatcher, Forward, 0, 0, 1, 0, 1, 1, 0, 1);
+        int aH = aHatcher.AddHatching(Chord(theStart, 0, 1, 0, 2));
+        AssertDomains(Domains(aHatcher, aH), 0, 1 - theStart);
+    }
+
+    [Fact]
+    public void An_element_added_after_a_trim_clears_it_and_the_next_trim_sees_it()
+    {
+        // a square of 4, then a hole of 2 in its middle: the line y = 2 had one stretch, and has two
+        Hatcher2D aHatcher = NewHatcher();
+        AddPolygon(aHatcher, Forward, 0, 0, 4, 0, 4, 4, 0, 4);
+        int aH = aHatcher.AddHatching(Chord(-1, 2, 1, 0));
+        AssertDomains(Domains(aHatcher, aH), 1, 5);
+        AddPolygon(aHatcher, Reversed, 1, 1, 3, 1, 3, 3, 1, 3);
+        Assert.Equal(0, aHatcher.NbPoints(aH));
+        AssertDomains(Domains(aHatcher, aH), 1, 2, 4, 5);
+    }
 }

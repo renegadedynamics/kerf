@@ -83,59 +83,46 @@ internal sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
     public static Box2d Box(in Hyperbola2D hypr, double u1, double u2, double tol)
     {
         Box2d box = new();
-        if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u1))
+        // Kerf: one end infinite, as the 3D form (decision 1964)
+        if (InfiniteHelpers.HalfInfinite(u1, u2, out double finite, out int towards))
         {
-            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
+            Point2D end = global::Kerf.Engine.Geometry.ElCLib.Value(finite, hypr);
+            box.Add(end);
+            Xy xDir = hypr.Axis.XDirection.XY(), yDir = hypr.Axis.YDirection.XY();
+            for (int i = 1; i <= 2; ++i)
+            {
+                double a = hypr.MinorRadius * yDir.Coord(i), b = hypr.MajorRadius * xDir.Coord(i);
+                double abp = Math.Abs(a + b), bam = Math.Abs(b - a);
+                if (abp >= Epsilon(1.0) && bam >= Epsilon(1.0))
+                {
+                    double t3 = 0.5 * Math.Log(bam / abp);
+                    if (towards < 0 ? t3 < finite : t3 > finite)
+                    {
+                        box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(t3, hypr));
+                    }
+                }
+            }
+            Xy along = (hypr.MajorRadius * xDir) + (towards * hypr.MinorRadius * yDir);
+            Xy back = hypr.Location.XY() - end.XY();
+            InfiniteHelpers.OpenAlong(new Xy(along.X() != 0.0 ? along.X() : back.X(), along.Y() != 0.0 ? along.Y() : back.Y()), ref box);
+            box.Enlarge(tol);
+            return box;
+        }
+        // both ends infinite: the whole curve, open on every side, as OCCT has it; the same end twice is no arc
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u1))
+        {
+            if ((u1 < 0.0) == (u2 < 0.0))
             {
                 throw new FailureException("GeomBndLib_Hyperbola2d::Box - bad parameter");
-            }
-            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
-            {
-                box.OpenXmax();
-                box.OpenYmax();
-            }
-            else
-            {
-                box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, hypr));
             }
             box.OpenXmin();
             box.OpenYmin();
-        }
-        else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u1))
-        {
-            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
-            {
-                box.OpenXmin();
-                box.OpenYmin();
-            }
-            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
-            {
-                throw new FailureException("GeomBndLib_Hyperbola2d::Box - bad parameter");
-            }
-            else
-            {
-                box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, hypr));
-            }
             box.OpenXmax();
             box.OpenYmax();
         }
         else
         {
-            box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u1, hypr));
-            if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
-            {
-                box.OpenXmin();
-                box.OpenYmin();
-            }
-            else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
-            {
-                box.OpenXmax();
-                box.OpenYmax();
-            }
-            else
-            {
-                ComputeHyperbola2dBox(hypr, u1, u2, ref box);
-            }
+            ComputeHyperbola2dBox(hypr, u1, u2, ref box);
         }
         box.Enlarge(tol);
         return box;

@@ -1568,6 +1568,13 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
                 myShapeBuilder.Init(start as StepBrepWithVoids, tp, aLocalFactors, range);
                 found = true;
             }
+            // Kerf: before the manifold solid B-rep it is one of: OCCT tests it after, so it read the outer shell alone
+            // and lost every void (decision 1963)
+            else if (start.IsKind(typeof(StepFacetedBrepAndBrepWithVoids)))
+            {
+                myShapeBuilder.Init(start as StepFacetedBrepAndBrepWithVoids, tp, aLocalFactors, range);
+                found = true;
+            }
             else if (start.IsKind(typeof(StepManifoldSolidBrep)))
             {
                 myShapeBuilder.Init(start as StepManifoldSolidBrep, tp, aLocalFactors, range);
@@ -1576,11 +1583,6 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
             else if (start.IsKind(typeof(StepShellBasedSurfaceModel)))
             {
                 myShapeBuilder.Init(start as StepShellBasedSurfaceModel, tp, _nmTool, aLocalFactors, range);
-                found = true;
-            }
-            else if (start.IsKind(typeof(StepFacetedBrepAndBrepWithVoids)))
-            {
-                myShapeBuilder.Init(start as StepFacetedBrepAndBrepWithVoids, tp, aLocalFactors, range);
                 found = true;
             }
             else if (start.IsKind(typeof(StepGeometricSet)))

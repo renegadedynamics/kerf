@@ -282,9 +282,9 @@ internal class ResolConstraint<MultiLine, ToolLine>
                 for (i = 1; i <= _incPass; i++)
                 {
                     ToolLine.Value(ssp, _iPas[i], tabP2d);
-                    // OCCT: indexes the 2d points with the passing point i where the curve k - nb3d is meant; out of
-                    // range unless i - nb3d happens to be a 2d curve (unchecked in OCCT; the port throws)
-                    poi2d = tabP2d[i - nb3d];
+                    // Kerf: the curve k - nb3d's point; OCCT indexes the 2d points with the passing point i, out of range
+                    // unless i - nb3d happens to be a 2d curve, and another curve's point when it is (decision 1969)
+                    poi2d = tabP2d[k - nb3d];
                     _secont[i + incSec] = poi2d.X;
                     _secont[i + _incPass + incSec] = poi2d.Y;
                 }
@@ -516,7 +516,10 @@ internal class ResolConstraint<MultiLine, ToolLine>
         int nb2d = ToolLine.NbP2d(ssp);
         cCol = nb3d * 3 + nb2d * 2;
 
-        return cCol * incPass + incTan * (cCol - 1) + 3 * incCurv;
+        // Kerf: OCCT counts three rows for each curvature point, but its equations for them are commented out, so the
+        // rows stay zero, the system is singular and any curvature point failed (NotDone). A curvature point is
+        // constrained as the tangency it also is (decision 1967).
+        return cCol * incPass + incTan * (cCol - 1);
     }
 
     /// <summary>The number of unknowns: the coordinates of every pole.</summary>
@@ -669,8 +672,8 @@ internal class ResolConstraint<MultiLine, ToolLine>
                     npt = _iTan[i];
                     global::Kerf.Engine.Approximation.AppParCurves.SecondDerivativeBernstein(parameters[npt], dda);
                     ToolLine.Tangency(ssp, npt, tabV2d);
-                    // OCCT: tabV2d(k) where k - nb3d is meant (out of range when there are 3d curves; the port throws)
-                    v2d = tabV2d[k];
+                    // Kerf: the curve k - nb3d's tangent; OCCT's tabV2d(k) is out of range after 3d curves (decision 1969)
+                    v2d = tabV2d[k - nb3d];
                     v2d.Coord(out t1, out t2);
                     tmax = Math.Abs(t1);
                     ibont[k, i] = 1;

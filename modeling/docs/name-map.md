@@ -84,7 +84,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `locate(loc)`, `move(loc)`, `shape.location = …` | `Located(loc)`, `Moved(loc)`, `WithLocation(loc)`: copies |
 | `shape.label = …`, `.color = …` | `WithLabel(…)`, `WithColor(…)` |
 | `relocate`, `clean()`, `fix()`, `mirror()`, `rotate()`, `scale()`, `translate()` | `Clean()`, `Fix()`, `Mirror()`, `Rotate()`, `Scale()`, `Translate()`: copies of the caller's class |
-| `a + b`, `a - b`, `a & b` on a Part, Sketch or Curve | The same operators, typed (`Part + Shape` is a `Part`), or `Add`, `Subtract`, `Common`; `TryAdd`, `TrySubtract`, `TryCommon` give a `Result<T>` |
+| `a + b`, `a - b`, `a & b` on a Part, Sketch or Curve | The same operators, typed (`Part + Shape` is a `Part`), or the methods `Add`, `Subtract`, `Common`, which give a `Result<T>` |
 | `a + b`, `a - b`, `a & b` on a Solid, Face, Edge… | The same operators, giving the kernel's result as a `Shape` (one solid or a compound, a wire or a compound); `Fuse`, `Cut`, `Intersect` as in Python |
 | `shape + None` | Not allowed: a null operand throws `ArgumentNullException`; add nothing with an empty list |
 | `loc * shape`, `[locs] * shape` | The same operators, keeping the shape's class |

@@ -303,6 +303,12 @@ internal sealed class ImportBuilder : ImportRoot
             {
                 shape = tranShell.InternalValue();
                 shape.Closed(true);
+                // Kerf: turned by its orientation, as a void of a brep_with_voids is; OCCT kept it as written
+                // (decision 1963)
+                if (!ocShell.Orientation())
+                {
+                    shape.Reverse();
+                }
                 builder.Add(solid, shape);
             }
             else

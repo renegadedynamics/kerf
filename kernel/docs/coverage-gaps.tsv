@@ -34,11 +34,8 @@ Kerf.Kernel.DataExchange	STEPSelections	OCCT's exchange framework: selections, s
 Kerf.Kernel.DataExchange	StepSelect	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
 Kerf.Kernel.DataExchange	APIHeaderSection	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
 Kerf.Kernel.DataExchange	StepData	OCCT's exchange framework: selections, sessions and printing that Draw's data-exchange commands drive and Draw-lite doesn't port; only what a read or write passes through runs
-Kerf.Kernel.DataExchange	StepToTopoDS	The translators' rarer forms and write modes; follows the STEP test data
-Kerf.Kernel.DataExchange	StepToGeom	The translators' rarer forms and write modes; follows the STEP test data
-Kerf.Kernel.DataExchange	TopoDSToStep	The translators' rarer forms and write modes; follows the STEP test data
-Kerf.Kernel.DataExchange	STEPControl	The translators' rarer forms and write modes; follows the STEP test data
-Kerf.Kernel.DataExchange	STEPConstruct	The translators' rarer forms and write modes; follows the STEP test data
+Kerf.Kernel.DataExchange	StepToTopoDS	12Q's tests take it from 63.5% to 73.8%: placements, messages, voids. Left: the translators for structures no STEP file we test with holds (tessellated, edge-based wireframes, geometric sets of points); real tests need those files
+Kerf.Kernel.DataExchange	STEPControl	12Q's tests take it from 71.4% to 74.9%: every write mode, units, voids. Left: the actors' branches for assemblies with external references and for tessellated and GD&T data, which need STEP files that hold them
 Kerf.Kernel.DataExchange	UnitsMethods	Conversions for units no test file uses
 Kerf.Kernel.Foundation	MathRoot	11I's tests reach the solvers, their failures and the common forms. Left: rediscretising in FindAllRoots near tangent points, and trigonometric branches for coefficients within rounding of nil
 Kerf.Kernel.Foundation	MathSys	11I's tests reach the solvers, their failures and bounds. Left: the SVD fallback for a Jacobian within rounding of singular, and line-search back-offs
@@ -47,24 +44,18 @@ Kerf.Kernel.Foundation	BVH	The tree builders and traversals are tested. Distance
 Kerf.Kernel.ModelingAlgorithms	LocOpe	Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use
 Kerf.Kernel.ModelingAlgorithms	BRepFeat	Feature forms (prisms and pipes from and until faces, ribs) past what the corpus's feature cases use
 Kerf.Kernel.ModelingAlgorithms	Geom2dGcc	Tangent-circle solvers by qualifier and curve type: many combinations, few tested
-Kerf.Kernel.ModelingAlgorithms	HLRBRep	Hidden-line paths past the few hlr cases
 Kerf.Kernel.ModelingAlgorithms	ChFi3d	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
-Kerf.Kernel.ModelingAlgorithms	FilletSurf	Blends on restrictions and points, and rarely reached walking branches; 884 fillet cases already run
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepBuild	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepTool	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	TopOpeBRepDS	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	TopTrans	The legacy Booleans' remains: only what fillets' and HLR's callers need is alive. Candidates for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	IntCurveSurface	About 400 lines are dead in OCCT too: the limits for infinite surfaces, cut off by its clamp to 1e50, and two helpers nothing calls (occt-issues.md); the floor is out of reach by honest tests
-Kerf.Kernel.ModelingAlgorithms	Geom2dInt	Intersection forms by curve and surface type the tests don't reach
-Kerf.Kernel.ModelingAlgorithms	Geom2dHatch	Intersection forms by curve and surface type the tests don't reach
 Kerf.Kernel.ModelingAlgorithms	Plate	Constraint kinds the fill tests and cases don't reach
-Kerf.Kernel.ModelingAlgorithms	BiTgte	Forms past the corpus's few cases; both are small OCCT features
-Kerf.Kernel.ModelingAlgorithms	Draft	Forms past the corpus's few cases; both are small OCCT features
-Kerf.Kernel.ModelingAlgorithms	BRepApprox	A small approximation wrapper, partly run
+Kerf.Kernel.ModelingAlgorithms	BiTgte	12Q's tests take it from 66.2% to 74.1% (the rolling ball's tubes, decision 23101). Left: corners and the walking over many faces, which need shapes past the few the corpus has; a small OCCT feature
+Kerf.Kernel.ModelingAlgorithms	BRepApprox	12Q takes it from 33.3% to 55.6%. Left: the constructors of OCCT's generic instantiations, which nothing calls (their work runs in the generic AppParCurves and Approx code)
 Kerf.Kernel.ModelingAlgorithms	TopBas	A single value type nothing calls (HLR's interference): a candidate for removal, not tests
 Kerf.Kernel.ModelingAlgorithms	Sweep	A few accessors
 Kerf.Kernel.ModelingAlgorithms	Prs3d	A few accessors
-Kerf.Kernel.ModelingData	AppParCurves	Least-squares forms the tests' approximations don't reach
 Kerf.Kernel.ModelingData	Hermit	11I's tests hold a(u) to its promise under steep weights and tight tolerances. Left: pole-moving branches for ratios beyond the tolerance whose end values stay within it, which no weights tried reach
 Kerf.Kernel.ModelingData	ExtremaPC	Search forms and curve kinds the tests don't reach
 Kerf.Modeling	(root)	Enum helpers

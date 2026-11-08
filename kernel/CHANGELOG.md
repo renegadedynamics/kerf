@@ -5,6 +5,10 @@ version may break the API.
 
 ## Unreleased
 
+- **A STEP file past the reader's limits fails as `exchange.limit-exceeded`,** as documented, where it was `exchange.failed` (decision 1965).
+- **A STEP solid written as a faceted B-rep with voids is read with its voids,** from any file; they were lost (decision 1963).
+- **The box of a half-infinite parabola or hyperbola, or of a ray not along an axis, holds it:** it was open on the wrong sides (decision 1964).
+- **A STEP spline with fewer poles than its degree needs, or a surface of a degree out of range, is an entity not translated,** where reading it threw (decision 1966).
 - **A validity check of a placed, meshed shape allocates about half as much,** with the same verdicts: it no longer composes placements it doesn't read (decision 23301).
 - **Shape healing allocates 3.5% less in `ShapeFix` and 1.7% less on a STEP import,** with the same shapes: a wire's 2D intersections make only the intersector they use (decision 23303).
 - **A Boolean's check that searches on B-spline edges is about a third cheaper** (decision 1950): a curve keeps its values at the ends of its range, the same values as before.

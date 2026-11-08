@@ -25,4 +25,17 @@ internal sealed record ParserReadLimits
 
     /// <summary>The deepest nesting of lists in a parameter list, plus scopes.</summary>
     public int MaxDepth { get; init; } = 10_000;
+
+    /// <summary>
+    /// Kerf (decision 1965): where a parse that stops at a limit says which, for its caller to tell a refused file
+    /// from a malformed one; null for no report. The caller's own object, for its read alone.
+    /// </summary>
+    public ParserLimitReport? Report { get; init; }
+}
+
+/// <summary>Which of <see cref="ParserReadLimits"/> a parse stopped at (decision 1965).</summary>
+internal sealed class ParserLimitReport
+{
+    /// <summary>The limit reached ("record count", "nesting depth", "file size"), or null if none was.</summary>
+    public string? Exceeded { get; set; }
 }

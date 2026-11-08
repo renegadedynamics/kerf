@@ -148,17 +148,17 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block(), stream);
         stream.Position = 0;
-        Assert.Equal("exchange.failed", Importers.ImportStep(stream, new ImportLimits(MaxBytes: 1000)).Error!.Code.Value);
+        Assert.Equal("exchange.limit-exceeded", Importers.ImportStep(stream, new ImportLimits(MaxBytes: 1000)).Error!.Code.Value);
     }
 
     [Fact]
     public void StepPastTheRecordLimitIsRefused()
     {
-        // Kerf's parser counts records; native OCCT reads from a temporary file, with no such limit
+        // Kerf's parser counts records; native OCCT reads from a temporary file, with no such limit (decision 1965: reported as the limit)
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block(), stream);
         stream.Position = 0;
-        Assert.Equal("exchange.failed", Importers.ImportStep(stream, new ImportLimits(MaxEntities: 50)).Error!.Code.Value);
+        Assert.Equal("exchange.limit-exceeded", Importers.ImportStep(stream, new ImportLimits(MaxEntities: 50)).Error!.Code.Value);
     }
 
     [Fact]

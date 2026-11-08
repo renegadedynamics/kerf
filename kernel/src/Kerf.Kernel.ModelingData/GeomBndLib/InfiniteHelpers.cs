@@ -45,9 +45,9 @@ internal static class InfiniteHelpers
         }
         else
         {
-            box.OpenXmin();
-            box.OpenYmin();
-            box.OpenZmin();
+            // Kerf: OCCT opened the three minima, which misses a coordinate that grows as the parameter falls
+            // (decision 1964)
+            OpenAlong(dir.XYZ().Reversed(), ref box);
         }
     }
 
@@ -77,10 +77,39 @@ internal static class InfiniteHelpers
         }
         else
         {
-            box.OpenXmax();
-            box.OpenYmax();
-            box.OpenZmax();
+            // Kerf: OCCT opened the three maxima, which misses a coordinate that falls as the parameter grows
+            // (decision 1964)
+            OpenAlong(dir.XYZ(), ref box);
         }
+    }
+
+    /// <summary>
+    /// Opens, on each axis the vector moves along, the side it moves towards (Kerf, decision 1964): what a point
+    /// going to infinity along it reaches.
+    /// </summary>
+    internal static void OpenAlong(in Xyz v, ref Box box)
+    {
+        if (v.X() > 0.0) box.OpenXmax(); else if (v.X() < 0.0) box.OpenXmin();
+        if (v.Y() > 0.0) box.OpenYmax(); else if (v.Y() < 0.0) box.OpenYmin();
+        if (v.Z() > 0.0) box.OpenZmax(); else if (v.Z() < 0.0) box.OpenZmin();
+    }
+
+    /// <inheritdoc cref="OpenAlong(in Xyz, ref Box)"/>
+    internal static void OpenAlong(in Xy v, ref Box2d box)
+    {
+        if (v.X() > 0.0) box.OpenXmax(); else if (v.X() < 0.0) box.OpenXmin();
+        if (v.Y() > 0.0) box.OpenYmax(); else if (v.Y() < 0.0) box.OpenYmin();
+    }
+
+    /// <summary>
+    /// For an arc with one end infinite (Kerf, decision 1964): its finite parameter and the sign of the infinite end.
+    /// </summary>
+    internal static bool HalfInfinite(double u1, double u2, out double finite, out int towards)
+    {
+        bool inf1 = global::Kerf.Engine.Foundation.Precision.IsInfinite(u1), inf2 = global::Kerf.Engine.Foundation.Precision.IsInfinite(u2);
+        finite = inf1 ? u2 : u1;
+        towards = (inf1 ? u1 : u2) < 0.0 ? -1 : 1;
+        return inf1 != inf2;
     }
 
     /// <summary>Opens the box in both directions along the given direction.</summary>
@@ -134,8 +163,8 @@ internal static class InfiniteHelpers
         }
         else
         {
-            box.OpenXmin();
-            box.OpenYmin();
+            // Kerf: as the 3D form (decision 1964)
+            OpenAlong(dir.XY().Reversed(), ref box);
         }
     }
 
@@ -157,8 +186,8 @@ internal static class InfiniteHelpers
         }
         else
         {
-            box.OpenXmax();
-            box.OpenYmax();
+            // Kerf: as the 3D form (decision 1964)
+            OpenAlong(dir.XY(), ref box);
         }
     }
 
