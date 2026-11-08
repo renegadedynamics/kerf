@@ -80,14 +80,13 @@ public class OffsetCloseUpTests
     }
 
     [Fact]
-    public void Nothing_from_an_outward_offset_is_a_failure_not_a_face_closing_up()
+    public void An_offset_kind_other_than_arc_or_intersection_is_refused()
     {
-        // The tangent join makes nothing at a triangle's corners outwards (unit 12S, offset2d-survey.md); mitres work
-        var triangle = new RegularPolygon(10, 3);
-        var made = Offset(triangle, 1, new OffsetOptions { Kind = Kind.Tangent });
-        Assert.False(made.IsSuccess);
-        Assert.Contains("made nothing", made.Error!.Message);
-        Assert.True(Offset(triangle, 1, new OffsetOptions { Kind = Kind.Intersection }).IsSuccess);
+        // Kind.Tangent has gone (decision 23603): in 2D it made nothing at a triangle's corners outwards (unit 12S)
+        Assert.Equal([Kind.Arc, Kind.Intersection], Enum.GetValues<Kind>());
+        var e = Assert.Throws<ArgumentOutOfRangeException>(() => new RegularPolygon(10, 3).Faces()[0].OuterWire().Offset2D(1, (Kind)2));
+        Assert.Contains("Kind.Arc or Kind.Intersection", e.Message);
+        Assert.True(Offset(new RegularPolygon(10, 3), 1, new OffsetOptions { Kind = Kind.Intersection }).IsSuccess);
     }
 
     [Fact]

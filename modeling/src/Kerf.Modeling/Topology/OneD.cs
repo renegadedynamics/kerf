@@ -339,7 +339,7 @@ public static partial class Shape1DExtensions
             {
                 Kind.Arc => JoinKind.Arc,
                 Kind.Intersection => JoinKind.Intersection,
-                _ => JoinKind.Tangent,
+                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "An offset's kind is Kind.Arc or Kind.Intersection."),
             };
             var line = TopoUtil.AsWire(self);
             var lineEdges = line.Edges();

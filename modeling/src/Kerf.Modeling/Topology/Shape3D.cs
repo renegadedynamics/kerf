@@ -175,13 +175,13 @@ public static partial class Shape3DExtensions
         /// This shape shelled to a <paramref name="thickness"/> (positive outwards, negative inwards), the given faces removed to
         /// open it; with no faces, a closed hollow solid.
         /// </summary>
-        /// <exception cref="ArgumentException">Kind.Tangent isn't supported.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="kind"/> is neither Kind.Arc nor Kind.Intersection.</exception>
         /// <exception cref="InvalidOperationException">OCCT can't build the shell.</exception>
         public Shape Hollow(IEnumerable<Face>? faces, double thickness, double tolerance = 0.0001, Kind kind = Kind.Arc)
         {
             var faceList = faces?.ToList() ?? [];
-            if (kind == Kind.Tangent)
-                throw new ArgumentException("Kind.TANGENT not supported");
+            if (kind is not (Kind.Arc or Kind.Intersection))
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, "An offset's kind is Kind.Arc or Kind.Intersection.");
             var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
             // BRepOffsetAPI_MakeThickSolid by join, in skin mode, with intersections
             var options = new OffsetOptions { Tolerance = tolerance, Mode = OffsetMode.Skin, Intersection = true, SelfIntersection = false, Join = join };
@@ -212,13 +212,13 @@ public static partial class Shape3DExtensions
         /// <summary>
         /// This shape offset by <paramref name="thickness"/> (positive outwards), with <paramref name="openings"/> removed.
         /// </summary>
-        /// <exception cref="ArgumentException">Kind.Tangent isn't supported.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="kind"/> is neither Kind.Arc nor Kind.Intersection.</exception>
         /// <exception cref="InvalidOperationException">OCCT can't build the offset.</exception>
         public Shape Offset3D(IEnumerable<Face>? openings, double thickness, double tolerance = 0.0001, Kind kind = Kind.Arc)
         {
             var faceList = openings?.ToList() ?? [];
-            if (kind == Kind.Tangent)
-                throw new ArgumentException("Kind.TANGENT not supported");
+            if (kind is not (Kind.Arc or Kind.Intersection))
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, "An offset's kind is Kind.Arc or Kind.Intersection.");
             var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
             // BRepOffsetAPI_MakeThickSolid by join, in skin mode, with intersections, internal edges removed
             var options = new OffsetOptions

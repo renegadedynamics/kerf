@@ -153,6 +153,8 @@ right, except the inward error, which a tighter deflection answers without a rew
 
 ## 5. For the owner
 
+*The owner's answers, 8 November 2026 (unit 12T): the tighter polyline, 0.001 of the distance, with OCCT's where it fails (decision 23601); the tangent join removed, in 2D and 3D (decision 23603); the 77 left (decision 23604).*
+
 1. **The inward offset past a curve's sharpest bend is up to 1% of the distance off**, silently, as in OCCT. Tighten
    the polyline to 0.001 of the distance (0.1% off, 3 times its edges where it applies), or to the model's tolerance (exact
    to within it, more edges)? I recommend 0.001 of the distance, with a time check on the sweep.
