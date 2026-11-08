@@ -59,8 +59,20 @@ internal sealed class BSplineCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
             }
         }
 
+        bool kept = false;
         if (Math.Abs(aU1 - trim1) > eps || Math.Abs(aU2 - trim2) > eps)
         {
+            // A frozen curve keeps the boxes of its arcs, as the same arc is bounded many times (Kerf)
+            if (curve.IsFrozen)
+            {
+                Box2d? known = curve.KeptArcBox(trim1, trim2);
+                if (known is Box2d k)
+                {
+                    k.Enlarge(tol);
+                    return k;
+                }
+                kept = true;
+            }
             Geometry2D copy = curve.Copy();
             curve = (BSplineCurve2D)copy;
             curve.Segment(trim1, trim2);
@@ -70,6 +82,10 @@ internal sealed class BSplineCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
         for (int idx = 1; idx <= curve.PoleCount; ++idx)
         {
             box.Add(curve.Pole(idx));
+        }
+        if (kept)
+        {
+            _geom.KeepArcBox(trim1, trim2, box);
         }
         box.Enlarge(tol);
         return box;

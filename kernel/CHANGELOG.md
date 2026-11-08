@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **Large `mkvolume`-style Booleans allocate up to a third less** (19% over the corpus's cases), with the same shapes: a frozen 2D B-spline keeps the boxes of the arcs it was bounded over (decision 23401).
 - **A STEP file past the reader's limits fails as `exchange.limit-exceeded`,** as documented, where it was `exchange.failed` (decision 1965).
 - **A STEP solid written as a faceted B-rep with voids is read with its voids,** from any file; they were lost (decision 1963).
 - **The box of a half-infinite parabola or hyperbola, or of a ray not along an axis, holds it:** it was open on the wrong sides (decision 1964).
