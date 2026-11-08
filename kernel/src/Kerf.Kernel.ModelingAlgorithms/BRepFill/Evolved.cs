@@ -1977,9 +1977,7 @@ internal sealed class Evolved
             sol = new Solid();
             b.MakeSolid(ref sol);
             b.Add(sol, sh);
-            SolidClassifier sc = new(sol);
-            sc.PerformInfinitePoint(BRepFill_Confusion());
-            if (sc.State() == In)
+            if (SolidClassifier.InfinitePointState(sol, BRepFill_Confusion()) == In)
             {
                 sol = new Solid();
                 b.MakeSolid(ref sol);
