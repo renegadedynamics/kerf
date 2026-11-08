@@ -30,10 +30,17 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
     private double _param1sup;
     private double _param2inf;
     private double _param2sup;
-    private readonly IntConicConic _intconiconi = new();
-    private readonly IntConicCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool> _intconicurv =
-        new();
-    private readonly IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> _intcurvcurv = new();
+    // Kerf: each sub-intersector is made when it's first used, as OCCT's members are made with the object: a pair of
+    // edges needs one of them, and each holds sequences of its own (performance.md, "The perf search")
+    private IntConicConic? _intconiconi;
+    private IntConicCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool>? _intconicurv;
+    private IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur>? _intcurvcurv;
+
+    private IntConicConic ConicConic => _intconiconi ??= new();
+
+    private IntConicCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpParTool> ConicCurve => _intconicurv ??= new();
+
+    private IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> CurveCurve => _intcurvcurv ??= new();
 
     /// <summary>Empty constructor.</summary>
     public IntCurveCurveGen()
@@ -176,9 +183,9 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                     }
                 }
                 this.ResetFields();
-                _intcurvcurv.SetReversedParameters(false);
-                _intcurvcurv.Perform(c, d1, tolConf, tol);
-                this.SetValues(_intcurvcurv);
+                CurveCurve.SetReversedParameters(false);
+                CurveCurve.Perform(c, d1, tolConf, tol);
+                this.SetValues(CurveCurve);
                 _done = true;
             }
             break;
@@ -202,9 +209,9 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
 
             default: {
                 this.ResetFields();
-                _intcurvcurv.SetReversedParameters(false);
-                _intcurvcurv.Perform(c, d, tolConf, tol);
-                this.SetValues(_intcurvcurv);
+                CurveCurve.SetReversedParameters(false);
+                CurveCurve.Perform(c, d, tolConf, tol);
+                this.SetValues(CurveCurve);
                 _done = true;
             }
             break;
@@ -336,90 +343,90 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                 switch (typ2)
                 {
                     case Line: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi.Perform(TheCurveTool.Line(c1), d1, TheCurveTool.Line(c2), d2, tolConf, tol);
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic.Perform(TheCurveTool.Line(c1), d1, TheCurveTool.Line(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Circle: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c1), d1, TheCurveTool.Circle(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Ellipse: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c1), d1, TheCurveTool.Ellipse(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Parabola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c1), d1, TheCurveTool.Parabola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Hyperbola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c1), d1, TheCurveTool.Hyperbola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
 
                     break;
 
                     default: {
-                        _intconicurv.SetReversedParameters(false);
-                        _intconicurv.Perform(TheCurveTool.Line(c1), d1, c2, d2, tolConf, tol);
+                        ConicCurve.SetReversedParameters(false);
+                        ConicCurve.Perform(TheCurveTool.Line(c1), d1, c2, d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
@@ -430,90 +437,90 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                 switch (typ2)
                 {
                     case Line: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c2), d2, TheCurveTool.Circle(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Circle: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Circle(c1), d1, TheCurveTool.Circle(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Ellipse: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Circle(c1), d1, TheCurveTool.Ellipse(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Parabola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Circle(c1), d1, TheCurveTool.Parabola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Hyperbola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Circle(c1), d1, TheCurveTool.Hyperbola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     default: {
-                        _intconicurv.SetReversedParameters(false);
-                        _intconicurv.Perform(TheCurveTool.Circle(c1), d1, c2, d2, tolConf, tol);
+                        ConicCurve.SetReversedParameters(false);
+                        ConicCurve.Perform(TheCurveTool.Circle(c1), d1, c2, d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
 
@@ -525,92 +532,92 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                 switch (typ2)
                 {
                     case Line: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c2), d2, TheCurveTool.Ellipse(c1), d1, tolConf, tol);
 
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Circle: {
-                        _intconiconi.SetReversedParameters(true);
+                        ConicConic.SetReversedParameters(true);
 
-                        _intconiconi
+                        ConicConic
                             .Perform(TheCurveTool.Circle(c2), d2, TheCurveTool.Ellipse(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Ellipse: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Ellipse(c1), d1, TheCurveTool.Ellipse(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Parabola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Ellipse(c1), d1, TheCurveTool.Parabola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Hyperbola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Ellipse(c1), d1, TheCurveTool.Hyperbola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     default: {
-                        _intconicurv.SetReversedParameters(false);
-                        _intconicurv.Perform(TheCurveTool.Ellipse(c1), d1, c2, d2, tolConf, tol);
+                        ConicCurve.SetReversedParameters(false);
+                        ConicCurve.Perform(TheCurveTool.Ellipse(c1), d1, c2, d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
@@ -621,90 +628,90 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                 switch (typ2)
                 {
                     case Line: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c2), d2, TheCurveTool.Parabola(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Circle: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Circle(c2), d2, TheCurveTool.Parabola(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Ellipse: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Ellipse(c2), d2, TheCurveTool.Parabola(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Parabola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Parabola(c1), d1, TheCurveTool.Parabola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Hyperbola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic
                             .Perform(TheCurveTool.Parabola(c1), d1, TheCurveTool.Hyperbola(c2), d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     default: {
-                        _intconicurv.SetReversedParameters(false);
-                        _intconicurv.Perform(TheCurveTool.Parabola(c1), d1, c2, d2, tolConf, tol);
+                        ConicCurve.SetReversedParameters(false);
+                        ConicCurve.Perform(TheCurveTool.Parabola(c1), d1, c2, d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
@@ -715,68 +722,68 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                 switch (typ2)
                 {
                     case Line: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Line(c2), d2, TheCurveTool.Hyperbola(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Circle: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Circle(c2), d2, TheCurveTool.Hyperbola(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Ellipse: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Ellipse(c2), d2, TheCurveTool.Hyperbola(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Parabola: {
-                        _intconiconi.SetReversedParameters(true);
-                        _intconiconi
+                        ConicConic.SetReversedParameters(true);
+                        ConicConic
                             .Perform(TheCurveTool.Parabola(c2), d2, TheCurveTool.Hyperbola(c1), d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     case Hyperbola: {
-                        _intconiconi.SetReversedParameters(false);
-                        _intconiconi.Perform(TheCurveTool.Hyperbola(c1),
+                        ConicConic.SetReversedParameters(false);
+                        ConicConic.Perform(TheCurveTool.Hyperbola(c1),
                                                                 d1,
                                                                 TheCurveTool.Hyperbola(c2),
                                                                 d2,
@@ -784,25 +791,25 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                                                                 tol);
                         if (composite)
                         {
-                            this.Append(_intconiconi, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicConic, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconiconi);
+                            this.SetValues(ConicConic);
                         }
                     }
                     break;
 
                     default: {
-                        _intconicurv.SetReversedParameters(false);
-                        _intconicurv.Perform(TheCurveTool.Hyperbola(c1), d1, c2, d2, tolConf, tol);
+                        ConicCurve.SetReversedParameters(false);
+                        ConicCurve.Perform(TheCurveTool.Hyperbola(c1), d1, c2, d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
@@ -813,85 +820,85 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
                 switch (typ2)
                 {
                     case Line: {
-                        _intconicurv.SetReversedParameters(true);
-                        _intconicurv.Perform(TheCurveTool.Line(c2), d2, c1, d1, tolConf, tol);
+                        ConicCurve.SetReversedParameters(true);
+                        ConicCurve.Perform(TheCurveTool.Line(c2), d2, c1, d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
 
                     case Circle: {
-                        _intconicurv.SetReversedParameters(true);
-                        _intconicurv.Perform(TheCurveTool.Circle(c2), d2, c1, d1, tolConf, tol);
+                        ConicCurve.SetReversedParameters(true);
+                        ConicCurve.Perform(TheCurveTool.Circle(c2), d2, c1, d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
 
                     case Ellipse: {
-                        _intconicurv.SetReversedParameters(true);
-                        _intconicurv.Perform(TheCurveTool.Ellipse(c2), d2, c1, d1, tolConf, tol);
+                        ConicCurve.SetReversedParameters(true);
+                        ConicCurve.Perform(TheCurveTool.Ellipse(c2), d2, c1, d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
 
                     case Parabola: {
-                        _intconicurv.SetReversedParameters(true);
-                        _intconicurv.Perform(TheCurveTool.Parabola(c2), d2, c1, d1, tolConf, tol);
+                        ConicCurve.SetReversedParameters(true);
+                        ConicCurve.Perform(TheCurveTool.Parabola(c2), d2, c1, d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
 
                     case Hyperbola: {
-                        _intconicurv.SetReversedParameters(true);
-                        _intconicurv.Perform(TheCurveTool.Hyperbola(c2), d2, c1, d1, tolConf, tol);
+                        ConicCurve.SetReversedParameters(true);
+                        ConicCurve.Perform(TheCurveTool.Hyperbola(c2), d2, c1, d1, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intconicurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(ConicCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intconicurv);
+                            this.SetValues(ConicCurve);
                         }
                     }
                     break;
 
                     default: {
-                        _intcurvcurv.SetReversedParameters(false);
-                        _intcurvcurv.Perform(c1, d1, c2, d2, tolConf, tol);
+                        CurveCurve.SetReversedParameters(false);
+                        CurveCurve.Perform(c1, d1, c2, d2, tolConf, tol);
                         if (composite)
                         {
-                            this.Append(_intcurvcurv, _param1inf, _param1sup, _param2inf, _param2sup);
+                            this.Append(CurveCurve, _param1inf, _param1sup, _param2inf, _param2sup);
                         }
                         else
                         {
-                            this.SetValues(_intcurvcurv);
+                            this.SetValues(CurveCurve);
                         }
                         _done = true;
                     }
@@ -1085,13 +1092,13 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
     /// <summary>The minimum number of samples of the polygon intersection.</summary>
     public void SetMinNbSamples(int minNbSamples)
     {
-        _intcurvcurv.SetMinNbSamples(minNbSamples);
+        CurveCurve.SetMinNbSamples(minNbSamples);
     }
 
 
 
     public int GetMinNbSamples()
     {
-        return _intcurvcurv.GetMinNbSamples();
+        return CurveCurve.GetMinNbSamples();
     }
 }
