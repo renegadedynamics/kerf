@@ -5,8 +5,8 @@ version may break the API.
 
 ## Unreleased
 
-- **A Boolean's check that searches on B-spline edges is about a third cheaper** (decision 22904): a curve keeps its values at the ends of its range, the same values as before.
-- **`ThickSolid` is checked and retried as `Offset` and `Hollow` are:** a cone with its apex, inwards with round joins, is made with mitres and says so, and an offset that comes out nonsense fails, holding the shape (decision 22901). `OffsetVolumes.Check` is public, as `BooleanVolumes.Check` is. **A hollow solid made outwards that fills the solid it was made around fails** (decision 22902).
+- **A Boolean's check that searches on B-spline edges is about a third cheaper** (decision 1950): a curve keeps its values at the ends of its range, the same values as before.
+- **`ThickSolid` is checked and retried as `Offset` and `Hollow` are:** a cone with its apex, inwards with round joins, is made with mitres and says so, and an offset that comes out nonsense fails, holding the shape (decision 1947). `OffsetVolumes.Check` is public, as `BooleanVolumes.Check` is. **A hollow solid made outwards that fills the solid it was made around fails** (decision 1948).
 - **A cone offset or hollowed inwards with round joins now works,** where it failed: it's made with mitres, which give the same solid there, and the result carries the warning `offset.join-changed` (decision 1938). A hollow solid made inwards that takes nothing out fails, where it reported success (decision 1939).
 - **A mesh of a damaged face fails, carrying the rest, instead of taking all the memory:** `meshing.faces-refused`, with the other faces' mesh from `TryGetInvalid`; glTF, 3MF and OBJ writes fail with `exchange.write-failed`. Six damaged files that ran out of 1.5 GB now fail in under a second, and a loft whose mesh couldn't be cancelled for hours can be (decisions 1942 and 1944). OBJ no longer lets a mesh past `MaxTriangles` out as an internal exception.
 - **Running out of memory, or a cancel, is no longer turned into an ordinary failure** in a mesh, a loft's recovery or a fillet's message (decision 1943).

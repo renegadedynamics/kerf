@@ -62,7 +62,7 @@ Ongoing, to the owner's bar.
 |---|---|
 | **12N** Unexplained rises: **explained** (decisions 1938 to 1941) | Extrude until's +3.6 MB, a thick solid's +2.2%, and `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB. The thick solid's is fixed (rounding taken as crossing, decision 1941); extrude until's is decision 1881's check and the mesh's the rig's noise, both under the bar. With it, decision 1918's cone: round joins at an apex retried with mitres |
 | **12O** The mesher (11O) | Meet the deflection at a sensible triangle count, so that `ControlAllSurfaces` can go altogether (decision 1680) |
-| **12P** Wasteful cases (11Q): **done** (decisions 1947 to 1951) | Down the slowest list: the corpus's slowest cases, the rig's slowest suites and Bento's examples. With it, `Kerf.Modeling`'s offsets checked and retried (22901, 22902), and the rig's bytes the median of its runs (22903). A curve adaptor keeps a B-spline's ends: `buc60462_2`'s check -35% of samples (22904); the rest written down (22905) |
+| **12P** Wasteful cases (11Q): **done** (decisions 1947 to 1951) | Down the slowest list: the corpus's slowest cases, the rig's slowest suites and Bento's examples. With it, `Kerf.Modeling`'s offsets checked and retried (1947, 1948), and the rig's bytes the median of its runs (1949). A curve adaptor keeps a B-spline's ends: `buc60462_2`'s check -35% of samples (1950); the rest written down (1951) |
 
 ## 5. Tests and surveys
 
