@@ -339,8 +339,7 @@ internal class EdgeCheck : ResultCheck
                     Placement tFloc = tf.Location();
                     Surface? su = tf.Surface();
                     Placement L = (floc * tFloc).Predivided(_shape.Placement);
-                    Placement le = _shape.Placement * _cref.Location();
-                    Transform3D etrsf = le.Transformation;
+                    Transform3D etrsf = Placement.ProductTransformation(_shape.Placement, _cref.Location());
                     bool pcurvefound = false;
 
                     var itcr = new NCollection_List<CurveRepresentation>.Iterator(te.Curves());
@@ -727,8 +726,7 @@ internal class EdgeCheck : ResultCheck
             if (cr.IsCurve3D && !te.Degenerated())
             {
                 //// modified by jgv, 20.03.03 ////
-                Placement loc = _shape.Placement * cr.Location();
-                var c3d = (Curve3D)cr.Curve3D()!.Transformed(loc.Transformation);
+                var c3d = (Curve3D)cr.Curve3D()!.Transformed(Placement.ProductTransformation(_shape.Placement, cr.Location()));
                 ///////////////////////////////////
                 var gac3d = new CurveAdaptor(c3d, first, last);
                 it = iRep;
@@ -746,8 +744,7 @@ internal class EdgeCheck : ResultCheck
                 {
                     Surface sref = cr.Surface()!;
                     //// modified by jgv, 20.03.03 ////
-                    Placement loc = _shape.Placement * cr.Location();
-                    sref = (Surface)sref.Transformed(loc.Transformation);
+                    sref = (Surface)sref.Transformed(Placement.ProductTransformation(_shape.Placement, cr.Location()));
                     ///////////////////////////////////
                     Curve2D pCref = cr.PCurve()!;
                     var gahSref = new SurfaceAdaptor(sref);
@@ -872,8 +869,8 @@ internal class EdgeCheck : ResultCheck
             CurveRepresentation cr = it.Value();
             var pt = (PolygonOnTriangulationRepresentation)cr;
 
-            Placement ll = edge.Placement * pt.Location();
-            Transform3D trsf = ll.Transformation;
+            // Kerf: the transformation of the product, without a new node of the chain for each edge and polygon
+            Transform3D trsf = Placement.ProductTransformation(edge.Placement, pt.Location());
 
             Triangulation triang = cr.Triangulation()!;
             PolygonOnTriangulation pOnTriag = cr.IsPolygonOnClosedTriangulation
