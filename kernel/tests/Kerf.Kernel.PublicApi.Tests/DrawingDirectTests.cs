@@ -131,4 +131,51 @@ public class DrawingDirectTests
             Assert.Equal(anAll.Edges.Count(e => e.IsVisible), aVisible.Edges.Length);
         }
     }
+
+    [Fact]
+    public void Svg_options_and_line_styles_default_as_documented()
+    {
+        SvgOptions d = SvgOptions.Default;
+        Assert.Null(d.PageWidth);
+        Assert.Null(d.PageHeight);
+        Assert.Equal(SvgUnit.Millimetre, d.Unit);
+        Assert.Equal(5, d.Margin);
+        Assert.Null(d.Scale);
+        Assert.True(d.IncludeHidden);
+        Assert.Null(d.Background);
+        Assert.Equal(0.01, d.Tolerance);
+        Assert.Equal(3, d.Decimals);
+        Assert.Equal(LineStyle.Visible, d.VisibleStyle);
+        Assert.Equal(LineStyle.Hidden, d.HiddenStyle);
+        Assert.Equal(new Color(0, 0, 0), LineStyle.Visible.Color);
+        Assert.True(LineStyle.Visible.Dashes.IsEmpty);
+        Assert.Equal(new Color(0.5, 0.5, 0.5), LineStyle.Hidden.Color);
+        Assert.Equal(0.18, LineStyle.Hidden.Width);
+        Assert.Equal(new double[] { 1.5, 1 }, LineStyle.Hidden.Dashes.ToArray());
+    }
+
+    [Fact]
+    public void Svg_writes_the_page_and_the_styles_it_is_given()
+    {
+        // the top of a 10 x 20 box at scale 2 with a margin of 1: a page of 22 by 42
+        LineDrawing aDrawing = Solid.Box(10, 20, 30).Value.Shape.ProjectLines(Camera.Top).Value;
+        var aDashed = new LineStyle { Color = new Color(1, 0, 0), Width = 0.5, Dashes = [2, 1] };
+        var anOptions = new SvgOptions { Scale = 2, Margin = 1, Decimals = 1, VisibleStyle = aDashed, Background = new Color(1, 1, 1), Tolerance = 0.05 };
+        Assert.Equal((2.0, 1.0, 1, 0.05), (anOptions.Scale, anOptions.Margin, anOptions.Decimals, anOptions.Tolerance));
+        Assert.Equal(aDashed, anOptions.VisibleStyle);
+        Assert.Equal(new double[] { 2, 1 }, aDashed.Dashes.ToArray());
+        Assert.Equal(0.5, aDashed.Width);
+        string aSvg = Svg.WriteToString(aDrawing, anOptions);
+        Assert.Contains("width=\"22mm\" height=\"42mm\" viewBox=\"0 0 22 42\"", aSvg);
+        Assert.Contains("<rect x=\"0\" y=\"0\" width=\"22\" height=\"42\" fill=\"#ffffff\"", aSvg);
+        Assert.Contains("<g id=\"visible\" fill=\"none\" stroke=\"#ff0000\" stroke-width=\"0.5\" stroke-dasharray=\"2 1\"", aSvg);
+        Assert.Contains("<g id=\"hidden\"", aSvg);
+        // without hidden lines, their layer goes; in inches on a page of 4 by 6 the drawing fits it
+        string aVisibleOnly = Svg.WriteToString(aDrawing, new SvgOptions { IncludeHidden = false, Unit = SvgUnit.Inch, PageWidth = 4, PageHeight = 6 });
+        Assert.DoesNotContain("<g id=\"hidden\"", aVisibleOnly);
+        Assert.Contains("width=\"4in\" height=\"6in\"", aVisibleOnly);
+        Assert.False(new SvgOptions { IncludeHidden = false }.IncludeHidden);
+        Assert.Equal(SvgUnit.Inch, new SvgOptions { Unit = SvgUnit.Inch }.Unit);
+        Assert.Equal((4.0, 6.0), (new SvgOptions { PageWidth = 4, PageHeight = 6 }.PageWidth, new SvgOptions { PageWidth = 4, PageHeight = 6 }.PageHeight));
+    }
 }
