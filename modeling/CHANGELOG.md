@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Importers.ImportStep` past `ImportLimits.MaxBytes` or `MaxEntities` fails as `exchange.limit-exceeded`,** as documented and as BREP does, where it was `exchange.failed` (kernel decision 23105).
 - **`Offset3D` and `Hollow` of a cone with its apex, inwards with round joins, now give the right solid,** made with mitres, with a warning that `Operations.Offset` returns as `offset.join-changed`; before, `Offset3D` gave a shape with no solid in it, and `Hollow` failed. **An offset or hollow solid that comes out nonsense now fails, holding the shape,** where it gave a volume of 2e100, or a repair that filled the wall, as a success (decisions 1947 and 1948).
 - **`MeshTolerances.ControlAllSurfaces` has gone** (a breaking change): a mesh keeps to `Linear` on every kind of surface without it, by default, with no more triangles (kernel decision 1954). Remove it from a constructor or `with`; nothing else changes.
 - **`Solid.Extrude` along the profile's plane and `Solid.MakeLoft` of sections in one plane now fail,** where they gave a solid of no volume.
