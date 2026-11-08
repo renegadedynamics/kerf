@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **A validity check of a placed, meshed shape allocates about half as much,** with the same verdicts: it no longer composes placements it doesn't read (decision 23301).
+- **Shape healing allocates 6% less in `ShapeFix` and 3% less on a STEP import,** with the same shapes: a wire's 2D intersections make only the intersector they use, and orienting a shell builds no tree of its edges (decision 23303).
 - **A Boolean's check that searches on B-spline edges is about a third cheaper** (decision 1950): a curve keeps its values at the ends of its range, the same values as before.
 - **`ThickSolid` is checked and retried as `Offset` and `Hollow` are:** a cone with its apex, inwards with round joins, is made with mitres and says so, and an offset that comes out nonsense fails, holding the shape (decision 1947). `OffsetVolumes.Check` is public, as `BooleanVolumes.Check` is. **A hollow solid made outwards that fills the solid it was made around fails** (decision 1948).
 - **Meshing allocates less on large faces:** 28% less over `data/occ`, 36% on `terrain.brep` and three quarters on a fine sphere, with the same meshes (decision 1955).
