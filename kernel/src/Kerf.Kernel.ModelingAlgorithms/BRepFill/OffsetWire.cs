@@ -632,12 +632,36 @@ internal sealed class OffsetWire
     {
         for (Explorer exp = new(shape, ShapeType.Wire); exp.More(); exp.Next())
         {
-            if (!exp.Current().ClosedFlag || !Tool.IsClosed(exp.Current()))
+            if (!exp.Current().ClosedFlag || !Tool.IsClosed(exp.Current()) || !Chained(exp.Current()))
             {
                 return false;
             }
         }
         return true;
+    }
+
+    // Whether a wire's edges, as oriented in it, run on from one to the next: each vertex starts as many edges as it ends.
+    // Where the finer polyline's offset closes up it can give a closed loop with an edge the wrong way round, which a face on
+    // it finds not closed and unorientable (offset/wire_closed_inside_0_075/D4, decision 23605)
+    private static bool Chained(in Shape wire)
+    {
+        Dictionary<Shape, int> balance = new(ShapeHasher.Instance);
+        for (Iterator it = new(wire); it.More(); it.Next())
+        {
+            if (it.Value().Type != ShapeType.Edge)
+            {
+                continue;
+            }
+            EdgeVertices(ShapeCasts.Edge(it.Value()), out Vertex first, out Vertex last);
+            if (first.IsNull || last.IsNull)
+            {
+                return false;
+            }
+            Shape a = first.Oriented(Forward), b = last.Oriented(Forward);
+            balance[a] = balance.GetValueOrDefault(a) + 1;
+            balance[b] = balance.GetValueOrDefault(b) - 1;
+        }
+        return balance.Values.All(n => n == 0);
     }
 
     // The parallel at distance 0: the wires of the spine, moved by the altitude.

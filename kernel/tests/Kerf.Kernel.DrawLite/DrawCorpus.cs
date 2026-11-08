@@ -367,14 +367,9 @@ public sealed class DrawCorpus(string theTestsDirectory)
     public static readonly IReadOnlyDictionary<string, (string Reason, string Figure)> KnownDifferences =
         new Dictionary<string, (string, string)>(StringComparer.Ordinal)
         {
-            // OCCT's offset closes up; the finer polyline leaves a 3-edge remnant whose face is faulty
-            ["offset/wire_closed_inside_0_075/D4"] = ("a faulty remnant where OCCT's offset closes up (decision 23601)", "The length is 0.394065"),
             // OCCT can't build it (TODO OCC23748); the finer polyline does, shorter than the script's figure
             ["offset/wire_unclosed_outside_0_075/A1"] = ("built where OCCT fails (TODO OCC23748), 10.60 for the script's 11.69 (decision 23601)",
                                                          "The length of result shape is 10.6026, expected 11.6898"),
-            // OCCT's result is faulty (TODO OCC23748); so is this one, 2% longer
-            ["offset/wire_unclosed_outside_0_075/A9"] = ("faulty as OCCT's (TODO OCC23748), 2% longer (decision 23601)",
-                                                         "The length of result shape is 79361, expected 77744.9"),
         };
 
     // Before IntendedDifferences, which reads them as it's initialised

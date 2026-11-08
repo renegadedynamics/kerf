@@ -255,4 +255,22 @@ public class BRepFill_OffsetWireTests
         anOffset.Perform(0.1);
         Assert.False(anOffset.IsDone);
     }
+
+    [Fact]
+    public void A_finer_polyline_whose_offset_has_an_edge_the_wrong_way_round_falls_back_to_OCCTs()
+    {
+        // tests/offset/wire_closed_inside_0_075/D4: at the distance where it closes up, the polyline at 0.001 of the distance
+        // gave a closed loop of three edges, one the wrong way round (a face on it not closed and unorientable), as a
+        // success; OCCT's polyline closes up, as natively (decisions 23601 and 23605)
+        string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                                        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "offset_wire_044.brep");
+        if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
+        {
+            return;
+        }
+        MakeWireOffset anOffset = new(ShapeCasts.Wire(aShape));
+        anOffset.Perform(-0.075 * 32.074);
+        Assert.True(anOffset.IsDone);
+        Assert.Equal(0, Count(anOffset.Shape(), ShapeType.Edge));
+    }
 }
