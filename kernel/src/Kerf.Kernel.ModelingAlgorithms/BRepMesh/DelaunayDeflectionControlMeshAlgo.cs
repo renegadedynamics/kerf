@@ -30,6 +30,11 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     private HashSet<OrientedEdge>? _couplesMap;
     private LinkMarks? _passLinks;
     private NCollection_List<Point2D>? _controlNodes;
+    // Kerf: each node's normal for the angular check, estimated when a link first needs it, as OCCT estimates it again for
+    // each of the node's links; 0 not yet, 1 estimated, 2 not estimable (decision 23702). From the shared pool, returned at the end.
+    private Direction3D[] _normals = [];
+    private byte[] _normalStates = [];
+    private int _normalsCapacity;
     private CircleTool? _circles;
 
     /// <summary>An algorithm.</summary>
@@ -113,6 +118,8 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
 
             isInserted = InsertNodes(_controlNodes, mesher, ps.Next());
         }
+
+        ReturnNormals();
 
         _couplesMap = null;
         _passLinks = null;
@@ -314,7 +321,7 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 {
                     if (!RejectSplitLinksForMinSize(nodesInfo[i], nodesInfo[j], midPnt2d))
                     {
-                        if (!CheckLinkEndsForAngularDeviation(nodesInfo[i], nodesInfo[j], midPnt2d))
+                        if (!CheckLinkEndsForAngularDeviation(nodesInfo[i], nodesIndices[i], nodesInfo[j], nodesIndices[j]))
                         {
                             _controlNodes!.Append(new Point2D(midPnt2d));
                         }
@@ -336,16 +343,10 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     }
 
     // Checks the given point (located between the given nodes) for specified angular deviation.
-    private bool CheckLinkEndsForAngularDeviation(in TriangleNodeInfo nodeInfo1,
-                                                  in TriangleNodeInfo nodeInfo2,
-                                                  in Xy midPoint)
+    private bool CheckLinkEndsForAngularDeviation(in TriangleNodeInfo nodeInfo1, int node1,
+                                                  in TriangleNodeInfo nodeInfo2, int node2)
     {
-        _ = midPoint;
-        Direction3D norm1 = new(), norm2 = new();
-        Surface surf = GetDFace().GetSurface().GeomSurfaceOriginal()!;
-
-        if ((global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo1.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref norm1) == 0)
-            && (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo2.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref norm2) == 0))
+        if (NodeNormal(nodeInfo1, node1, out Direction3D norm1) && NodeNormal(nodeInfo2, node2, out Direction3D norm2))
         {
             double angle = norm1.AngleTo(norm2);
             if (angle > GetParameters().AngleInterior)
@@ -355,6 +356,57 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
         }
 
         return true;
+    }
+
+    // The surface's normal at the node, as GeomLib.NormEstim estimates it at its parameters, which don't change; false if
+    // it can't be estimated. Estimated once, where OCCT estimates it for each of the node's links (decision 23702).
+    private bool NodeNormal(in TriangleNodeInfo nodeInfo, int node, out Direction3D normal)
+    {
+        if (node >= _normalsCapacity)
+        {
+            GrowNormals(node);
+        }
+
+        byte state = _normalStates[node];
+        if (state == 0)
+        {
+            Direction3D estimate = new();
+            Surface surf = GetDFace().GetSurface().GeomSurfaceOriginal()!;
+            state = global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref estimate) == 0 ? (byte)1 : (byte)2;
+            _normals[node] = estimate;
+            _normalStates[node] = state;
+        }
+
+        normal = _normals[node];
+        return state == 1;
+    }
+
+    private void GrowNormals(int node)
+    {
+        int size = Math.Max(node + 1, GetStructure().NodeCount + 1);
+        Direction3D[] normals = System.Buffers.ArrayPool<Direction3D>.Shared.Rent(size);
+        byte[] states = System.Buffers.ArrayPool<byte>.Shared.Rent(size);
+        int capacity = Math.Min(normals.Length, states.Length);
+        Array.Copy(_normals, normals, _normalsCapacity);
+        Array.Copy(_normalStates, states, _normalsCapacity);
+        Array.Clear(states, _normalsCapacity, capacity - _normalsCapacity);
+        ReturnNormals();
+        _normals = normals;
+        _normalStates = states;
+        _normalsCapacity = capacity;
+    }
+
+    private void ReturnNormals()
+    {
+        if (_normalStates.Length > 0)
+        {
+            System.Buffers.ArrayPool<Direction3D>.Shared.Return(_normals);
+            System.Buffers.ArrayPool<byte>.Shared.Return(_normalStates);
+        }
+
+        _normals = [];
+        _normalStates = [];
+        _normalsCapacity = 0;
     }
 
     // Returns 3d point corresponding to the given one in 2d space.
