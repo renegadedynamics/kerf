@@ -2273,3 +2273,11 @@ Found by unit 12J:
 | `Draft_Modification`, a surface of extrusion | Turns planes, cylinders and cones only; an extrusion only as the tangent neighbour of a drafted face | An extruded circle (not made a cylinder) is refused (`FaceRecomputation`) | leave: refused, not wrong |
 | `Draft_Modification::Add`, a face it can't turn | Marks the face bad before binding it, so `Remove` refuses it (`NoSuchObject`) | Only `Clear` brings the draft back, not removing the face | leave: as documented, `Remove` is for faces taken |
 | `StepToGeom::MakeYprRotation`, an axis off the coordinate axes | Never computes roll (it stays 0); turns yaw by π where `atan2`, already in four quadrants, was right; tests `\|[1][3] - 1\|`, so a pitch of -π/2 is missed | Yaw, pitch and roll that compose to another rotation | fixed (decision 23108) |
+
+## Found by unit 12S
+
+| Where | What | Effect | Triage |
+|---|---|---|---|
+| `BRepFill_OffsetWire::Perform`, `CheckBadEdges` | An edge curving tighter than the offset is replaced by a polyline of deflection `0.01 * |offset|`, whose chords lie inside the curve | An inward offset past a curve's sharpest bend up to 1% of the distance off, silently: an ellipse 10 by 5 at -3, 39.556 for 40.035 | **open**, for the owner (decision 1959) |
+| `BRepFill_OffsetWire::MakeOffset` | A B-spline edge with a kink (C0) inside it goes to `Geom2d_OffsetCurve`, which refuses it | "Offset on C0 curve": 39 of the 77 offset/wire_* failures, OCCT's known ones; splitting first rescues 4 | leave (decision 1958) |
+| `BRepOffsetAPI_MakeOffset`, the tangent join | Not a 2D join OCCT documents; by reading, the code tests `== Arc` in some places and `== Intersection` in others, so the tangent join takes neither branch in some | Nothing outwards from a triangle or star; mitres' results elsewhere | **open**, for the owner (decision 1960) |

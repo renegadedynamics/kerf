@@ -246,6 +246,29 @@ internal static class OneD
         }
     }
 
+    private const string PiecesKey = "Kerf.Modeling.OffsetPieces";
+
+    /// <summary>
+    /// The failure of a closed curve's offset that left <paramref name="pieces"/>, none or several, not one: holding the
+    /// pieces (as the failure's shapes, and for <see cref="PiecesOf"/>).
+    /// </summary>
+    internal static InvalidOperationException Pieces(ShapeList<Wire> pieces, double distance)
+    {
+        // Nothing from an outward offset isn't a curve closing up but the kernel failing (the tangent join at a sharp
+        // corner): a plain failure, which a face's offset doesn't take for its face closing up
+        if (pieces.Count == 0 && distance > 0)
+            return Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset by {Formatting.Number(distance)} in the plane failed: it made nothing.");
+        string message = pieces.Count == 0
+            ? $"The offset by {Formatting.Number(distance)} in the plane leaves nothing: the curve closes up at that distance."
+            : $"The offset by {Formatting.Number(distance)} in the plane splits the curve into {pieces.Count} pieces; offset a face to keep them all.";
+        var failure = Failures.Expected(ModelingDiagnostics.OffsetFailed, message, shapes: [.. pieces.Select(w => (Shape)w)]);
+        failure.Data[PiecesKey] = pieces.ToList();
+        return failure;
+    }
+
+    /// <summary>The pieces a closed curve's offset left (none when it closed up), if <paramref name="e"/> is that failure.</summary>
+    internal static List<Wire>? PiecesOf(Exception e) => e.Data[PiecesKey] as List<Wire>;
+
     /// <summary>
     /// The wire with its offset curves (which STEP export, among others, can't handle) replaced by B-splines within a
     /// tenth of the tolerance; a wire without offset curves is returned as it is.
@@ -378,12 +401,12 @@ public static partial class Shape1DExtensions
             if (!offsetted.TryGetValue(out var built))
                 throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset by {Formatting.Number(distance)} in the plane failed.",
                                         offsetted.Diagnostics);
-            var obj = TopoUtil.Downcast(built.Shape);
-            if (obj.IsCompound())
-                obj = TopoUtil.UnwrapCompound((Compound)obj);
-            if (!obj.IsWire())
-                throw new InvalidOperationException("Unexpected result type");   // likely several wires
-            var offsetWire = (Wire)obj;
+            // A closed curve offset inwards far enough leaves nothing, or splits into several (a waist pinched off): a failure
+            // either way for one curve, which a face's offset reads to drop the face or keep each piece (unit 12S)
+            var pieces = built.Shape.Wires();
+            if (pieces.Count != 1)
+                throw OneD.Pieces(pieces, distance);
+            var offsetWire = pieces[0];
             if (asBSpline)
                 offsetWire = OneD.OffsetCurvesToBSplines(offsetWire);
 
