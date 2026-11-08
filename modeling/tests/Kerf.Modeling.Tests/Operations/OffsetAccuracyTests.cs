@@ -1,6 +1,6 @@
 // Unit 12T: a 2D offset inwards past a curve's sharpest bend, where the kernel stands a polyline in for the curve
 // (CheckBadEdges). OCCT's deflection of 0.01 of the distance put the offset up to 1% of it too far in, silently; 0.001
-// keeps it within 0.1% (decision 23601). And a closed curve whose offset came out open is a failure, not an exception.
+// keeps it within 0.1% (decision 1980). And a closed curve whose offset came out open is a failure, not an exception.
 using static Kerf.Modeling.Operations;
 
 namespace Kerf.Modeling.Tests;

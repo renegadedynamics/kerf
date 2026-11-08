@@ -82,7 +82,7 @@ public class OffsetCloseUpTests
     [Fact]
     public void An_offset_kind_other_than_arc_or_intersection_is_refused()
     {
-        // Kind.Tangent has gone (decision 23603): in 2D it made nothing at a triangle's corners outwards (unit 12S)
+        // Kind.Tangent has gone (decision 1982): in 2D it made nothing at a triangle's corners outwards (unit 12S)
         Assert.Equal([Kind.Arc, Kind.Intersection], Enum.GetValues<Kind>());
         var e = Assert.Throws<ArgumentOutOfRangeException>(() => new RegularPolygon(10, 3).Faces()[0].OuterWire().Offset2D(1, (Kind)2));
         Assert.Contains("Kind.Arc or Kind.Intersection", e.Message);

@@ -16,4 +16,4 @@ raised. The branch builds against 0.3.0 as it is, and against the next release, 
 | A closed spline offset inwards to where it just closes up, when the kernel gives an open piece | `#VALUE!` from an exception thrown out of `Offset` | `#VALUE!`, `modeling.offset-failed`: "the offset of a closed curve came out open" |
 | `{kind: "tangent"}` | `#VALUE!` on the branch already (the table) | the same |
 
-Decisions 23601 to 23604 in the kernel's `docs/decisions.md`.
+Decisions 1980 to 1983 in the kernel's `docs/decisions.md`.

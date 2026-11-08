@@ -138,7 +138,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `extrude(…, dir=, both=, taper=, clean=)` | `Extrude(face, amount, new ExtrudeOptions { Direction = …, Both = …, Taper = …, Clean = … })` |
 | `extrude(…, until=Until.NEXT, target=t)` | `Extrude(face, Until.Next, t, options)` |
 | `sweep(…, multisection=, is_frenet=, transition=, normal=, binormal=, clean=)` | `Sweep(sections, path, new SweepOptions { … })` |
-| `offset(…, openings=, kind=, side=, closed=, min_edge_length=)` | `Offset(obj, amount, new OffsetOptions { Openings = [..], Kind = …, … })`; `Kind.Arc` or `Kind.Intersection`: `Kind.TANGENT` has no counterpart (it gave the mitre's result or nothing in 2D, and 3D offsets refused it; kernel decision 23603) |
+| `offset(…, openings=, kind=, side=, closed=, min_edge_length=)` | `Offset(obj, amount, new OffsetOptions { Openings = [..], Kind = …, … })`; `Kind.Arc` or `Kind.Intersection`: `Kind.TANGENT` has no counterpart (it gave the mitre's result or nothing in 2D, and 3D offsets refused it; kernel decision 1982) |
 | `thicken(…, normal_override=, both=, clean=)` | `Thicken(faces, amount, new ThickenOptions { … })` |
 | A failure (`ValueError`, `RuntimeError` from fillet, chamfer, offset, loft, draft) | A failed `Result<T>` with a code (`ModelingDiagnostics`) from the operation (`Fillet`, `Extrude`, …; unit 10M3) |
 | `DraftAngleError` | A failed `Result<Part>`, code `modeling.draft-failed`, the face as the diagnostic's shape |

@@ -164,7 +164,7 @@ public enum Keep
 
 /// <summary>
 /// An offset's corners: rounded or mitred. build123d's <c>Kind.TANGENT</c> has no counterpart: in 2D it gave the mitre's
-/// result or nothing, and 3D offsets take only these two (kernel decision 23603).
+/// result or nothing, and 3D offsets take only these two (kernel decision 1982).
 /// </summary>
 public enum Kind
 {
