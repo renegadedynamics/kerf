@@ -474,15 +474,38 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     }
 
     /// <summary>This transformation as a <see cref="Transform3D"/>.</summary>
-    /// <exception cref="InvalidOperationException">The form is <see cref="TransformForm.Other"/>.</exception>
+    /// <remarks>A matrix given as it is has the form <see cref="TransformForm.Other"/>, whatever it holds, so a rotation and a
+    /// uniform scale from a 4 by 4 matrix are recognised from its values, where OCCT refuses them (#1355, decision 1931).</remarks>
+    /// <exception cref="InvalidOperationException">The matrix isn't a rotation and a uniform scale.</exception>
     public readonly Transform3D ToTransform()
     {
-        if (Form == Other)
+        if (Form != Other)
         {
-            throw Refusal.State(new ConstructionErrorException("gp_GTrsf::Trsf() - non-orthogonal GTrsf"));
+            return new Transform3D(_scale, _shape, _matrix, _loc);
         }
 
-        return new Transform3D(_scale, _shape, _matrix, _loc);
+        double determinant = _matrix.Determinant;
+        if (Math.Abs(determinant) >= Constants.Resolution())
+        {
+            double scale = Math.Sign(determinant) * Math.Pow(Math.Abs(determinant), 1.0 / 3.0);
+            Matrix3x3 rotation = _matrix.Divided(scale);
+            Matrix3x3 product = rotation.Transposed().Multiplied(rotation).Subtracted(new Matrix3x3().WithIdentity());
+            bool orthogonal = true;
+            for (int i = 1; i <= 3; i++)
+            {
+                for (int j = 1; j <= 3; j++)
+                {
+                    orthogonal &= Math.Abs(product.Value(i, j)) <= 1.0e-12;
+                }
+            }
+
+            if (orthogonal)
+            {
+                return new Transform3D(scale, Composite, rotation, _loc);
+            }
+        }
+
+        throw Refusal.State(new ConstructionErrorException("gp_GTrsf::Trsf() - non-orthogonal GTrsf"));
     }
 
     /// <summary>The 4x4 matrix, row by row, as OCCT's <c>GetMat4</c>.</summary>

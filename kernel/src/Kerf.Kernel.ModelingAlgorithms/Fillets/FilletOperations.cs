@@ -197,7 +197,7 @@ public static class FilletOperations
                 {
                     return after;
                 }
-                ImmutableArray<Diagnostic> faulty = Faulty(fillet, specs.Length);
+                ImmutableArray<Diagnostic> faulty = Faulty(fillet, fillet.FaultyContourCount, fillet.FaultyContour, fillet.StripeStatus, specs.Length, "fillet");
                 if (fit is { } known && FilletLimits.TooLarge(known, specs) is { } tooLarge)
                 {
                     faulty = [tooLarge, .. faulty];
@@ -300,7 +300,7 @@ public static class FilletOperations
                 }
                 EngineOutcome outcome = MakerOutcome.Of(chamfer, range, [solid],
                                                         () => (FilletLimits.Judge(solid, specs, options) is { } fit ? FilletLimits.TooLarge(fit, specs) : FilletLimits.TooLarge(solid, specs, faces, options))
-                                                              ?? Diagnostic.Error(Failed, $"The chamfer couldn't be built on {specs.Length} edge(s).").WithShapes(specs.Select(s => (Shape)s.Edge)));
+                                                              ?? ChamferFailure(chamfer, specs));
                 return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
                made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result"));
@@ -429,21 +429,29 @@ public static class FilletOperations
     // A tolerance a fillet or chamfer's result could need: its largest size, or what its input already had
     private static double ToleranceLimit(Shape solid, double size) => Math.Max(size, Validity.LargestTolerance(solid));
 
-    private static ImmutableArray<Diagnostic> Faulty(MakeFillet fillet, int edgeCount)
+    // Which edges a chamfer failed on, as a fillet says, and why, where it knows (#1632); otherwise all it was given
+    private static Diagnostic ChamferFailure(MakeChamfer chamfer, ChamferSpec[] specs)
+    {
+        Diagnostic failure = Faulty(chamfer, chamfer.FaultyContourCount, chamfer.FaultyContour, chamfer.StripeStatus, specs.Length, "chamfer")[0];
+        return failure.Shapes.IsDefaultOrEmpty ? failure.WithShapes(specs.Select(static s => (Shape)s.Edge)) : failure;
+    }
+
+    private static ImmutableArray<Diagnostic> Faulty(LocalOperation fillet, int faultyCount, Func<int, int> faultyContour, Func<int, ErrorStatus> stripeStatus,
+                                                     int edgeCount, string what)
     {
         var edges = new List<Shape>();
         var contours = new List<Diagnostic>();
         Diagnostic? first = null;
-        for (int i = 1; i <= fillet.FaultyContourCount; i++)
+        for (int i = 1; i <= faultyCount; i++)
         {
-            int contour = fillet.FaultyContour(i);
+            int contour = faultyContour(i);
             // A faulty stripe past the contours can lack a spine, which OCCT dereferences unchecked
             if (contour < 1 || contour > fillet.ContourCount)
             {
                 continue;
             }
 
-            Diagnostic status = StatusDiagnostics.ToDiagnostic(fillet.StripeStatus(contour)) ?? Diagnostic.Error(Failed, "The fillet couldn't be built.");
+            Diagnostic status = StatusDiagnostics.ToDiagnostic(stripeStatus(contour)) ?? Diagnostic.Error(Failed, $"The {what} couldn't be built.");
             first ??= status;
             var own = new List<Shape>();
             for (int j = 1; j <= fillet.NbEdges(contour); j++)
@@ -455,7 +463,7 @@ public static class FilletOperations
         }
         if (first is null)
         {
-            return [Diagnostic.Error(Failed, $"The fillet couldn't be built on {edgeCount} edge(s).")];
+            return [Diagnostic.Error(Failed, $"The {what} couldn't be built on {edgeCount} edge(s).")];
         }
         return [(first with { Message = $"{first.Message} It failed on {edges.Count} edge(s)." }).WithShapes(edges), .. contours];
     }

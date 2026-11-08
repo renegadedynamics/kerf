@@ -63,6 +63,9 @@ public static class BooleanOperations
     /// <summary>A warning: the result is empty (a common of disjoint shapes): <c>boolean.empty-result</c>.</summary>
     public static DiagnosticCode EmptyResult { get; } = new("boolean.empty-result");
 
+    /// <summary>A warning: the first attempt was proved wrong, and this result was made with its inputs the other way round: <c>boolean.other-way-round</c>.</summary>
+    public static DiagnosticCode BuiltOtherWayRound { get; } = new("boolean.other-way-round");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(OperationDiagnostics.BooleanFailed, "The Boolean operation failed.");
 
     extension<TShape>(TShape a) where TShape : struct, IShape<TShape>
@@ -167,9 +170,41 @@ public static class BooleanOperations
         if (options is not { CheckResult: false } && result.TryGetValue(out built) && RuleOf(operation) is { } rule
             && BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is { } wrong)
         {
-            return Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
+            return OtherWayRound(rule, arguments, tools, options, cancellationToken) ?? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
         }
         return result;
+    }
+
+    // A Boolean proved wrong is tried with its two inputs the other way round, as the intersections depend on the order, and it's
+    // kept if that passes the same check: OCCT #1643's lofts give an empty common one way and the right one the other, for a reason
+    // not found (decision 1937). It costs a second Boolean, only on a result that would have failed.
+    private static Result<Built<Shape>>? OtherWayRound(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
+                                                       BooleanOptions? options, CancellationToken cancellationToken)
+    {
+        if (arguments.Count != 1 || tools.Count != 1)
+        {
+            return null;
+        }
+
+        BooleanOperation other = rule switch
+        {
+            BooleanVolumeRule.Common => new EngineCommon(),
+            BooleanVolumeRule.Fuse => new EngineFuse(),
+            _ => new EngineCut(),
+        };
+        if (rule == BooleanVolumeRule.Cut)
+        {
+            other.SetOperation(Engine.Booleans.Operation.CUT21);
+        }
+        other.SetTools(List(arguments, nameof(arguments)));
+        Result<Built<Shape>> again = Run((BuilderAlgo)other, tools, options, null, cancellationToken);
+        if (!again.TryGetValue(out Built<Shape>? built) || BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is not null)
+        {
+            return null;
+        }
+
+        return Result<Built<Shape>>.Success(built, [.. again.Diagnostics,
+            Diagnostic.Warning(BuiltOtherWayRound, "The first attempt at this Boolean was wrong, and this one was made with its inputs the other way round.")]);
     }
 
     private static BooleanVolumeRule? RuleOf(BooleanOperation operation) => operation switch

@@ -1435,3 +1435,13 @@ Each of the eight above that is a fuse of solids that touch, whose result comes 
 | #1039, a shell | | No rule | |
 
 The table's rules alone find only #1629: decision 1865 says why, and 1866 what was added.
+
+## Three rises explained (unit 12N)
+
+Counted, not timed: the machine was shared with the owner and another helper, and the rig wasn't run. Decision 1940 has the reasoning.
+
+| Rise | Cause | Counted | Done |
+|---|---|---|---|
+| 36, extrude until, +3.6 MB (31.7 to 35.3, decision 1887) | Decision 1881's check that a fuse as large as both its inputs didn't lose an overlap. The inputs touch along a curved face, so their boxes overlap deeply and the grid's points are all classified | 371 classifications, 3.56 MB a recalculation on the thread; switched off, 36.3 to 33.0 MB on the last pass | Left: the price of catching a silent wrong fuse, about 10% of one example |
+| A thick solid, +2.2% (79.1 to 80.8 MB) | Decision 1885's walked curves for equal cylinders whose axes missed by 7e-15, rounding, on one part's pipes | That part 11.4 to 16.8 MB; bisected to 989e1a577 | **Fixed** (decision 1941): the row 80.0 to 74 MB, the part back to 11.4 |
+| `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB | Each thread keeps its own `MeshWorkStorage`, so the bytes depend on which threads mesh which faces; the rig keeps the last run's | 31 runs in one process: 5.66 to 9.64 MB parallel, 5.55 to 5.61 serial; 24 sets made | Left: larger shapes' parallel meshes are within 1% and 9% of serial |

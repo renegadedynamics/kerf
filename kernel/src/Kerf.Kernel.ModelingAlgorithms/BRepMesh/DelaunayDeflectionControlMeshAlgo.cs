@@ -37,6 +37,9 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
         _circles = null;
     }
 
+    /// <summary>The deviation above which a node is inserted: the face's deflection, from its edges.</summary>
+    protected virtual double ControlledDeflection() => GetDFace().GetDeflection();
+
     /// <summary>Processes the generated mesh: inserts the surface nodes, then controls the deflection.</summary>
     protected override void PostProcessMesh(Delaun mesher, ProgressRange range)
     {
@@ -353,7 +356,8 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
             _maxSqDeflection = sqDeflection;
         }
 
-        double aSqDeflection = GetDFace().GetDeflection() * GetDFace().GetDeflection();
+        double deflection = ControlledDeflection();
+        double aSqDeflection = deflection * deflection;
         if (sqDeflection < aSqDeflection)
         {
             return true;

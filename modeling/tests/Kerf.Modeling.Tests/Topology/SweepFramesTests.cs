@@ -98,4 +98,15 @@ public class SweepFramesTests
         foreach (var mode in modes)
             Assert.Equal(Math.PI * 10, Solid.SweepMulti([Disc(), new Pos(0, 0, 10) * Disc()], straight, binormal: mode).Volume, 5);
     }
+
+    [Fact]
+    public void A_solid_of_no_volume_fails()
+    {
+        // The direction in the profile's plane; sections in one plane (decision 1927)
+        var extrude = Assert.ThrowsAny<Exception>(() => Solid.Extrude(Face.MakeRect(10, 10), new Vector3D(1, 0, 0)));
+        Assert.Contains("encloses no volume", extrude.Message);
+        var loft = Assert.ThrowsAny<Exception>(() => Solid.MakeLoft([Wire.MakeRect(10, 10), Wire.MakeRect(6, 6)]));
+        Assert.Contains("encloses no volume", loft.Message);
+        Assert.Equal(10 * 10 * 3, Solid.Extrude(Face.MakeRect(10, 10), new Vector3D(0, 0, 3)).Volume, 1e-9);
+    }
 }

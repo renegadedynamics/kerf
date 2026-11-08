@@ -37,7 +37,7 @@ The main work, with silent errors first.
 | **12H** Hang risks (11T) | The suspect loops in reliability.md, and the rest of its ranked list of failure islands. | Each bounded, or shown to be bounded by something other than a user's input. **Done** (decisions 1913 to 1917; reliability.md, section 4b): about 220 loops; 1,000 damaged files, none that a cancel can't stop |
 | **12H2** Section 2's loose ends | Meshes out of memory on damaged files; the `while` and `do` loops not read; the two edge-order cases. | Each bounded so it fails loudly, or written down. **Done** (decisions 22801 to 22805; reliability.md, section 4d): the 6 out of memory are refused, 1 false failure in 752; of 3 that main didn't stop in 150 s, 1 is cancelled and 2 still run out of a 1.5 GB heap; 110 loops read, 13 bounded, about 480 left; the edge-order cases stay |
 | **12I** The corpus | The 59 FAILED, the 502 BAD, and the 48 issues that couldn't be told. | Each attributed, as in corpus-failures.md, and fixed where the fix is plain. **Attributed; 3 silent faults fixed** (decisions 1918 to 1921; corpus-failures.md). 396 of the BAD stand on their scripts alone |
-| **12J** OCCT's defects (11S) | Carry on down occt-defects.md, from the top. | Ongoing |
+| **12J** OCCT's defects (11S) | Carry on down occt-defects.md, from the top. | Ongoing. **First pass done** (decisions 1926 to 1936): #1123, #1444, #572, #1039, #1659, #1643 right where they were wrong or failing; solids of no volume, a face against a solid, and a fuse that lost part of an input now fail; #1355, #1632, #1431 and upstream `53706f78a8` and `1349657592` in part. Left at the top: #1629, #245, #1639, the self-interfering fillets, a sphere's mesh (for the owner) and a cone's offset |
 
 ## 3. Fillets a user would notice
 
@@ -60,7 +60,7 @@ Ongoing, to the owner's bar.
 
 | Unit | What |
 |---|---|
-| **12N** Unexplained rises | Extrude until's +3.6 MB, a thick solid's +2.2%, and `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB |
+| **12N** Unexplained rises: **explained** (decisions 1938 to 1941) | Extrude until's +3.6 MB, a thick solid's +2.2%, and `Pump_Nut.brep`'s parallel mesh, 5.86 to 6.81 MB. The thick solid's is fixed (rounding taken as crossing, decision 1941); extrude until's is decision 1881's check and the mesh's the rig's noise, both under the bar. With it, decision 1918's cone: round joins at an apex retried with mitres |
 | **12O** The mesher (11O) | Meet the deflection at a sensible triangle count, so that `ControlAllSurfaces` can go altogether (decision 1680) |
 | **12P** Wasteful cases (11Q) | Down the slowest list: the corpus's slowest cases, the rig's slowest suites and Bento's examples |
 

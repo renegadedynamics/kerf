@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Booleans;
+using Kerf.Construction;
+using Kerf.Geometry;
 using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Tests.Shared;
@@ -47,18 +49,44 @@ public class BooleanVolumeIssueTests
     }
 
     [Fact]
-    public void Issue_1643_a_cut_that_removed_nothing_and_an_empty_common_fail()
+    public void Issue_1643_a_cut_that_removed_nothing_and_an_empty_common_are_redone_the_other_way_round()
     {
         (Shape body, Shape lip) = BooleanIssueShapes.Lofts();
-        FailsCarrying(body.Common(lip), "it's empty");
-        FailsCarrying(body.Cut(lip), "it removed nothing");
+        var precise = new MassOptions { Tolerance = 1e-6 };
+        // Without the check they're as OCCT makes them
+        Assert.Empty(body.Common(lip, Unchecked).Value.Shape.AllFaces());
+
+        Result<Built<Shape>> common = body.Common(lip), cut = body.Cut(lip), fuse = body.Fuse(lip);
+        Assert.Contains(common.Diagnostics, static d => d.Code == BooleanOperations.BuiltOtherWayRound);
+        Assert.Contains(cut.Diagnostics, static d => d.Code == BooleanOperations.BuiltOtherWayRound);
+        Assert.Contains(fuse.Diagnostics, static d => d.Code == BooleanOperations.BuiltOtherWayRound);
+
+        // The object is what's cut away and what's left; the fuse is the inputs less what they share
+        double a = body.IntegrateVolume(precise), b = lip.IntegrateVolume(precise);
+        double inBoth = common.Value.Shape.IntegrateVolume(precise);
+        Assert.True(inBoth > 0.5 * Math.Min(a, b));
+        Assert.Equal(a, inBoth + cut.Value.Shape.IntegrateVolume(precise), 1e-3 * a);
+        Assert.Equal(a + b - inBoth, fuse.Value.Shape.IntegrateVolume(precise), 1e-3 * a);
     }
 
     [Fact]
-    public void Issue_1643_the_other_order_is_right_and_passes()
+    public void A_fuse_that_lost_part_of_an_input_fires_and_one_that_holds_it_doesnt()
+    {
+        Shape block = Solid.Box(10, 10, 10).Value.Shape;
+        Shape outside = Solid.Box(4, 4, 4).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(8, 3, 3))));
+        Shape within = Solid.Box(4, 4, 4).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(3, 3, 3))));
+        // Made to order: the block alone stands for each one's fuse, and is right only for the second
+        Diagnostic? lost = BooleanVolumes.Check(BooleanVolumeRule.Fuse, [block], [outside], block, 0);
+        Assert.NotNull(lost);
+        Assert.Contains("lost part of an input", lost.Message, StringComparison.Ordinal);
+        Assert.Null(BooleanVolumes.Check(BooleanVolumeRule.Fuse, [block], [within], block, 0));
+    }
+
+    [Fact]
+    public void Issue_1643_the_order_that_works_needs_no_second_attempt()
     {
         (Shape body, Shape lip) = BooleanIssueShapes.Lofts();
-        Assert.True(lip.Common(body).IsSuccess);
+        Assert.DoesNotContain(lip.Common(body).Diagnostics, static d => d.Code == BooleanOperations.BuiltOtherWayRound);
         Assert.True(lip.Cut(body).IsSuccess);
         Assert.True(lip.Fuse(body).IsSuccess);
     }

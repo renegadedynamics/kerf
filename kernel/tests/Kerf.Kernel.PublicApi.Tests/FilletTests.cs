@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Booleans;
 using Kerf.Construction;
 using Kerf.Fillets;
 using Kerf.Geometry;
+using Kerf.Measurement;
 using Kerf.Topology;
 
 namespace Kerf.Kernel.PublicApi.Tests;
@@ -112,5 +114,32 @@ public class FilletTests
         Assert.False(tooLarge.IsSuccess);
         Assert.StartsWith("fillet.", tooLarge.Error!.Code.Value, StringComparison.Ordinal);
         Assert.Throws<ArgumentException>(() => square.Fillet2D([Vertex.At(new Point3D(50, 50, 0))], 1));
+    }
+
+    [Fact]
+    public void A_chamfer_that_fails_says_which_edges_and_why()
+    {
+        // OCCT #1632: a chamfer had no way to say which contours failed
+        Shape cut = Solid.Sphere(5).Value.Shape.Cut(Solid.Box(5, 5, 5).Value.Shape).Value.Shape;
+        Edge[] edges = [.. cut.AllEdges().Where(static e => !e.IsDegenerated)];
+        Result<Built<Shape>> chamfer = cut.Chamfer(edges, 6);
+        Assert.True(chamfer.IsFailure);
+        Assert.Equal(new DiagnosticCode("fillet.no-starting-solution"), chamfer.Error!.Code);
+        Assert.InRange(chamfer.Error.Shapes.Length, 1, edges.Length);
+        Assert.All(chamfer.Error.Shapes, shape => Assert.Contains(edges, edge => edge.IsSame(shape.As<Edge>())));
+    }
+
+    [Fact]
+    public void A_corner_chamfered_twice_is_a_plain_failure()
+    {
+        // OCCT #1431: a crash there, and an internal fault here
+        Wire outline = Wire.Polygon([new(0, 0, 0), new(10, 0, 0), new(10, 10, 0), new(0, 10, 0)], closed: true).Value;
+        Face face = Face.FromWire(outline).Value;
+        Edge[] edges = [.. face.AllEdges()];
+        Edge bottom = edges.First(static e => e.BoundingBox().Max.Y < 1e-3), right = edges.First(static e => e.BoundingBox().Min.X > 9.99);
+        Assert.Equal(100 - 0.5, face.Chamfer2D([(bottom, right)], 1).Value.Shape.IntegrateArea(), 1e-9);
+        Result<Built<Face>> twice = face.Chamfer2D([(bottom, right), (bottom, right)], 1);
+        Assert.True(twice.IsFailure);
+        Assert.Equal(new DiagnosticCode("fillet.connexion-error"), twice.Error!.Code);
     }
 }

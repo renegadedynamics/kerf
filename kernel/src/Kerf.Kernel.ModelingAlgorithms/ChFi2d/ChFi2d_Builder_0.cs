@@ -66,7 +66,14 @@ internal sealed partial class PlanarBuilder
         // EE1 and EE2 are copies of E1 and E2 with the good orientation
         // on <newFace>
         Edge ee1 = new(), ee2 = new();
+        // Not OCCT's, which goes on with null edges (#1431): a corner chamfered already no longer has these two edges
         _status = global::Kerf.Engine.Fillets.Planar.ChFi2d.FindConnectedEdges(_newFace, commonVertex, ref ee1, ref ee2);
+        if (ee1.IsNull || ee2.IsNull)
+        {
+            _status = ConstructionError.ConnexionError;
+            return chamfer;
+        }
+
         if (ee1.IsSame(e2))
         {
             Orientation orient = ee1.Orientation;
