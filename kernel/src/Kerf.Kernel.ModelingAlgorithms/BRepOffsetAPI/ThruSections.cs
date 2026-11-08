@@ -216,9 +216,7 @@ internal class ThruSections : MakeShape
         bb.Add(solid, shell);
 
         // verify the orientation the solid
-        SolidClassifier clas3d = new(solid);
-        clas3d.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
-        if (clas3d.State() == In)
+        if (SolidClassifier.InfinitePointState(solid, global::Kerf.Engine.Foundation.Precision.Confusion()) == In)
         {
             bb.MakeSolid(ref solid);
             Shape localShape = shell.Reversed();
@@ -595,9 +593,7 @@ internal class ThruSections : MakeShape
                 b.Add(solid, shell);
 
                 // verify the orientation of the solid
-                SolidClassifier clas3d = new(solid);
-                clas3d.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (clas3d.State() == In)
+                if (SolidClassifier.InfinitePointState(solid, global::Kerf.Engine.Foundation.Precision.Confusion()) == In)
                 {
                     b.MakeSolid(ref solid);
                     Shape localShape = shell.Reversed();
@@ -1041,9 +1037,7 @@ internal class ThruSections : MakeShape
                 b.Add(solid, shell);
 
                 // verify the orientation the solid
-                SolidClassifier clas3d = new(solid);
-                clas3d.PerformInfinitePoint(global::Kerf.Engine.Foundation.Precision.Confusion());
-                if (clas3d.State() == In)
+                if (SolidClassifier.InfinitePointState(solid, global::Kerf.Engine.Foundation.Precision.Confusion()) == In)
                 {
                     b.MakeSolid(ref solid);
                     Shape localShape = shell.Reversed();

@@ -285,9 +285,7 @@ internal class SolidFixer : RootFixer
             {
                 try
                 {
-                    var bsc3d = new SolidClassifier(aSolid);
-                    bsc3d.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
-                    infinstatus = bsc3d.State();
+                    infinstatus = SolidClassifier.InfinitePointState(aSolid, Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 catch (Exception caught) when (Refusal.IsFailure(caught))
                 {
@@ -317,9 +315,7 @@ internal class SolidFixer : RootFixer
                     var solid = new Solid();
                     B.MakeSolid(ref solid);
                     B.Add(solid, shellHole);
-                    var bsc3dHol = new SolidClassifier(solid);
-                    bsc3dHol.PerformInfinitePoint(Kerf.Engine.Foundation.Precision.Confusion());
-                    infinstatus = bsc3dHol.State();
+                    infinstatus = SolidClassifier.InfinitePointState(solid, Kerf.Engine.Foundation.Precision.Confusion());
                 }
                 if (infinstatus == Out)
                 {
@@ -613,11 +609,8 @@ internal class SolidFixer : RootFixer
         //   Pas encore fini : il faut une bonne orientation
         try
         {
-            var    bsc3d = new SolidClassifier(solid);
             double t     = Kerf.Engine.Foundation.Precision.Confusion(); // tolerance moyenne
-            bsc3d.PerformInfinitePoint(t);
-
-            if (bsc3d.State() == In)
+            if (SolidClassifier.InfinitePointState(solid, t) == In)
             {
                 //         Ensuite, inverser C-A-D REPRENDRE LES SHELLS
                 //         (l inversion du solide n est pas bien prise en compte)
