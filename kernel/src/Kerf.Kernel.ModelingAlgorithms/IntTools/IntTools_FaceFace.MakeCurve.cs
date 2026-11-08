@@ -262,11 +262,12 @@ internal partial class FaceFace
                     if (fprm < nul && lprm > nul)
                     {
                         // interval that goes through 0. is divided on two intervals;
-                        while (fprm < nul || fprm > period)
+                        // Kerf: a period at a time (decision 22804)
+                        for (int aStep = 0; fprm < nul || fprm > period; global::Kerf.Engine.Foundation.StepLimit.Next(ref aStep))
                         {
                             fprm = fprm + period;
                         }
-                        while (lprm < nul || lprm > period)
+                        for (int aStep = 0; lprm < nul || lprm > period; global::Kerf.Engine.Foundation.StepLimit.Next(ref aStep))
                         {
                             lprm = lprm + period;
                         }

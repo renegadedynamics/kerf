@@ -608,7 +608,8 @@ internal sealed class TangentialDeflection
             correction = true;
             tooSmall = false;
 
-            while (correction) // Adjustment of Du
+            // Kerf: a point that isn't a number shrinks the step for ever (decision 22804)
+            for (int aCorrection = 0; correction; global::Kerf.Engine.Foundation.StepLimit.Next(ref aCorrection)) // Adjustment of Du
             {
                 if (isNeedToCheck)
                 {
@@ -1243,7 +1244,8 @@ internal sealed class TangentialDeflection
             correction = true;
             tooSmall = false;
 
-            while (correction) // Adjustment of Du
+            // Kerf: a point that isn't a number shrinks the step for ever (decision 22804)
+            for (int aCorrection = 0; correction; global::Kerf.Engine.Foundation.StepLimit.Next(ref aCorrection)) // Adjustment of Du
             {
                 if (isNeedToCheck)
                 {

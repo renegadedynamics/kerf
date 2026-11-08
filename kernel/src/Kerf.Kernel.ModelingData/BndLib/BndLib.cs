@@ -1565,6 +1565,13 @@ internal static class BndLib
             return;
         }
 
+        // Kerf: past a turn the eighths repeat, and a box takes the same point twice as once: a range of 1e300 was four
+        // billion of them, two minutes before a cancel was seen (decision 22804)
+        if ((long)fi2 - fi1 >= 8)
+        {
+            fi2 = fi1 + 7;
+        }
+
         if (ra < ri)
         {
             ComputeDegeneratedTorus(s, uMin, uMax, vMin, vMax, ref b);

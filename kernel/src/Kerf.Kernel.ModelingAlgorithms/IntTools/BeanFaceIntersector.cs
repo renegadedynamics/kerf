@@ -909,6 +909,12 @@ internal class BeanFaceIntersector
                                         }
                                         else
                                         {
+                                            // Kerf: once the spacing of doubles is wider than the resolution, the next step is this
+                                            // one again, for ever (decision 22804)
+                                            if (asolution == a || asolution == b)
+                                            {
+                                                break;
+                                            }
                                             if (da < db)
                                             {
                                                 b = asolution;
