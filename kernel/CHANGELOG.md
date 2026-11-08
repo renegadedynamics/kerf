@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A sphere's mesh keeps to the deflection asked,** at an absolute deflection: it could be twice out, silently, and now keeps within it with the same triangles, or a few more where grid nodes beside the seam were lost (decision 23001). A relative deflection keeps OCCT's mesh.
 - **A mesh in which no face could be meshed fails,** `meshing.failed`, carrying the mesh with its edges' polylines from `TryGetInvalid`, where it reported success with a warning (decision 23003). Some faces left unmeshed is still a success with `meshing.faces-not-meshed`.
 - **A cone offset or hollowed inwards with round joins now works,** where it failed: it's made with mitres, which give the same solid there, and the result carries the warning `offset.join-changed` (decision 1938). A hollow solid made inwards that takes nothing out fails, where it reported success (decision 1939).
 - **A mesh of a damaged face fails, carrying the rest, instead of taking all the memory:** `meshing.faces-refused`, with the other faces' mesh from `TryGetInvalid`; glTF, 3MF and OBJ writes fail with `exchange.write-failed`. Six damaged files that ran out of 1.5 GB now fail in under a second, and a loft whose mesh couldn't be cancelled for hours can be (decisions 22801 and 22803). OBJ no longer lets a mesh past `MaxTriangles` out as an internal exception.

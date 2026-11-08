@@ -64,11 +64,11 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
     private int myTorusMeshes;
     private bool myTorusCase;
 
-    private static bool HasTorus(in Shape theShape)
+    private static bool HasTorusOrSphere(in Shape theShape)
     {
         for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            if (new FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current())).GetType() == SurfaceKind.Torus)
+            if (new FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current())).GetType() is SurfaceKind.Torus or SurfaceKind.Sphere)
             {
                 return true;
             }
@@ -200,9 +200,10 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
             Same($"Incremental Mesh, multi-threading {(theInParallel ? "ON" : "OFF")}\n{Statuses(aNativeFlags)}", aResult, $"{theWhat} result");
         }
 
-        // Decision 1929: a torus is meshed to the deflection asked, where native's grid can miss it, so a shape with tori
-        // meshed at an absolute deflection gets more nodes than native's. Its run is made, with native's calls, and not compared
-        myTorusCase = !theIsRelative && HasTorus(aDI.GetShape("s"));
+        // Decisions 1929 and 23001: a torus and a sphere are meshed to the deflection asked, where native's grid can miss it,
+        // so a shape with tori meshed at an absolute deflection gets more nodes than native's, and one with spheres other
+        // triangles. Its run is made, with native's calls, and not compared
+        myTorusCase = !theIsRelative && HasTorusOrSphere(aDI.GetShape("s"));
         if (myTorusCase)
         {
             myTorusMeshes++;
@@ -379,7 +380,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         }
 
         output.WriteLine($"{myRuns} runs: {myTextsSame} BRep texts byte-identical, {myTextsSameButChecked} but for the Checked flags "
-                         + $"(decision 551), {myRuns - myTextsSame - myTextsSameButChecked - myTorusMeshes} different, {myTorusMeshes} with tori not compared (decision 1929); {mySubShapes} exploded faces; {myValues} other values compared, "
+                         + $"(decision 551), {myRuns - myTextsSame - myTextsSameButChecked - myTorusMeshes} different, {myTorusMeshes} with tori or spheres not compared (decisions 1929 and 23001); {mySubShapes} exploded faces; {myValues} other values compared, "
                          + $"{myDisagreements.Count} disagreements");
         Assert.Empty(myDisagreements);
     }
