@@ -305,4 +305,84 @@ public sealed class StepToGeomTests
         Assert.True(G.Value(G.FirstParameter).DistanceTo(new Point3D(3, 2, 3)) < 1e-9, G.Value(G.FirstParameter).ToString());
         Assert.True(G.Value(G.LastParameter).DistanceTo(new Point3D(1, 7, 3)) < 1e-9, G.Value(G.LastParameter).ToString());
     }
+
+    [Fact]
+    public void A_2d_transformation_operator_is_inverted()
+    {
+        // as in 3D: the operator's origin is the image of the global origin, its first axis the X axis's
+        var anOperator = new StepCartesianTransformationOperator2d();
+        anOperator.SetLocalOrigin(Point2d(1, 2));
+        anOperator.SetAxis1(Direction(0, 1));
+        Transform2D T = new Transform2D();
+        Assert.True(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTransformation2d(anOperator, ref T));
+        Assert.True(new Point2D(0, 0).Transformed(T).DistanceTo(new Point2D(1, 2)) < 1e-12);
+        Assert.True(new Point2D(1, 0).Transformed(T).DistanceTo(new Point2D(1, 3)) < 1e-12);
+        // without its first axis, X; without a 2D origin, nothing
+        var aNoAxis = new StepCartesianTransformationOperator2d();
+        aNoAxis.SetLocalOrigin(Point2d(3, 4));
+        Transform2D U = new Transform2D();
+        Assert.True(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTransformation2d(aNoAxis, ref U));
+        Assert.True(new Point2D(1, 0).Transformed(U).DistanceTo(new Point2D(4, 4)) < 1e-12);
+        var aNoOrigin = new StepCartesianTransformationOperator2d();
+        aNoOrigin.SetLocalOrigin(Point(1, 2, 3));
+        Assert.False(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTransformation2d(aNoOrigin, ref U));
+    }
+
+    [Fact]
+    public void Su_parameters_place_a_frame_by_their_turns_and_offsets()
+    {
+        StepSuParameters Su(double a, double alpha, double b, double beta, double c, double gamma)
+        {
+            var aSu = new StepSuParameters();
+            aSu.SetA(a);
+            aSu.SetAlpha(alpha);
+            aSu.SetB(b);
+            aSu.SetBeta(beta);
+            aSu.SetC(c);
+            aSu.SetGamma(gamma);
+            return aSu;
+        }
+        // none: the world frame; c alone lifts it, a alone moves it along X
+        Frame3D aNone = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(Su(0, 0, 0, 0, 0, 0)).Ax2();
+        Assert.True(aNone.Location.DistanceTo(Point3D.Origin) < 1e-12 && aNone.Direction.IsEqual(Direction3D.UnitZ, 1e-12) && aNone.XDirection.IsEqual(Direction3D.UnitX, 1e-12));
+        Assert.True(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(Su(0, 0, 0, 0, 5, 0)).Ax2().Location.DistanceTo(new Point3D(0, 0, 5)) < 1e-12);
+        Assert.True(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(Su(2, 0, 0, 0, 0, 0)).Ax2().Location.DistanceTo(new Point3D(2, 0, 0)) < 1e-12);
+        // gamma turns everything about Z, beta the X direction about the axis
+        Frame3D aTurned = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(Su(2, 0, 0, Math.PI / 2, 0, Math.PI / 2)).Ax2();
+        Assert.True(aTurned.Location.DistanceTo(new Point3D(0, 2, 0)) < 1e-12);
+        Assert.True(aTurned.XDirection.IsEqual(new Direction3D(-1, 0, 0), 1e-12));
+        // alpha tilts the axis, and b runs along the tilted axis
+        Frame3D aTilted = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(Su(0, Math.PI / 2, 3, 0, 0, 0)).Ax2();
+        Assert.True(aTilted.Direction.IsEqual(new Direction3D(0, -1, 0), 1e-12));
+        Assert.True(aTilted.Location.DistanceTo(new Point3D(0, -3, 0)) < 1e-12);
+    }
+
+    [Fact]
+    public void A_circle_about_a_diameter_is_revolved_from_pole_to_pole()
+    {
+        // a circle of radius 2 about (0, 0, 0) in the plane XZ, turned about Z, which runs through its centre in its
+        // plane: the half circle from pole to pole is taken, so the surface is the sphere, once over
+        var aCircle = new StepCircle();
+        aCircle.Init(Name(), Select(Placement(Direction(0, 1, 0), Direction(1, 0, 0))), 2);
+        var aCentre = new StepCartesianPoint();
+        aCentre.Init3D(Name(), 1, 2, 3);
+        var anAxis = new StepAxis1Placement();
+        anAxis.Init(Name(), aCentre, true, Direction(0, 0, 1));
+        var aRevolution = new StepSurfaceOfRevolution();
+        aRevolution.Init(Name(), aCircle, anAxis);
+        RevolutionSurface? G = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeSurfaceOfRevolution(aRevolution);
+        Assert.NotNull(G);
+        TrimmedCurve3D aHalf = Assert.IsType<TrimmedCurve3D>(G.BasisCurve);
+        Assert.Equal(M_PI, aHalf.LastParameter - aHalf.FirstParameter, 12);
+        for (int i = 0; i <= 4; i++)
+        {
+            for (int j = 0; j <= 4; j++)
+            {
+                Point3D aP = G.Value(2 * M_PI * i / 4, aHalf.FirstParameter + (M_PI * j / 4));
+                Assert.Equal(2, aP.DistanceTo(new Point3D(1, 2, 3)), 12);
+            }
+        }
+        // its poles are on the axis
+        Assert.Equal(0, Math.Sqrt(Math.Pow(G.Value(0, aHalf.FirstParameter).X - 1, 2) + Math.Pow(G.Value(0, aHalf.FirstParameter).Y - 2, 2)), 9);
+    }
 }
