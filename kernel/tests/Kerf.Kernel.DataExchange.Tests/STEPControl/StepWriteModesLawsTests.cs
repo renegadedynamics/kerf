@@ -204,4 +204,36 @@ public class StepWriteModesLawsTests
         // two circles and the seam
         Assert.Equal((2 * 2 * Math.PI * 5) + 10, Length(Read(aText)), 6);
     }
+
+    [Fact]
+    public void A_wire_and_points_written_as_curves_come_back_as_themselves()
+    {
+        // no faces, so each edge once: a square of side 4 and three loose points
+        Shape aSquare = new MakePolygon(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 4, 0), new Point3D(0, 4, 0), true).Shape();
+        var aBuilder = new BrepBuilder();
+        Compound aCompound = new();
+        aBuilder.MakeCompound(ref aCompound);
+        aBuilder.Add(aCompound, aSquare);
+        Point3D[] aPoints = [new(1, 2, 3), new(-1, 0, 5), new(7, 7, 7)];
+        foreach (Point3D aP in aPoints)
+        {
+            aBuilder.Add(aCompound, new MakeVertex(aP).Shape());
+        }
+        (ReturnStatus aStatus, string aText) = Write(aCompound, ModelType.GeometricCurveSet);
+        Assert.Equal(ReturnStatus.RetDone, aStatus);
+        Assert.Contains("GEOMETRIC_CURVE_SET", aText);
+        Shape aRead = Read(aText);
+        Assert.Equal(16, Length(aRead), 9);
+        Assert.Equal(0, Count(aRead, ShapeType.Face));
+        // the loose points come back where they were, besides the square's corners
+        var aVertices = new List<Point3D>();
+        for (var anExp = new Explorer(aRead, ShapeType.Vertex); anExp.More(); anExp.Next())
+        {
+            aVertices.Add(Tool.Pnt(ShapeCasts.Vertex(anExp.Current())));
+        }
+        foreach (Point3D aP in aPoints)
+        {
+            Assert.Contains(aVertices, v => v.DistanceTo(aP) < 1e-9);
+        }
+    }
 }
