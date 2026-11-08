@@ -226,6 +226,24 @@ string front = Svg.WriteToString(part.Shape.ProjectLines(Camera.Front).Value,
 - `DrawingOperations.ProjectLines(shapes, camera)` draws several shapes together, each hiding the others' lines.
 - DXF export isn't available.
 
+### Pictures: shaded PNG
+
+```csharp
+using Kerf.Drawing;
+using Kerf.Meshing;
+
+var mesh = part.Shape.Mesh(Renderer.DefaultMeshOptions(part.Shape)).Value;
+var scene = new Scene(new SceneItem(mesh), new SceneItem(pinMesh, new Color(0.2, 0.4, 0.8)));
+Result<RgbaImage> image = Renderer.Render(scene, Camera.Isometric, new RenderOptions { Width = 640, Height = 480 });
+using (var file = File.Create("part.png"))
+    Console.WriteLine(Png.Write(image.Value, file));
+```
+
+- A `SceneItem` has a colour, colours for single faces (`WithFaceColor`) and a `Transform`.
+- `RenderOptions` sets the size, the background (an opacity of 0 makes it transparent), flat or smooth shading, the
+  lights and which edges are drawn over the faces.
+- Faces are opaque: there's no transparency yet.
+
 ## 9. Common mistakes
 
 - **Not checking a `Result`.** `.Value` on a failure throws; use `IsFailure` or `TryGetValue` and print `Error`.
