@@ -29,7 +29,6 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
 | Silent wrong answer | #245 | A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
-| Silent wrong answer | A sphere | A sphere's mesh 1.69 times its deflection on 3% of its triangles (decision 1929) | Reproduced | S; **for the owner**: the fix costs triangles |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
@@ -68,6 +67,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 | #1355 | A rotation from a 4 by 4 matrix refusing to convert to a transform | 1931 |
 | #572 | A cone from a STEP file with no triangles | 1930 |
 | #1444 | A thin torus's mesh 1.42 from the surface for 0.45 asked | 1929 |
+| A sphere | A sphere's mesh up to twice its deflection, from the scaling of its parameters; now within it with the grid's own triangles | 23001 |
 | `53706f78a8` | A loft's rational section changing shape, for weights that agree part way through being scaled | 1928 |
 | Decision 1809's list | `Solid.Extrude`, `Solid.MakeLoft` and `Sweeps.Sweep` reporting success for a solid of no volume | 1927 |
 | #1123 | A minimum distance of 0.083 between parts that intersect | 1926 |
@@ -234,7 +234,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1460 | Data Exchange, STEP Export - Natural bound written as VERTEX_LOOP drops the seam of a trimmed periodic face | can't tell | Same writer; not tried |
 | 1458 | Rename TKCAF and TKMesh-related toolkits to make them fit to the general TK-naming rule | not relevant | Build, packaging or repository matter: Kerf has its own build |
 | 1456 | BOPTools_AlgoTools3D::DoSplitSEAMOnFace(edge, face) SIGSEGVs on a null pcurve (unchecked BRep_Tool::CurveOnSurface, unlike its 3-argument sibling) | not relevant | A null dereference natively; here an exception, and BOPAlgo reports it |
-| 1444 | Bad meshing of torus-like shapes with some specific curvatures | already fixed | Decision 1929: its file, 0.28 measured for 0.45 asked. A sphere is left: see the decision |
+| 1444 | Bad meshing of torus-like shapes with some specific curvatures | already fixed | Decision 1929: its file, 0.28 measured for 0.45 asked. The sphere decision 1929 left is fixed by decision 1953 |
 | 1434 | GeomTools_Curve2dSet::Add / GeomTools_SurfaceSet::Add accept a null handle and defer the crash to Write(), unlike the CurveSet sibling | not relevant | Natively a crash on a null handle: the port's analyzers refuse null (nullable) |
 | 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | already fixed | Decision 1933: `fillet.connexion-error`, by a test |
 | 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering |

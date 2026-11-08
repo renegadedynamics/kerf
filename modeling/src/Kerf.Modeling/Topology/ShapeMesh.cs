@@ -6,12 +6,12 @@ namespace Kerf.Modeling;
 /// neighbouring facets (<see cref="Angular"/>, in radians).
 /// </summary>
 /// <remarks>
-/// <see cref="Linear"/> isn't a guaranteed maximum. On elementary surfaces the mesher relies on its grid of nodes, so a long,
-/// thin face such as a fillet can stray further: 3.7 times on a filleted bottle. <see cref="ControlAllSurfaces"/> checks
-/// those surfaces too (there, 0.65 times, with 39% more triangles), which suits a mesh used as the shape, such as for STL.
-/// It holds closer to the value, though it still isn't a guarantee.
+/// At an absolute deflection the mesh keeps within <see cref="Linear"/> of every kind of surface, measured from the
+/// surface over <c>data/occ</c>, spheres, tori, cylinders, cones and Bento's examples (the kernel's decision 23002). It is
+/// measured, not proved: a face the survey didn't meet could stray. Relative to each edge's size, the faces keep OCCT's
+/// meshes.
 /// </remarks>
-public readonly record struct MeshTolerances(double Linear, double Angular, bool Relative = false, bool ControlAllSurfaces = false)
+public readonly record struct MeshTolerances(double Linear, double Angular, bool Relative = false)
 {
     /// <summary>
     /// Tolerances in proportion to a shape: a linear deflection of <paramref name="deviation"/> percent of the
@@ -78,7 +78,6 @@ public sealed class ShapeMesh
             Relative = tolerances.Relative,
             Parallel = true,
             EdgeDeflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : null,
-            ControlAllSurfaces = tolerances.ControlAllSurfaces,
         };
         var mesh = Failures.Get(global::Kerf.Meshing.Mesher.Mesh(shape, options), () => "mesh");
         var faceMeshes = mesh.Faces.Select(f => new FaceMesh(f.Positions, f.Normals, f.Triangles, GeomTypeOf(f.Kind))).ToArray();
