@@ -22,6 +22,12 @@ public static class Mesher
     /// <summary>The mesh would pass <see cref="MeshOptions.MaxTriangles"/>.</summary>
     public static DiagnosticCode TooLarge { get; } = new("meshing.too-large");
 
+    /// <summary>
+    /// Some faces were refused, as what their mesh would take is out of proportion to the face, from a damaged surface or
+    /// range (decision 1942): <c>meshing.faces-refused</c>. The failure carries the rest of the mesh.
+    /// </summary>
+    public static DiagnosticCode FacesRefused { get; } = new("meshing.faces-refused");
+
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
         /// <summary>
@@ -31,7 +37,8 @@ public static class Mesher
         /// (one read from a BREP file) keeps it.
         /// </summary>
         /// <returns>The mesh, with a warning (<see cref="FacesNotMeshed"/>) if some faces couldn't be meshed; or a
-        /// failure (<see cref="MeshFailed"/>, or the engine's error).</returns>
+        /// failure (<see cref="MeshFailed"/>, <see cref="TooLarge"/>, or the engine's error); or a failure
+        /// (<see cref="FacesRefused"/>) carrying the mesh of the other faces.</returns>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
         public Result<ShapeMesh> Mesh(MeshOptions? options = null, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
@@ -49,9 +56,10 @@ public static class Mesher
             var indicator = new ProgressIndicator(cancellationToken, progress);
             ShapeMesh? mesh;
             int status;
+            ToolParameters parameters = options.ToEngine();
             try
             {
-                mesh = IncrementalMesh.ReadMeshed(input, options.ToEngine(), target => Read(input, target, options), indicator.Start(),
+                mesh = IncrementalMesh.ReadMeshed(input, parameters, target => Read(input, target, options), indicator.Start(),
                                                   out status);
             }
             catch (OperationCanceledException)
@@ -72,6 +80,13 @@ public static class Mesher
             if (mesh is null)
             {
                 return Result<ShapeMesh>.Failure(Diagnostic.Error(MeshFailed, "The shape couldn't be meshed."));
+            }
+
+            if (parameters.Budget is { RefusedFaces: > 0 and int refused })
+            {
+                return Result<ShapeMesh>.Invalid(mesh, Diagnostic.Error(FacesRefused,
+                    $"{refused} {(refused == 1 ? "face was" : "faces were")} refused and left without triangles: their mesh would "
+                    + "take far more memory than their size and the deflection justify, as a damaged surface or range in a file does."));
             }
 
             if ((status & (int)Engine.Meshing.Model.StatusModel.Failure) != 0)

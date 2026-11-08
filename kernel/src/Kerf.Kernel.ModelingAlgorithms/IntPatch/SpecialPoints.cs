@@ -802,7 +802,8 @@ internal static class SpecialPoints
             {
                 double deltaPar = refPar[refInd] - par[i];
                 double incr = Math.CopySign(period, deltaPar);
-                while ((deltaPar > halfPeriod) || (deltaPar < -halfPeriod))
+                // Kerf: a period at a time (decision 1945)
+                for (int aStep = 0; (deltaPar > halfPeriod) || (deltaPar < -halfPeriod); global::Kerf.Engine.Foundation.StepLimit.Next(ref aStep))
                 {
                     par[i] += incr;
                     deltaPar = refPar[refInd] - par[i];

@@ -36,6 +36,53 @@ public class DamagedFileTests
         Assert.Equal("exchange.malformed", read.Error!.Code.Value);
     }
 
+    // The six files of the damaged-file sweep (decision 1917) whose mesh ran out of a 1.5 GB heap: a cone's seam damaged
+    // on its curve or a pcurve, and a loft's surface, each to 1e17 or 2^31 (decision 1942)
+    [Theory]
+    [InlineData("1430-cone.brep")]
+    [InlineData("5462-cone.brep")]
+    [InlineData("20630-cone.brep")]
+    [InlineData("20030-loft.brep")]
+    [InlineData("20958-loft.brep")]
+    [InlineData("5086-loft.brep")]
+    public void A_mesh_of_a_face_damaged_out_of_proportion_fails_carrying_the_other_faces(string file)
+    {
+        using Stream resource = typeof(DamagedFileTests).Assembly.GetManifestResourceStream("DamagedFiles." + file)!;
+        Result<Shape> read = Brep.Read(resource);
+        Assert.True(read.IsSuccess);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+
+        Result<ShapeMesh> mesh = read.Value.Mesh(new MeshOptions { Parallel = false });
+
+        // Before, 1 GB and more, then out of memory; now under 600 MB, most of it the circles in cells up to their floor
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, 800_000_000);
+        Assert.False(mesh.IsSuccess);
+        Assert.Equal(Mesher.FacesRefused, mesh.Error!.Code);
+        Assert.True(mesh.TryGetInvalid(out ShapeMesh? rest));
+        Assert.True(rest.TriangleCount > 0);
+    }
+
+    // A loft damaged to 1e300: its frontier's walks went on for hours and couldn't be cancelled (decision 1944)
+    [Fact]
+    public async Task A_mesh_of_a_loft_damaged_to_1e300_can_be_stopped()
+    {
+        using Stream resource = typeof(DamagedFileTests).Assembly.GetManifestResourceStream("DamagedFiles.78-loft.brep")!;
+        Result<Shape> read = Brep.Read(resource);
+        Assert.True(read.IsSuccess);
+        using var source = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        Task task = Task.Run(() =>
+        {
+            try
+            {
+                _ = read.Value.Mesh(new MeshOptions { Parallel = false }, cancellationToken: source.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
+        await task.WaitAsync(TimeSpan.FromSeconds(60));
+    }
+
     [Fact]
     public async Task A_mesh_of_a_range_damaged_to_1e300_can_be_stopped()
     {

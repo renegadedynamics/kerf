@@ -231,7 +231,7 @@ The 103 figures, against the scripts' references, are about half checks with no 
 | Its data could not be had or read | 8 |
 | Tried on its file, and nothing to judge it by | 1 |
 
-**Not done, by kind:** 2 port cases of edge order (not plain: decision 1738); 38 Draw-lite (no user sees these); 396 BAD not checked natively, which can't now be; the bsection, bug5805 and bug3721 rows above; the 45.
+**Not done, by kind:** 2 port cases of edge order (not plain: decisions 1738 and 1946); 38 Draw-lite (no user sees these); 396 BAD not checked natively, which can't now be; the bsection, bug5805 and bug3721 rows above; the 45.
 
 ## Left
 

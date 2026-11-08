@@ -818,7 +818,9 @@ internal partial class UnifySameDomain
                 Point3D pointFirst = Tool.Pnt(v[0]);
                 while (Math.Abs(paramLast - paramFirst) > 7 * M_PI / 8)
                 {
-                    paramLast = (paramFirst + paramLast) / 2;
+                    // Kerf: past about 2.4e16 the halving stops moving, as the spacing of doubles there is wider than the
+                    // bound (decision 1945)
+                    paramLast = global::Kerf.Engine.Foundation.StepLimit.Moved(paramLast, (paramFirst + paramLast) / 2);
                 }
                 var    bAcurveFE        = new EdgeCurveAdaptor(fe);
                 Point3D pointLast        = bAcurveFE.Value(paramLast);
