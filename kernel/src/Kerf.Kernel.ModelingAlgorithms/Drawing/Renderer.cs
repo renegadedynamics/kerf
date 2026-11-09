@@ -739,7 +739,8 @@ public static class Renderer
                 Vector256<double> w1 = ((cx - px) * (ay - vpy) - (cy - vpy) * (ax - px)) * vInverse;
                 Vector256<double> w2 = ((ax - px) * (by - vpy) - (ay - vpy) * (bx - px)) * vInverse;
                 Vector256<double> outside = Vector256.LessThan(w0, zero) | Vector256.LessThan(w1, zero) | Vector256.LessThan(w2, zero);
-                if (outside == Vector256<double>.AllBitsSet)
+                // Masks compared as integers: a lane of all ones is a NaN as a double, unequal to itself
+                if (outside.AsUInt64() == Vector256<ulong>.AllBitsSet)
                 {
                     continue;
                 }
@@ -750,7 +751,7 @@ public static class Renderer
                 Vector128<float> before = Vector128.Create((ReadOnlySpan<float>)depths);
                 Vector128<int> inside = Vector256.Narrow(outside.AsInt64(), outside.AsInt64()).GetLower();
                 Vector128<float> nearer = Vector128.AndNot(Vector128.GreaterThan(d, before), inside.AsSingle());
-                if (nearer == Vector128<float>.Zero)
+                if (nearer.AsUInt32() == Vector128<uint>.Zero)
                 {
                     continue;
                 }
@@ -895,7 +896,7 @@ public static class Renderer
 
                 Vector256<double> ex = vax + t * vdx - px, ey = vay + t * vdy - vpy;
                 Vector256<double> far = Vector256.GreaterThan(ex * ex + ey * ey, vr2);
-                if (far == Vector256<double>.AllBitsSet)
+                if (far.AsUInt64() == Vector256<ulong>.AllBitsSet)
                 {
                     continue;
                 }
@@ -904,7 +905,7 @@ public static class Renderer
                 Vector128<float> d = Vector256.Narrow(wide, wide).GetLower();
                 Vector128<int> farLanes = Vector256.Narrow(far.AsInt64(), far.AsInt64()).GetLower();
                 Vector128<float> over = Vector128.AndNot(Vector128.GreaterThanOrEqual(d, Vector128.Create((ReadOnlySpan<float>)depth.AsSpan(row + x, 4))), farLanes.AsSingle());
-                if (over == Vector128<float>.Zero)
+                if (over.AsUInt32() == Vector128<uint>.Zero)
                 {
                     continue;
                 }
