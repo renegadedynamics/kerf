@@ -174,6 +174,7 @@ internal static partial class FilletLimits
     {
         for (int i = 0; i < specs.Length; i++)
         {
+            Cancellation.ThrowIfRequested();
             Edge edge = specs[i].Edge;
             var curve = new EdgeCurveAdaptor(edge);
             if (curve.GetType() != CurveKind.Circle)

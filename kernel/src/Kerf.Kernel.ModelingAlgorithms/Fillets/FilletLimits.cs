@@ -383,6 +383,7 @@ internal static partial class FilletLimits
         var cuts = new Cutter[parts.Length];
         for (int i = 0; i < parts.Length; i++)
         {
+            Cancellation.ThrowIfRequested();
             if (Read(neighbours, parts[i].Edge) is not { } corner || !EndsSquare(neighbours, corner))
             {
                 return null;
@@ -404,6 +405,7 @@ internal static partial class FilletLimits
         // The edges have to be apart, with one convexity, as one Boolean makes them all
         for (int i = 0; i < cuts.Length; i++)
         {
+            Cancellation.ThrowIfRequested(); // pairs of edges: millions, for thousands
             if (cuts[i].Corner.IsConvex != cuts[0].Corner.IsConvex)
             {
                 return null;
@@ -421,6 +423,7 @@ internal static partial class FilletLimits
         bool atLimit = false;
         foreach (Cutter cut in cuts)
         {
+            Cancellation.ThrowIfRequested(); // every cut's demand on each side: quadratic too
             foreach (Side side in new[] { cut.Corner.One, cut.Corner.Two })
             {
                 if (side.Width is { } width)
@@ -553,6 +556,7 @@ internal static partial class FilletLimits
         var cuts = new Cutter[specs.Length];
         for (int i = 0; i < specs.Length; i++)
         {
+            Cancellation.ThrowIfRequested();
             if (ReadRim(neighbours, specs[i].Edge) is not { } corner)
             {
                 return null;
@@ -568,6 +572,7 @@ internal static partial class FilletLimits
         // What Judge has already asked for one radius, for those it doesn't judge: a contact line off its face has no answer here
         foreach (Cutter cut in cuts)
         {
+            Cancellation.ThrowIfRequested(); // every cut's demand on each side: quadratic too
             foreach (Side side in new[] { cut.Corner.One, cut.Corner.Two })
             {
                 if (side.Width is { } width)
@@ -930,6 +935,8 @@ internal static partial class FilletLimits
         var corners = new Dictionary<Shape, Corner>(ShapeHasher.Instance);
         foreach (Edge edge in edges)
         {
+            // Every fillet and chamfer reads all its edges before the algorithm starts: thousands, on a large shape
+            Cancellation.ThrowIfRequested();
             if ((Read(neighbours, edge) ?? ReadRim(neighbours, edge)) is { } corner)
             {
                 corners[edge] = corner;
@@ -1091,6 +1098,7 @@ internal static partial class FilletLimits
             else if (planar || !Tool.IsClosed(other, face))
             {
                 others.Add(other);
+
             }
         }
         Vector3D toCentre = new(at, circle.Location);

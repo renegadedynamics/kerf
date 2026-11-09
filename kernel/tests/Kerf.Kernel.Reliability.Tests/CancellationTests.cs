@@ -120,6 +120,37 @@ public class CancellationTests
     }
 
     [Fact]
+    public void A_fillet_of_thousands_of_edges_stops_soon_after_the_cancel_in_its_checks_before_the_algorithm()
+    {
+        // Bento's case: every edge of a plate of 900 holes, cancelled while the limits are read. 0.4.0 spent 2 s there on a quiet
+        // machine before its first check, asking of each hole's far rim whether it was tangent to the plate's top, of 904 edges, and
+        // returned 1.8 to 2.4 s after the cancel; now within 100 ms, and 1 s is the bound so that a loaded machine passes. The holes
+        // are as deep as the plate, as Bento's: on the plate above, its holes past both faces, 0.4.0 read the rims in 0.3 s
+        Shape block = Solid.Box(200, 200, 10).Value.Shape;
+        var holes = new List<Shape>();
+        for (int i = 0; i < 30; i++)
+        {
+            for (int j = 0; j < 30; j++)
+            {
+                holes.Add(Solid.Cylinder(1, 10, new Frame3D(new Point3D(27.5 + i * 5, 27.5 + j * 5, 0), Direction3D.UnitZ)).Value.Shape);
+            }
+        }
+        Shape plate = BooleanOperations.Cut([block], holes).Value.Shape;
+        Edge[] edges = [.. plate.AllEdges()];
+        using var source = new CancellationTokenSource();
+        long cancelled = 0;
+        var clock = Stopwatch.StartNew();
+        using var timer = new Timer(_ =>
+        {
+            Interlocked.Exchange(ref cancelled, clock.ElapsedTicks);
+            source.Cancel();
+        }, null, 200, Timeout.Infinite);
+        Assert.ThrowsAny<OperationCanceledException>(() => plate.Fillet(edges, 0.2, cancellationToken: source.Token));
+        TimeSpan late = TimeSpan.FromTicks((long)((clock.ElapsedTicks - Interlocked.Read(ref cancelled)) * (double)TimeSpan.TicksPerSecond / Stopwatch.Frequency));
+        Assert.True(late < TimeSpan.FromSeconds(1), $"returned {late.TotalMilliseconds:F0} ms after the cancel");
+    }
+
+    [Fact]
     public void A_mesh_too_large_to_be_meant_fails_at_once()
     {
         Assert.Equal("meshing.too-large", ChildProcess.Run("mesh-too-fine", 60));
