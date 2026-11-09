@@ -5,6 +5,15 @@ version may break the API.
 
 ## Unreleased
 
+- **The kernel's argument exceptions are types of its own,** each derived from .NET's of the same name
+  (`ArgumentException`, `ArgumentOutOfRangeException`, `ArgumentNullException`) with the same message, and recognised
+  by the new `Diagnostic.IsKernelArgumentError`, so a caller can tell the kernel's refusal of a value from its own
+  errors however the runtime compiled the call. `catch (ArgumentException)` catches them as before; a check of the
+  exact type sees the subclass (decision 25801).
+- **A primitive too small to be valid fails, carrying the shape,** where it was a success: a cylinder, sphere or torus
+  of a radius under 1e-7, an arc of a nanometre, a wedge's top as narrow, and a face on a surface's bounds as narrow
+  (decision 25802).
+
 ## 0.4.0
 
 - **Silent wrong answers found and fixed,** in line with phase 12's aim of trustworthy results first: Cuts of crossing

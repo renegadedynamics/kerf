@@ -28,7 +28,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   they said the selector returned nothing (kernel decision 2013).
 - **An operation reports the kernel's refusal of a value as a failure every time,** `kernel.invalid-argument` in context
   ("box 0 × 1 × 1 failed: …"), where after many calls the JIT's optimisation could make one throw `ArgumentException`
-  instead (an extrusion along a zero vector, a box of size 0; kernel decision 2014).
+  or lose its context (an extrusion along a zero vector, a box of size 0, and a cone, sphere, torus, circle or Bezier
+  curve refused; kernel decisions 2014 and 25801).
+- **A `Cylinder`, `Hole`, `Sphere`, `Torus` or `Wedge` too small to be valid fails, and a `Rectangle` 1e-9 wide,**
+  where each returned a shape that isn't valid as a success; **a `Superellipse` about 1.5e-7 wide and a `Triangle`
+  with a side under the tolerance** fail as `ModelingException`, where they threw `InvalidCastException` and
+  `InvalidOperationException` (kernel decision 25802).
 
 ## 0.4.0
 
