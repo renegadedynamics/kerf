@@ -102,6 +102,10 @@ string svg = Svg.WriteToString(annotated, new SvgOptions { TextOutput = TextOutp
   holes clockwise. **`Lines`** are its lines for writing as text: each line's characters (a tab as the spaces it
   advances) and its anchor, the point on its baseline where the alignment puts the line's start, centre or end, so a
   reader's own text lands where the outlines do. **`CapHeight`** is the height of the font's H, which DXF's TEXT takes.
+- **In DXF** (Kerf.Modeling's `ExportDxf`), outlines are each contour as a closed polyline within the exporter's
+  tolerance; in DXF 2013 they are also filled, as the SVG fills them: a solid `HATCH` for each outer contour, its
+  boundary that contour's polyline and the holes in it, under the contours, in the notes' layer and its colour
+  (`fillOutlines: false` leaves the fill out). R12 has no `HATCH`, so its notes are their contours alone (unit 13N).
 - A drawing keeps its notes (`LineDrawing.Notes`, `WithNotes`, or the constructor), and `GetBounds` counts them, so a
   page fitted to the drawing fits its notes too. A drawing without notes is written as before.
 
