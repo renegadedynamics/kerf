@@ -23,8 +23,20 @@ internal static class Validity
         }
         try
         {
-            // The report is only worth building for a fault
-            return new Analyzer(shape, true, true).IsValid() ? null : shape.Validate().ToDiagnostic(what);
+            // The report is only worth building for a fault. A check that finds none anywhere may skip the faces a whole check
+            // found so before; one that finds something and skipped faces is made again in full (unit 13K)
+            var analyzer = Analyzer.Remembering(shape, true);
+            if (analyzer.IsClean)
+            {
+                return null;
+            }
+
+            if (analyzer.SkippedFaces > 0)
+            {
+                analyzer = new Analyzer(shape, true, true);
+            }
+
+            return analyzer.IsValid() ? null : shape.Validate().ToDiagnostic(what);
         }
         catch (Exception e) when (Refusal.IsFailure(e))
         {
