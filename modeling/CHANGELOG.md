@@ -10,7 +10,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   `Export3mf` give it in their results, and `Triangulate`, `Tessellate` and `TriangulateTree` raise it to `Warnings`,
   where `Triangulate` and `Tessellate` dropped the mesh's warnings (`meshing.faces-not-meshed` too). It's met at relative
   deflections (the exports' default) on small fillet tori, up to 1.14 times out; the meshes are unchanged (kernel
-  decision 26901; the guide's section 7).
+  decision 2071; the guide's section 7).
 - **`TightCorners.Collapse` builds more of what it refused:** a tight arc beside a convex arc, corners of several arcs
   together, sides drafted by one angle, and corners that are B-splines, ellipses or Béziers where the collapse swallows
   them whole; a tight arc beside a concave arc, a curve swallowed only in part, and sides drafted by different angles

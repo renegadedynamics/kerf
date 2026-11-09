@@ -6,7 +6,7 @@ using Kerf.Modeling;
 
 /// <summary>
 /// Where the layer meshes, it passes on the kernel's <c>meshing.deflection-exceeded</c> as it does other warnings: the
-/// exporters in their results, <c>Tessellate</c> and <c>Triangulate</c> (and so a <c>MeshNode</c>) to <see cref="Warnings"/> (the kernel's decision 26901).
+/// exporters in their results, <c>Tessellate</c> and <c>Triangulate</c> (and so a <c>MeshNode</c>) to <see cref="Warnings"/> (the kernel's decision 2071).
 /// </summary>
 public class MeshDeflectionWarningTests
 {

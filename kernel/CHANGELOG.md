@@ -13,7 +13,7 @@ version may break the API.
   and gives the furthest one's distance from its surface in model units and as a share of its deflection. It is met at
   relative deflections, on small fillet tori beside a long boundary edge, up to 1.14 times out, where the mesh said
   nothing; it finds every face over by more than 3.5% and some nearer it. `Gltf.Write`, `ThreeMf.Write` and `Obj.Write`
-  give it for each part, naming the part, and `Render` and `ModelNode.ToScene` pass it on (decision 26901).
+  give it for each part, naming the part, and `Render` and `ModelNode.ToScene` pass it on (decision 2071).
 - **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
   too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
   refused them; beside a concave arc it still refuses, saying why (decision 2048).
