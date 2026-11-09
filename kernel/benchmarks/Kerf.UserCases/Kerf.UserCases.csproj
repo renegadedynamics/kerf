@@ -39,4 +39,13 @@
     <None Include="data/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- The enclosure at v0.16 (unit 14D): a library of its own, as its types have the v0.11 model's names -->
+  <ItemGroup>
+    <Compile Remove="enclosure-v0.16/**" />
+    <None Remove="enclosure-v0.16/**" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(KerfHasEnclosure)' == 'true'">
+    <ProjectReference Include="enclosure-v0.16/Kerf.UserCases.EnclosureV016.csproj" Aliases="v016" />
+  </ItemGroup>
+
 </Project>
