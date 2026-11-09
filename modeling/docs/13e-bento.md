@@ -30,4 +30,4 @@ License 1.1); Bento's own notices need only say that the Kerf packages include i
   value can be cached on its arguments; a font installed after Bento starts isn't seen until it restarts.
 - **Cancellation:** `TextShapes.Make` obeys the cancellation in force, as the operations do.
 
-Decisions 25401 to 25407 in the kernel's `docs/decisions.md`; the kernel's `docs/api/fonts.md`.
+Decisions 2018 to 2024 in the kernel's `docs/decisions.md`; the kernel's `docs/api/fonts.md`.

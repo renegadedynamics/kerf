@@ -147,7 +147,7 @@ public sealed class TextTests : IDisposable
     public void A_character_of_several_faces_turns_as_one()
     {
         // build123d places each face of a character on its own (the dot of an i at its own centre's tangent); Kerf places
-        // the character (decision 25407): the dots stay over their stems
+        // the character (decision 2024): the dots stay over their stems
         var arc = Edge.MakeCircle(20, startAngle: 0, endAngle: 180);
         var text = new Text("iiij%", 10, fontPath: Liberation, textAlign: (TextAlign.Left, TextAlign.Bottom), path: arc, positionOnPath: 0.2);
         Assert.Equal(11, text.Faces().Count);

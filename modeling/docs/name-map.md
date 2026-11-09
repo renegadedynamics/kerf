@@ -190,7 +190,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 
 ## Deliberate differences
 
-- `Text` (unit 13E; the kernel's decisions 25403 to 25407): a character the font has no glyph for fails, naming it, where
+- `Text` (unit 13E; the kernel's decisions 2020 to 2024): a character the font has no glyph for fails, naming it, where
   build123d draws the font's empty box; an empty text fails where build123d gives no faces, and a size of 0 fails where
   build123d crashes the process. Kerning is GPOS's where a font has it, which FreeType, and so build123d, ignores; a tab's
   stops are at whole multiples of eight; a synthesised italic is a 10° shear, not also 1.5% smaller; a character of

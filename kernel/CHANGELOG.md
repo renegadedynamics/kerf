@@ -11,7 +11,7 @@ version may break the API.
   Linux; ships Liberation Sans as the default font (SIL Open Font Licence 1.1, in THIRD-PARTY-NOTICES.md); and draws
   text as faces with `TextShapes.Make`, holes in letters as holes: on a TrueType font of 2,048 units to the em the same
   faces, areas and boxes as build123d's `Text` on native OCCT to 1e-13, and within FreeType's rounding (2e-6) on others. A damaged or hostile font fails with `font.malformed` or `font.limit-exceeded`; a character the
-  font hasn't fails with `text.missing-glyph`, naming it (decisions 25401 to 25406).
+  font hasn't fails with `text.missing-glyph`, naming it (decisions 2018 to 2023).
 
 ## 0.4.0
 
