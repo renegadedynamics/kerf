@@ -48,10 +48,10 @@ public class gp_TrsfTest
         // OCCT #1618, decision 1820: NaN passed the test for a null vector, and an infinite length normalises to NaN
         foreach (double aBad in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity })
         {
-            Assert.Throws<ArgumentException>(() => new Direction3D(aBad, 0.0, 0.0));
-            Assert.Throws<ArgumentException>(() => new Direction3D(0.0, 0.0, aBad));
-            Assert.Throws<ArgumentException>(() => new Direction2D(aBad, 0.0));
-            Assert.Throws<ArgumentException>(() => new Direction2D(0.0, aBad));
+            KernelAssert.Throws<ArgumentException>(() => new Direction3D(aBad, 0.0, 0.0));
+            KernelAssert.Throws<ArgumentException>(() => new Direction3D(0.0, 0.0, aBad));
+            KernelAssert.Throws<ArgumentException>(() => new Direction2D(aBad, 0.0));
+            KernelAssert.Throws<ArgumentException>(() => new Direction2D(0.0, aBad));
         }
         Assert.Equal(1.0, new Direction3D(1e150, 0.0, 0.0).X);
     }
@@ -63,15 +63,15 @@ public class gp_TrsfTest
         Frame3D aFrame = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         CoordinateSystem aSystem = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         double aNaN = double.NaN;
-        Assert.Throws<ArgumentException>(() => new Circle3D(aFrame, aNaN));
-        Assert.Throws<ArgumentException>(() => new Ellipse3D(aFrame, aNaN, 1.0));
-        Assert.Throws<ArgumentException>(() => new Ellipse3D(aFrame, 2.0, aNaN));
-        Assert.Throws<ArgumentException>(() => new Hyperbola3D(aFrame, aNaN, 1.0));
-        Assert.Throws<ArgumentException>(() => new Parabola3D(aFrame, aNaN));
-        Assert.Throws<ArgumentException>(() => new Sphere3D(aSystem, aNaN));
-        Assert.Throws<ArgumentException>(() => new Cylinder3D(aSystem, aNaN));
-        Assert.Throws<ArgumentException>(() => new Cone3D(aSystem, aNaN, 1.0));
-        Assert.Throws<ArgumentException>(() => new Cone3D(aSystem, 0.5, aNaN));
-        Assert.Throws<ArgumentException>(() => new Torus3D(aSystem, aNaN, 1.0));
+        KernelAssert.Throws<ArgumentException>(() => new Circle3D(aFrame, aNaN));
+        KernelAssert.Throws<ArgumentException>(() => new Ellipse3D(aFrame, aNaN, 1.0));
+        KernelAssert.Throws<ArgumentException>(() => new Ellipse3D(aFrame, 2.0, aNaN));
+        KernelAssert.Throws<ArgumentException>(() => new Hyperbola3D(aFrame, aNaN, 1.0));
+        KernelAssert.Throws<ArgumentException>(() => new Parabola3D(aFrame, aNaN));
+        KernelAssert.Throws<ArgumentException>(() => new Sphere3D(aSystem, aNaN));
+        KernelAssert.Throws<ArgumentException>(() => new Cylinder3D(aSystem, aNaN));
+        KernelAssert.Throws<ArgumentException>(() => new Cone3D(aSystem, aNaN, 1.0));
+        KernelAssert.Throws<ArgumentException>(() => new Cone3D(aSystem, 0.5, aNaN));
+        KernelAssert.Throws<ArgumentException>(() => new Torus3D(aSystem, aNaN, 1.0));
     }
 }

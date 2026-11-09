@@ -309,6 +309,13 @@ them following:
 | `modeling.spline-failed` | A B-spline that can't be interpolated or approximated through the points |
 | `kernel.invalid-argument` | An argument the kernel refused, said in context (unit 10M1) |
 
+The layer knows an argument the kernel refused by the exception's type: every argument exception the kernel throws is
+one of its own types (`ArgumentException`, `ArgumentOutOfRangeException` or `ArgumentNullException` to a caller,
+with the same messages), which `Diagnostic.IsKernelArgumentError` recognises, and KERF0004 makes a kernel source that
+throws .NET's own an error. An argument exception of any other kind is the layer's own misuse error, and passes
+through. It once went by the assembly of the frame that threw, which the JIT's inlining changes once a call is hot
+(decision 2028).
+
 The operations that say what they were doing: the primitives (box, cone, cylinder, sphere, torus, wedge), lofts,
 extrusions (plain, with rotation, tapered, until), revolutions, sweeps (single and multi-section), thickening,
 triangulation and every Boolean (cut, fuse, intersect, section, split). The importers return the exchange's own

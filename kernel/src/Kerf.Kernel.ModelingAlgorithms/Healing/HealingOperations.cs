@@ -188,7 +188,7 @@ public static class HealingOperations
         public Result<Built<Shape>> FixWireframe(double tolerance, WireframeFixOptions? options)
         {
             Shape input = NotNull(shape.AsShape());
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(tolerance);
+            KernelArgumentOutOfRangeException.ThrowIfNegativeOrZero(tolerance);
             options ??= WireframeFixOptions.Default;
             return EngineOperation.Run<Shape>(_ =>
             {
@@ -338,7 +338,7 @@ public static class HealingOperations
     public static Result<Built<Shape>> Sew(IEnumerable<Shape> shapes, SewOptions? options = null, IProgress<double>? progress = null,
                                            CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(shapes);
+        KernelArgumentNullException.ThrowIfNull(shapes);
         List<Shape> inputs = [.. shapes];
         foreach (Shape s in inputs)
         {
@@ -379,7 +379,7 @@ public static class HealingOperations
     /// <exception cref="ArgumentException">An edge is null.</exception>
     public static ImmutableArray<Wire> ConnectEdges(IEnumerable<Edge> edges, double tolerance, bool shared = false)
     {
-        ArgumentNullException.ThrowIfNull(edges);
+        KernelArgumentNullException.ThrowIfNull(edges);
         var sequence = new NCollection_HSequence<Shape>();
         foreach (Edge edge in edges)
         {
@@ -475,5 +475,5 @@ public static class HealingOperations
     private static int Mode(bool? mode) => mode switch { null => -1, true => 1, false => 0 };
 
     private static Shape NotNull(Shape shape, [System.Runtime.CompilerServices.CallerArgumentExpression(nameof(shape))] string? name = null)
-        => shape.IsNull ? throw new ArgumentException("The shape is null.", name) : shape;
+        => shape.IsNull ? throw new KernelArgumentException("The shape is null.", name) : shape;
 }

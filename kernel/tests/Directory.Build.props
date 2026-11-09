@@ -13,6 +13,8 @@
     <Using Include="Kerf.Engine" />
     <Using Include="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" Alias="math_Vector" />
     <Using Include="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
+    <!-- The kernel's refusals of an argument, .NET's exceptions marked as the kernel's (decision 2028) -->
+    <Compile Include="$(MSBuildThisFileDirectory)Shared/KernelAssert.cs" Link="Shared/KernelAssert.cs" />
   </ItemGroup>
   <!-- The engine's failures, thrown or held by the exception a public member refuses with (unit 10P2) -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Kerf.Kernel.Foundation.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.ModelingData.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.ModelingAlgorithms.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.DataExchange.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.Oracle.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.DrawLite.Tests'">

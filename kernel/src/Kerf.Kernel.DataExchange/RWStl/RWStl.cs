@@ -271,7 +271,7 @@ internal static class RWStl
     public static Triangulation? ReadStream(Stream stream, double mergeAngle = Math.PI / 2.0,
                                                  ProgressRange progress = default, StlReadLimits? limits = null)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         if (!stream.CanSeek)
         {
             // the port: the peek below needs to seek back (ReadAsciiStream and ReadBinaryStream copy such a stream

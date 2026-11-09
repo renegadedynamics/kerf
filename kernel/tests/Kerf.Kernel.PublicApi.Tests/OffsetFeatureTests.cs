@@ -23,7 +23,7 @@ public class OffsetFeatureTests
         Assert.Equal(11, MaxX(grown.Shape), 6);
         Assert.Equal(6, grown.Shape.AllFaces().Length);
         Assert.Single(grown.History.Generated(box.AllFaces()[0]));
-        Assert.Throws<ArgumentOutOfRangeException>(() => box.Offset(0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => box.Offset(0));
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class OffsetFeatureTests
         Built<Solid> shelled = box.Hollow([Top(box)], -1).Value;
         Assert.Equal(11, shelled.Shape.AllFaces().Length);
         Assert.NotEmpty(shelled.History.Generated(box.AllFaces()[0]));
-        Assert.Throws<ArgumentException>(() => box.Hollow([Face.FromWire(ConstructionTests.Square(1, 50)).Value], -1));
+        KernelAssert.Throws<ArgumentException>(() => box.Hollow([Face.FromWire(ConstructionTests.Square(1, 50)).Value], -1));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class OffsetFeatureTests
         Assert.Equal(6, slab.Shape.AllFaces().Length);
         Shape outline = square.Offset2D(1, new Offset2DOptions { Join = JoinKind.Intersection }).Value.Shape;
         Assert.Equal(11, MaxX(outline), 6);
-        Assert.Throws<ArgumentException>(() => Solid.Box(1, 1, 1).Value.Shape.Thicken(1));
+        KernelAssert.Throws<ArgumentException>(() => Solid.Box(1, 1, 1).Value.Shape.Thicken(1));
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class OffsetFeatureTests
         Face profile = Face.FromWire(Wire.Polygon([new(3, 3, 10), new(6, 3, 10), new(6, 6, 10), new(3, 6, 10)], closed: true).Value).Value;
         Built<Shape> boss = box.ExtrudeUntil(profile, top, 0, new ExtrudeUntilOptions { Until = ExtrudeLimit.Height, Height = 5 }).Value;
         Assert.Equal(15, boss.Shape.AllVertices().Max(v => v.Point.Z), 6);
-        Assert.Throws<ArgumentException>(() => box.ExtrudeUntil(profile, top, 0, new ExtrudeUntilOptions { Until = ExtrudeLimit.Face }));
+        KernelAssert.Throws<ArgumentException>(() => box.ExtrudeUntil(profile, top, 0, new ExtrudeUntilOptions { Until = ExtrudeLimit.Face }));
 
         Edge across = Edge.Line(new(5, 0, 10), new(5, 10, 10)).Value;
         Built<Shape> split = box.SplitFaces([(top, (Shape)across)]).Value;

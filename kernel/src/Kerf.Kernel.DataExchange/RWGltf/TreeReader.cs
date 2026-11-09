@@ -67,7 +67,7 @@ internal sealed class TreeReader
     /// </summary>
     public Tree? Read(Stream stream, Func<string, Stream?>? resolver = null, ProgressRange progress = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         Error = null;
         _warnings.Clear();
         try

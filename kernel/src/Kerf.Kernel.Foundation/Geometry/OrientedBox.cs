@@ -25,18 +25,18 @@ public readonly struct OrientedBox : IEquatable<OrientedBox>
     {
         if (IsZero(xAxis) || IsZero(yAxis) || IsZero(zAxis))
         {
-            throw new ArgumentException("The box's axes must be valid directions, not default ones.", nameof(xAxis));
+            throw new KernelArgumentException("The box's axes must be valid directions, not default ones.", nameof(xAxis));
         }
 
         if (Math.Abs(xAxis.Dot(yAxis)) > Tolerances.Angular * 1e6 || Math.Abs(yAxis.Dot(zAxis)) > Tolerances.Angular * 1e6
             || Math.Abs(zAxis.Dot(xAxis)) > Tolerances.Angular * 1e6)
         {
-            throw new ArgumentException("The box's axes must be perpendicular.", nameof(yAxis));
+            throw new KernelArgumentException("The box's axes must be perpendicular.", nameof(yAxis));
         }
 
         if (!(halfSize.X >= 0 && halfSize.Y >= 0 && halfSize.Z >= 0))
         {
-            throw new ArgumentException($"The box's half-lengths {halfSize} must be zero or more.", nameof(halfSize));
+            throw new KernelArgumentException($"The box's half-lengths {halfSize} must be zero or more.", nameof(halfSize));
         }
 
         _centre = centre;

@@ -148,9 +148,9 @@ public class OperationsDirectTests
     [Fact]
     public void A_torus_that_reaches_its_axis_is_refused_and_an_arc_clear_of_it_is_not()
     {
-        Assert.Throws<ArgumentException>(() => Solid.Torus(1, 2, Up));
-        Assert.Throws<ArgumentException>(() => Solid.Torus(1, 1, Up));
-        Assert.Throws<ArgumentException>(() => Solid.Torus(1, 2, Up, new TorusOptions { MinorStart = 1, MinorEnd = 4 }));
+        KernelAssert.Throws<ArgumentException>(() => Solid.Torus(1, 2, Up));
+        KernelAssert.Throws<ArgumentException>(() => Solid.Torus(1, 1, Up));
+        KernelAssert.Throws<ArgumentException>(() => Solid.Torus(1, 2, Up, new TorusOptions { MinorStart = 1, MinorEnd = 4 }));
         Solid clear = Solid.Torus(1, 2, Up, new TorusOptions { MinorStart = -0.5, MinorEnd = 0.5 }).Value;
         Assert.True(clear.Validate().IsValid);
     }

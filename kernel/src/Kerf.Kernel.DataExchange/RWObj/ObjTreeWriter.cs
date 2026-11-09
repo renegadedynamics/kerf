@@ -59,8 +59,8 @@ internal sealed class ObjTreeWriter
     /// </summary>
     public bool Write(Tree tree, Stream obj, Stream? mtl, string mtlName = "model.mtl", ProgressRange progress = default)
     {
-        ArgumentNullException.ThrowIfNull(tree);
-        ArgumentNullException.ThrowIfNull(obj);
+        KernelArgumentNullException.ThrowIfNull(tree);
+        KernelArgumentNullException.ThrowIfNull(obj);
         using var ps = new ProgressScope(progress, "Writing OBJ", Options.MeshParameters is null ? 1 : 2);
         Tree aTree = tree;
         if (Options.MeshParameters is ToolParameters aParams)

@@ -19,6 +19,14 @@ public static class Primitives
 
     private static readonly Diagnostic PrimitiveFailed = Diagnostic.Error(Failed, "The primitive couldn't be built.");
 
+    // The size under which a primitive's result is checked (decision 2029). OCCT builds a cylinder, sphere or torus whose
+    // radius is under the confusion tolerance, an arc of a nanometre, or a wedge's top of one, and the solid isn't valid;
+    // from 2e-7 up every primitive tried was valid as built, so the check is kept to the sizes where it can find something
+    private const double Small = 1e-5;
+
+    // What to call the primitive if it's checked, as EngineOperation.Run takes it: only if a length it's made of is small
+    private static string? CheckedIf(double smallest, string what) => smallest < Small ? what : null;
+
     // The least cosine over an angle range: -1 if it passes through an odd multiple of pi
     private static double LeastCosine(double from, double to) =>
         Math.Floor((to - Math.PI) / (2 * Math.PI)) >= Math.Ceiling((from - Math.PI) / (2 * Math.PI)) ? -1 : Math.Min(Math.Cos(from), Math.Cos(to));
@@ -36,7 +44,7 @@ public static class Primitives
             MakerOutcome.Positive(dz, nameof(dz));
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
-            return Run(() => new MakeBox(f, dx, dy, dz));
+            return Run(() => new MakeBox(f, dx, dy, dz), checkedAs: CheckedIf(Math.Min(dx, Math.Min(dy, dz)), "The box"));
         }
 
         /// <summary>The box between two opposite corners, along the world axes.</summary>
@@ -46,9 +54,10 @@ public static class Primitives
             if (Math.Abs(corner1.X - corner2.X) <= Tolerances.Confusion || Math.Abs(corner1.Y - corner2.Y) <= Tolerances.Confusion
                 || Math.Abs(corner1.Z - corner2.Z) <= Tolerances.Confusion)
             {
-                throw new ArgumentException("The corners must differ in every coordinate.", nameof(corner2));
+                throw new KernelArgumentException("The corners must differ in every coordinate.", nameof(corner2));
             }
-            return Run(() => new MakeBox(corner1, corner2));
+            double smallest = Math.Min(Math.Abs(corner1.X - corner2.X), Math.Min(Math.Abs(corner1.Y - corner2.Y), Math.Abs(corner1.Z - corner2.Z)));
+            return Run(() => new MakeBox(corner1, corner2), checkedAs: CheckedIf(smallest, "The box"));
         }
 
         /// <summary>A cylinder on the world Z axis, its base at the origin.</summary>
@@ -64,7 +73,8 @@ public static class Primitives
             Angle(angle, nameof(angle));
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
-            return Run(() => new ApiMakeCylinder(f, radius, height, angle));
+            return Run(() => new ApiMakeCylinder(f, radius, height, angle),
+                       checkedAs: CheckedIf(Math.Min(radius, Math.Min(height, radius * angle)), "The cylinder"));
         }
 
         /// <summary>A cone (or truncated cone) on the world Z axis, of radius <paramref name="radius1"/> at the origin and
@@ -75,17 +85,19 @@ public static class Primitives
         /// <summary>A cone on <paramref name="frame"/>'s axis.</summary>
         public static Result<Built<Solid>> Cone(double radius1, double radius2, double height, in Frame3D frame, double angle = 2 * Math.PI)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(radius1);
-            ArgumentOutOfRangeException.ThrowIfNegative(radius2);
+            KernelArgumentOutOfRangeException.ThrowIfNegative(radius1);
+            KernelArgumentOutOfRangeException.ThrowIfNegative(radius2);
             if (Math.Abs(radius1 - radius2) <= Tolerances.Confusion)
             {
-                throw new ArgumentException("A cone's radii must differ; use a cylinder.", nameof(radius2));
+                throw new KernelArgumentException("A cone's radii must differ; use a cylinder.", nameof(radius2));
             }
             MakerOutcome.Positive(height, nameof(height));
             Angle(angle, nameof(angle));
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
-            return Run(() => new ApiMakeCone(f, radius1, radius2, height, angle));
+            double ends = Math.Min(radius1 > 0 ? radius1 : double.PositiveInfinity, radius2 > 0 ? radius2 : double.PositiveInfinity);
+            double smallest = Math.Min(Math.Min(ends, height), Math.Min(Math.Abs(radius1 - radius2), Math.Max(radius1, radius2) * angle));
+            return Run(() => new ApiMakeCone(f, radius1, radius2, height, angle), checkedAs: CheckedIf(smallest, "The cone"));
         }
 
         /// <summary>A sphere centred at the origin.</summary>
@@ -100,11 +112,13 @@ public static class Primitives
             if (!(options.MinLatitude < options.MaxLatitude) || options.MinLatitude < -Math.PI / 2 - Tolerances.Angular
                 || options.MaxLatitude > Math.PI / 2 + Tolerances.Angular)
             {
-                throw new ArgumentException("The latitudes must increase, within -π/2 to π/2.", nameof(options));
+                throw new KernelArgumentException("The latitudes must increase, within -π/2 to π/2.", nameof(options));
             }
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
-            return Run(() => new MakeSphere(f, radius, options.MinLatitude, options.MaxLatitude, options.Angle));
+            double smallest = radius * Math.Min(1, Math.Min(options.MaxLatitude - options.MinLatitude, options.Angle));
+            return Run(() => new MakeSphere(f, radius, options.MinLatitude, options.MaxLatitude, options.Angle),
+                       checkedAs: CheckedIf(smallest, "The sphere"));
         }
 
         /// <summary>A torus about the world Z axis.</summary>
@@ -120,16 +134,21 @@ public static class Primitives
             MakerOutcome.Positive(minorRadius, nameof(minorRadius));
             if (majorRadius + minorRadius * LeastCosine(options.MinorStart, options.MinorEnd) <= Tolerances.Confusion)
             {
-                throw new ArgumentException("The torus's minor circle reaches its axis, so the solid would pass through itself.", nameof(minorRadius));
+                throw new KernelArgumentException("The torus's minor circle reaches its axis, so the solid would pass through itself.", nameof(minorRadius));
             }
 
             Angle(options.Angle, nameof(options));
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
             double span = options.MinorEnd - options.MinorStart;
+            // The minor circle, its arc if partial, and its nearest approach to the axis, each as long as the revolution
+            double clearance = majorRadius + minorRadius * LeastCosine(options.MinorStart, options.MinorEnd);
+            double arc = span > 0 ? Math.Min(span, 2 * Math.PI) : 2 * Math.PI;
+            double smallest = Math.Min(Math.Min(minorRadius, minorRadius * arc), Math.Min(clearance, clearance * options.Angle));
+            string? checkedAs = CheckedIf(smallest, "The torus");
             return span > 0 && span < 2 * Math.PI - Tolerances.Angular
-                ? Run(() => TubeSlice(f, majorRadius, minorRadius, options.MinorStart, options.MinorEnd, options.Angle))
-                : Run(() => new MakeTorus(f, majorRadius, minorRadius, options.MinorStart, options.MinorEnd, options.Angle));
+                ? Run(() => TubeSlice(f, majorRadius, minorRadius, options.MinorStart, options.MinorEnd, options.Angle), checkedAs: checkedAs)
+                : Run(() => new MakeTorus(f, majorRadius, minorRadius, options.MinorStart, options.MinorEnd, options.Angle), checkedAs: checkedAs);
         }
 
         /// <summary>A wedge: a box of the given sizes whose face at Y = dy is narrowed as <paramref name="options"/> says.</summary>
@@ -140,22 +159,25 @@ public static class Primitives
         /// <exception cref="ArgumentException">The options give neither a top length nor both top corners.</exception>
         public static Result<Built<Solid>> Wedge(double dx, double dy, double dz, WedgeOptions options, in Frame3D frame)
         {
-            ArgumentNullException.ThrowIfNull(options);
+            KernelArgumentNullException.ThrowIfNull(options);
             MakerOutcome.Positive(dx, nameof(dx));
             MakerOutcome.Positive(dy, nameof(dy));
             MakerOutcome.Positive(dz, nameof(dz));
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
+            // A top of no length or width is a ridge or a point, and is checked as a small one is
+            double sides = Math.Min(dx, Math.Min(dy, dz));
             if (options.TopLength is { } ltx)
             {
-                ArgumentOutOfRangeException.ThrowIfNegative(ltx, nameof(options));
-                return Run(() => new MakeWedge(f, dx, dy, dz, ltx));
+                KernelArgumentOutOfRangeException.ThrowIfNegative(ltx, nameof(options));
+                return Run(() => new MakeWedge(f, dx, dy, dz, ltx), checkedAs: CheckedIf(Math.Min(sides, ltx), "The wedge"));
             }
             if (options is { TopMin: { } min, TopMax: { } max })
             {
-                return Run(() => new MakeWedge(f, dx, dy, dz, min.X, min.Z, max.X, max.Z));
+                double top = Math.Min(Math.Abs(max.X - min.X), Math.Abs(max.Z - min.Z));
+                return Run(() => new MakeWedge(f, dx, dy, dz, min.X, min.Z, max.X, max.Z), checkedAs: CheckedIf(Math.Min(sides, top), "The wedge"));
             }
-            throw new ArgumentException("Give the wedge's top length, or both of its top corners.", nameof(options));
+            throw new KernelArgumentException("Give the wedge's top length, or both of its top corners.", nameof(options));
         }
 
         /// <summary>The half-space on <paramref name="inside"/>'s side of a face (an infinite solid, for Booleans).</summary>
@@ -177,7 +199,7 @@ public static class Primitives
     {
         if (!(angle > Tolerances.Angular) || angle > 2 * Math.PI + Tolerances.Angular)
         {
-            throw new ArgumentOutOfRangeException(name, angle, "The angle must be more than 0 and at most 2π.");
+            throw new KernelArgumentOutOfRangeException(name, angle, "The angle must be more than 0 and at most 2π.");
         }
     }
 
@@ -199,6 +221,7 @@ public static class Primitives
         return new ApiMakeRevol(face, new Axis3D(frame.Location, z), angle);
     }
 
-    private static Result<Built<Solid>> Run(Func<MakeShape> make, Shape input = default) =>
-        EngineOperation.Run<Solid>(range => MakerOutcome.Of(make(), range, input.IsNull ? [] : [input]), PrimitiveFailed);
+    // checkedAs: what to call the result if it's checked, which a failure carrying it then says isn't valid (decision 1742)
+    private static Result<Built<Solid>> Run(Func<MakeShape> make, Shape input = default, string? checkedAs = null) =>
+        EngineOperation.Run<Solid>(range => MakerOutcome.Of(make(), range, input.IsNull ? [] : [input]), PrimitiveFailed, checkedAs: checkedAs);
 }

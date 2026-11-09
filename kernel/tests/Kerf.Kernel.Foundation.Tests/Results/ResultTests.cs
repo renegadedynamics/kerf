@@ -38,13 +38,13 @@ public class DiagnosticCodeTests
     [InlineData("input_invalid")]
     public void MalformedCodesThrow(string text)
     {
-        Assert.Throws<ArgumentException>(() => new DiagnosticCode(text));
+        KernelAssert.Throws<ArgumentException>(() => new DiagnosticCode(text));
     }
 
     [Fact]
     public void ANullCodeThrows()
     {
-        Assert.Throws<ArgumentNullException>(() => new DiagnosticCode(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => new DiagnosticCode(null!));
     }
 
     [Fact]
@@ -92,9 +92,9 @@ public class DiagnosticTests
     [Fact]
     public void ADiagnosticNeedsACodeAndAMessage()
     {
-        Assert.Throws<ArgumentException>(() => Diagnostic.Error(default, "a"));
-        Assert.Throws<ArgumentNullException>(() => Diagnostic.Error(DiagnosticCode.InvalidInput, null!));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Diagnostic { Severity = (Severity)7, Code = DiagnosticCode.InvalidInput, Message = "a" });
+        KernelAssert.Throws<ArgumentException>(() => Diagnostic.Error(default, "a"));
+        KernelAssert.Throws<ArgumentNullException>(() => Diagnostic.Error(DiagnosticCode.InvalidInput, null!));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new Diagnostic { Severity = (Severity)7, Code = DiagnosticCode.InvalidInput, Message = "a" });
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class DiagnosticTests
     {
         var error = Diagnostic.Error(DiagnosticCode.InvalidInput, "a");
         Assert.Equal("b", (error with { Message = "b" }).Message);
-        Assert.Throws<ArgumentException>(() => error with { Code = default });
+        KernelAssert.Throws<ArgumentException>(() => error with { Code = default });
     }
 }
 
@@ -147,8 +147,8 @@ public class ResultTests
     [Fact]
     public void ASuccessCantCarryAnError()
     {
-        Assert.Throws<ArgumentException>(() => Result<int>.Success(1, [Bad]));
-        Assert.Throws<ArgumentException>(() => Result<int>.Success(1, [null!]));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Success(1, [Bad]));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Success(1, [null!]));
     }
 
     [Fact]
@@ -178,11 +178,11 @@ public class ResultTests
     [Fact]
     public void AFailureNeedsAnError()
     {
-        Assert.Throws<ArgumentException>(() => Result<int>.Failure(Careful));
-        Assert.Throws<ArgumentNullException>(() => Result<int>.Failure((Diagnostic)null!));
-        Assert.Throws<ArgumentException>(() => Result<int>.Failure([Careful]));
-        Assert.Throws<ArgumentException>(() => Result<int>.Failure(ImmutableArray<Diagnostic>.Empty));
-        Assert.Throws<ArgumentException>(() => Result<int>.Failure(Bad, [Bad]));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Failure(Careful));
+        KernelAssert.Throws<ArgumentNullException>(() => Result<int>.Failure((Diagnostic)null!));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Failure([Careful]));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Failure(ImmutableArray<Diagnostic>.Empty));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Failure(Bad, [Bad]));
     }
 
     [Fact]
@@ -249,8 +249,8 @@ public class ResultTests
     [Fact]
     public void MapAndBindRejectNull()
     {
-        Assert.Throws<ArgumentNullException>(() => Result<int>.Success(1).Map<int>(null!));
-        Assert.Throws<ArgumentNullException>(() => Result<int>.Success(1).Bind<int>(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => Result<int>.Success(1).Map<int>(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => Result<int>.Success(1).Bind<int>(null!));
     }
 
     [Fact]
@@ -287,9 +287,9 @@ public class ResultWithoutValueTests
     [Fact]
     public void TheChecks()
     {
-        Assert.Throws<ArgumentException>(() => Result.Success([Bad]));
-        Assert.Throws<ArgumentException>(() => Result.Failure(Careful));
-        Assert.Throws<ArgumentException>(() => Result.Failure([Careful]));
+        KernelAssert.Throws<ArgumentException>(() => Result.Success([Bad]));
+        KernelAssert.Throws<ArgumentException>(() => Result.Failure(Careful));
+        KernelAssert.Throws<ArgumentException>(() => Result.Failure([Careful]));
     }
 
     [Fact]
@@ -329,8 +329,8 @@ public class ResultCombinatorTests
     {
         Assert.Equal("4", Result<int>.Success(4).Match(x => x.ToString(), error => error.Message));
         Assert.Equal("Bad input.", Result<int>.Failure(Bad, [Careful]).Match(x => x.ToString(), error => error.Message));
-        Assert.Throws<ArgumentNullException>(() => Result<int>.Success(4).Match(null!, error => ""));
-        Assert.Throws<ArgumentNullException>(() => Result<int>.Success(4).Match(x => "", null!));
+        KernelAssert.Throws<ArgumentNullException>(() => Result<int>.Success(4).Match(null!, error => ""));
+        KernelAssert.Throws<ArgumentNullException>(() => Result<int>.Success(4).Match(x => "", null!));
     }
 
     [Fact]
@@ -372,11 +372,11 @@ public class ResultCombinatorTests
         Assert.Equal(3, invalid.GetValueOrDefault(3));
         Assert.True(invalid.TryGetInvalid(out int carried));
         Assert.Equal(7, carried);
-        Assert.Throws<ArgumentException>(() => Result<int>.Invalid(7, Careful));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Invalid(7, Careful));
 
         Assert.True(Result<int>.Invalid(7, [Careful, Bad]).TryGetInvalid(out carried));
         Assert.Equal(7, carried);
-        Assert.Throws<ArgumentException>(() => Result<int>.Invalid(7, [Careful]));
+        KernelAssert.Throws<ArgumentException>(() => Result<int>.Invalid(7, [Careful]));
     }
 
     [Fact]

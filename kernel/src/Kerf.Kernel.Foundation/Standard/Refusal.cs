@@ -67,10 +67,10 @@ internal static class Refusal
     }
 
     /// <summary>The <see cref="ArgumentException"/> for a failure.</summary>
-    public static ArgumentException Argument(FailureException failure) => new(PublicMessage(failure), failure);
+    public static ArgumentException Argument(FailureException failure) => new KernelArgumentException(PublicMessage(failure), failure);
 
     /// <summary>The <see cref="ArgumentOutOfRangeException"/> for a failure.</summary>
-    public static ArgumentOutOfRangeException Range(FailureException failure) => new(PublicMessage(failure), failure);
+    public static ArgumentOutOfRangeException Range(FailureException failure) => new KernelArgumentOutOfRangeException(PublicMessage(failure), failure);
 
     /// <summary>The <see cref="InvalidOperationException"/> for a failure.</summary>
     public static InvalidOperationException State(FailureException failure) => new(PublicMessage(failure), failure);

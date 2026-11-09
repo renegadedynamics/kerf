@@ -44,8 +44,8 @@ public class DiagnosticShapesTests
         Vertex shape = built;
         Assert.True(shape.IsSame(vertex));
         Assert.Same(history, built.History);
-        Assert.Throws<ArgumentNullException>(() => new Built<Vertex>(vertex, null!));
-        Assert.Throws<ArgumentNullException>(() => built with { History = null! });
+        KernelAssert.Throws<ArgumentNullException>(() => new Built<Vertex>(vertex, null!));
+        KernelAssert.Throws<ArgumentNullException>(() => built with { History = null! });
     }
 
     [Fact]

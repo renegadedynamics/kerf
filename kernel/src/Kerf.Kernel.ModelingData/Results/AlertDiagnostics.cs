@@ -33,7 +33,7 @@ internal static class AlertDiagnostics
     /// <summary>The code for an alert.</summary>
     public static DiagnosticCode CodeOf(Alert alert)
     {
-        ArgumentNullException.ThrowIfNull(alert);
+        KernelArgumentNullException.ThrowIfNull(alert);
         var name = alert.DynamicTypeName();
         var underscore = name.IndexOf('_');
         var package = underscore >= 0 ? name[..underscore] : "";
@@ -47,7 +47,7 @@ internal static class AlertDiagnostics
     /// <summary>The diagnostic for an alert of <paramref name="gravity"/>, or null for information and traces.</summary>
     public static Diagnostic? ToDiagnostic(Alert alert, Gravity gravity)
     {
-        ArgumentNullException.ThrowIfNull(alert);
+        KernelArgumentNullException.ThrowIfNull(alert);
         Severity severity;
         switch (gravity)
         {
@@ -69,7 +69,7 @@ internal static class AlertDiagnostics
     /// </summary>
     public static ImmutableArray<Diagnostic> ToDiagnostics(Report report)
     {
-        ArgumentNullException.ThrowIfNull(report);
+        KernelArgumentNullException.ThrowIfNull(report);
         var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
         foreach (var gravity in (ReadOnlySpan<Gravity>)[Gravity.Warning, Gravity.Alarm, Gravity.Fail])
             foreach (var alert in report.GetAlerts(gravity))

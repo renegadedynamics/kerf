@@ -36,6 +36,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   Liberation Sans stands in, which has Arial's widths, with a warning. A character the font has no glyph for fails,
   naming it (the kernel's decisions 2018 to 2024). **Breaking:** the unused `FontStyle` and `TextAlign` enums of
   Kerf.Modeling are the kernel's `Kerf.Fonts.FontStyle` and `TextAlign`, with the same members.
+  or lose its context (an extrusion along a zero vector, a box of size 0, and a cone, sphere, torus, circle or Bezier
+  curve refused; kernel decisions 2014 and 25801).
+- **A `Cylinder`, `Hole`, `Sphere`, `Torus` or `Wedge` too small to be valid fails, and a `Rectangle` 1e-9 wide,**
+  where each returned a shape that isn't valid as a success; **a `Superellipse` about 1.5e-7 wide and a `Triangle`
+  with a side under the tolerance** fail as `ModelingException`, where they threw `InvalidCastException` and
+  `InvalidOperationException` (kernel decision 25802).
 
 ## 0.4.0
 

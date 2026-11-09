@@ -29,7 +29,7 @@ public sealed class ShapeGraph
     /// <summary>The graph of <paramref name="root"/> and its sub-shapes.</summary>
     /// <exception cref="ArgumentException"><paramref name="root"/> is null.</exception>
     public static ShapeGraph Build(Shape root)
-        => root.IsNull ? throw new ArgumentException("The shape is null.", nameof(root)) : new ShapeGraph(root);
+        => root.IsNull ? throw new KernelArgumentException("The shape is null.", nameof(root)) : new ShapeGraph(root);
 
     /// <summary>The root shape.</summary>
     public Shape Root => _root;
@@ -71,7 +71,7 @@ public sealed class ShapeGraph
         ShapeType type = shape.Type;
         if (ancestorType >= type || ancestorType == ShapeType.Shape)
         {
-            throw new ArgumentException($"A {type} has no ancestors of type {ancestorType}.", nameof(ancestorType));
+            throw new KernelArgumentException($"A {type} has no ancestors of type {ancestorType}.", nameof(ancestorType));
         }
 
         IndexedMap<Shape, NCollection_List<Shape>> map = _ancestors.GetOrAdd((type, ancestorType), static (key, root) =>

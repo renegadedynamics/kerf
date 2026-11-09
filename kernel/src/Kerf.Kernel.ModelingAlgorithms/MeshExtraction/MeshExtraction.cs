@@ -55,8 +55,8 @@ internal static class MeshExtraction
                                       IReadOnlyList<Shape> edges, double deflection, double angle,
                                       out Triangulation?[] triangulations, out Placement[] placements)
     {
-        ArgumentNullException.ThrowIfNull(faces);
-        ArgumentNullException.ThrowIfNull(edges);
+        KernelArgumentNullException.ThrowIfNull(faces);
+        KernelArgumentNullException.ThrowIfNull(edges);
 
         var edgeFaces = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(root, ShapeType.Edge, ShapeType.Face, edgeFaces);

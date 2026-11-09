@@ -32,18 +32,18 @@ public class FailureSurfaceTests
     [Fact]
     public void A_zero_direction_is_an_argument_exception()
     {
-        var e = Assert.Throws<ArgumentException>(() => new Direction3D(0, 0, 0));
+        var e = KernelAssert.Throws<ArgumentException>(() => new Direction3D(0, 0, 0));
         Assert.DoesNotContain("gp_", e.Message);
-        Assert.Throws<ArgumentException>(() => new Direction2D(0, 0));
+        KernelAssert.Throws<ArgumentException>(() => new Direction2D(0, 0));
     }
 
     [Fact]
     public void Each_kind_of_misuse_is_the_exception_dotnet_would_throw()
     {
-        Assert.Throws<ArgumentException>(() => new Circle3D(Frame3D.World, -1));
+        KernelAssert.Throws<ArgumentException>(() => new Circle3D(Frame3D.World, -1));
         Assert.Throws<InvalidOperationException>(() => new Vector3D(0, 0, 0).Normalized());
         Assert.Throws<InvalidOperationException>(() => default(Shape).Type);
-        Assert.Throws<ArgumentException>(() => new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), double.NaN, 1));
+        KernelAssert.Throws<ArgumentException>(() => new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), double.NaN, 1));
     }
 
     /// <summary>Every guard in a public type's own code goes through Refusal: its failure never leaves as itself.</summary>
@@ -315,7 +315,9 @@ public class FailureSurfaceTests
                     // The reflection's own refusal of an argument, not the member's
                 }
             });
-            if (!call.Wait(TimeSpan.FromSeconds(20)) || thrown is null || thrown.GetType().IsVisible)
+            // The kernel's refusals of an argument are types of its own, which a caller knows by .NET's types they derive from
+            if (!call.Wait(TimeSpan.FromSeconds(20)) || thrown is null || thrown.GetType().IsVisible
+                || (Diagnostic.IsKernelArgumentError(thrown) && thrown.GetType().BaseType!.IsVisible))
                 return;
             escapes.TryAdd($"{method.DeclaringType!.FullName}.{method.Name}({string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name))})",
                            $"{thrown.GetType().Name}: {thrown.Message}");

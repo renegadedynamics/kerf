@@ -63,7 +63,7 @@ public class BooleanTests
         Face cutter = Face.FromWire(Wire.Polygon([new(-1, -1, 1), new(3, -1, 1), new(3, 3, 1), new(-1, 3, 1)], closed: true).Value).Value;
         Assert.Equal(2, BooleanOperations.Split([Box(0)], [cutter]).Value.Shape.AllSolids().Length);
         Assert.Equal(3, BooleanOperations.Partition([Box(0), Box(1)], new BooleanOptions { Simplify = false }).Value.Shape.AllSolids().Length);
-        Assert.Throws<ArgumentException>(() => BooleanOperations.Partition([]));
+        KernelAssert.Throws<ArgumentException>(() => BooleanOperations.Partition([]));
     }
 
     [Fact]

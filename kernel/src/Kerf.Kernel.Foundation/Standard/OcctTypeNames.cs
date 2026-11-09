@@ -19,11 +19,14 @@ internal static partial class OcctTypeNames
 
     /// <summary>
     /// The type's OCCT name, as <c>Standard_Type::Name()</c> gives it (<c>Standard_Transient</c>,
-    /// <c>BVH_Tree`2</c>), or its .NET name if OCCT has no other.
+    /// <c>BVH_Tree`2</c>), or its .NET name if OCCT has no other: for the kernel's argument exceptions, .NET's type's
+    /// (<c>ArgumentException</c>), which they are as far as a caller knows.
     /// </summary>
     public static string Of(Type type)
     {
-        ArgumentNullException.ThrowIfNull(type);
+        KernelArgumentNullException.ThrowIfNull(type);
+        if (typeof(IKernelArgumentError).IsAssignableFrom(type) && type.BaseType is { } dotnet)
+            type = dotnet;
         Type definition = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
         return definition.FullName is { } fullName && Names.TryGetValue(fullName, out string? name) ? name : type.Name;
     }
@@ -34,7 +37,7 @@ internal static partial class OcctTypeNames
     /// </summary>
     public static string Of(Enum value)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        KernelArgumentNullException.ThrowIfNull(value);
         string name = value.ToString();
         return value.GetType().FullName is { } type && MemberNames.TryGetValue(type + "." + name, out string? occt) ? occt : name;
     }

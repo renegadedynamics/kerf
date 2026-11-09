@@ -123,7 +123,7 @@ public class LoopBoundTests
     [InlineData(-1)]
     public void A_restriction_to_no_segments_is_refused(int segments)
     {
-        Assert.Throws<ArgumentException>(() => new BSplineRestriction(
+        KernelAssert.Throws<ArgumentException>(() => new BSplineRestriction(
             true, true, true, 1e-3, 1e-5, Continuity.C1, Continuity.C2, 6, segments, true, false));
     }
 }

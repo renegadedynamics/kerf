@@ -32,7 +32,7 @@ public static class Step
     public static Result<ModelNode> Read(Stream stream, StepReadOptions? options = null, IProgress<double>? progress = null,
                                          CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         return ReadCore("STEP data", stream, options ?? StepReadOptions.Default, null, progress, cancellationToken);
     }
 
@@ -45,7 +45,7 @@ public static class Step
     public static Result<ModelNode> Read(string path, StepReadOptions? options = null, IProgress<double>? progress = null,
                                          CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(path);
+        KernelArgumentNullException.ThrowIfNull(path);
         options ??= StepReadOptions.Default;
         string full = Path.GetFullPath(path);
         using var file = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -62,8 +62,8 @@ public static class Step
     public static Result Write(ModelNode model, Stream stream, StepWriteOptions? options = null, IProgress<double>? progress = null,
                                CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(stream);
         options ??= StepWriteOptions.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -91,7 +91,7 @@ public static class Step
             StepSchema.Ap203 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP203,
             StepSchema.Ap242 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP242DIS,
             StepSchema.Ap214 => Parameters.WriteMode_StepSchema.WriteMode_StepSchema_AP214IS,
-            _ => throw new ArgumentOutOfRangeException(nameof(options), options.Schema, "An unknown STEP schema."),
+            _ => throw new KernelArgumentOutOfRangeException(nameof(options), options.Schema, "An unknown STEP schema."),
         };
         bool done;
         try

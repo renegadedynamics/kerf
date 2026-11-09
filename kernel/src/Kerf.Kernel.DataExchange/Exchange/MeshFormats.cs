@@ -32,7 +32,7 @@ public static class Stl
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<ShapeMesh> Read(Stream stream, StlReadOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         options ??= StlReadOptions.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -83,8 +83,8 @@ public static class Stl
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(ShapeMesh mesh, Stream stream, StlWriteOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(mesh);
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(mesh);
+        KernelArgumentNullException.ThrowIfNull(stream);
         options ??= StlWriteOptions.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -113,7 +113,7 @@ public static class Gltf
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<ModelNode> Read(Stream stream, GltfReadOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         options ??= GltfReadOptions.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -169,8 +169,8 @@ public static class Gltf
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(ModelNode model, Stream stream, GltfWriteOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(stream);
         options ??= GltfWriteOptions.Default;
         return WriteCore(model, stream, null, null, options, cancellationToken);
     }
@@ -184,10 +184,10 @@ public static class Gltf
     public static Result Write(ModelNode model, Stream json, Stream buffer, string bufferUri, GltfWriteOptions? options = null,
                                CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(json);
-        ArgumentNullException.ThrowIfNull(buffer);
-        ArgumentNullException.ThrowIfNull(bufferUri);
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(json);
+        KernelArgumentNullException.ThrowIfNull(buffer);
+        KernelArgumentNullException.ThrowIfNull(bufferUri);
         return WriteCore(model, json, buffer, bufferUri, (options ?? GltfWriteOptions.Default) with { Binary = false }, cancellationToken);
     }
 
@@ -253,8 +253,8 @@ public static class ThreeMf
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(ModelNode model, Stream stream, ThreeMfWriteOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(stream);
         options ??= ThreeMfWriteOptions.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -290,9 +290,9 @@ public static class Obj
     public static Result Write(ModelNode model, Stream obj, Stream? materials = null, string materialsName = "model.mtl",
                                ObjWriteOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(model);
-        ArgumentNullException.ThrowIfNull(obj);
-        ArgumentNullException.ThrowIfNull(materialsName);
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(obj);
+        KernelArgumentNullException.ThrowIfNull(materialsName);
         options ??= ObjWriteOptions.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);

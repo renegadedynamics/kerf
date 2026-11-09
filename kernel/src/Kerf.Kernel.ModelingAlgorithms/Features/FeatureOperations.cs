@@ -77,7 +77,7 @@ public static class FeatureOperations
         /// <paramref name="pull"/>, about their intersection with <paramref name="neutralPlane"/>.</summary>
         public Result<Built<Shape>> Draft(IEnumerable<Face> faces, Direction3D pull, double angle, in Plane3D neutralPlane)
         {
-            ArgumentNullException.ThrowIfNull(faces);
+            KernelArgumentNullException.ThrowIfNull(faces);
             return shape.Draft(faces.Select(f => (f, angle)), pull, neutralPlane);
         }
 
@@ -88,7 +88,7 @@ public static class FeatureOperations
         /// <exception cref="ArgumentException">The shape is null, or a face isn't one of its faces.</exception>
         public Result<Built<Shape>> Draft(IEnumerable<(Face Face, double Angle)> faces, Direction3D pull, in Plane3D neutralPlane)
         {
-            ArgumentNullException.ThrowIfNull(faces);
+            KernelArgumentNullException.ThrowIfNull(faces);
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             MakerOutcome.Valid(pull, nameof(pull));
@@ -117,7 +117,7 @@ public static class FeatureOperations
         /// shape, or a null face for none), extruded with a taper of <paramref name="taper"/> (radians) and added or taken away.</summary>
         public Result<Built<Shape>> ExtrudeUntil(Face profile, Face sketchFace, double taper, ExtrudeUntilOptions options)
         {
-            ArgumentNullException.ThrowIfNull(options);
+            KernelArgumentNullException.ThrowIfNull(options);
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             MakerOutcome.NotNull(profile, nameof(profile));
@@ -133,12 +133,12 @@ public static class FeatureOperations
                     MakerOutcome.Positive(Math.Abs(options.Height), nameof(options));
                     break;
                 case ExtrudeLimit.Face:
-                    until = options.Face is { IsNull: false } f ? f : throw new ArgumentException("ExtrudeLimit.Face needs the face.", nameof(options));
+                    until = options.Face is { IsNull: false } f ? f : throw new KernelArgumentException("ExtrudeLimit.Face needs the face.", nameof(options));
                     break;
                 case ExtrudeLimit.End or ExtrudeLimit.ThroughAll:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(options), options.Until, "An unknown limit.");
+                    throw new KernelArgumentOutOfRangeException(nameof(options), options.Until, "An unknown limit.");
             }
             return EngineOperation.Run<Shape>(_ =>
             {
@@ -165,7 +165,7 @@ public static class FeatureOperations
         /// <summary>The shape with faces split by wires or edges lying on them (OCCT's <c>BRepFeat_SplitShape</c>).</summary>
         public Result<Built<Shape>> SplitFaces(IEnumerable<(Face Face, Shape Splitter)> splits)
         {
-            ArgumentNullException.ThrowIfNull(splits);
+            KernelArgumentNullException.ThrowIfNull(splits);
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
             (Face Face, Shape Splitter)[] list = [.. splits];
@@ -175,7 +175,7 @@ public static class FeatureOperations
                 MakerOutcome.NotNull(splitter, nameof(splits));
                 if (splitter.Type is not (ShapeType.Wire or ShapeType.Edge or ShapeType.Compound))
                 {
-                    throw new ArgumentException($"A splitter must be a wire, an edge or a compound of them, not a {splitter.Type}.", nameof(splits));
+                    throw new KernelArgumentException($"A splitter must be a wire, an edge or a compound of them, not a {splitter.Type}.", nameof(splits));
                 }
             }
             return EngineOperation.Run<Shape>(range =>
@@ -208,7 +208,7 @@ public static class FeatureOperations
     /// <exception cref="ArgumentException">The shape or an edge is null.</exception>
     public static Result<SplitFacesResult> SplitAlong(Shape shape, IEnumerable<Edge> edges)
     {
-        ArgumentNullException.ThrowIfNull(edges);
+        KernelArgumentNullException.ThrowIfNull(edges);
         MakerOutcome.NotNull(shape, nameof(shape));
         var sequence = new Kerf.Engine.NCollection_Sequence<Shape>();
         foreach (Edge edge in edges)
@@ -239,12 +239,12 @@ public static class FeatureOperations
         Face[] list = [.. faces];
         if (list.Length == 0)
         {
-            throw new ArgumentException("There are no faces.", name);
+            throw new KernelArgumentException("There are no faces.", name);
         }
         var own = shape.AllFaces();
         if (list.Any(f => f.IsNull || !own.Any(o => o.IsSame(f))))
         {
-            throw new ArgumentException("A face isn't one of the shape's.", name);
+            throw new KernelArgumentException("A face isn't one of the shape's.", name);
         }
         return list;
     }

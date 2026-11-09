@@ -96,20 +96,20 @@ public static class TextShapes
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<Shape> Make(Font font, string text, double size, TextOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(font);
-        ArgumentNullException.ThrowIfNull(text);
+        KernelArgumentNullException.ThrowIfNull(font);
+        KernelArgumentNullException.ThrowIfNull(text);
         options ??= TextOptions.Default;
         if (options.Horizontal is not (TextAlign.Left or TextAlign.Center or TextAlign.Right))
         {
-            throw new ArgumentOutOfRangeException(nameof(options), options.Horizontal, "The horizontal alignment must be Left, Center or Right.");
+            throw new KernelArgumentOutOfRangeException(nameof(options), options.Horizontal, "The horizontal alignment must be Left, Center or Right.");
         }
 
         if (options.Vertical is not (TextAlign.Bottom or TextAlign.Center or TextAlign.Top or TextAlign.TopFirstLine))
         {
-            throw new ArgumentOutOfRangeException(nameof(options), options.Vertical, "The vertical alignment must be Bottom, Center, Top or TopFirstLine.");
+            throw new KernelArgumentOutOfRangeException(nameof(options), options.Vertical, "The vertical alignment must be Bottom, Center, Top or TopFirstLine.");
         }
 
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.TabSize, nameof(options));
+        KernelArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.TabSize, nameof(options));
         if (!double.IsFinite(size) || size <= 0)
         {
             return Result<Shape>.Failure(Diagnostic.Error(DiagnosticCode.InvalidInput, $"The text's size must be positive: it is {size.ToString(CultureInfo.InvariantCulture)}."));
