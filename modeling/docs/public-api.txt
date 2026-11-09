@@ -341,11 +341,12 @@ public abstract class Kerf.Modeling.Export2D
   public static LineTypeDefinition LineTypeDefinition(LineType lineType)
   public static double LineTypeScale(Unit unit)
 public sealed class Kerf.Modeling.ExportDxf : Export2D
-  public ExportDxf(DxfVersion version = DxfVersion.R2013, Unit unit = Unit.Millimeter, ColorIndex? color = default, double? lineWeight = default, LineType? lineType = default, double tolerance = 0.001, TextOutput textOutput = TextOutput.Outlines)
+  public ExportDxf(DxfVersion version = DxfVersion.R2013, Unit unit = Unit.Millimeter, ColorIndex? color = default, double? lineWeight = default, LineType? lineType = default, double tolerance = 0.001, TextOutput textOutput = TextOutput.Outlines, bool fillOutlines = true)
   public DxfVersion Version { get; }
   public IReadOnlyList<DxfLayer> Layers { get; }
   public TextOutput TextOutput { get; }
   public Unit Unit { get; }
+  public bool FillOutlines { get; }
   public double Tolerance { get; }
   public int EntityCount { get; }
   public int NotPlanarEdgeCount { get; }
