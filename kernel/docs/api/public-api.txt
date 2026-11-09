@@ -1,0 +1,3654 @@
+# Kerf's public API, by reflection (unit 13P; design-rules.md, section 3). Generated: run PublicApiBaselineTests
+# with KERF_API_UPDATE=1 to rewrite it. Each type's line, then its public and protected members', sorted.
+
+assembly Kerf.Kernel.DataExchange
+public static class Kerf.Exchange.Brep
+  public static Result Write(Shape shape, Stream stream, BrepWriteOptions? options = default)
+  public static Result<Shape> Read(Stream stream, ReadLimits? limits = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Exchange.BrepWriteOptions : IEquatable<BrepWriteOptions>
+  public BrepWriteOptions()
+  public bool Binary { get; init; }
+  public bool WithNormals { get; init; }
+  public bool WithTriangles { get; init; }
+  public static BrepWriteOptions Default { get; }
+public static class Kerf.Exchange.Gltf
+  public static Result Write(ModelNode model, Stream json, Stream buffer, string bufferUri, GltfWriteOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result Write(ModelNode model, Stream stream, GltfWriteOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result<ModelNode> Read(Stream stream, GltfReadOptions? options = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Exchange.GltfReadOptions : IEquatable<GltfReadOptions>
+  public GltfReadOptions()
+  public LengthUnit Unit { get; init; }
+  public ReadLimits Limits { get; init; }
+  public static GltfReadOptions Default { get; }
+public sealed record Kerf.Exchange.GltfWriteOptions : IEquatable<GltfWriteOptions>
+  public GltfWriteOptions()
+  public LengthUnit Unit { get; init; }
+  public MeshOptions Mesh { get; init; }
+  public bool Binary { get; init; }
+  public static GltfWriteOptions Default { get; }
+  public string Generator { get; init; }
+public enum Kerf.Exchange.LengthUnit
+  Millimetre = 0
+  Micrometre = 1
+  Centimetre = 2
+  Metre = 3
+  Inch = 4
+  Foot = 5
+public static class Kerf.Exchange.LengthUnits
+  public static double Millimetres(this LengthUnit unit)
+public sealed record Kerf.Exchange.ModelNode : IEquatable<ModelNode>
+  public ModelNode()
+  public const int MaxNesting = 64
+  public Color? Color { get; init; }
+  public ImmutableArray<ModelNode> Children { get; init; }
+  public Placement Placement { get; init; }
+  public Shape? Shape { get; init; }
+  public ShapeMesh? Mesh { get; init; }
+  public bool IsPart { get; }
+  public string? Name { get; init; }
+  public Result<Scene> ToScene(MeshOptions? meshOptions = default, Color? defaultColor = default, CancellationToken cancellationToken = default)
+  public Shape ToShape()
+  public static ModelNode Assembly(IEnumerable<ModelNode> children, string? name = default, Placement? placement = default, Color? color = default)
+  public static ModelNode Part(Shape shape, string? name = default, Color? color = default)
+  public static ModelNode Part(ShapeMesh mesh, string? name = default, Color? color = default)
+public static class Kerf.Exchange.Obj
+  public static Result Write(ModelNode model, Stream obj, Stream? materials = default, string materialsName = "model.mtl", ObjWriteOptions? options = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Exchange.ObjWriteOptions : IEquatable<ObjWriteOptions>
+  public ObjWriteOptions()
+  public MeshOptions Mesh { get; init; }
+  public bool Normals { get; init; }
+  public bool YUp { get; init; }
+  public double Scale { get; init; }
+  public static ObjWriteOptions Default { get; }
+public sealed record Kerf.Exchange.ReadLimits : IEquatable<ReadLimits>
+  public ReadLimits()
+  public int MaxDepth { get; init; }
+  public int MaxEntities { get; init; }
+  public int MaxNodes { get; init; }
+  public long MaxBytes { get; init; }
+  public long MaxTriangles { get; init; }
+  public static ReadLimits Default { get; }
+public static class Kerf.Exchange.Step
+  public static Result Write(ModelNode model, Stream stream, StepWriteOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result Write(Shape shape, Stream stream, StepWriteOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<ModelNode> Read(Stream stream, StepReadOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<ModelNode> Read(string path, StepReadOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+public enum Kerf.Exchange.StepPrecision
+  Least = -1
+  Average = 0
+  Greatest = 1
+  Session = 2
+public sealed record Kerf.Exchange.StepReadOptions : IEquatable<StepReadOptions>
+  public StepReadOptions()
+  public ReadLimits Limits { get; init; }
+  public bool ExternalReferences { get; init; }
+  public bool Heal { get; init; }
+  public bool ProductNames { get; init; }
+  public static StepReadOptions Default { get; }
+public enum Kerf.Exchange.StepSchema
+  Ap214 = 0
+  Ap203 = 1
+  Ap242 = 2
+public sealed record Kerf.Exchange.StepWriteOptions : IEquatable<StepWriteOptions>
+  public StepWriteOptions()
+  public LengthUnit Unit { get; init; }
+  public StepPrecision Precision { get; init; }
+  public StepSchema Schema { get; init; }
+  public bool CleanDuplicates { get; init; }
+  public bool WritePcurves { get; init; }
+  public static StepWriteOptions Default { get; }
+public static class Kerf.Exchange.Stl
+  public static Result Write(ShapeMesh mesh, Stream stream, StlWriteOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result<ShapeMesh> Read(Stream stream, StlReadOptions? options = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Exchange.StlReadOptions : IEquatable<StlReadOptions>
+  public StlReadOptions()
+  public LengthUnit Unit { get; init; }
+  public ReadLimits Limits { get; init; }
+  public static StlReadOptions Default { get; }
+public sealed record Kerf.Exchange.StlWriteOptions : IEquatable<StlWriteOptions>
+  public StlWriteOptions()
+  public bool Ascii { get; init; }
+  public static StlWriteOptions Default { get; }
+public static class Kerf.Exchange.ThreeMf
+  public static Result Write(ModelNode model, Stream stream, ThreeMfWriteOptions? options = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Exchange.ThreeMfWriteOptions : IEquatable<ThreeMfWriteOptions>
+  public ThreeMfWriteOptions()
+  public LengthUnit Unit { get; init; }
+  public MeshOptions Mesh { get; init; }
+  public static ThreeMfWriteOptions Default { get; }
+
+assembly Kerf.Kernel.Foundation
+public static class Kerf.Cancellation
+  public static CancellationToken Current { get; }
+  public static Cancellation.Scope Use(CancellationToken token)
+public readonly struct Kerf.Cancellation.Scope : IDisposable
+  public void Dispose()
+public readonly struct Kerf.Color : IEquatable<Color>
+  public Color(double r, double g, double b, double a = 1)
+  public double A { get; }
+  public double B { get; }
+  public double G { get; }
+  public double R { get; }
+  public (double, double, double, double) ToLinear()
+  public bool Equals(Color other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Color FromLinear(double r, double g, double b, double a = 1)
+  public static bool TryFromName(string name, out Color color)
+  public static bool op_Equality(Color left, Color right)
+  public static bool op_Inequality(Color left, Color right)
+  public string NearestName()
+public sealed record Kerf.Diagnostic : IEquatable<Diagnostic>
+  public Diagnostic()
+  public bool IsError { get; }
+  public required DiagnosticCode Code { get; init; }
+  public required Severity Severity { get; init; }
+  public required string Message { get; init; }
+  public override string ToString()
+  public static Diagnostic Error(DiagnosticCode code, string message)
+  public static Diagnostic FromException(Exception exception)
+  public static Diagnostic Warning(DiagnosticCode code, string message)
+  public static bool IsKernelArgumentError(Exception exception)
+  public static bool IsKernelFailure(Exception exception)
+public readonly record struct Kerf.DiagnosticCode : IEquatable<DiagnosticCode>
+  public DiagnosticCode(string value)
+  public static DiagnosticCode Cancelled { get; }
+  public static DiagnosticCode DefaultResult { get; }
+  public static DiagnosticCode InvalidInput { get; }
+  public static DiagnosticCode InvalidResult { get; }
+  public static DiagnosticCode NotConverged { get; }
+  public string Value { get; }
+  public override string ToString()
+public abstract class Kerf.Engine.Foundation.Transient
+public readonly struct Kerf.Geometry.Axis2D : IEquatable<Axis2D>
+  public Axis2D()
+  public Axis2D(in Point2D point, in Direction2D direction)
+  public Direction2D Direction { get; }
+  public Point2D Location { get; }
+  public static Axis2D XAxis { get; }
+  public static Axis2D YAxis { get; }
+  public Axis2D Mirrored(in Axis2D axis)
+  public Axis2D Mirrored(in Point2D point)
+  public Axis2D Reversed()
+  public Axis2D Rotated(in Point2D point, double angle)
+  public Axis2D Scaled(in Point2D point, double factor)
+  public Axis2D Transformed(in Transform2D transform)
+  public Axis2D Translated(in Point2D point1, in Point2D point2)
+  public Axis2D Translated(in Vector2D vector)
+  public Axis2D WithDirection(in Direction2D direction)
+  public Axis2D WithLocation(in Point2D point)
+  public bool Equals(Axis2D other)
+  public bool IsCoaxial(in Axis2D other, double angularTolerance, double linearTolerance)
+  public bool IsNormal(in Axis2D other, double angularTolerance)
+  public bool IsOpposite(in Axis2D other, double angularTolerance)
+  public bool IsParallel(in Axis2D other, double angularTolerance)
+  public double AngleTo(in Axis2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Axis2D left, in Axis2D right)
+  public static bool op_Inequality(in Axis2D left, in Axis2D right)
+public readonly struct Kerf.Geometry.Axis3D : IEquatable<Axis3D>
+  public Axis3D()
+  public Axis3D(in Point3D point, in Direction3D direction)
+  public Direction3D Direction { get; }
+  public Point3D Location { get; }
+  public static Axis3D XAxis { get; }
+  public static Axis3D YAxis { get; }
+  public static Axis3D ZAxis { get; }
+  public Axis3D Mirrored(in Axis3D axis)
+  public Axis3D Mirrored(in Frame3D frame)
+  public Axis3D Mirrored(in Point3D point)
+  public Axis3D Reversed()
+  public Axis3D Rotated(in Axis3D axis, double angle)
+  public Axis3D Scaled(in Point3D point, double factor)
+  public Axis3D Transformed(in Transform3D transform)
+  public Axis3D Translated(in Point3D point1, in Point3D point2)
+  public Axis3D Translated(in Vector3D vector)
+  public Axis3D WithDirection(in Direction3D direction)
+  public Axis3D WithLocation(in Point3D point)
+  public bool Equals(Axis3D other)
+  public bool IsCoaxial(in Axis3D other, double angularTolerance, double linearTolerance)
+  public bool IsNormal(in Axis3D other, double angularTolerance)
+  public bool IsOpposite(in Axis3D other, double angularTolerance)
+  public bool IsParallel(in Axis3D other, double angularTolerance)
+  public double AngleTo(in Axis3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Axis3D left, in Axis3D right)
+  public static bool op_Inequality(in Axis3D left, in Axis3D right)
+public readonly struct Kerf.Geometry.BoundingBox : IEquatable<BoundingBox>
+  public BoundingBox(Point3D min, Point3D max)
+  public Point3D Centre { get; }
+  public Point3D Max { get; }
+  public Point3D Min { get; }
+  public Vector3D Size { get; }
+  public bool IsEmpty { get; }
+  public bool IsInfinite { get; }
+  public static BoundingBox Empty { get; }
+  public BoundingBox Enlarged(double gap)
+  public BoundingBox Including(Point3D point)
+  public BoundingBox Transformed(in Transform3D transform)
+  public BoundingBox Union(in BoundingBox other)
+  public bool Contains(Point3D point)
+  public bool Equals(BoundingBox other)
+  public bool Intersects(in BoundingBox other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static BoundingBox Of(params ReadOnlySpan<Point3D> points)
+  public static bool op_Equality(in BoundingBox left, in BoundingBox right)
+  public static bool op_Inequality(in BoundingBox left, in BoundingBox right)
+public readonly struct Kerf.Geometry.Circle2D : IEquatable<Circle2D>
+  public Circle2D()
+  public Circle2D(in Axis2D xAxis, double radius, bool sense = true)
+  public Circle2D(in Frame2D axis, double radius)
+  public Axis2D XAxis { get; }
+  public Axis2D YAxis { get; }
+  public Frame2D Axis { get; }
+  public Frame2D Position { get; }
+  public Point2D Location { get; }
+  public bool IsDirect { get; }
+  public double Area { get; }
+  public double Length { get; }
+  public double Radius { get; }
+  public Circle2D Mirrored(in Axis2D axis)
+  public Circle2D Mirrored(in Point2D point)
+  public Circle2D Reversed()
+  public Circle2D Rotated(in Point2D point, double angle)
+  public Circle2D Scaled(in Point2D point, double factor)
+  public Circle2D Transformed(in Transform2D transform)
+  public Circle2D Translated(in Point2D point1, in Point2D point2)
+  public Circle2D Translated(in Vector2D vector)
+  public Circle2D WithAxis(in Frame2D frame)
+  public Circle2D WithLocation(in Point2D point)
+  public Circle2D WithRadius(double radius)
+  public Circle2D WithXAxis(in Axis2D axis)
+  public Circle2D WithYAxis(in Axis2D axis)
+  public bool Contains(in Point2D point, double linearTolerance)
+  public bool Equals(Circle2D other)
+  public double DistanceTo(in Point2D point)
+  public double SquareDistanceTo(in Point2D point)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Circle2D left, in Circle2D right)
+  public static bool op_Inequality(in Circle2D left, in Circle2D right)
+  public void Coefficients(out double a, out double b, out double c, out double d, out double e, out double f)
+public readonly struct Kerf.Geometry.Circle3D : IEquatable<Circle3D>
+  public Circle3D()
+  public Circle3D(in Frame3D frame, double radius)
+  public Axis3D Axis { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public Frame3D Position { get; }
+  public Point3D Location { get; }
+  public double Area { get; }
+  public double Length { get; }
+  public double Radius { get; }
+  public Circle3D Mirrored(in Axis3D axis)
+  public Circle3D Mirrored(in Frame3D frame)
+  public Circle3D Mirrored(in Point3D point)
+  public Circle3D Rotated(in Axis3D axis, double angle)
+  public Circle3D Scaled(in Point3D point, double factor)
+  public Circle3D Transformed(in Transform3D transform)
+  public Circle3D Translated(in Point3D point1, in Point3D point2)
+  public Circle3D Translated(in Vector3D vector)
+  public Circle3D WithAxis(in Axis3D axis)
+  public Circle3D WithLocation(in Point3D point)
+  public Circle3D WithPosition(in Frame3D frame)
+  public Circle3D WithRadius(double radius)
+  public bool Contains(in Point3D point, double linearTolerance)
+  public bool Equals(Circle3D other)
+  public double DistanceTo(in Point3D point)
+  public double SquareDistanceTo(in Point3D point)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Circle3D left, in Circle3D right)
+  public static bool op_Inequality(in Circle3D left, in Circle3D right)
+public readonly struct Kerf.Geometry.Cone3D : IEquatable<Cone3D>
+  public Cone3D()
+  public Cone3D(in CoordinateSystem position, double angle, double radius)
+  public Axis3D Axis { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public CoordinateSystem Position { get; }
+  public Point3D Apex { get; }
+  public Point3D Location { get; }
+  public bool IsDirect { get; }
+  public double RefRadius { get; }
+  public double SemiAngle { get; }
+  public Cone3D Mirrored(in Axis3D axis)
+  public Cone3D Mirrored(in Frame3D frame)
+  public Cone3D Mirrored(in Point3D point)
+  public Cone3D Rotated(in Axis3D axis, double angle)
+  public Cone3D Scaled(in Point3D point, double factor)
+  public Cone3D Transformed(in Transform3D transform)
+  public Cone3D Translated(in Point3D point1, in Point3D point2)
+  public Cone3D Translated(in Vector3D vector)
+  public Cone3D UReversed()
+  public Cone3D VReversed()
+  public Cone3D WithAxis(in Axis3D axis)
+  public Cone3D WithLocation(in Point3D location)
+  public Cone3D WithPosition(in CoordinateSystem position)
+  public Cone3D WithRadius(double r)
+  public Cone3D WithSemiAngle(double angle)
+  public bool Equals(Cone3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Cone3D left, in Cone3D right)
+  public static bool op_Inequality(in Cone3D left, in Cone3D right)
+  public void Coefficients(out double a1, out double a2, out double a3, out double b1, out double b2, out double b3, out double c1, out double c2, out double c3, out double d)
+public enum Kerf.Geometry.Continuity
+  C0 = 0
+  G1 = 1
+  C1 = 2
+  G2 = 3
+  C2 = 4
+  C3 = 5
+  CN = 6
+public readonly struct Kerf.Geometry.CoordinateSystem : IEquatable<CoordinateSystem>
+  public CoordinateSystem()
+  public CoordinateSystem(in Frame3D frame)
+  public CoordinateSystem(in Point3D point, in Direction3D direction)
+  public CoordinateSystem(in Point3D point, in Direction3D normal, in Direction3D xDirection)
+  public Axis3D Axis { get; }
+  public Direction3D Direction { get; }
+  public Direction3D XDirection { get; }
+  public Direction3D YDirection { get; }
+  public Frame3D Frame { get; }
+  public Point3D Location { get; }
+  public bool IsDirect { get; }
+  public static CoordinateSystem World { get; }
+  public CoordinateSystem Mirrored(in Axis3D axis)
+  public CoordinateSystem Mirrored(in Frame3D frame)
+  public CoordinateSystem Mirrored(in Point3D point)
+  public CoordinateSystem Rotated(in Axis3D axis, double angle)
+  public CoordinateSystem Scaled(in Point3D point, double factor)
+  public CoordinateSystem Transformed(in Transform3D transform)
+  public CoordinateSystem Translated(in Point3D point1, in Point3D point2)
+  public CoordinateSystem Translated(in Vector3D vector)
+  public CoordinateSystem WithAxis(in Axis3D axis)
+  public CoordinateSystem WithDirection(in Direction3D direction)
+  public CoordinateSystem WithLocation(in Point3D point)
+  public CoordinateSystem WithXDirection(in Direction3D xDirection)
+  public CoordinateSystem WithYDirection(in Direction3D yDirection)
+  public CoordinateSystem XReversed()
+  public CoordinateSystem YReversed()
+  public CoordinateSystem ZReversed()
+  public bool Equals(CoordinateSystem other)
+  public bool IsCoplanar(in Axis3D axis, double linearTolerance, double angularTolerance)
+  public bool IsCoplanar(in CoordinateSystem other, double linearTolerance, double angularTolerance)
+  public double AngleTo(in CoordinateSystem other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in CoordinateSystem left, in CoordinateSystem right)
+  public static bool op_Inequality(in CoordinateSystem left, in CoordinateSystem right)
+public readonly record struct Kerf.Geometry.CurveDerivatives : IEquatable<CurveDerivatives>
+  public CurveDerivatives(int Order, Point3D Point, Vector3D D1 = default, Vector3D D2 = default, Vector3D D3 = default)
+  public Point3D Point { get; init; }
+  public Vector3D D1 { get; init; }
+  public Vector3D D2 { get; init; }
+  public Vector3D D3 { get; init; }
+  public int Order { get; init; }
+public readonly record struct Kerf.Geometry.CurveDerivatives2D : IEquatable<CurveDerivatives2D>
+  public CurveDerivatives2D(int Order, Point2D Point, Vector2D D1 = default, Vector2D D2 = default, Vector2D D3 = default)
+  public Point2D Point { get; init; }
+  public Vector2D D1 { get; init; }
+  public Vector2D D2 { get; init; }
+  public Vector2D D3 { get; init; }
+  public int Order { get; init; }
+public enum Kerf.Geometry.CurveKind
+  Line = 0
+  Circle = 1
+  Ellipse = 2
+  Hyperbola = 3
+  Parabola = 4
+  BezierCurve = 5
+  BSplineCurve = 6
+  OffsetCurve = 7
+  OtherCurve = 8
+public readonly record struct Kerf.Geometry.CurvePoint : IEquatable<CurvePoint>
+  public CurvePoint(double Parameter, Point3D Point, double Distance = 0)
+  public Point3D Point { get; init; }
+  public double Distance { get; init; }
+  public double Parameter { get; init; }
+public readonly record struct Kerf.Geometry.CurvePoint2D : IEquatable<CurvePoint2D>
+  public CurvePoint2D(double Parameter, Point2D Point, double Distance = 0)
+  public Point2D Point { get; init; }
+  public double Distance { get; init; }
+  public double Parameter { get; init; }
+public readonly struct Kerf.Geometry.Cylinder3D : IEquatable<Cylinder3D>
+  public Cylinder3D()
+  public Cylinder3D(in CoordinateSystem position, double radius)
+  public Axis3D Axis { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public CoordinateSystem Position { get; }
+  public Point3D Location { get; }
+  public bool IsDirect { get; }
+  public double Radius { get; }
+  public Cylinder3D Mirrored(in Axis3D axis)
+  public Cylinder3D Mirrored(in Frame3D frame)
+  public Cylinder3D Mirrored(in Point3D point)
+  public Cylinder3D Rotated(in Axis3D axis, double angle)
+  public Cylinder3D Scaled(in Point3D point, double factor)
+  public Cylinder3D Transformed(in Transform3D transform)
+  public Cylinder3D Translated(in Point3D point1, in Point3D point2)
+  public Cylinder3D Translated(in Vector3D vector)
+  public Cylinder3D UReversed()
+  public Cylinder3D VReversed()
+  public Cylinder3D WithAxis(in Axis3D axis)
+  public Cylinder3D WithLocation(in Point3D location)
+  public Cylinder3D WithPosition(in CoordinateSystem position)
+  public Cylinder3D WithRadius(double r)
+  public bool Equals(Cylinder3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Cylinder3D left, in Cylinder3D right)
+  public static bool op_Inequality(in Cylinder3D left, in Cylinder3D right)
+  public void Coefficients(out double a1, out double a2, out double a3, out double b1, out double b2, out double b3, out double c1, out double c2, out double c3, out double d)
+public readonly struct Kerf.Geometry.Direction2D : IEquatable<Direction2D>
+  public Direction2D()
+  public Direction2D(double x, double y)
+  public Direction2D(in Vector2D vector)
+  public double X { get; }
+  public double Y { get; }
+  public static Direction2D UnitX { get; }
+  public static Direction2D UnitY { get; }
+  public Direction2D Mirrored(in Axis2D axis)
+  public Direction2D Mirrored(in Direction2D direction)
+  public Direction2D Reversed()
+  public Direction2D Rotated(double angle)
+  public Direction2D Transformed(in Transform2D transform)
+  public Direction2D WithX(double x)
+  public Direction2D WithY(double y)
+  public Vector2D ToVector()
+  public bool Equals(Direction2D other)
+  public bool IsEqual(in Direction2D other, double angularTolerance)
+  public bool IsNormal(in Direction2D other, double angularTolerance)
+  public bool IsOpposite(in Direction2D other, double angularTolerance)
+  public bool IsParallel(in Direction2D other, double angularTolerance)
+  public double AngleTo(in Direction2D other)
+  public double Crossed(in Direction2D right)
+  public double Dot(in Direction2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Direction2D op_UnaryNegation(in Direction2D v)
+  public static bool op_Equality(in Direction2D left, in Direction2D right)
+  public static bool op_Inequality(in Direction2D left, in Direction2D right)
+  public static double op_ExclusiveOr(in Direction2D left, in Direction2D right)
+  public static double op_Multiply(in Direction2D left, in Direction2D right)
+  public void Deconstruct(out double x, out double y)
+public readonly struct Kerf.Geometry.Direction3D : IEquatable<Direction3D>
+  public Direction3D()
+  public Direction3D(double x, double y, double z)
+  public Direction3D(in Vector3D vector)
+  public double X { get; }
+  public double Y { get; }
+  public double Z { get; }
+  public static Direction3D UnitX { get; }
+  public static Direction3D UnitY { get; }
+  public static Direction3D UnitZ { get; }
+  public Direction3D CrossCrossed(in Direction3D v1, in Direction3D v2)
+  public Direction3D Crossed(in Direction3D right)
+  public Direction3D Mirrored(in Axis3D axis)
+  public Direction3D Mirrored(in Direction3D direction)
+  public Direction3D Mirrored(in Frame3D frame)
+  public Direction3D Reversed()
+  public Direction3D Rotated(in Axis3D axis, double angle)
+  public Direction3D Transformed(in Transform3D transform)
+  public Direction3D WithX(double x)
+  public Direction3D WithY(double y)
+  public Direction3D WithZ(double z)
+  public Vector3 ToVector3()
+  public Vector3D ToVector()
+  public bool Equals(Direction3D other)
+  public bool IsEqual(in Direction3D other, double angularTolerance)
+  public bool IsNormal(in Direction3D other, double angularTolerance)
+  public bool IsOpposite(in Direction3D other, double angularTolerance)
+  public bool IsParallel(in Direction3D other, double angularTolerance)
+  public double AngleTo(in Direction3D other)
+  public double AngleWithRef(in Direction3D other, in Direction3D reference)
+  public double Dot(in Direction3D other)
+  public double DotCross(in Direction3D v1, in Direction3D v2)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Direction3D op_ExclusiveOr(in Direction3D left, in Direction3D right)
+  public static Direction3D op_UnaryNegation(in Direction3D v)
+  public static Vector3D op_Implicit(in Direction3D direction)
+  public static Vector3D op_Multiply(double scalar, in Direction3D direction)
+  public static Vector3D op_Multiply(in Direction3D direction, double scalar)
+  public static bool op_Equality(in Direction3D left, in Direction3D right)
+  public static bool op_Inequality(in Direction3D left, in Direction3D right)
+  public static double op_Multiply(in Direction3D left, in Direction3D right)
+  public void Deconstruct(out double x, out double y, out double z)
+public readonly struct Kerf.Geometry.Ellipse2D : IEquatable<Ellipse2D>
+  public Ellipse2D()
+  public Ellipse2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
+  public Ellipse2D(in Frame2D frame, double majorRadius, double minorRadius)
+  public Axis2D Directrix1 { get; }
+  public Axis2D Directrix2 { get; }
+  public Axis2D XAxis { get; }
+  public Axis2D YAxis { get; }
+  public Frame2D Axis { get; }
+  public Point2D Focus1 { get; }
+  public Point2D Focus2 { get; }
+  public Point2D Location { get; }
+  public bool IsDirect { get; }
+  public double Area { get; }
+  public double Eccentricity { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public Ellipse2D Mirrored(in Axis2D axis)
+  public Ellipse2D Mirrored(in Point2D point)
+  public Ellipse2D Reversed()
+  public Ellipse2D Rotated(in Point2D point, double angle)
+  public Ellipse2D Scaled(in Point2D point, double factor)
+  public Ellipse2D Transformed(in Transform2D transform)
+  public Ellipse2D Translated(in Point2D point1, in Point2D point2)
+  public Ellipse2D Translated(in Vector2D vector)
+  public Ellipse2D WithAxis(in Frame2D frame)
+  public Ellipse2D WithLocation(in Point2D point)
+  public Ellipse2D WithMajorRadius(double majorRadius)
+  public Ellipse2D WithMinorRadius(double minorRadius)
+  public Ellipse2D WithXAxis(in Axis2D axis)
+  public Ellipse2D WithYAxis(in Axis2D axis)
+  public bool Equals(Ellipse2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Ellipse2D left, in Ellipse2D right)
+  public static bool op_Inequality(in Ellipse2D left, in Ellipse2D right)
+  public void Coefficients(out double a, out double b, out double c, out double d, out double e, out double f)
+public readonly struct Kerf.Geometry.Ellipse3D : IEquatable<Ellipse3D>
+  public Ellipse3D()
+  public Ellipse3D(in Frame3D frame, double majorRadius, double minorRadius)
+  public Axis3D Axis { get; }
+  public Axis3D Directrix1 { get; }
+  public Axis3D Directrix2 { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public Frame3D Position { get; }
+  public Point3D Focus1 { get; }
+  public Point3D Focus2 { get; }
+  public Point3D Location { get; }
+  public double Area { get; }
+  public double Eccentricity { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public Ellipse3D Mirrored(in Axis3D axis)
+  public Ellipse3D Mirrored(in Frame3D frame)
+  public Ellipse3D Mirrored(in Point3D point)
+  public Ellipse3D Rotated(in Axis3D axis, double angle)
+  public Ellipse3D Scaled(in Point3D point, double factor)
+  public Ellipse3D Transformed(in Transform3D transform)
+  public Ellipse3D Translated(in Point3D point1, in Point3D point2)
+  public Ellipse3D Translated(in Vector3D vector)
+  public Ellipse3D WithAxis(in Axis3D axis)
+  public Ellipse3D WithLocation(in Point3D point)
+  public Ellipse3D WithMajorRadius(double majorRadius)
+  public Ellipse3D WithMinorRadius(double minorRadius)
+  public Ellipse3D WithPosition(in Frame3D frame)
+  public bool Equals(Ellipse3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Ellipse3D left, in Ellipse3D right)
+  public static bool op_Inequality(in Ellipse3D left, in Ellipse3D right)
+public enum Kerf.Geometry.EulerSequence
+  EulerAngles = 0
+  YawPitchRoll = 1
+  ExtrinsicXYZ = 2
+  ExtrinsicXZY = 3
+  ExtrinsicYZX = 4
+  ExtrinsicYXZ = 5
+  ExtrinsicZXY = 6
+  ExtrinsicZYX = 7
+  IntrinsicXYZ = 8
+  IntrinsicXZY = 9
+  IntrinsicYZX = 10
+  IntrinsicYXZ = 11
+  IntrinsicZXY = 12
+  IntrinsicZYX = 13
+  ExtrinsicXYX = 14
+  ExtrinsicXZX = 15
+  ExtrinsicYZY = 16
+  ExtrinsicYXY = 17
+  ExtrinsicZYZ = 18
+  ExtrinsicZXZ = 19
+  IntrinsicXYX = 20
+  IntrinsicXZX = 21
+  IntrinsicYZY = 22
+  IntrinsicYXY = 23
+  IntrinsicZXZ = 24
+  IntrinsicZYZ = 25
+public readonly struct Kerf.Geometry.Frame2D : IEquatable<Frame2D>
+  public Frame2D()
+  public Frame2D(in Axis2D axis, bool sense = true)
+  public Frame2D(in Point2D point, in Direction2D direction, bool sense = true)
+  public Frame2D(in Point2D point, in Direction2D xDirection, in Direction2D yDirection)
+  public Axis2D XAxis { get; }
+  public Axis2D YAxis { get; }
+  public Direction2D XDirection { get; }
+  public Direction2D YDirection { get; }
+  public Point2D Location { get; }
+  public static Frame2D World { get; }
+  public Frame2D Mirrored(in Axis2D axis)
+  public Frame2D Mirrored(in Point2D point)
+  public Frame2D Rotated(in Point2D point, double angle)
+  public Frame2D Scaled(in Point2D point, double factor)
+  public Frame2D Transformed(in Transform2D transform)
+  public Frame2D Translated(in Point2D point1, in Point2D point2)
+  public Frame2D Translated(in Vector2D vector)
+  public Frame2D WithAxis(in Frame2D frame)
+  public Frame2D WithLocation(in Point2D point)
+  public Frame2D WithXAxis(in Axis2D axis)
+  public Frame2D WithXDirection(in Direction2D xDirection)
+  public Frame2D WithYAxis(in Axis2D axis)
+  public Frame2D WithYDirection(in Direction2D yDirection)
+  public bool Equals(Frame2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Frame2D left, in Frame2D right)
+  public static bool op_Inequality(in Frame2D left, in Frame2D right)
+public readonly struct Kerf.Geometry.Frame3D : IEquatable<Frame3D>
+  public Frame3D()
+  public Frame3D(in Point3D point, in Direction3D direction)
+  public Frame3D(in Point3D point, in Direction3D normal, in Direction3D xDirection)
+  public Axis3D Axis { get; }
+  public Direction3D Direction { get; }
+  public Direction3D XDirection { get; }
+  public Direction3D YDirection { get; }
+  public Point3D Location { get; }
+  public static Frame3D World { get; }
+  public static Frame3D YZ { get; }
+  public static Frame3D ZX { get; }
+  public Frame3D Mirrored(in Axis3D axis)
+  public Frame3D Mirrored(in Frame3D frame)
+  public Frame3D Mirrored(in Point3D point)
+  public Frame3D Rotated(in Axis3D axis, double angle)
+  public Frame3D Scaled(in Point3D point, double factor)
+  public Frame3D Transformed(in Transform3D transform)
+  public Frame3D Translated(in Point3D point1, in Point3D point2)
+  public Frame3D Translated(in Vector3D vector)
+  public Frame3D WithAxis(in Axis3D axis)
+  public Frame3D WithDirection(in Direction3D direction)
+  public Frame3D WithLocation(in Point3D point)
+  public Frame3D WithXDirection(in Direction3D xDirection)
+  public Frame3D WithYDirection(in Direction3D yDirection)
+  public bool Equals(Frame3D other)
+  public bool IsCoplanar(in Axis3D axis, double linearTolerance, double angularTolerance)
+  public bool IsCoplanar(in Frame3D other, double linearTolerance, double angularTolerance)
+  public double AngleTo(in Frame3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Frame3D left, in Frame3D right)
+  public static bool op_Inequality(in Frame3D left, in Frame3D right)
+public readonly struct Kerf.Geometry.GeneralTransform2D : IEquatable<GeneralTransform2D>
+  public GeneralTransform2D()
+  public GeneralTransform2D(in Transform2D transform)
+  public TransformForm Form { get; }
+  public Vector2D TranslationPart { get; }
+  public bool IsNegative { get; }
+  public bool IsSingular { get; }
+  public double this[int row, int col] { get; }
+  public GeneralTransform2D Inverted()
+  public GeneralTransform2D Multiplied(in GeneralTransform2D transform)
+  public GeneralTransform2D Powered(int n)
+  public GeneralTransform2D PreMultiplied(in GeneralTransform2D transform)
+  public GeneralTransform2D WithAffinity(in Axis2D axis, double ratio)
+  public GeneralTransform2D WithTransform(in Transform2D transform)
+  public Transform2D ToTransform()
+  public bool Equals(GeneralTransform2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static GeneralTransform2D Affinity(in Axis2D axis, double ratio)
+  public static GeneralTransform2D op_Multiply(in GeneralTransform2D left, in GeneralTransform2D right)
+  public static bool op_Equality(in GeneralTransform2D left, in GeneralTransform2D right)
+  public static bool op_Inequality(in GeneralTransform2D left, in GeneralTransform2D right)
+public readonly struct Kerf.Geometry.GeneralTransform3D : IEquatable<GeneralTransform3D>
+  public GeneralTransform3D()
+  public GeneralTransform3D(in Transform3D transform)
+  public Matrix3x3 VectorialPart { get; }
+  public TransformForm Form { get; }
+  public Vector3D TranslationPart { get; }
+  public bool IsNegative { get; }
+  public bool IsSingular { get; }
+  public double this[int row, int col] { get; }
+  public GeneralTransform3D Inverted()
+  public GeneralTransform3D Multiplied(in GeneralTransform3D transform)
+  public GeneralTransform3D Powered(int n)
+  public GeneralTransform3D PreMultiplied(in GeneralTransform3D transform)
+  public GeneralTransform3D WithAffinity(in Axis3D axis, double ratio)
+  public GeneralTransform3D WithAffinity(in Frame3D frame, double ratio)
+  public GeneralTransform3D WithMat4(ReadOnlySpan<double> matrix)
+  public GeneralTransform3D WithTransform(in Transform3D transform)
+  public GeneralTransform3D WithVectorialPart(in Matrix3x3 matrix)
+  public Transform3D ToTransform()
+  public bool Equals(GeneralTransform3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static GeneralTransform3D Affinity(in Axis3D axis, double ratio)
+  public static GeneralTransform3D Affinity(in Frame3D frame, double ratio)
+  public static GeneralTransform3D Mat4(ReadOnlySpan<double> matrix)
+  public static GeneralTransform3D op_Multiply(in GeneralTransform3D left, in GeneralTransform3D right)
+  public static Point3D op_Multiply(in GeneralTransform3D transform, in Point3D point)
+  public static bool op_Equality(in GeneralTransform3D left, in GeneralTransform3D right)
+  public static bool op_Inequality(in GeneralTransform3D left, in GeneralTransform3D right)
+  public void GetMat4(Span<double> matrix)
+public readonly struct Kerf.Geometry.Grid<T>
+  public Grid(ReadOnlyMemory<T?> values, int rowCount, int columnCount)
+  public ReadOnlyMemory<T?> Values { get; }
+  public T? this[int row, int column] { get; }
+  public bool IsEmpty { get; }
+  public int ColumnCount { get; }
+  public int RowCount { get; }
+  public ReadOnlySpan<T?> Row(int row)
+  public T?[,] ToArray()
+public readonly struct Kerf.Geometry.Hyperbola2D : IEquatable<Hyperbola2D>
+  public Hyperbola2D()
+  public Hyperbola2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
+  public Hyperbola2D(in Frame2D frame, double majorRadius, double minorRadius)
+  public Axis2D Asymptote1 { get; }
+  public Axis2D Asymptote2 { get; }
+  public Axis2D Directrix1 { get; }
+  public Axis2D Directrix2 { get; }
+  public Axis2D XAxis { get; }
+  public Axis2D YAxis { get; }
+  public Frame2D Axis { get; }
+  public Point2D Focus1 { get; }
+  public Point2D Focus2 { get; }
+  public Point2D Location { get; }
+  public bool IsDirect { get; }
+  public double Eccentricity { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public Hyperbola2D ConjugateBranch1()
+  public Hyperbola2D ConjugateBranch2()
+  public Hyperbola2D Mirrored(in Axis2D axis)
+  public Hyperbola2D Mirrored(in Point2D point)
+  public Hyperbola2D OtherBranch()
+  public Hyperbola2D Reversed()
+  public Hyperbola2D Rotated(in Point2D point, double angle)
+  public Hyperbola2D Scaled(in Point2D point, double factor)
+  public Hyperbola2D Transformed(in Transform2D transform)
+  public Hyperbola2D Translated(in Point2D point1, in Point2D point2)
+  public Hyperbola2D Translated(in Vector2D vector)
+  public Hyperbola2D WithAxis(in Frame2D frame)
+  public Hyperbola2D WithLocation(in Point2D point)
+  public Hyperbola2D WithMajorRadius(double majorRadius)
+  public Hyperbola2D WithMinorRadius(double minorRadius)
+  public Hyperbola2D WithXAxis(in Axis2D axis)
+  public Hyperbola2D WithYAxis(in Axis2D axis)
+  public bool Equals(Hyperbola2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Hyperbola2D left, in Hyperbola2D right)
+  public static bool op_Inequality(in Hyperbola2D left, in Hyperbola2D right)
+  public void Coefficients(out double a, out double b, out double c, out double d, out double e, out double f)
+public readonly struct Kerf.Geometry.Hyperbola3D : IEquatable<Hyperbola3D>
+  public Hyperbola3D()
+  public Hyperbola3D(in Frame3D frame, double majorRadius, double minorRadius)
+  public Axis3D Asymptote1 { get; }
+  public Axis3D Asymptote2 { get; }
+  public Axis3D Axis { get; }
+  public Axis3D Directrix1 { get; }
+  public Axis3D Directrix2 { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public Frame3D Position { get; }
+  public Point3D Focus1 { get; }
+  public Point3D Focus2 { get; }
+  public Point3D Location { get; }
+  public double Eccentricity { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public Hyperbola3D ConjugateBranch1()
+  public Hyperbola3D ConjugateBranch2()
+  public Hyperbola3D Mirrored(in Axis3D axis)
+  public Hyperbola3D Mirrored(in Frame3D frame)
+  public Hyperbola3D Mirrored(in Point3D point)
+  public Hyperbola3D OtherBranch()
+  public Hyperbola3D Rotated(in Axis3D axis, double angle)
+  public Hyperbola3D Scaled(in Point3D point, double factor)
+  public Hyperbola3D Transformed(in Transform3D transform)
+  public Hyperbola3D Translated(in Point3D point1, in Point3D point2)
+  public Hyperbola3D Translated(in Vector3D vector)
+  public Hyperbola3D WithAxis(in Axis3D axis)
+  public Hyperbola3D WithLocation(in Point3D point)
+  public Hyperbola3D WithMajorRadius(double majorRadius)
+  public Hyperbola3D WithMinorRadius(double minorRadius)
+  public Hyperbola3D WithPosition(in Frame3D frame)
+  public bool Equals(Hyperbola3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Hyperbola3D left, in Hyperbola3D right)
+  public static bool op_Inequality(in Hyperbola3D left, in Hyperbola3D right)
+public interface Kerf.Geometry.IGeometry
+public readonly record struct Kerf.Geometry.Interval : IEquatable<Interval>
+  public Interval(double Min, double Max)
+  public bool IsInfinite { get; }
+  public double Length { get; }
+  public double Max { get; init; }
+  public double Middle { get; }
+  public double Min { get; init; }
+  public bool Contains(double value, double tolerance = 0)
+  public double At(double fraction)
+  public double Clamp(double value)
+  public override string ToString()
+public enum Kerf.Geometry.JoinKind
+  Arc = 0
+  Tangent = 1
+  Intersection = 2
+public readonly struct Kerf.Geometry.Line2D : IEquatable<Line2D>
+  public Line2D()
+  public Line2D(double a, double b, double c)
+  public Line2D(in Axis2D axis)
+  public Line2D(in Point2D point, in Direction2D direction)
+  public Axis2D Position { get; }
+  public Direction2D Direction { get; }
+  public Point2D Location { get; }
+  public Line2D Mirrored(in Axis2D axis)
+  public Line2D Mirrored(in Point2D point)
+  public Line2D Normal(in Point2D point)
+  public Line2D Reversed()
+  public Line2D Rotated(in Point2D point, double angle)
+  public Line2D Scaled(in Point2D point, double factor)
+  public Line2D Transformed(in Transform2D transform)
+  public Line2D Translated(in Point2D point1, in Point2D point2)
+  public Line2D Translated(in Vector2D vector)
+  public Line2D WithDirection(in Direction2D direction)
+  public Line2D WithLocation(in Point2D point)
+  public Line2D WithPosition(in Axis2D axis)
+  public bool Contains(in Point2D point, double linearTolerance)
+  public bool Equals(Line2D other)
+  public double AngleTo(in Line2D other)
+  public double DistanceTo(in Line2D other)
+  public double DistanceTo(in Point2D point)
+  public double SquareDistanceTo(in Line2D other)
+  public double SquareDistanceTo(in Point2D point)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Line2D left, in Line2D right)
+  public static bool op_Inequality(in Line2D left, in Line2D right)
+  public void Coefficients(out double a, out double b, out double c)
+public readonly struct Kerf.Geometry.Line3D : IEquatable<Line3D>
+  public Line3D()
+  public Line3D(in Axis3D axis)
+  public Line3D(in Point3D point, in Direction3D direction)
+  public Axis3D Position { get; }
+  public Direction3D Direction { get; }
+  public Point3D Location { get; }
+  public Line3D Mirrored(in Axis3D axis)
+  public Line3D Mirrored(in Frame3D frame)
+  public Line3D Mirrored(in Point3D point)
+  public Line3D Normal(in Point3D point)
+  public Line3D Reversed()
+  public Line3D Rotated(in Axis3D axis, double angle)
+  public Line3D Scaled(in Point3D point, double factor)
+  public Line3D Transformed(in Transform3D transform)
+  public Line3D Translated(in Point3D point1, in Point3D point2)
+  public Line3D Translated(in Vector3D vector)
+  public Line3D WithDirection(in Direction3D direction)
+  public Line3D WithLocation(in Point3D point)
+  public Line3D WithPosition(in Axis3D axis)
+  public bool Contains(in Point3D point, double linearTolerance)
+  public bool Equals(Line3D other)
+  public double AngleTo(in Line3D other)
+  public double DistanceTo(in Line3D other)
+  public double DistanceTo(in Point3D point)
+  public double SquareDistanceTo(in Line3D other)
+  public double SquareDistanceTo(in Point3D point)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Line3D left, in Line3D right)
+  public static bool op_Inequality(in Line3D left, in Line3D right)
+public readonly struct Kerf.Geometry.Matrix3x3 : IEquatable<Matrix3x3>
+  public Matrix3x3(double a11, double a12, double a13, double a21, double a22, double a23, double a31, double a32, double a33)
+  public bool IsSingular { get; }
+  public double Determinant { get; }
+  public static Matrix3x3 Identity { get; }
+  public Matrix3x3 Added(in Matrix3x3 other)
+  public Matrix3x3 Divided(double scalar)
+  public Matrix3x3 Inverted()
+  public Matrix3x3 Multiplied(double scalar)
+  public Matrix3x3 Multiplied(in Matrix3x3 other)
+  public Matrix3x3 Powered(int n)
+  public Matrix3x3 PreMultiplied(in Matrix3x3 other)
+  public Matrix3x3 Subtracted(in Matrix3x3 other)
+  public Matrix3x3 Transposed()
+  public Matrix3x3 WithDiagonal(double x1, double x2, double x3)
+  public Matrix3x3 WithIdentity()
+  public Matrix3x3 WithScale(double factor)
+  public bool Equals(Matrix3x3 other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Matrix3x3 op_Addition(in Matrix3x3 left, in Matrix3x3 right)
+  public static Matrix3x3 op_Division(in Matrix3x3 mat, double scalar)
+  public static Matrix3x3 op_Multiply(double scalar, in Matrix3x3 mat)
+  public static Matrix3x3 op_Multiply(in Matrix3x3 left, in Matrix3x3 right)
+  public static Matrix3x3 op_Multiply(in Matrix3x3 mat, double scalar)
+  public static Matrix3x3 op_Subtraction(in Matrix3x3 left, in Matrix3x3 right)
+  public static bool op_Equality(in Matrix3x3 left, in Matrix3x3 right)
+  public static bool op_Inequality(in Matrix3x3 left, in Matrix3x3 right)
+  public void CopyTo(Span<double> destination)
+public readonly struct Kerf.Geometry.OrientedBox : IEquatable<OrientedBox>
+  public OrientedBox(Point3D centre, Direction3D xAxis, Direction3D yAxis, Direction3D zAxis, Vector3D halfSize)
+  public Direction3D XAxis { get; }
+  public Direction3D YAxis { get; }
+  public Direction3D ZAxis { get; }
+  public Point3D Centre { get; }
+  public Vector3D HalfSize { get; }
+  public bool IsEmpty { get; }
+  public double Diagonal { get; }
+  public double Volume { get; }
+  public static OrientedBox Empty { get; }
+  public BoundingBox ToBoundingBox()
+  public Point3D[] Corners()
+  public bool Contains(Point3D point)
+  public bool Contains(in OrientedBox other)
+  public bool Equals(OrientedBox other)
+  public bool Intersects(in OrientedBox other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static OrientedBox FromBoundingBox(in BoundingBox box)
+  public static bool op_Equality(in OrientedBox left, in OrientedBox right)
+  public static bool op_Inequality(in OrientedBox left, in OrientedBox right)
+public readonly struct Kerf.Geometry.Parabola2D : IEquatable<Parabola2D>
+  public Parabola2D()
+  public Parabola2D(in Axis2D directrix, in Point2D focus, bool sense = true)
+  public Parabola2D(in Axis2D mirrorAxis, double focalLength, bool sense = true)
+  public Parabola2D(in Frame2D axes, double focalLength)
+  public Axis2D Directrix { get; }
+  public Axis2D MirrorAxis { get; }
+  public Frame2D Axis { get; }
+  public Point2D Focus { get; }
+  public Point2D Location { get; }
+  public bool IsDirect { get; }
+  public double Focal { get; }
+  public double Parameter { get; }
+  public Parabola2D Mirrored(in Axis2D axis)
+  public Parabola2D Mirrored(in Point2D point)
+  public Parabola2D Reversed()
+  public Parabola2D Rotated(in Point2D point, double angle)
+  public Parabola2D Scaled(in Point2D point, double factor)
+  public Parabola2D Transformed(in Transform2D transform)
+  public Parabola2D Translated(in Point2D point1, in Point2D point2)
+  public Parabola2D Translated(in Vector2D vector)
+  public Parabola2D WithAxis(in Frame2D frame)
+  public Parabola2D WithFocal(double focal)
+  public Parabola2D WithLocation(in Point2D point)
+  public Parabola2D WithMirrorAxis(in Axis2D axis)
+  public bool Equals(Parabola2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Parabola2D left, in Parabola2D right)
+  public static bool op_Inequality(in Parabola2D left, in Parabola2D right)
+  public void Coefficients(out double a, out double b, out double c, out double d, out double e, out double f)
+public readonly struct Kerf.Geometry.Parabola3D : IEquatable<Parabola3D>
+  public Parabola3D()
+  public Parabola3D(in Axis3D directrix, in Point3D focus)
+  public Parabola3D(in Frame3D frame, double focal)
+  public Axis3D Axis { get; }
+  public Axis3D Directrix { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public Frame3D Position { get; }
+  public Point3D Focus { get; }
+  public Point3D Location { get; }
+  public double Focal { get; }
+  public double Parameter { get; }
+  public Parabola3D Mirrored(in Axis3D axis)
+  public Parabola3D Mirrored(in Frame3D frame)
+  public Parabola3D Mirrored(in Point3D point)
+  public Parabola3D Rotated(in Axis3D axis, double angle)
+  public Parabola3D Scaled(in Point3D point, double factor)
+  public Parabola3D Transformed(in Transform3D transform)
+  public Parabola3D Translated(in Point3D point1, in Point3D point2)
+  public Parabola3D Translated(in Vector3D vector)
+  public Parabola3D WithAxis(in Axis3D axis)
+  public Parabola3D WithFocal(double focal)
+  public Parabola3D WithLocation(in Point3D point)
+  public Parabola3D WithPosition(in Frame3D frame)
+  public bool Equals(Parabola3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Parabola3D left, in Parabola3D right)
+  public static bool op_Inequality(in Parabola3D left, in Parabola3D right)
+public readonly struct Kerf.Geometry.Plane3D : IEquatable<Plane3D>
+  public Plane3D()
+  public Plane3D(double a, double b, double c, double d)
+  public Plane3D(in CoordinateSystem position)
+  public Plane3D(in Point3D point, in Direction3D direction)
+  public Axis3D Axis { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public CoordinateSystem Position { get; }
+  public Point3D Location { get; }
+  public bool IsDirect { get; }
+  public Plane3D Mirrored(in Axis3D axis)
+  public Plane3D Mirrored(in Frame3D frame)
+  public Plane3D Mirrored(in Point3D point)
+  public Plane3D Rotated(in Axis3D axis, double angle)
+  public Plane3D Scaled(in Point3D point, double factor)
+  public Plane3D Transformed(in Transform3D transform)
+  public Plane3D Translated(in Point3D point1, in Point3D point2)
+  public Plane3D Translated(in Vector3D vector)
+  public Plane3D UReversed()
+  public Plane3D VReversed()
+  public Plane3D WithAxis(in Axis3D axis)
+  public Plane3D WithLocation(in Point3D location)
+  public Plane3D WithPosition(in CoordinateSystem position)
+  public bool Contains(in Line3D line, double linearTolerance, double angularTolerance)
+  public bool Contains(in Point3D point, double linearTolerance)
+  public bool Equals(Plane3D other)
+  public double DistanceTo(in Line3D line)
+  public double DistanceTo(in Plane3D other)
+  public double DistanceTo(in Point3D point)
+  public double SignedDistance(in Line3D line)
+  public double SignedDistance(in Plane3D other)
+  public double SignedDistance(in Point3D point)
+  public double SquareDistanceTo(in Line3D line)
+  public double SquareDistanceTo(in Plane3D other)
+  public double SquareDistanceTo(in Point3D point)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Plane3D left, in Plane3D right)
+  public static bool op_Inequality(in Plane3D left, in Plane3D right)
+  public void Coefficients(out double a, out double b, out double c, out double d)
+public readonly struct Kerf.Geometry.Point2D : IEquatable<Point2D>
+  public Point2D(double x, double y)
+  public double X { get; }
+  public double Y { get; }
+  public static Point2D Origin { get; }
+  public Point2D Mirrored(in Axis2D axis)
+  public Point2D Mirrored(in Point2D point)
+  public Point2D Rotated(in Point2D point, double angle)
+  public Point2D Scaled(in Point2D point, double factor)
+  public Point2D Transformed(in Transform2D transform)
+  public Point2D Translated(in Point2D point1, in Point2D point2)
+  public Point2D Translated(in Vector2D vector)
+  public Point2D WithX(double x)
+  public Point2D WithY(double y)
+  public Vector2 ToVector2()
+  public bool Equals(Point2D other)
+  public bool IsEqual(in Point2D other, double linearTolerance)
+  public double DistanceTo(in Point2D other)
+  public double SquareDistanceTo(in Point2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Point2D op_Addition(in Point2D point, in Vector2D offset)
+  public static Point2D op_Subtraction(in Point2D point, in Vector2D offset)
+  public static Vector2D op_Subtraction(in Point2D end, in Point2D start)
+  public static bool op_Equality(in Point2D left, in Point2D right)
+  public static bool op_Inequality(in Point2D left, in Point2D right)
+  public void Deconstruct(out double x, out double y)
+public readonly struct Kerf.Geometry.Point3D : IEquatable<Point3D>, IGeometry
+  public Point3D(double x, double y, double z)
+  public double X { get; }
+  public double Y { get; }
+  public double Z { get; }
+  public static Point3D Origin { get; }
+  public Point3D BaryCentered(double alpha, in Point3D point, double beta)
+  public Point3D Mirrored(in Axis3D axis)
+  public Point3D Mirrored(in Frame3D frame)
+  public Point3D Mirrored(in Point3D point)
+  public Point3D Rotated(in Axis3D axis, double angle)
+  public Point3D Scaled(in Point3D point, double factor)
+  public Point3D Transformed(in Transform3D transform)
+  public Point3D Translated(in Point3D point1, in Point3D point2)
+  public Point3D Translated(in Vector3D vector)
+  public Point3D WithX(double x)
+  public Point3D WithY(double y)
+  public Point3D WithZ(double z)
+  public Vector3 ToVector3()
+  public bool Equals(Point3D other)
+  public bool IsEqual(in Point3D other, double linearTolerance)
+  public double DistanceTo(in Point3D other)
+  public double SquareDistanceTo(in Point3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Point3D op_Addition(in Point3D point, in Vector3D offset)
+  public static Point3D op_Subtraction(in Point3D point, in Vector3D offset)
+  public static Vector3D op_Subtraction(in Point3D end, in Point3D start)
+  public static bool op_Equality(in Point3D left, in Point3D right)
+  public static bool op_Inequality(in Point3D left, in Point3D right)
+  public void Deconstruct(out double x, out double y, out double z)
+public readonly struct Kerf.Geometry.Sphere3D : IEquatable<Sphere3D>
+  public Sphere3D()
+  public Sphere3D(in CoordinateSystem position, double radius)
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public CoordinateSystem Position { get; }
+  public Point3D Location { get; }
+  public bool IsDirect { get; }
+  public double Area { get; }
+  public double Radius { get; }
+  public double Volume { get; }
+  public Sphere3D Mirrored(in Axis3D axis)
+  public Sphere3D Mirrored(in Frame3D frame)
+  public Sphere3D Mirrored(in Point3D point)
+  public Sphere3D Rotated(in Axis3D axis, double angle)
+  public Sphere3D Scaled(in Point3D point, double factor)
+  public Sphere3D Transformed(in Transform3D transform)
+  public Sphere3D Translated(in Point3D point1, in Point3D point2)
+  public Sphere3D Translated(in Vector3D vector)
+  public Sphere3D UReversed()
+  public Sphere3D VReversed()
+  public Sphere3D WithLocation(in Point3D location)
+  public Sphere3D WithPosition(in CoordinateSystem position)
+  public Sphere3D WithRadius(double r)
+  public bool Equals(Sphere3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Sphere3D left, in Sphere3D right)
+  public static bool op_Inequality(in Sphere3D left, in Sphere3D right)
+  public void Coefficients(out double a1, out double a2, out double a3, out double b1, out double b2, out double b3, out double c1, out double c2, out double c3, out double d)
+public readonly record struct Kerf.Geometry.SurfaceDerivatives : IEquatable<SurfaceDerivatives>
+  public SurfaceDerivatives(int Order, Point3D Point, Vector3D DU = default, Vector3D DV = default, Vector3D DUU = default, Vector3D DVV = default, Vector3D DUV = default, Vector3D DUUU = default, Vector3D DVVV = default, Vector3D DUUV = default, Vector3D DUVV = default)
+  public Point3D Point { get; init; }
+  public Vector3D DU { get; init; }
+  public Vector3D DUU { get; init; }
+  public Vector3D DUUU { get; init; }
+  public Vector3D DUUV { get; init; }
+  public Vector3D DUV { get; init; }
+  public Vector3D DUVV { get; init; }
+  public Vector3D DV { get; init; }
+  public Vector3D DVV { get; init; }
+  public Vector3D DVVV { get; init; }
+  public int Order { get; init; }
+public enum Kerf.Geometry.SurfaceKind
+  Plane = 0
+  Cylinder = 1
+  Cone = 2
+  Sphere = 3
+  Torus = 4
+  BezierSurface = 5
+  BSplineSurface = 6
+  SurfaceOfRevolution = 7
+  SurfaceOfExtrusion = 8
+  OffsetSurface = 9
+  OtherSurface = 10
+public readonly record struct Kerf.Geometry.SurfacePoint : IEquatable<SurfacePoint>
+  public SurfacePoint(double U, double V, Point3D Point, double Distance = 0)
+  public Point3D Point { get; init; }
+  public double Distance { get; init; }
+  public double U { get; init; }
+  public double V { get; init; }
+public static class Kerf.Geometry.Tolerances
+  public const double Angular = 1E-12
+  public const double Confusion = 1E-07
+  public const double Infinite = 2E+100
+  public static double Approximation { get; }
+  public static double Intersection { get; }
+  public static double Parametric { get; }
+public readonly struct Kerf.Geometry.Torus3D : IEquatable<Torus3D>
+  public Torus3D()
+  public Torus3D(in CoordinateSystem position, double majorRadius, double minorRadius)
+  public Axis3D Axis { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public CoordinateSystem Position { get; }
+  public Point3D Location { get; }
+  public bool IsDirect { get; }
+  public double Area { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Volume { get; }
+  public Torus3D Mirrored(in Axis3D axis)
+  public Torus3D Mirrored(in Frame3D frame)
+  public Torus3D Mirrored(in Point3D point)
+  public Torus3D Rotated(in Axis3D axis, double angle)
+  public Torus3D Scaled(in Point3D point, double factor)
+  public Torus3D Transformed(in Transform3D transform)
+  public Torus3D Translated(in Point3D point1, in Point3D point2)
+  public Torus3D Translated(in Vector3D vector)
+  public Torus3D UReversed()
+  public Torus3D VReversed()
+  public Torus3D WithAxis(in Axis3D axis)
+  public Torus3D WithLocation(in Point3D location)
+  public Torus3D WithMajorRadius(double majorRadius)
+  public Torus3D WithMinorRadius(double minorRadius)
+  public Torus3D WithPosition(in CoordinateSystem position)
+  public bool Equals(Torus3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Torus3D left, in Torus3D right)
+  public static bool op_Inequality(in Torus3D left, in Torus3D right)
+  public void Coefficients(Span<double> coef)
+public readonly struct Kerf.Geometry.Transform2D : IEquatable<Transform2D>
+  public Transform2D()
+  public Transform2D(in Transform3D transform)
+  public TransformForm Form { get; }
+  public Vector2D TranslationPart { get; }
+  public bool IsNegative { get; }
+  public double RotationAngle { get; }
+  public double ScaleFactor { get; }
+  public static Transform2D Identity { get; }
+  public Transform2D Inverted()
+  public Transform2D Multiplied(in Transform2D transform)
+  public Transform2D Powered(int n)
+  public Transform2D PreMultiplied(in Transform2D transform)
+  public Transform2D WithMirror(in Axis2D axis)
+  public Transform2D WithMirror(in Point2D point)
+  public Transform2D WithRotation(in Point2D point, double angle)
+  public Transform2D WithScale(in Point2D point, double factor)
+  public Transform2D WithScaleFactor(double factor)
+  public Transform2D WithTransformation(in Axis2D axis)
+  public Transform2D WithTransformation(in Axis2D from, in Axis2D to)
+  public Transform2D WithTranslation(in Point2D point1, in Point2D point2)
+  public Transform2D WithTranslation(in Vector2D vector)
+  public Transform2D WithTranslationPart(in Vector2D vector)
+  public Transform2D WithValues(double a11, double a12, double a13, double a21, double a22, double a23)
+  public bool Equals(Transform2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Direction2D op_Multiply(in Transform2D transform, in Direction2D direction)
+  public static Point2D op_Multiply(in Transform2D transform, in Point2D point)
+  public static Transform2D Mirror(in Axis2D axis)
+  public static Transform2D Mirror(in Point2D point)
+  public static Transform2D Rotation(in Point2D point, double angle)
+  public static Transform2D Scale(in Point2D point, double factor)
+  public static Transform2D Transformation(in Axis2D from, in Axis2D to)
+  public static Transform2D Transformation(in Axis2D toSystem)
+  public static Transform2D Translation(in Point2D point1, in Point2D point2)
+  public static Transform2D Translation(in Vector2D vector)
+  public static Transform2D Values(double a11, double a12, double a13, double a21, double a22, double a23)
+  public static Transform2D op_Multiply(in Transform2D left, in Transform2D right)
+  public static Vector2D op_Multiply(in Transform2D transform, in Vector2D vector)
+  public static bool op_Equality(in Transform2D left, in Transform2D right)
+  public static bool op_Inequality(in Transform2D left, in Transform2D right)
+public readonly struct Kerf.Geometry.Transform3D : IEquatable<Transform3D>
+  public Transform3D()
+  public Transform3D(in Transform2D transform)
+  public Matrix3x3 RotationPart { get; }
+  public Matrix3x3 VectorialPart { get; }
+  public TransformForm Form { get; }
+  public Vector3D TranslationPart { get; }
+  public bool IsNegative { get; }
+  public double ScaleFactor { get; }
+  public static Transform3D Identity { get; }
+  public (double, double, double) GetEulerAngles(EulerSequence sequence)
+  public (double, double, double, double) GetQuaternion()
+  public Matrix4x4 ToMatrix4x4()
+  public Transform3D Inverted()
+  public Transform3D Multiplied(in Transform3D transform)
+  public Transform3D Powered(int n)
+  public Transform3D PreMultiplied(in Transform3D transform)
+  public Transform3D ToRotation()
+  public Transform3D WithDisplacement(in CoordinateSystem from, in CoordinateSystem to)
+  public Transform3D WithMirror(in Axis3D axis)
+  public Transform3D WithMirror(in Frame3D frame)
+  public Transform3D WithMirror(in Point3D point)
+  public Transform3D WithRotation(in Axis3D axis, double angle)
+  public Transform3D WithScale(in Point3D point, double factor)
+  public Transform3D WithScaleFactor(double factor)
+  public Transform3D WithTransformation(in CoordinateSystem from, in CoordinateSystem to)
+  public Transform3D WithTransformation(in CoordinateSystem position)
+  public Transform3D WithTranslation(in Point3D point1, in Point3D point2)
+  public Transform3D WithTranslation(in Vector3D vector)
+  public Transform3D WithTranslationPart(in Vector3D vector)
+  public Transform3D WithValues(double a11, double a12, double a13, double a14, double a21, double a22, double a23, double a24, double a31, double a32, double a33, double a34)
+  public bool Equals(Transform3D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Direction3D op_Multiply(in Transform3D transform, in Direction3D direction)
+  public static Point3D op_Multiply(in Transform3D transform, in Point3D point)
+  public static Transform3D Displacement(in CoordinateSystem from, in CoordinateSystem to)
+  public static Transform3D Mirror(in Axis3D axis)
+  public static Transform3D Mirror(in Frame3D frame)
+  public static Transform3D Mirror(in Point3D point)
+  public static Transform3D Rotation(EulerSequence sequence, double alpha, double beta, double gamma)
+  public static Transform3D Rotation(in Axis3D axis, double angle)
+  public static Transform3D Scale(in Point3D point, double factor)
+  public static Transform3D Transformation(in CoordinateSystem from, in CoordinateSystem to)
+  public static Transform3D Transformation(in CoordinateSystem toSystem)
+  public static Transform3D Translation(in Point3D point1, in Point3D point2)
+  public static Transform3D Translation(in Vector3D vector)
+  public static Transform3D Values(double a11, double a12, double a13, double a14, double a21, double a22, double a23, double a24, double a31, double a32, double a33, double a34)
+  public static Transform3D op_Multiply(in Transform3D left, in Transform3D right)
+  public static Vector3D op_Multiply(in Transform3D transform, in Vector3D vector)
+  public static bool op_Equality(in Transform3D left, in Transform3D right)
+  public static bool op_Inequality(in Transform3D left, in Transform3D right)
+public enum Kerf.Geometry.TransformForm
+  Identity = 0
+  Rotation = 1
+  Translation = 2
+  PointMirror = 3
+  AxisMirror = 4
+  PlaneMirror = 5
+  Scale = 6
+  Composite = 7
+  Other = 8
+public readonly struct Kerf.Geometry.Vector2D : IEquatable<Vector2D>
+  public Vector2D(double x, double y)
+  public Vector2D(in Direction2D direction)
+  public Vector2D(in Point2D point1, in Point2D point2)
+  public double Magnitude { get; }
+  public double SquareMagnitude { get; }
+  public double X { get; }
+  public double Y { get; }
+  public static Vector2D UnitX { get; }
+  public static Vector2D UnitY { get; }
+  public static Vector2D Zero { get; }
+  public Vector2 ToVector2()
+  public Vector2D Added(in Vector2D other)
+  public Vector2D Divided(double scalar)
+  public Vector2D GetNormal()
+  public Vector2D Mirrored(in Axis2D axis)
+  public Vector2D Mirrored(in Vector2D vector)
+  public Vector2D Multiplied(double scalar)
+  public Vector2D Normalized()
+  public Vector2D Reversed()
+  public Vector2D Rotated(double angle)
+  public Vector2D Scaled(double factor)
+  public Vector2D Subtracted(in Vector2D right)
+  public Vector2D Transformed(in Transform2D transform)
+  public Vector2D WithX(double x)
+  public Vector2D WithY(double y)
+  public bool Equals(Vector2D other)
+  public bool IsEqual(in Vector2D other, double linearTolerance, double angularTolerance)
+  public bool IsNormal(in Vector2D other, double angularTolerance)
+  public bool IsOpposite(in Vector2D other, double angularTolerance)
+  public bool IsParallel(in Vector2D other, double angularTolerance)
+  public double AngleTo(in Vector2D other)
+  public double CrossMagnitude(in Vector2D right)
+  public double CrossSquareMagnitude(in Vector2D right)
+  public double Crossed(in Vector2D right)
+  public double Dot(in Vector2D other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Vector2D LinearForm(double a1, in Vector2D v1, double a2, in Vector2D v2)
+  public static Vector2D LinearForm(double a1, in Vector2D v1, double a2, in Vector2D v2, in Vector2D v3)
+  public static Vector2D LinearForm(double a1, in Vector2D v1, in Vector2D v2)
+  public static Vector2D LinearForm(in Vector2D v1, in Vector2D v2)
+  public static Vector2D op_Addition(in Vector2D left, in Vector2D right)
+  public static Vector2D op_Division(in Vector2D v, double scalar)
+  public static Vector2D op_Multiply(double scalar, in Vector2D v)
+  public static Vector2D op_Multiply(in Vector2D v, double scalar)
+  public static Vector2D op_Subtraction(in Vector2D left, in Vector2D right)
+  public static Vector2D op_UnaryNegation(in Vector2D v)
+  public static bool op_Equality(in Vector2D left, in Vector2D right)
+  public static bool op_Inequality(in Vector2D left, in Vector2D right)
+  public static double op_ExclusiveOr(in Vector2D left, in Vector2D right)
+  public static double op_Multiply(in Vector2D left, in Vector2D right)
+  public void Deconstruct(out double x, out double y)
+public readonly struct Kerf.Geometry.Vector3D : IEquatable<Vector3D>
+  public Vector3D(double x, double y, double z)
+  public Vector3D(in Direction3D direction)
+  public Vector3D(in Point3D point1, in Point3D point2)
+  public double Magnitude { get; }
+  public double SquareMagnitude { get; }
+  public double X { get; }
+  public double Y { get; }
+  public double Z { get; }
+  public static Vector3D UnitX { get; }
+  public static Vector3D UnitY { get; }
+  public static Vector3D UnitZ { get; }
+  public static Vector3D Zero { get; }
+  public Vector3 ToVector3()
+  public Vector3D Added(in Vector3D other)
+  public Vector3D CrossCrossed(in Vector3D v1, in Vector3D v2)
+  public Vector3D Crossed(in Vector3D right)
+  public Vector3D Divided(double scalar)
+  public Vector3D Mirrored(in Axis3D axis)
+  public Vector3D Mirrored(in Frame3D frame)
+  public Vector3D Mirrored(in Vector3D vector)
+  public Vector3D Multiplied(double scalar)
+  public Vector3D Normalized()
+  public Vector3D Reversed()
+  public Vector3D Rotated(in Axis3D axis, double angle)
+  public Vector3D Scaled(double factor)
+  public Vector3D Subtracted(in Vector3D right)
+  public Vector3D Transformed(in Transform3D transformation)
+  public Vector3D WithX(double x)
+  public Vector3D WithY(double y)
+  public Vector3D WithZ(double z)
+  public bool Equals(Vector3D other)
+  public bool IsEqual(in Vector3D other, double linearTolerance, double angularTolerance)
+  public bool IsNormal(in Vector3D other, double angularTolerance)
+  public bool IsOpposite(in Vector3D other, double angularTolerance)
+  public bool IsParallel(in Vector3D other, double angularTolerance)
+  public double AngleTo(in Vector3D other)
+  public double AngleWithRef(in Vector3D other, in Vector3D reference)
+  public double CrossMagnitude(in Vector3D right)
+  public double CrossSquareMagnitude(in Vector3D right)
+  public double Dot(in Vector3D other)
+  public double DotCross(in Vector3D v1, in Vector3D v2)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2)
+  public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, double a3, in Vector3D v3)
+  public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, double a3, in Vector3D v3, in Vector3D v4)
+  public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, in Vector3D v3)
+  public static Vector3D LinearForm(double a1, in Vector3D v1, in Vector3D v2)
+  public static Vector3D LinearForm(in Vector3D v1, in Vector3D v2)
+  public static Vector3D op_Addition(in Vector3D left, in Vector3D right)
+  public static Vector3D op_Division(in Vector3D v, double scalar)
+  public static Vector3D op_ExclusiveOr(in Vector3D left, in Vector3D right)
+  public static Vector3D op_Multiply(double scalar, in Vector3D v)
+  public static Vector3D op_Multiply(in Vector3D v, double scalar)
+  public static Vector3D op_Subtraction(in Vector3D left, in Vector3D right)
+  public static Vector3D op_UnaryNegation(in Vector3D v)
+  public static bool op_Equality(in Vector3D left, in Vector3D right)
+  public static bool op_Inequality(in Vector3D left, in Vector3D right)
+  public static double op_Multiply(in Vector3D left, in Vector3D right)
+  public void Deconstruct(out double x, out double y, out double z)
+public readonly struct Kerf.Result<T>
+  public Diagnostic? Error { get; }
+  public ImmutableArray<Diagnostic> Diagnostics { get; }
+  public T? Value { get; }
+  public bool IsFailure { get; }
+  public bool IsSuccess { get; }
+  public Result<TOut> Bind<TOut>(Func<T?, Result<TOut>> next)
+  public Result<TOut> SelectMany<TNext, TOut>(Func<T?, Result<TNext>> next, Func<T?, TNext, TOut> selector)
+  public Result<TOut?> Map<TOut>(Func<T?, TOut?> map)
+  public Result<TOut?> Select<TOut>(Func<T?, TOut?> selector)
+  public T? GetValueOrDefault(T? fallback)
+  public TOut? Match<TOut>(Func<T?, TOut?> success, Func<Diagnostic, TOut?> failure)
+  public bool TryGetInvalid(out T? invalid)
+  public bool TryGetValue(out T? value)
+  public override string ToString()
+  public static Result<T?> Failure(Diagnostic error, ImmutableArray<Diagnostic> warnings = default)
+  public static Result<T?> Failure(ImmutableArray<Diagnostic> diagnostics)
+  public static Result<T?> Invalid(T? invalid, Diagnostic error, ImmutableArray<Diagnostic> warnings = default)
+  public static Result<T?> Invalid(T? invalid, ImmutableArray<Diagnostic> diagnostics)
+  public static Result<T?> Success(T? value, ImmutableArray<Diagnostic> warnings = default)
+  public static Result<T?> op_Implicit(T? value)
+public readonly struct Kerf.Result
+  public Diagnostic? Error { get; }
+  public ImmutableArray<Diagnostic> Diagnostics { get; }
+  public bool IsFailure { get; }
+  public bool IsSuccess { get; }
+  public Result Bind(Func<Result> next)
+  public Result<T?> Map<T>(Func<T?> next)
+  public TOut? Match<TOut>(Func<TOut?> success, Func<Diagnostic, TOut?> failure)
+  public override string ToString()
+  public static Result Failure(Diagnostic error, ImmutableArray<Diagnostic> warnings = default)
+  public static Result Failure(ImmutableArray<Diagnostic> diagnostics)
+  public static Result Success(ImmutableArray<Diagnostic> warnings = default)
+public enum Kerf.Severity
+  Warning = 0
+  Error = 1
+public readonly struct Kerf.Topology.Placement : IEquatable<Placement>
+  public Placement()
+  public Placement(in Transform3D transform)
+  public Transform3D Transformation { get; }
+  public bool IsIdentity { get; }
+  public Placement Divided(in Placement other)
+  public Placement Inverted()
+  public Placement Multiplied(in Placement other)
+  public Placement Powered(int power)
+  public Placement Predivided(in Placement other)
+  public bool Equals(Placement other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Placement op_Division(in Placement left, in Placement right)
+  public static Placement op_Multiply(in Placement left, in Placement right)
+  public static Transform3D op_Explicit(in Placement location)
+  public static bool op_Equality(in Placement left, in Placement right)
+  public static bool op_Inequality(in Placement left, in Placement right)
+
+assembly Kerf.Kernel.ModelingAlgorithms
+public static class Kerf.Booleans.BooleanOperations
+  public static DiagnosticCode BuiltOtherWayRound { get; }
+  public static DiagnosticCode EmptyResult { get; }
+  public static DiagnosticCode Failed { get; }
+  public static Result<Built<Shape>> Common(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Common<TShape, TOther>(this TShape a, TOther b, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Cut(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Cut<TShape, TOther>(this TShape a, TOther b, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Fuse(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Fuse<TShape, TOther>(this TShape a, TOther b, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> FuseAll(IReadOnlyList<Shape> shapes, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Partition(IReadOnlyList<Shape> shapes, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Section(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Section<TShape, TOther>(this TShape a, TOther b, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Split(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Booleans.BooleanOptions : IEquatable<BooleanOptions>
+  public BooleanOptions()
+  public GlueMode Glue { get; init; }
+  public bool ApproximateSection { get; init; }
+  public bool CheckInverted { get; init; }
+  public bool CheckResult { get; init; }
+  public bool Parallel { get; init; }
+  public bool SectionCurvesOnFaces { get; init; }
+  public bool Simplify { get; init; }
+  public bool UseObb { get; init; }
+  public double FuzzyValue { get; init; }
+  public static BooleanOptions Default { get; }
+public enum Kerf.Booleans.BooleanVolumeRule
+  Common = 0
+  Cut = 1
+  Fuse = 2
+public static class Kerf.Booleans.BooleanVolumes
+  public static Diagnostic? Check(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue = 0)
+public enum Kerf.Booleans.GlueMode
+  Off = 0
+  Shift = 1
+  Full = 2
+public sealed record Kerf.Construction.ExtrudeOptions : IEquatable<ExtrudeOptions>
+  public ExtrudeOptions()
+  public bool Canonize { get; init; }
+  public bool CheckResult { get; init; }
+  public static ExtrudeOptions Default { get; }
+public sealed record Kerf.Construction.FillBoundary : IEquatable<FillBoundary>
+  public FillBoundary(Edge Edge, Continuity Continuity = Continuity.C0)
+  public Continuity Continuity { get; init; }
+  public Edge Edge { get; init; }
+  public Face? Support { get; init; }
+  public bool IsBoundary { get; init; }
+public sealed record Kerf.Construction.FillOptions : IEquatable<FillOptions>
+  public FillOptions()
+  public Face? InitialSurface { get; init; }
+  public ImmutableArray<Point3D> Points { get; init; }
+  public bool Anisotropy { get; init; }
+  public bool CheckResult { get; init; }
+  public double AngularTolerance { get; init; }
+  public double CurvatureTolerance { get; init; }
+  public double Tolerance2D { get; init; }
+  public double Tolerance3D { get; init; }
+  public int Degree { get; init; }
+  public int Iterations { get; init; }
+  public int MaxDegree { get; init; }
+  public int MaxSegments { get; init; }
+  public int PointsOnCurve { get; init; }
+  public static FillOptions Default { get; }
+public sealed record Kerf.Construction.HelixOptions : IEquatable<HelixOptions>
+  public HelixOptions()
+  public Continuity Continuity { get; init; }
+  public double Tolerance { get; init; }
+  public double? EndRadius { get; init; }
+  public int MaxDegree { get; init; }
+  public static HelixOptions Default { get; }
+public sealed record Kerf.Construction.LoftOptions : IEquatable<LoftOptions>
+  public LoftOptions()
+  public Continuity Continuity { get; init; }
+  public ParametrizationType Parametrization { get; init; }
+  public bool CheckCompatibility { get; init; }
+  public bool CheckResult { get; init; }
+  public bool MakeSolid { get; init; }
+  public bool Ruled { get; init; }
+  public bool Smoothing { get; init; }
+  public double Tolerance { get; init; }
+  public int MaxDegree { get; init; }
+  public static LoftOptions Default { get; }
+public static class Kerf.Construction.Primitives
+  public static DiagnosticCode Failed { get; }
+  public static Result<Built<Solid>> Box(Point3D corner1, Point3D corner2)
+  public static Result<Built<Solid>> Box(double dx, double dy, double dz)
+  public static Result<Built<Solid>> Box(double dx, double dy, double dz, in Frame3D frame)
+  public static Result<Built<Solid>> Cone(double radius1, double radius2, double height, double angle = 6.283185307179586)
+  public static Result<Built<Solid>> Cone(double radius1, double radius2, double height, in Frame3D frame, double angle = 6.283185307179586)
+  public static Result<Built<Solid>> Cylinder(double radius, double height, double angle = 6.283185307179586)
+  public static Result<Built<Solid>> Cylinder(double radius, double height, in Frame3D frame, double angle = 6.283185307179586)
+  public static Result<Built<Solid>> HalfSpace(Face boundary, Point3D inside)
+  public static Result<Built<Solid>> HalfSpace(Shell boundary, Point3D inside)
+  public static Result<Built<Solid>> Sphere(double radius, SphereOptions? options = default)
+  public static Result<Built<Solid>> Sphere(double radius, in Frame3D frame, SphereOptions? options = default)
+  public static Result<Built<Solid>> Torus(double majorRadius, double minorRadius, TorusOptions? options = default)
+  public static Result<Built<Solid>> Torus(double majorRadius, double minorRadius, in Frame3D frame, TorusOptions? options = default)
+  public static Result<Built<Solid>> Wedge(double dx, double dy, double dz, WedgeOptions options)
+  public static Result<Built<Solid>> Wedge(double dx, double dy, double dz, WedgeOptions options, in Frame3D frame)
+public static class Kerf.Construction.ShapeFactory
+  public static DiagnosticCode Curves3DIncomplete { get; }
+  public static Result<Built<Shape>> WithCurves3D<TShape>(this TShape shape, double tolerance = 1E-05, Continuity continuity = Continuity.C1, int maxDegree = 14, int maxSegments = 0)
+  public static Result<Edge> Arc(in Circle3D circle, double startAngle, double endAngle)
+  public static Result<Edge> Circle(in Circle3D circle)
+  public static Result<Edge> FromCurve(Curve2D curve, Surface surface, Interval? range = default, bool computeCurve3D = true)
+  public static Result<Edge> FromCurve(Curve3D curve, Interval? range = default)
+  public static Result<Edge> Line(Point3D start, Point3D end)
+  public static Result<Face> FromPlane(in Plane3D plane, Wire? boundary = default)
+  public static Result<Face> FromSurface(Surface surface, (Interval, Interval)? bounds = default, Wire? boundary = default, IEnumerable<Wire>? holes = default, bool checkResult = true)
+  public static Result<Face> FromWire(Wire wire, bool onlyPlane = false, bool checkResult = true)
+  public static Result<Face> FromWires(Wire outer, IEnumerable<Wire> holes, bool onlyPlane = false, bool checkResult = true)
+  public static Result<Face> WithHoles(this Face face, IEnumerable<Wire> holes, bool checkResult = true)
+  public static Result<Shell> FromPolygons(IReadOnlyList<Point3D> points, IEnumerable<(Plane3D, int[])> polygons)
+  public static Result<Shell> FromSurface(Surface surface, (Interval, Interval)? bounds = default)
+  public static Result<Solid> FromShells(IEnumerable<Shell> shells, bool checkResult = true)
+  public static Result<Wire> Connect(IEnumerable<Edge> edges)
+  public static Result<Wire> FromEdges(IEnumerable<Edge> edges)
+  public static Result<Wire> Polygon(ReadOnlySpan<Point3D> points, bool closed = false)
+  public static Vertex At(Point3D point)
+  public static bool TryFindSurface<TShape>(this TShape shape, double tolerance, out Surface? surface, bool onlyPlane = false)
+  public static bool TryGetPlane(this Wire wire, out Plane3D plane)
+public static class Kerf.Construction.ShapeProjections
+  public static DiagnosticCode ProjectionEmpty { get; }
+  public static Result<ImmutableArray<Wire>> Project(Edge edge, Shape target, Direction3D direction)
+  public static Result<ImmutableArray<Wire>> Project(Edge edge, Shape target, Point3D eye)
+  public static Result<ImmutableArray<Wire>> Project(Wire wire, Shape target, Direction3D direction)
+  public static Result<ImmutableArray<Wire>> Project(Wire wire, Shape target, Point3D eye)
+public static class Kerf.Construction.ShapeTransforms
+  public static DiagnosticCode TransformFailed { get; }
+  public static Result<Built<Shape>> Mirrored<TShape>(this TShape shape, in Frame3D plane)
+  public static Result<Built<Shape>> Scaled<TShape>(this TShape shape, Point3D centre, double factor)
+  public static Result<Built<Shape>> Transformed<TShape>(this TShape shape, in GeneralTransform3D transform, bool copyGeometry = false)
+  public static Result<Built<Shape>> Transformed<TShape>(this TShape shape, in Transform3D transform, bool copyGeometry = false)
+public sealed record Kerf.Construction.SphereOptions : IEquatable<SphereOptions>
+  public SphereOptions()
+  public double Angle { get; init; }
+  public double MaxLatitude { get; init; }
+  public double MinLatitude { get; init; }
+  public static SphereOptions Default { get; }
+public static class Kerf.Construction.Surfaces
+  public static DiagnosticCode FillFailed { get; }
+  public static Result<Built<Face>> Fill(IReadOnlyList<FillBoundary> boundaries, FillOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+public enum Kerf.Construction.SweepFrame
+  CorrectedFrenet = 0
+  Frenet = 1
+  Discrete = 2
+  Fixed = 3
+  Binormal = 4
+  Auxiliary = 5
+public sealed record Kerf.Construction.SweepOptions : IEquatable<SweepOptions>
+  public SweepOptions()
+  public Direction3D? Binormal { get; init; }
+  public Frame3D? FixedFrame { get; init; }
+  public SweepFrame Frame { get; init; }
+  public TransitionMode Transition { get; init; }
+  public Wire? AuxiliarySpine { get; init; }
+  public bool CheckResult { get; init; }
+  public bool CurvilinearEquivalence { get; init; }
+  public bool MakeSolid { get; init; }
+  public bool TryOtherFrames { get; init; }
+  public bool WithContact { get; init; }
+  public bool WithCorrection { get; init; }
+  public double Tolerance { get; init; }
+  public static SweepOptions Default { get; }
+public static class Kerf.Construction.Sweeps
+  public static DiagnosticCode HelixFailed { get; }
+  public static DiagnosticCode HelixTolerance { get; }
+  public static DiagnosticCode NoVolume { get; }
+  public static DiagnosticCode NotSolid { get; }
+  public static DiagnosticCode SweepFailed { get; }
+  public static DiagnosticCode SweptWithDiscrete { get; }
+  public static DiagnosticCode SweptWithFrenet { get; }
+  public static Result<Built<Face>> Ruled(Edge first, Edge second)
+  public static Result<Built<Shape>> Extrude<TShape>(this TShape profile, Vector3D direction, ExtrudeOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Loft(IReadOnlyList<Shape> sections, LoftOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Revolve<TShape>(this TShape profile, in Axis3D axis, double angle = 6.283185307179586, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Revolve<TShape>(this TShape profile, in Axis3D axis, double angle, bool copyProfile, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Sweep(IReadOnlyList<Shape> profiles, Wire spine, SweepOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Sweep(Shape profile, Wire spine, SweepOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shell>> Ruled(Wire first, Wire second)
+  public static Result<Wire> Helix(double radius, double pitch, double height, HelixOptions? options = default)
+  public static Result<Wire> Helix(in Frame3D frame, double radius, double pitch, double height, HelixOptions? options = default)
+public sealed record Kerf.Construction.TorusOptions : IEquatable<TorusOptions>
+  public TorusOptions()
+  public double Angle { get; init; }
+  public double MinorEnd { get; init; }
+  public double MinorStart { get; init; }
+  public static TorusOptions Default { get; }
+public enum Kerf.Construction.TransitionMode
+  Transformed = 0
+  RightCorner = 1
+  RoundCorner = 2
+public sealed record Kerf.Construction.WedgeOptions : IEquatable<WedgeOptions>
+  public WedgeOptions()
+  public (double, double)? TopMax { get; init; }
+  public (double, double)? TopMin { get; init; }
+  public double? TopLength { get; init; }
+public sealed record Kerf.Drawing.Camera : IEquatable<Camera>
+  public Camera()
+  public Direction3D Up { get; init; }
+  public Direction3D ViewDirection { get; }
+  public Frame3D ViewFrame { get; }
+  public Point3D Eye { get; init; }
+  public Point3D Target { get; init; }
+  public Projection Projection { get; init; }
+  public double Distance { get; }
+  public static Camera Front { get; }
+  public static Camera Isometric { get; }
+  public static Camera Right { get; }
+  public static Camera Top { get; }
+  public Point2D Project(Point3D point)
+  public static Camera Along(Direction3D viewDirection, Direction3D? up = default)
+  public static Camera LookAt(Point3D eye, Point3D target, Direction3D? up = default, Projection projection = Projection.Orthographic)
+public sealed record Kerf.Drawing.DirectionalLight : IEquatable<DirectionalLight>
+  public DirectionalLight(Vector3D Direction, double Intensity)
+  public Vector3D Direction { get; init; }
+  public double Intensity { get; init; }
+public sealed class Kerf.Drawing.DrawingNote
+  public (Point2D, Point2D) Bounds { get; }
+  public ImmutableArray<ImmutableArray<Curve2D>> Contours { get; }
+  public ImmutableArray<NoteLine> Lines { get; }
+  public NoteStyle Style { get; }
+  public Point2D Position { get; }
+  public double CapHeight { get; }
+  public string Text { get; }
+  public Result<DrawingNote> With(Point2D position, NoteStyle style, CancellationToken cancellationToken = default)
+  public static Result<DrawingNote> Make(string text, Point2D position, NoteStyle? style = default, CancellationToken cancellationToken = default)
+public static class Kerf.Drawing.DrawingOperations
+  public static DiagnosticCode FacesNotMeshed { get; }
+  public static DiagnosticCode ProjectionFailed { get; }
+  public static Result<LineDrawing> ProjectLines(IEnumerable<Shape> shapes, Camera camera, DrawingOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result<LineDrawing> ProjectLines<TShape>(this TShape shape, Camera camera, DrawingOptions? options = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Drawing.DrawingOptions : IEquatable<DrawingOptions>
+  public DrawingOptions()
+  public HiddenLineMethod Method { get; init; }
+  public MeshOptions? Mesh { get; init; }
+  public bool IncludeHidden { get; init; }
+  public double? Tolerance { get; init; }
+  public int IsoLineCount { get; init; }
+  public static DrawingOptions Default { get; }
+public sealed record Kerf.Drawing.DrawnEdge : IEquatable<DrawnEdge>
+  public DrawnEdge(Curve2D Curve, LineKind Kind, bool IsVisible, Shape Source)
+  public Curve2D Curve { get; init; }
+  public LineKind Kind { get; init; }
+  public Point2D End { get; }
+  public Point2D Start { get; }
+  public Shape Source { get; init; }
+  public bool IsVisible { get; init; }
+public enum Kerf.Drawing.EdgeDisplay
+  None = 0
+  Feature = 1
+  All = 2
+public enum Kerf.Drawing.HiddenLineMethod
+  Exact = 0
+  Polygonal = 1
+public sealed class Kerf.Drawing.LineDrawing
+  public LineDrawing(Camera camera, IEnumerable<DrawnEdge> edges)
+  public LineDrawing(Camera camera, IEnumerable<DrawnEdge> edges, IEnumerable<DrawingNote> notes)
+  public Camera Camera { get; }
+  public IEnumerable<DrawnEdge> Hidden { get; }
+  public IEnumerable<DrawnEdge> Visible { get; }
+  public ImmutableArray<DrawingNote> Notes { get; }
+  public ImmutableArray<DrawnEdge> Edges { get; }
+  public (Point2D, Point2D)? GetBounds(bool includeHidden = true)
+  public IEnumerable<DrawnEdge> Of(LineKind kind, bool visible)
+  public LineDrawing WithNotes(params IEnumerable<DrawingNote> notes)
+public enum Kerf.Drawing.LineKind
+  Sharp = 0
+  Smooth = 1
+  Sewn = 2
+  Outline = 3
+  IsoLine = 4
+public sealed record Kerf.Drawing.LineStyle : IEquatable<LineStyle>
+  public LineStyle()
+  public Color Color { get; init; }
+  public ImmutableArray<double> Dashes { get; init; }
+  public double Width { get; init; }
+  public static LineStyle Hidden { get; }
+  public static LineStyle Visible { get; }
+public sealed record Kerf.Drawing.NoteLine : IEquatable<NoteLine>
+  public NoteLine(string Text, Point2D Anchor)
+  public Point2D Anchor { get; init; }
+  public string Text { get; init; }
+public sealed record Kerf.Drawing.NoteStyle : IEquatable<NoteStyle>
+  public NoteStyle()
+  public Font Font { get; init; }
+  public TextAlign Horizontal { get; init; }
+  public TextAlign Vertical { get; init; }
+  public double Rotation { get; init; }
+  public double Size { get; init; }
+  public static NoteStyle Default { get; }
+public enum Kerf.Drawing.PageOrientation
+  Landscape = 0
+  Portrait = 1
+public enum Kerf.Drawing.PageSize
+  A0 = 0
+  A1 = 1
+  A2 = 2
+  A3 = 3
+  A4 = 4
+  A5 = 5
+  A6 = 6
+  A7 = 7
+  A8 = 8
+  A9 = 9
+  A10 = 10
+  AnsiA = 11
+  Letter = 11
+  Legal = 12
+  AnsiB = 13
+  Ledger = 13
+  AnsiC = 14
+  AnsiD = 15
+  AnsiE = 16
+public static class Kerf.Drawing.Png
+  public static DiagnosticCode WriteFailed { get; }
+  public static Result Write(RgbaImage image, Stream stream, PngOptions? options = default)
+  public static byte[] Encode(RgbaImage image, PngOptions? options = default)
+public enum Kerf.Drawing.PngCompression
+  Deterministic = 0
+  Smallest = 1
+public sealed record Kerf.Drawing.PngOptions : IEquatable<PngOptions>
+  public PngOptions()
+  public PngCompression Compression { get; init; }
+  public static PngOptions Default { get; }
+public enum Kerf.Drawing.Projection
+  Orthographic = 0
+  Perspective = 1
+public sealed record Kerf.Drawing.RenderOptions : IEquatable<RenderOptions>
+  public RenderOptions()
+  public Color Background { get; init; }
+  public Color EdgeColor { get; init; }
+  public EdgeDisplay Edges { get; init; }
+  public ImmutableArray<DirectionalLight> Lights { get; init; }
+  public Shading Shading { get; init; }
+  public bool Parallel { get; init; }
+  public double Ambient { get; init; }
+  public double EdgeWidth { get; init; }
+  public double FeatureAngle { get; init; }
+  public double Margin { get; init; }
+  public double? Scale { get; init; }
+  public int Height { get; init; }
+  public int Supersampling { get; init; }
+  public int Width { get; init; }
+  public static RenderOptions Default { get; }
+public static class Kerf.Drawing.Renderer
+  public static DiagnosticCode RenderFailed { get; }
+  public static MeshOptions DefaultMeshOptions(Shape shape)
+  public static Result<RgbaImage> Render(Scene scene, Camera camera, RenderOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result<RgbaImage> Render(this ShapeMesh mesh, Camera camera, RenderOptions? options = default, Color? color = default, CancellationToken cancellationToken = default)
+  public static Result<RgbaImage> Render<TShape>(this TShape shape, Camera camera, RenderOptions? options = default, Color? color = default, MeshOptions? meshOptions = default, CancellationToken cancellationToken = default)
+public sealed class Kerf.Drawing.RgbaImage
+  public RgbaImage(int width, int height, ReadOnlySpan<byte> pixels)
+  public ReadOnlyMemory<byte> Pixels { get; }
+  public int Height { get; }
+  public int Width { get; }
+  public (byte, byte, byte, byte) GetPixel(int x, int y)
+public sealed record Kerf.Drawing.Scene : IEquatable<Scene>
+  public Scene(IEnumerable<SceneItem> items)
+  public Scene(params SceneItem[] items)
+  public ImmutableArray<SceneItem> Items { get; }
+public sealed record Kerf.Drawing.SceneItem : IEquatable<SceneItem>
+  public SceneItem(ShapeMesh mesh, Color? color = default)
+  public Color Color { get; init; }
+  public ImmutableDictionary<int, Color> FaceColors { get; init; }
+  public ShapeMesh Mesh { get; init; }
+  public Transform3D Transform { get; init; }
+  public static Color DefaultColor { get; }
+  public SceneItem WithFaceColor(Face face, Color color)
+public enum Kerf.Drawing.Shading
+  Flat = 0
+  Smooth = 1
+public sealed record Kerf.Drawing.Sheet : IEquatable<Sheet>
+  public Sheet(PageSize size, PageOrientation orientation = PageOrientation.Landscape)
+  public (Point2D, Point2D) Frame { get; }
+  public (Point2D, Point2D) TitleBlockArea { get; }
+  public ImmutableArray<SheetView> Views { get; init; }
+  public PageOrientation Orientation { get; }
+  public PageSize Size { get; }
+  public TitleBlock TitleBlock { get; init; }
+  public double Height { get; }
+  public double Width { get; }
+  public static DiagnosticCode Overflow { get; }
+  public Result<LineDrawing> Draw(CancellationToken cancellationToken = default)
+  public SvgOptions PageOptions(SvgOptions? style = default)
+  public static string ScaleText(double scale)
+public sealed record Kerf.Drawing.SheetView : IEquatable<SheetView>
+  public SheetView(LineDrawing drawing, Point2D center, double scale = 1)
+  public LineDrawing Drawing { get; }
+  public Point2D Center { get; }
+  public double Scale { get; }
+public static class Kerf.Drawing.Svg
+  public static DiagnosticCode WriteFailed { get; }
+  public static Result Write(LineDrawing drawing, Stream stream, SvgOptions? options = default, CancellationToken cancellationToken = default)
+  public static string WriteToString(LineDrawing drawing, SvgOptions? options = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Drawing.SvgOptions : IEquatable<SvgOptions>
+  public SvgOptions()
+  public (Point2D, Point2D)? Area { get; init; }
+  public Color NoteColor { get; init; }
+  public Color? Background { get; init; }
+  public LineStyle HiddenStyle { get; init; }
+  public LineStyle VisibleStyle { get; init; }
+  public SvgUnit Unit { get; init; }
+  public TextOutput TextOutput { get; init; }
+  public bool IncludeHidden { get; init; }
+  public double Margin { get; init; }
+  public double Tolerance { get; init; }
+  public double? PageHeight { get; init; }
+  public double? PageWidth { get; init; }
+  public double? Scale { get; init; }
+  public int Decimals { get; init; }
+  public static SvgOptions Default { get; }
+public enum Kerf.Drawing.SvgUnit
+  Millimetre = 0
+  Centimetre = 1
+  Inch = 2
+  Point = 3
+  Pixel = 4
+public enum Kerf.Drawing.TextOutput
+  Outlines = 0
+  Text = 1
+public sealed record Kerf.Drawing.TitleBlock : IEquatable<TitleBlock>
+  public TitleBlock()
+  public string Author { get; init; }
+  public string Date { get; init; }
+  public string PartNumber { get; init; }
+  public string Sheet { get; init; }
+  public string Title { get; init; }
+  public string Units { get; init; }
+  public string? Scale { get; init; }
+public enum Kerf.Features.ExtrudeLimit
+  Height = 0
+  Face = 1
+  End = 2
+  ThroughAll = 3
+public sealed record Kerf.Features.ExtrudeUntilOptions : IEquatable<ExtrudeUntilOptions>
+  public ExtrudeUntilOptions()
+  public ExtrudeLimit Until { get; init; }
+  public Face? Face { get; init; }
+  public bool CheckResult { get; init; }
+  public bool Fuse { get; init; }
+  public bool ModifySketchFace { get; init; }
+  public double Height { get; init; }
+public static class Kerf.Features.FeatureOperations
+  public static DiagnosticCode DraftFaceFailed { get; }
+  public static DiagnosticCode Failed { get; }
+  public static Result<Built<Shape>> Draft<TShape>(this TShape shape, IEnumerable<(Face, double)> faces, Direction3D pull, in Plane3D neutralPlane)
+  public static Result<Built<Shape>> Draft<TShape>(this TShape shape, IEnumerable<Face> faces, Direction3D pull, double angle, in Plane3D neutralPlane)
+  public static Result<Built<Shape>> ExtrudeUntil<TShape>(this TShape shape, Face profile, Face sketchFace, double taper, ExtrudeUntilOptions options)
+  public static Result<Built<Shape>> SplitFaces<TShape>(this TShape shape, IEnumerable<(Face, Shape)> splits)
+  public static Result<SplitFacesResult> SplitAlong(Shape shape, IEnumerable<Edge> edges)
+public sealed record Kerf.Features.SplitFacesResult : IEquatable<SplitFacesResult>
+  public SplitFacesResult(Shape Shape, ShapeHistory History, ImmutableArray<Face> Left, ImmutableArray<Face> Right)
+  public ImmutableArray<Face> Left { get; init; }
+  public ImmutableArray<Face> Right { get; init; }
+  public Shape Shape { get; init; }
+  public ShapeHistory History { get; init; }
+public enum Kerf.Fillets.ChamferMode
+  Classic = 0
+  ConstantThroat = 1
+  ConstantThroatWithPenetration = 2
+public sealed record Kerf.Fillets.ChamferOptions : IEquatable<ChamferOptions>
+  public ChamferOptions()
+  public ChamferMode Mode { get; init; }
+  public TightCorners TightCorners { get; init; }
+  public bool CheckResult { get; init; }
+  public static ChamferOptions Default { get; }
+public readonly record struct Kerf.Fillets.ChamferSpec : IEquatable<ChamferSpec>
+  public ChamferSpec(Edge Edge, double Distance, double? Distance2 = default, double? Angle = default, Face? ReferenceFace = default)
+  public Edge Edge { get; init; }
+  public Face? ReferenceFace { get; init; }
+  public double Distance { get; init; }
+  public double? Angle { get; init; }
+  public double? Distance2 { get; init; }
+public static class Kerf.Fillets.FilletOperations
+  public static DiagnosticCode Failed { get; }
+  public static DiagnosticCode TooLarge { get; }
+  public static Result<Built<Face>> Chamfer2D(this Face face, IEnumerable<(Edge, Edge)> corners, double distance, double? distance2 = default, bool checkResult = true)
+  public static Result<Built<Face>> Chamfer2D(this Face face, IEnumerable<Vertex> vertices, double distance, double? distance2 = default, bool checkResult = true)
+  public static Result<Built<Face>> Fillet2D(this Face face, IEnumerable<Vertex> vertices, double radius, bool checkResult = true)
+  public static Result<Built<Shape>> Chamfer<TShape>(this TShape shape, IEnumerable<ChamferSpec> edges, ChamferOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Chamfer<TShape>(this TShape shape, IEnumerable<Edge> edges, double distance, ChamferOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Fillet<TShape>(this TShape shape, IEnumerable<Edge> edges, double radius, FilletOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Fillet<TShape>(this TShape shape, IEnumerable<FilletSpec> edges, FilletOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static double? ChamferLimit<TShape>(this TShape shape, IEnumerable<Edge> edges)
+  public static double? FilletLimit<TShape>(this TShape shape, IEnumerable<Edge> edges)
+public sealed record Kerf.Fillets.FilletOptions : IEquatable<FilletOptions>
+  public FilletOptions()
+  public Continuity InternalContinuity { get; init; }
+  public FilletShape Shape { get; init; }
+  public FilletTolerances Tolerances { get; init; }
+  public bool CheckResult { get; init; }
+  public double AngularTolerance { get; init; }
+  public static FilletOptions Default { get; }
+public enum Kerf.Fillets.FilletShape
+  Rational = 0
+  QuasiAngular = 1
+  Polynomial = 2
+public readonly record struct Kerf.Fillets.FilletSpec : IEquatable<FilletSpec>
+  public FilletSpec(Edge Edge, double Radius, double? EndRadius = default)
+  public Edge Edge { get; init; }
+  public double Radius { get; init; }
+  public double? EndRadius { get; init; }
+public sealed record Kerf.Fillets.FilletTolerances : IEquatable<FilletTolerances>
+  public FilletTolerances()
+  public double Angular { get; init; }
+  public double Approximation2D { get; init; }
+  public double Approximation3D { get; init; }
+  public double Deflection { get; init; }
+  public double Parametric { get; init; }
+  public double Spine { get; init; }
+  public static FilletTolerances Default { get; }
+public enum Kerf.Fillets.TightCorners
+  Refuse = 0
+  Collapse = 1
+public sealed class Kerf.Fonts.Font
+  public FontStyle Style { get; }
+  public bool HasCubicOutlines { get; }
+  public bool HasKerning { get; }
+  public bool IsFixedPitch { get; }
+  public double ItalicAngle { get; }
+  public int Ascender { get; }
+  public int Descender { get; }
+  public int FaceIndex { get; }
+  public int GlyphCount { get; }
+  public int LineSpacing { get; }
+  public int UnitsPerEm { get; }
+  public int Weight { get; }
+  public static DiagnosticCode LimitExceeded { get; }
+  public static DiagnosticCode Malformed { get; }
+  public static DiagnosticCode Unsupported { get; }
+  public string FamilyName { get; }
+  public string FullName { get; }
+  public string PostScriptName { get; }
+  public string StyleName { get; }
+  public string TypographicFamilyName { get; }
+  public string TypographicStyleName { get; }
+  public Result<GlyphOutline> Outline(int glyph)
+  public bool HasGlyph(int codePoint)
+  public int AdvanceWidth(int glyph)
+  public int GlyphOf(int codePoint)
+  public int Kerning(int left, int right)
+  public override string ToString()
+  public static Result<Font> Read(Stream stream, int faceIndex = 0, FontReadLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Result<IReadOnlyList<Font>> ReadCollection(Stream stream, FontReadLimits? limits = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Fonts.FontEntry : IEquatable<FontEntry>
+  public FontEntry(string Family, FontStyle Style, string StyleName, string? Path, int FaceIndex)
+  public FontStyle Style { get; init; }
+  public int FaceIndex { get; init; }
+  public string Family { get; init; }
+  public string StyleName { get; init; }
+  public string? Path { get; init; }
+public sealed class Kerf.Fonts.FontLibrary
+  public const string DefaultFamily = "Liberation Sans"
+  public IReadOnlyList<FontEntry> Fonts { get; }
+  public static DiagnosticCode Substituted { get; }
+  public static FontLibrary System { get; }
+  public Result<Font> Find(string family, FontStyle style = FontStyle.Regular)
+  public bool HasFamily(string family)
+  public static Font Default(FontStyle style = FontStyle.Regular)
+  public static FontLibrary FromFonts(IEnumerable<Font> fonts)
+  public static FontLibrary Scan(IEnumerable<string> folders, FontReadLimits? limits = default)
+  public static IReadOnlyList<string> SystemFolders()
+public sealed record Kerf.Fonts.FontReadLimits : IEquatable<FontReadLimits>
+  public FontReadLimits()
+  public int MaxCharStringOperations { get; init; }
+  public int MaxCompositeDepth { get; init; }
+  public int MaxFaces { get; init; }
+  public int MaxOutlinePoints { get; init; }
+  public long MaxBytes { get; init; }
+  public static FontReadLimits Default { get; }
+public enum Kerf.Fonts.FontStyle
+  Regular = 0
+  Bold = 1
+  Italic = 2
+  BoldItalic = 3
+public sealed class Kerf.Fonts.GlyphOutline
+  public IReadOnlyList<ImmutableArray<OutlineSegment>> Contours { get; }
+  public int Glyph { get; }
+public readonly struct Kerf.Fonts.OutlineSegment : IEquatable<OutlineSegment>
+  public OutlineSegmentKind Kind { get; }
+  public Point2D Control1 { get; }
+  public Point2D Control2 { get; }
+  public Point2D End { get; }
+  public Point2D Start { get; }
+  public bool Equals(OutlineSegment other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(OutlineSegment left, OutlineSegment right)
+  public static bool op_Inequality(OutlineSegment left, OutlineSegment right)
+public enum Kerf.Fonts.OutlineSegmentKind
+  Line = 0
+  Quadratic = 1
+  Cubic = 2
+public enum Kerf.Fonts.TextAlign
+  Bottom = 0
+  Center = 1
+  Left = 2
+  Right = 3
+  Top = 4
+  TopFirstLine = 5
+public sealed record Kerf.Fonts.TextOptions : IEquatable<TextOptions>
+  public TextOptions()
+  public TextAlign Horizontal { get; init; }
+  public TextAlign Vertical { get; init; }
+  public bool Kerning { get; init; }
+  public bool SingleStroke { get; init; }
+  public double Slant { get; init; }
+  public int TabSize { get; init; }
+  public static TextOptions Default { get; }
+public static class Kerf.Fonts.TextShapes
+  public static DiagnosticCode Empty { get; }
+  public static DiagnosticCode MissingGlyph { get; }
+  public static Result<Shape> Make(Font font, string text, double size, TextOptions? options = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Geometry.ApproximationOptions : IEquatable<ApproximationOptions>
+  public ApproximationOptions()
+  public (double, double, double)? Smoothing { get; init; }
+  public Continuity Continuity { get; init; }
+  public ParametrizationType Parametrization { get; init; }
+  public double Tolerance { get; init; }
+  public int MaxDegree { get; init; }
+  public int MinDegree { get; init; }
+  public static ApproximationOptions Default { get; }
+public sealed record Kerf.Geometry.ConversionOptions : IEquatable<ConversionOptions>
+  public ConversionOptions()
+  public Continuity Continuity { get; init; }
+  public bool ForceApproximation { get; init; }
+  public double Tolerance { get; init; }
+  public int MaxDegree { get; init; }
+  public int MaxSegments { get; init; }
+  public static ConversionOptions Default { get; }
+public readonly record struct Kerf.Geometry.CurveCurveHit2D : IEquatable<CurveCurveHit2D>
+  public CurveCurveHit2D(Point2D Point, double FirstParameter, double SecondParameter)
+  public Point2D Point { get; init; }
+  public double FirstParameter { get; init; }
+  public double SecondParameter { get; init; }
+public readonly record struct Kerf.Geometry.CurveFrame : IEquatable<CurveFrame>
+  public CurveFrame(Point3D Point, Vector3D Tangent, Vector3D Normal, Vector3D Binormal)
+  public Point3D Point { get; init; }
+  public Vector3D Binormal { get; init; }
+  public Vector3D Normal { get; init; }
+  public Vector3D Tangent { get; init; }
+public readonly record struct Kerf.Geometry.CurveSurfaceHit : IEquatable<CurveSurfaceHit>
+  public CurveSurfaceHit(Point3D Point, double CurveParameter, double U, double V)
+  public Point3D Point { get; init; }
+  public double CurveParameter { get; init; }
+  public double U { get; init; }
+  public double V { get; init; }
+public enum Kerf.Geometry.FrameLaw
+  Frenet = 0
+  CorrectedFrenet = 1
+public static class Kerf.Geometry.GeometryOperations
+  public static DiagnosticCode ApproximationFailed { get; }
+  public static DiagnosticCode ConstructionFailed { get; }
+  public static DiagnosticCode ConversionFailed { get; }
+  public static DiagnosticCode InterpolationFailed { get; }
+  public static DiagnosticCode IntersectionFailed { get; }
+  public static DiagnosticCode NotConnected { get; }
+  public static Curve3D ToCurve3D(this Curve2D curve, in Plane3D plane)
+  public static ImmutableArray<CurveFrame> Frames(this EdgeCurve curve, ReadOnlySpan<double> parameters, FrameLaw law = FrameLaw.Frenet)
+  public static ImmutableArray<CurveFrame> Frames(this WireCurve curve, ReadOnlySpan<double> parameters, FrameLaw law = FrameLaw.Frenet)
+  public static ImmutableArray<CurvePoint2D> Project(this Curve2D curve, Point2D point)
+  public static ImmutableArray<CurvePoint> Project(this Curve3D curve, Point3D point)
+  public static ImmutableArray<SurfacePoint> Project(this Surface surface, Point3D point)
+  public static Result<BSplineCurve3D> Approximate(ReadOnlySpan<Point3D> points, ApproximationOptions? options = default)
+  public static Result<BSplineCurve3D> Interpolate(ReadOnlySpan<Point3D> points, InterpolationOptions? options = default)
+  public static Result<BSplineCurve3D> Join(IEnumerable<BoundedCurve3D> curves, double tolerance = 1E-07)
+  public static Result<BSplineCurve3D> ToBSpline(this Curve3D curve, ConversionOptions? options = default)
+  public static Result<BSplineSurface> Approximate(Grid<Point3D> points, ApproximationOptions? options = default)
+  public static Result<Curve2D> ToCurve2D(this Curve3D curve, in Plane3D plane)
+  public static Result<ImmutableArray<Curve3D>> Intersect(this Surface surface, Surface other, double tolerance = 1E-07)
+  public static Result<ImmutableArray<CurveCurveHit2D>> Intersect(this Curve2D curve, Curve2D other, double tolerance = 1E-06)
+  public static Result<ImmutableArray<CurveCurveHit2D>> SelfIntersections(this Curve2D curve, double tolerance = 1E-06)
+  public static Result<ImmutableArray<CurveSurfaceHit>> Intersect(this Curve3D curve, Surface surface)
+  public static Result<TrimmedCurve3D> Arc(in Circle3D circle, double startAngle, double endAngle, bool counterClockwise = true)
+  public static Result<TrimmedCurve3D> Arc(in Ellipse3D ellipse, double startAngle, double endAngle, bool counterClockwise = true)
+  public static Result<TrimmedCurve3D> Arc(in Hyperbola3D hyperbola, double start, double end, bool counterClockwise = true)
+  public static Result<TrimmedCurve3D> Arc(in Parabola3D parabola, double start, double end, bool counterClockwise = true)
+  public static Result<TrimmedCurve3D> ArcTangent(Point3D start, Vector3D tangent, Point3D end)
+  public static Result<TrimmedCurve3D> ArcThrough(Point3D start, Point3D middle, Point3D end)
+  public static Result<TrimmedCurve3D> Segment(Point3D start, Point3D end)
+  public static bool IsPlanar(this Curve3D curve, Direction3D? normal = default, double tolerance = 0)
+  public static bool TryGetPlane(this Surface surface, double tolerance, out Plane3D plane)
+  public static bool TryProjectNearest(this Curve3D curve, Point3D point, out CurvePoint nearest)
+  public static bool TryProjectNearest(this Surface surface, Point3D point, out SurfacePoint nearest)
+public sealed record Kerf.Geometry.InterpolationOptions : IEquatable<InterpolationOptions>
+  public InterpolationOptions()
+  public ImmutableArray<Vector3D> Tangents { get; init; }
+  public ImmutableArray<double> Parameters { get; init; }
+  public bool Periodic { get; init; }
+  public bool ScaleTangents { get; init; }
+  public double Tolerance { get; init; }
+  public static InterpolationOptions Default { get; }
+public enum Kerf.Geometry.Tangency
+  Unqualified = 0
+  Enclosing = 1
+  Enclosed = 2
+  Outside = 3
+public sealed record Kerf.Geometry.TangentCircle2D : IEquatable<TangentCircle2D>
+  public TangentCircle2D(Circle2D Circle, ImmutableArray<TangentContact2D> Contacts)
+  public Circle2D Circle { get; init; }
+  public ImmutableArray<TangentContact2D> Contacts { get; init; }
+public readonly record struct Kerf.Geometry.TangentContact2D : IEquatable<TangentContact2D>
+  public TangentContact2D(Tangency Tangency, Point2D Point, double SolutionParameter, double TargetParameter, bool IsCoincident = false)
+  public Point2D Point { get; init; }
+  public Tangency Tangency { get; init; }
+  public bool IsCoincident { get; init; }
+  public double SolutionParameter { get; init; }
+  public double TargetParameter { get; init; }
+public sealed record Kerf.Geometry.TangentLine2D : IEquatable<TangentLine2D>
+  public TangentLine2D(Line2D Line, ImmutableArray<TangentContact2D> Contacts)
+  public ImmutableArray<TangentContact2D> Contacts { get; init; }
+  public Line2D Line { get; init; }
+public readonly record struct Kerf.Geometry.TangentTarget2D : IEquatable<TangentTarget2D>
+  public Curve2D? Curve { get; }
+  public Interval? Range { get; }
+  public Point2D Point { get; }
+  public Tangency Tangency { get; }
+  public bool IsPoint { get; }
+  public static TangentTarget2D Tangent(Curve2D curve, Interval range, Tangency tangency = Tangency.Unqualified)
+  public static TangentTarget2D Tangent(Curve2D curve, Tangency tangency = Tangency.Unqualified)
+  public static TangentTarget2D Through(Point2D point)
+  public static TangentTarget2D op_Implicit(Curve2D curve)
+  public static TangentTarget2D op_Implicit(Point2D point)
+public static class Kerf.Geometry.Tangents2D
+  public static DiagnosticCode TangentsFailed { get; }
+  public static Result<ImmutableArray<TangentCircle2D>> Circles(TangentTarget2D first, TangentTarget2D second, TangentTarget2D third, double tolerance = 1E-07)
+  public static Result<ImmutableArray<TangentCircle2D>> Circles(TangentTarget2D first, TangentTarget2D second, double radius, double tolerance = 1E-07)
+  public static Result<ImmutableArray<TangentCircle2D>> CirclesCentredAt(TangentTarget2D target, Point2D centre, double tolerance = 1E-07)
+  public static Result<ImmutableArray<TangentCircle2D>> CirclesCentredOn(TangentTarget2D first, TangentTarget2D second, Curve2D locus, Interval? locusRange = default, double tolerance = 1E-07)
+  public static Result<ImmutableArray<TangentCircle2D>> CirclesCentredOn(TangentTarget2D target, Curve2D locus, double radius, Interval? locusRange = default, double tolerance = 1E-07)
+  public static Result<ImmutableArray<TangentLine2D>> Lines(TangentTarget2D first, TangentTarget2D second, double angularTolerance = 1E-12)
+  public static Result<ImmutableArray<TangentLine2D>> LinesAtAngle(TangentTarget2D target, Line2D reference, double angle, double angularTolerance = 1E-12)
+public sealed record Kerf.Healing.BSplineApproximationOptions : IEquatable<BSplineApproximationOptions>
+  public BSplineApproximationOptions()
+  public Continuity Continuity2D { get; init; }
+  public Continuity Continuity3D { get; init; }
+  public bool CheckResult { get; init; }
+  public bool Polynomial { get; init; }
+  public bool PreferDegree { get; init; }
+  public double Tolerance2D { get; init; }
+  public double Tolerance3D { get; init; }
+  public int MaxDegree { get; init; }
+  public int MaxSegments { get; init; }
+  public static BSplineApproximationOptions Default { get; }
+public sealed record Kerf.Healing.BSplineConversionOptions : IEquatable<BSplineConversionOptions>
+  public BSplineConversionOptions()
+  public bool CheckResult { get; init; }
+  public bool Extrusions { get; init; }
+  public bool Offsets { get; init; }
+  public bool Planes { get; init; }
+  public bool Revolutions { get; init; }
+  public static BSplineConversionOptions Default { get; }
+public sealed record Kerf.Healing.FixOptions : IEquatable<FixOptions>
+  public FixOptions()
+  public bool CheckResult { get; init; }
+  public bool? FixFaces { get; init; }
+  public bool? FixSameParameter { get; init; }
+  public bool? FixShells { get; init; }
+  public bool? FixSolids { get; init; }
+  public bool? FixWires { get; init; }
+  public double MaxTolerance { get; init; }
+  public double MinTolerance { get; init; }
+  public double Precision { get; init; }
+  public static FixOptions Default { get; }
+public static class Kerf.Healing.HealingOperations
+  public static DiagnosticCode ConversionFailed { get; }
+  public static DiagnosticCode FixFailed { get; }
+  public static DiagnosticCode NotAClosedShell { get; }
+  public static DiagnosticCode SewingFailed { get; }
+  public static DiagnosticCode UnifyFailed { get; }
+  public static ImmutableArray<Edge> MisorientedEdges<TShape>(this TShape shape, bool checkInternalEdges = false)
+  public static ImmutableArray<Wire> ConnectEdges(IEnumerable<Edge> edges, double tolerance, bool shared = false)
+  public static ImmutableArray<Wire> FreeBoundaries<TShape>(this TShape shape, double tolerance = 0)
+  public static Result<Built<Shape>> ApproximateBSplines<TShape>(this TShape shape, BSplineApproximationOptions? options = default)
+  public static Result<Built<Shape>> ConvertToBSpline<TShape>(this TShape shape, BSplineConversionOptions? options = default)
+  public static Result<Built<Shape>> Fix<TShape>(this TShape shape, FixOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> FixFace(this Face face, bool checkResult = true)
+  public static Result<Built<Shape>> FixWireframe<TShape>(this TShape shape, double tolerance)
+  public static Result<Built<Shape>> FixWireframe<TShape>(this TShape shape, double tolerance, WireframeFixOptions? options)
+  public static Result<Built<Shape>> Sew(IEnumerable<Shape> shapes, SewOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Unify<TShape>(this TShape shape, UnifyOptions? options = default)
+  public static Result<Built<Solid>> MakeSolid(this Shell shell)
+  public static ValidationReport Validate<TShape>(this TShape shape, ValidationOptions? options = default)
+public sealed record Kerf.Healing.SewOptions : IEquatable<SewOptions>
+  public SewOptions()
+  public bool CheckResult { get; init; }
+  public bool NonManifold { get; init; }
+  public double Tolerance { get; init; }
+  public double? MaxTolerance { get; init; }
+  public double? MinTolerance { get; init; }
+  public static SewOptions Default { get; }
+public readonly record struct Kerf.Healing.ShapeProblem : IEquatable<ShapeProblem>
+  public ShapeProblem(Shape Shape, Shape Context, DiagnosticCode Code, string Message)
+  public DiagnosticCode Code { get; init; }
+  public Shape Context { get; init; }
+  public Shape Shape { get; init; }
+  public string Message { get; init; }
+public sealed record Kerf.Healing.UnifyOptions : IEquatable<UnifyOptions>
+  public UnifyOptions()
+  public bool AllowInternalEdges { get; init; }
+  public bool CheckResult { get; init; }
+  public bool ConcatBSplines { get; init; }
+  public bool Edges { get; init; }
+  public bool Faces { get; init; }
+  public double AngularTolerance { get; init; }
+  public double LinearTolerance { get; init; }
+  public static UnifyOptions Default { get; }
+public sealed record Kerf.Healing.ValidationOptions : IEquatable<ValidationOptions>
+  public ValidationOptions()
+  public bool Exact { get; init; }
+  public bool Geometry { get; init; }
+  public bool Parallel { get; init; }
+  public static ValidationOptions Default { get; }
+public sealed record Kerf.Healing.ValidationReport : IEquatable<ValidationReport>
+  public ValidationReport()
+  public required ImmutableArray<ShapeProblem> Problems { get; init; }
+  public required bool IsValid { get; init; }
+  public Diagnostic ToDiagnostic(string what)
+public sealed record Kerf.Healing.WireframeFixOptions : IEquatable<WireframeFixOptions>
+  public WireframeFixOptions()
+  public bool CheckResult { get; init; }
+  public bool SmallEdgesFirst { get; init; }
+  public double? MaxTolerance { get; init; }
+  public static WireframeFixOptions Default { get; }
+public enum Kerf.Measurement.Dimension
+  Length = 1
+  Area = 2
+  Volume = 3
+public sealed record Kerf.Measurement.DistanceOptions : IEquatable<DistanceOptions>
+  public DistanceOptions()
+  public bool Parallel { get; init; }
+  public double Deflection { get; init; }
+  public static DistanceOptions Default { get; }
+public sealed record Kerf.Measurement.DistanceResult : IEquatable<DistanceResult>
+  public DistanceResult()
+  public bool IsInnerSolution { get; init; }
+  public required ImmutableArray<DistanceSolution> Solutions { get; init; }
+  public required double Value { get; init; }
+public readonly record struct Kerf.Measurement.DistanceSolution : IEquatable<DistanceSolution>
+  public DistanceSolution(Point3D OnA, Point3D OnB, SupportKind SupportA, Shape SupportShapeA, Point2D ParametersA, SupportKind SupportB, Shape SupportShapeB, Point2D ParametersB)
+  public Point2D ParametersA { get; init; }
+  public Point2D ParametersB { get; init; }
+  public Point3D OnA { get; init; }
+  public Point3D OnB { get; init; }
+  public Shape SupportShapeA { get; init; }
+  public Shape SupportShapeB { get; init; }
+  public SupportKind SupportA { get; init; }
+  public SupportKind SupportB { get; init; }
+public readonly record struct Kerf.Measurement.LineHit : IEquatable<LineHit>
+  public LineHit(Point3D Point, double LineParameter, Face Face, double U, double V, Containment State)
+  public Containment State { get; init; }
+  public Face Face { get; init; }
+  public Point3D Point { get; init; }
+  public double LineParameter { get; init; }
+  public double U { get; init; }
+  public double V { get; init; }
+public sealed record Kerf.Measurement.MassOptions : IEquatable<MassOptions>
+  public MassOptions()
+  public bool OnlyClosed { get; init; }
+  public bool SkipShared { get; init; }
+  public bool UseTriangulation { get; init; }
+  public double Tolerance { get; init; }
+  public static MassOptions Default { get; }
+public sealed record Kerf.Measurement.MassProperties : IEquatable<MassProperties>
+  public MassProperties()
+  public required (Direction3D, Direction3D, Direction3D) PrincipalAxes { get; init; }
+  public required (double, double, double) PrincipalMoments { get; init; }
+  public required Dimension Dimension { get; init; }
+  public required Matrix3x3 Inertia { get; init; }
+  public required Point3D CentreOfMass { get; init; }
+  public required Vector3D StaticMoments { get; init; }
+  public required double Mass { get; init; }
+  public double MomentOfInertia(in Axis3D axis)
+  public double RadiusOfGyration(in Axis3D axis)
+public static class Kerf.Measurement.MeasureOperations
+  public static DiagnosticCode DistanceFailed { get; }
+  public static (Point2D, double) ParametersOf(this Face face, Point3D point, double tolerance = 1E-07)
+  public static BoundingBox BoundingBox<TShape>(this TShape shape, bool optimal = false, bool useTriangulation = false)
+  public static Containment Classify(this Face face, Point2D parameters, double tolerance = 1E-07)
+  public static Containment Classify(this Solid solid, Point3D point, double tolerance = 1E-07)
+  public static Containment ClassifyPoint<TShape>(this TShape shape, Point3D point, double tolerance = 1E-07)
+  public static ImmutableArray<LineHit> Intersect<TShape>(this TShape shape, in Line3D line, double tolerance = 1E-07)
+  public static MassProperties MassProperties<TShape>(this TShape shape, Dimension dimension, MassOptions? options = default)
+  public static OrientedBox OrientedBox<TShape>(this TShape shape, bool optimal = false)
+  public static Point3D CentreOfArea<TShape>(this TShape shape, MassOptions? options = default)
+  public static Result<DistanceResult> Distance<TShape, TOther>(this TShape shape, TOther other, DistanceOptions? options = default, CancellationToken cancellationToken = default)
+  public static bool IsOnFace<TShape>(this TShape shape, Point3D point, double tolerance = 1E-07)
+  public static double IntegrateArea<TShape>(this TShape shape, MassOptions? options = default)
+  public static double IntegrateLength<TShape>(this TShape shape, MassOptions? options = default)
+  public static double IntegrateVolume<TShape>(this TShape shape, MassOptions? options = default)
+public enum Kerf.Measurement.SupportKind
+  Vertex = 0
+  Edge = 1
+  Face = 2
+public readonly struct Kerf.Meshing.EdgePolyline
+  public CurveKind Kind { get; }
+  public Edge Edge { get; }
+  public ReadOnlyMemory<float> Points { get; }
+  public int PointCount { get; }
+public readonly struct Kerf.Meshing.FaceMesh
+  public Face Face { get; }
+  public ReadOnlyMemory<float> Normals { get; }
+  public ReadOnlyMemory<float> Positions { get; }
+  public ReadOnlyMemory<int> Triangles { get; }
+  public SurfaceKind Kind { get; }
+  public double Deflection { get; }
+  public int FirstNode { get; }
+  public int FirstTriangle { get; }
+  public int NodeCount { get; }
+  public int TriangleCount { get; }
+  public Point2D[] GetSurfaceParameters()
+  public Point3D[] GetNodes()
+  public Triangle[] GetTriangles()
+public sealed record Kerf.Meshing.MeshOptions : IEquatable<MeshOptions>
+  public MeshOptions()
+  public bool InternalVertices { get; init; }
+  public bool Parallel { get; init; }
+  public bool Relative { get; init; }
+  public double AngularDeflection { get; init; }
+  public double LinearDeflection { get; init; }
+  public double MinSize { get; init; }
+  public double? EdgeDeflection { get; init; }
+  public long MaxTriangles { get; init; }
+  public static MeshOptions Default { get; }
+public static class Kerf.Meshing.Mesher
+  public static DiagnosticCode FacesNotMeshed { get; }
+  public static DiagnosticCode FacesRefused { get; }
+  public static DiagnosticCode MeshFailed { get; }
+  public static DiagnosticCode TooLarge { get; }
+  public static Result<ShapeMesh> Mesh<TShape>(this TShape shape, MeshOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+public sealed class Kerf.Meshing.ShapeMesh
+  public IReadOnlyList<EdgePolyline> Edges { get; }
+  public IReadOnlyList<FaceMesh> Faces { get; }
+  public MeshOptions Options { get; }
+  public ReadOnlyMemory<float> EdgePoints { get; }
+  public ReadOnlyMemory<float> Normals { get; }
+  public ReadOnlyMemory<float> Positions { get; }
+  public ReadOnlyMemory<int> Triangles { get; }
+  public Shape Shape { get; }
+  public Shape TriangulatedShape { get; }
+  public int NodeCount { get; }
+  public int TriangleCount { get; }
+  public Triangle[] GetTriangles()
+public readonly record struct Kerf.Meshing.Triangle : IEquatable<Triangle>
+  public Triangle(int A, int B, int C)
+  public int A { get; init; }
+  public int B { get; init; }
+  public int C { get; init; }
+public sealed record Kerf.Offsets.Offset2DOptions : IEquatable<Offset2DOptions>
+  public Offset2DOptions()
+  public JoinKind Join { get; init; }
+  public bool CheckResult { get; init; }
+  public bool Open { get; init; }
+  public static Offset2DOptions Default { get; }
+public enum Kerf.Offsets.OffsetMode
+  Skin = 0
+  Pipe = 1
+  RectoVerso = 2
+public static class Kerf.Offsets.OffsetOperations
+  public static DiagnosticCode Failed { get; }
+  public static DiagnosticCode JoinChanged { get; }
+  public static Result<Built<Shape>> Offset2D(this Wire wire, double distance, Face plane, Offset2DOptions? options = default)
+  public static Result<Built<Shape>> Offset2D<TShape>(this TShape shape, double distance, Offset2DOptions? options = default)
+  public static Result<Built<Shape>> Offset<TShape>(this TShape shape, double distance, OffsetOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> ThickSolid<TShape>(this TShape shape, IEnumerable<Face> openings, double thickness, OffsetOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Solid>> Hollow(this Solid solid, IEnumerable<Face> openings, double thickness, OffsetOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Solid>> Thicken<TShape>(this TShape shape, double thickness, OffsetOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+public sealed record Kerf.Offsets.OffsetOptions : IEquatable<OffsetOptions>
+  public OffsetOptions()
+  public JoinKind Join { get; init; }
+  public OffsetMode Mode { get; init; }
+  public bool CheckResult { get; init; }
+  public bool Intersection { get; init; }
+  public bool RemoveInternalEdges { get; init; }
+  public bool SelfIntersection { get; init; }
+  public double Tolerance { get; init; }
+  public static OffsetOptions Default { get; }
+public static class Kerf.Offsets.OffsetVolumes
+  public static Diagnostic? Check(Shape input, double distance, JoinKind join, Shape result, string what, bool isWall = false)
+
+assembly Kerf.Kernel.ModelingData
+public sealed record Kerf.Built<TShape> : IEquatable<Built<TShape>>
+  public Built(TShape Shape, ShapeHistory History)
+  public ShapeHistory History { get; init; }
+  public TShape Shape { get; init; }
+  public static TShape op_Implicit(Built<TShape> built)
+public static class Kerf.DiagnosticShapes
+  public static Diagnostic WithShapes(this Diagnostic diagnostic, IEnumerable<Shape> shapes)
+  public static Diagnostic WithShapes(this Diagnostic diagnostic, params ReadOnlySpan<Shape> shapes)
+  public static ImmutableArray<Shape> get_Shapes(Diagnostic diagnostic)
+public sealed class Kerf.Geometry.BSplineCurve2D : BoundedCurve2D
+  public BSplineCurve2D(BSplineCurve2D other)
+  public BSplineCurve2D(ReadOnlySpan<Point2D> poles, ReadOnlySpan<double> knots, ReadOnlySpan<int> multiplicities, int degree, bool periodic = false, ReadOnlySpan<double> weights = default)
+  public IReadOnlyList<Point2D> Poles { get; }
+  public IReadOnlyList<double> KnotSequence { get; }
+  public IReadOnlyList<double> Knots { get; }
+  public IReadOnlyList<double> Weights { get; }
+  public IReadOnlyList<int> Multiplicities { get; }
+  public bool IsRational { get; }
+  public int Degree { get; }
+  public int KnotCount { get; }
+  public int PoleCount { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override Point2D EndPoint { get; }
+  public sealed override Point2D StartPoint { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public static int MaxDegree { get; }
+  public BSplineCurve2D DegreeIncreased(int degree)
+  public BSplineCurve2D Segmented(double u1, double u2, double tolerance = 1E-09)
+  public BSplineCurve2D WithKnot(int index, double knot)
+  public BSplineCurve2D WithKnot(int index, double knot, int multiplicity)
+  public BSplineCurve2D WithNotPeriodic()
+  public BSplineCurve2D WithPeriodic()
+  public BSplineCurve2D WithPole(int index, Point2D pole)
+  public BSplineCurve2D WithPole(int index, Point2D pole, double weight)
+  public BSplineCurve2D WithWeight(int index, double weight)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.BSplineCurve3D : BoundedCurve3D
+  public BSplineCurve3D(BSplineCurve3D other)
+  public BSplineCurve3D(ReadOnlySpan<Point3D> poles, ReadOnlySpan<double> knots, ReadOnlySpan<int> multiplicities, int degree, bool periodic = false, ReadOnlySpan<double> weights = default)
+  public IReadOnlyList<Point3D> Poles { get; }
+  public IReadOnlyList<double> KnotSequence { get; }
+  public IReadOnlyList<double> Knots { get; }
+  public IReadOnlyList<double> Weights { get; }
+  public IReadOnlyList<int> Multiplicities { get; }
+  public bool IsRational { get; }
+  public int Degree { get; }
+  public int KnotCount { get; }
+  public int PoleCount { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override Point3D EndPoint { get; }
+  public sealed override Point3D StartPoint { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public static int MaxDegree { get; }
+  public BSplineCurve3D DegreeIncreased(int degree)
+  public BSplineCurve3D Segmented(double u1, double u2, double tolerance = 1E-09)
+  public BSplineCurve3D WithKnot(int index, double knot)
+  public BSplineCurve3D WithKnot(int index, double knot, int multiplicity)
+  public BSplineCurve3D WithNotPeriodic()
+  public BSplineCurve3D WithPeriodic()
+  public BSplineCurve3D WithPole(int index, Point3D pole)
+  public BSplineCurve3D WithPole(int index, Point3D pole, double weight)
+  public BSplineCurve3D WithWeight(int index, double weight)
+  public bool IsEqual(BSplineCurve3D other, double tolerance)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.BSplineSurface : BoundedSurface
+  public BSplineSurface(BSplineSurface other)
+  public BSplineSurface(Grid<Point3D> poles, ReadOnlySpan<double> uKnots, ReadOnlySpan<double> vKnots, ReadOnlySpan<int> uMultiplicities, ReadOnlySpan<int> vMultiplicities, int uDegree, int vDegree, bool uPeriodic = false, bool vPeriodic = false, Grid<double> weights = default)
+  public Grid<Point3D> Poles { get; }
+  public Grid<double> Weights { get; }
+  public IReadOnlyList<double> UKnotSequence { get; }
+  public IReadOnlyList<double> UKnots { get; }
+  public IReadOnlyList<double> VKnotSequence { get; }
+  public IReadOnlyList<double> VKnots { get; }
+  public IReadOnlyList<int> UMultiplicities { get; }
+  public IReadOnlyList<int> VMultiplicities { get; }
+  public bool IsURational { get; }
+  public bool IsVRational { get; }
+  public int UDegree { get; }
+  public int UKnotCount { get; }
+  public int UPoleCount { get; }
+  public int VDegree { get; }
+  public int VKnotCount { get; }
+  public int VPoleCount { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public static int MaxDegree { get; }
+  public BSplineSurface DegreeIncreased(int uDegree, int vDegree)
+  public BSplineSurface ExchangedUV()
+  public BSplineSurface Segmented(double u1, double u2, double v1, double v2, double uTolerance = 1E-09, double vTolerance = 1E-09)
+  public BSplineSurface WithPole(int uIndex, int vIndex, Point3D pole)
+  public BSplineSurface WithPole(int uIndex, int vIndex, Point3D pole, double weight)
+  public BSplineSurface WithUNotPeriodic()
+  public BSplineSurface WithUPeriodic()
+  public BSplineSurface WithVNotPeriodic()
+  public BSplineSurface WithVPeriodic()
+  public BSplineSurface WithWeight(int uIndex, int vIndex, double weight)
+  public Curve3D UIso(double u, bool checkRational)
+  public Curve3D VIso(double v, bool checkRational)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public sealed class Kerf.Geometry.BezierCurve2D : BoundedCurve2D
+  public BezierCurve2D(BezierCurve2D other)
+  public BezierCurve2D(ReadOnlySpan<Point2D> poles, ReadOnlySpan<double> weights = default)
+  public IReadOnlyList<Point2D> Poles { get; }
+  public IReadOnlyList<double> KnotSequence { get; }
+  public IReadOnlyList<double> Knots { get; }
+  public IReadOnlyList<double> Weights { get; }
+  public IReadOnlyList<int> Multiplicities { get; }
+  public bool IsRational { get; }
+  public int Degree { get; }
+  public int PoleCount { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override Point2D EndPoint { get; }
+  public sealed override Point2D StartPoint { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public static int MaxDegree { get; }
+  public BezierCurve2D Increased(int degree)
+  public BezierCurve2D Segmented(double u1, double u2)
+  public BezierCurve2D WithPole(int index, Point2D pole)
+  public BezierCurve2D WithPole(int index, Point2D pole, double weight)
+  public BezierCurve2D WithWeight(int index, double weight)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.BezierCurve3D : BoundedCurve3D
+  public BezierCurve3D(BezierCurve3D other)
+  public BezierCurve3D(ReadOnlySpan<Point3D> poles, ReadOnlySpan<double> weights = default)
+  public IReadOnlyList<Point3D> Poles { get; }
+  public IReadOnlyList<double> KnotSequence { get; }
+  public IReadOnlyList<double> Knots { get; }
+  public IReadOnlyList<double> Weights { get; }
+  public IReadOnlyList<int> Multiplicities { get; }
+  public bool IsRational { get; }
+  public int Degree { get; }
+  public int PoleCount { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override Point3D EndPoint { get; }
+  public sealed override Point3D StartPoint { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public static int MaxDegree { get; }
+  public BezierCurve3D Increased(int degree)
+  public BezierCurve3D Segmented(double u1, double u2)
+  public BezierCurve3D WithPole(int index, Point3D pole)
+  public BezierCurve3D WithPole(int index, Point3D pole, double weight)
+  public BezierCurve3D WithWeight(int index, double weight)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.BezierSurface : BoundedSurface
+  public BezierSurface(BezierSurface other)
+  public BezierSurface(Grid<Point3D> poles, Grid<double> weights = default)
+  public Grid<Point3D> Poles { get; }
+  public Grid<double> Weights { get; }
+  public IReadOnlyList<double> UKnotSequence { get; }
+  public IReadOnlyList<double> UKnots { get; }
+  public IReadOnlyList<double> VKnotSequence { get; }
+  public IReadOnlyList<double> VKnots { get; }
+  public IReadOnlyList<int> UMultiplicities { get; }
+  public IReadOnlyList<int> VMultiplicities { get; }
+  public bool IsURational { get; }
+  public bool IsVRational { get; }
+  public int UDegree { get; }
+  public int UPoleCount { get; }
+  public int VDegree { get; }
+  public int VPoleCount { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public static int MaxDegree { get; }
+  public BezierSurface ExchangedUV()
+  public BezierSurface Increased(int uDegree, int vDegree)
+  public BezierSurface Segmented(double u1, double u2, double v1, double v2)
+  public BezierSurface WithPole(int uIndex, int vIndex, Point3D pole)
+  public BezierSurface WithPole(int uIndex, int vIndex, Point3D pole, double weight)
+  public BezierSurface WithWeight(int uIndex, int vIndex, double weight)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public abstract class Kerf.Geometry.BoundedCurve2D : Curve2D
+  public abstract Point2D EndPoint { get; }
+  public abstract Point2D StartPoint { get; }
+public abstract class Kerf.Geometry.BoundedCurve3D : Curve3D
+  public abstract Point3D EndPoint { get; }
+  public abstract Point3D StartPoint { get; }
+public abstract class Kerf.Geometry.BoundedSurface : Surface
+public sealed class Kerf.Geometry.CircleCurve2D : ConicCurve2D
+  public CircleCurve2D(in Axis2D axis, double radius, bool sense = true)
+  public CircleCurve2D(in Circle2D circle)
+  public CircleCurve2D(in Frame2D frame, double radius)
+  public Circle2D Circle { get; }
+  public double Radius { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public CircleCurve2D WithCircle(in Circle2D circle)
+  public CircleCurve2D WithRadius(double r)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.CircleCurve3D : ConicCurve3D
+  public CircleCurve3D(in Circle3D circle)
+  public CircleCurve3D(in Frame3D frame, double r)
+  public Circle3D Circle { get; }
+  public double Radius { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public CircleCurve3D WithCircle(in Circle3D circle)
+  public CircleCurve3D WithRadius(double r)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public abstract class Kerf.Geometry.ConicCurve2D : Curve2D
+  public Axis2D XAxis { get; }
+  public Axis2D YAxis { get; }
+  public Frame2D Position { get; }
+  public Point2D Location { get; }
+  public abstract double Eccentricity { get; }
+  public override Continuity Continuity { get; }
+  public ConicCurve2D WithAxis(in Frame2D frame)
+  public ConicCurve2D WithLocation(in Point2D point)
+  public ConicCurve2D WithXAxis(in Axis2D xAxis)
+  public ConicCurve2D WithYAxis(in Axis2D yAxis)
+public abstract class Kerf.Geometry.ConicCurve3D : Curve3D
+  public Axis3D Axis { get; }
+  public Axis3D XAxis { get; }
+  public Axis3D YAxis { get; }
+  public Frame3D Position { get; }
+  public Point3D Location { get; }
+  public abstract double Eccentricity { get; }
+  public override Continuity Continuity { get; }
+  public ConicCurve3D WithAxis(in Axis3D axis)
+  public ConicCurve3D WithLocation(in Point3D point)
+  public ConicCurve3D WithPosition(in Frame3D frame)
+public sealed class Kerf.Geometry.ConicalSurface : ElementarySurface
+  public ConicalSurface(in Cone3D cone)
+  public ConicalSurface(in CoordinateSystem position, double angle, double radius)
+  public Cone3D Cone { get; }
+  public Point3D Apex { get; }
+  public double RefRadius { get; }
+  public double SemiAngle { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public ConicalSurface WithCone(in Cone3D cone)
+  public ConicalSurface WithRadius(double r)
+  public ConicalSurface WithSemiAngle(double angle)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public abstract class Kerf.Geometry.Curve2D : Geometry2D
+  public CurveKind Kind { get; }
+  public Interval Range { get; }
+  public abstract Continuity Continuity { get; }
+  public abstract bool IsClosed { get; }
+  public abstract bool IsPeriodic { get; }
+  public abstract double FirstParameter { get; }
+  public abstract double LastParameter { get; }
+  public virtual double Period { get; }
+  public Curve2D Reversed()
+  public CurveDerivatives2D Derivatives(double u, int order)
+  public Point2D Evaluate(double u)
+  public Vector2D DerivativeN(double u, int n)
+  public abstract double ReversedParameter(double u)
+public abstract class Kerf.Geometry.Curve3D : Geometry3D
+  public CurveKind Kind { get; }
+  public Interval Range { get; }
+  public abstract Continuity Continuity { get; }
+  public abstract bool IsClosed { get; }
+  public abstract bool IsPeriodic { get; }
+  public abstract double FirstParameter { get; }
+  public abstract double LastParameter { get; }
+  public virtual double Period { get; }
+  public Curve3D Reversed()
+  public CurveDerivatives Derivatives(double u, int order)
+  public Point3D Evaluate(double u)
+  public Vector3D DerivativeN(double u, int n)
+  public abstract double ReversedParameter(double u)
+  public double LengthBetween(double u1, double u2)
+  public double ParameterAtLength(double length, double from)
+public sealed class Kerf.Geometry.CylindricalSurface : ElementarySurface
+  public CylindricalSurface(in CoordinateSystem position, double radius)
+  public CylindricalSurface(in Cylinder3D cylinder)
+  public Cylinder3D Cylinder { get; }
+  public double Radius { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public CylindricalSurface WithCylinder(in Cylinder3D cylinder)
+  public CylindricalSurface WithRadius(double r)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public abstract class Kerf.Geometry.ElementarySurface : Surface
+  public Axis3D Axis { get; }
+  public CoordinateSystem Position { get; }
+  public Point3D Location { get; }
+  public override Continuity Continuity { get; }
+  public ElementarySurface WithAxis(in Axis3D axis)
+  public ElementarySurface WithLocation(in Point3D location)
+  public ElementarySurface WithPosition(in CoordinateSystem position)
+public sealed class Kerf.Geometry.EllipseCurve2D : ConicCurve2D
+  public EllipseCurve2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
+  public EllipseCurve2D(in Ellipse2D ellipse)
+  public EllipseCurve2D(in Frame2D axis, double majorRadius, double minorRadius)
+  public Axis2D Directrix1 { get; }
+  public Axis2D Directrix2 { get; }
+  public Ellipse2D Ellipse { get; }
+  public Point2D Focus1 { get; }
+  public Point2D Focus2 { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public EllipseCurve2D WithEllipse(in Ellipse2D ellipse)
+  public EllipseCurve2D WithMajorRadius(double majorRadius)
+  public EllipseCurve2D WithMinorRadius(double minorRadius)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.EllipseCurve3D : ConicCurve3D
+  public EllipseCurve3D(in Ellipse3D ellipse)
+  public EllipseCurve3D(in Frame3D frame, double majorRadius, double minorRadius)
+  public Axis3D Directrix1 { get; }
+  public Axis3D Directrix2 { get; }
+  public Ellipse3D Ellipse { get; }
+  public Point3D Focus1 { get; }
+  public Point3D Focus2 { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public EllipseCurve3D WithEllipse(in Ellipse3D ellipse)
+  public EllipseCurve3D WithMajorRadius(double majorRadius)
+  public EllipseCurve3D WithMinorRadius(double minorRadius)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.ExtrusionSurface : SweptSurface
+  public ExtrusionSurface(Curve3D curve, in Direction3D direction)
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public ExtrusionSurface WithBasisCurve(Curve3D curve)
+  public ExtrusionSurface WithDirection(in Direction3D direction)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public abstract class Kerf.Geometry.Geometry2D : Transient
+  public Geometry2D Mirrored(in Axis2D axis)
+  public Geometry2D Mirrored(in Point2D point)
+  public Geometry2D Rotated(in Point2D point, double angle)
+  public Geometry2D Scaled(in Point2D point, double factor)
+  public Geometry2D Transformed(in Transform2D transform)
+  public Geometry2D Translated(in Point2D point1, in Point2D point2)
+  public Geometry2D Translated(in Vector2D vector)
+  public abstract Geometry2D Copy()
+public abstract class Kerf.Geometry.Geometry3D : Transient
+  public Geometry3D Mirrored(in Axis3D axis)
+  public Geometry3D Mirrored(in Frame3D frame)
+  public Geometry3D Mirrored(in Point3D point)
+  public Geometry3D Rotated(in Axis3D axis, double angle)
+  public Geometry3D Scaled(in Point3D point, double factor)
+  public Geometry3D Transformed(in Transform3D transform)
+  public Geometry3D Translated(in Point3D point1, in Point3D point2)
+  public Geometry3D Translated(in Vector3D vector)
+  public abstract Geometry3D Copy()
+public sealed class Kerf.Geometry.HyperbolaCurve2D : ConicCurve2D
+  public HyperbolaCurve2D(in Axis2D majorAxis, double majorRadius, double minorRadius, bool sense = true)
+  public HyperbolaCurve2D(in Frame2D axis, double majorRadius, double minorRadius)
+  public HyperbolaCurve2D(in Hyperbola2D hyperbola)
+  public Axis2D Asymptote1 { get; }
+  public Axis2D Asymptote2 { get; }
+  public Axis2D Directrix1 { get; }
+  public Axis2D Directrix2 { get; }
+  public Hyperbola2D Hyperbola { get; }
+  public Point2D Focus1 { get; }
+  public Point2D Focus2 { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public Hyperbola2D ConjugateBranch1()
+  public Hyperbola2D ConjugateBranch2()
+  public Hyperbola2D OtherBranch()
+  public HyperbolaCurve2D WithHyperbola(in Hyperbola2D hyperbola)
+  public HyperbolaCurve2D WithMajorRadius(double majorRadius)
+  public HyperbolaCurve2D WithMinorRadius(double minorRadius)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.HyperbolaCurve3D : ConicCurve3D
+  public HyperbolaCurve3D(in Frame3D frame, double majorRadius, double minorRadius)
+  public HyperbolaCurve3D(in Hyperbola3D hyperbola)
+  public Axis3D Asymptote1 { get; }
+  public Axis3D Asymptote2 { get; }
+  public Axis3D Directrix1 { get; }
+  public Axis3D Directrix2 { get; }
+  public Hyperbola3D Hyperbola { get; }
+  public Point3D Focus1 { get; }
+  public Point3D Focus2 { get; }
+  public double Focal { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Parameter { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public Hyperbola3D ConjugateBranch1()
+  public Hyperbola3D ConjugateBranch2()
+  public Hyperbola3D OtherBranch()
+  public HyperbolaCurve3D WithHyperbola(in Hyperbola3D hyperbola)
+  public HyperbolaCurve3D WithMajorRadius(double majorRadius)
+  public HyperbolaCurve3D WithMinorRadius(double minorRadius)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.LineCurve2D : Curve2D
+  public LineCurve2D(in Axis2D axis)
+  public LineCurve2D(in Line2D line)
+  public LineCurve2D(in Point2D point, in Direction2D direction)
+  public Axis2D Position { get; }
+  public Direction2D Direction { get; }
+  public Line2D Line { get; }
+  public Point2D Location { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public LineCurve2D WithDirection(in Direction2D direction)
+  public LineCurve2D WithLine(in Line2D line)
+  public LineCurve2D WithLocation(in Point2D point)
+  public LineCurve2D WithPosition(in Axis2D axis)
+  public double Distance(in Point2D point)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.LineCurve3D : Curve3D
+  public LineCurve3D(in Axis3D axis)
+  public LineCurve3D(in Line3D line)
+  public LineCurve3D(in Point3D point, in Direction3D direction)
+  public Axis3D Position { get; }
+  public Line3D Line { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public LineCurve3D WithDirection(in Direction3D direction)
+  public LineCurve3D WithLine(in Line3D line)
+  public LineCurve3D WithLocation(in Point3D point)
+  public LineCurve3D WithPosition(in Axis3D axis)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.OffsetCurve2D : Curve2D
+  public OffsetCurve2D(Curve2D curve, double offset, bool skipContinuityCheck = false)
+  public OffsetCurve2D(OffsetCurve2D other)
+  public Curve2D BasisCurve { get; }
+  public double Offset { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public sealed override double Period { get; }
+  public OffsetCurve2D WithBasisCurve(Curve2D curve, bool skipContinuityCheck = false)
+  public OffsetCurve2D WithOffsetValue(double d)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.OffsetCurve3D : Curve3D
+  public OffsetCurve3D(Curve3D curve, double offset, in Direction3D direction, bool skipContinuityCheck = false)
+  public OffsetCurve3D(OffsetCurve3D other)
+  public Curve3D BasisCurve { get; }
+  public Direction3D Direction { get; }
+  public double Offset { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public sealed override double Period { get; }
+  public OffsetCurve3D WithBasisCurve(Curve3D curve, bool skipContinuityCheck = false)
+  public OffsetCurve3D WithDirection(in Direction3D direction)
+  public OffsetCurve3D WithOffsetValue(double d)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.OffsetSurface : Surface
+  public OffsetSurface(OffsetSurface other)
+  public OffsetSurface(Surface surface, double offset, bool skipContinuityCheck = false)
+  public Surface BasisSurface { get; }
+  public double Offset { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public sealed override double UPeriod { get; }
+  public sealed override double VPeriod { get; }
+  public OffsetSurface WithBasisSurface(Surface surface, bool skipContinuityCheck = false)
+  public OffsetSurface WithOffsetValue(double d)
+  public Surface? Surface()
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public sealed class Kerf.Geometry.ParabolaCurve2D : ConicCurve2D
+  public ParabolaCurve2D(in Axis2D directrix, in Point2D focus)
+  public ParabolaCurve2D(in Axis2D mirrorAxis, double focal, bool sense = true)
+  public ParabolaCurve2D(in Frame2D axis, double focal)
+  public ParabolaCurve2D(in Parabola2D parabola)
+  public Axis2D Directrix { get; }
+  public Parabola2D Parabola { get; }
+  public Point2D Focus { get; }
+  public double Focal { get; }
+  public double Parameter { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public ParabolaCurve2D WithFocal(double focal)
+  public ParabolaCurve2D WithParabola(in Parabola2D parabola)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.ParabolaCurve3D : ConicCurve3D
+  public ParabolaCurve3D(in Axis3D directrix, in Point3D focus)
+  public ParabolaCurve3D(in Frame3D frame, double focal)
+  public ParabolaCurve3D(in Parabola3D parabola)
+  public Axis3D Directrix { get; }
+  public Parabola3D Parabola { get; }
+  public Point3D Focus { get; }
+  public double Focal { get; }
+  public double Parameter { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double Eccentricity { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public ParabolaCurve3D WithFocal(double focal)
+  public ParabolaCurve3D WithParabola(in Parabola3D parabola)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public enum Kerf.Geometry.ParametrizationType
+  ChordLength = 0
+  Centripetal = 1
+  IsoParametric = 2
+public sealed class Kerf.Geometry.PlaneSurface : ElementarySurface
+  public PlaneSurface(double a, double b, double c, double d)
+  public PlaneSurface(in CoordinateSystem position)
+  public PlaneSurface(in Plane3D plane)
+  public PlaneSurface(in Point3D point, in Direction3D direction)
+  public Plane3D Plane { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public PlaneSurface WithPlane(in Plane3D plane)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public sealed class Kerf.Geometry.RevolutionSurface : SweptSurface
+  public RevolutionSurface(Curve3D curve, in Axis3D axis)
+  public Axis3D Axis { get; }
+  public Frame3D ReferencePlane { get; }
+  public Point3D Location { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public RevolutionSurface WithAxis(in Axis3D axis)
+  public RevolutionSurface WithBasisCurve(Curve3D curve)
+  public RevolutionSurface WithDirection(in Direction3D direction)
+  public RevolutionSurface WithLocation(in Point3D point)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public sealed class Kerf.Geometry.SphericalSurface : ElementarySurface
+  public SphericalSurface(in CoordinateSystem position, double radius)
+  public SphericalSurface(in Sphere3D sphere)
+  public Sphere3D Sphere { get; }
+  public double Area { get; }
+  public double Radius { get; }
+  public double Volume { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public SphericalSurface WithRadius(double r)
+  public SphericalSurface WithSphere(in Sphere3D sphere)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public abstract class Kerf.Geometry.Surface : Geometry3D
+  public (Interval, Interval) Bounds { get; }
+  public SurfaceKind Kind { get; }
+  public abstract Continuity Continuity { get; }
+  public abstract bool IsUClosed { get; }
+  public abstract bool IsUPeriodic { get; }
+  public abstract bool IsVClosed { get; }
+  public abstract bool IsVPeriodic { get; }
+  public virtual double UPeriod { get; }
+  public virtual double VPeriod { get; }
+  public Point3D Evaluate(double u, double v)
+  public Surface UReversed()
+  public Surface VReversed()
+  public SurfaceDerivatives Derivatives(double u, double v, int order)
+  public Vector3D DerivativeN(double u, double v, int uOrder, int vOrder)
+  public abstract Curve3D UIso(double u)
+  public abstract Curve3D VIso(double v)
+  public abstract double UReversedParameter(double u)
+  public abstract double VReversedParameter(double v)
+public abstract class Kerf.Geometry.SweptSurface : Surface
+  public Curve3D BasisCurve { get; }
+  public Direction3D Direction { get; }
+  public override Continuity Continuity { get; }
+public sealed class Kerf.Geometry.ToroidalSurface : ElementarySurface
+  public ToroidalSurface(in CoordinateSystem position, double majorRadius, double minorRadius)
+  public ToroidalSurface(in Torus3D torus)
+  public Torus3D Torus { get; }
+  public double Area { get; }
+  public double MajorRadius { get; }
+  public double MinorRadius { get; }
+  public double Volume { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public ToroidalSurface WithMajorRadius(double majorRadius)
+  public ToroidalSurface WithMinorRadius(double minorRadius)
+  public ToroidalSurface WithTorus(in Torus3D torus)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public sealed class Kerf.Geometry.TrimmedCurve2D : BoundedCurve2D
+  public TrimmedCurve2D(Curve2D curve, double u1, double u2, bool sense = true, bool adjustPeriodic = true)
+  public Curve2D BasisCurve { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override Point2D EndPoint { get; }
+  public sealed override Point2D StartPoint { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public sealed override double Period { get; }
+  public TrimmedCurve2D WithTrim(double u1, double u2, bool sense = true, bool adjustPeriodic = true)
+  public sealed override Geometry2D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.TrimmedCurve3D : BoundedCurve3D
+  public TrimmedCurve3D(Curve3D curve, double u1, double u2, bool sense = true, bool adjustPeriodic = true)
+  public Curve3D BasisCurve { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override Point3D EndPoint { get; }
+  public sealed override Point3D StartPoint { get; }
+  public sealed override bool IsClosed { get; }
+  public sealed override bool IsPeriodic { get; }
+  public sealed override double FirstParameter { get; }
+  public sealed override double LastParameter { get; }
+  public sealed override double Period { get; }
+  public TrimmedCurve3D WithTrim(double u1, double u2, bool sense = true, bool adjustPeriodic = true)
+  public sealed override Geometry3D Copy()
+  public sealed override double ReversedParameter(double u)
+public sealed class Kerf.Geometry.TrimmedSurface : BoundedSurface
+  public TrimmedSurface(Surface surface, double param1, double param2, bool uTrim, bool sense = true)
+  public TrimmedSurface(Surface surface, double u1, double u2, double v1, double v2, bool uSense = true, bool vSense = true)
+  public Surface BasisSurface { get; }
+  public sealed override Continuity Continuity { get; }
+  public sealed override bool IsUClosed { get; }
+  public sealed override bool IsUPeriodic { get; }
+  public sealed override bool IsVClosed { get; }
+  public sealed override bool IsVPeriodic { get; }
+  public sealed override double UPeriod { get; }
+  public sealed override double VPeriod { get; }
+  public TrimmedSurface WithTrim(double param1, double param2, bool uTrim, bool sense = true)
+  public TrimmedSurface WithTrim(double u1, double u2, double v1, double v2, bool uSense = true, bool vSense = true)
+  public sealed override Curve3D UIso(double u)
+  public sealed override Curve3D VIso(double v)
+  public sealed override Geometry3D Copy()
+  public sealed override double UReversedParameter(double u)
+  public sealed override double VReversedParameter(double v)
+public struct Kerf.Topology.CompSolid : IEquatable<CompSolid>, IShape, IShape3D, IShape<CompSolid>
+  public CompSolid()
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public bool IsNull { get; }
+  public int ChildCount { get; }
+  public CompSolid Reversed()
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public bool Equals(CompSolid other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static CompSolid Create(IEnumerable<Solid> solids)
+  public static CompSolid op_Explicit(in Shape shape)
+  public static Shape op_Implicit(in CompSolid shape)
+  public static bool op_Equality(in CompSolid left, in CompSolid right)
+  public static bool op_Inequality(in CompSolid left, in CompSolid right)
+public struct Kerf.Topology.Compound : IEquatable<Compound>, IShape, IShape3D, IShape<Compound>
+  public Compound()
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public bool IsNull { get; }
+  public int ChildCount { get; }
+  public Compound Reversed()
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public bool Equals(Compound other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Compound Create(IEnumerable<Shape> shapes)
+  public static Compound op_Explicit(in Shape shape)
+  public static Shape op_Implicit(in Compound shape)
+  public static bool op_Equality(in Compound left, in Compound right)
+  public static bool op_Inequality(in Compound left, in Compound right)
+public enum Kerf.Topology.Containment
+  In = 0
+  Out = 1
+  On = 2
+  Unknown = 3
+public struct Kerf.Topology.Edge : IEquatable<Edge>, IShape, IShape1D, IShape<Edge>
+  public Edge()
+  public Interval Range { get; }
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public Vertex FirstVertex { get; }
+  public Vertex LastVertex { get; }
+  public bool IsDegenerated { get; }
+  public bool IsNull { get; }
+  public double Tolerance { get; }
+  public int ChildCount { get; }
+  public Edge Reversed()
+  public EdgeCurve ToCurve()
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public bool Equals(Edge other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public bool IsSeam(Face face)
+  public bool TryGetCurve(out Curve3D? curve, out Interval range)
+  public bool TryGetCurveOnFace(Face face, out Curve2D? curve, out Interval range)
+  public bool TryGetCurveOnPlane(in Plane3D plane, out Curve2D? curve, out Interval range)
+  public bool TryGetLocalCurve(out Curve3D? curve, out Interval range, out Placement placement)
+  public double ParameterOf(Vertex vertex)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Edge op_Explicit(in Shape shape)
+  public static Shape op_Implicit(in Edge shape)
+  public static bool op_Equality(in Edge left, in Edge right)
+  public static bool op_Inequality(in Edge left, in Edge right)
+public sealed class Kerf.Topology.EdgeCurve
+  public Continuity Continuity { get; }
+  public CurveKind Kind { get; }
+  public Edge Edge { get; }
+  public Interval Range { get; }
+  public bool IsClosed { get; }
+  public bool IsPeriodic { get; }
+  public double Length { get; }
+  public double Period { get; }
+  public Continuity ContinuityWith(EdgeCurve other, double u, double otherU, double linearTolerance = 1E-07, double angularTolerance = 1E-12)
+  public CurveDerivatives Derivatives(double u, int order)
+  public ImmutableArray<double> Discretize(double deflection)
+  public Point3D Evaluate(double u)
+  public Vector3D DerivativeN(double u, int n)
+  public Vector3D Tangent(double u)
+  public bool TryGetBSpline(out BSplineCurve3D? curve)
+  public bool TryGetBezier(out BezierCurve3D? curve)
+  public bool TryGetCircle(out Circle3D circle)
+  public bool TryGetEllipse(out Ellipse3D ellipse)
+  public bool TryGetHyperbola(out Hyperbola3D hyperbola)
+  public bool TryGetLine(out Line3D line)
+  public bool TryGetOffsetCurve(out OffsetCurve3D? curve)
+  public bool TryGetParabola(out Parabola3D parabola)
+  public double LengthBetween(double u1, double u2)
+  public double ParameterAtLength(double length, double from)
+public struct Kerf.Topology.Face : IEquatable<Face>, IShape, IShape2D, IShape<Face>
+  public Face()
+  public (Interval, Interval) UVBounds { get; }
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public Wire OuterWire { get; }
+  public bool IsNull { get; }
+  public double Tolerance { get; }
+  public int ChildCount { get; }
+  public Face Reversed()
+  public FaceSurface ToSurface()
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public bool Equals(Face other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public bool TryGetSurface(out Surface? surface)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Face op_Explicit(in Shape shape)
+  public static Shape op_Implicit(in Face shape)
+  public static bool op_Equality(in Face left, in Face right)
+  public static bool op_Inequality(in Face left, in Face right)
+public sealed class Kerf.Topology.FaceSurface
+  public (Interval, Interval) Bounds { get; }
+  public Face Face { get; }
+  public SurfaceKind Kind { get; }
+  public Direction3D Normal(double u, double v)
+  public Point3D Evaluate(double u, double v)
+  public SurfaceDerivatives Derivatives(double u, double v, int order)
+  public Vector3D DerivativeN(double u, double v, int uOrder, int vOrder)
+  public bool TryGetCone(out Cone3D cone)
+  public bool TryGetCurvature(double u, double v, double tolerance, out SurfaceCurvature curvature)
+  public bool TryGetCylinder(out Cylinder3D cylinder)
+  public bool TryGetPlane(out Plane3D plane)
+  public bool TryGetSphere(out Sphere3D sphere)
+  public bool TryGetTorus(out Torus3D torus)
+public interface Kerf.Topology.IShape
+  public Shape AsShape()
+public interface Kerf.Topology.IShape<TSelf> : IShape
+  public static abstract ShapeType Type { get; }
+public interface Kerf.Topology.IShape1D : IShape
+public interface Kerf.Topology.IShape2D : IShape
+public interface Kerf.Topology.IShape3D : IShape
+public enum Kerf.Topology.Orientation
+  Forward = 0
+  Reversed = 1
+  Internal = 2
+  External = 3
+public struct Kerf.Topology.Shape : IEquatable<Shape>, IShape, IShape<Shape>
+  public Shape()
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public bool IsNull { get; }
+  public int ChildCount { get; }
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public Shape Reversed()
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public TShape As<TShape>()
+  public bool Equals(Shape other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public bool TryAs<TShape>(out TShape shape)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(in Shape left, in Shape right)
+  public static bool op_Inequality(in Shape left, in Shape right)
+public sealed class Kerf.Topology.ShapeComparer : IEqualityComparer<Shape>
+  public static ShapeComparer Equal { get; }
+  public static ShapeComparer Same { get; }
+  public bool Equals(Shape x, Shape y)
+  public int GetHashCode(Shape obj)
+public sealed class Kerf.Topology.ShapeComparer<T> : IEqualityComparer<T>
+  public static ShapeComparer<T> Equal { get; }
+  public static ShapeComparer<T> Same { get; }
+  public bool Equals(T? x, T? y)
+  public int GetHashCode(T obj)
+public sealed class Kerf.Topology.ShapeGraph
+  public Shape Root { get; }
+  public int Count { get; }
+  public ImmutableArray<Shape> All(ShapeType type)
+  public ImmutableArray<Shape> Ancestors(Shape shape, ShapeType ancestorType)
+  public int IndexOf(Shape shape)
+  public static ShapeGraph Build(Shape root)
+public sealed class Kerf.Topology.ShapeHistory
+  public IEnumerable<ShapeHistoryEntry> Entries { get; }
+  public bool HasGenerated { get; }
+  public bool HasModified { get; }
+  public bool HasRemoved { get; }
+  public static ShapeHistory Empty { get; }
+  public IReadOnlyList<Shape> Generated(Shape initial)
+  public IReadOnlyList<Shape> Modified(Shape initial)
+  public ShapeHistory Then(ShapeHistory next)
+  public bool IsRemoved(Shape initial)
+  public static ShapeHistory Compose(params ReadOnlySpan<ShapeHistory> histories)
+  public static ShapeHistory Create(IEnumerable<ShapeHistoryEntry> entries)
+public readonly record struct Kerf.Topology.ShapeHistoryEntry : IEquatable<ShapeHistoryEntry>
+  public ShapeHistoryEntry(Shape Initial, ShapeHistoryKind Kind, ImmutableArray<Shape> Results)
+  public ImmutableArray<Shape> Results { get; init; }
+  public Shape Initial { get; init; }
+  public ShapeHistoryKind Kind { get; init; }
+public enum Kerf.Topology.ShapeHistoryKind
+  Modified = 0
+  Generated = 1
+  Removed = 2
+public static class Kerf.Topology.ShapeTraversal
+  public static ImmutableArray<Edge> AllEdges<TShape>(this TShape shape)
+  public static ImmutableArray<Face> AllFaces<TShape>(this TShape shape)
+  public static ImmutableArray<Shape> TopLevelShapes<TShape>(this TShape shape)
+  public static ImmutableArray<Shell> AllShells<TShape>(this TShape shape)
+  public static ImmutableArray<Solid> AllSolids<TShape>(this TShape shape)
+  public static ImmutableArray<Vertex> AllVertices<TShape>(this TShape shape)
+  public static ImmutableArray<Wire> AllWires<TShape>(this TShape shape)
+  public static Shape Moved<TShape>(this TShape shape, in Transform3D transform)
+  public static Shape WithChildren<TShape>(this TShape shape, IEnumerable<Shape> children)
+  public static Shape WithoutChild<TShape>(this TShape shape, Shape child)
+  public static SubShapes<Shape> get_Children<TShape>(TShape shape)
+  public static bool get_IsClosed<TSelf>(TSelf self)
+public enum Kerf.Topology.ShapeType
+  Compound = 0
+  CompSolid = 1
+  Solid = 2
+  Shell = 3
+  Face = 4
+  Wire = 5
+  Edge = 6
+  Vertex = 7
+  Shape = 8
+public struct Kerf.Topology.Shell : IEquatable<Shell>, IShape, IShape2D, IShape<Shell>
+  public Shell()
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public bool IsNull { get; }
+  public int ChildCount { get; }
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public Shell Reversed()
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public bool Equals(Shell other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Shape op_Implicit(in Shell shape)
+  public static Shell Create(IEnumerable<Face> faces)
+  public static Shell op_Explicit(in Shape shape)
+  public static bool op_Equality(in Shell left, in Shell right)
+  public static bool op_Inequality(in Shell left, in Shell right)
+public struct Kerf.Topology.Solid : IEquatable<Solid>, IShape, IShape3D, IShape<Solid>
+  public Solid()
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public bool IsNull { get; }
+  public int ChildCount { get; }
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public Solid Reversed()
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public bool Equals(Solid other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Shape op_Implicit(in Solid shape)
+  public static Solid Create(IEnumerable<Shell> shells)
+  public static Solid op_Explicit(in Shape shape)
+  public static bool op_Equality(in Solid left, in Solid right)
+  public static bool op_Inequality(in Solid left, in Solid right)
+public readonly struct Kerf.Topology.SubShapes<TShape> : IEnumerable, IEnumerable<TShape>
+  public SubShapes<TShape>.Enumerator GetEnumerator()
+public struct Kerf.Topology.SubShapes.Enumerator : IDisposable, IEnumerator, IEnumerator<TShape>
+  public TShape Current { get; }
+  public bool MoveNext()
+  public void Dispose()
+  public void Reset()
+public readonly record struct Kerf.Topology.SurfaceCurvature : IEquatable<SurfaceCurvature>
+  public SurfaceCurvature(double Min, double Max, Direction3D Normal)
+  public Direction3D Normal { get; init; }
+  public double Gaussian { get; }
+  public double Max { get; init; }
+  public double Mean { get; }
+  public double Min { get; init; }
+public struct Kerf.Topology.Vertex : IEquatable<Vertex>, IShape, IShape<Vertex>
+  public Vertex()
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public Point3D Point { get; }
+  public ShapeType Type { get; }
+  public bool IsNull { get; }
+  public double Tolerance { get; }
+  public int ChildCount { get; }
+  public Point2D ParametersOn(Face face)
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public Vertex Reversed()
+  public bool Equals(Vertex other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Shape op_Implicit(in Vertex shape)
+  public static Vertex op_Explicit(in Shape shape)
+  public static bool op_Equality(in Vertex left, in Vertex right)
+  public static bool op_Inequality(in Vertex left, in Vertex right)
+public struct Kerf.Topology.Wire : IEquatable<Wire>, IShape, IShape1D, IShape<Wire>
+  public Wire()
+  public Orientation Orientation { get; }
+  public Placement Placement { get; }
+  public ShapeType Type { get; }
+  public bool IsNull { get; }
+  public int ChildCount { get; }
+  public ImmutableArray<Edge> OrderedEdges()
+  public Shape AsShape()
+  public Shape Complemented()
+  public Shape Composed(Orientation orientation)
+  public Shape Located(in Placement placement, bool throwOnInvalid = false)
+  public Shape Moved(in Placement position, bool throwOnInvalid = false)
+  public Shape Oriented(Orientation orientation)
+  public SubShapes<T> Explore<T>(ShapeType? avoid = default)
+  public Wire Reversed()
+  public WireCurve ToCurve()
+  public bool Equals(Wire other)
+  public bool IsEqual(in Shape other)
+  public bool IsPartner(in Shape other)
+  public bool IsSame(in Shape other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Shape op_Implicit(in Wire shape)
+  public static Wire Create(IEnumerable<Edge> edges)
+  public static Wire op_Explicit(in Shape shape)
+  public static bool op_Equality(in Wire left, in Wire right)
+  public static bool op_Inequality(in Wire left, in Wire right)
+public sealed class Kerf.Topology.WireCurve
+  public Continuity Continuity { get; }
+  public Interval Range { get; }
+  public Wire Wire { get; }
+  public bool IsClosed { get; }
+  public double Length { get; }
+  public CurveDerivatives Derivatives(double u, int order)
+  public ImmutableArray<CurvePoint> Project(Point3D point)
+  public ImmutableArray<double> Discretize(double deflection)
+  public Point3D Evaluate(double u)
+  public Vector3D DerivativeN(double u, int n)
+  public double LengthBetween(double u1, double u2)
+  public double ParameterAtLength(double length, double from)

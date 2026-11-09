@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Kerf.Modeling;
 
 /// <summary>
@@ -186,7 +188,7 @@ public sealed class ModelHistory
     }
 
     /// <summary>What an input sub-shape was rebuilt into, if anything.</summary>
-    public Shape[] Modified(Shape shape)
+    public ImmutableArray<Shape> Modified(Shape shape)
     {
         if (!IsSupportedType(shape))
             return [];
@@ -194,7 +196,7 @@ public sealed class ModelHistory
     }
 
     /// <summary>What was made from an input sub-shape, if anything.</summary>
-    public Shape[] Generated(Shape shape)
+    public ImmutableArray<Shape> Generated(Shape shape)
     {
         if (!IsSupportedType(shape))
             return [];

@@ -324,7 +324,10 @@ new ExportDxf().AddDrawing(drawing.Value).Write("part.dxf");
 - A layer must be added before a shape goes on it; `""` is the default layer, `"0"`. Line weights are DXF's standard
   ones (0.05, 0.09, 0.13 … 2.11 mm).
 - `Text`'s faces are written as their edges, as any other shape's. A drawing's notes (next) are written as closed
-  polylines of their outlines by default, or as TEXT with `new ExportDxf(textOutput: TextOutput.Text)`.
+  polylines of their outlines by default, filled in DXF 2013 by a solid HATCH under each letter's contours (holes
+  kept), so they look as in the SVG; `new ExportDxf(fillOutlines: false)` writes the contours alone, for a laser cutter
+  to engrave the outlines, say. R12 has no HATCH: its notes are their contours either way. Or notes can be TEXT, with
+  `new ExportDxf(textOutput: TextOutput.Text)`.
 
 ### Drawing sheets
 
@@ -359,8 +362,8 @@ new ExportDxf(textOutput: TextOutput.Text).AddDrawing(annotated).Write("plate-to
 ```
 
 - **Text is outlines by default,** in both formats: SVG fills each note's glyph outlines, DXF writes each contour as a
-  closed polyline within the exporter's `tolerance`, so the file looks the same everywhere and a laser cutter can engrave
-  it. **`TextOutput.Text`** writes text instead: SVG's `<text>` in the font's family, DXF's TEXT with a text style for
+  closed polyline within the exporter's `tolerance` and, in DXF 2013, fills it with a solid HATCH (`fillOutlines:
+  false` for the contours alone), so the file looks the same everywhere and a laser cutter can engrave it. **`TextOutput.Text`** writes text instead: SVG's `<text>` in the font's family, DXF's TEXT with a text style for
   each font (`LiberationSans-Regular.ttf`), smaller and editable but drawn in whatever font the reader has. R12's text is
   ASCII, so a note that isn't is written as outlines there, with a warning (`modeling.dxf-text-as-outlines`).
 - A note's size is the font's em, as `Text`'s is; `NoteStyle` sets the font, the alignment on the note's position
