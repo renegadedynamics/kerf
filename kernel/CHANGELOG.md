@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **`FilletSizeLimit` and `ChamferSizeLimit`** give a fillet's or chamfer's proved limit with the shape's tolerance about
+  it, as a `SizeLimit`; `FilletLimit` and `ChamferLimit` are its value, as before (decision 26501).
 - **Notes and sheets in drawings** (unit 13F2): `DrawingNote` puts text on a `LineDrawing` (`WithNotes`), in any font,
   at a size, alignment and rotation; `Svg` writes notes as filled outlines by default or as `<text>` with
   `SvgOptions.TextOutput`. `Sheet` lays views of a part out on ISO A0 to A10, US or ANSI C to E paper with a border and a

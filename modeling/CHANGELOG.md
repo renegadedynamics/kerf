@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`MaxChamfer` and `MaxFillet` give the proved limit, less twice the shape's tolerance, where the limit itself can't be
+  built and that can:** 1.6999998 for the guide's rounded box, whose corners close to a point at 1.7, where the search
+  gave 1.594, and 9.9999998 for a fillet using up a face beside a slanted end, where it gave 9.944. Where the limit
+  builds, or none is proved, the answers are as they were (kernel decision 26501).
 - **Text in DXF:** `ExportDxf` writes a drawing's notes (`Kerf.Drawing.DrawingNote`) on a `"notes"` layer, as closed
   polylines of their outlines by default or as TEXT with a text style for each font (`textOutput: TextOutput.Text`;
   R12's text is ASCII, so other notes stay outlines there, with the warning `modeling.dxf-text-as-outlines`), and
