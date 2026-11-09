@@ -38,7 +38,7 @@ public class FilletFailuresTests
             var failed = Failures.Try(() => shape.Fillet(3, shape.Edges()));
             Assert.Equal(PlateMessage, failed.Error!.Message);
             Assert.Equal(ModelingDiagnostics.FilletFailed, failed.Error.Code);
-            Assert.True(Failures.IsKernelFailure(Assert.Throws<InvalidOperationException>(() => shape.Fillet(3, shape.Edges())).InnerException!));
+            Assert.True(Failures.IsKernelFailure(Assert.Throws<ModelingException>(() => shape.Fillet(3, shape.Edges())).InnerException!));
         }
     }
 
@@ -55,7 +55,7 @@ public class FilletFailuresTests
         Assert.Contains("the most that fits is 10,", failed.Error.Message, StringComparison.Ordinal);
         Assert.False(failed.TryGetInvalid(out _));
         Assert.Throws<InvalidOperationException>(() => failed.Value);
-        Assert.False(ModelingDiagnostics.TryGetInvalid(Assert.Throws<InvalidOperationException>(() => box.Fillet(11, box.Edges())), out _));
+        Assert.False(ModelingDiagnostics.TryGetInvalid(Assert.Throws<ModelingException>(() => box.Fillet(11, box.Edges())), out _));
         Assert.False(ModelingDiagnostics.TryGetInvalid(new InvalidOperationException(), out _));
         Assert.True(box.Fillet(9.99, box.Edges()).IsValid);
     }

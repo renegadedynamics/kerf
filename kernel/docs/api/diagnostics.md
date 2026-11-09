@@ -314,3 +314,14 @@ extrusions (plain, with rotation, tapered, until), revolutions, sweeps (single a
 triangulation and every Boolean (cut, fuse, intersect, section, split). The importers return the exchange's own
 diagnostics (`exchange.failed`, `exchange.malformed`, `exchange.external-references`…); STEP's error says "Could not
 import … : it isn't readable STEP data", then the exchange's message (unit 10M3; it was an `ArgumentException`).
+
+## Fonts and text (unit 13D)
+
+| Code | Meaning |
+|---|---|
+| `font.malformed` | Data that isn't a font, or a font damaged past reading (`Font.Malformed`) |
+| `font.limit-exceeded` | A font past a `FontReadLimits` limit (`Font.LimitExceeded`) |
+| `font.unsupported` | A font in a form the reader doesn't read: WOFF, CFF2, Type 1, bitmaps only (`Font.Unsupported`) |
+| `font.substituted` | A warning: a font was replaced by another, and the message says which (`FontLibrary.Substituted`) |
+| `text.missing-glyph` | A character the font has no glyph for (`TextShapes.MissingGlyph`) |
+| `text.empty` | Text with nothing to draw (`TextShapes.Empty`) |

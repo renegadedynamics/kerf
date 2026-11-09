@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Users' cases (unit 13C, README.md): parts shaped like users', each with a fixed result, run by the release check
+    (tools/release-check.ps1) against the last release's packages, and by the rig (tools/bench.ps1).
+
+    By default it builds Kerf.Modeling from the repository's modeling folder (KerfModelingRoot), as the Bento benchmark
+    does; with -p:KerfPackageVersion=0.4.0 it uses that version's packages instead. The release check copies this folder
+    out of the tree to build it so, which is why it sets what it needs here rather than relying on Directory.Build.props.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Which Kerf the cases compile against: a case that uses a later API is left out of an earlier version (README.md) -->
+  <PropertyGroup Condition="'$(KerfPackageVersion)' != ''">
+    <KerfVersionCore>$(KerfPackageVersion.Split('-')[0])</KerfVersionCore>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(KerfPackageVersion)' == '' or $([MSBuild]::VersionGreaterThanOrEquals('$(KerfVersionCore)', '0.4.0'))">
+    <DefineConstants>$(DefineConstants);KERF_0_4_OR_LATER</DefineConstants>
+    <KerfHasEnclosure>true</KerfHasEnclosure>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(KerfPackageVersion)' == ''">
+    <ProjectReference Include="$(KerfModelingRoot)src/Kerf.Modeling/Kerf.Modeling.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(KerfPackageVersion)' != ''">
+    <PackageReference Include="Kerf.Modeling" Version="$(KerfPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="enclosure/**" Condition="'$(KerfHasEnclosure)' != 'true'" />
+    <None Include="data/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

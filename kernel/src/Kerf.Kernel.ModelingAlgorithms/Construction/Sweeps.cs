@@ -88,7 +88,7 @@ public static class Sweeps
             MakerOutcome.NotNull(profile.AsShape(), nameof(profile));
             if (direction.Magnitude <= Tolerances.Confusion)
             {
-                throw new ArgumentException("The extrusion's direction is zero.", nameof(direction));
+                MakerOutcome.Refuse(new ArgumentException("The extrusion's direction is zero.", nameof(direction)));
             }
             Shape p = profile.AsShape();
             // A prism is as good as its profile, so only the profile is checked unless it's found wanting

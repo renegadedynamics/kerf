@@ -174,14 +174,6 @@ public enum Kind
 }
 
 
-/// <summary>Text font styles.</summary>
-public enum FontStyle
-{
-#pragma warning disable CS1591
-    Regular, Bold, Italic, BoldItalic,
-#pragma warning restore CS1591
-}
-
 /// <summary>Which of the two arcs through the same end points to take.</summary>
 public enum Sagitta
 {
@@ -293,14 +285,6 @@ public enum ShapeKey
 {
 #pragma warning disable CS1591
     Length, Radius, Area, Volume, Distance,
-#pragma warning restore CS1591
-}
-
-/// <summary>How text sits relative to its insertion point.</summary>
-public enum TextAlign
-{
-#pragma warning disable CS1591
-    Bottom, Center, Left, Right, Top, TopFirstLine,
 #pragma warning restore CS1591
 }
 

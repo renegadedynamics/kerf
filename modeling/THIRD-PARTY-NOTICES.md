@@ -20,6 +20,10 @@ dependency under its own licence. The full licence texts are in [licenses/](lice
   SAS and the Kerf contributors. See [licenses/OCCT-LGPL-2.1.txt](licenses/OCCT-LGPL-2.1.txt) and
   [licenses/OCCT-LGPL-exception.txt](licenses/OCCT-LGPL-exception.txt).
 
+Kerf.Kernel's `Kerf.Kernel.ModelingAlgorithms` package carries the default font for `Text`, Liberation Sans 2.1.5
+(SIL Open Font License 1.1); its notice and licence are in that package's THIRD-PARTY-NOTICES.md. This package carries
+no font.
+
 Until unit 10B the package could also be built on native OCCT and FreeType, whose libraries it then shipped. That
 backend is gone, and so is FreeType's licence from this package; the 0.1.0 previews that shipped FreeType carry it.
 

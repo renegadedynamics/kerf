@@ -1,0 +1,86 @@
+// Written by `Kerf.UserCases expected`; change it only with a decision that says why the result changed.
+
+namespace Kerf.UserCases;
+
+internal static class Expected
+{
+    public static CaseResult Of(string name) => name switch
+    {
+        "fuse-boss" => new(
+        [
+            new("fused", 37461.27929002225, true, 52),
+        ], null),
+        "fuse-detent" => new(
+        [
+            new("fused", 37619.790989996625, true, 78),
+        ], null),
+        "chamfer-guide-box" => new(
+        [
+            new("chamfered", 35794.10980650834, true, 18),
+        ], null),
+        "collapse-guide-box" => new(
+        [
+            new("chamfered", 35336.53767742043, true, 18),
+        ], null),
+        "chamfer-housing" => new(
+        [
+            new("chamfered", 80717.16564342577, true, 42),
+        ], null),
+        "collapse-housing" => new(
+        [
+            new("chamfered", 80080.52691308703, true, 42),
+        ], null),
+        "enclosure" => new(
+        [
+            new("part body", 30297.73557835907, true, 99),
+            new("part clamp", 10168.280158334608, true, 22),
+            new("part door", 38079.89558280724, true, 96),
+            new("part sled_xiao", 1146.9720000000002, true, 27),
+            new("part sled_bmm", 1120.111999999999, true, 28),
+            new("part body_bumper", 14337.172514953647, true, 95),
+            new("part door_bumper", 25812.992349396438, true, 32),
+            new("part boot", 15425.489524948003, true, 100),
+            new("part housing", 27888.622517081512, true, 342),
+            new("part housing_clamp", 10928.506104761378, true, 27),
+            new("part housing_plug", 502.1492076568489, true, 10),
+            new("part saddle", 4413.366176168759, true, 10),
+            new("part adapter", 457.3249047961184, true, 14),
+            new("aid boot_tower", 3321.6730791442283, true, 35),
+            new("component battery", 3313.8250000000003, true, 6),
+            new("component ldc", 1792.0000000000007, true, 6),
+            new("component xiao", 1201.231999999999, true, 18),
+            new("component bmi330", 662.4580000000002, true, 21),
+            new("component bmm350", 662.4580000000004, true, 21),
+            new("component flash", 1257.5850000000003, true, 6),
+            new("component regulator", 806.3999999999999, true, 6),
+            new("component antenna", 74.375, true, 6),
+            new("component arm", 3619.114736935443, true, 4),
+            new("component coil", 532.0951056639885, true, 6),
+            new("component plate", 400, true, 6),
+            new("component shaft", 335558.95943964936, true, 3),
+            new("component rubber", 5074.134446039243, true, 4),
+            new("component sleeve", 25696.14817202783, true, 4),
+            new("component door_screw0", 302.4568327243574, true, 5),
+            new("component door_screw1", 302.4568327243574, true, 5),
+            new("component door_screw2", 302.4568327243574, true, 5),
+            new("component door_screw3", 302.4568327243574, true, 5),
+            new("component clamp_bolt0", 124.11647176169876, true, 5),
+            new("component clamp_bolt1", 124.11647176169876, true, 5),
+            new("component clamp_bolt2", 124.11647176169876, true, 5),
+            new("component clamp_bolt3", 124.11647176169876, true, 5),
+            new("component housing_bolt0", 150.53726597838894, true, 5),
+            new("component housing_nut0", 76.51473997560902, true, 9),
+            new("component housing_plug0", 502.1492076568489, true, 10),
+            new("component housing_bolt1", 150.53726597838894, true, 5),
+            new("component housing_nut1", 76.51473997560902, true, 9),
+            new("component housing_plug1", 502.14920765692574, true, 10),
+            new("component housing_bolt2", 150.53726597838894, true, 5),
+            new("component housing_nut2", 76.51473997560902, true, 9),
+            new("component housing_plug2", 502.14920765684906, true, 10),
+            new("component housing_bolt3", 150.53726597838894, true, 5),
+            new("component housing_nut3", 76.51473997560902, true, 9),
+            new("component housing_plug3", 502.1492076569256, true, 10),
+        ], null),
+        _ => CaseResult.Absent,
+    };
+}

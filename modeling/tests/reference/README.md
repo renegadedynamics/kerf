@@ -7,6 +7,15 @@ recompute the same cases and compare. The JSON is committed, so running the test
 |---|---|---|
 | `geometry_reference.py` | `Reference/geometry.json` | `Geometry/ReferenceTests.cs`: positions, directions and angles to about 1e-12 |
 | `topology_reference.py` | `Reference/topology.json` | `Topology/TopologyReferenceTests.cs`: each named shape's type, topology counts, validity, volume, area, bounding box and centre |
+| `dxf_reference.py` | `Reference/dxf.json` | `Exchange/DxfTests.cs`: build123d's `ExportDXF` of 23 shapes as ezdxf reads it back, each entity to 1e-9, and the layer and line type tables |
+
+`dxf_audit.py` isn't a reference: it runs ezdxf's `audit` and `recover` on the files `DxfTests.WritesTheAuditSetWhenAsked`
+writes when `KERF_DXF_AUDIT_DIR` names a folder, and fails on any error or fix:
+
+```sh
+KERF_DXF_AUDIT_DIR=/tmp/dxf dotnet test tests/Kerf.Modeling.Tests -c Release --filter "FullyQualifiedName~DxfTests"
+PYTHONDONTWRITEBYTECODE=1 .deps/py/Scripts/python -B tests/reference/dxf_audit.py /tmp/dxf
+```
 
 ## Setting up the reference environment
 
