@@ -21,6 +21,10 @@ version may break the API.
   compresses sixteen bytes at a time, in about 40% of the time. The same pixels and the same PNG bytes (decisions 2051
   and 2052).
 - **A sphere's and a torus's meshes keep to the deflection at a relative deflection too** (`MeshOptions.Relative`): they kept OCCT's meshes, up to 5.5 times out on small fillet tori and twice on whole spheres, silently. Now within the deflection relative mode works out for each face, with 3.5% more triangles over the survey, all on spheres and tori, but for some small fillet tori, up to 1.14 times out beside a long boundary edge (decision 2057); meshes at an absolute deflection, and other kinds of surface, are the same to the byte (decision 2056).
+- **A mesh of a face whose surface is damaged far from its edges fails at once:** `Mesh` returns
+  `meshing.faces-refused`, carrying the other faces, as soon as an edge finds the face's surface more than ten thousand
+  times the edge's size away from it, where two lofts with a surface pole of 1e300 took 2 to 5 minutes and a gigabyte
+  before they were refused (under a second and 23 MB now). Sound shapes mesh as before (decision 26602).
 - **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
   the caller's own list, so changing the list after making the options changed them. A collection expression
   (`Points = [p1, p2]`) works as before; a list is passed as `[.. list]` (unit 13P, decision 2044).

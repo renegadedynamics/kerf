@@ -16,6 +16,11 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 - **STEP export copies less:** the header's FILE_NAME is rewritten in place, where the whole file was turned into a
   string and back; 13% to 18% fewer bytes on an enclosure's parts, the same files (kernel decision 2053).
 - **A mesh at relative tolerances** (`MeshTolerances` with `Relative`) keeps spheres and tori within the deflection worked out for each face, where they could be several times out; some small fillet tori stay up to 1.14 times out beside a long boundary edge (kernel decisions 2056 and 2057).
+- **A sketch object narrower than the tolerance fails, carrying its face,** where it was a valid face of no area returned
+  as a success: `Ellipse(1, 1e-12)`, a `Trapezoid` or `Rectangle` 1e-8 high, `Circle(1e-12)`. A face whose mean width
+  (twice its area over its perimeter) is under 1e-7 fails with `modeling.object-failed`, as a `ModelingException` from
+  the constructor or a failure from `Operations.Make…` (`TryGetInvalid` gives the face). From 2e-7 they are valid as
+  before (kernel decision 26603).
 - **Notes as outlines are filled in DXF 2013:** each letter's contours (outer and holes) are a solid `HATCH` in the
   notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
   SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a

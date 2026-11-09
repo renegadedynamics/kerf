@@ -22,6 +22,13 @@ public class TinyObjectTests
         ["rectangle 1e-9 wide"] = () => new Rectangle(1e-9, 1),
         ["superellipse 1.5e-7 wide"] = () => new Superellipse(1.5e-7, 1),
         ["triangle side 1e-8"] = () => new Triangle(sideA: 1e-8, sideB: 1, sideC: 1),
+        // Valid by the check, but of no area: narrower than the tolerance on average (decision 26603)
+        ["ellipse 1e-12 across"] = () => new Ellipse(1, 1e-12),
+        ["trapezoid 1e-8 high"] = () => new Trapezoid(1, 1e-8, 60),
+        ["trapezoid 1e-12 high"] = () => new Trapezoid(1, 1e-12, 60),
+        ["rectangle 1e-8 wide"] = () => new Rectangle(1e-8, 1),
+        ["circle radius 1e-12"] = () => new Circle(1e-12),
+        ["polygon 1e-9 high"] = () => new Polygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1e-9, 0), new Point3D(0, 1e-9, 0)),
     };
 
     [Theory]
@@ -38,8 +45,22 @@ public class TinyObjectTests
         Assert.True(new Cylinder(2e-7, 1).IsValid);
         Assert.True(new Sphere(2e-7).IsValid);
         Assert.True(new Torus(1, 2e-7).IsValid);
-        Assert.True(new Rectangle(1e-8, 1).IsValid);
+        Assert.True(new Rectangle(2e-7, 1).IsValid);
+        Assert.True(new Ellipse(1, 2e-7).IsValid);
+        Assert.True(new Trapezoid(1, 2e-7, 60).IsValid);
+        Assert.True(new Circle(2e-7).IsValid);
         Assert.True(new Superellipse(5e-7, 1).IsValid);
+    }
+
+    [Fact]
+    public void A_face_of_no_area_fails_carrying_it()
+    {
+        // Ellipse(1, 1e-12) was a valid face of no area, returned as a success (decision 26603)
+        var made = Kerf.Modeling.Operations.MakeEllipse(1, 1e-12);
+        Assert.True(made.IsFailure);
+        Assert.Equal(ModelingDiagnostics.ObjectFailed, made.Diagnostics.First(d => d.IsError).Code);
+        Assert.True(made.TryGetInvalid(out var invalid));
+        Assert.True(invalid.Area < 1e-10);
     }
 
     [Fact]
