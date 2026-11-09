@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **Notes as outlines are filled in DXF 2013:** each letter's contours (outer and holes) are a solid `HATCH` in the
+  notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
+  SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a
+  laser cutter engraving outlines, say). R12 has no `HATCH` and is unchanged (kernel decision 2042).
 - **Breaking: no mutable collections handed out** (unit 13P, kernel decision 26402): `edge.ConnectedFaces(parent)` and
   `ElementsOfType<T>()` return a `ShapeList` (they returned a `List`), `ModelHistory.Modified` and `Generated` an
   `ImmutableArray<Shape>` (an array), and `MatrixOfInertia` an `ImmutableArray<ImmutableArray<double>>` (a
