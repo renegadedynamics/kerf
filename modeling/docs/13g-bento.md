@@ -1,6 +1,6 @@
 # 13G for Bento: one exception type from the objects
 
-Kerf's decision 25601 (unit 13G). Nothing in Bento has to change.
+Kerf's decision 2013 (unit 13G). Nothing in Bento has to change.
 
 - An object that can't be made from its values (`new Triangle(sideA: 1, sideB: 1, sideC: 3)`, a `Spline` through points
   1e-7 apart) now throws `Kerf.Modeling.ModelingException`, where it threw `ArgumentException`,

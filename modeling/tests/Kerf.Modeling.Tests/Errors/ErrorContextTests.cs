@@ -8,7 +8,7 @@ using Kerf.Modeling;
 /// A kernel failure says what was being done, for someone reading it in a cell: the native backend's "box 0.0 × 1.0 ×
 /// 1.0 failed: …", lost in unit 10B (decision 1342), restored in 10F through the kernel's diagnostics. Since unit 10M3 a
 /// failure is a failed result's diagnostics (Failures.Try, as the public operations return them); the shorthands that
-/// can't return one throw ModelingException (decision 25601) with the same message, the kernel's failure inside. The tests keep
+/// can't return one throw ModelingException (decision 2013) with the same message, the kernel's failure inside. The tests keep
 /// their names, under which native OCCT's differential log is recorded.
 /// </summary>
 public class ErrorContextTests
@@ -29,7 +29,7 @@ public class ErrorContextTests
     [Fact]
     public void A_kernel_refusal_is_the_kernel_s_once_the_JIT_has_optimised_the_call()
     {
-        // Decision 25602: the layer tells the kernel's refusals by the assembly that threw them, and once a call is hot the
+        // Decision 2014: the layer tells the kernel's refusals by the assembly that threw them, and once a call is hot the
         // JIT inlines the kernel's small checks, and the public methods calling them, into the layer's frames. Run long
         // enough to be optimised (tiering waits 100 ms after 30 calls), each refusal must still be the kernel's, said in
         // context, every time

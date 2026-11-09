@@ -17,7 +17,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   `MakeConvexPolyhedron` was). New codes: `modeling.no-solution`, `modeling.limit-not-reached` and
   `modeling.object-failed`. `ModelingException` is an `InvalidOperationException`, and the operators' and topological
   methods' failures are one too; code catching `ArgumentException` for an object's geometric failure must catch
-  `ModelingException` (kernel decision 25601). An argument wrong on its own (a null, too few points, a missing angle)
+  `ModelingException` (kernel decision 2013). An argument wrong on its own (a null, too few points, a missing angle)
   is still an `ArgumentException`.
 - **`RectangleRounded` of radius 0 is the rectangle,** where it threw; a negative radius is an `ArgumentException`.
   **A large `Triangle`** (sides of 1e10, whose lengths come out 8e-6 from the solver's) finds its edges, where it
@@ -25,10 +25,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   closed `FilletPolyline` of two points** fails saying so, where it threw an index error. **`SlotCenterToCenter`
   and `SlotOverall` too short to have a side** fail as `ModelingException`, where the kernel's internal exception
   escaped. **`ConstrainedArcs` and `ConstrainedLines` with no solution** say so (`modeling.no-solution`), where
-  they said the selector returned nothing (kernel decision 25601).
+  they said the selector returned nothing (kernel decision 2013).
 - **An operation reports the kernel's refusal of a value as a failure every time,** `kernel.invalid-argument` in context
   ("box 0 × 1 × 1 failed: …"), where after many calls the JIT's optimisation could make one throw `ArgumentException`
-  instead (an extrusion along a zero vector, a box of size 0; kernel decision 25602).
+  instead (an extrusion along a zero vector, a box of size 0; kernel decision 2014).
 
 ## 0.4.0
 
