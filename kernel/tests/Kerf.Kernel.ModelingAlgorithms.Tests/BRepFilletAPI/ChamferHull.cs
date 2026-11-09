@@ -96,19 +96,17 @@ internal static class ChamferHull
     }
 
     /// <summary>What a chamfer a on the face and down sides drafted outwards by t over a depth h removes from a convex prism's end:
-    /// the frustum of the sides (Steiner's formula, exact for a convex region grown by a disc), less the hull of the outline grown by t
-    /// at depth h and the contact on the face. With t = 0 the sides are square, and h is b.</summary>
+    /// the frustum of the sides, less the hull of the outline grown by t at depth h and the contact on the face. A drafted side's section
+    /// is the outline grown, its tangents moved out, which is mitred at a sharp corner and round at an arc; its area is quadratic in the
+    /// depth, so Simpson's rule is exact for the frustum as for the hull. With t = 0 the sides are square, and h is b.</summary>
     public static double Removed(Outline outline, double a, double h, double t = 0)
     {
         double At(int count)
         {
             (double X, double Y, double Tx, double Ty)[] samples = outline(count);
-            P[] region = Polygon(samples);
-            double area = Area(region), perimeter = Perimeter(region);
-            P[] contact = Eroded(samples, a);
-            P[] low = t == 0 ? region : Minkowski(region, Disc(t, count));
+            P[] region = Polygon(samples), contact = Eroded(samples, a), low = Grown(samples, region, t);
             double Section(double lambda) => Area(Minkowski(Scaled(low, 1 - lambda), Scaled(contact, lambda)));
-            double frustum = h * (area + t * perimeter / 2 + Math.PI * t * t / 3);
+            double frustum = h / 6 * (Area(region) + 4 * Area(Grown(samples, region, t / 2)) + Area(low));
             double hull = h / 6 * (Section(0) + 4 * Section(0.5) + Section(1));
             return frustum - hull;
         }
@@ -123,23 +121,19 @@ internal static class ChamferHull
         double At(int count)
         {
             (double X, double Y, double Tx, double Ty)[] samples = outline(count);
-            P[] region = Polygon(samples);
-            P[] low = t == 0 ? region : Minkowski(region, Disc(t, count));
+            P[] low = Grown(samples, Polygon(samples), t);
             double lambda = 1 - z / h;
             return Area(Minkowski(Scaled(low, 1 - lambda), Scaled(Eroded(samples, a), lambda)));
         }
         return (4 * At(16000) - At(8000)) / 3;
     }
 
+    // The outline grown by t (shrunk where t is negative): the half-planes of its tangents moved out by t
+    private static P[] Grown((double X, double Y, double Tx, double Ty)[] samples, P[] region, double t) => t == 0 ? region : Eroded(samples, -t);
+
     private static P[] Polygon((double X, double Y, double Tx, double Ty)[] samples) => [.. samples.Select(s => new P(s.X, s.Y))];
 
     private static P[] Scaled(P[] polygon, double k) => [.. polygon.Select(p => p * k)];
-
-    private static P[] Disc(double t, int count)
-    {
-        int n = Math.Max(16, count / 4);
-        return [.. Enumerable.Range(0, n).Select(i => new P(t * Math.Cos(2 * Math.PI * i / n), t * Math.Sin(2 * Math.PI * i / n)))];
-    }
 
     private static double Area(P[] polygon)
     {
@@ -149,17 +143,6 @@ internal static class ChamferHull
             twice += polygon[i].Cross(polygon[(i + 1) % polygon.Length]);
         }
         return twice / 2;
-    }
-
-    private static double Perimeter(P[] polygon)
-    {
-        double sum = 0;
-        for (int i = 0; i < polygon.Length; i++)
-        {
-            P d = polygon[(i + 1) % polygon.Length] - polygon[i];
-            sum += Math.Sqrt(d.X * d.X + d.Y * d.Y);
-        }
-        return sum;
     }
 
     // The region eroded by a: the half-planes left of each tangent line, stepped in by a, intersected, by the sorted-lines method

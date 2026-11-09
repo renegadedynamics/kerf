@@ -109,8 +109,15 @@ internal static partial class FilletLimits
         public Flat Apex { get; set; }
     }
 
-    /// <summary>One loop to chamfer, a on F and b down the sides.</summary>
-    private sealed record TightLoop(Piece[] Pieces, double A, double B);
+    /// <summary>One loop to chamfer, A on F and B deep. With the sides square to F, B is the length down them and the pieces are the
+    /// loop's edges; with them drafted, the pieces are the chamfer's contact on the sides, the outline grown by the draft over B, and A
+    /// is the length on F plus that growth, and <see cref="Draft"/> says what the outline itself was.</summary>
+    private sealed record TightLoop(Piece[] Pieces, double A, double B, Drafted? Draft = null);
+
+    /// <summary>A loop's sides drafted, each by the same angle: <paramref name="Slant"/> the length down them, <paramref name="Grown"/>
+    /// how far the outline grows over the chamfer's depth (negative where the sides lean in), and the outline's own signed area, the area
+    /// halfway down to the contact, and its length.</summary>
+    private sealed record Drafted(double Slant, double Grown, double OutlineArea, double MiddleArea, double OutlineLength);
 
     /// <summary>The chamfer with tight corners collapsed, or a refusal saying what isn't built; null where no corner is tight, for
     /// ChFi3d to build as it always has.</summary>
@@ -283,12 +290,19 @@ internal static partial class FilletLimits
     {
         why = null;
         var pieces = new List<Piece>();
+        double? lean = null;
         foreach (Edge edge in edges)
         {
-            if (ReadPiece(neighbours, face, frame, edge, out why) is not { } piece)
+            if (ReadPiece(neighbours, face, frame, edge, out double own, out why) is not { } piece)
             {
                 return null;
             }
+            if (lean is { } other && Math.Abs(own - other) > 1e-9)
+            {
+                why = "the faces beside the loop are drafted by different angles";
+                return null;
+            }
+            lean ??= own;
             pieces.Add(piece);
         }
 
@@ -315,6 +329,28 @@ internal static partial class FilletLimits
             return null;
         }
 
+        // Sides drafted by an angle δ: the contact on them is b down the slope, at a depth of b cos δ, where the outline has grown by
+        // b sin δ. The chamfer is then as for square sides from that grown outline, by its depth, with a on F plus the growth, as the
+        // contact on F is the outline stepped in by a (docs/chamfer-corners.md, section 1)
+        Drafted? draft = null;
+        if (lean is { } sine && Math.Abs(sine) > 1e-12)
+        {
+            double grown = b * sine, slant = b;
+            if (a + grown <= join)
+            {
+                why = "the faces beside the loop lean in by more than the chamfer's length on the face";
+                return null;
+            }
+            if (Grown(loop, grown) is not { } contact || Grown(loop, grown / 2) is not { } halfway)
+            {
+                why = "the faces beside the loop lean in by more than a concave arc's radius";
+                return null;
+            }
+            draft = new Drafted(slant, grown, SectionArea(loop, 0, 0), SectionArea(halfway, 0, 0), loop.Sum(static p => p.Length));
+            loop = contact;
+            (a, b) = (a + grown, b * Math.Sqrt(1 - sine * sine));
+        }
+
         // How deep the sides go: the chamfer mustn't use one up
         foreach (Piece piece in loop)
         {
@@ -326,7 +362,7 @@ internal static partial class FilletLimits
             }
             if (deepest <= b + join)
             {
-                why = $"the chamfer's {b:G6} down the side uses up a face beside the loop, {deepest:G6} deep";
+                why = $"the chamfer's {(draft?.Slant ?? b):G6} down the side uses up a face beside the loop, {deepest:G6} deep";
                 return null;
             }
         }
@@ -484,7 +520,7 @@ internal static partial class FilletLimits
                 }
             }
         }
-        return new TightLoop(loop, a, b);
+        return new TightLoop(loop, a, b, draft);
     }
 
     // A line's inset by a, at its start
@@ -612,15 +648,61 @@ internal static partial class FilletLimits
         return piece;
     }
 
+    /// <summary>The loop's outline grown outwards by <paramref name="by"/>, away from the material: lines moved out square to themselves,
+    /// meeting where their corners are sharp, and arcs about the same centres; null where a concave arc closes up.</summary>
+    private static Piece[]? Grown(Piece[] loop, double by)
+    {
+        int n = loop.Length;
+        var moved = new Piece[n];
+        for (int i = 0; i < n; i++)
+        {
+            Piece piece = loop[i];
+            if (piece.IsArc)
+            {
+                double radius = piece.Radius + piece.Turn * by;
+                if (radius <= 0)
+                {
+                    return null;
+                }
+                moved[i] = piece with
+                {
+                    Radius = radius,
+                    Start = piece.Centre + Flat.At(piece.From) * radius,
+                    End = piece.Centre + Flat.At(piece.From + piece.Sweep) * radius,
+                };
+            }
+            else
+            {
+                Flat out_ = piece.Direction.Left * -by;
+                moved[i] = piece with { Start = piece.Start + out_, End = piece.End + out_ };
+            }
+        }
+
+        // Two lines at a sharp corner meet where they're moved to; anything else at one is refused once the loop is read
+        for (int i = 0; i < n; i++)
+        {
+            Piece one = loop[i], two = loop[(i + 1) % n];
+            if (!one.IsArc && !two.IsArc && Math.Abs(one.Direction.Cross(two.Direction)) > TangentJoint && Meet(one, -by, two) is { } corner)
+            {
+                moved[i] = moved[i] with { End = corner };
+                moved[(i + 1) % n] = moved[(i + 1) % n] with { Start = corner };
+            }
+        }
+        return moved;
+    }
+
     private static bool Crosses(Flat p, Flat q, Flat r, Flat s)
     {
         double d1 = (q - p).Cross(r - p), d2 = (q - p).Cross(s - p), d3 = (s - r).Cross(p - r), d4 = (s - r).Cross(q - r);
         return d1 * d2 < 0 && d3 * d4 < 0;
     }
 
-    private static Piece? ReadPiece(Neighbours neighbours, Face face, in FacePlane frame, Edge edge, out string? why)
+    /// <summary>One edge of the loop, and <paramref name="lean"/>, the sine of its side's draft: the side's slope from square to F, positive
+    /// where it runs outwards, away from the material, going down.</summary>
+    private static Piece? ReadPiece(Neighbours neighbours, Face face, in FacePlane frame, Edge edge, out double lean, out string? why)
     {
         why = null;
+        lean = 0;
         Face[] others = [.. neighbours.Faces(edge).Where(f => !f.IsSame(face))];
         if (others.Length != 1)
         {
@@ -639,26 +721,55 @@ internal static partial class FilletLimits
         {
             case CurveKind.Line:
             {
-                if (sideSurface.GetType() != SurfaceKind.Plane || Math.Abs(sideSurface.Plane().Axis.Direction.Dot(frame.Up)) > square)
+                if (sideSurface.GetType() != SurfaceKind.Plane || neighbours.Normal(side) is not { } normal)
                 {
-                    why = "a face beside a straight edge isn't a plane square to the face";
+                    why = "a face beside a straight edge isn't a plane";
                     return null;
                 }
-                return new Piece(edge, side, frame.Flatten(start), frame.Flatten(end), false, default, 0, 0, 0);
+                var line = new Piece(edge, side, frame.Flatten(start), frame.Flatten(end), false, default, 0, 0, 0);
+                Flat outwards = line.Direction.Left * -1;
+                Vector3D away = new Vector3D(frame.X) * outwards.X + new Vector3D(frame.Y) * outwards.Y;
+                double sine = normal.Dot(frame.Up), cosine = new Vector3D(normal).Dot(away);
+                if (cosine < 0.1)
+                {
+                    why = "a face beside a straight edge is drafted by more than 84 degrees";
+                    return null;
+                }
+                lean = Math.Abs(sine) > square ? sine : 0;
+                return line;
             }
             case CurveKind.Circle:
             {
                 Circle3D circle = curve.Circle();
-                if (sideSurface.GetType() != SurfaceKind.Cylinder)
+                double slope = 0;
+                if (sideSurface.GetType() == SurfaceKind.Cylinder)
                 {
-                    why = "a face beside an arc isn't a cylinder square to the face";
-                    return null;
+                    Cylinder3D cylinder = sideSurface.Cylinder();
+                    if (Math.Abs(Math.Abs(cylinder.Axis.Direction.Dot(frame.Up)) - 1) > square || Math.Abs(cylinder.Radius - circle.Radius) > TightTolerance(edge, face)
+                        || Math.Abs(Math.Abs(circle.Axis.Direction.Dot(frame.Up)) - 1) > square)
+                    {
+                        why = "a face beside an arc isn't a cylinder or cone about the arc's axis";
+                        return null;
+                    }
                 }
-                Cylinder3D cylinder = sideSurface.Cylinder();
-                if (Math.Abs(Math.Abs(cylinder.Axis.Direction.Dot(frame.Up)) - 1) > square || Math.Abs(cylinder.Radius - circle.Radius) > TightTolerance(edge, face)
-                    || Math.Abs(Math.Abs(circle.Axis.Direction.Dot(frame.Up)) - 1) > square)
+                else if (sideSurface.GetType() == SurfaceKind.Cone && Math.Abs(Math.Abs(circle.Axis.Direction.Dot(frame.Up)) - 1) <= square)
                 {
-                    why = "a face beside an arc isn't a cylinder square to the face";
+                    // A cone about the arc's axis, its radius r at F: how fast that changes going down is the draft's tangent
+                    Cone3D cone = sideSurface.Cone();
+                    Point3D apex = cone.Apex;
+                    double apexDepth = frame.Depth(apex), spread = Math.Abs(Math.Tan(cone.SemiAngle));
+                    bool onAxis = Math.Abs(Math.Abs(cone.Axis.Direction.Dot(frame.Up)) - 1) <= square
+                                  && (frame.Flatten(apex) - frame.Flatten(circle.Location)).Length <= TightTolerance(edge, face);
+                    if (!onAxis || Math.Abs(Math.Abs(apexDepth) * spread - circle.Radius) > TightTolerance(edge, face))
+                    {
+                        why = "a face beside an arc isn't a cylinder or cone about the arc's axis";
+                        return null;
+                    }
+                    slope = apexDepth < 0 ? spread : -spread;
+                }
+                else
+                {
+                    why = "a face beside an arc isn't a cylinder or cone about the arc's axis";
                     return null;
                 }
                 curve.D1(reversed ? last : first, out _, out Vector3D tangent);
@@ -670,7 +781,12 @@ internal static partial class FilletLimits
                 Flat along = new(tangent.Dot(new Vector3D(frame.X)), tangent.Dot(new Vector3D(frame.Y)));
                 int turn = from.Cross(along) > 0 ? 1 : -1;
                 double sweep = turn * (last - first);
-                return new Piece(edge, side, frame.Flatten(start), frame.Flatten(end), true, centre, circle.Radius, Math.Atan2(from.Y, from.X), sweep);
+                var arc = new Piece(edge, side, frame.Flatten(start), frame.Flatten(end), true, centre, circle.Radius, Math.Atan2(from.Y, from.X), sweep);
+
+                // Away from the material is out from the centre on a convex arc, in towards it on a concave one
+                double draft = arc.Turn * slope;
+                lean = draft / Math.Sqrt(1 + draft * draft);
+                return arc;
             }
             default:
                 why = "an edge of the loop isn't a line or a circular arc";
@@ -706,6 +822,11 @@ internal static partial class FilletLimits
     private static double RemovedVolume(TightLoop loop)
     {
         double outline = SectionArea(loop.Pieces, loop.A, 0), middle = SectionArea(loop.Pieces, loop.A, 0.5), top = SectionArea(loop.Pieces, loop.A, 1);
+        if (loop.Draft is { } draft)
+        {
+            // The sides' frustum, its sections the outline grown in proportion to the depth, less the chamfer's: Simpson's rule on each
+            return loop.B / 6 * (4 * (draft.MiddleArea - middle) + (draft.OutlineArea - top));
+        }
         return loop.B / 6 * (4 * (outline - middle) + (outline - top));
     }
 
@@ -714,7 +835,10 @@ internal static partial class FilletLimits
     private static double AreaChange(TightLoop loop)
     {
         double a = loop.A, b = loop.B;
-        double change = -(SectionArea(loop.Pieces, a, 0) - SectionArea(loop.Pieces, a, 1)) - b * loop.Pieces.Sum(static p => p.Length);
+        double change = loop.Draft is { } draft
+            // F loses the band to the contact; each side a band down its slope, its length the mean of the outline's and the contact's
+            ? -(draft.OutlineArea - SectionArea(loop.Pieces, a, 1)) - draft.Slant * (draft.OutlineLength + loop.Pieces.Sum(static p => p.Length)) / 2
+            : -(SectionArea(loop.Pieces, a, 0) - SectionArea(loop.Pieces, a, 1)) - b * loop.Pieces.Sum(static p => p.Length);
         foreach (Piece piece in loop.Pieces)
         {
             if (!piece.IsArc)
@@ -791,6 +915,15 @@ internal static partial class FilletLimits
         {
             double deepest = loop.Pieces.Min(p => p.Side.AllVertices().Max(v => frame.Depth(Tool.Pnt(v))));
             double below = 0.5 * Math.Min(loop.B, deepest - loop.B);
+            if (loop.Draft is { Grown: < 0 } leaning)
+            {
+                // Sides leaning in: the walls stand outside the outline on F only where the chamfer's carried down far enough
+                below = Math.Max(below, 1.5 * -leaning.Grown * loop.B / loop.A + sewing);
+                if (below >= deepest - loop.B)
+                {
+                    return null;
+                }
+            }
             if (CollapseTool(frame, loop, below, sewing) is not { } tool)
             {
                 return null;

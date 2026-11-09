@@ -66,6 +66,21 @@ support points), which is the rule above. It follows that its section at height 
 (1 - λ) R + λ E of the outline's region R and E. **For the check (section 4) only the ruled form matters,** which holds for
 outlines that aren't convex too.
 
+### Drafted sides
+
+With the sides drafted by an angle δ from square to F, each by the same angle (planes, and over arcs cones about the arcs' axes, as
+a draft or a tapered extrusion makes them), the chamfer's length b is measured down the slope, as ChFi3d measures it: its contact on
+the sides is at depth h = b cos δ, where the outline has grown by t = b sin δ (shrunk where the sides lean in going down). That
+contact σ is the outline grown by t, its lines moved out square to themselves and meeting at their mitres, its arcs of radius r ± t
+about the same centres. The contact on F is still the outline stepped in by a, which is σ stepped in by a + t. So **the chamfer is
+the one above from σ, at depth h, with a + t on F**: its rulings join points of the same normal, the outline and σ having the same
+normals, and a corner is tight just as before, r ≤ a being r + t ≤ a + t. What it removes is the sides' frustum down to h, whose
+section is the outline grown in proportion to the depth (an area quadratic in it), less the chamfer's; F loses its band to E as
+before, and each side a band b long down its slope, of mean length the outline's and σ's. ChFi3d below the corner's radius and this
+above it agree with the hull of σ and E, worked out apart, on both slopes of draft (the tests' `ChamferHull`). As with square sides,
+the shape runs on through the radius, though not smoothly: its contact's corner turns sharp there, so what's removed has a slope a
+little different either side (224.80 against 223.89 for each unit of length, on the guide's box drafted 5°).
+
 ### The alternative, and why not
 
 The other natural reading takes each section to be the outline eroded by λ a: the region of points at least λ a inside it.
@@ -91,7 +106,8 @@ isn't built.
 | Two-distance chamfers | All of the above with a on F and b on S: only a, the distance on the face whose outline has the arcs, decides what collapses. b > r with a < r collapses nothing | **Yes** |
 | Distance and angle | Two distances: with S square to F, the angle α from the reference face gives the other distance as the reference's times tan α | **Yes** |
 | Constant throat, with or without penetration | The throat isn't measured on the faces | **Not read:** the option leaves it to ChFi3d, as before |
-| The side face not square to F (a draft), or not a plane or such a cylinder | Not read | **Refused** |
+| The sides drafted, all by one angle: planes, and cones about the arcs' axes | The contact on the sides is the outline grown: below | **Yes** (unit 13I) |
+| Sides drafted by different angles, or not planes, or cylinders or cones about the arcs' axes | Not read | **Refused** |
 | Edges that aren't whole loops of one planar face | Not read: a chain that stops has ends of ChFi3d's kind | **Refused** |
 | The chamfer as deep as the side face, or deeper | Uses up the side | **Refused** |
 | Arcs in the other face of the edge | With S square to F, S is straight going down, so nothing in it collapses. A curved S isn't read | Nothing to do |
@@ -193,7 +209,7 @@ A(1/2) is the area of the rectangle (W - r - a) by (H - r - a) grown by r / 2, a
 
 ## 5. What it doesn't do
 
-The cases refused above; outlines of B-splines or ellipses; the side faces drafted; open chains; chamfers of several faces'
+The cases refused above; outlines of B-splines or ellipses; sides drafted by different angles; open chains; chamfers of several faces'
 loops at once (several loops of one face, an outline and its holes, are built, each with its own tool, in one Boolean). A tight arc beside a concave arc.
 
 ## Sources
