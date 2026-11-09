@@ -43,6 +43,12 @@ public static class ModelingDiagnostics
     /// </summary>
     public static DiagnosticCode HullFailed { get; } = new("modeling.hull-failed");
 
+    /// <summary>
+    /// A single-stroke font's text couldn't be outlined: its strokes' width makes faces that aren't valid:
+    /// <c>modeling.text-failed</c>. The kernel's own failures keep their codes (<c>text.missing-glyph</c>, <c>font.malformed</c>).
+    /// </summary>
+    public static DiagnosticCode TextFailed { get; } = new("modeling.text-failed");
+
     /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c>.</summary>
     public static DiagnosticCode KernelInvalidArgument { get; } = new("kernel.invalid-argument");
 
