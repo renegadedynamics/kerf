@@ -343,43 +343,100 @@ internal static partial class FilletLimits
                 why = "a corner beside an arc is sharp";
                 return null;
             }
-            if (piece.Tight && (before.IsArc || after.IsArc))
-            {
-                why = "a tight arc is beside another arc, not a straight edge";
-                return null;
-            }
+        }
+        if (loop.All(static p => p.Tight))
+        {
+            why = "every edge of the loop is a tight arc, with nothing beside them for the corners to collapse onto";
+            return null;
         }
 
-        // The contact on F: each line's inset, from corner to corner; an arc's inset, or its corner's point
-        static Flat Inset(Piece line, double a) => line.Start + line.Direction.Left * a;
-        static Flat? Meet(Piece one, double a, Piece two)
+        // The contact on F: each line's inset, from corner to corner; an arc's inset, or its corner's point. Each run of tight arcs
+        // collapses to the point P where the insets of the two pieces beside it meet; an arc beside it is stepped in up to its foot under
+        // P, and the stretch from there to the run is swallowed too, its rulings running to P as the run's do (docs/chamfer-corners.md)
+        var cutStart = new double[n];
+        var cutEnd = new double[n];
+        for (int i = 0; i < n; i++)
         {
-            Flat p = Inset(one, a), q = Inset(two, a), u = one.Direction, v = two.Direction;
-            double cross = u.Cross(v);
-            if (Math.Abs(cross) < 1e-12)
+            if (!loop[i].Tight || loop[(i + n - 1) % n].Tight)
             {
+                continue;
+            }
+            int last = i;
+            while (loop[(last + 1) % n].Tight)
+            {
+                last = (last + 1) % n;
+            }
+            int beforeAt = (i + n - 1) % n, afterAt = (last + 1) % n;
+            Piece before = loop[beforeAt], after = loop[afterAt];
+            if ((before.IsArc && !before.IsConvex) || (after.IsArc && !after.IsConvex))
+            {
+                why = "a tight arc is beside a concave arc, where the stretch it swallows turns the other way, so its rulings to the corner's point "
+                      + "don't join points of the same direction";
                 return null;
             }
-            return p + u * ((q - p).Cross(v) / cross);
+            if (Collapsed(before, after, a, join) is not { } corner)
+            {
+                why = before.IsArc || after.IsArc
+                    ? "the face is too narrow: the insets beside a tight arc don't meet within the edges beside it"
+                    : "the face is too narrow: the lines beside a tight arc are parallel, and their insets never meet";
+                return null;
+            }
+            for (int k = i; ; k = (k + 1) % n)
+            {
+                loop[k].Apex = corner.Apex;
+                loop[k].TopStart = loop[k].TopEnd = corner.Apex;
+                if (k == last)
+                {
+                    break;
+                }
+            }
+            cutEnd[beforeAt] = corner.BeforeSwallowed;
+            cutStart[afterAt] = corner.AfterSwallowed;
         }
         for (int i = 0; i < n; i++)
         {
             Piece piece = loop[i];
-            if (piece.Tight)
-            {
-                if (Meet(loop[(i + n - 1) % n], a, loop[(i + 1) % n]) is not { } apex)
-                {
-                    why = "the face is too narrow: the lines beside a tight arc are parallel, and their insets never meet";
-                    return null;
-                }
-                piece.Apex = apex;
-                piece.TopStart = piece.TopEnd = apex;
-            }
-            else if (piece.IsArc)
+            if (piece.IsArc && !piece.Tight)
             {
                 piece.TopStart = piece.Start + piece.InwardAtStart * a;
                 piece.TopEnd = piece.End + piece.InwardAtEnd * a;
             }
+        }
+
+        // The arcs beside a run, split where their stretch swallowed starts: the stretch is a tight piece of its own, its cone from P
+        if (cutStart.Any(static c => c > 0) || cutEnd.Any(static c => c > 0))
+        {
+            var split = new List<Piece>();
+            for (int i = 0; i < n; i++)
+            {
+                Piece piece = loop[i];
+                if (!piece.IsArc || (cutStart[i] <= 0 && cutEnd[i] <= 0))
+                {
+                    split.Add(piece);
+                    continue;
+                }
+                double sweep = Math.Abs(piece.Sweep), kept = sweep - cutStart[i] - cutEnd[i];
+                if (kept * piece.Radius <= join)
+                {
+                    why = "the face is too narrow: the inset of an arc beside a tight arc is used up";
+                    return null;
+                }
+                Flat apexBefore = loop[(i + n - 1) % n].Apex, apexAfter = loop[(i + 1) % n].Apex;
+                if (cutStart[i] > 0)
+                {
+                    split.Add(SubArc(piece, 0, cutStart[i], apexBefore));
+                }
+                Piece middle = SubArc(piece, cutStart[i], sweep - cutEnd[i], null);
+                middle.TopStart = cutStart[i] > 0 ? apexBefore : piece.TopStart;
+                middle.TopEnd = cutEnd[i] > 0 ? apexAfter : piece.TopEnd;
+                split.Add(middle);
+                if (cutEnd[i] > 0)
+                {
+                    split.Add(SubArc(piece, sweep - cutEnd[i], sweep, apexAfter));
+                }
+            }
+            loop = [.. split];
+            n = loop.Length;
         }
         for (int i = 0; i < n; i++)
         {
@@ -428,6 +485,131 @@ internal static partial class FilletLimits
             }
         }
         return new TightLoop(loop, a, b);
+    }
+
+    // A line's inset by a, at its start
+    private static Flat Inset(Piece line, double a) => line.Start + line.Direction.Left * a;
+
+    // Where two lines' insets meet; null if they're parallel
+    private static Flat? Meet(Piece one, double a, Piece two)
+    {
+        Flat p = Inset(one, a), q = Inset(two, a), u = one.Direction, v = two.Direction;
+        double cross = u.Cross(v);
+        if (Math.Abs(cross) < 1e-12)
+        {
+            return null;
+        }
+        return p + u * ((q - p).Cross(v) / cross);
+    }
+
+    /// <summary>Where a run of tight arcs collapses: the point P where the insets of the pieces before and after it meet, each a line's
+    /// inset or a convex arc's, stepped in to radius r - a; and for an arc, the angle of it next to the run whose inset lies past P, swallowed
+    /// with the run. Of the two points where a line or arc meets an arc, the one whose feet lie on both pieces, swallowing least. Null
+    /// where none does.</summary>
+    private static (Flat Apex, double BeforeSwallowed, double AfterSwallowed)? Collapsed(Piece before, Piece after, double a, double join)
+    {
+        if (!before.IsArc && !after.IsArc)
+        {
+            return Meet(before, a, after) is { } p ? (p, 0, 0) : null;
+        }
+        (Flat Apex, double Before, double After)? best = null;
+        double least = double.MaxValue;
+        foreach (Flat p in Crossings(before, after, a))
+        {
+            // How much of each piece lies between its foot under P and the run, as a length: none may be past the run's end of it
+            double onBefore, onAfter, angleBefore = 0, angleAfter = 0;
+            if (before.IsArc)
+            {
+                angleBefore = Turned(Math.Atan2(p.Y - before.Centre.Y, p.X - before.Centre.X), before.From + before.Sweep);
+                onBefore = angleBefore * before.Radius;
+            }
+            else
+            {
+                onBefore = (before.End - p).Dot(before.Direction);
+            }
+            if (after.IsArc)
+            {
+                angleAfter = Turned(after.From, Math.Atan2(p.Y - after.Centre.Y, p.X - after.Centre.X));
+                onAfter = angleAfter * after.Radius;
+            }
+            else
+            {
+                onAfter = (p - after.Start).Dot(after.Direction);
+            }
+            if (onBefore < -join || onAfter < -join || (before.IsArc && angleBefore >= before.Sweep) || (after.IsArc && angleAfter >= after.Sweep))
+            {
+                continue;
+            }
+            if (onBefore + onAfter < least)
+            {
+                least = onBefore + onAfter;
+                // A stretch no longer than the shape can tell is none: at r = a, P is the arc's centre, on the neighbour's inset at the joint
+                best = (p, onBefore > join ? angleBefore : 0, onAfter > join ? angleAfter : 0);
+            }
+        }
+        return best;
+    }
+
+    // The angle turned anticlockwise from one direction to another, in [-π, π): small negatives are a foot just short of the joint
+    private static double Turned(double from, double to)
+    {
+        double turned = Math.IEEERemainder(to - from, 2 * Math.PI);
+        return turned >= Math.PI ? turned - 2 * Math.PI : turned;
+    }
+
+    // The points where the insets of a line or convex arc and a convex arc cross: a line's inset is a line, an arc's the circle of r - a
+    private static List<Flat> Crossings(Piece one, Piece two, double a)
+    {
+        var found = new List<Flat>();
+        if (!one.IsArc || !two.IsArc)
+        {
+            Piece line = one.IsArc ? two : one, arc = one.IsArc ? one : two;
+            Flat p = Inset(line, a), u = line.Direction, d = p - arc.Centre;
+            double rho = arc.Radius - a, half = u.Dot(d), c = d.Dot(d) - rho * rho, discriminant = half * half - c;
+            if (discriminant < 0)
+            {
+                return found;
+            }
+            double root = Math.Sqrt(discriminant);
+            found.Add(p + u * (-half - root));
+            found.Add(p + u * (-half + root));
+            return found;
+        }
+        Flat between = two.Centre - one.Centre;
+        double distance = between.Length, r1 = one.Radius - a, r2 = two.Radius - a;
+        if (distance < 1e-12 || distance > r1 + r2 || distance < Math.Abs(r1 - r2))
+        {
+            return found;
+        }
+        double along = (distance * distance + r1 * r1 - r2 * r2) / (2 * distance), across = Math.Sqrt(Math.Max(0, r1 * r1 - along * along));
+        Flat axis = between * (1 / distance), mid = one.Centre + axis * along;
+        found.Add(mid + axis.Left * across);
+        found.Add(mid - axis.Left * across);
+        return found;
+    }
+
+    // The stretch of an arc from one angle turned along it to another; with a point, a tight piece whose cone runs from there
+    private static Piece SubArc(Piece arc, double from, double to, Flat? apex)
+    {
+        double start = arc.From + arc.Turn * from, sweep = arc.Turn * (to - from);
+        var piece = arc with
+        {
+            From = start,
+            Sweep = sweep,
+            Start = arc.Centre + Flat.At(start) * arc.Radius,
+            End = arc.Centre + Flat.At(start + sweep) * arc.Radius,
+        };
+        if (apex is { } p)
+        {
+            piece.Tight = true;
+            piece.Apex = p;
+            piece.TopStart = piece.TopEnd = p;
+        }
+        else
+        {
+            piece.Tight = false;
+        }
+        return piece;
     }
 
     private static bool Crosses(Flat p, Flat q, Flat r, Flat s)

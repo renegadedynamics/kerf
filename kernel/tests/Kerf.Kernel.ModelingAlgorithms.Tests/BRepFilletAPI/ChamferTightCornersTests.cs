@@ -310,21 +310,127 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
         Assert.Contains(why, made.Error.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void A_tight_arc_beside_another_arc_is_refused()
+    // A circle of 20 with a flat at y = -15, its two corners rounded to 1.5: each small arc between the flat and the big arc, extruded 10
+    private static Shape DShape()
     {
-        // A circle of 20 with a flat at y = -15, its two corners rounded to 1.5: each small arc between the flat and the big arc
         double a = Math.Asin(0.75);
         Point3D right = new(20 * Math.Cos(a), -15, 0), left = new(-20 * Math.Cos(a), -15, 0);
         Face d = Face.FromWire(Wire.FromEdges([Edge.Arc(CircleAt(0, 0, 20), -a, Math.PI + a).Value, Edge.Line(left, right).Value]).Value, onlyPlane: true).Value;
-        Face rounded = d.Fillet2D([.. d.AllVertices()], 1.5).Value.Shape;
-        Shape shape = rounded.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
-        RefusedFor(shape, 2, "a tight arc is beside another arc");
-
-        // Short of the small arcs' radius, nothing is tight, and the algorithm builds it as before
-        Assert.Equal(shape.Chamfer([.. Top(shape, 10).AllEdges()], 1).IsSuccess, shape.Chamfer([.. Top(shape, 10).AllEdges()], 1, Collapse).IsSuccess);
+        return d.Fillet2D([.. d.AllVertices()], 1.5).Value.Shape.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
     }
 
+    /// <summary>A convex outline's collapse against the hull, worked out apart from the build (<see cref="ChamferHull"/>): what it removes,
+    /// and what's left above half the chamfer's depth, cut off by a slab, against the hull's sections there.</summary>
+    private void LikeTheHull(Shape shape, double z, double a, double b, Result<Built<Shape>> made)
+    {
+        Assert.True(made.IsSuccess, made.Error?.Message);
+        Shape result = made.Value.Shape;
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(result, "It"));
+        ChamferHull.Outline outline = ChamferHull.OfFace(Top(shape, z));
+        double before = shape.IntegrateVolume(), removed = ChamferHull.Removed(outline, a, b);
+        output.WriteLine($"removed {before - result.IntegrateVolume():R}, the hull's {removed:R}");
+        Assert.Equal(before - removed, result.IntegrateVolume(), 1e-8 * before);
+        Shape slab = Solid.Box(new Point3D(-1000, -1000, z - b / 2), new Point3D(1000, 1000, z + 1)).Value.Shape;
+        double above = result.Common(slab).Value.Shape.IntegrateVolume();
+        double sections = b / 12 * (ChamferHull.SectionArea(outline, a, b, 0) + 4 * ChamferHull.SectionArea(outline, a, b, b / 4) + ChamferHull.SectionArea(outline, a, b, b / 2));
+        Assert.Equal(sections, above, 1e-8 * before);
+    }
+
+    [Theory]
+    [InlineData(1.5001)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void A_tight_arc_beside_a_convex_arc_swallows_its_end(double length)
+    {
+        // The small arcs' corners collapse to where the flat's inset meets the big arc's: the big arc's end next to each, from its foot
+        // under that point, runs to it too, a second cone, and the rest of it is stepped in as ever: 12 faces, from 10
+        Shape shape = DShape();
+        Result<Built<Shape>> made = shape.Chamfer([.. Top(shape, 10).AllEdges()], length, Collapse);
+        LikeTheHull(shape, 10, length, length, made);
+        Assert.Equal(12, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Fact]
+    public void Through_the_small_arcs_radius_nothing_jumps()
+    {
+        // ChFi3d short of 1.5, the collapse at it (its cones' apexes at the arcs' centres, nothing of the big arc swallowed) and past it
+        Shape shape = DShape();
+        Edge[] loop = [.. Top(shape, 10).AllEdges()];
+        double Removed(double length, ChamferOptions? options) => shape.IntegrateVolume() - shape.Chamfer(loop, length, options).Value.Shape.IntegrateVolume();
+        double below = Removed(1.4999, null), at = Removed(1.5, Collapse), above = Removed(1.5001, Collapse);
+        output.WriteLine($"{below:R} {at:R} {above:R}");
+        Assert.Equal((below + above) / 2, at, 1e-5); // to the curvature of what is removed against the length, about 2e-6 over 1e-4
+        Assert.Equal(10, shape.Chamfer(loop, 1.5, Collapse).Value.Shape.AllFaces().Length);
+
+        // Short of the small arcs' radius, nothing is tight, and the algorithm builds it as before
+        Assert.Equal(shape.Chamfer(loop, 1).IsSuccess, shape.Chamfer(loop, 1, Collapse).IsSuccess);
+    }
+
+    [Fact]
+    public void A_tight_arc_between_two_convex_arcs()
+    {
+        // A Reuleaux triangle of 20, its corners rounded to 1.5: where two arcs' insets cross, each arc swallowed at both ends
+        Point3D[] v = [new(0, 0, 0), new(20, 0, 0), new(10, 10 * Math.Sqrt(3), 0)];
+        Edge[] arcs =
+        [
+            Edge.Arc(CircleAt(v[2].X, v[2].Y, 20), -2 * Math.PI / 3, -Math.PI / 3).Value,
+            Edge.Arc(CircleAt(v[0].X, v[0].Y, 20), 0, Math.PI / 3).Value,
+            Edge.Arc(CircleAt(v[1].X, v[1].Y, 20), 2 * Math.PI / 3, Math.PI).Value,
+        ];
+        Face face = Face.FromWire(Wire.FromEdges(arcs).Value, onlyPlane: true).Value;
+        Shape shape = face.Fillet2D([.. face.AllVertices()], 1.5).Value.Shape.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+        Result<Built<Shape>> made = shape.Chamfer([.. Top(shape, 10).AllEdges()], 2.5, Collapse);
+        LikeTheHull(shape, 10, 2.5, 2.5, made);
+        Assert.Equal(20, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Fact]
+    public void Corners_of_two_arcs_each_collapse_to_one_point()
+    {
+        // The user's prism, each corner's arc as two edges of the same circle, as an import may leave it: the same shape as one arc
+        const double R = 1.7;
+        Point3D At(double x, double y) => new(x, y, 0);
+        var edges = new List<Edge>();
+        (double X, double Y, double From)[] corners = [(40 - R, R, -Math.PI / 2), (40 - R, 30 - R, 0), (R, 30 - R, Math.PI / 2), (R, R, Math.PI)];
+        for (int i = 0; i < 4; i++)
+        {
+            (double x, double y, double from) = corners[i];
+            edges.Add(Edge.Arc(CircleAt(x, y, R), from, from + Math.PI / 4).Value);
+            edges.Add(Edge.Arc(CircleAt(x, y, R), from + Math.PI / 4, from + Math.PI / 2).Value);
+            (double nx, double ny, double nextFrom) = corners[(i + 1) % 4];
+            edges.Add(Edge.Line(At(x + R * Math.Cos(from + Math.PI / 2), y + R * Math.Sin(from + Math.PI / 2)),
+                                At(nx + R * Math.Cos(nextFrom), ny + R * Math.Sin(nextFrom))).Value);
+        }
+        Face face = Face.FromWire(Wire.FromEdges(edges).Value, onlyPlane: true).Value;
+        Shape prism = face.Extrude(new Vector3D(0, 0, 30)).Value.Shape;
+        foreach (double length in new[] { 2.0, 3 })
+        {
+            Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 30).AllEdges()], length, Collapse);
+            Right(made, PrismVolume(40, 30, 30, R) - Removed(40, 30, R, length, length), 26);
+            LikeTheHull(prism, 30, length, length, made);
+        }
+    }
+
+    [Fact]
+    public void A_tight_arc_beside_a_concave_arc_is_refused()
+    {
+        // A square of 20 with a bite of 5 from its side, the bite's corners rounded to 1: each small arc between a line and the bite,
+        // which turns the other way, so the stretch of it swallowed would run to the corner's point against its direction
+        Edge[] edges =
+        [
+            Edge.Line(new Point3D(0, 0, 0), new Point3D(20, 0, 0)).Value,
+            Edge.Line(new Point3D(20, 0, 0), new Point3D(20, 5, 0)).Value,
+            Edge.Arc(CircleAt(20, 10, 5), Math.PI / 2, 3 * Math.PI / 2).Value,
+            Edge.Line(new Point3D(20, 15, 0), new Point3D(20, 20, 0)).Value,
+            Edge.Line(new Point3D(20, 20, 0), new Point3D(0, 20, 0)).Value,
+            Edge.Line(new Point3D(0, 20, 0), new Point3D(0, 0, 0)).Value,
+        ];
+        Face face = Face.FromWire(Wire.FromEdges(edges).Value, onlyPlane: true).Value;
+        Vertex[] bite = [.. face.AllVertices().Where(v => Math.Abs(v.Point.X - 20) < 1e-9 && (Math.Abs(v.Point.Y - 5) < 1e-9 || Math.Abs(v.Point.Y - 15) < 1e-9))];
+        Shape shape = face.Fillet2D(bite, 1).Value.Shape.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+        RefusedFor(shape, 2, "a tight arc is beside a concave arc");
+    }
     [Fact]
     public void A_sharp_corner_beside_an_arc_is_refused()
     {

@@ -5,6 +5,9 @@ version may break the API.
 
 ## Unreleased
 
+- **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
+  too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
+  refused them; beside a concave arc it still refuses, saying why (decision 26502).
 - **`FilletSizeLimit` and `ChamferSizeLimit`** give a fillet's or chamfer's proved limit with the shape's tolerance about
   it, as a `SizeLimit`; `FilletLimit` and `ChamferLimit` are its value, as before (decision 26501).
 - **Notes and sheets in drawings** (unit 13F2): `DrawingNote` puts text on a `LineDrawing` (`WithNotes`), in any font,

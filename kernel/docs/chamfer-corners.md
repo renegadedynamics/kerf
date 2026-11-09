@@ -84,8 +84,9 @@ isn't built.
 | A concave arc (its centre outside the material) | Its stepped arc has radius r + a, which never collapses: the ordinary right cone | **Yes**, beside the rest |
 | A convex arc with r > a | The ordinary right cone | **Yes**, beside the rest |
 | Two tight corners with a line between | Each its own P on the line's inset. If the two Ps meet or cross, the line's inset is used up and E loses a side; the corners would merge into one | **Yes** while the line's inset is longer than the shape's tolerance; **refused** after |
-| Two tight corners with no line between (arc to arc) | The neighbours aren't straight: below | **Refused** |
-| A tight arc beside an arc (not a line) | The stepped neighbours meet at a P that isn't on the bisector. Over the stretch of the neighbour from its foot under P to the joint, the neighbour's normals are E's only at P too, so the cone from P runs on over that stretch, as a second oblique cone (over the neighbour's circle), and the neighbour's own chamfer stops at the ruling to P. For a convex neighbour that's still the hull, and tangent throughout; a concave one isn't locally convex, and the rule there isn't proved | **Refused**: not built yet |
+| Two tight arcs or more together (one corner's arc in two edges, as an import may leave it) | The run's stepped arcs all turn inside out, and the insets of the pieces either side of the run meet at one P: every arc of the run is a cone from it, each tangent to the next along their shared ruling, as the arcs are tangent where they join | **Yes** (unit 13I) |
+| A tight arc beside a convex arc short of its corner | The stepped neighbours meet at a P that isn't on the bisector: where a line's inset meets the arc's stepped circle, or two stepped circles cross (of two points, the one whose feet lie on both pieces, swallowing least). Over the stretch of the neighbour from its foot under P to the joint, the neighbour's normals are E's only at P too, so the cone from P runs on over that stretch, as a second oblique cone (over the neighbour's circle), and the neighbour's own chamfer stops at the ruling to P. That's still the hull, and tangent throughout | **Yes** (unit 13I): the arc is split at its foot, one piece of the loop each way. **Refused** where the stretch swallowed uses the arc up |
+| A tight arc beside a concave arc | The concave arc's stepped circle grows, and P lies on it; but the stretch swallowed turns the other way from the tight arc, so its normals aren't E's at P, and the rulings to P wouldn't join points of the same normal. The ruled face from P is smooth, but it isn't the chamfer this note defines, and no other is proved | **Refused**, saying so |
 | The face too narrow for the insets | E is empty or turns inside out (a side of zero length or less), or its sides cross | **Refused**, saying so |
 | Two-distance chamfers | All of the above with a on F and b on S: only a, the distance on the face whose outline has the arcs, decides what collapses. b > r with a < r collapses nothing | **Yes** |
 | Distance and angle | Two distances: with S square to F, the angle α from the reference face gives the other distance as the reference's times tan α | **Yes** |
@@ -130,6 +131,8 @@ old, and the solid put together from them and the shape's other faces, unchanged
 
 - F has no loops but those chamfered, and no face of the shape but F and the loops' sides comes within depth b of F (by its
   box, which is larger than it);
+- each side is one piece's, and no two tight pieces are together: an arc split beside a collapsed corner, or a run of tight
+  arcs sharing a P, goes to the Boolean (unit 13I);
 - at each corner of a loop one straight edge runs square to F, down between the two sides, past depth b, and each side's
   other edges lie deeper than b;
 - seen from above, the band each piece's chamfer lies over (its edge, its stretch of the contact, the rulings between) meets
@@ -191,7 +194,7 @@ A(1/2) is the area of the rectangle (W - r - a) by (H - r - a) grown by r / 2, a
 ## 5. What it doesn't do
 
 The cases refused above; outlines of B-splines or ellipses; the side faces drafted; open chains; chamfers of several faces'
-loops at once (several loops of one face, an outline and its holes, are built, each with its own tool, in one Boolean). A tight arc beside a convex arc is the next to build, if a user brings one: its geometry is above.
+loops at once (several loops of one face, an outline and its holes, are built, each with its own tool, in one Boolean). A tight arc beside a concave arc.
 
 ## Sources
 
