@@ -21,4 +21,4 @@ reaches Bento with the first release after 0.4.0. Not done here: Bento is read o
 `Write` returns a `Result` as the 3D exporters do; its one warning, `modeling.dxf-not-planar`, says edges off the XY
 plane were projected onto it (a part's edges seen from above), which Bento could show as it shows other warnings.
 
-Decisions 25501 to 25504 in the kernel's `docs/decisions.md`; the guide's section 8, "DXF".
+Decisions 2009 to 2012 in the kernel's `docs/decisions.md`; the guide's section 8, "DXF".

@@ -162,7 +162,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `export_stl(shape, path, tolerance, angular_tolerance, ascii_format)` | `Exporters3D.ExportStl(shape, stream or path, StlExportOptions, token)` |
 | `export_gltf(shape, path, unit, binary, linear_deflection, angular_deflection)` | `Exporters3D.ExportGltf(shape, stream or path, GltfExportOptions, token)`; to a stream, a `.gltf` embeds its buffer |
 | `Mesher(unit).add_shape(shape, linear_deflection, angular_deflection)` then `write("x.3mf")` | `Exporters3D.Export3mf(shape, stream or path, ThreeMfExportOptions, token)` |
-| `ExportDXF(version=DXF2013, unit=Unit.MM, color, line_weight, line_type)` | `new ExportDxf(DxfVersion.R2013, Unit.Millimeter, color, lineWeight, lineType, tolerance)`: immutable, each `Add…` returning a new exporter; `DxfVersion.R12` as well (kernel decision 25503) |
+| `ExportDXF(version=DXF2013, unit=Unit.MM, color, line_weight, line_type)` | `new ExportDxf(DxfVersion.R2013, Unit.Millimeter, color, lineWeight, lineType, tolerance)`: immutable, each `Add…` returning a new exporter; `DxfVersion.R12` as well (kernel decision 2011) |
 | `exporter.add_layer(name, color=, line_weight=, line_type=)` | `AddLayer(name, color, lineWeight, lineType)`; a duplicate name, a forbidden character or a weight DXF hasn't got is `ArgumentException` |
 | `exporter.add_shape(shape or shapes, layer="")` | `AddShape(shape, layer)`, `AddShape(shapes, layer)`; the layer must have been added (`""` is `"0"`) |
 | `ExportDXF().add_shape(drawing.visible_lines).add_shape(drawing.hidden_lines, layer=…)` | `AddDrawing(lineDrawing, visibleLayer, hiddenLayer)`, from `Kerf.Drawing`'s `ProjectLines` |
@@ -187,7 +187,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 - `ExportDxf` writes splines exactly, rational ones with their weights, where build123d's `to_splines` makes every
   spline a polynomial cubic within 1e-3; scales line types to the unit, where build123d's are 10 times too long in
   inches and 2.54 times or more in centimetres and metres; projects edges off the XY plane (a tilted circle is an
-  ellipse) where build123d drops Z; and refuses a shape on a layer that wasn't added (kernel decision 25502).
+  ellipse) where build123d drops Z; and refuses a shape on a layer that wasn't added (kernel decision 2010).
 
 - `Color(0)` (black as a hex code) is black. build123d treats the 0 as "no colour code" and
   returns white.
