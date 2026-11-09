@@ -318,6 +318,7 @@ internal static partial class FilletLimits
         var own = new List<Edge>();
         foreach (FilletSpec spec in specs)
         {
+            Cancellation.ThrowIfRequested(); // every edge of the shape, for each spec
             foreach (Edge edge in unified.AllEdges().Where(e => e.IsSame(spec.Edge) || merged.Modified(spec.Edge).Any(m => m.IsSame(e))))
             {
                 if (!own.Any(e => e.IsSame(edge)))
@@ -358,6 +359,7 @@ internal static partial class FilletLimits
         var corners = new Dictionary<Shape, Corner>(ShapeHasher.Instance);
         foreach (FilletSpec spec in specs)
         {
+            Cancellation.ThrowIfRequested();
             if (Read(neighbours, spec.Edge) is not { } corner)
             {
                 return null;

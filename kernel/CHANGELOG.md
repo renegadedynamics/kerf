@@ -5,6 +5,21 @@ version may break the API.
 
 ## Unreleased
 
+- **A fillet of thousands of edges can be cancelled at once again,** as in 0.3.0: in 0.4.0 its limits were read before the
+  algorithm without a look at the token, and on a plate of 900 holes that took 2 s; now each edge is a check and the reading
+  30 ms, with the same results (decisions 24201 and 24202).
+
+## 0.4.0
+
+- **Silent wrong answers found and fixed,** in line with phase 12's aim of trustworthy results first: Cuts of crossing
+  cylinders, torus and sphere meshes outside the deflection asked, 2D offsets inwards up to 1% off, length-and-angle
+  chamfers that came back valid and wrong, and an offset that reported a volume of 3.7e101. Each is now right, or a
+  failure that carries the shape and says why (`docs/phase12-plan.md`).
+- **Bento's examples recalculate in 263 ms (native OCCT 8.0.1: 685 ms) with 120 MB allocated,** from 265 ms and 126 MB
+  at 0.3.0, and open in 530 ms (native 921 ms), at [the release's run](docs/benchmarks/2026-11-09-2a330b9b7.md) on a
+  quiet machine. Booleans on ordinary extrude-and-cut parts take 0.56 times native's time, and 0.94 times with Kerf's
+  checks of each result (decisions 2000 and 2001).
+- **Breaking:** `MeshOptions.ControlAllSurfaces` has gone, as every surface now keeps to the deflection without it.
 - **A chamfer longer than the tightest convex arc or ellipse in a plane beside its edges is refused at once, saying what fits** (`fillet.too-large`), where it was built and then failed as broken, after up to a few hundred milliseconds; and **a chamfer by a length and an angle past it, which came back valid but wrong, now fails too.** Below the limit nothing changes (decision 1985). **A broken chamfer's `result.invalid` says it couldn't be built at that length** (1986). **`ChamferLimit(edges)`**, as `FilletLimit`, gives the most one chamfer length can be (1987).
 - **`ChamferOptions.TightCorners = TightCorners.Collapse` chamfers past corners tighter than the chamfer:** on a whole loop of a planar face of lines and arcs, its sides square to it, a convex arc whose radius is no more than the length on that face collapses to the point where the straight insets beside it meet, and the chamfer over it is the oblique cone from there, tangent to its neighbours; checked against the volume and area the outline gives (decision 1988, `docs/chamfer-corners.md`). Off by default, and then nothing changes; other cases with such a corner are refused, saying why.
 - **The renderer draws see-through items:** a `SceneItem` or face colour with an opacity under 1 is see-through, its edges too, laid over what's behind it in depth order at each sample, so the order of the items doesn't matter. Scenes with nothing see-through give the same pixels as before (decision 1998).

@@ -383,6 +383,7 @@ internal static partial class FilletLimits
         var cuts = new Cutter[parts.Length];
         for (int i = 0; i < parts.Length; i++)
         {
+            Cancellation.ThrowIfRequested();
             if (Read(neighbours, parts[i].Edge) is not { } corner || !EndsSquare(neighbours, corner))
             {
                 return null;
@@ -404,6 +405,7 @@ internal static partial class FilletLimits
         // The edges have to be apart, with one convexity, as one Boolean makes them all
         for (int i = 0; i < cuts.Length; i++)
         {
+            Cancellation.ThrowIfRequested(); // pairs of edges: millions, for thousands
             if (cuts[i].Corner.IsConvex != cuts[0].Corner.IsConvex)
             {
                 return null;
@@ -421,6 +423,7 @@ internal static partial class FilletLimits
         bool atLimit = false;
         foreach (Cutter cut in cuts)
         {
+            Cancellation.ThrowIfRequested(); // every cut's demand on each side: quadratic too
             foreach (Side side in new[] { cut.Corner.One, cut.Corner.Two })
             {
                 if (side.Width is { } width)
@@ -553,6 +556,7 @@ internal static partial class FilletLimits
         var cuts = new Cutter[specs.Length];
         for (int i = 0; i < specs.Length; i++)
         {
+            Cancellation.ThrowIfRequested();
             if (ReadRim(neighbours, specs[i].Edge) is not { } corner)
             {
                 return null;
@@ -568,6 +572,7 @@ internal static partial class FilletLimits
         // What Judge has already asked for one radius, for those it doesn't judge: a contact line off its face has no answer here
         foreach (Cutter cut in cuts)
         {
+            Cancellation.ThrowIfRequested(); // every cut's demand on each side: quadratic too
             foreach (Side side in new[] { cut.Corner.One, cut.Corner.Two })
             {
                 if (side.Width is { } width)
@@ -930,6 +935,8 @@ internal static partial class FilletLimits
         var corners = new Dictionary<Shape, Corner>(ShapeHasher.Instance);
         foreach (Edge edge in edges)
         {
+            // Every fillet and chamfer reads all its edges before the algorithm starts: thousands, on a large shape
+            Cancellation.ThrowIfRequested();
             if ((Read(neighbours, edge) ?? ReadRim(neighbours, edge)) is { } corner)
             {
                 corners[edge] = corner;
@@ -1091,6 +1098,12 @@ internal static partial class FilletLimits
             else if (planar || !Tool.IsClosed(other, face))
             {
                 others.Add(other);
+
+                // Two are as good as hundreds: no width either way, and the top of a plate of many holes holds them all
+                if (others.Count > 1)
+                {
+                    return null;
+                }
             }
         }
         Vector3D toCentre = new(at, circle.Location);
@@ -1139,7 +1152,17 @@ internal static partial class FilletLimits
 
         // A next face the algorithm calls tangent is no limit, as for a straight edge (decision 1899)
         Face[] beyond = [.. neighbours.Faces(far).Where(f => !f.IsSame(face))];
-        if (beyond.Length != 1 || Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(far, face, beyond[0]))
+        if (beyond.Length != 1)
+        {
+            return null;
+        }
+
+        // Its test samples the edge on both faces, and finds the bounds of each in its parameters first, which on a plate's top of
+        // hundreds of holes is hundreds of projections for every hole: a face beside it turned about the axis meets this one at the
+        // same angle all the way round, so faces well apart there, not coded tangent, are what that test would find, without it
+        bool wellApart = RimNormal(neighbours, beyond[0], farCircle, farAt) is { } next && RimNormal(neighbours, face, farCircle, farAt) is { } here
+                         && Math.Abs(next.Dot(here)) < WellApart && Tool.Continuity(far, face, beyond[0]) == Continuity.C0;
+        if (!wellApart && Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(far, face, beyond[0]))
         {
             return null;
         }

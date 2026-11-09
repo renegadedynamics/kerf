@@ -96,6 +96,7 @@ internal static partial class FilletLimits
             {
                 continue;
             }
+            Cancellation.ThrowIfRequested();
             Edge[] edges = chains[ic];
             int count = edges.Length;
             neighbours ??= new Neighbours(shape);

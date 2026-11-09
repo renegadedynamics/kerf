@@ -3,6 +3,9 @@
 > **Agreed, 7 November 2026** (decision 1893), from the outline the owner asked for. Section 1 is started. The next
 > release is 0.4.0, with no fixed date: when sections 1 to 3 are done and the corpus shows no new failures. Sections 4
 > and 5 ship with whatever is ready by then.
+>
+> **0.4.0 prepared, 9 November 2026** (decision 2002), for the owner to test and publish: units 12A to 12Y as their
+> rows say. 12F, 12G, 12J, 12Q and 12R carry on. Phase 12 stays open until the owner closes it.
 
 ## The goal
 
@@ -70,6 +73,7 @@ Ongoing, to the owner's bar.
 | **Perf search, second round** (the first round's five ideas): **done** (decisions 1975 and 1976) | Each idea counted over 561 corpus cases and the slowest, kept only over decision 1829's bar and with the same results. A frozen 2D B-spline keeps the boxes of its arcs: `mkvolume` -19% of its bytes over the corpus's 74 cases, 20% to 37% on 15 of the 20 over 150 MB, `bug25232_9` -10% (1975); the other four under the bar (1976) |
 | **12U** The mesh guards' cost (decisions 1929, 1953): **done** (decisions 1977 to 1979) | The torus's and sphere's guards cost 14% to 18% in time and 5% to 12% in memory on the bottle and `Axis_of_bearing.brep`, for the same meshes. A quarter of the checks was a set of node pairs growing; a pass now marks its links by index (OCCT's map kept for the passes after the first), and a node's normal is estimated once, not once a link. Over `data/occ`, 5.3% fewer bytes and the angular check's estimates from 8.0% of the samples to 1.8%; `Axis_of_bearing.brep` 10.7% fewer bytes; the same meshes. Not done: skipping a face proved within the deflection, which would change its recorded deflection |
 | **12Y** Booleans on ordinary parts (a user's agent: 1.3 to 1.4 times build123d's, its suite twice as long): **done** (decisions 2000 and 2001; performance.md, "Booleans on ordinary parts") | Reproduced on eight extrude-and-cut parts, 145 Booleans, against native OCCT 8.0.1: the kernel's Boolean and clean are 0.5 to 0.7 times native's, and the gap was `Kerf.Modeling`'s two checks (decisions 1742, 1860), about as much again as the Boolean. The volume check kept a result's volume for the next Boolean (its time halved) and a classifier keeps a frozen solid's edge-face map (a second boss's fuse a third fewer bytes): the parts now 0.94 times native at the quietest (from 1.12), the same results. The rest of "twice as long" is a fresh process's JIT and tiering, about 3 s over the first 300 Booleans. The checks are still about 40% of `Kerf.Modeling`'s Boolean time, for the owner |
+| **12Z** A fillet's cancel slower in 0.4.0 (Bento's `AnEditStopsACellInsideALongFillet`, 2.5 to 2.9 s against 2 s): **done** (decisions 2005 and 2006), on `release/0.4.0` | Reproduced in Kerf: every edge of a plate of 900 holes, cancelled at 300 ms, returned 1.8 to 2.4 s later (0.3.0: 4 to 28 ms). Every fillet reads its edges' limits before ChFi3d, with no look at the token, and asking whether each hole's far rim was tangent to the plate's top of 904 edges took 2.1 s. Each edge is a check now, as are the builds after ChFi3d fails, and faces turned about a rim's axis and well apart aren't sampled, as a straight edge's weren't: the reading 30 ms with the same answers, and a cancel within 70 ms at 17 points (0.3.0: 78 ms). A test of the cancel on that plate |
 
 ## 5. Tests and surveys
 
@@ -87,6 +91,7 @@ Fitted around the rest.
 - General-surface fillets and replacing ChFi3d, as above.
 - Coverage of generated STEP entities.
 - Bento's caching (11F), which is the owner's with another agent.
+- DXF export and text (fonts, `Text`, notes and title blocks in drawings): 0.5.0 (decision 2004).
 
 ## How the work runs
 

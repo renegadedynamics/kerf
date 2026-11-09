@@ -111,6 +111,8 @@ Time from cancelling to returning, cancelled at 2, 10, 30, 50, 70 and 90% of a r
 
 **A result that's finished when the cancel arrives is returned,** which the tests expect.
 
+**A fillet's limits, read before ChFi3d** (unit 12Z, decisions 2005 and 2006). From 0.4.0 every fillet reads the limits of all its edges first, and on a plate of 900 holes that took 2.1 s without a look at the token: Bento's cell edited 300 ms into such a fillet waited 2.5 to 2.9 s for it. Each edge is a check now, and the reading 30 ms. Cancelled at 17 times from 20 ms to 8 s, on a quiet machine, the fillet returns within 70 ms of each (0.3.0: 78 ms); the worst is in ChFi3d's first 200 ms, as before.
+
 ## 4. "Sometimes it works": failure islands
 
 **The same call always gives the same answer.** Ten models (cuts, fuses, fillets, chamfers, an offset, a loft, a sweep, 81 holes): volume, area, counts, every mesh vertex and triangle, and the STEP text, by SHA-256. Six times serially and twelve times on four threads, in each of five new processes: **one digest for each model, 0 flips in 900.** Island points gave the same in new processes with 1, 2 and 8 processors (379 steps, 0 differences). Nothing here depends on timing, or the hash codes drawn for shapes.
