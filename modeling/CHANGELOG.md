@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **An operation reports the kernel's refusal of a value as a failure every time,** `kernel.invalid-argument` in context
+  ("box 0 × 1 × 1 failed: …"), where after many calls the JIT's optimisation could make one throw `ArgumentException`
+  instead (an extrusion along a zero vector, a box of size 0; kernel decision 25602).
+
 ## 0.4.0
 
 - **Silent wrong answers found and fixed,** and failures that say why: a chamfer or fillet too large says what fits,

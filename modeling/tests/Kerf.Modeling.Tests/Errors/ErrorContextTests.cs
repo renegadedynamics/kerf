@@ -26,6 +26,26 @@ public class ErrorContextTests
         Assert.StartsWith("box 0 × 1 × 1 failed: The value must be a positive number", e.Message);
     }
 
+    [Fact]
+    public void A_kernel_refusal_is_the_kernel_s_once_the_JIT_has_optimised_the_call()
+    {
+        // Decision 25602: the layer tells the kernel's refusals by the assembly that threw them, and once a call is hot the
+        // JIT inlines the kernel's small checks, and the public methods calling them, into the layer's frames. Run long
+        // enough to be optimised (tiering waits 100 ms after 30 calls), each refusal must still be the kernel's, said in
+        // context, every time
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        int runs = 0;
+        while (watch.ElapsedMilliseconds < 1500 || runs < 200)
+        {
+            var box = Failures.Try(() => new Box(0, 1, 1));
+            Assert.Equal("kernel.invalid-argument", box.Error!.Code.Value);
+            Assert.StartsWith("box 0 × 1 × 1 failed: ", box.Error.Message);
+            var extrude = Failures.Try(() => Solid.Extrude(Face.MakeRect(1, 1), new Vector3D(0, 0, 0)));
+            Assert.StartsWith("extrude failed: ", extrude.Error!.Message);
+            runs++;
+        }
+    }
+
     [Theory]
     [InlineData("extrude")]
     [InlineData("loft")]
