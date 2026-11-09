@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`TightCorners.Collapse` builds more of what it refused:** a tight arc beside a convex arc, corners of several arcs
+  together, sides drafted by one angle, and corners that are B-splines, ellipses or Béziers where the collapse swallows
+  them whole; a tight arc beside a concave arc, a curve swallowed only in part, and sides drafted by different angles
+  are still refused, saying why (kernel decisions 26502 to 26504; the guide's section 5).
 - **`MaxChamfer` and `MaxFillet` give the proved limit, less twice the shape's tolerance, where the limit itself can't be
   built and that can:** 1.6999998 for the guide's rounded box, whose corners close to a point at 1.7, where the search
   gave 1.594, and 9.9999998 for a fillet using up a face beside a slanted end, where it gave 9.944. Where the limit

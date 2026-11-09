@@ -183,7 +183,8 @@ first, inside the same operation, so 12V's refusal is reached only where no corn
 **`MaxChamfer` and `ChamferLimit`** (unit 12V, decision 1987) take no options and give the default's limit: the tightest
 convex arc's radius, or a face's width. With `Collapse` a tight arc sets no limit; the most that fits is then where a
 straight edge's inset is used up or the face is too narrow, which they don't compute. They're left as they are
-(decision 1992).
+(decision 1992). Where the arc's radius itself can't be built, as the default's edge closes to a point there, `MaxChamfer`
+gives the radius less twice the shape's tolerance, which ChFi3d builds: 1.6999998 on the guide's box (decision 26501).
 
 ## 4. The check
 

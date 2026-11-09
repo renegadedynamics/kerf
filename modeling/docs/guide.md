@@ -192,8 +192,12 @@ too, with `Kind` (`Arc`, `Intersection`) and `Side` in `OffsetOptions`.
 radius of a convex arc on its face can't step that arc in, and is refused. With
 `new ChamferOptions { TightCorners = TightCorners.Collapse }` the corner collapses to a point instead: the straight
 edges' insets meet, and the chamfer over the arc is a cone from there, tangent to the planes beside it, as the convex
-hull a user would otherwise build by hand. It's built for whole loops of a planar face of lines and arcs, their sides
-square to it (the end of a rounded prism or a housing), and refused, saying why, otherwise:
+hull a user would otherwise build by hand. It's built for whole loops of a planar face, their sides square to it or
+drafted by one angle (the end of a rounded prism, a housing, a moulding), with the length down a drafted side measured
+along its slope: tight arcs beside lines or convex arcs (a convex arc's end beside the corner runs to its point too),
+corners of several arcs together, and corners that are B-splines or ellipses where the collapse swallows them whole. A
+tight arc beside a concave arc, a curve the corner swallows only in part, and sides drafted by different angles are
+refused, saying why:
 
 ```csharp
 Part block = new Box(40, 30, 30);
