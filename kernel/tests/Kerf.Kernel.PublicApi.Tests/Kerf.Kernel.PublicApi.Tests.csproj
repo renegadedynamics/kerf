@@ -21,6 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The public surface as text, and what in it could change (unit 13P): PublicApiBaselineTests, ImmutabilityGuardTests -->
+    <Compile Include="..\Shared\ApiSurface.cs" Link="Shared\ApiSurface.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Remove="Kerf.Engine" />
     <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" />
     <Using Remove="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" />

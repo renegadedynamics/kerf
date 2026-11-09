@@ -41,6 +41,8 @@
     <Compile Include="..\..\..\kernel\tests\Shared\BooleanIssueShapes.cs" Link="Shared\BooleanIssueShapes.cs" />
     <!-- The kernel's refusals of an argument, where a test calls the kernel itself (decision 2028) -->
     <Compile Include="..\..\..\kernel\tests\Shared\KernelAssert.cs" Link="Shared\KernelAssert.cs" />
+    <!-- The public surface as text, and what in it could change (unit 13P): PublicApiBaselineTests, ImmutabilityGuardTests -->
+    <Compile Include="..\..\..\kernel\tests\Shared\ApiSurface.cs" Link="Shared\ApiSurface.cs" />
   </ItemGroup>
 
   <ItemGroup>

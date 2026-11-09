@@ -99,7 +99,7 @@ public class EmptyShapeMassPropertiesTests
     {
         var matrix = default(Solid).MatrixOfInertia;
         Assert.Equal(3, matrix.Length);
-        Assert.All(matrix, row => Assert.Equal([0.0, 0.0, 0.0], row));
+        Assert.All(matrix, row => Assert.Equal<double>([0.0, 0.0, 0.0], row));
     }
 
     [Fact]
