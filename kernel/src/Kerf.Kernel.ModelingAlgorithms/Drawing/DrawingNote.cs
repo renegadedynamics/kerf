@@ -12,7 +12,8 @@ namespace Kerf.Drawing;
 /// <summary>How a writer puts a drawing's notes in its file (decision 2008: outlines by default, text as an option).</summary>
 public enum TextOutput
 {
-    /// <summary>The glyphs' outlines: filled paths in SVG, closed polylines in DXF. Drawn the same everywhere, with no font
+    /// <summary>The glyphs' outlines: filled paths in SVG; in DXF closed polylines, filled by solid hatches in DXF 2013
+    /// (Kerf.Modeling's <c>ExportDxf</c>, which can leave the fill out). Drawn the same everywhere, with no font
     /// needed to read the file.</summary>
     Outlines,
 
