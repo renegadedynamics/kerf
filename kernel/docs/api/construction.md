@@ -66,6 +66,7 @@ public static class ShapeFactory   // static extension members
     // Face.FromSurface(Surface, (Interval U, Interval V)? bounds = null, Wire? boundary = null)    -> Result<Face>
     // Face.FromPlane(Plane3D, Wire? boundary = null)
     // Shell.FromSurface(Surface, …), Solid.FromShells(IEnumerable<Shell>)                       -> Result<Solid>
+    // Shell.FromPolygons(IReadOnlyList<Point3D>, IEnumerable<(Plane3D, int[])>)                 -> Result<Shell> (decision 1995)
     // Wire.TryGetPlane(out Plane3D), Shape.TryFindSurface(double tolerance, out Surface)         (BRepLib_FindSurface)
 }
 

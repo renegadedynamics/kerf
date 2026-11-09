@@ -37,6 +37,12 @@ public static class ModelingDiagnostics
     /// <summary>A spline couldn't be interpolated or approximated through the points: <c>modeling.spline-failed</c>.</summary>
     public static DiagnosticCode SplineFailed { get; } = new("modeling.spline-failed");
 
+    /// <summary>
+    /// A convex polyhedron couldn't be made: the points' hull has no volume (fewer than four distinct points, or all on
+    /// one line or in one plane), a coordinate isn't finite, or the solid wasn't valid: <c>modeling.hull-failed</c>.
+    /// </summary>
+    public static DiagnosticCode HullFailed { get; } = new("modeling.hull-failed");
+
     /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c>.</summary>
     public static DiagnosticCode KernelInvalidArgument { get; } = new("kernel.invalid-argument");
 

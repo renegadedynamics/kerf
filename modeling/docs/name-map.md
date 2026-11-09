@@ -188,5 +188,14 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
   stays .NET's: `ValueError` becomes `ArgumentException` (`ArgumentNullException` for a missing input), except where
   the shape being operated on is empty, which throws `InvalidOperationException` (the object's state, not an argument,
   is at fault). `RuntimeError` becomes `InvalidOperationException`. The messages are .NET sentences (unit 10M2).
+- `ConvexPolyhedron` merges points closer than 1e-6, leaves out a corner within 1e-6 of the hull of the others where
+  it would make a face thinner than that, and builds each flat side (corners within 5e-8 of one plane) as one face;
+  build123d makes a face of each of Qhull's triangles and cleans. A set with no volume throws `ArgumentException`, where
+  SciPy raises `QhullError`. `Operations.MakeConvexPolyhedron` gives the same as a `Result<Part>` (kernel decisions
+  24001 and 24004).
+- `Wire.MakePolygon(…, close: true)` closes a polygon whose ends are 1e-7 to 1e-6 apart, which build123d leaves open
+  (kernel decision 24002).
+- `Wire.MakeConvexHull` samples curves to a deflection, not 2 / tolerance points an edge, and makes each joining line
+  touch its curves, so its hull is exact where build123d's is within half a sample's spacing (kernel decision 24005).
 - A `Vertex` given as a constrained-arc target or centre is its point. build123d adds the vertex's
   position to its point, which counts the position twice for a moved vertex.
