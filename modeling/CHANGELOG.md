@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A part built by many cuts and fuses spends about a third less on its Booleans' checks,** with the same results: the volume check no longer measures each result twice, and fusing a second boss or rib onto a part allocates about a third less (kernel decisions 24101 and 24102). On eight ordinary parts, the Booleans now take about as long as native OCCT's.
 - **`Kind.Tangent` has gone** (a breaking change): an offset's kind is `Kind.Arc` or `Kind.Intersection`. In a 2D offset the tangent join gave the intersection join's result or nothing at all, and `Offset3D`, `Hollow` and a solid's `Offset` threw on it (kernel decision 1982). Use `Kind.Intersection`.
 - **An ellipse or spline offset inwards past its sharpest bend is within 0.1% of the distance,** where it was up to 1% off, silently (kernel decision 1980). **A closed curve whose offset comes out open fails** as `modeling.offset-failed`, where `Operations.Offset` threw (decision 1981).
 - **`Importers.ImportStep` past `ImportLimits.MaxBytes` or `MaxEntities` fails as `exchange.limit-exceeded`,** as documented and as BREP does, where it was `exchange.failed` (kernel decision 1965).
