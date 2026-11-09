@@ -18,8 +18,8 @@ version may break the API.
   it, as a `SizeLimit`; `FilletLimit` and `ChamferLimit` are its value, as before (decision 2047).
 - **Rendering and PNG writing are lighter** (unit 14A): a render keeps only a band of its supersampled samples at a
   time (an 1800 × 1100 picture supersampled twice allocated 63 MB, now about 8), and `Png.Encode` filters and
-  compresses sixteen bytes at a time, in about 40% of the time. The same pixels and the same PNG bytes (decisions 27101
-  and 27102).
+  compresses sixteen bytes at a time, in about 40% of the time. The same pixels and the same PNG bytes (decisions 2051
+  and 2052).
 - **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
   the caller's own list, so changing the list after making the options changed them. A collection expression
   (`Points = [p1, p2]`) works as before; a list is passed as `[.. list]` (unit 13P, decision 2044).
