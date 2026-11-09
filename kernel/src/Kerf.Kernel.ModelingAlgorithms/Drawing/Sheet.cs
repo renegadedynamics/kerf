@@ -7,29 +7,53 @@ using Kerf.Geometry;
 
 namespace Kerf.Drawing;
 
-/// <summary>A drawing sheet's paper: ISO 216's A4 to A0 and ANSI Y14.1's A to E.</summary>
+/// <summary>
+/// A drawing sheet's paper: ISO 216's A0 to A10 and the US sizes, build123d's <c>PageSize</c>, with ANSI Y14.1's C, D and
+/// E; ANSI A is <see cref="Letter"/> and ANSI B <see cref="Ledger"/>.
+/// </summary>
 public enum PageSize
 {
-    /// <summary>ISO A4, 297 × 210 mm.</summary>
-    A4,
-
-    /// <summary>ISO A3, 420 × 297 mm.</summary>
-    A3,
-
-    /// <summary>ISO A2, 594 × 420 mm.</summary>
-    A2,
+    /// <summary>ISO A0, 1189 × 841 mm.</summary>
+    A0,
 
     /// <summary>ISO A1, 841 × 594 mm.</summary>
     A1,
 
-    /// <summary>ISO A0, 1189 × 841 mm.</summary>
-    A0,
+    /// <summary>ISO A2, 594 × 420 mm.</summary>
+    A2,
 
-    /// <summary>ANSI A (US letter), 11 × 8.5 in.</summary>
-    AnsiA,
+    /// <summary>ISO A3, 420 × 297 mm.</summary>
+    A3,
 
-    /// <summary>ANSI B (ledger), 17 × 11 in.</summary>
-    AnsiB,
+    /// <summary>ISO A4, 297 × 210 mm.</summary>
+    A4,
+
+    /// <summary>ISO A5, 210 × 148 mm.</summary>
+    A5,
+
+    /// <summary>ISO A6, 148 × 105 mm.</summary>
+    A6,
+
+    /// <summary>ISO A7, 105 × 74 mm.</summary>
+    A7,
+
+    /// <summary>ISO A8, 74 × 52 mm.</summary>
+    A8,
+
+    /// <summary>ISO A9, 52 × 37 mm.</summary>
+    A9,
+
+    /// <summary>ISO A10, 37 × 26 mm.</summary>
+    A10,
+
+    /// <summary>US letter, ANSI A: 11 × 8.5 in.</summary>
+    Letter,
+
+    /// <summary>US legal, 14 × 8.5 in.</summary>
+    Legal,
+
+    /// <summary>US ledger (tabloid), ANSI B: 17 × 11 in.</summary>
+    Ledger,
 
     /// <summary>ANSI C, 22 × 17 in.</summary>
     AnsiC,
@@ -39,6 +63,12 @@ public enum PageSize
 
     /// <summary>ANSI E, 44 × 34 in.</summary>
     AnsiE,
+
+    /// <summary>ANSI A: <see cref="Letter"/>.</summary>
+    AnsiA = Letter,
+
+    /// <summary>ANSI B: <see cref="Ledger"/>.</summary>
+    AnsiB = Ledger,
 }
 
 /// <summary>Which way up a sheet's paper is.</summary>
@@ -120,9 +150,10 @@ public sealed record SheetView
 /// and Kerf.Modeling's DXF exporter writes as it is.
 /// </summary>
 /// <remarks>
-/// Plain, not a drafting standard: a border 20 mm from the left edge (for filing, as ISO 5457) and 10 mm from the others,
-/// and a title block 180 mm wide and 25 high, of two rows of cells, each with its label and the caller's text, in the
-/// default font. Immutable.
+/// Plain, not a drafting standard: a border 20 mm from the left edge (for filing, as ISO 5457) and 10 mm from the others
+/// (less in proportion on paper smaller than A4),
+/// and a title block 180 mm wide and 25 high (smaller in proportion on paper too narrow for it), of two rows of cells,
+/// each with its label and the caller's text, in the default font. Immutable.
 /// </remarks>
 public sealed record Sheet
 {
@@ -146,13 +177,20 @@ public sealed record Sheet
         Orientation = orientation;
         (double length, double breadth) = size switch
         {
-            PageSize.A4 => (297.0, 210.0),
-            PageSize.A3 => (420.0, 297.0),
-            PageSize.A2 => (594.0, 420.0),
-            PageSize.A1 => (841.0, 594.0),
             PageSize.A0 => (1189.0, 841.0),
-            PageSize.AnsiA => (279.4, 215.9),
-            PageSize.AnsiB => (431.8, 279.4),
+            PageSize.A1 => (841.0, 594.0),
+            PageSize.A2 => (594.0, 420.0),
+            PageSize.A3 => (420.0, 297.0),
+            PageSize.A4 => (297.0, 210.0),
+            PageSize.A5 => (210.0, 148.0),
+            PageSize.A6 => (148.0, 105.0),
+            PageSize.A7 => (105.0, 74.0),
+            PageSize.A8 => (74.0, 52.0),
+            PageSize.A9 => (52.0, 37.0),
+            PageSize.A10 => (37.0, 26.0),
+            PageSize.Letter => (279.4, 215.9),
+            PageSize.Legal => (355.6, 215.9),
+            PageSize.Ledger => (431.8, 279.4),
             PageSize.AnsiC => (558.8, 431.8),
             PageSize.AnsiD => (863.6, 558.8),
             _ => (1117.6, 863.6),
@@ -187,12 +225,22 @@ public sealed record Sheet
     } = [];
 
     /// <summary>The inside of the border, where views go.</summary>
-    public (Point2D Min, Point2D Max) Frame => (new Point2D(LeftMargin, Margin), new Point2D(Width - Margin, Height - Margin));
+    /// <remarks>20 mm from the left edge and 10 mm from the others, or less in proportion on paper smaller than A4 (its
+    /// short side under 210 mm).</remarks>
+    public (Point2D Min, Point2D Max) Frame
+        => (new Point2D(LeftMargin * MarginScale, Margin * MarginScale), new Point2D(Width - Margin * MarginScale, Height - Margin * MarginScale));
 
     /// <summary>The title block, in the frame's bottom right corner.</summary>
+    /// <remarks>180 mm wide and 25 high, or smaller in proportion on paper whose frame is narrower than 180 mm (A5 and
+    /// smaller, upright or not).</remarks>
     public (Point2D Min, Point2D Max) TitleBlockArea
-        => (new Point2D(Width - Margin - Math.Min(BlockWidth, Width - Margin - LeftMargin), Margin),
-            new Point2D(Width - Margin, Margin + BottomRow + TopRow));
+        => (new Point2D(Frame.Max.X - BlockWidth * BlockScale, Frame.Min.Y), new Point2D(Frame.Max.X, Frame.Min.Y + (BottomRow + TopRow) * BlockScale));
+
+    // The margins' scale: 1 on A4 and larger paper
+    private double MarginScale => Math.Min(1, Math.Min(Width, Height) / 210);
+
+    // The title block's scale: 1 where the frame is 180 mm wide or wider
+    private double BlockScale => Math.Min(1, (Frame.Max.X - Frame.Min.X) / BlockWidth);
 
     /// <summary>A scale as a title block writes it: <c>1:2</c> for 0.5, <c>5:1</c> for 5, <c>1:1</c>.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The scale isn't more than zero.</exception>
@@ -248,7 +296,7 @@ public sealed record Sheet
 
         // The title block: a top row of the title and the part number, a bottom row of the rest
         (Point2D b0, Point2D b1) = TitleBlockArea;
-        double width = b1.X - b0.X, middle = b0.Y + BottomRow, k = width / BlockWidth;
+        double k = BlockScale, middle = b0.Y + BottomRow * k;
         Line(b0.X, b1.Y, b1.X, b1.Y);
         Line(b0.X, b0.Y, b0.X, b1.Y);
         Line(b0.X, middle, b1.X, middle);
@@ -259,11 +307,11 @@ public sealed record Sheet
             [double one] => ScaleText(one),
             _ => "As shown",
         });
-        (string Label, string Value, double Width, double Size)[] top = [("TITLE", block.Title, 120 * k, 5), ("PART NUMBER", block.PartNumber, 60 * k, 3.5)];
+        (string Label, string Value, double Width, double Size)[] top = [("TITLE", block.Title, 120 * k, 5 * k), ("PART NUMBER", block.PartNumber, 60 * k, 3.5 * k)];
         (string Label, string Value, double Width, double Size)[] bottom =
         [
-            ("SCALE", scale, 30 * k, 3.5), ("UNITS", block.Units, 25 * k, 3.5), ("DATE", block.Date, 40 * k, 3.5),
-            ("AUTHOR", block.Author, 55 * k, 3.5), ("SHEET", block.Sheet, 30 * k, 3.5),
+            ("SCALE", scale, 30 * k, 3.5 * k), ("UNITS", block.Units, 25 * k, 3.5 * k), ("DATE", block.Date, 40 * k, 3.5 * k),
+            ("AUTHOR", block.Author, 55 * k, 3.5 * k), ("SHEET", block.Sheet, 30 * k, 3.5 * k),
         ];
         foreach (var (row, y0, y1) in new[] { (top, middle, b1.Y), (bottom, b0.Y, middle) })
         {
@@ -277,12 +325,12 @@ public sealed record Sheet
                     Line(x, y0, x, y1);
                 }
 
-                Result<DrawingNote> labelNote = DrawingNote.Make(label, new Point2D(x + Inset, y1 - Inset),
-                    new NoteStyle { Size = 1.8, Vertical = TextAlign.Top }, cancellationToken);
+                Result<DrawingNote> labelNote = DrawingNote.Make(label, new Point2D(x + Inset * k, y1 - Inset * k),
+                    new NoteStyle { Size = 1.8 * k, Vertical = TextAlign.Top }, cancellationToken);
                 notes.Add(labelNote.Value);
                 if (value.Trim().Length > 0)
                 {
-                    Result<DrawingNote> valueNote = DrawingNote.Make(value, new Point2D(x + Inset, y0 + 2),
+                    Result<DrawingNote> valueNote = DrawingNote.Make(value, new Point2D(x + Inset * k, y0 + 2 * k),
                         new NoteStyle { Size = size }, cancellationToken);
                     if (!valueNote.IsSuccess)
                     {
@@ -291,7 +339,7 @@ public sealed record Sheet
 
                     notes.Add(valueNote.Value);
                     warnings.AddRange(valueNote.Diagnostics);
-                    if (valueNote.Value.Bounds.Max.X > x + cell - 0.5 || valueNote.Value.Bounds.Max.Y > y1 - 2.5)
+                    if (valueNote.Value.Bounds.Max.X > x + cell - 0.5 * k || valueNote.Value.Bounds.Max.Y > y1 - 2.5 * k)
                     {
                         warnings.Add(Diagnostic.Warning(Overflow, $"The title block's {label.ToLowerInvariant()} doesn't fit its cell: '{value}'."));
                     }

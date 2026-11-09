@@ -18,7 +18,11 @@ public class SheetTests
     [InlineData(PageSize.A2, 594, 420)]
     [InlineData(PageSize.A1, 841, 594)]
     [InlineData(PageSize.A0, 1189, 841)]
+    [InlineData(PageSize.A5, 210, 148)]
+    [InlineData(PageSize.A6, 148, 105)]
+    [InlineData(PageSize.A10, 37, 26)]
     [InlineData(PageSize.AnsiA, 279.4, 215.9)]
+    [InlineData(PageSize.Legal, 355.6, 215.9)]
     [InlineData(PageSize.AnsiB, 431.8, 279.4)]
     [InlineData(PageSize.AnsiC, 558.8, 431.8)]
     [InlineData(PageSize.AnsiD, 863.6, 558.8)]
@@ -29,8 +33,12 @@ public class SheetTests
         var portrait = new Sheet(size, PageOrientation.Portrait);
         Assert.Equal((width, height), (landscape.Width, landscape.Height));
         Assert.Equal((height, width), (portrait.Width, portrait.Height));
-        // The title block fits the frame on every paper; on A4 upright it is the frame's whole width
+        // The title block fits the frame's width on every paper; on A4 upright it is the whole of it
         Assert.True(portrait.TitleBlockArea.Min.X >= portrait.Frame.Min.X - 1e-9);
+        Assert.Equal(Math.Min(180, landscape.Frame.Max.X - landscape.Frame.Min.X), landscape.TitleBlockArea.Max.X - landscape.TitleBlockArea.Min.X, 1e-9);
+        Assert.True(portrait.TitleBlockArea.Max.Y < portrait.Frame.Max.Y);
+        if (size == PageSize.A4)
+            Assert.Equal(portrait.Frame.Min.X, portrait.TitleBlockArea.Min.X, 1e-9);
         LineDrawing drawing = portrait.Draw().Value;
         Assert.Equal(12, drawing.Edges.Length); // the border's 4 lines, the block's 3 and its 5 cells' dividers
         Assert.Equal(9, drawing.Notes.Length);  // the labels, and the units and sheet number they have by default
