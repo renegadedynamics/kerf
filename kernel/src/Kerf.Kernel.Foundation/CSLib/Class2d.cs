@@ -3,8 +3,6 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics;
 using Kerf.Geometry;
 
 namespace Kerf.Engine.Geometry;
@@ -249,17 +247,8 @@ internal sealed class Class2d
         return result;
     }
 
-    // Ray-casting classification in normalized coordinates: true if inside. Four edges at a time where the processor has
-    // vectors of four doubles (unit 14E), each edge's test the scalar one's operations in the same order, so the same result
+    // Ray-casting classification in normalized coordinates: true if inside.
     private bool InternalSiDans(double px, double py)
-        => Vector256.IsHardwareAccelerated && _pointsCount >= 2 * Vector256<double>.Count ? InternalSiDansVector(px, py) : InternalSiDansScalar(px, py);
-
-    // Ray-casting classification with ON detection, in normalized coordinates (as InternalSiDans, by vectors where it can).
-    private Result InternalSiDansOuOn(double px, double py)
-        => Vector256.IsHardwareAccelerated && _pointsCount >= 2 * Vector256<double>.Count ? InternalSiDansOuOnVector(px, py) : InternalSiDansOuOnScalar(px, py);
-
-    /// <summary>The ray-casting test edge by edge (OCCT's loop), in normalized coordinates: true if inside.</summary>
-    internal bool InternalSiDansScalar(double px, double py)
     {
         // Count edge crossings with a horizontal ray from (Px, Py) to +infinity.
         int nbCrossings = 0;
@@ -302,8 +291,8 @@ internal sealed class Class2d
         return (nbCrossings & 1) != 0;
     }
 
-    /// <summary>The ray-casting test with ON detection edge by edge (OCCT's loop), in normalized coordinates.</summary>
-    internal Result InternalSiDansOuOnScalar(double px, double py)
+    // Ray-casting classification with ON detection, in normalized coordinates.
+    private Result InternalSiDansOuOn(double px, double py)
     {
         int nbCrossings = 0;
 
@@ -364,126 +353,5 @@ internal sealed class Class2d
 
         // Odd number of crossings means inside.
         return ((nbCrossings & 1) != 0) ? Result.Result_Inside : Result.Result_Outside;
-    }
-
-    /// <summary>
-    /// <see cref="InternalSiDansScalar"/> four edges at a time. The scalar loop's sign of the previous point is the sign of
-    /// the edge's first point (it changes only when the two differ), so each edge's crossing depends on its own two points
-    /// alone; each is tested with the same operations in the same order, and the crossings counted.
-    /// </summary>
-    internal bool InternalSiDansVector(double px, double py)
-    {
-        ReadOnlySpan<double> xs = _pnts2dX.AsSpan(), ys = _pnts2dY.AsSpan(); // _pointsCount + 1 points, the last the first
-        Vector256<double> vpx = Vector256.Create(px), vpy = Vector256.Create(py);
-        Vector256<long> crossings = Vector256<long>.Zero;
-        int first = 0;
-        for (; first + Vector256<double>.Count <= _pointsCount; first += Vector256<double>.Count)
-        {
-            Vector256<double> prevDx = Vector256.Create(xs.Slice(first)) - vpx, prevDy = Vector256.Create(ys.Slice(first)) - vpy;
-            Vector256<double> currDx = Vector256.Create(xs.Slice(first + 1)) - vpx, currDy = Vector256.Create(ys.Slice(first + 1)) - vpy;
-            crossings -= Crosses(prevDx, prevDy, currDx, currDy).AsInt64();
-        }
-
-        int nbCrossings = (int)Vector256.Sum(crossings);
-        for (; first < _pointsCount; ++first)
-        {
-            if (Crosses(xs[first] - px, ys[first] - py, xs[first + 1] - px, ys[first + 1] - py))
-            {
-                ++nbCrossings;
-            }
-        }
-
-        return (nbCrossings & 1) != 0;
-    }
-
-    /// <summary>
-    /// <see cref="InternalSiDansOuOnScalar"/> four edges at a time: the scalar loop answers ON at the first edge found ON,
-    /// and otherwise by the crossings, so the answer is ON if any edge is, whichever is found first.
-    /// </summary>
-    internal Result InternalSiDansOuOnVector(double px, double py)
-    {
-        ReadOnlySpan<double> xs = _pnts2dX.AsSpan(), ys = _pnts2dY.AsSpan();
-        Vector256<double> vpx = Vector256.Create(px), vpy = Vector256.Create(py);
-        Vector256<double> tolU = Vector256.Create(_tolU), tolV = Vector256.Create(_tolV), negTolU = Vector256.Create(-_tolU), negTolV = Vector256.Create(-_tolV);
-        Vector256<double> confusion = Vector256.Create(global::Kerf.Engine.Foundation.Precision.PConfusion());
-        Vector256<long> crossings = Vector256<long>.Zero;
-        int first = 0;
-        for (; first + Vector256<double>.Count <= _pointsCount; first += Vector256<double>.Count)
-        {
-            Vector256<double> prevX = Vector256.Create(xs.Slice(first)), prevY = Vector256.Create(ys.Slice(first));
-            Vector256<double> nextX = Vector256.Create(xs.Slice(first + 1)), nextY = Vector256.Create(ys.Slice(first + 1));
-            Vector256<double> prevDx = prevX - vpx, prevDy = prevY - vpy, currDx = nextX - vpx, currDy = nextY - vpy;
-
-            // Very close to the edge's second point
-            Vector256<double> on = Vector256.LessThan(currDx, tolU) & Vector256.GreaterThan(currDx, negTolU)
-                                   & Vector256.LessThan(currDy, tolV) & Vector256.GreaterThan(currDy, negTolV);
-
-            // On the edge, by its Y at the point's X, unless it's nearly vertical
-            Vector256<double> edgeDx = nextX - prevX;
-            Vector256<double> deltaY = nextY - (nextY - prevY) / edgeDx * currDx - vpy;
-            on |= Vector256.LessThan(prevDx * currDx, Vector256<double>.Zero) & Vector256.GreaterThan(Vector256.Abs(edgeDx), confusion)
-                  & Vector256.GreaterThanOrEqual(deltaY, negTolV) & Vector256.LessThanOrEqual(deltaY, tolV);
-            if (on != Vector256<double>.Zero)
-            {
-                return Result.Result_Uncertain;
-            }
-
-            crossings -= Crosses(prevDx, prevDy, currDx, currDy).AsInt64();
-        }
-
-        int nbCrossings = (int)Vector256.Sum(crossings);
-        for (; first < _pointsCount; ++first)
-        {
-            double prevDx = xs[first] - px, prevDy = ys[first] - py, currDx = xs[first + 1] - px, currDy = ys[first + 1] - py;
-            if (currDx < _tolU && currDx > -_tolU && currDy < _tolV && currDy > -_tolV)
-            {
-                return Result.Result_Uncertain;
-            }
-
-            double edgeDx = xs[first + 1] - xs[first];
-            if (prevDx * currDx < 0.0 && Math.Abs(edgeDx) > global::Kerf.Engine.Foundation.Precision.PConfusion())
-            {
-                double deltaY = ys[first + 1] - (ys[first + 1] - ys[first]) / edgeDx * currDx - py;
-                if (deltaY >= -_tolV && deltaY <= _tolV)
-                {
-                    return Result.Result_Uncertain;
-                }
-            }
-
-            if (Crosses(prevDx, prevDy, currDx, currDy))
-            {
-                ++nbCrossings;
-            }
-        }
-
-        return ((nbCrossings & 1) != 0) ? Result.Result_Inside : Result.Result_Outside;
-    }
-
-    // Whether an edge, its points relative to the test point, crosses the ray to +X: the scalar loops' test
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool Crosses(double prevDx, double prevDy, double currDx, double currDy)
-    {
-        if ((currDy < 0.0) == (prevDy < 0.0))
-        {
-            return false;
-        }
-
-        if (prevDx > 0.0 && currDx > 0.0)
-        {
-            return true;
-        }
-
-        return (prevDx > 0.0 || currDx > 0.0) && prevDx - prevDy * (currDx - prevDx) / (currDy - prevDy) > 0.0;
-    }
-
-    // The same for four edges: all bits set in the lanes whose edge crosses
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector256<double> Crosses(Vector256<double> prevDx, Vector256<double> prevDy, Vector256<double> currDx, Vector256<double> currDy)
-    {
-        Vector256<double> zero = Vector256<double>.Zero;
-        Vector256<double> signChanges = Vector256.LessThan(currDy, zero) ^ Vector256.LessThan(prevDy, zero);
-        Vector256<double> prevRight = Vector256.GreaterThan(prevDx, zero), currRight = Vector256.GreaterThan(currDx, zero);
-        Vector256<double> xIntersect = prevDx - prevDy * (currDx - prevDx) / (currDy - prevDy);
-        return signChanges & ((prevRight & currRight) | ((prevRight | currRight) & Vector256.GreaterThan(xIntersect, zero)));
     }
 }
