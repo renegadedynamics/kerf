@@ -177,8 +177,8 @@ public class ExchangeTests
         Assert.Equal(0.5, linear.R, 1e-4);
         Assert.Equal((float)0.214041, (float)linear.ToLinear().R);
         Assert.Equal(0.5, linear.A);
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Color(1.5, 0, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Color.FromLinear(0, 0, double.NaN));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new Color(1.5, 0, 0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Color.FromLinear(0, 0, double.NaN));
         Assert.NotEqual(new Color(1, 0, 0), new Color(1, 0, 0, 0.5));
     }
 
@@ -194,7 +194,7 @@ public class ExchangeTests
         Shape all = assembly.ToShape();
         Assert.Equal(12000, all.IntegrateVolume(), 1e-6);
         Assert.Equal(100, all.BoundingBox(optimal: true).Min.X, 1e-6);
-        Assert.Throws<ArgumentException>(() => ModelNode.Part(default(Shape)));
+        KernelAssert.Throws<ArgumentException>(() => ModelNode.Part(default(Shape)));
         Assert.Equal(1L << 30, ReadLimits.Default.MaxBytes);
         Assert.Equal(25.4, LengthUnit.Inch.Millimetres());
     }

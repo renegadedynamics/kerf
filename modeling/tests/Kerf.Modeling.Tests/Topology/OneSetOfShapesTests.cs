@@ -204,8 +204,8 @@ public class OneSetOfShapesTests
         // The other two differ only on nothing: zero, where the kernel refuses
         Assert.Equal(0, default(Face).Area);
         Assert.Equal(0, default(Edge).Length);
-        Assert.Throws<ArgumentException>(() => default(Face).IntegrateArea());
-        Assert.Throws<ArgumentException>(() => default(Edge).IntegrateLength());
+        KernelAssert.Throws<ArgumentException>(() => default(Face).IntegrateArea());
+        KernelAssert.Throws<ArgumentException>(() => default(Edge).IntegrateLength());
         Assert.Equal(4 * Math.PI, sphereFace.Area, 6);
         Assert.Equal(sphereFace.Area, sphereFace.IntegrateArea(), 12);
     }

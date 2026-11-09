@@ -18,11 +18,11 @@ internal sealed class SubShape
     {
         if (shape.IsNull)
         {
-            throw new ArgumentException("A sub-shape needs a shape", nameof(shape));
+            throw new KernelArgumentException("A sub-shape needs a shape", nameof(shape));
         }
         shape.TShape()?.FreezeGraph();
         Shape = shape;
-        Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
+        Attributes = attributes ?? throw new KernelArgumentNullException(nameof(attributes));
     }
 
     /// <summary>The sub-shape, in the part's coordinates.</summary>

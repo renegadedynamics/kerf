@@ -85,7 +85,7 @@ public class RenderingTests
         Assert.InRange(r, 240, 255);
         Assert.Equal(0, g);
         Assert.Equal(0, b);
-        Assert.Throws<ArgumentException>(() => item.WithFaceColor(Fixtures.Cylinder().AllFaces()[0], new Color(0, 1, 0)));
+        KernelAssert.Throws<ArgumentException>(() => item.WithFaceColor(Fixtures.Cylinder().AllFaces()[0], new Color(0, 1, 0)));
     }
 
     [Fact]
@@ -185,10 +185,10 @@ public class RenderingTests
     [Fact]
     public void Misuse_throws_and_an_empty_scene_is_the_background()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new RenderOptions { Supersampling = 5 });
-        Assert.Throws<ArgumentOutOfRangeException>(() => new RenderOptions { Width = 0 });
-        Assert.Throws<ArgumentNullException>(() => Renderer.Render((Scene)null!, Camera.Top));
-        Assert.Throws<ArgumentException>(() => Renderer.Render(new Scene(), Camera.Top with { Up = Direction3D.UnitZ }));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new RenderOptions { Supersampling = 5 });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new RenderOptions { Width = 0 });
+        KernelAssert.Throws<ArgumentNullException>(() => Renderer.Render((Scene)null!, Camera.Top));
+        KernelAssert.Throws<ArgumentException>(() => Renderer.Render(new Scene(), Camera.Top with { Up = Direction3D.UnitZ }));
         RgbaImage empty = Renderer.Render(new Scene(), Camera.Top, Small).Value;
         Assert.Equal(0, Coverage(empty));
         using var cancelled = new CancellationTokenSource();

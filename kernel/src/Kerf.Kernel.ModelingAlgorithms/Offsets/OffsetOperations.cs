@@ -95,7 +95,7 @@ public static class OffsetOperations
             MakerOutcome.NotNull(s, nameof(shape));
             if (s.Type is not (ShapeType.Face or ShapeType.Shell))
             {
-                throw new ArgumentException($"Only a face or a shell can be thickened, not a {s.Type}.", nameof(shape));
+                throw new KernelArgumentException($"Only a face or a shell can be thickened, not a {s.Type}.", nameof(shape));
             }
             NonZero(thickness, nameof(thickness));
             return EngineOperation.Run<Solid>(range =>
@@ -123,7 +123,7 @@ public static class OffsetOperations
         public Result<Built<Shape>> ThickSolid(IEnumerable<Face> openings, double thickness, OffsetOptions? options = null,
                                                IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(openings);
+            KernelArgumentNullException.ThrowIfNull(openings);
             options ??= OffsetOptions.Default;
             Shape s = shape.AsShape();
             MakerOutcome.NotNull(s, nameof(shape));
@@ -142,7 +142,7 @@ public static class OffsetOperations
             MakerOutcome.NotNull(s, nameof(shape));
             if (s.Type is not (ShapeType.Wire or ShapeType.Face))
             {
-                throw new ArgumentException($"Only a wire or a face can be offset in its plane, not a {s.Type}.", nameof(shape));
+                throw new KernelArgumentException($"Only a wire or a face can be offset in its plane, not a {s.Type}.", nameof(shape));
             }
             return EngineOperation.Run<Shape>(range =>
             {
@@ -189,7 +189,7 @@ public static class OffsetOperations
         public Result<Built<Solid>> Hollow(IEnumerable<Face> openings, double thickness, OffsetOptions? options = null,
                                            IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(openings);
+            KernelArgumentNullException.ThrowIfNull(openings);
             options ??= OffsetOptions.Default;
             Solid s = solid;
             MakerOutcome.NotNull(s, nameof(solid));
@@ -200,7 +200,7 @@ public static class OffsetOperations
                 MakerOutcome.NotNull(face, nameof(openings));
                 if (!s.AllFaces().Any(f => f.IsSame(face)))
                 {
-                    throw new ArgumentException("An opening isn't one of the solid's faces.", nameof(openings));
+                    throw new KernelArgumentException("An opening isn't one of the solid's faces.", nameof(openings));
                 }
                 faces.Append(face);
             }
@@ -292,7 +292,7 @@ public static class OffsetOperations
             MakerOutcome.NotNull(face, nameof(openings));
             if (!own.Any(f => f.IsSame(face)))
             {
-                throw new ArgumentException("An opening isn't one of the shape's faces.", nameof(openings));
+                throw new KernelArgumentException("An opening isn't one of the shape's faces.", nameof(openings));
             }
             faces.Append(face);
         }
@@ -303,7 +303,7 @@ public static class OffsetOperations
     {
         if (!(Math.Abs(value) > Tolerances.Confusion) || double.IsInfinity(value))
         {
-            throw new ArgumentOutOfRangeException(name, value, "The distance must be a non-zero number.");
+            throw new KernelArgumentOutOfRangeException(name, value, "The distance must be a non-zero number.");
         }
     }
 

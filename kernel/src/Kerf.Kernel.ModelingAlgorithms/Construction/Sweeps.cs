@@ -88,7 +88,7 @@ public static class Sweeps
             MakerOutcome.NotNull(profile.AsShape(), nameof(profile));
             if (direction.Magnitude <= Tolerances.Confusion)
             {
-                MakerOutcome.Refuse(new ArgumentException("The extrusion's direction is zero.", nameof(direction)));
+                throw new KernelArgumentException("The extrusion's direction is zero.", nameof(direction));
             }
             Shape p = profile.AsShape();
             // A prism is as good as its profile, so only the profile is checked unless it's found wanting
@@ -119,7 +119,7 @@ public static class Sweeps
             MakerOutcome.Valid(axis, nameof(axis));
             if (!(Math.Abs(angle) > Tolerances.Angular) || Math.Abs(angle) > 2 * Math.PI + Tolerances.Angular)
             {
-                throw new ArgumentOutOfRangeException(nameof(angle), angle, "The angle must be non-zero and at most 2π.");
+                throw new KernelArgumentOutOfRangeException(nameof(angle), angle, "The angle must be non-zero and at most 2π.");
             }
             Shape p = profile.AsShape();
             Axis3D a = axis;
@@ -159,7 +159,7 @@ public static class Sweeps
         double endRadius = options.EndRadius ?? radius;
         if (!(endRadius >= 0) || double.IsInfinity(endRadius))
         {
-            throw new ArgumentOutOfRangeException(nameof(options), endRadius, "The end radius must be zero or more.");
+            throw new KernelArgumentOutOfRangeException(nameof(options), endRadius, "The end radius must be zero or more.");
         }
         MakerOutcome.Positive(options.Tolerance, nameof(options));
         var builder = new BuilderHelix();
@@ -242,7 +242,7 @@ public static class Sweeps
     private static Result<Built<Shape>> SweepInFrame(IReadOnlyList<Shape> profiles, Wire spine, SweepOptions options,
                                                      IProgress<double>? progress, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(profiles);
+        KernelArgumentNullException.ThrowIfNull(profiles);
         MakerOutcome.NotNull(spine, nameof(spine));
         Shape[] sections = Sections(profiles, nameof(profiles));
         Shape[] inputs = [.. sections, spine];
@@ -275,12 +275,12 @@ public static class Sweeps
     public static Result<Built<Shape>> Loft(IReadOnlyList<Shape> sections, LoftOptions? options = null,
                                             IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(sections);
+        KernelArgumentNullException.ThrowIfNull(sections);
         options ??= LoftOptions.Default;
         Shape[] inputs = Sections(sections, nameof(sections));
         if (inputs.Length < 2)
         {
-            throw new ArgumentException("A loft needs at least two sections.", nameof(sections));
+            throw new KernelArgumentException("A loft needs at least two sections.", nameof(sections));
         }
         return EngineOperation.Run<Shape>(range =>
         {
@@ -326,14 +326,14 @@ public static class Sweeps
     {
         if (sections.Count == 0)
         {
-            throw new ArgumentException("There are no sections.", name);
+            throw new KernelArgumentException("There are no sections.", name);
         }
         foreach (Shape section in sections)
         {
             MakerOutcome.NotNull(section, name);
             if (section.Type is not (ShapeType.Wire or ShapeType.Vertex))
             {
-                throw new ArgumentException($"A section must be a wire or a vertex, not a {section.Type}.", name);
+                throw new KernelArgumentException($"A section must be a wire or a vertex, not a {section.Type}.", name);
             }
         }
         return [.. sections];
@@ -349,8 +349,8 @@ public static class Sweeps
         SweepFrame.Auxiliary when options.AuxiliarySpine is { IsNull: false } auxiliary =>
             pipe => pipe.SetMode(auxiliary, options.CurvilinearEquivalence),
         SweepFrame.Fixed or SweepFrame.Binormal or SweepFrame.Auxiliary =>
-            throw new ArgumentException($"The sweep frame {options.Frame} needs its value in the options.", nameof(options)),
-        _ => throw new ArgumentOutOfRangeException(nameof(options), options.Frame, "An unknown sweep frame."),
+            throw new KernelArgumentException($"The sweep frame {options.Frame} needs its value in the options.", nameof(options)),
+        _ => throw new KernelArgumentOutOfRangeException(nameof(options), options.Frame, "An unknown sweep frame."),
     };
 
     // An extrusion or revolution built, with its history of the profile's sub-shapes and their caps

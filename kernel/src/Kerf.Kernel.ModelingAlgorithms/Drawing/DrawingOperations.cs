@@ -57,12 +57,12 @@ public static class DrawingOperations
     public static Result<LineDrawing> ProjectLines(IEnumerable<Shape> shapes, Camera camera, DrawingOptions? options = null,
                                                    CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(shapes);
-        ArgumentNullException.ThrowIfNull(camera);
+        KernelArgumentNullException.ThrowIfNull(shapes);
+        KernelArgumentNullException.ThrowIfNull(camera);
         List<Shape> inputs = [.. shapes];
         if (inputs.Any(s => s.IsNull))
         {
-            throw new ArgumentException("A shape is null.", nameof(shapes));
+            throw new KernelArgumentException("A shape is null.", nameof(shapes));
         }
 
         options ??= DrawingOptions.Default;
@@ -71,7 +71,7 @@ public static class DrawingOperations
         AlgorithmProjector projector = camera.ToProjector();
         if (options.Method == HiddenLineMethod.Polygonal && camera.Projection == Projection.Perspective)
         {
-            throw new ArgumentException("The polygonal algorithm draws with orthographic cameras only.", nameof(options));
+            throw new KernelArgumentException("The polygonal algorithm draws with orthographic cameras only.", nameof(options));
         }
 
         cancellationToken.ThrowIfCancellationRequested();

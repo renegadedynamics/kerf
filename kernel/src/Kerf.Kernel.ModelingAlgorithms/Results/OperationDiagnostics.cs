@@ -22,7 +22,7 @@ internal static class OperationDiagnostics
     /// </summary>
     public static ImmutableArray<Diagnostic> FromException(Exception exception)
     {
-        ArgumentNullException.ThrowIfNull(exception);
+        KernelArgumentNullException.ThrowIfNull(exception);
         if (exception is BooleanFailureException boolean)
         {
             var alerts = AlertDiagnostics.ToDiagnostics(boolean.Report());
@@ -38,8 +38,8 @@ internal static class OperationDiagnostics
     /// </summary>
     public static ImmutableArray<Diagnostic> FromReport(Report report, Diagnostic fallback)
     {
-        ArgumentNullException.ThrowIfNull(report);
-        ArgumentNullException.ThrowIfNull(fallback);
+        KernelArgumentNullException.ThrowIfNull(report);
+        KernelArgumentNullException.ThrowIfNull(fallback);
         var alerts = AlertDiagnostics.ToDiagnostics(report);
         return alerts.Any(d => d.IsError) ? alerts : [.. alerts, fallback];
     }

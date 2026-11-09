@@ -33,7 +33,7 @@ public static class ShapeFactory
         /// <summary>An edge on <paramref name="curve"/>, over its whole range or <paramref name="range"/>.</summary>
         public static Result<Edge> FromCurve(Curve3D curve, Interval? range = null)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             return range is { } r ? BuildEdge(() => new MakeEdge(curve, r.Min, r.Max)) : BuildEdge(() => new MakeEdge(curve));
         }
 
@@ -42,8 +42,8 @@ public static class ShapeFactory
         /// <c>WithCurves3D</c> to compute with other settings.</summary>
         public static Result<Edge> FromCurve(Curve2D curve, Surface surface, Interval? range = null, bool computeCurve3D = true)
         {
-            ArgumentNullException.ThrowIfNull(curve);
-            ArgumentNullException.ThrowIfNull(surface);
+            KernelArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(surface);
             return BuildEdge(() => range is { } r ? new MakeEdge(curve, surface, r.Min, r.Max) : new MakeEdge(curve, surface),
                              buildCurve: computeCurve3D);
         }
@@ -70,7 +70,7 @@ public static class ShapeFactory
         /// <exception cref="ArgumentException">An edge is null.</exception>
         public static Result<Wire> FromEdges(IEnumerable<Edge> edges)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             Edge[] list = [.. edges];
             foreach (Edge e in list)
             {
@@ -95,7 +95,7 @@ public static class ShapeFactory
         /// <exception cref="ArgumentException">An edge is null.</exception>
         public static Result<Wire> Connect(IEnumerable<Edge> edges)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             var list = new Kerf.Engine.NCollection_List<Shape>();
             foreach (Edge e in edges)
             {
@@ -117,7 +117,7 @@ public static class ShapeFactory
         {
             if (points.Length < 2)
             {
-                throw new ArgumentException("A polygon needs at least two points.", nameof(points));
+                throw new KernelArgumentException("A polygon needs at least two points.", nameof(points));
             }
             Point3D[] copy = points.ToArray();
             return Guarded(() =>
@@ -225,7 +225,7 @@ public static class ShapeFactory
         public static Result<Face> FromWires(Wire outer, IEnumerable<Wire> holes, bool onlyPlane = false, bool checkResult = true)
         {
             MakerOutcome.NotNull(outer, nameof(outer));
-            ArgumentNullException.ThrowIfNull(holes);
+            KernelArgumentNullException.ThrowIfNull(holes);
             Wire[] inner = [.. holes];
             foreach (Wire hole in inner)
             {
@@ -251,15 +251,15 @@ public static class ShapeFactory
         public static Result<Face> FromSurface(Surface surface, (Interval U, Interval V)? bounds = null, Wire? boundary = null,
                                                IEnumerable<Wire>? holes = null, bool checkResult = true)
         {
-            ArgumentNullException.ThrowIfNull(surface);
+            KernelArgumentNullException.ThrowIfNull(surface);
             if (bounds is not null && boundary is not null)
             {
-                throw new ArgumentException("Give the bounds or a boundary, not both.", nameof(boundary));
+                throw new KernelArgumentException("Give the bounds or a boundary, not both.", nameof(boundary));
             }
             Wire[] inner = [.. holes ?? []];
             if (inner.Length > 0 && boundary is null)
             {
-                throw new ArgumentException("Holes need a boundary.", nameof(holes));
+                throw new KernelArgumentException("Holes need a boundary.", nameof(holes));
             }
             foreach (Wire hole in inner)
             {
@@ -271,9 +271,15 @@ public static class ShapeFactory
                     ? new MakeFace(surface, b.U.Min, b.U.Max, b.V.Min, b.V.Max, Tolerances.Confusion)
                     : new MakeFace(surface, Tolerances.Confusion));
             // A surface's own bounds make a good face; bounds off the surface don't (mkface/after_extsurf_and_offset C6 to C9,
-            // decision 1919), and wires may not bound one
-            return Validity.Checked(made, checkResult && (boundary is not null || (bounds is { } limits && IsOff(surface, limits))), "The face");
+            // decision 1919), nor bounds so narrow that an edge is shorter than its tolerance (a rectangle 1e-9 wide,
+            // decision 2029), and wires may not bound one
+            return Validity.Checked(made, checkResult && (boundary is not null || (bounds is { } limits && (IsOff(surface, limits) || IsNarrow(limits)))),
+                                    "The face");
         }
+
+        // Bounds narrower than this, in the surface's parameters, are checked: from 2e-7 up a rectangle was valid as built
+        private static bool IsNarrow((Interval U, Interval V) limits) =>
+            limits.U.Max - limits.U.Min < 1e-5 || limits.V.Max - limits.V.Min < 1e-5;
 
         private static bool IsOff(Surface surface, (Interval U, Interval V) limits)
         {
@@ -301,7 +307,7 @@ public static class ShapeFactory
         /// <exception cref="ArgumentException">The face or a hole is null.</exception>
         public Result<Face> WithHoles(IEnumerable<Wire> holes, bool checkResult = true)
         {
-            ArgumentNullException.ThrowIfNull(holes);
+            KernelArgumentNullException.ThrowIfNull(holes);
             Face f = face;
             MakerOutcome.NotNull(f, nameof(face));
             Wire[] inner = [.. holes];
@@ -328,7 +334,7 @@ public static class ShapeFactory
         /// <summary>A shell on <paramref name="surface"/>, over its natural bounds or <paramref name="bounds"/>.</summary>
         public static Result<Shell> FromSurface(Surface surface, (Interval U, Interval V)? bounds = null)
         {
-            ArgumentNullException.ThrowIfNull(surface);
+            KernelArgumentNullException.ThrowIfNull(surface);
             return Guarded(() =>
             {
                 MakeShell shell = bounds is { } b ? new MakeShell(surface, b.U.Min, b.U.Max, b.V.Min, b.V.Max) : new MakeShell(surface);
@@ -351,18 +357,18 @@ public static class ShapeFactory
         /// <exception cref="ArgumentException">A polygon has fewer than three corners, or an index is out of range.</exception>
         public static Result<Shell> FromPolygons(IReadOnlyList<Point3D> points, IEnumerable<(Plane3D Plane, int[] Corners)> polygons)
         {
-            ArgumentNullException.ThrowIfNull(points);
-            ArgumentNullException.ThrowIfNull(polygons);
+            KernelArgumentNullException.ThrowIfNull(points);
+            KernelArgumentNullException.ThrowIfNull(polygons);
             var list = polygons.ToList();
             foreach (var (_, corners) in list)
             {
                 if (corners is not { Length: >= 3 })
                 {
-                    throw new ArgumentException("A polygon needs at least three corners.", nameof(polygons));
+                    throw new KernelArgumentException("A polygon needs at least three corners.", nameof(polygons));
                 }
                 if (corners.Any(i => i < 0 || i >= points.Count))
                 {
-                    throw new ArgumentException("A corner's index is out of range.", nameof(polygons));
+                    throw new KernelArgumentException("A corner's index is out of range.", nameof(polygons));
                 }
             }
             return Validity.Checked(Guarded<Shell>(() =>
@@ -409,11 +415,11 @@ public static class ShapeFactory
         /// <exception cref="ArgumentException">No shells, or a null one.</exception>
         public static Result<Solid> FromShells(IEnumerable<Shell> shells, bool checkResult = true)
         {
-            ArgumentNullException.ThrowIfNull(shells);
+            KernelArgumentNullException.ThrowIfNull(shells);
             Shell[] list = [.. shells];
             if (list.Length == 0)
             {
-                throw new ArgumentException("A solid needs at least one shell.", nameof(shells));
+                throw new KernelArgumentException("A solid needs at least one shell.", nameof(shells));
             }
             foreach (Shell s in list)
             {

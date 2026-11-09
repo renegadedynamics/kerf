@@ -150,10 +150,10 @@ public class Tangents2DTests
     public void Misuse_throws()
     {
         LineCurve2D line = Line(0, 0, 1, 0);
-        Assert.Throws<ArgumentException>(() => Tangents2D.Lines(new Point2D(0, 0), new Point2D(1, 1)));
-        Assert.Throws<ArgumentException>(() => Tangents2D.Circles(TangentTarget2D.Tangent(line, Tangency.Enclosing), Circle(0, 3, 1), 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Tangents2D.Circles(line, Circle(0, 3, 1), 0));
-        Assert.Throws<ArgumentException>(() => Tangents2D.CirclesCentredAt(new Point2D(1, 1), Point2D.Origin));
-        Assert.Throws<ArgumentNullException>(() => TangentTarget2D.Tangent(null!));
+        KernelAssert.Throws<ArgumentException>(() => Tangents2D.Lines(new Point2D(0, 0), new Point2D(1, 1)));
+        KernelAssert.Throws<ArgumentException>(() => Tangents2D.Circles(TangentTarget2D.Tangent(line, Tangency.Enclosing), Circle(0, 3, 1), 1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Tangents2D.Circles(line, Circle(0, 3, 1), 0));
+        KernelAssert.Throws<ArgumentException>(() => Tangents2D.CirclesCentredAt(new Point2D(1, 1), Point2D.Origin));
+        KernelAssert.Throws<ArgumentNullException>(() => TangentTarget2D.Tangent(null!));
     }
 }

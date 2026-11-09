@@ -97,18 +97,18 @@ public static partial class GeometryOperations
             options ??= InterpolationOptions.Default;
             if (points.Length < 2)
             {
-                throw new ArgumentException("Interpolation needs at least two points.", nameof(points));
+                throw new KernelArgumentException("Interpolation needs at least two points.", nameof(points));
             }
             ImmutableArray<Vector3D> tangents = options.Tangents.IsDefault ? [] : options.Tangents;
             ImmutableArray<double> parameters = options.Parameters.IsDefault ? [] : options.Parameters;
             int count = points.Length;
             if (tangents.Length is not (0 or 2) && tangents.Length != count)
             {
-                throw new ArgumentException("Give no tangents, one at each end, or one at every point.", nameof(options));
+                throw new KernelArgumentException("Give no tangents, one at each end, or one at every point.", nameof(options));
             }
             if (!parameters.IsEmpty && parameters.Length != points.Length + (options.Periodic ? 1 : 0))
             {
-                throw new ArgumentException("Give one parameter for every point (and one more, for the closing point, if periodic), or none.",
+                throw new KernelArgumentException("Give one parameter for every point (and one more, for the closing point, if periodic), or none.",
                                             nameof(options));
             }
 
@@ -157,7 +157,7 @@ public static partial class GeometryOperations
             options ??= ApproximationOptions.Default;
             if (points.Length < 2)
             {
-                throw new ArgumentException("Approximation needs at least two points.", nameof(points));
+                throw new KernelArgumentException("Approximation needs at least two points.", nameof(points));
             }
             CheckDegrees(options);
             NCollection_Array1<Point3D> array = GeometryArrays.Of(points);
@@ -176,11 +176,11 @@ public static partial class GeometryOperations
         /// <exception cref="ArgumentException">No curves, or a null among them.</exception>
         public static Result<BSplineCurve3D> Join(IEnumerable<BoundedCurve3D> curves, double tolerance = Tolerances.Confusion)
         {
-            ArgumentNullException.ThrowIfNull(curves);
+            KernelArgumentNullException.ThrowIfNull(curves);
             BoundedCurve3D[] list = [.. curves];
             if (list.Length == 0 || Array.IndexOf(list, null) >= 0)
             {
-                throw new ArgumentException("Join needs at least one curve, and no nulls.", nameof(curves));
+                throw new KernelArgumentException("Join needs at least one curve, and no nulls.", nameof(curves));
             }
             return Guarded(ConversionFailed, () =>
             {
@@ -209,7 +209,7 @@ public static partial class GeometryOperations
             options ??= ApproximationOptions.Default;
             if (points.RowCount < 2 || points.ColumnCount < 2)
             {
-                throw new ArgumentException("Approximation needs at least two rows and two columns of points.", nameof(points));
+                throw new KernelArgumentException("Approximation needs at least two rows and two columns of points.", nameof(points));
             }
             CheckDegrees(options);
             NCollection_Array2<Point3D> array = GeometryArrays.Of(points);
@@ -236,7 +236,7 @@ public static partial class GeometryOperations
         /// </summary>
         public bool IsPlanar(Direction3D? normal = null, double tolerance = 0)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             Engine.Geometry.Xyz n = normal is { } d ? d.XYZ() : default;
             return CurveAnalysis.IsPlanar(curve, ref n, tolerance);
         }
@@ -244,7 +244,7 @@ public static partial class GeometryOperations
         /// <summary>The curve as a B-spline: exactly where OCCT can, else approximated within the options.</summary>
         public Result<BSplineCurve3D> ToBSpline(ConversionOptions? options = null)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             options ??= ConversionOptions.Default;
             Curve3D source = curve;
             return Guarded(ConversionFailed, () =>
@@ -274,7 +274,7 @@ public static partial class GeometryOperations
         /// <summary>The curve in the 2D coordinates of <paramref name="plane"/>; it must lie in the plane.</summary>
         public Result<Curve2D> ToCurve2D(in Plane3D plane)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             Plane3D p = plane;
             Curve3D source = curve;
             return Guarded(ConversionFailed, () => Projections.To2d(source, p) is { } flat
@@ -286,7 +286,7 @@ public static partial class GeometryOperations
         /// first; empty if there are none.</summary>
         public ImmutableArray<CurvePoint> Project(Point3D point)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             try
             {
                 var projection = new ProjectPointOnCurve(point, curve);
@@ -316,8 +316,8 @@ public static partial class GeometryOperations
         /// along a stretch, that stretch isn't a point, and the result carries a warning.</summary>
         public Result<ImmutableArray<CurveSurfaceHit>> Intersect(Surface surface)
         {
-            ArgumentNullException.ThrowIfNull(curve);
-            ArgumentNullException.ThrowIfNull(surface);
+            KernelArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(surface);
             Curve3D source = curve;
             return Guarded(IntersectionFailed, () =>
             {
@@ -345,7 +345,7 @@ public static partial class GeometryOperations
         /// <summary>The 2D curve placed in <paramref name="plane"/>.</summary>
         public Curve3D ToCurve3D(in Plane3D plane)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             return Projections.To3d(curve, plane);
         }
 
@@ -353,7 +353,7 @@ public static partial class GeometryOperations
         /// <c>Geom2dAPI_ProjectPointOnCurve</c>), nearest first; empty if there are none.</summary>
         public ImmutableArray<CurvePoint2D> Project(Point2D point)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             try
             {
                 var projection = new ProjectPointOnCurve2D(point, curve);
@@ -376,8 +376,8 @@ public static partial class GeometryOperations
         /// result carries a warning.</summary>
         public Result<ImmutableArray<CurveCurveHit2D>> Intersect(Curve2D other, double tolerance = 1e-6)
         {
-            ArgumentNullException.ThrowIfNull(curve);
-            ArgumentNullException.ThrowIfNull(other);
+            KernelArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(other);
             Curve2D first = curve;
             return Guarded(IntersectionFailed, () =>
             {
@@ -401,7 +401,7 @@ public static partial class GeometryOperations
         /// </summary>
         public Result<ImmutableArray<CurveCurveHit2D>> SelfIntersections(double tolerance = 1e-6)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             Curve2D source = curve;
             return Guarded(IntersectionFailed, () =>
             {
@@ -428,7 +428,7 @@ public static partial class GeometryOperations
         /// first; empty if there are none.</summary>
         public ImmutableArray<SurfacePoint> Project(Point3D point)
         {
-            ArgumentNullException.ThrowIfNull(surface);
+            KernelArgumentNullException.ThrowIfNull(surface);
             try
             {
                 var projection = new ProjectPointOnSurface(point, surface);
@@ -458,8 +458,8 @@ public static partial class GeometryOperations
         /// <summary>The curves where the two surfaces meet (empty if they don't).</summary>
         public Result<ImmutableArray<Curve3D>> Intersect(Surface other, double tolerance = Tolerances.Confusion)
         {
-            ArgumentNullException.ThrowIfNull(surface);
-            ArgumentNullException.ThrowIfNull(other);
+            KernelArgumentNullException.ThrowIfNull(surface);
+            KernelArgumentNullException.ThrowIfNull(other);
             Surface first = surface;
             return Guarded(IntersectionFailed, () =>
             {
@@ -481,7 +481,7 @@ public static partial class GeometryOperations
         /// <c>GeomLib_IsPlanarSurface</c>).</summary>
         public bool TryGetPlane(double tolerance, out Plane3D plane)
         {
-            ArgumentNullException.ThrowIfNull(surface);
+            KernelArgumentNullException.ThrowIfNull(surface);
             var check = new IsPlanarSurface(surface, tolerance);
             plane = check.IsPlanar ? check.Plan() : default;
             return check.IsPlanar;
@@ -490,9 +490,9 @@ public static partial class GeometryOperations
 
     private static void CheckDegrees(ApproximationOptions options)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(options.MinDegree, 1, nameof(options));
-        ArgumentOutOfRangeException.ThrowIfLessThan(options.MaxDegree, options.MinDegree, nameof(options));
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(options.MaxDegree, BSplineCurve3D.MaxDegree, nameof(options));
+        KernelArgumentOutOfRangeException.ThrowIfLessThan(options.MinDegree, 1, nameof(options));
+        KernelArgumentOutOfRangeException.ThrowIfLessThan(options.MaxDegree, options.MinDegree, nameof(options));
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThan(options.MaxDegree, BSplineCurve3D.MaxDegree, nameof(options));
     }
 
     // A GC maker's result, or its status as a diagnostic

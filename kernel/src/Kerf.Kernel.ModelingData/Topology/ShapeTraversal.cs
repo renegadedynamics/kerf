@@ -100,7 +100,7 @@ public static class ShapeTraversal
         {
             if (Math.Abs(Math.Abs(transform.ScaleFactor) - 1.0) > Placement.ScalePrec() || transform.IsNegative)
             {
-                throw new ArgumentException("A shape can only be moved by a rigid transformation: no scale, no mirror.", nameof(transform));
+                throw new KernelArgumentException("A shape can only be moved by a rigid transformation: no scale, no mirror.", nameof(transform));
             }
 
             return shape.AsShape().Moved(new Placement(transform));
@@ -114,7 +114,7 @@ public static class ShapeTraversal
         /// <exception cref="ArgumentException">The shape or a child is null, or a child can't be a sub-shape of it.</exception>
         public Shape WithChildren(IEnumerable<Shape> children)
         {
-            ArgumentNullException.ThrowIfNull(children);
+            KernelArgumentNullException.ThrowIfNull(children);
             Shape self = shape.AsShape();
             NotNull(self);
             return Rebuilt(self, children);
@@ -143,7 +143,7 @@ public static class ShapeTraversal
                 }
             }
 
-            return found ? Rebuilt(self, kept) : throw new ArgumentException("The shape has no such child.", nameof(child));
+            return found ? Rebuilt(self, kept) : throw new KernelArgumentException("The shape has no such child.", nameof(child));
         }
     }
 
@@ -153,7 +153,7 @@ public static class ShapeTraversal
     {
         if (T.Type == ShapeType.Shape)
         {
-            throw new ArgumentException("Explore needs a shape type: Vertex, Edge, Wire, Face, Shell, Solid, CompSolid or Compound.");
+            throw new KernelArgumentException("Explore needs a shape type: Vertex, Edge, Wire, Face, Shell, Solid, CompSolid or Compound.");
         }
 
         return new(shape, T.Type, avoid ?? ShapeType.Shape, children: false);
@@ -200,7 +200,7 @@ public static class ShapeTraversal
     {
         if (shape.IsNull)
         {
-            throw new ArgumentException("The shape is null.", nameof(shape));
+            throw new KernelArgumentException("The shape is null.", nameof(shape));
         }
     }
 
@@ -215,7 +215,7 @@ public static class ShapeTraversal
             {
                 if (child.IsNull)
                 {
-                    throw new ArgumentException("A child is null.", nameof(children));
+                    throw new KernelArgumentException("A child is null.", nameof(children));
                 }
 
                 builder.Add(result, child);
@@ -223,7 +223,7 @@ public static class ShapeTraversal
         }
         catch (Exception e) when (Refusal.IsFailure(e) && (e is DomainErrorException))
         {
-            throw new ArgumentException($"A child can't be a sub-shape of a {shape.Type}: {FailureDiagnostics.PublicText(e)}", nameof(children), e);
+            throw new KernelArgumentException($"A child can't be a sub-shape of a {shape.Type}: {FailureDiagnostics.PublicText(e)}", nameof(children), e);
         }
 
         result.TShape()!.FreezeGraph();

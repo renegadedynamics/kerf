@@ -20,11 +20,11 @@ public readonly struct Grid<T>
     /// <paramref name="rowCount"/> × <paramref name="columnCount"/>.</exception>
     public Grid(ReadOnlyMemory<T> values, int rowCount, int columnCount)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(rowCount);
-        ArgumentOutOfRangeException.ThrowIfNegative(columnCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(rowCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(columnCount);
         if ((long)rowCount * columnCount != values.Length)
         {
-            throw new ArgumentOutOfRangeException(nameof(values), values.Length,
+            throw new KernelArgumentOutOfRangeException(nameof(values), values.Length,
                                                   $"A {rowCount} x {columnCount} grid needs {(long)rowCount * columnCount} values.");
         }
 
@@ -53,12 +53,12 @@ public readonly struct Grid<T>
         {
             if ((uint)row >= (uint)RowCount)
             {
-                throw new ArgumentOutOfRangeException(nameof(row), row, "The row is outside the grid.");
+                throw new KernelArgumentOutOfRangeException(nameof(row), row, "The row is outside the grid.");
             }
 
             if ((uint)column >= (uint)ColumnCount)
             {
-                throw new ArgumentOutOfRangeException(nameof(column), column, "The column is outside the grid.");
+                throw new KernelArgumentOutOfRangeException(nameof(column), column, "The column is outside the grid.");
             }
 
             return _values.Span[row * ColumnCount + column];
@@ -71,7 +71,7 @@ public readonly struct Grid<T>
     {
         if ((uint)row >= (uint)RowCount)
         {
-            throw new ArgumentOutOfRangeException(nameof(row), row, "The row is outside the grid.");
+            throw new KernelArgumentOutOfRangeException(nameof(row), row, "The row is outside the grid.");
         }
 
         return _values.Span.Slice(row * ColumnCount, ColumnCount);

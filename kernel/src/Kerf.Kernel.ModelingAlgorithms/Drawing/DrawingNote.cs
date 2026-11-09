@@ -32,14 +32,14 @@ public sealed record NoteStyle
     public double Size
     {
         get;
-        init => field = double.IsFinite(value) && value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The size must be more than zero.");
+        init => field = double.IsFinite(value) && value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The size must be more than zero.");
     } = 3.5;
 
     /// <summary>The font; Kerf's own Liberation Sans by default (<see cref="FontLibrary.Default"/>).</summary>
     public Font Font
     {
         get;
-        init => field = value ?? throw new ArgumentNullException(nameof(value));
+        init => field = value ?? throw new KernelArgumentNullException(nameof(value));
     } = FontLibrary.Default();
 
     /// <summary>The alignment across, on the note's position: <see cref="TextAlign.Left"/>, <see cref="TextAlign.Center"/>
@@ -49,7 +49,7 @@ public sealed record NoteStyle
         get;
         init => field = value is TextAlign.Left or TextAlign.Center or TextAlign.Right
             ? value
-            : throw new ArgumentOutOfRangeException(nameof(value), value, "The horizontal alignment must be Left, Center or Right.");
+            : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The horizontal alignment must be Left, Center or Right.");
     } = TextAlign.Left;
 
     /// <summary>The alignment up and down, on the note's position: <see cref="TextAlign.Bottom"/> (the last line's baseline),
@@ -60,14 +60,14 @@ public sealed record NoteStyle
         get;
         init => field = value is TextAlign.Bottom or TextAlign.Center or TextAlign.Top or TextAlign.TopFirstLine
             ? value
-            : throw new ArgumentOutOfRangeException(nameof(value), value, "The vertical alignment must be Bottom, Center, Top or TopFirstLine.");
+            : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The vertical alignment must be Bottom, Center, Top or TopFirstLine.");
     } = TextAlign.Bottom;
 
     /// <summary>The rotation in degrees, counter-clockwise about the note's position.</summary>
     public double Rotation
     {
         get;
-        init => field = double.IsFinite(value) ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The rotation must be finite.");
+        init => field = double.IsFinite(value) ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The rotation must be finite.");
     }
 }
 
@@ -137,7 +137,7 @@ public sealed class DrawingNote
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<DrawingNote> Make(string text, Point2D position, NoteStyle? style = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(text);
+        KernelArgumentNullException.ThrowIfNull(text);
         style ??= NoteStyle.Default;
         if (!double.IsFinite(position.X) || !double.IsFinite(position.Y))
         {

@@ -90,22 +90,10 @@ internal static class Failures
     }
 
     // The kernel's public API checks its arguments first (ArgumentException) where OCCT's own checks came later, as its
-    // failures (Standard_DomainError): an argument the kernel refuses is the kernel's failure, said in context as one
-    private static bool IsKernelArgumentError(Exception e)
-    {
-        if (e is not ArgumentException)
-            return false;
-        foreach (var frame in new System.Diagnostics.StackTrace(e).GetFrames())
-        {
-            var assembly = System.Diagnostics.DiagnosticMethodInfo.Create(frame)?.DeclaringAssemblyName is { } full
-                ? new System.Reflection.AssemblyName(full).Name
-                : null;
-            if (assembly is null || assembly.StartsWith("System.", StringComparison.Ordinal))
-                continue;
-            return assembly.StartsWith("Kerf.Kernel.", StringComparison.Ordinal);
-        }
-        return false;
-    }
+    // failures (Standard_DomainError): an argument the kernel refuses is the kernel's failure, said in context as one.
+    // The kernel's argument exceptions are types of its own, so this doesn't depend on which frame threw: once the JIT
+    // inlines a small kernel check into the layer's code, its throw comes from the layer's frame (decision 2028)
+    private static bool IsKernelArgumentError(Exception e) => Diagnostic.IsKernelArgumentError(e);
 
     /// <summary>A refused argument's diagnostic: <c>kernel.invalid-argument</c>, with the kernel's message.</summary>
     private static Diagnostic ArgumentDiagnostic(ArgumentException e)

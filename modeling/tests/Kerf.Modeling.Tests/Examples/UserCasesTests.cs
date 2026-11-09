@@ -1,5 +1,4 @@
-using System.Diagnostics;
-using Xunit.Abstractions;
+using Cases = Kerf.UserCases.UserCases;
 
 namespace Kerf.Modeling.Tests.Examples;
 
@@ -8,41 +7,29 @@ namespace Kerf.Modeling.Tests.Examples;
 /// same operands as the rig and the release check run them, so a change that moves one fails here before they time it.
 /// </summary>
 /// <remarks>
-/// The program runs in a process of its own, as the rig and the release check run it, so its thousands of operations
-/// don't warm this one's runtime for other tests (decision 2017).
+/// They run in this process. They once ran in a process of their own, as their thousands of operations warmed this one's
+/// runtime until the kernel's refusals in other tests escaped as bare argument exceptions (decision 2017); the layer now
+/// tells those by their type, wherever the JIT compiled the check (decision 2028).
 /// </remarks>
-public class UserCasesTests(ITestOutputHelper output)
+public class UserCasesTests
 {
-    [Fact]
-    public async Task Each_gives_its_fixed_result()
+    public static TheoryData<string> Names() => [.. Cases.All.Select(c => c.Name)];
+
+    [Theory]
+    [MemberData(nameof(Names))]
+    public void Each_gives_its_fixed_result(string name)
     {
-        var program = Path.Combine(AppContext.BaseDirectory, "Kerf.UserCases.dll");
-        var start = new ProcessStartInfo("dotnet")
-        {
-            ArgumentList = { program, "check", "--data", Path.Combine(AppContext.BaseDirectory, "data") },
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        using var process = Process.Start(start)!;
-        using var limit = new CancellationTokenSource(TimeSpan.FromMinutes(10));
-        var errors = process.StandardError.ReadToEndAsync(limit.Token);
-        string text;
-        try
-        {
-            text = await process.StandardOutput.ReadToEndAsync(limit.Token);
-            await process.WaitForExitAsync(limit.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            // This test started the process: stopping it touches nothing else
-            process.Kill();
-            throw new TimeoutException("the cases took over 10 minutes");
-        }
-        output.WriteLine(text);
-        var errorText = await errors;
-        output.WriteLine(errorText);
-        Assert.True(process.ExitCode == 0, text + errorText);
-        Assert.Matches(@"(\d+) of \1 cases give their fixed result", text);
+        var c = Cases.All.Single(c => c.Name == name);
+        var operation = c.Prepare(Path.Combine(AppContext.BaseDirectory, "data"));
+        Assert.NotNull(operation);
+        // Twice from the same operands, as the program's check runs them: the second run builds its shapes again (the
+        // enclosure keeps its parts in static fields) and gives the same result
+        var first = operation();
+        var second = operation();
+        Assert.False(ReferenceEquals(first, second), "the second run gave the first run's object");
+        if (first is List<(string, Part)> a && second is List<(string, Part)> b)
+            Assert.DoesNotContain(a.Zip(b), p => ReferenceEquals(p.First.Item2, p.Second.Item2));
+        Assert.True(c.Read(first).Matches(c.Expected), $"first run: {c.Read(first).Summary()}");
+        Assert.True(c.Read(second).Matches(c.Expected), $"second run: {c.Read(second).Summary()}");
     }
 }

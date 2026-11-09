@@ -75,6 +75,28 @@ internal static class MassPropertiesBuilder
         }
     }
 
+    /// <summary>
+    /// The volume the faces of <paramref name="s"/> contribute about <see cref="RoughBaryCenter"/> of <paramref name="about"/>, so
+    /// that sets of faces taken about one point add up to the solid they bound (unit 13B): a planar face bounded by lines and
+    /// circles in closed form (<see cref="PlanarFaceMass"/>), any other by the fixed Gauss points of VolumeProperties.
+    /// </summary>
+    internal static double VolumeOfFaces(in Shape s, in Shape about)
+    {
+        Point3D reference = RoughBaryCenter(about);
+        var props = new Properties(reference);
+        VolumePropertiesFaces(s, props, reference, 1.0, skipShared: false, useTriangulation: false, exactPlanes: true);
+        return props.Mass();
+    }
+
+    /// <summary>The area of the faces of <paramref name="s"/>, as <see cref="VolumeOfFaces"/> takes them: planar faces in closed
+    /// form, any other by fixed Gauss points.</summary>
+    internal static double AreaOfFaces(in Shape s)
+    {
+        var props = new Properties();
+        SurfacePropertiesCore(s, props, 1.0, skipShared: false, useTriangulation: false, exactPlanes: true);
+        return props.Mass();
+    }
+
     private static Point3D RoughBaryCenter(in Shape s)
     {
         int i;
@@ -183,7 +205,8 @@ internal static class MassPropertiesBuilder
                                             double eps,
                                             bool skipShared,
                                             bool useTriangulation,
-                                            bool massOnly = false)
+                                            bool massOnly = false,
+                                            bool exactPlanes = false)
     {
         int i;
         double errorMax = 0.0, error;
@@ -234,7 +257,7 @@ internal static class MassPropertiesBuilder
                 mg.Perform(tri, locDummy, ori);
                 props.Add(mg);
             }
-            else if (massOnly && eps < 1.0 && PlanarFaceMass.TryArea(f, bd, out double planar))
+            else if (((massOnly && eps < 1.0) || exactPlanes) && PlanarFaceMass.TryArea(f, bd, out double planar))
             {
                 props.AddMass(planar);
             }
@@ -333,7 +356,8 @@ internal static class MassPropertiesBuilder
                                                 double eps,
                                                 bool skipShared,
                                                 bool useTriangulation,
-                                                bool massOnly = false)
+                                                bool massOnly = false,
+                                                bool exactPlanes = false)
     {
         int i;
         double errorMax = 0.0, error = 0.0;
@@ -396,7 +420,7 @@ internal static class MassPropertiesBuilder
                     mg.Perform(tri, locDummy, ori);
                     props.Add(mg);
                 }
-                else if (massOnly && eps < 1.0 && PlanarFaceMass.TryVolume(f, bd, refPnt, out double planar))
+                else if (((massOnly && eps < 1.0) || exactPlanes) && PlanarFaceMass.TryVolume(f, bd, refPnt, out double planar))
                 {
                     props.AddMass(planar);
                 }

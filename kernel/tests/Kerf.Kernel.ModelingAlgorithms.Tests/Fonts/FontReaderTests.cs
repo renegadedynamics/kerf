@@ -117,9 +117,9 @@ public class FontReaderTests
         Assert.True(font.HasGlyph('é'));
         Assert.True(font.HasGlyph(0x20AC)); // the euro sign
         Assert.NotEqual(font.GlyphOf('a'), font.GlyphOf('b'));
-        Assert.Throws<ArgumentOutOfRangeException>(() => font.AdvanceWidth(font.GlyphCount));
-        Assert.Throws<ArgumentOutOfRangeException>(() => font.Outline(-1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => font.Kerning(0, font.GlyphCount));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => font.AdvanceWidth(font.GlyphCount));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => font.Outline(-1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => font.Kerning(0, font.GlyphCount));
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public class FontReaderTests
         Assert.Equal("input.invalid", third.Error!.Code.Value);
         Assert.Contains("holds 2 fonts", third.Error.Message, StringComparison.Ordinal);
         Assert.Single(Font.ReadCollection(new MemoryStream(TestFonts.Bytes("KerfTestCff.otf"))).Value);
-        Assert.Throws<ArgumentOutOfRangeException>(() => Font.Read(new MemoryStream(collection), -1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Font.Read(new MemoryStream(collection), -1));
     }
 
     [Fact]

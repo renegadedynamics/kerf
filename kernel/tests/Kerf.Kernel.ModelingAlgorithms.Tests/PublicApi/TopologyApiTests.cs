@@ -59,7 +59,7 @@ public class TopologyApiTests
         Assert.Empty(box.Explore<Edge>(avoid: ShapeType.Face));
         Assert.Single(box.Children);
         Assert.Equal(ShapeType.Shell, box.Children.Single().Type);
-        Assert.Throws<ArgumentException>(() => box.Explore<Shape>());
+        KernelAssert.Throws<ArgumentException>(() => box.Explore<Shape>());
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class TopologyApiTests
         Assert.Equal(6, solid.AllFaces().Length);
         CompSolid compSolid = CompSolid.Create([box]);
         Assert.Single(compSolid.AllSolids());
-        Assert.Throws<ArgumentException>(() => Compound.Create([default(Shape)]));
+        KernelAssert.Throws<ArgumentException>(() => Compound.Create([default(Shape)]));
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class TopologyApiTests
         Assert.Equal(6, shell.AllFaces().Length);
         Shape again = fewer.WithChildren(shell.AllFaces().Select(f => (Shape)f));
         Assert.Equal(6, ((Shell)again).AllFaces().Length);
-        Assert.Throws<ArgumentException>(() => shell.WithoutChild(Cylinder()));
+        KernelAssert.Throws<ArgumentException>(() => shell.WithoutChild(Cylinder()));
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class TopologyApiTests
         Assert.True(moved.IsPartner(box));
         Assert.False(moved.IsSame(box));
         Assert.Equal(new Vector3D(10, 0, 0), moved.Placement.Transformation.TranslationPart);
-        Assert.Throws<ArgumentException>(() => box.Moved(Transform3D.Scale(Point3D.Origin, 2)));
+        KernelAssert.Throws<ArgumentException>(() => box.Moved(Transform3D.Scale(Point3D.Origin, 2)));
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class TopologyApiTests
         Assert.Equal(0, graph.IndexOf(box));
         Assert.Equal(-1, graph.IndexOf(Cylinder()));
         Assert.Equal(12, graph.All(ShapeType.Edge).Length);
-        Assert.Throws<ArgumentException>(() => graph.Ancestors(edge, ShapeType.Vertex));
+        KernelAssert.Throws<ArgumentException>(() => graph.Ancestors(edge, ShapeType.Vertex));
     }
 
     [Fact]

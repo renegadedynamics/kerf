@@ -138,7 +138,7 @@ public class SheetTests
         };
         Assert.Contains(sheet.Draw().Value.Notes, n => n.Text == "As shown");
         Assert.Contains((sheet with { TitleBlock = sheet.TitleBlock with { Scale = "NTS" } }).Draw().Value.Notes, n => n.Text == "NTS");
-        Assert.Throws<ArgumentOutOfRangeException>(() => new SheetView(sheet.Views[0].Drawing, Point2D.Origin, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Sheet((PageSize)99));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new SheetView(sheet.Views[0].Drawing, Point2D.Origin, 0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new Sheet((PageSize)99));
     }
 }

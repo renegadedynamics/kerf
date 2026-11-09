@@ -13,8 +13,8 @@ public sealed partial class BSplineCurve3D
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> isn't a pole's.</exception>
     public BSplineCurve3D WithPole(int index, Point3D pole)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         return WithPoleOneBased(index + 1, pole);
     }
 
@@ -24,8 +24,8 @@ public sealed partial class BSplineCurve3D
     /// positive.</exception>
     public BSplineCurve3D WithPole(int index, Point3D pole, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithPoleOneBased(index + 1, pole, weight);
     }
@@ -36,8 +36,8 @@ public sealed partial class BSplineCurve3D
     /// positive.</exception>
     public BSplineCurve3D WithWeight(int index, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithWeightOneBased(index + 1, weight);
     }
@@ -48,8 +48,8 @@ public sealed partial class BSplineCurve3D
     /// <exception cref="ArgumentException">The knot wouldn't lie strictly between its neighbours.</exception>
     public BSplineCurve3D WithKnot(int index, double knot)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
         return CopyChecks.Knot(() => WithKnotOneBased(index + 1, knot));
     }
 
@@ -60,8 +60,8 @@ public sealed partial class BSplineCurve3D
     /// is more than the degree.</exception>
     public BSplineCurve3D WithKnot(int index, double knot, int multiplicity)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
         return CopyChecks.Knot(() => WithKnotOneBased(index + 1, knot, multiplicity));
     }
 }
@@ -72,8 +72,8 @@ public sealed partial class BSplineCurve2D
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> isn't a pole's.</exception>
     public BSplineCurve2D WithPole(int index, Point2D pole)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         return WithPoleOneBased(index + 1, pole);
     }
 
@@ -83,8 +83,8 @@ public sealed partial class BSplineCurve2D
     /// positive.</exception>
     public BSplineCurve2D WithPole(int index, Point2D pole, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithPoleOneBased(index + 1, pole, weight);
     }
@@ -95,8 +95,8 @@ public sealed partial class BSplineCurve2D
     /// positive.</exception>
     public BSplineCurve2D WithWeight(int index, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithWeightOneBased(index + 1, weight);
     }
@@ -107,8 +107,8 @@ public sealed partial class BSplineCurve2D
     /// <exception cref="ArgumentException">The knot wouldn't lie strictly between its neighbours.</exception>
     public BSplineCurve2D WithKnot(int index, double knot)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
         return CopyChecks.Knot(() => WithKnotOneBased(index + 1, knot));
     }
 
@@ -119,8 +119,8 @@ public sealed partial class BSplineCurve2D
     /// is more than the degree.</exception>
     public BSplineCurve2D WithKnot(int index, double knot, int multiplicity)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, KnotCount);
         return CopyChecks.Knot(() => WithKnotOneBased(index + 1, knot, multiplicity));
     }
 }
@@ -131,8 +131,8 @@ public sealed partial class BezierCurve3D
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> isn't a pole's.</exception>
     public BezierCurve3D WithPole(int index, Point3D pole)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         return WithPoleOneBased(index + 1, pole);
     }
 
@@ -142,8 +142,8 @@ public sealed partial class BezierCurve3D
     /// positive.</exception>
     public BezierCurve3D WithPole(int index, Point3D pole, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithPoleOneBased(index + 1, pole, weight);
     }
@@ -154,8 +154,8 @@ public sealed partial class BezierCurve3D
     /// positive.</exception>
     public BezierCurve3D WithWeight(int index, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithWeightOneBased(index + 1, weight);
     }
@@ -167,8 +167,8 @@ public sealed partial class BezierCurve2D
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> isn't a pole's.</exception>
     public BezierCurve2D WithPole(int index, Point2D pole)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         return WithPoleOneBased(index + 1, pole);
     }
 
@@ -178,8 +178,8 @@ public sealed partial class BezierCurve2D
     /// positive.</exception>
     public BezierCurve2D WithPole(int index, Point2D pole, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithPoleOneBased(index + 1, pole, weight);
     }
@@ -190,8 +190,8 @@ public sealed partial class BezierCurve2D
     /// positive.</exception>
     public BezierCurve2D WithWeight(int index, double weight)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(index);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(index);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, PoleCount);
         CopyChecks.Weight(weight);
         return WithWeightOneBased(index + 1, weight);
     }
@@ -230,10 +230,10 @@ public sealed partial class BSplineSurface
 
     private void CheckPoleIndex(int uIndex, int vIndex)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(uIndex);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(uIndex, UPoleCount);
-        ArgumentOutOfRangeException.ThrowIfNegative(vIndex);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(vIndex, VPoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(uIndex);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(uIndex, UPoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(vIndex);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(vIndex, VPoleCount);
     }
 }
 
@@ -270,10 +270,10 @@ public sealed partial class BezierSurface
 
     private void CheckPoleIndex(int uIndex, int vIndex)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(uIndex);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(uIndex, UPoleCount);
-        ArgumentOutOfRangeException.ThrowIfNegative(vIndex);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(vIndex, VPoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(uIndex);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(uIndex, UPoleCount);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(vIndex);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(vIndex, VPoleCount);
     }
 }
 
@@ -284,7 +284,7 @@ internal static class CopyChecks
     {
         if (!(weight > Kerf.Engine.Geometry.Constants.Resolution()))
         {
-            throw new ArgumentOutOfRangeException(name, weight, "A weight must be positive.");
+            throw new KernelArgumentOutOfRangeException(name, weight, "A weight must be positive.");
         }
     }
 
@@ -296,7 +296,7 @@ internal static class CopyChecks
         }
         catch (Exception e) when (Refusal.Of(e) is global::Kerf.Engine.Foundation.ConstructionErrorException)
         {
-            throw new ArgumentException("The knot must lie strictly between its neighbours, with a multiplicity no more than the degree.", e);
+            throw new KernelArgumentException("The knot must lie strictly between its neighbours, with a multiplicity no more than the degree.", e);
         }
     }
 }

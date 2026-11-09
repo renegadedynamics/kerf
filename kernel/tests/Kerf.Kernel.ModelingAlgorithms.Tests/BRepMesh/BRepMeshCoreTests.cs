@@ -29,8 +29,8 @@ public class BRepMeshCoreTests
         Assert.Equal(3, aList.Count);
         aList[1] = 20;
         Assert.Equal(20, aList[1]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => aList[3]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => aList[-1]);
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => aList[3]);
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => aList[-1]);
     }
 
     [Fact]

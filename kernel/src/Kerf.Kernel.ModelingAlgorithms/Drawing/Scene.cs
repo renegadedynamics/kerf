@@ -44,7 +44,7 @@ public sealed record SceneItem
     /// <exception cref="ArgumentNullException"><paramref name="mesh"/> is null.</exception>
     public SceneItem(ShapeMesh mesh, Color? color = null)
     {
-        Mesh = mesh ?? throw new ArgumentNullException(nameof(mesh));
+        Mesh = mesh ?? throw new KernelArgumentNullException(nameof(mesh));
         Color = color ?? DefaultColor;
     }
 
@@ -75,7 +75,7 @@ public sealed record SceneItem
             }
         }
 
-        throw new ArgumentException("The face isn't one of the mesh's.", nameof(face));
+        throw new KernelArgumentException("The face isn't one of the mesh's.", nameof(face));
     }
 }
 
@@ -86,11 +86,11 @@ public sealed record Scene
     /// <exception cref="ArgumentNullException"><paramref name="items"/> or an item is null.</exception>
     public Scene(IEnumerable<SceneItem> items)
     {
-        ArgumentNullException.ThrowIfNull(items);
+        KernelArgumentNullException.ThrowIfNull(items);
         Items = [.. items];
         if (Items.Any(i => i is null))
         {
-            throw new ArgumentNullException(nameof(items), "An item is null.");
+            throw new KernelArgumentNullException(nameof(items), "An item is null.");
         }
     }
 
@@ -130,7 +130,7 @@ public sealed record RenderOptions
     public double Ambient
     {
         get;
-        init => field = value is >= 0 and <= 1 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The ambient light must be from 0 to 1.");
+        init => field = value is >= 0 and <= 1 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The ambient light must be from 0 to 1.");
     } = 0.3;
 
     /// <summary>Which edges are drawn over the faces.</summary>
@@ -143,40 +143,40 @@ public sealed record RenderOptions
     public double EdgeWidth
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The width must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The width must be more than zero.");
     } = 1.0;
 
     /// <summary>The angle in degrees between faces above which their edge is a feature edge.</summary>
     public double FeatureAngle
     {
         get;
-        init => field = value is >= 0 and < 180 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The angle must be from 0 to 180 degrees.");
+        init => field = value is >= 0 and < 180 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The angle must be from 0 to 180 degrees.");
     } = 20;
 
     /// <summary>Anti-aliasing: each pixel is the mean of this many samples squared (1, none, to 4).</summary>
     public int Supersampling
     {
         get;
-        init => field = value is >= 1 and <= 4 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The supersampling must be from 1 to 4.");
+        init => field = value is >= 1 and <= 4 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The supersampling must be from 1 to 4.");
     } = 2;
 
     /// <summary>Pixels per model unit at the target; null to fit the scene in the picture, inside the margin.</summary>
     public double? Scale
     {
         get;
-        init => field = value is null or > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The scale must be more than zero.");
+        init => field = value is null or > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The scale must be more than zero.");
     }
 
     /// <summary>The margin left when fitting, as a fraction of the picture's size (0 to 0.45).</summary>
     public double Margin
     {
         get;
-        init => field = value is >= 0 and <= 0.45 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The margin must be from 0 to 0.45.");
+        init => field = value is >= 0 and <= 0.45 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The margin must be from 0 to 0.45.");
     } = 0.05;
 
     /// <summary>Rasterise bands of rows in parallel: the picture is the serial one, bit for bit.</summary>
     public bool Parallel { get; init; } = true;
 
     private static int Size(int value)
-        => value is >= 1 and <= 16384 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The size must be from 1 to 16,384 pixels.");
+        => value is >= 1 and <= 16384 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The size must be from 1 to 16,384 pixels.");
 }

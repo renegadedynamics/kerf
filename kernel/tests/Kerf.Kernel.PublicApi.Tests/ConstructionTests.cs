@@ -36,11 +36,11 @@ public class ConstructionTests
     [Fact]
     public void A_primitives_misuse_throws()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => Solid.Box(0, 1, 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Solid.Cylinder(-1, 1));
-        Assert.Throws<ArgumentException>(() => Solid.Box(1, 1, 1, default(Frame3D)));
-        Assert.Throws<ArgumentException>(() => Solid.Cone(2, 2, 1));
-        Assert.Throws<ArgumentException>(() => Solid.Wedge(1, 1, 1, new WedgeOptions()));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Solid.Box(0, 1, 1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Solid.Cylinder(-1, 1));
+        KernelAssert.Throws<ArgumentException>(() => Solid.Box(1, 1, 1, default(Frame3D)));
+        KernelAssert.Throws<ArgumentException>(() => Solid.Cone(2, 2, 1));
+        KernelAssert.Throws<ArgumentException>(() => Solid.Wedge(1, 1, 1, new WedgeOptions()));
     }
 
     [Fact]
@@ -75,8 +75,8 @@ public class ConstructionTests
         Assert.Equal(ShapeType.Shell, Shell.FromSurface(sphere).Value.Type);
         Face onPlane = Face.FromPlane(new Plane3D(Point3D.Origin, Direction3D.UnitZ), square).Value;
         Assert.Equal(4, onPlane.AllEdges().Length);
-        Assert.Throws<ArgumentException>(() => Wire.Polygon([Point3D.Origin]));
-        Assert.Throws<ArgumentException>(() => Solid.FromShells([]));
+        KernelAssert.Throws<ArgumentException>(() => Wire.Polygon([Point3D.Origin]));
+        KernelAssert.Throws<ArgumentException>(() => Solid.FromShells([]));
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public class ConstructionTests
         var wrong = sides.ToArray();
         wrong[0] = Side(new Direction3D(0, 0, -1), 0, 0, 2, 3, 1);
         Assert.False(Shell.FromPolygons(corners, wrong).IsSuccess);
-        Assert.Throws<ArgumentException>(() => Shell.FromPolygons(corners, [(sides[0].Item1, new[] { 0, 1 })]));
-        Assert.Throws<ArgumentException>(() => Shell.FromPolygons(corners, [(sides[0].Item1, new[] { 0, 1, 8 })]));
+        KernelAssert.Throws<ArgumentException>(() => Shell.FromPolygons(corners, [(sides[0].Item1, new[] { 0, 1 })]));
+        KernelAssert.Throws<ArgumentException>(() => Shell.FromPolygons(corners, [(sides[0].Item1, new[] { 0, 1, 8 })]));
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class ConstructionTests
         // the side face it swept, then its top edge (the caps, decision 1560)
         Assert.Equal(2, prism.History.Generated(bottomEdge).Count);
         Assert.Equal(ShapeType.Face, prism.History.Generated(bottomEdge)[0].Type);
-        Assert.Throws<ArgumentException>(() => face.Extrude(Vector3D.Zero));
+        KernelAssert.Throws<ArgumentException>(() => face.Extrude(Vector3D.Zero));
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class ConstructionTests
         Built<Shape> ring = face.Revolve(Axis3D.ZAxis).Value;
         Assert.Equal(ShapeType.Solid, ring.Shape.Type);
         Assert.Single(ring.History.Generated(face.AllEdges()[0]));
-        Assert.Throws<ArgumentOutOfRangeException>(() => face.Revolve(Axis3D.ZAxis, 0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => face.Revolve(Axis3D.ZAxis, 0));
     }
 
     [Fact]
@@ -200,8 +200,8 @@ public class ConstructionTests
         Assert.NotNull(surface);
         Assert.Equal(2, MaxZOfSurface(surface!), 1);
 
-        Assert.Throws<ArgumentException>(() => Surfaces.Fill([]));
-        Assert.Throws<ArgumentException>(() => Surfaces.Fill([new FillBoundary(square.AllEdges()[0], Continuity.C2)]));
+        KernelAssert.Throws<ArgumentException>(() => Surfaces.Fill([]));
+        KernelAssert.Throws<ArgumentException>(() => Surfaces.Fill([new FillBoundary(square.AllEdges()[0], Continuity.C2)]));
     }
 
     private static double MaxZOfSurface(Surface surface)
@@ -229,8 +229,8 @@ public class ConstructionTests
         Wire cone = Sweeps.Helix(new Frame3D(new Point3D(0, 0, 1), Direction3D.UnitZ), 5, 2, 10, new HelixOptions { EndRadius = 2 }).Value;
         Assert.Contains(cone.AllVertices(), v => v.Point.DistanceTo(new Point3D(2, 0, 11)) < 1e-6);
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 0, 10));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 2, 10, new HelixOptions { EndRadius = -1 }));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 0, 10));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 2, 10, new HelixOptions { EndRadius = -1 }));
     }
 
     [Fact]
@@ -243,7 +243,7 @@ public class ConstructionTests
         Assert.Equal(20, MaxZ(tube.Shape), 9);
         Built<Shape> open = Sweeps.Sweep(profile, spine, new SweepOptions { MakeSolid = false, Frame = SweepFrame.Frenet }).Value;
         Assert.NotEqual(ShapeType.Solid, open.Shape.Type);
-        Assert.Throws<ArgumentException>(() => Sweeps.Sweep(profile, spine, new SweepOptions { Frame = SweepFrame.Binormal }));
+        KernelAssert.Throws<ArgumentException>(() => Sweeps.Sweep(profile, spine, new SweepOptions { Frame = SweepFrame.Binormal }));
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public class ConstructionTests
         Assert.False(apexInside.IsSuccess);
         Assert.Equal("construction.loft-wrong-usage", apexInside.Error!.Code.Value);
         Assert.True(Sweeps.Loft([Square(10), triangle]).IsSuccess);
-        Assert.Throws<ArgumentException>(() => Sweeps.Loft([Square(1)]));
+        KernelAssert.Throws<ArgumentException>(() => Sweeps.Loft([Square(1)]));
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public class ConstructionTests
         Assert.Single(scaled.History.Modified(box.AllFaces()[0]));
         Built<Shape> mirrored = box.Mirrored(new Frame3D(Point3D.Origin, Direction3D.UnitZ)).Value;
         Assert.Equal(0, MaxZ(mirrored.Shape), 12);
-        Assert.Throws<ArgumentOutOfRangeException>(() => box.Scaled(Point3D.Origin, 0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => box.Scaled(Point3D.Origin, 0));
     }
 
     [Fact]

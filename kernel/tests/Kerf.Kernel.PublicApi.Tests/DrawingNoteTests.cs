@@ -102,11 +102,11 @@ public class DrawingNoteTests
         Assert.Equal(TextShapes.Empty, DrawingNote.Make(" \n ", Point2D.Origin).Error!.Code);
         Assert.Equal(TextShapes.MissingGlyph, DrawingNote.Make("A", Point2D.Origin).Error!.Code);
         Assert.Equal(DiagnosticCode.InvalidInput, DrawingNote.Make("A", new Point2D(double.NaN, 0)).Error!.Code);
-        Assert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Size = 0 });
-        Assert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Horizontal = TextAlign.Top });
-        Assert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Vertical = TextAlign.Left });
-        Assert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Rotation = double.PositiveInfinity });
-        Assert.Throws<ArgumentNullException>(() => new NoteStyle { Font = null! });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Size = 0 });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Horizontal = TextAlign.Top });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Vertical = TextAlign.Left });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new NoteStyle { Rotation = double.PositiveInfinity });
+        KernelAssert.Throws<ArgumentNullException>(() => new NoteStyle { Font = null! });
     }
 
     private static LineDrawing Annotated()
@@ -184,6 +184,6 @@ public class DrawingNoteTests
         // The page's corner is the origin: a point (x, y) is at (x, 50 - y), whatever the drawing's extent
         (Point2D min, _) = drawing.GetBounds()!.Value;
         Assert.Contains($"M {Math.Round(min.X, 3).ToString(System.Globalization.CultureInfo.InvariantCulture)} ", svg);
-        Assert.Throws<ArgumentOutOfRangeException>(() => new SvgOptions { Area = (new Point2D(1, 0), new Point2D(1, 5)) });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new SvgOptions { Area = (new Point2D(1, 0), new Point2D(1, 5)) });
     }
 }

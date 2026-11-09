@@ -38,21 +38,21 @@ public sealed class RgbaImage
     /// <exception cref="ArgumentOutOfRangeException">The pixel is outside the picture.</exception>
     public (byte R, byte G, byte B, byte A) GetPixel(int x, int y)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(x);
-        ArgumentOutOfRangeException.ThrowIfNegative(y);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(x, Width);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(y, Height);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(x);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(y);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(x, Width);
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(y, Height);
         int i = 4 * (y * Width + x);
         return (_pixels[i], _pixels[i + 1], _pixels[i + 2], _pixels[i + 3]);
     }
 
     private static ReadOnlySpan<byte> Check(int width, int height, ReadOnlySpan<byte> pixels)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
+        KernelArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
+        KernelArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
         if ((long)width * height * 4 != pixels.Length)
         {
-            throw new ArgumentException("There must be four bytes a pixel.", nameof(pixels));
+            throw new KernelArgumentException("There must be four bytes a pixel.", nameof(pixels));
         }
 
         return pixels;

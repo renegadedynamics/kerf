@@ -78,7 +78,7 @@ internal class CurveData : CurveModel
     // std::deque::operator[] as a reference into the list's storage.
     internal static ref T At<T>(List<T> list, int index)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)list.Count, nameof(index));
+        KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)list.Count, nameof(index));
         return ref CollectionsMarshal.AsSpan(list)[index];
     }
 }

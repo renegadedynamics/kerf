@@ -147,7 +147,7 @@ internal class IncrementalMesh : DiscretRoot
     internal static T? ReadMeshed<T>(in Shape shape, in ToolParameters parameters, Func<Shape, T> read, ProgressRange range,
                                      out int status)
     {
-        ArgumentNullException.ThrowIfNull(read);
+        KernelArgumentNullException.ThrowIfNull(read);
         IncrementalMesh algo = new();
         algo._parameters = parameters;
         algo.SetShape(shape);

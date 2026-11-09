@@ -99,4 +99,22 @@ public class ChamferTightCornersTests
         Shape made = prism.Chamfer(2, null, top, options: Collapse);
         Assert.Equal(Prism(40, 30, 30, 1.7) - Removed(40, 30, 1.7, 2, 2), made.Volume, 1e-3);
     }
+
+    [Fact]
+    public void The_users_housing_end_is_built_from_its_faces()
+    {
+        // The section of a user's housing extruded (unit 13B's report): its end's 20 lines and arcs of 1.5, chamfered 3. The Boolean
+        // with its tool allocated about 160 MB for it and took 30 to 80 times a plain chamfer; counted, not timed, it's now a few MB
+        Part prism = new(Importers.ImportStep(Path.Combine(AppContext.BaseDirectory, "Reference", "Chamfers", "housing-prism.step")).Value);
+        var end = prism.Edges().GroupBy(Axis.X).Last();
+        Assert.Equal(20, end.Count);
+        Assert.True(Chamfer(prism, end, 3, options: Collapse).IsSuccess);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        Part made = Chamfer(prism, end, 3, options: Collapse).Value;
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.True(made.IsValid);
+        Assert.Equal(80080.526913, made.Volume, 1e-6 * 80080.526913);
+        Assert.Equal(42, made.Faces().Count);
+        Assert.InRange(allocated, 0, 16L << 20);
+    }
 }

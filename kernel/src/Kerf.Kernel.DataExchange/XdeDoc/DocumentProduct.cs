@@ -46,7 +46,7 @@ internal sealed class DocumentProduct
     {
         if (shape.IsNull)
         {
-            throw new ArgumentException("A part needs a shape", nameof(shape));
+            throw new KernelArgumentException("A part needs a shape", nameof(shape));
         }
         shape.TShape()?.FreezeGraph();
         return new DocumentProduct(shape, false, [], subShapes?.ToImmutableArray() ?? [],

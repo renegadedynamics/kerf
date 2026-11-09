@@ -126,7 +126,7 @@ public static class MeasureOperations
             Direction3D d = line.Direction;
             if (d.X == 0 && d.Y == 0 && d.Z == 0)
             {
-                throw new ArgumentException("The line must be a valid line, not a default one.", nameof(line));
+                throw new KernelArgumentException("The line must be a valid line, not a default one.", nameof(line));
             }
 
             var hits = ImmutableArray.CreateBuilder<LineHit>();
@@ -178,7 +178,7 @@ public static class MeasureOperations
         {
             Face f = NotNull(face.AsShape()).As<Face>();
             Surface surface = Engine.Topology.Brep.Tool.Surface(f, out Placement location)
-                              ?? throw new ArgumentException("The face has no surface.", nameof(face));
+                              ?? throw new KernelArgumentException("The face has no surface.", nameof(face));
             Point3D local = point.Transformed(location.Transformation.Inverted());
             var analysis = new Engine.Healing.Analysis.SurfaceAnalysis(surface);
             Point2D uv = analysis.ValueOfUV(local, tolerance);
@@ -237,7 +237,7 @@ public static class MeasureOperations
                 MassPropertiesBuilder.VolumeProperties(shape, props, options.OnlyClosed, options.SkipShared, options.UseTriangulation);
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(dimension), dimension, "Not a dimension.");
+                throw new KernelArgumentOutOfRangeException(nameof(dimension), dimension, "Not a dimension.");
         }
 
         return props;
@@ -351,5 +351,5 @@ public static class MeasureOperations
     }
 
     private static Shape NotNull(Shape shape, [System.Runtime.CompilerServices.CallerArgumentExpression(nameof(shape))] string? name = null)
-        => shape.IsNull ? throw new ArgumentException("The shape is null.", name) : shape;
+        => shape.IsNull ? throw new KernelArgumentException("The shape is null.", name) : shape;
 }

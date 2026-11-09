@@ -44,7 +44,7 @@ public sealed record LineStyle
     public double Width
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The width must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The width must be more than zero.");
     } = 0.35;
 
     /// <summary>The dash pattern, lengths on and off in turn; empty for a solid line.</summary>
@@ -75,7 +75,7 @@ public sealed record SvgOptions
     public double Margin
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The margin must be zero or more.");
+        init => field = value >= 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The margin must be zero or more.");
     } = 5;
 
     /// <summary>Page units per model unit; null to fit the page (or 1 without a page size).</summary>
@@ -97,7 +97,7 @@ public sealed record SvgOptions
     public double Tolerance
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
     } = 0.01;
 
     /// <summary>How the drawing's notes are written: as filled outlines (the default), or as <c>&lt;text&gt;</c> in the
@@ -116,18 +116,18 @@ public sealed record SvgOptions
         get;
         init => field = value is null || (value.Value.Min.X < value.Value.Max.X && value.Value.Min.Y < value.Value.Max.Y)
             ? value
-            : throw new ArgumentOutOfRangeException(nameof(value), value, "The area's minimum must be below its maximum.");
+            : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The area's minimum must be below its maximum.");
     }
 
     /// <summary>The decimals written for coordinates (0 to 10).</summary>
     public int Decimals
     {
         get;
-        init => field = value is >= 0 and <= 10 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The decimals must be from 0 to 10.");
+        init => field = value is >= 0 and <= 10 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The decimals must be from 0 to 10.");
     } = 3;
 
     private static double? Positive(double? value)
-        => value is null or > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The value must be more than zero.");
+        => value is null or > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The value must be more than zero.");
 }
 
 /// <summary>
@@ -148,7 +148,7 @@ public static class Svg
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(LineDrawing drawing, Stream stream, SvgOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         string text = WriteToString(drawing, options, cancellationToken);
         try
         {
@@ -168,7 +168,7 @@ public static class Svg
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static string WriteToString(LineDrawing drawing, SvgOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(drawing);
+        KernelArgumentNullException.ThrowIfNull(drawing);
         options ??= SvgOptions.Default;
         var page = Page.Of(drawing, options);
         var svg = new StringBuilder();

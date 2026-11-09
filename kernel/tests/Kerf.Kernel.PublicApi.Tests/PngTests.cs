@@ -57,6 +57,6 @@ public class PngTests
         byte[] png = Png.Encode(new RgbaImage(2, 1, [255, 0, 0, 255, 0, 0, 0, 0]));
         Assert.Equal("89504E470D0A1A0A0000000D4948445200000002000000010806000000F4227F8A0000000E49444154780163F8CF00420C0C000CFC01FF773B9E950000000049454E44AE426082",
                      Convert.ToHexString(png));
-        Assert.Throws<ArgumentException>(() => new RgbaImage(2, 2, new byte[15]));
+        KernelAssert.Throws<ArgumentException>(() => new RgbaImage(2, 2, new byte[15]));
     }
 }

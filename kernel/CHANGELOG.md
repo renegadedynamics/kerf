@@ -17,6 +17,15 @@ version may break the API.
   text as faces with `TextShapes.Make`, holes in letters as holes: on a TrueType font of 2,048 units to the em the same
   faces, areas and boxes as build123d's `Text` on native OCCT to 1e-13, and within FreeType's rounding (2e-6) on others. A damaged or hostile font fails with `font.malformed` or `font.limit-exceeded`; a character the
   font hasn't fails with `text.missing-glyph`, naming it (decisions 2018 to 2023).
+- **`TightCorners.Collapse` is about 10 times quicker on the guide's box and on a user's housing end, allocating about a 40th,** with the same faces, edges and history: where nothing else of the part comes near the chamfer it's built from its faces, not by a Boolean, and its edges are exact lines and circles where they were B-splines (decisions 2025 to 2027). The faces over arcs that don't collapse are OCCT's cones, where they were B-splines.
+- **The kernel's argument exceptions are types of its own,** each derived from .NET's of the same name
+  (`ArgumentException`, `ArgumentOutOfRangeException`, `ArgumentNullException`) with the same message, and recognised
+  by the new `Diagnostic.IsKernelArgumentError`, so a caller can tell the kernel's refusal of a value from its own
+  errors however the runtime compiled the call. `catch (ArgumentException)` catches them as before; a check of the
+  exact type sees the subclass (decision 2028).
+- **A primitive too small to be valid fails, carrying the shape,** where it was a success: a cylinder, sphere or torus
+  of a radius under 1e-7, an arc of a nanometre, a wedge's top as narrow, and a face on a surface's bounds as narrow
+  (decision 2029).
 
 ## 0.4.0
 

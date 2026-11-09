@@ -66,7 +66,7 @@ public readonly struct Color : IEquatable<Color>
     /// </summary>
     public static bool TryFromName(string name, out Color color)
     {
-        ArgumentNullException.ThrowIfNull(name);
+        KernelArgumentNullException.ThrowIfNull(name);
         var linear = new LinearColor();
         if (!LinearColor.ColorFromName(name, ref linear))
         {
@@ -119,7 +119,7 @@ public readonly struct Color : IEquatable<Color>
     {
         if (!(value is >= 0 and <= 1))
         {
-            throw new ArgumentOutOfRangeException(name, value, "A colour's components are from 0 to 1.");
+            throw new KernelArgumentOutOfRangeException(name, value, "A colour's components are from 0 to 1.");
         }
     }
 }

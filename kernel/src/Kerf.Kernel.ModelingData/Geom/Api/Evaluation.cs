@@ -64,7 +64,7 @@ public abstract partial class Curve3D
                 return new CurveDerivatives(3, r.Point, r.D1, r.D2, r.D3);
             }
             default:
-                throw new ArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3; use DerivativeN for higher orders.");
+                throw new KernelArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3; use DerivativeN for higher orders.");
         }
     }
 
@@ -72,7 +72,7 @@ public abstract partial class Curve3D
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is less than 1.</exception>
     public Vector3D DerivativeN(double u, int n)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
+        KernelArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
         return EvalDN(u, n);
     }
 }
@@ -125,7 +125,7 @@ public abstract partial class Curve2D
                 return new CurveDerivatives2D(3, r.Point, r.D1, r.D2, r.D3);
             }
             default:
-                throw new ArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3; use DerivativeN for higher orders.");
+                throw new KernelArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3; use DerivativeN for higher orders.");
         }
     }
 
@@ -133,7 +133,7 @@ public abstract partial class Curve2D
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is less than 1.</exception>
     public Vector2D DerivativeN(double u, int n)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
+        KernelArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
         return EvalDN(u, n);
     }
 }
@@ -195,7 +195,7 @@ public abstract partial class Surface
                 return new SurfaceDerivatives(3, r.Point, r.D1U, r.D1V, r.D2U, r.D2V, r.D2UV, r.D3U, r.D3V, r.D3UUV, r.D3UVV);
             }
             default:
-                throw new ArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3; use DerivativeN for higher orders.");
+                throw new KernelArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3; use DerivativeN for higher orders.");
         }
     }
 
@@ -204,11 +204,11 @@ public abstract partial class Surface
     /// <exception cref="ArgumentOutOfRangeException">An order is negative, or both are zero.</exception>
     public Vector3D DerivativeN(double u, double v, int uOrder, int vOrder)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(uOrder);
-        ArgumentOutOfRangeException.ThrowIfNegative(vOrder);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(uOrder);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(vOrder);
         if (uOrder + vOrder < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(uOrder), "The derivative's order must be 1 or more.");
+            throw new KernelArgumentOutOfRangeException(nameof(uOrder), "The derivative's order must be 1 or more.");
         }
 
         return EvalDN(u, v, uOrder, vOrder);

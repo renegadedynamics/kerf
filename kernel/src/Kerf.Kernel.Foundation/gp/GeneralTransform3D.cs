@@ -249,7 +249,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         double scale = _scale;
         if (matrix.Length < 16)
         {
-            throw new ArgumentException("A 4x4 matrix needs 16 elements.", nameof(matrix));
+            throw new KernelArgumentException("A 4x4 matrix needs 16 elements.", nameof(matrix));
         }
 
         shape = Other;
@@ -513,7 +513,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     {
         if (matrix.Length < 16)
         {
-            throw new ArgumentException("A 4x4 matrix needs 16 elements.", nameof(matrix));
+            throw new KernelArgumentException("A 4x4 matrix needs 16 elements.", nameof(matrix));
         }
 
         if (_shape == Identity)

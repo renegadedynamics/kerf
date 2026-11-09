@@ -85,26 +85,26 @@ public enum PageOrientation
 public sealed record TitleBlock
 {
     /// <summary>The drawing's title.</summary>
-    public string Title { get; init => field = value ?? throw new ArgumentNullException(nameof(value)); } = "";
+    public string Title { get; init => field = value ?? throw new KernelArgumentNullException(nameof(value)); } = "";
 
     /// <summary>The part's number.</summary>
-    public string PartNumber { get; init => field = value ?? throw new ArgumentNullException(nameof(value)); } = "";
+    public string PartNumber { get; init => field = value ?? throw new KernelArgumentNullException(nameof(value)); } = "";
 
     /// <summary>The scale as written; null for the views' scale (<see cref="Sheet.ScaleText"/>), or "As shown" where they
     /// differ.</summary>
     public string? Scale { get; init; }
 
     /// <summary>The units the part's dimensions are in.</summary>
-    public string Units { get; init => field = value ?? throw new ArgumentNullException(nameof(value)); } = "mm";
+    public string Units { get; init => field = value ?? throw new KernelArgumentNullException(nameof(value)); } = "mm";
 
     /// <summary>The date, as it is to be written (a sheet doesn't read the clock, so the same sheet is the same file).</summary>
-    public string Date { get; init => field = value ?? throw new ArgumentNullException(nameof(value)); } = "";
+    public string Date { get; init => field = value ?? throw new KernelArgumentNullException(nameof(value)); } = "";
 
     /// <summary>Who drew it.</summary>
-    public string Author { get; init => field = value ?? throw new ArgumentNullException(nameof(value)); } = "";
+    public string Author { get; init => field = value ?? throw new KernelArgumentNullException(nameof(value)); } = "";
 
     /// <summary>The sheet's number.</summary>
-    public string Sheet { get; init => field = value ?? throw new ArgumentNullException(nameof(value)); } = "1 of 1";
+    public string Sheet { get; init => field = value ?? throw new KernelArgumentNullException(nameof(value)); } = "1 of 1";
 }
 
 /// <summary>A view on a sheet: a line drawing, its extent's centre placed at its <see cref="Center"/> on the sheet (in
@@ -117,15 +117,15 @@ public sealed record SheetView
     /// <exception cref="ArgumentOutOfRangeException">The scale isn't more than zero, or the centre isn't finite.</exception>
     public SheetView(LineDrawing drawing, Point2D center, double scale = 1)
     {
-        ArgumentNullException.ThrowIfNull(drawing);
+        KernelArgumentNullException.ThrowIfNull(drawing);
         if (!double.IsFinite(scale) || scale <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(scale), scale, "The scale must be more than zero.");
+            throw new KernelArgumentOutOfRangeException(nameof(scale), scale, "The scale must be more than zero.");
         }
 
         if (!double.IsFinite(center.X) || !double.IsFinite(center.Y))
         {
-            throw new ArgumentOutOfRangeException(nameof(center), center, "The centre must be finite.");
+            throw new KernelArgumentOutOfRangeException(nameof(center), center, "The centre must be finite.");
         }
 
         Drawing = drawing;
@@ -165,12 +165,12 @@ public sealed record Sheet
     {
         if (!Enum.IsDefined(size))
         {
-            throw new ArgumentOutOfRangeException(nameof(size), size, "Not a page size.");
+            throw new KernelArgumentOutOfRangeException(nameof(size), size, "Not a page size.");
         }
 
         if (!Enum.IsDefined(orientation))
         {
-            throw new ArgumentOutOfRangeException(nameof(orientation), orientation, "Not an orientation.");
+            throw new KernelArgumentOutOfRangeException(nameof(orientation), orientation, "Not an orientation.");
         }
 
         Size = size;
@@ -215,13 +215,13 @@ public sealed record Sheet
     public double Height { get; }
 
     /// <summary>What the title block says.</summary>
-    public TitleBlock TitleBlock { get; init => field = value ?? throw new ArgumentNullException(nameof(value)); } = new();
+    public TitleBlock TitleBlock { get; init => field = value ?? throw new KernelArgumentNullException(nameof(value)); } = new();
 
     /// <summary>The views, drawn in order.</summary>
     public ImmutableArray<SheetView> Views
     {
         get;
-        init => field = value.IsDefault || value.Any(v => v is null) ? throw new ArgumentNullException(nameof(value), "A view is null.") : value;
+        init => field = value.IsDefault || value.Any(v => v is null) ? throw new KernelArgumentNullException(nameof(value), "A view is null.") : value;
     } = [];
 
     /// <summary>The inside of the border, where views go.</summary>
@@ -248,7 +248,7 @@ public sealed record Sheet
     {
         if (!double.IsFinite(scale) || scale <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(scale), scale, "The scale must be more than zero.");
+            throw new KernelArgumentOutOfRangeException(nameof(scale), scale, "The scale must be more than zero.");
         }
 
         string N(double v) => Math.Round(v, 3).ToString("0.###", CultureInfo.InvariantCulture);

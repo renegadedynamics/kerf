@@ -235,8 +235,8 @@ public sealed class Font
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<Font> Read(Stream stream, int faceIndex = 0, FontReadLimits? limits = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
-        ArgumentOutOfRangeException.ThrowIfNegative(faceIndex);
+        KernelArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(faceIndex);
         limits ??= FontReadLimits.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -250,7 +250,7 @@ public sealed class Font
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<IReadOnlyList<Font>> ReadCollection(Stream stream, FontReadLimits? limits = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         limits ??= FontReadLimits.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -343,7 +343,7 @@ public sealed class Font
     {
         if ((uint)glyph >= (uint)GlyphCount)
         {
-            throw new ArgumentOutOfRangeException(nameof(glyph), glyph, $"The font has {GlyphCount} glyphs.");
+            throw new KernelArgumentOutOfRangeException(nameof(glyph), glyph, $"The font has {GlyphCount} glyphs.");
         }
     }
 

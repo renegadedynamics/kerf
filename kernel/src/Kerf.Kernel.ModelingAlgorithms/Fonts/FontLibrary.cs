@@ -132,7 +132,7 @@ public sealed class FontLibrary
     /// <exception cref="ArgumentNullException"><paramref name="folders"/> is null.</exception>
     public static FontLibrary Scan(IEnumerable<string> folders, FontReadLimits? limits = null)
     {
-        ArgumentNullException.ThrowIfNull(folders);
+        KernelArgumentNullException.ThrowIfNull(folders);
         limits ??= FontReadLimits.Default;
         var options = new EnumerationOptions
         {
@@ -186,11 +186,11 @@ public sealed class FontLibrary
     /// <exception cref="ArgumentNullException"><paramref name="fonts"/> or one of them is null.</exception>
     public static FontLibrary FromFonts(IEnumerable<Font> fonts)
     {
-        ArgumentNullException.ThrowIfNull(fonts);
+        KernelArgumentNullException.ThrowIfNull(fonts);
         var list = new List<(FontEntry, string, string, Font?)>();
         foreach (Font font in fonts)
         {
-            ArgumentNullException.ThrowIfNull(font, nameof(fonts));
+            KernelArgumentNullException.ThrowIfNull(font, nameof(fonts));
             if (font.FamilyName.Length == 0)
             {
                 continue;
@@ -213,7 +213,7 @@ public sealed class FontLibrary
     /// <exception cref="ArgumentNullException"><paramref name="family"/> is null.</exception>
     public bool HasFamily(string family)
     {
-        ArgumentNullException.ThrowIfNull(family);
+        KernelArgumentNullException.ThrowIfNull(family);
         return Enum.GetValues<FontStyle>().Any(s => _byName.ContainsKey((family, s)));
     }
 
@@ -227,7 +227,7 @@ public sealed class FontLibrary
     /// <exception cref="ArgumentNullException"><paramref name="family"/> is null.</exception>
     public Result<Font> Find(string family, FontStyle style = FontStyle.Regular)
     {
-        ArgumentNullException.ThrowIfNull(family);
+        KernelArgumentNullException.ThrowIfNull(family);
         FontStyle[] order = style switch
         {
             FontStyle.BoldItalic => [FontStyle.BoldItalic, FontStyle.Bold, FontStyle.Regular, FontStyle.Italic],

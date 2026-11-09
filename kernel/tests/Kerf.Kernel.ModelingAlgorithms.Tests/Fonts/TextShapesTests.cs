@@ -178,11 +178,11 @@ public class TextShapesTests
     [Fact]
     public void Misuse_throws()
     {
-        Assert.Throws<ArgumentNullException>(() => TextShapes.Make(null!, "x", 1));
-        Assert.Throws<ArgumentNullException>(() => TextShapes.Make(Regular, null!, 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => TextShapes.Make(Regular, "x", 1, new TextOptions { Horizontal = TextAlign.Top }));
-        Assert.Throws<ArgumentOutOfRangeException>(() => TextShapes.Make(Regular, "x", 1, new TextOptions { Vertical = TextAlign.Left }));
-        Assert.Throws<ArgumentOutOfRangeException>(() => TextShapes.Make(Regular, "x", 1, new TextOptions { TabSize = 0 }));
+        KernelAssert.Throws<ArgumentNullException>(() => TextShapes.Make(null!, "x", 1));
+        KernelAssert.Throws<ArgumentNullException>(() => TextShapes.Make(Regular, null!, 1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => TextShapes.Make(Regular, "x", 1, new TextOptions { Horizontal = TextAlign.Top }));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => TextShapes.Make(Regular, "x", 1, new TextOptions { Vertical = TextAlign.Left }));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => TextShapes.Make(Regular, "x", 1, new TextOptions { TabSize = 0 }));
         Assert.Equal(DiagnosticCode.InvalidInput, TextShapes.Make(Regular, "x", 1, new TextOptions { Slant = 90 }).Error!.Code);
         using var source = new CancellationTokenSource();
         source.Cancel();

@@ -19,14 +19,14 @@ public sealed record MeshOptions
     public double LinearDeflection
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The deflection must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The deflection must be more than zero.");
     } = 1e-3;
 
     /// <summary>The largest angle between neighbouring facets, in radians.</summary>
     public double AngularDeflection
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The angle must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The angle must be more than zero.");
     } = 0.5;
 
     /// <summary>Whether <see cref="LinearDeflection"/> is relative to each edge's size; the faces then take their edges'
@@ -43,14 +43,14 @@ public sealed record MeshOptions
     public long MaxTriangles
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The limit must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The limit must be more than zero.");
     } = 10_000_000;
 
     /// <summary>The smallest size of a mesh element; zero (the default) for a tenth of the deflection.</summary>
     public double MinSize
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The size must be zero or more.");
+        init => field = value >= 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The size must be zero or more.");
     }
 
     /// <summary>Whether a face's internal vertices become nodes of its mesh.</summary>
@@ -63,7 +63,7 @@ public sealed record MeshOptions
     public double? EdgeDeflection
     {
         get;
-        init => field = value is null or > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The deflection must be more than zero.");
+        init => field = value is null or > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The deflection must be more than zero.");
     }
 
     /// <summary>The engine's parameters: OCCT's defaults for what the options leave alone.</summary>

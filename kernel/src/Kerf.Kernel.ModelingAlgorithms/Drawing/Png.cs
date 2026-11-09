@@ -45,7 +45,7 @@ public static class Png
     /// <exception cref="ArgumentNullException">The picture or the stream is null.</exception>
     public static Result Write(RgbaImage image, Stream stream, PngOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         byte[] bytes = Encode(image, options);
         try
         {
@@ -63,7 +63,7 @@ public static class Png
     /// <exception cref="ArgumentNullException">The picture is null.</exception>
     public static byte[] Encode(RgbaImage image, PngOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(image);
+        KernelArgumentNullException.ThrowIfNull(image);
         options ??= PngOptions.Default;
         byte[] filtered = Filter(image);
         byte[] compressed = options.Compression == PngCompression.Smallest ? ZLib(filtered) : Deflater.ZLib(filtered);

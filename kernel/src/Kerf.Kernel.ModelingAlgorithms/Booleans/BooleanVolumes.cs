@@ -91,8 +91,8 @@ public static class BooleanVolumes
     /// <param name="fuzzyValue">Its fuzzy value, which widens the margin.</param>
     public static Diagnostic? Check(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue = 0)
     {
-        ArgumentNullException.ThrowIfNull(arguments);
-        ArgumentNullException.ThrowIfNull(tools);
+        KernelArgumentNullException.ThrowIfNull(arguments);
+        KernelArgumentNullException.ThrowIfNull(tools);
         // Look at what the shapes are before measuring anything: a Boolean of faces costs nothing here
         if (!AllSolids(arguments) || !AllSolids(tools) || !AllSolids([result]) || !HasSolid(arguments) || !HasSolid(tools))
         {
@@ -449,7 +449,7 @@ public static class BooleanVolumes
         // A tool's overlaps only make its sum larger, so this bound stays true; the object's largest solid is what's sure of it
         BooleanVolumeRule.Cut => (a.Largest - b.Sum, a.Sum),
         BooleanVolumeRule.Fuse => (Math.Max(a.Largest, b.Largest), a.Sum + b.Sum),
-        _ => throw new ArgumentOutOfRangeException(nameof(rule)),
+        _ => throw new KernelArgumentOutOfRangeException(nameof(rule)),
     };
 
     private static string Message(BooleanVolumeRule rule, in Measure a, in Measure b, in Measure result, bool negative, double least, double most)
