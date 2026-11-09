@@ -46,6 +46,10 @@ public static class ModelingDiagnostics
     /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c>.</summary>
     public static DiagnosticCode KernelInvalidArgument { get; } = new("kernel.invalid-argument");
 
+    /// <summary>A warning from <see cref="ExportDxf"/>: edges off the XY plane were projected onto it:
+    /// <c>modeling.dxf-not-planar</c>.</summary>
+    public static DiagnosticCode DxfNotPlanar { get; } = new("modeling.dxf-not-planar");
+
     /// <summary>
     /// What an operation made that isn't valid, from the exception a shorthand threw for it (<c>result.invalid</c>): the
     /// operators and constructors can't return a <see cref="Result{T}"/>, whose <c>TryGetInvalid</c> gives the same. To look at

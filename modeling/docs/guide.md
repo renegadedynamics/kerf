@@ -228,7 +228,7 @@ Every exporter and importer returns a `Result`. A missing folder or file is `Dir
 
 ### Drawings: hidden lines and SVG
 
-build123d's `ExportSVG` class isn't ported, but the kernel's `Kerf.Drawing` does the same job: a hidden-line
+build123d's `ExportSVG` class isn't ported (`ExportDxf` is, below), but the kernel's `Kerf.Drawing` does the same job: a hidden-line
 projection of any shape through a camera, written as SVG with the hidden lines in their own dashed layer.
 
 ```csharp
@@ -246,7 +246,34 @@ string front = Svg.WriteToString(part.Shape.ProjectLines(Camera.Front).Value,
   `PageHeight`, `Scale`, `Unit`, `VisibleStyle`, `HiddenStyle`, `Background`).
 - `DrawingOptions` chooses the method (exact, or the faster polygonal one) and whether hidden lines are computed at all.
 - `DrawingOperations.ProjectLines(shapes, camera)` draws several shapes together, each hiding the others' lines.
-- DXF export isn't available.
+
+### DXF: for other CAD programs and laser cutters
+
+`ExportDxf` is build123d's `ExportDXF`: layers with colours, line types and weights, then shapes or drawings on them.
+
+```csharp
+// A sketch's outline to cut, and a hole's to engrave, in millimetres
+Result written = new ExportDxf(unit: Unit.Millimeter)
+    .AddLayer("cut", ColorIndex.Red)
+    .AddLayer("engrave", ColorIndex.Blue, lineWeight: 0.25)
+    .AddShape(new Rectangle(50, 20) - new Circle(4), "cut")
+    .AddShape(new Pos(18, 0) * new Circle(2), "engrave")
+    .Write("plate.dxf");
+
+// A drawing: the visible lines on "visible", the hidden ones on "hidden" (grey, dashed)
+Result<LineDrawing> drawing = part.Shape.ProjectLines(Camera.Isometric);
+new ExportDxf().AddDrawing(drawing.Value).Write("part.dxf");
+```
+
+- **Each call returns a new exporter;** chain them, or keep the result: `dxf.AddShape(s);` on its own adds nothing.
+- Edges are drawn in the XY plane: lines, circles, arcs, ellipses and splines exactly (a rational spline with its
+  weights), anything else as a polyline within `tolerance` (1e-3). An edge off the plane is projected onto it, and
+  `Write` warns (`modeling.dxf-not-planar`). Coordinates aren't scaled: `unit` names them in the header.
+- `new ExportDxf(DxfVersion.R12)` writes the old R12 format, which some laser cutters' software reads better:
+  ellipses and splines become polylines, and the header has no units.
+- A layer must be added before a shape goes on it; `""` is the default layer, `"0"`. Line weights are DXF's standard
+  ones (0.05, 0.09, 0.13 … 2.11 mm).
+- Text, when it comes (`Text`), is written as its outlines, as any other shape's edges.
 
 ### Pictures: shaded PNG
 
@@ -279,7 +306,8 @@ using (var file = File.Create("part.png"))
   part first.
 - **Angles are degrees** in objects and operations (`Rotation`, `Revolve`, `Taper`), as in build123d; mesh angular
   deflections are radians.
-- **Not ported yet:** text, builder mode, DXF export, `import_svg`. SVG drawings come from `Kerf.Drawing` (section 8). [name-map.md](name-map.md) lists the rest.
+- **Not ported yet:** text, builder mode, `import_svg`. SVG drawings come from `Kerf.Drawing`, DXF from `ExportDxf`
+  (section 8). [name-map.md](name-map.md) lists the rest.
 
 ## 10. Coming from build123d
 
