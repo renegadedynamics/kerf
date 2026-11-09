@@ -25,5 +25,5 @@ Bento (only read for this unit) names no `PageSize` of Kerf's: its `PrintLayout.
   it's made, and a sheet's `Draw` makes its title block's notes again each time, so a cell can cache its value on its
   arguments.
 
-Decisions 25901 to 25904 in the kernel's `docs/decisions.md`; the kernel's `docs/api/drawing.md` ("Notes", "Sheets");
+Decisions 2030 to 2033 in the kernel's `docs/decisions.md`; the kernel's `docs/api/drawing.md` ("Notes", "Sheets");
 the guide's section 8, "Drawing sheets".

@@ -9,7 +9,7 @@ version may break the API.
   at a size, alignment and rotation; `Svg` writes notes as filled outlines by default or as `<text>` with
   `SvgOptions.TextOutput`. `Sheet` lays views of a part out on ISO A0 to A10, US or ANSI C to E paper with a border and a
   title block the caller fills, as one drawing in millimetres; `SvgOptions.Area` places a page on the view plane, and
-  `Sheet.PageOptions` gives the paper's. Drawings without notes are written as before (decisions 25901 to 25904).
+  `Sheet.PageOptions` gives the paper's. Drawings without notes are written as before (decisions 2030 to 2033).
 - **Fonts and text** (unit 13D): `Kerf.Fonts` reads TrueType and OpenType fonts (`.ttf`, `.otf`, `.ttc`) with a managed
   reader of Kerf's own, giving FreeType's outlines (to 4.4e-7 of the em over half a million glyphs of 376 fonts), pair
   kerning from GPOS or `kern`, and FreeType's metrics; finds installed fonts by family and style on Windows, macOS and

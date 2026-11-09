@@ -9,7 +9,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   polylines of their outlines by default or as TEXT with a text style for each font (`textOutput: TextOutput.Text`;
   R12's text is ASCII, so other notes stay outlines there, with the warning `modeling.dxf-text-as-outlines`), and
   `AddNotes` adds notes alone. A drawing sheet (`Kerf.Drawing.Sheet`) is written as any drawing is; the guide's
-  section 8 has one (kernel decisions 25901 to 25904).
+  section 8 has one (kernel decisions 2030 to 2033).
 - **Breaking:** Kerf.Modeling's unused `PageSize` enum has gone; `Kerf.Drawing.PageSize` has its values, and ANSI C to E.
 - **DXF export:** `ExportDxf`, build123d's `ExportDXF`, writes sketches, faces, wires, edges and line drawings to DXF
   for other CAD programs and laser cutters: layers with colours, line types and weights, units in the header, lines,
