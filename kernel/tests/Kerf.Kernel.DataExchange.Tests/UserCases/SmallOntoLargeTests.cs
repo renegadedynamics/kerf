@@ -26,7 +26,7 @@ public class SmallOntoLargeTests(ITestOutputHelper output)
         (node.Shape is { } shape ? shape.Explore<Solid>().Select(static s => (Shape)s) : []).Concat(node.Children.SelectMany(Solids));
 
     [Theory]
-    // 0.4.0 asked 357 and 1,688 points, and now 150 and 481; the volumes are those native OCCT, 0.3.0 and 0.4.0 all gave
+    // 0.4.0 asked 357 and 1,688 points, and now 150 and 473; the volumes are those native OCCT, 0.3.0 and 0.4.0 all gave
     [InlineData("door-before-boss.step", "boss.step", 37461.279, 170)]
     [InlineData("door-before-detent.step", "detent-bump.step", 37619.791, 550)]
     public void A_small_part_fused_onto_the_door_is_checked_at_few_points(string door, string part, double volume, int most)
