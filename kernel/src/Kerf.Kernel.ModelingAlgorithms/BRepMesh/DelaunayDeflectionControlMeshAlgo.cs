@@ -55,6 +55,12 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     /// </summary>
     protected virtual bool ClearsFrontier => false;
 
+    /// <summary>
+    /// Kerf: whether a face whose mesh is still further from the surface than <see cref="ControlledDeflection"/> after the
+    /// passes is marked so, for the mesh's warning (decision 26901); not in OCCT's control.
+    /// </summary>
+    protected virtual bool ReportsExceeded => false;
+
     /// <summary>Processes the generated mesh: inserts the surface nodes, then controls the deflection.</summary>
     protected override void PostProcessMesh(Delaun mesher, ProgressRange range)
     {
@@ -133,6 +139,16 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
 
         if (!(_maxSqDeflection < 0.0))
         {
+            if (ReportsExceeded)
+            {
+                // Kerf: the guard's last measure still over its limit, which the face's deflection is about to replace (decision 26901)
+                double limit = ControlledDeflection();
+                if (_maxSqDeflection > limit * limit)
+                {
+                    GetDFace().MarkDeflectionExceeded(limit);
+                }
+            }
+
             GetDFace().SetDeflection(Math.Sqrt(_maxSqDeflection));
         }
     }

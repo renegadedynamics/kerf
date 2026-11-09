@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Collections.Immutable;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
@@ -74,9 +75,11 @@ internal static class ExchangeTree
     /// XCAF's AddShape shares a compound's equal shapes), so a part placed many times is written once. Parts of one
     /// shape with other names or colours get copies of it: STEP's writer maps shapes to products. With
     /// <paramref name="mesh"/>, each part's shape is meshed first (the mesh formats); a mesh part is written as faces
-    /// holding its triangles.
+    /// holding its triangles. A part whose faces are meshed further from their surfaces than the deflection adds a
+    /// warning to <paramref name="warnings"/> (<c>meshing.deflection-exceeded</c>, decision 26901).
     /// </summary>
-    public static Tree ToTree(ModelNode root, MeshOptions? mesh) => new(ToInstance(root, new Products(), mesh));
+    public static Tree ToTree(ModelNode root, MeshOptions? mesh, List<Diagnostic>? warnings = null)
+        => new(ToInstance(root, new Products(), mesh, warnings));
 
     private readonly record struct ProductKey(object TShape, Orientation Orientation, string? Name, Color? Color);
 
@@ -86,7 +89,7 @@ internal static class ExchangeTree
         public readonly HashSet<object> Shapes = new(ReferenceEqualityComparer.Instance);
     }
 
-    private static Instance ToInstance(ModelNode node, Products products, MeshOptions? mesh)
+    private static Instance ToInstance(ModelNode node, Products products, MeshOptions? mesh, List<Diagnostic>? warnings)
     {
         Shape? part = node.Shape;
         if (node.Mesh is { } shapeMesh)
@@ -96,18 +99,23 @@ internal static class ExchangeTree
         else if (part is { } shape && mesh is not null)
         {
             ToolParameters parameters = mesh.ToEngine();
-            part = IncrementalMesh.Meshed(shape, parameters);
+            part = IncrementalMesh.Meshed(shape, parameters, out _, out ImmutableArray<ExceededFace> exceeded);
             if (parameters.Budget is { RefusedFaces: > 0 and int refused })
             {
                 // Kerf: a part written with faces missing would be a success for an invalid result (decision 1942)
                 throw new MeshFaceRefusedException($"{refused} {(refused == 1 ? "face" : "faces")} of {node.Name ?? "a part"} couldn't be meshed: "
                                                    + "their mesh would take far more memory than their size and the deflection justify, as a damaged surface or range does.");
             }
+
+            if (!exceeded.IsEmpty)
+            {
+                warnings?.Add(Mesher.DeflectionWarning(exceeded, mesh.Relative, node.Name ?? "a part"));
+            }
         }
 
         if (part is not { } partShape)
         {
-            var assembly = DocumentProduct.Assembly(node.Name, node.Children.Select(child => ToInstance(child, products, mesh)));
+            var assembly = DocumentProduct.Assembly(node.Name, node.Children.Select(child => ToInstance(child, products, mesh, warnings)));
             if (node.Color is { } c)
             {
                 assembly = assembly.WithColor(ColorType.ColorSurf, c.ToEngine());
