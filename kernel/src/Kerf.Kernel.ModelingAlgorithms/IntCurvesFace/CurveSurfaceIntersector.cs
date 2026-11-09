@@ -48,6 +48,9 @@ internal class CurveSurfaceIntersector : Transient
                                // This case is recognized only for some pairs
                                // of analytical curves and surfaces (plane - line, ...)
     private Box? _faceBox; // Kerf: the face's box, widened (MissesFace)
+    // Kerf: one intersection of a curve and the surface, which each Perform resets, not one made for each: a solid's
+    // classifier intersects its line with each face it nears, for every point it classifies (unit 13R)
+    private HInter? _hics;
     // Kerf: the lines this thread has intersected with a face, for the tests that hold a classification's cost down
     [ThreadStatic]
     internal static int s_linesIntersected;
@@ -400,7 +403,7 @@ internal class CurveSurfaceIntersector : Transient
         }
         s_linesIntersected++;
 
-        var hics = new HInter();
+        HInter hics = _hics ??= new HInter();
         var geomline = new LineCurve3D(l);
         // C++ builds an adaptor and copies it into a handle: one adaptor here
         var hll = new CurveAdaptor(geomline);
@@ -511,7 +514,7 @@ internal class CurveSurfaceIntersector : Transient
         _seqState.Clear();
         //  Modified by skv - Wed Sep  3 16:14:11 2003 OCC578 End
         _nbpnt = 0;
-        var hics = new HInter();
+        HInter hics = _hics ??= new HInter();
 
         //--
         double parinf = parMin;

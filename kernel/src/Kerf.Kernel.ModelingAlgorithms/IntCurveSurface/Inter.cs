@@ -233,6 +233,9 @@ internal class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePoly
     private const int THE_NBSAMPLESONPARAB = 16;
     private const int THE_NBSAMPLESONHYPR = 32;
 
+    // Kerf: the surface's intervals, kept for the next Perform of this intersection (unit 13R)
+    private List<InterUtils.UVBounds>? _intervals;
+
     /// <summary>
     /// Computes the intersection between the curve and the surface, on each C2 interval of the surface
     /// (IntCurveSurface_InterImpl::Perform).
@@ -242,11 +245,14 @@ internal class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePoly
         ResetFields();
         _done = true;
 
-        List<InterUtils.UVBounds> intervals = new();
+        // Kerf: one list of intervals for each intersection, cleared by each Perform (unit 13R); the per-interval Perform
+        // below doesn't come back here
+        List<InterUtils.UVBounds> intervals = _intervals ??= new();
         InterUtils.DecomposeSurfaceIntervals<TheSurface, TheSurfaceTool>(surface, intervals);
 
-        foreach (InterUtils.UVBounds bounds in intervals)
+        for (int i = 0; i < intervals.Count; i++)
         {
+            InterUtils.UVBounds bounds = intervals[i];
             Perform(curve, surface, bounds.U0, bounds.V0, bounds.U1, bounds.V1);
         }
     }
