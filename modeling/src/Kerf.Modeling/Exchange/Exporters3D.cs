@@ -227,6 +227,119 @@ public static class Exporters3D
     public static Result Export3mf(IShape toExport, string filePath, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
         => ToFile(filePath, s => Export3mf(toExport, s, options, cancellationToken));
 
+    /// <summary>
+    /// <see cref="ExportBrep(IShape, Stream)"/> with the data written asynchronously: the BREP is made in memory,
+    /// synchronously, then written to the stream without blocking a thread, and the stream flushed. The same bytes;
+    /// nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportBrepAsync(IShape toExport, Stream stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        return AsyncIo.ToStreamAsync(stream, s => ExportBrep(toExport, s), cancellationToken);
+    }
+
+    /// <summary>Writes a shape to a BREP file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> ExportBrepAsync(IShape toExport, string filePath, CancellationToken cancellationToken = default)
+        => AsyncIo.ToFileAsync(filePath, s => ExportBrep(toExport, s), cancellationToken);
+
+    /// <summary>
+    /// <see cref="ExportStep(IShape, Stream, StepExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the STEP is made in memory, synchronously, then written to the stream without blocking a thread,
+    /// and the stream flushed. The same bytes (given a <see cref="StepExportOptions.Timestamp"/>; the time of writing
+    /// otherwise); nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportStepAsync(IShape toExport, Stream stream, StepExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ExchangeUnits.LengthUnit((options ?? StepExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToStreamAsync(stream, s => ExportStep(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>Writes a shape to a STEP file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> ExportStepAsync(IShape toExport, string filePath, StepExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ExchangeUnits.LengthUnit((options ?? StepExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToFileAsync(filePath, s => ExportStep(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="ExportStl(IShape, Stream, StlExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the shape is meshed and the STL made in memory, synchronously, then written to the stream without
+    /// blocking a thread, and the stream flushed. The same bytes; nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportStlAsync(IShape toExport, Stream stream, StlExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        return AsyncIo.ToStreamAsync(stream, s => ExportStl(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>Writes a shape's mesh to an STL file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> ExportStlAsync(IShape toExport, string filePath, StlExportOptions? options = null, CancellationToken cancellationToken = default)
+        => AsyncIo.ToFileAsync(filePath, s => ExportStl(toExport, s, options, cancellationToken), cancellationToken);
+
+    /// <summary>
+    /// <see cref="ExportGltf(IShape, Stream, GltfExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the shape is meshed and the glTF made in memory, synchronously, then written to the stream
+    /// without blocking a thread, and the stream flushed. The same bytes; nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportGltfAsync(IShape toExport, Stream stream, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ExchangeUnits.LengthUnit((options ?? GltfExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToStreamAsync(stream, s => ExportGltf(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// Writes a shape or assembly to a glTF 2.0 file asynchronously (see the stream form): binary, or JSON with its
+    /// buffer in a <c>.bin</c> file of the same name beside it, written after it. A missing folder throws at once.
+    /// </summary>
+    public static Task<Result> ExportGltfAsync(IShape toExport, string filePath, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+        options ??= GltfExportOptions.Default;
+        var writeOptions = GltfOptions(options);
+        if (options.Binary)
+            return AsyncIo.ToFileAsync(filePath, s => ExportGltf(toExport, s, options, cancellationToken), cancellationToken);
+        AsyncIo.CheckFolder(filePath);
+        var binPath = Path.ChangeExtension(filePath, ".bin");
+        return WriteFiles();
+
+        async Task<Result> WriteFiles()
+        {
+            var token = AsyncIo.Effective(cancellationToken);
+            token.ThrowIfCancellationRequested();
+            using var json = new MemoryStream();
+            using var bin = new MemoryStream();
+            var done = Export(toExport, () => Gltf.Write(MeshTree(toExport), json, bin, Path.GetFileName(binPath), writeOptions, cancellationToken));
+            if (done.IsFailure)
+                return done;
+            if (await AsyncIo.WriteFileAsync(filePath, json, token).ConfigureAwait(false) is { } jsonFailed)
+                return jsonFailed;
+            if (bin.Length == 0)
+                return done;
+            return await AsyncIo.WriteFileAsync(binPath, bin, token).ConfigureAwait(false) ?? done;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="Export3mf(IShape, Stream, ThreeMfExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the shape is meshed and the 3MF made in memory, synchronously, then written to the stream without
+    /// blocking a thread, and the stream flushed. The same bytes; nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> Export3mfAsync(IShape toExport, Stream stream, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ExchangeUnits.LengthUnit((options ?? ThreeMfExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToStreamAsync(stream, s => Export3mf(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>Writes a shape or assembly to a 3MF file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> Export3mfAsync(IShape toExport, string filePath, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ExchangeUnits.LengthUnit((options ?? ThreeMfExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToFileAsync(filePath, s => Export3mf(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
     // An export's failures as its result: nothing to write, a failure carried up from the kernel, or a stream or
     // file that can't be written
     private static Result Export(IShape shape, Func<Result> write)

@@ -31,6 +31,28 @@ public static class Importers
     }
 
     /// <summary>
+    /// <see cref="ImportBrep(Stream, ImportLimits?, CancellationToken)"/> with the data read asynchronously into memory,
+    /// then parsed synchronously on the thread the read finished on. The same result.
+    /// </summary>
+    public static Task<Result<Shape>> ImportBrepAsync(Stream stream, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        var maxBytes = (limits ?? ImportLimits.Default).MaxBytes;
+        return Read();
+
+        async Task<Result<Shape>> Read()
+        {
+            if (await AsyncIo.ReadAllAsync(stream, maxBytes, AsyncIo.Effective(cancellationToken)).ConfigureAwait(false) is not { } bytes)
+                return Result<Shape>.Failure(Diagnostic.Error(LimitExceeded, $"The BREP data is larger than the limit of {maxBytes} bytes"));
+            return Extras.ReadBRep(bytes);
+        }
+    }
+
+    /// <summary>A shape from a BREP file, read asynchronously (see the stream form). A missing file throws at once.</summary>
+    public static Task<Result<Shape>> ImportBrepAsync(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+        => AsyncIo.ReadFileAsync(fileName, file => ImportBrepAsync(file, limits, cancellationToken));
+
+    /// <summary>
     /// The model of STEP data, as build123d's <c>import_step</c>: the file's assembly tree as compounds whose
     /// <see cref="Assembly.Children"/> are its components, each placed by its location, with the product names
     /// as labels and the colours (a shape's own, else its product's); one free shape is returned as it is, several in a
@@ -57,6 +79,45 @@ public static class Importers
         var options = new StepReadOptions { Limits = (limits ?? ImportLimits.Default).ToReadLimits(), ExternalReferences = externalFiles };
         var read = externalFiles ? Step.Read(name, options, cancellationToken: cancellationToken)
                                  : Step.Read(stream, options, cancellationToken: cancellationToken);
+        return FromStep(read, name);
+    }
+
+    /// <summary>
+    /// <see cref="ImportStep(Stream, ImportLimits?, CancellationToken, string)"/> with the data read asynchronously into
+    /// memory, then parsed and translated synchronously on the thread the read finished on. The same result.
+    /// </summary>
+    public static Task<Result<ModelShape>> ImportStepAsync(Stream stream, ImportLimits? limits = null, string name = "STEP data",
+                                                           CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(name);
+        var options = new StepReadOptions { Limits = (limits ?? ImportLimits.Default).ToReadLimits() };
+        return Read();
+
+        async Task<Result<ModelShape>> Read() =>
+            FromStep(await Step.ReadAsync(stream, options, cancellationToken: cancellationToken).ConfigureAwait(false), name);
+    }
+
+    /// <summary>
+    /// The model of a STEP file, read asynchronously (see the stream form). A missing file throws at once. Other STEP
+    /// files it refers to are read from its folder, synchronously, while it is translated.
+    /// </summary>
+    public static Task<Result<ModelShape>> ImportStepAsync(string fileName, ImportLimits? limits = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(fileName);
+        if (!File.Exists(fileName))
+            throw new FileNotFoundException($"No such file: {fileName}", fileName);
+        var name = Path.GetFullPath(fileName);
+        var options = new StepReadOptions { Limits = (limits ?? ImportLimits.Default).ToReadLimits(), ExternalReferences = true };
+        var reading = Step.ReadAsync(name, options, cancellationToken: cancellationToken);
+        return Read();
+
+        async Task<Result<ModelShape>> Read() => FromStep(await reading.ConfigureAwait(false), name);
+    }
+
+    // The model of STEP data read, or the reader's failure, saying which data
+    private static Result<ModelShape> FromStep(Result<ModelNode> read, string name)
+    {
         if (read.Error is { } error)
         {
             // Data refused for its references says so; other data that can't be read says which and why
@@ -118,6 +179,33 @@ public static class Importers
     }
 
     /// <summary>
+    /// <see cref="ImportStl(Stream, Unit, ImportLimits?, CancellationToken)"/> with the data read asynchronously into
+    /// memory, then parsed synchronously on the thread the read finished on. The same result.
+    /// </summary>
+    public static Task<Result<Face>> ImportStlAsync(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+                                                    CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        var options = new StlReadOptions
+        {
+            Limits = (limits ?? ImportLimits.Default).ToReadLimits(),
+            Unit = ExchangeUnits.LengthUnit(modelUnit, "model_scale"),
+        };
+        return Read();
+
+        async Task<Result<Face>> Read() =>
+            (await Stl.ReadAsync(stream, options, cancellationToken).ConfigureAwait(false)).Map(mesh => (Face)mesh.TriangulatedShape);
+    }
+
+    /// <summary>A face holding the triangles of an STL file, read asynchronously (see the stream form). A missing file throws at once.</summary>
+    public static Task<Result<Face>> ImportStlAsync(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+                                                    CancellationToken cancellationToken = default)
+    {
+        ExchangeUnits.LengthUnit(modelUnit, "model_scale");
+        return AsyncIo.ReadFileAsync(fileName, file => ImportStlAsync(file, modelUnit, limits, cancellationToken));
+    }
+
+    /// <summary>
     /// The model of glTF 2.0 data (<c>.glb</c>, or <c>.gltf</c> with its buffers embedded), Y-up turned Z-up, in
     /// <paramref name="modelUnit"/>: a part is a compound of faces holding only triangles, with the mesh's name and
     /// colour; a scene of several parts or a node hierarchy is an assembly (<see cref="Assembly.Children"/>).
@@ -141,6 +229,33 @@ public static class Importers
     {
         using var file = OpenRead(fileName);
         return ImportGltf(file, modelUnit, limits, cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="ImportGltf(Stream, Unit, ImportLimits?, CancellationToken)"/> with the data read asynchronously into
+    /// memory, then parsed synchronously on the thread the read finished on. The same result.
+    /// </summary>
+    public static Task<Result<ModelShape>> ImportGltfAsync(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+                                                           CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        var options = new GltfReadOptions
+        {
+            Limits = (limits ?? ImportLimits.Default).ToReadLimits(),
+            Unit = ExchangeUnits.LengthUnit(modelUnit, "model_unit"),
+        };
+        return Read();
+
+        async Task<Result<ModelShape>> Read() =>
+            (await Gltf.ReadAsync(stream, options, cancellationToken).ConfigureAwait(false)).Map(FromModel);
+    }
+
+    /// <summary>The model of a glTF 2.0 file, read asynchronously (see the stream form). A missing file throws at once. External buffers aren't read.</summary>
+    public static Task<Result<ModelShape>> ImportGltfAsync(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = null,
+                                                           CancellationToken cancellationToken = default)
+    {
+        ExchangeUnits.LengthUnit(modelUnit, "model_unit");
+        return AsyncIo.ReadFileAsync(fileName, file => ImportGltfAsync(file, modelUnit, limits, cancellationToken));
     }
 
 
