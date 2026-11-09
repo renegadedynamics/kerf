@@ -192,7 +192,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
   it would make a face thinner than that, and builds each flat side (corners within 5e-8 of one plane) as one face;
   build123d makes a face of each of Qhull's triangles and cleans. A set with no volume throws `ArgumentException`, where
   SciPy raises `QhullError`. `Operations.MakeConvexPolyhedron` gives the same as a `Result<Part>` (kernel decisions
-  24001 and 24004).
+  1993 and 1996).
 - `Wire.MakePolygon(…, close: true)` closes a polygon whose ends are 1e-7 to 1e-6 apart, which build123d leaves open
   (kernel decision 1994).
 - `Wire.MakeConvexHull` samples curves to a deflection, not 2 / tolerance points an edge, and makes each joining line
