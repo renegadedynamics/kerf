@@ -72,7 +72,7 @@ public class ChamferLimitTests
         Assert.Equal(5, disc.MaxChamfer([rim]));
 
         // The prism: 1.7 doesn't build, as the arcs' edge on the end closes to a point, but the largest length below it by more than
-        // the shape's tolerance does, a cone of radius 2e-7 at each corner; it was the halving's 1.594 (decision 26501)
+        // the shape's tolerance does, a cone of radius 2e-7 at each corner; it was the halving's 1.594 (decision 2047)
         Part prism = Prism();
         ShapeList<Edge> outline = Outline(prism);
         Assert.Equal(1.7, prism.AsShape().ChamferLimit(outline));

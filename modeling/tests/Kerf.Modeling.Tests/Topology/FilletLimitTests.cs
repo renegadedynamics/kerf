@@ -239,7 +239,7 @@ public class FilletLimitTests
         Edge longest = cut.Edges().OrderByDescending(e => e.Length).First();
         Assert.True(Fillet(cut, longest, 10).IsFailure);
 
-        // So MaxFillet gives the width less twice the shape's tolerance, which builds, where its halving gave 9.94 (decision 26501)
+        // So MaxFillet gives the width less twice the shape's tolerance, which builds, where its halving gave 9.94 (decision 2047)
         SizeLimit limit = cut.AsShape().FilletSizeLimit([longest])!.Value;
         Assert.Equal(10, limit.Value);
         Assert.Equal(1e-7, limit.Tolerance, 1e-20);
