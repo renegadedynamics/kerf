@@ -8,7 +8,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 - **Notes as outlines are filled in DXF 2013:** each letter's contours (outer and holes) are a solid `HATCH` in the
   notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
   SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a
-  laser cutter engraving outlines, say). R12 has no `HATCH` and is unchanged (kernel decision 26201).
+  laser cutter engraving outlines, say). R12 has no `HATCH` and is unchanged (kernel decision 2042).
 - **Text in DXF:** `ExportDxf` writes a drawing's notes (`Kerf.Drawing.DrawingNote`) on a `"notes"` layer, as closed
   polylines of their outlines by default or as TEXT with a text style for each font (`textOutput: TextOutput.Text`;
   R12's text is ASCII, so other notes stay outlines there, with the warning `modeling.dxf-text-as-outlines`), and
