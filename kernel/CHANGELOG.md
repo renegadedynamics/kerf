@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **Fusing a second boss or rib onto a part allocates about a third less,** with the same result: classifying many points in one frozen solid maps its edges' faces once, not once a point (decision 24102).
 - **A Boolean's check of its result's volume is about twice as quick on parts built by many cuts and fuses,** with the same verdicts: it keeps the volume it measured of a result, which the next Boolean measures again as its object (decision 24101).
 - **Meshing allocates 5% less over `data/occ`, and up to 11% less on shapes with tori and spheres, and its angular check estimates each node's normal once,** with the same meshes: the checks of deviation no longer grow a set of node pairs (decisions 1977, 1978).
 - **A 2D offset inwards past a curve's sharpest bend is within 0.1% of the distance,** where it was up to 1% too far in, silently, as in OCCT: the polyline that stands in for such an edge is drawn to 0.001 of the distance, with about 3 times its edges, and to OCCT's 0.01 where the finer one fails (decision 1980). Nothing else changes.

@@ -45,6 +45,8 @@ internal class SolidExplorer
     private readonly IndexedSet<Shape> _mapEV = new(ShapeHasher.Instance);
     // Kerf: whether the edges and vertices and their tree are filled; see InitShape
     private bool _treeFilled;
+    // Kerf: the faces of each edge of a frozen shape, which every point classified asks for (unit 12Y); see GetMapEF
+    private IndexedMap<Shape, NCollection_List<Shape>>? _mapEF;
 
     /// <summary>
     /// A point <paramref name="APoint_"/> in the face <paramref name="_face"/>: <paramref name="param_"/>, in ]0, 1[,
@@ -898,6 +900,7 @@ internal class SolidExplorer
         _mapEV.Clear();
         _tree.Clear();
         _treeFilled = false;
+        _mapEF = null;
 
         _shape = s;
         _firstFace = 0;
@@ -1049,6 +1052,30 @@ internal class SolidExplorer
         }
 
         return _tree;
+    }
+
+    /// <summary>
+    /// The faces of each edge of the shape, as <c>BRepClass3d_SClassifier::Perform</c> maps them for each point. A frozen
+    /// shape's are kept (unit 12Y): its TShapes never change again, so the map made again would be the same, in the same
+    /// order. Made afresh for a shape that isn't frozen, which an algorithm may change between points, and inside an open
+    /// working overlay, where a frozen TShape can read as its working copy; and never kept from there.
+    /// </summary>
+    public IndexedMap<Shape, NCollection_List<Shape>> GetMapEF()
+    {
+        bool keep = _shape.TShape() is { IsFrozen: true } && Kerf.Engine.Topology.Tools.WorkingOverlay.Current is null;
+        if (keep && Volatile.Read(ref _mapEF) is { } kept)
+        {
+            return kept;
+        }
+
+        var mapEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, mapEF);
+        if (keep)
+        {
+            Volatile.Write(ref _mapEF, mapEF);
+        }
+
+        return mapEF;
     }
 
     /// <summary>The edges and vertices of the shape.</summary>
