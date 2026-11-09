@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **`TightCorners.Collapse` is about 10 times quicker on the guide's box and on a user's housing end, allocating about a 40th,** with the same faces, edges and history: where nothing else of the part comes near the chamfer it's built from its faces, not by a Boolean, and its edges are exact lines and circles where they were B-splines (decisions 25201 to 25203). The faces over arcs that don't collapse are OCCT's cones, where they were B-splines.
+
 ## 0.4.0
 
 - **Silent wrong answers found and fixed,** in line with phase 12's aim of trustworthy results first: Cuts of crossing
