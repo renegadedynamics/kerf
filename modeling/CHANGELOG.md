@@ -6,6 +6,16 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 ## Unreleased
 
 - **A mesh at relative tolerances** (`MeshTolerances` with `Relative`) keeps spheres and tori within the deflection worked out for each face, where they could be several times out; some small fillet tori stay up to 1.14 times out beside a long boundary edge (kernel decisions 26301 and 26302).
+- **Notes as outlines are filled in DXF 2013:** each letter's contours (outer and holes) are a solid `HATCH` in the
+  notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
+  SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a
+  laser cutter engraving outlines, say). R12 has no `HATCH` and is unchanged (kernel decision 2042).
+- **Breaking: no mutable collections handed out** (unit 13P, kernel decision 2044): `edge.ConnectedFaces(parent)` and
+  `ElementsOfType<T>()` return a `ShapeList` (they returned a `List`), `ModelHistory.Modified` and `Generated` an
+  `ImmutableArray<Shape>` (an array), and `MatrixOfInertia` an `ImmutableArray<ImmutableArray<double>>` (a
+  `double[][]`). Indexing, `Count` or `Length`, `foreach` and LINQ work as before, with the same values in the same
+  order; code that added to or wrote into the result copies it first (`[.. result]`). The modelling layer's public
+  API is listed in docs/public-api.txt, which a test keeps current.
 - **Text in DXF:** `ExportDxf` writes a drawing's notes (`Kerf.Drawing.DrawingNote`) on a `"notes"` layer, as closed
   polylines of their outlines by default or as TEXT with a text style for each font (`textOutput: TextOutput.Text`;
   R12's text is ASCII, so other notes stay outlines there, with the warning `modeling.dxf-text-as-outlines`), and

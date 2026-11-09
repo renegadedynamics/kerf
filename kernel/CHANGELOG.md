@@ -6,6 +6,13 @@ version may break the API.
 ## Unreleased
 
 - **A sphere's and a torus's meshes keep to the deflection at a relative deflection too** (`MeshOptions.Relative`): they kept OCCT's meshes, up to 5.5 times out on small fillet tori and twice on whole spheres, silently. Now within the deflection relative mode works out for each face, with 3.5% more triangles over the survey, all on spheres and tori, but for some small fillet tori, up to 1.14 times out beside a long boundary edge (decision 26302); meshes at an absolute deflection, and other kinds of surface, are the same to the byte (decision 26301).
+- **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
+  the caller's own list, so changing the list after making the options changed them. A collection expression
+  (`Points = [p1, p2]`) works as before; a list is passed as `[.. list]` (unit 13P, decision 2044).
+- **The public API is on record:** kernel/docs/api/public-api.txt lists every public type and member of the four
+  assemblies, and modeling/docs/public-api.txt the modelling layer's, one line each; a test fails until the file
+  matches, so the file's history shows what each change added, removed or changed. A second test fails on anything
+  public that could change a value once made (design-rules.md, section 3; decision 2043).
 - **Notes and sheets in drawings** (unit 13F2): `DrawingNote` puts text on a `LineDrawing` (`WithNotes`), in any font,
   at a size, alignment and rotation; `Svg` writes notes as filled outlines by default or as `<text>` with
   `SvgOptions.TextOutput`. `Sheet` lays views of a part out on ISO A0 to A10, US or ANSI C to E paper with a border and a

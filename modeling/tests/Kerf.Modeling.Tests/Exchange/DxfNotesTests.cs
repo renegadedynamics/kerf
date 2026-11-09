@@ -62,7 +62,10 @@ public class DxfNotesTests
         Assert.Equal(TextOutput.Outlines, exporter.TextOutput);
         var read = DxfTestReader.Read(exporter.WriteToString());
         Assert.NotNull(read.LayerNamed("notes"));
-        List<Item> polylines = OnLayer(read, "notes");
+        List<Item> polylines = [.. OnLayer(read, "notes").Where(e => e.Type != "HATCH")];
+        // Filled in 2013, a hatch an outer contour; R12 has no hatches
+        Assert.Equal(version == DxfVersion.R12 ? 0 : drawing.Notes.Sum(n => n.Contours.Count(c => ContourArea(c) > 0)),
+                     read.Entities.Count(e => e.Type == "HATCH"));
         var contours = drawing.Notes.SelectMany(n => n.Contours).ToList();
         Assert.Equal(contours.Count, polylines.Count);
         Assert.All(polylines, p => Assert.Equal(version == DxfVersion.R12 ? "POLYLINE" : "LWPOLYLINE", p.Type));
@@ -159,7 +162,7 @@ public class DxfNotesTests
 
         var exporter = new ExportDxf().AddLayer("engrave", ColorIndex.Blue).AddNotes(drawing.Notes, "engrave");
         var read = DxfTestReader.Read(exporter.WriteToString());
-        Assert.Equal(drawing.Notes.Sum(n => n.Contours.Length), OnLayer(read, "engrave").Count);
+        Assert.Equal(drawing.Notes.Sum(n => n.Contours.Length), OnLayer(read, "engrave").Count(e => e.Type == "LWPOLYLINE"));
         Assert.Throws<ArgumentException>(() => new ExportDxf().AddNotes(drawing.Notes, "missing"));
         Assert.Throws<ArgumentException>(() => new ExportDxf(textOutput: (TextOutput)7));
         // Immutable: adding returns a new exporter
@@ -185,7 +188,7 @@ public class DxfNotesTests
         if (text == TextOutput.Text)
             Assert.Equal(sheet.Value.Notes.Sum(n => n.Lines.Length), notes.Count(e => e.Type == "TEXT"));
         else
-            Assert.Equal(sheet.Value.Notes.Sum(n => n.Contours.Length), notes.Count);
+            Assert.Equal(sheet.Value.Notes.Sum(n => n.Contours.Length), notes.Count(e => e.Type != "HATCH"));
         // The paper's border, in millimetres from its corner
         Assert.Equal(new Point2D(20, 10), read.Header["$EXTMIN"].Point(10));
         Assert.Equal(new Point2D(287, 200), read.Header["$EXTMAX"].Point(10));
@@ -221,6 +224,233 @@ public class DxfNotesTests
         {
             Directory.Delete(folder, true);
         }
+    }
+
+    // A contour's signed area, from 4096 chords a curve (within about 1e-9 of the curve's own for these sizes)
+    internal static double ContourArea(System.Collections.Immutable.ImmutableArray<Curve2D> contour)
+    {
+        double sum = 0;
+        foreach (Curve2D curve in contour)
+        {
+            const int n = 4096;
+            Point2D a = curve.Evaluate(curve.FirstParameter);
+            for (int k = 1; k <= n; k++)
+            {
+                Point2D b = curve.Evaluate(k == n ? curve.LastParameter : curve.FirstParameter + (curve.LastParameter - curve.FirstParameter) * k / n);
+                sum += a.X * b.Y - b.X * a.Y;
+                a = b;
+            }
+        }
+        return 0.5 * sum;
+    }
+
+    private static double PolygonArea(IReadOnlyList<Point2D> polygon)
+    {
+        double sum = 0;
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            Point2D a = polygon[i], b = polygon[(i + 1) % polygon.Count];
+            sum += a.X * b.Y - b.X * a.Y;
+        }
+        return 0.5 * sum;
+    }
+
+    private static double Perimeter(System.Collections.Immutable.ImmutableArray<Curve2D> contour)
+    {
+        double sum = 0;
+        foreach (Curve2D curve in contour)
+        {
+            for (int k = 0; k < 256; k++)
+            {
+                double u0 = curve.FirstParameter + (curve.LastParameter - curve.FirstParameter) * k / 256;
+                double u1 = curve.FirstParameter + (curve.LastParameter - curve.FirstParameter) * (k + 1) / 256;
+                sum += curve.Evaluate(u0).DistanceTo(curve.Evaluate(u1));
+            }
+        }
+        return sum;
+    }
+
+    // A point's distance from a contour: the nearest of 64 samples a curve, refined by golden-section search
+    private static double DistanceToContour(Point2D p, System.Collections.Immutable.ImmutableArray<Curve2D> contour)
+    {
+        double best = double.PositiveInfinity;
+        foreach (Curve2D curve in contour)
+        {
+            double first = curve.FirstParameter, last = curve.LastParameter, step = (last - first) / 64;
+            int nearest = Enumerable.Range(0, 65).MinBy(k => p.DistanceTo(curve.Evaluate(first + step * k)));
+            double lo = Math.Max(first, first + step * (nearest - 1)), hi = Math.Min(last, first + step * (nearest + 1));
+            const double g = 0.6180339887498949;
+            for (int i = 0; i < 100; i++)
+            {
+                double m1 = hi - g * (hi - lo), m2 = lo + g * (hi - lo);
+                if (p.DistanceTo(curve.Evaluate(m1)) < p.DistanceTo(curve.Evaluate(m2)))
+                    hi = m2;
+                else
+                    lo = m1;
+            }
+            best = Math.Min(best, p.DistanceTo(curve.Evaluate(0.5 * (lo + hi))));
+        }
+        return best;
+    }
+
+    // A HATCH's boundary paths as read: each path's flags and points
+    internal static List<(int Flags, List<Point2D> Points)> HatchPaths(Item hatch)
+    {
+        var groups = hatch.Groups;
+        int i = groups.ToList().FindIndex(g => g.Code == 91);
+        int count = int.Parse(groups[i].Value, System.Globalization.CultureInfo.InvariantCulture);
+        var paths = new List<(int, List<Point2D>)>();
+        i++;
+        for (int n = 0; n < count; n++)
+        {
+            Assert.Equal(92, groups[i].Code);
+            int flags = (int)groups[i].Number;
+            Assert.Equal((72, "0"), (groups[i + 1].Code, groups[i + 1].Value));   // no bulges
+            Assert.Equal((73, "1"), (groups[i + 2].Code, groups[i + 2].Value));   // closed
+            Assert.Equal(93, groups[i + 3].Code);
+            int vertices = (int)groups[i + 3].Number;
+            i += 4;
+            var points = new List<Point2D>();
+            for (int v = 0; v < vertices; v++, i += 2)
+            {
+                Assert.Equal((10, 20), (groups[i].Code, groups[i + 1].Code));
+                points.Add(new Point2D(groups[i].Number, groups[i + 1].Number));
+            }
+            Assert.Equal((97, "0"), (groups[i].Code, groups[i].Value));           // no source objects
+            i++;
+            paths.Add((flags, points));
+        }
+        Assert.Equal([75, 76, 98], groups.Skip(i).Select(g => g.Code));
+        return paths;
+    }
+
+    [Fact]
+    public void Notes_as_outlines_are_filled_in_2013_by_a_solid_hatch_under_each_glyphs_contours()
+    {
+        LineDrawing drawing = Annotated();
+        var exporter = new ExportDxf().AddDrawing(drawing);
+        Assert.True(exporter.FillOutlines);
+        var read = DxfTestReader.Read(exporter.WriteToString());
+        List<Item> onLayer = OnLayer(read, "notes");
+        List<Item> hatches = [.. onLayer.Where(e => e.Type == "HATCH")];
+        List<Item> polylines = [.. onLayer.Where(e => e.Type == "LWPOLYLINE")];
+        Assert.Equal(onLayer.Count, hatches.Count + polylines.Count);
+        var contours = drawing.Notes.SelectMany(n => n.Contours).ToList();
+        Assert.Equal(contours.Count, polylines.Count);
+
+        // A solid fill in the layer's colour, in the XY plane, not associative, odd-parity
+        foreach (Item hatch in hatches)
+        {
+            Assert.Equal("SOLID", hatch.Text(2));
+            Assert.Equal(1, (int)hatch.Number(70));
+            Assert.Equal(0, (int)hatch.Number(71));
+            Assert.Equal(1.0, hatch.Number(230));
+            Assert.Equal(0, (int)hatch.Number(75));
+            Assert.Null(hatch.Text(62));   // by layer
+        }
+
+        // Each note's hatches come before its contours, so the contours are drawn over them
+        int firstPolyline = onLayer.IndexOf(polylines[0]);
+        Assert.All(onLayer.Take(firstPolyline), e => Assert.Equal("HATCH", e.Type));
+
+        // Every boundary is one of the contours' polylines, vertex for vertex, and each contour of area is used once:
+        // the outer one external (flags 3) and counter-clockwise, the holes (2) clockwise and inside it
+        var paths = hatches.Select(HatchPaths).ToList();
+        var used = new HashSet<int>();
+        foreach (var hatch in paths)
+        {
+            Assert.Equal(3, hatch[0].Flags);
+            Assert.True(PolygonArea(hatch[0].Points) > 0);
+            foreach (var (flags, points) in hatch.Skip(1))
+            {
+                Assert.Equal(2, flags);
+                Assert.True(PolygonArea(points) < 0);
+                Assert.All(points, p => Assert.True(Inside(p, hatch[0].Points)));
+            }
+            foreach (var (_, points) in hatch)
+            {
+                int index = Enumerable.Range(0, polylines.Count).Single(k => polylines[k].Points(10).SequenceEqual(points));
+                Assert.True(used.Add(index), "A contour is in two hatches");
+                // Its vertices are on the glyph's contour
+                Assert.All(points, p => Assert.True(DistanceToContour(p, contours[index]) <= 1e-9, $"{DistanceToContour(p, contours[index])} from the contour"));
+            }
+        }
+        Assert.Equal(Enumerable.Range(0, contours.Count), used.Order());
+        Assert.Contains(paths, h => h.Count > 1);   // letters with holes keep them
+
+        // The fill's area is the outline's: exactly the polylines', and the curves' within the flattening's tolerance
+        double hatched = paths.Sum(h => h.Sum(p => PolygonArea(p.Points)));
+        double polygons = polylines.Sum(p => PolygonArea(p.Points(10)));
+        double outline = contours.Sum(ContourArea), perimeter = contours.Sum(Perimeter);
+        Assert.Equal(polygons, hatched, 1e-9 * Math.Abs(polygons));
+        Assert.True(Math.Abs(hatched - outline) <= exporter.Tolerance * perimeter, $"{hatched} filled, {outline} the outline's");
+        Assert.True(Math.Abs(hatched - outline) <= 1e-3 * outline, $"{hatched} filled, {outline} the outline's");
+
+        // The extents are the outlines', as before
+        var contoursAlone = DxfTestReader.Read(new ExportDxf(fillOutlines: false).AddDrawing(drawing).WriteToString());
+        Assert.Equal(contoursAlone.Header["$EXTMIN"].Point(10), read.Header["$EXTMIN"].Point(10));
+        Assert.Equal(contoursAlone.Header["$EXTMAX"].Point(10), read.Header["$EXTMAX"].Point(10));
+    }
+
+    [Fact]
+    public void Contours_alone_on_request_and_in_R12()
+    {
+        LineDrawing drawing = Annotated();
+        var exporter = new ExportDxf(fillOutlines: false).AddLayer("engrave").AddDrawing(drawing);
+        Assert.False(exporter.FillOutlines);   // kept by each new exporter
+        var read = DxfTestReader.Read(exporter.WriteToString());
+        Assert.DoesNotContain(read.Entities, e => e.Type == "HATCH");
+        Assert.Equal(drawing.Notes.Sum(n => n.Contours.Length), OnLayer(read, "notes").Count);
+        // The fill adds hatches and changes nothing else
+        var filled = DxfTestReader.Read(new ExportDxf().AddLayer("engrave").AddDrawing(drawing).WriteToString());
+        static string Key(Item e) => e.Type + string.Join(",", e.Groups.Where(g => g.Code is not (5 or 330)).Select(g => $"{g.Code}={g.Value}"));   // without handles
+        Assert.Equal(read.Entities.Select(Key), filled.Entities.Where(e => e.Type != "HATCH").Select(Key));
+        // R12 has no HATCH: its contours alone, the same either way, with no warning
+        var r12 = new ExportDxf(DxfVersion.R12).AddDrawing(drawing);
+        Assert.Equal(new ExportDxf(DxfVersion.R12, fillOutlines: false).AddDrawing(drawing).WriteToString(), r12.WriteToString());
+        Assert.DoesNotContain(DxfTestReader.Read(r12.WriteToString()).Entities, e => e.Type == "HATCH");
+        Assert.True(r12.Write(new MemoryStream()) is { IsSuccess: true, Diagnostics.IsEmpty: true });
+        // Text has nothing to fill
+        Assert.DoesNotContain(DxfTestReader.Read(new ExportDxf(textOutput: TextOutput.Text).AddDrawing(drawing).WriteToString()).Entities,
+                              e => e.Type == "HATCH");
+    }
+
+    [Fact]
+    public void Regions_are_outer_contours_with_the_holes_they_hold()
+    {
+        static System.Collections.Immutable.ImmutableArray<Point2D> Square(double x, double y, double size, bool clockwise)
+        {
+            Point2D[] p = [new(x, y), new(x + size, y), new(x + size, y + size), new(x, y + size)];
+            return clockwise ? [.. p.Reverse()] : [.. p];
+        }
+        // ® as squares: an outer, a hole in it, an island in the hole with a hole of its own; and two outers that
+        // overlap (kerned glyphs), each its own region; a hole in nothing and a contour of no area fill nothing
+        var outer = Square(0, 0, 10, false);
+        var ring = Square(1, 1, 8, true);
+        var island = Square(3, 3, 4, false);
+        var islandHole = Square(4, 4, 2, true);
+        var left = Square(20, 0, 5, false);
+        var right = Square(24, 0, 5, false);
+        var stray = Square(40, 0, 1, true);
+        System.Collections.Immutable.ImmutableArray<Point2D> flat = [new(50, 0), new(51, 0)];
+        var regions = ExportDxf.Regions([outer, ring, island, islandHole, left, right, stray, flat]);
+        Assert.Equal(4, regions.Count);
+        Assert.Equal([[.. outer], [.. ring]], regions[0].Select(b => b.ToArray()));
+        Assert.Equal([[.. island], [.. islandHole]], regions[1].Select(b => b.ToArray()));
+        Assert.Equal([[.. left]], regions[2].Select(b => b.ToArray()));
+        Assert.Equal([[.. right]], regions[3].Select(b => b.ToArray()));
+    }
+
+    private static bool Inside(Point2D p, IReadOnlyList<Point2D> polygon)
+    {
+        bool inside = false;
+        for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+        {
+            Point2D a = polygon[i], b = polygon[j];
+            if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < a.X + (p.Y - a.Y) * (b.X - a.X) / (b.Y - a.Y))
+                inside = !inside;
+        }
+        return inside;
     }
 
     [Fact]
