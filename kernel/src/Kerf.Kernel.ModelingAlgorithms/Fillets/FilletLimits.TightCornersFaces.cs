@@ -59,6 +59,13 @@ internal static partial class FilletLimits
             Piece[] pieces = loop.Pieces;
             int n = pieces.Length;
             double near = pieces.Max(static p => Tool.Tolerance(p.Edge)) * 2 + Tolerance;
+
+            // One piece to a side, no two tight pieces together, and the sides square to the face: an arc split beside a run, two tight
+            // arcs sharing a point, or a draft, whose pieces are the contact on the sides rather than their edges, is the Boolean's
+            if (loop.Draft is not null || pieces.Any(static p => p.IsCurve) || Enumerable.Range(0, n).Any(i => pieces[i].Tight && pieces[(i + 1) % n].Tight))
+            {
+                return null;
+            }
             foreach (Piece piece in pieces)
             {
                 if (!sides.Add(piece.Side))

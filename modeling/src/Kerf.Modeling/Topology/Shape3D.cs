@@ -145,8 +145,8 @@ public static partial class Shape3DExtensions
 
         /// <summary>
         /// The largest fillet radius the edges take: for straight edges between planes and circles between planes, cylinders and cones, what the geometry gives, if that can be
-        /// built; otherwise found by a binary search to within <paramref name="tolerance"/>, which doesn't try what the geometry
-        /// says can't fit.
+        /// built, or else that less what the shape's tolerance there needs, if that can; otherwise found by a binary search to within
+        /// <paramref name="tolerance"/>, which doesn't try what the geometry says can't fit.
         /// </summary>
         /// <exception cref="InvalidOperationException">No value was found within <paramref name="maxIterations"/>.</exception>
         /// <exception cref="ArgumentException">The shape isn't valid.</exception>
@@ -155,15 +155,16 @@ public static partial class Shape3DExtensions
             if (!self.IsValid)
                 throw new ArgumentException("Invalid Shape");
             var edges = edgeList.Select(e => e).ToList();
-            return Shape3DExtensions.Largest(self.AsShape().FilletLimit(edges), r => self.AsShape().Fillet(edges, r).IsSuccess,
+            return Shape3DExtensions.Largest(self.AsShape().FilletSizeLimit(edges), r => self.AsShape().Fillet(edges, r).IsSuccess,
                                              2 * self.Bounds().Diagonal, tolerance, maxIterations);
         }
 
         /// <summary>
         /// The largest chamfer length the edges take, as one length on both faces: what the geometry gives (the tightest convex arc
-        /// in a face beside them, or the width of a face beside straight edges and rims), if that can be built; otherwise found by
-        /// the same binary search as <c>MaxFillet</c>, to within <paramref name="tolerance"/>, which doesn't try what the geometry
-        /// says can't fit. build123d has no <c>max_chamfer</c>.
+        /// in a face beside them, or the width of a face beside straight edges and rims), if that can be built, or else that less what
+        /// the shape's tolerance there needs, if that can (an arc's radius, where the edge closes to a point, less twice its tolerance);
+        /// otherwise found by the same binary search as <c>MaxFillet</c>, to within <paramref name="tolerance"/>, which doesn't try
+        /// what the geometry says can't fit. build123d has no <c>max_chamfer</c>.
         /// </summary>
         /// <exception cref="InvalidOperationException">No value was found within <paramref name="maxIterations"/>.</exception>
         /// <exception cref="ArgumentException">The shape isn't valid.</exception>
@@ -172,7 +173,7 @@ public static partial class Shape3DExtensions
             if (!self.IsValid)
                 throw new ArgumentException("Invalid Shape");
             var edges = edgeList.Select(e => e).ToList();
-            return Shape3DExtensions.Largest(self.AsShape().ChamferLimit(edges), d => self.AsShape().Chamfer(edges, d).IsSuccess,
+            return Shape3DExtensions.Largest(self.AsShape().ChamferSizeLimit(edges), d => self.AsShape().Chamfer(edges, d).IsSuccess,
                                              2 * self.Bounds().Diagonal, tolerance, maxIterations);
         }
 
@@ -314,11 +315,13 @@ public static partial class Shape3DExtensions
     }
 
     /// <summary>
-    /// The largest size that works, to within <paramref name="tolerance"/>: the geometry's <paramref name="limit"/> if it works, and
-    /// otherwise halving (0, <paramref name="windowMax"/>), without trying at or past the limit, which can't fit (decision 1900).
+    /// The largest size that works, to within <paramref name="tolerance"/>: the geometry's <paramref name="proved"/> limit if it works,
+    /// then the largest size below it that isn't taken as the limit, if that works, and otherwise halving (0, <paramref name="windowMax"/>),
+    /// without trying at or past the limit, which can't fit (decision 1900).
     /// </summary>
-    internal static double Largest(double? limit, Func<double, bool> works, double windowMax, double tolerance, int maxIterations)
+    internal static double Largest(SizeLimit? proved, Func<double, bool> works, double windowMax, double tolerance, int maxIterations)
     {
+        double? limit = proved?.Value;
         double Search(double windowMin, double windowMax, int iteration)
         {
             var windowMid = (windowMin + windowMax) / 2;
@@ -334,8 +337,14 @@ public static partial class Shape3DExtensions
             // They work: close enough, or try the larger window
             return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
         }
-        if (limit is { } most && works(most))
-            return most;
+        if (proved is { } most)
+        {
+            if (works(most.Value))
+                return most.Value;
+            // Where the limit itself can't be built, just below it often can: an arc's chamfer to a point, a fillet using up a face
+            if (most.JustBelow > 0 && works(most.JustBelow))
+                return most.JustBelow;
+        }
         return Search(0.0, windowMax, 0);
     }
 
