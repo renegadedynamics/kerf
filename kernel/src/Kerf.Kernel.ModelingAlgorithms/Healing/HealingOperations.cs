@@ -80,7 +80,19 @@ public static class HealingOperations
         public ValidationReport Validate(ValidationOptions? options = null)
         {
             options ??= ValidationOptions.Default;
-            var analyzer = new Analyzer(NotNull(shape.AsShape()), options.Geometry, options.Parallel, options.Exact);
+            // A check that finds nothing wrong anywhere has nothing to report, so it may skip the faces a whole check found so
+            // before; one that finds something and skipped faces is made again in full for its report (unit 13K)
+            Analyzer? remembering = null;
+            if (options.Geometry && !options.Exact)
+            {
+                remembering = Analyzer.Remembering(NotNull(shape.AsShape()), options.Parallel);
+                if (remembering.IsClean)
+                {
+                    return new ValidationReport { IsValid = true, Problems = [] };
+                }
+            }
+
+            Analyzer analyzer = remembering is { SkippedFaces: 0 } ? remembering : new Analyzer(NotNull(shape.AsShape()), options.Geometry, options.Parallel, options.Exact);
             var problems = ImmutableArray.CreateBuilder<ShapeProblem>();
             var seen = new HashSet<ShapeProblem>();
             foreach ((Shape sub, ResultCheck? check) in analyzer.Results())

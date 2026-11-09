@@ -47,6 +47,12 @@ internal class Analyzer
     private bool _isParallel;
     private bool _isExact;
 
+    // Kerf (unit 13K): this check skips the faces ValidMemory knows, and keeps those it finds clean
+    private readonly bool _isRemembering;
+
+    /// <summary>The faces this check skipped, as a whole check had found nothing wrong under them (<see cref="ValidMemory"/>).</summary>
+    internal int SkippedFaces { get; private set; }
+
     /// <summary>
     /// For tests only (tests/Shared/FullCheck): told of each check as it finishes, with the shape and whether geometry was
     /// checked, to compare it with the check as it was. Never set in a package.
@@ -70,6 +76,21 @@ internal class Analyzer
     }
 
     /// <summary>
+    /// Kerf (unit 13K): checks <paramref name="s"/> with its geometry, skipping the frozen faces <see cref="ValidMemory"/>
+    /// knows, and keeping those of a check that finds nothing wrong anywhere. Read <see cref="IsClean"/>: for a check that
+    /// skipped faces, that's all that stands for the whole shape, and a caller that wants statuses checks again in full.
+    /// </summary>
+    internal static Analyzer Remembering(in Shape s, bool isParallel) => new(s, isParallel, remembering: true);
+
+    private Analyzer(in Shape s, bool isParallel, bool remembering)
+    {
+        _shape = new Shape();
+        _isParallel = isParallel;
+        _isRemembering = remembering;
+        Init(s, true);
+    }
+
+    /// <summary>
     /// Checks <paramref name="shape"/> again, from scratch; with <paramref name="b"/> false only topological
     /// information is checked.
     /// </summary>
@@ -90,9 +111,54 @@ internal class Analyzer
         }
 
         _map.EnsureCapacity(10 * nbFaces);
-        Put(shape, b);
+        SkippedFaces = 0;
+        bool remembering = _isRemembering && b && !_isExact;
+        Put(shape, b, remembering);
         Perform();
-        Finished?.Invoke(this, shape, b);
+        if (remembering && IsClean)
+        {
+            Remember();
+        }
+
+        // The comparison with the check as it was reads every sub-shape's statuses, which a skipped face has none of
+        if (SkippedFaces == 0)
+        {
+            Finished?.Invoke(this, shape, b);
+        }
+    }
+
+    /// <summary>
+    /// Kerf (unit 13K): true if every status of every sub-shape checked, in every context, is no fault. Stronger than
+    /// <see cref="IsValid()"/>, which reads some of them.
+    /// </summary>
+    internal bool IsClean
+    {
+        get
+        {
+            for (int i = 0; i < _map.Count; i++)
+            {
+                if (_map.ValueAt(i) is { IsClean: false })
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    // After a clean check: what's under each frozen face reads only that face's graph, placement and orientation, and none of
+    // it has a fault (ValidMemory)
+    private void Remember()
+    {
+        for (int i = 0; i < _map.Count; i++)
+        {
+            Shape key = _map.KeyAt(i);
+            if (key.Type == ShapeType.Face && _map.ValueAt(i) is not null)
+            {
+                ValidMemory.Remember(key);
+            }
+        }
     }
 
     /// <summary>
@@ -118,7 +184,14 @@ internal class Analyzer
     /// </summary>
     public bool IsValid(in Shape s)
     {
-        if (_map.GetValue(s) is { } result)
+        ResultCheck? own = _map.GetValue(s);
+        if (own is null && SkippedFaces > 0 && s.Type == ShapeType.Face)
+        {
+            // Skipped: a whole check found nothing wrong under it (ValidMemory)
+            return true;
+        }
+
+        if (own is { } result)
         {
             if (result.Status().ItemAt(0) != StatusCheck.NoError)
             {
@@ -188,10 +261,18 @@ internal class Analyzer
                or IndexOutOfRangeException
                or DivideByZeroException);
 
-    private void Put(in Shape shape, bool b)
+    private void Put(in Shape shape, bool b, bool remembering)
     {
         if (_map.ContainsKey(shape))
         {
+            return;
+        }
+
+        if (remembering && shape.Type == ShapeType.Face && ValidMemory.Knows(shape))
+        {
+            // Null, as for a compound: IsValid and Perform leave a face with no result alone, and what's under it isn't visited
+            _map.Add(shape, null);
+            SkippedFaces++;
             return;
         }
 
@@ -240,7 +321,7 @@ internal class Analyzer
 
         for (var theIterator = new Iterator(shape); theIterator.More(); theIterator.Next())
         {
-            Put(theIterator.Value(), b); // performs minimum on each shape
+            Put(theIterator.Value(), b, remembering); // performs minimum on each shape
         }
     }
 
@@ -470,6 +551,11 @@ internal class Analyzer
                     }
                     case ShapeType.Wire:
                     {
+                        break;
+                    }
+                    case ShapeType.Face when result is null:
+                    {
+                        // Kerf (unit 13K): skipped, as a whole check found nothing wrong under it (ValidMemory)
                         break;
                     }
                     case ShapeType.Face:

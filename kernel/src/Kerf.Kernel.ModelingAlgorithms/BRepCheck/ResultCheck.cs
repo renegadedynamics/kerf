@@ -98,6 +98,29 @@ internal abstract class ResultCheck : Transient
     /// <summary>The statuses of the shape itself.</summary>
     public NCollection_List<StatusCheck> Status() => _map.GetValue(_shape);
 
+    /// <summary>
+    /// Kerf (unit 13K): true if no status of the shape, on its own or in any context it was checked in, is a fault. Stronger
+    /// than what <see cref="Analyzer.IsValid()"/> reads, which is the first status of some of the lists.
+    /// </summary>
+    internal bool IsClean
+    {
+        get
+        {
+            for (int i = 0; i < _map.Count; i++)
+            {
+                for (var itl = new NCollection_List<StatusCheck>.Iterator(_map.ValueAt(i)); itl.More(); itl.Next())
+                {
+                    if (itl.Value() != NoError)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
     public bool IsMinimum => _min;
 
     public bool IsBlind => _blind;

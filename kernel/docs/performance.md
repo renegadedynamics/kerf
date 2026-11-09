@@ -1843,3 +1843,33 @@ the section renders' commons skipped where they miss. On 0.4.0 they take the bui
 `enclosure-v0.16` in `Kerf.UserCases`, beside v0.11's `enclosure`: decision 2054. `release-check.ps1 -Last 0.4.0 -Only
 enclosure,enclosure-v0.16 -Runs 3` builds and runs it on both sides, with the same results: 4,551 MB a run on 0.4.0's
 packages, 3,238 on this branch (−29%; v0.11's 4,507 and 3,269). Its times came from a machine at 100% and say nothing.
+
+## The checks' share of a Boolean (unit 13K)
+
+*9 November 2026, on a machine shared with the owner and several helpers: times here are from a loaded machine, and the verdicts rest on bytes and counts. Decisions 2063 to 2068.*
+
+**Where it went** (a throwaway probe around each part of `Kerf.Modeling`'s checks; MB on the checking thread):
+
+| | 12Y's 8 parts, a pass | Enclosure, a build | Boss, a fuse | Bump, a fuse |
+|---|---:|---:|---:|---:|
+| Whole, before | 1,062 MB | 3,344 MB | 17.4 MB | 25.2 MB |
+| Validity check | 169 | 296 | 1.1 | 1.7 |
+| Volume check, all | 44 | 276 | 4.5 | 10.5 |
+| of which the volumes' integration | 35 | 88 | 0.3 | 0.5 |
+| of which 1866's and 1881's grids | 9 | 167 | | 6.9 |
+| of which 1937's points | | 21 | 4.2 | 3.1 |
+| Whole, after | 951 (-10%) | 2,941 (-12%) | 15.2 | 21.9 |
+| Validity check, after | 118 | 154 | 0.8 | 0.4 |
+
+On ordinary parts the checks are the result's validity and its volume, about half each; the point questions matter on a small part against a large one and on results with spline edges.
+
+**What changed:**
+
+1. **One check's questions share** its classifiers, boxes, tolerance and the inputs' validation (decision 2064). Same verdicts by construction; small.
+2. **A classifier doesn't look for the extrema of a spline edge whose poles keep it away** (decision 2065). The same states on 90,448 points of the dataset; the corpus's `buc60462_2` check 10.9 to 0.8 s.
+3. **Decision 1924's point check is on by default** (decision 2066): it doesn't run on 12Y's parts, the users' cases or the enclosure (0.03% of bytes for its gate), catches the radius-5000 fuse 16.5% out that 0.4.0 called a success, and fired falsely on none of the corpus's 4,026 Booleans (296 asked).
+4. **A check skips the frozen faces a whole check found clean** (decision 2067): 85% of a chain's results' faces were checked as the last result. 38,751 remembered checks made again in full: no difference.
+
+**The corpus's filtered groups** (`boolean/`, `blend/`, `bugs/modalg_*`, `bugs/moddata_*`; the check run on every Common, Cut and Fuse through the hook, two cases at a time): statuses as `corpus-13.txt`; checks 32.1 s and 4,251 MB before, 36.0 s and 7,117 MB after, the point check's 296 Booleans the rise (about 50 ms and 10 MB each on average, a median of 6 ms, the dearest about 3 s), the other 3,730 8.8 to 7.0 s.
+
+**The boss** (fresh processes in turn, IL, 9 fuses after 3, heavily loaded): 59.5 ms against 0.3.0's 46.6 and 0.4.0's 79.2, 15.4 MB against 14.3 and 84.4; the bump 48.0 against 88.7 and 184.7. Within 10% of 0.3.0's bytes, not of its time here; what's left is decision 1937's 150 points inside the door (decision 2068).

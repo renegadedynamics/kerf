@@ -18,6 +18,9 @@ internal static class Fixtures
 
     public static Shape TwoBoxesFused() => Load("two-boxes-fused");
 
+    /// <summary>The shape of the fixture <paramref name="name"/>.brep.</summary>
+    public static Shape Named(string name) => Load(name);
+
     public static byte[] Bytes(string name)
     {
         using Stream stream = typeof(Fixtures).Assembly.GetManifestResourceStream($"Fixtures.{name}.brep")

@@ -49,6 +49,10 @@ internal sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
         {
             Edge e = ShapeCasts.Edge(shp);
             double edgeTSq = Tool.Tolerance(e);
+            if (SplineHull.KeepsAway(e, edgeTSq, _p, null))
+            {
+                return false;
+            }
             edgeTSq *= edgeTSq;
             var c = new EdgeCurveAdaptor(e);
             Tool.Range(e, out double f, out double l);
@@ -133,6 +137,10 @@ internal sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
         {
             Edge e = ShapeCasts.Edge(shp);
             double edgeTSq = Tool.Tolerance(e);
+            if (SplineHull.KeepsAway(e, edgeTSq, _l.Location, _l.Direction))
+            {
+                return false;
+            }
             edgeTSq *= edgeTSq;
             var c = new EdgeCurveAdaptor(e);
             Tool.Range(e, out double f, out double l);
@@ -239,4 +247,103 @@ internal sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
 
     /// <summary>True if a correct classification is possible (no edge was parallel to the line).</summary>
     public bool IsCorrect => _isValid;
+}
+
+/// <summary>
+/// Kerf (unit 13K): whether an edge's spline keeps further than a distance from a point, or from a line, by its poles alone.
+/// </summary>
+/// <remarks>
+/// A spline lies in the hull of its poles, as its weights are positive, and each span in the hull of the Degree + 1 poles that
+/// make it; a hull is inside the box of its poles, and seen along a line, inside the box of the poles seen so. If the point
+/// or line is outside every span's box by more than the distance, no point of the edge is within it, and the extrema the
+/// selectors would ask, a global search on a spline, find none that counts: they're asked otherwise, as before, so what a
+/// selector keeps is the same. Those extrema were nearly all of a classifier's time on a result whose section curves are
+/// splines with a loose tolerance, as a Boolean of cylinders nearly crossing gives (decision 1924's points).
+/// </remarks>
+internal static class SplineHull
+{
+    // The spline edges this thread's selectors kept away by their poles, and those whose extrema they still asked: for the tests
+    // that hold a classifier's cost down
+    [ThreadStatic]
+    internal static int s_keptAway;
+
+    [ThreadStatic]
+    internal static int s_extremaAsked;
+
+    /// <summary>True if every point of <paramref name="e"/>'s spline is further than <paramref name="distance"/> from
+    /// <paramref name="origin"/>, or from the line through it along <paramref name="along"/>; false if that isn't shown, or
+    /// the edge's curve isn't a spline.</summary>
+    public static bool KeepsAway(in Edge e, double distance, in Point3D origin, Direction3D? along)
+    {
+        Curve3D? curve = Tool.Curve(e, out Placement placement, out _, out _);
+        if (curve is TrimmedCurve3D trimmed)
+        {
+            curve = trimmed.BasisCurve;
+        }
+        NCollection_Array1<Point3D> poles;
+        int span;
+        switch (curve)
+        {
+            case BSplineCurve3D spline:
+                poles = spline.InternalPoles();
+                span = spline.IsPeriodic ? poles.Length() : spline.Degree + 1;
+                break;
+            case BezierCurve3D bezier:
+                poles = bezier.InternalPoles();
+                span = poles.Length();
+                break;
+            default:
+                return false;
+        }
+
+        // Axes to measure along: across the line, or the three of space
+        Vector3D first, second, third;
+        if (along is { } direction)
+        {
+            var d = new Vector3D(direction);
+            first = d.Crossed(Math.Abs(direction.X) < 0.6 ? new Vector3D(1, 0, 0) : new Vector3D(0, 1, 0)).Normalized();
+            second = d.Crossed(first);
+            third = Vector3D.Zero;
+        }
+        else
+        {
+            (first, second, third) = (new Vector3D(1, 0, 0), new Vector3D(0, 1, 0), new Vector3D(0, 0, 1));
+        }
+        bool moved = !placement.IsIdentity;
+        Transform3D move = placement.Transformation;
+        double reach = distance + global::Kerf.Engine.Foundation.Precision.Confusion();
+        int lower = poles.Lower(), count = poles.Length();
+        if (count == 0 || span > count)
+        {
+            return false;
+        }
+        for (int start = 0; start + span <= count; start++)
+        {
+            double minX = double.MaxValue, maxX = double.MinValue, minY = double.MaxValue, maxY = double.MinValue;
+            double minZ = double.MaxValue, maxZ = double.MinValue;
+            for (int i = start; i < start + span; i++)
+            {
+                Point3D pole = poles[lower + i];
+                if (moved)
+                {
+                    pole = pole.Transformed(move);
+                }
+                var offset = new Vector3D(pole.X - origin.X, pole.Y - origin.Y, pole.Z - origin.Z);
+                double x = offset.Dot(first), y = offset.Dot(second), z = offset.Dot(third);
+                minX = Math.Min(minX, x);
+                maxX = Math.Max(maxX, x);
+                minY = Math.Min(minY, y);
+                maxY = Math.Max(maxY, y);
+                minZ = Math.Min(minZ, z);
+                maxZ = Math.Max(maxZ, z);
+            }
+            if (minX <= reach && maxX >= -reach && minY <= reach && maxY >= -reach && minZ <= reach && maxZ >= -reach)
+            {
+                s_extremaAsked++;
+                return false;
+            }
+        }
+        s_keptAway++;
+        return true;
+    }
 }
