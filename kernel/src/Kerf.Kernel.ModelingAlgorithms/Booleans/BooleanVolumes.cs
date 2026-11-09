@@ -7,6 +7,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
+using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Construction;
 using Kerf.Geometry;
@@ -360,6 +361,26 @@ public static class BooleanVolumes
             return null;
         }
 
+        // A point can prove something only if it's well outside the result, so a point on the result's boundary is passed over
+        // before it's classified (unit 13A): a face of the smaller input that's one of the result's lies on it all over, and a
+        // point inside a face of the result on the same surface, placed the same, is on it too. A small part fused onto a large
+        // one keeps most of its faces, or pieces of them, and they were most of what this classified: a bump of 1.5 by 0.5 on
+        // a door 1,688 classifications and distances, 311 MB, after a Boolean of 8 MB
+        var resultFaces = new HashSet<Shape>(ShapeHasher.Instance);
+        var onSurface = new Dictionary<Surface, List<(Placement Placement, FaceClassifier2D Classifier)>>(ReferenceEqualityComparer.Instance);
+        foreach (Face face in result.AllFaces())
+        {
+            resultFaces.Add(face);
+            if (Tool.Surface(face, out Placement placement) is { } surface)
+            {
+                if (!onSurface.TryGetValue(surface, out var faces))
+                {
+                    onSurface[surface] = faces = [];
+                }
+                faces.Add((placement, new FaceClassifier2D(face, Tolerances.Confusion)));
+            }
+        }
+
         var inResult = new SolidClassifier(result);
         var inLarger = new SolidClassifier(larger);
         double depth = -1;
@@ -368,7 +389,8 @@ public static class BooleanVolumes
         foreach (Face face in smaller.AllFaces())
         {
             // Its own bounds, from its wires; a face with none, such as an infinite plane, has nothing to sample
-            if (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace)))
+            if (resultFaces.Contains(face)
+                || (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace))))
             {
                 continue;
             }
@@ -380,19 +402,28 @@ public static class BooleanVolumes
                 continue;
             }
 
+            var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
+            List<(Placement Placement, FaceClassifier2D Classifier)> resultFacesHere = [];
+            if (Tool.Surface(face, out Placement here) is { } own && onSurface.TryGetValue(own, out var sharing))
+            {
+                resultFacesHere.AddRange(sharing.Where(s => s.Placement.IsEqual(here)));
+            }
+
             for (int i = 1; i <= FaceGrid; i++)
             {
                 for (int j = 1; j <= FaceGrid; j++)
                 {
                     double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
-                    if (face.Classify(new Point2D(u, v)) != Containment.In)
+                    var uv = new Point2D(u, v);
+                    if (inFace.Perform(uv) != Containment.In || resultFacesHere.Any(s => s.Classifier.Perform(uv) == Containment.In))
                     {
                         continue;
                     }
 
                     Point3D point = surface.Value(u, v);
-                    // What's inside the larger input is in a fuse whatever its classifier says of the result
-                    if (Inside(inResult, point) || Inside(inLarger, point))
+                    // What's inside the larger input is in a fuse whatever its classifier says of the result; and a point on the
+                    // boundary of either is within its tolerance of it, so can't be deep outside it
+                    if (StateOf(inResult, point) is Containment.In or Containment.On || StateOf(inLarger, point) is Containment.In or Containment.On)
                     {
                         continue;
                     }
@@ -424,14 +455,22 @@ public static class BooleanVolumes
         return null;
     }
 
-    private static bool Inside(SolidClassifier classifier, in Point3D point)
+    // The points this thread's checks have classified or measured the distance of, for the tests that hold the checks' cost down
+    [ThreadStatic]
+    internal static int s_pointsAsked;
+
+    private static bool Inside(SolidClassifier classifier, in Point3D point) => StateOf(classifier, point) == Containment.In;
+
+    private static Containment StateOf(SolidClassifier classifier, in Point3D point)
     {
+        s_pointsAsked++;
         classifier.Perform(point, Tolerances.Confusion);
-        return classifier.State() == Containment.In;
+        return classifier.State();
     }
 
     private static bool Deep(in Point3D point, Shape shape, double depth)
     {
+        s_pointsAsked++;
         Vertex vertex = Vertex.At(point);
         foreach (Shell shell in shape.Explore<Shell>())
         {
