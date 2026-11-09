@@ -2,6 +2,7 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Features;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Fillets;
 using Kerf.Geometry;
@@ -256,13 +257,14 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void A_cone_beside_the_arc_is_refused()
+    public void A_cone_beside_a_whole_circle_is_refused_as_a_cylinder_is()
     {
+        // A drafted side is read now (unit 13I), but a whole circle has no straight neighbours to collapse onto
         Shape frustum = Solid.Cone(10, 5, 10).Value.Shape;
         Edge rim = Top(frustum, 10).AllEdges().First(e => new EdgeCurveAdaptor(e).GetType() == CurveKind.Circle);
         Result<Built<Shape>> made = frustum.Chamfer([rim], 6, Collapse);
         Assert.False(made.IsSuccess);
-        Assert.Contains("a cylinder square to the face", made.Error!.Message, StringComparison.Ordinal);
+        Assert.Contains("isn't closed by two edges or more", made.Error!.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -310,21 +312,330 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
         Assert.Contains(why, made.Error.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void A_tight_arc_beside_another_arc_is_refused()
+    // A circle of 20 with a flat at y = -15, its two corners rounded to 1.5: each small arc between the flat and the big arc, extruded 10
+    private static Shape DShape()
     {
-        // A circle of 20 with a flat at y = -15, its two corners rounded to 1.5: each small arc between the flat and the big arc
         double a = Math.Asin(0.75);
         Point3D right = new(20 * Math.Cos(a), -15, 0), left = new(-20 * Math.Cos(a), -15, 0);
         Face d = Face.FromWire(Wire.FromEdges([Edge.Arc(CircleAt(0, 0, 20), -a, Math.PI + a).Value, Edge.Line(left, right).Value]).Value, onlyPlane: true).Value;
-        Face rounded = d.Fillet2D([.. d.AllVertices()], 1.5).Value.Shape;
-        Shape shape = rounded.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
-        RefusedFor(shape, 2, "a tight arc is beside another arc");
-
-        // Short of the small arcs' radius, nothing is tight, and the algorithm builds it as before
-        Assert.Equal(shape.Chamfer([.. Top(shape, 10).AllEdges()], 1).IsSuccess, shape.Chamfer([.. Top(shape, 10).AllEdges()], 1, Collapse).IsSuccess);
+        return d.Fillet2D([.. d.AllVertices()], 1.5).Value.Shape.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
     }
 
+    /// <summary>A convex outline's collapse against the hull, worked out apart from the build (<see cref="ChamferHull"/>): what it removes,
+    /// and what's left above half the chamfer's depth, cut off by a slab, against the hull's sections there.</summary>
+    private void LikeTheHull(Shape shape, double z, double a, double b, Result<Built<Shape>> made, double grown = 0)
+    {
+        Assert.True(made.IsSuccess, made.Error?.Message);
+        Shape result = made.Value.Shape;
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(result, "It"));
+        ChamferHull.Outline outline = ChamferHull.OfFace(Top(shape, z));
+        double before = shape.IntegrateVolume(), removed = ChamferHull.Removed(outline, a, b, grown);
+        output.WriteLine($"removed {before - result.IntegrateVolume():R}, the hull's {removed:R}");
+        Assert.Equal(before - removed, result.IntegrateVolume(), 1e-8 * before);
+        Shape slab = Solid.Box(new Point3D(-1000, -1000, z - b / 2), new Point3D(1000, 1000, z + 1)).Value.Shape;
+        double above = result.Common(slab).Value.Shape.IntegrateVolume();
+        double sections = b / 12 * (ChamferHull.SectionArea(outline, a, b, 0, grown) + 4 * ChamferHull.SectionArea(outline, a, b, b / 4, grown)
+                                    + ChamferHull.SectionArea(outline, a, b, b / 2, grown));
+        Assert.Equal(sections, above, 1e-8 * before);
+    }
+
+    [Theory]
+    [InlineData(1.5001)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void A_tight_arc_beside_a_convex_arc_swallows_its_end(double length)
+    {
+        // The small arcs' corners collapse to where the flat's inset meets the big arc's: the big arc's end next to each, from its foot
+        // under that point, runs to it too, a second cone, and the rest of it is stepped in as ever: 12 faces, from 10
+        Shape shape = DShape();
+        Result<Built<Shape>> made = shape.Chamfer([.. Top(shape, 10).AllEdges()], length, Collapse);
+        LikeTheHull(shape, 10, length, length, made);
+        Assert.Equal(12, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Fact]
+    public void Through_the_small_arcs_radius_nothing_jumps()
+    {
+        // ChFi3d short of 1.5, the collapse at it (its cones' apexes at the arcs' centres, nothing of the big arc swallowed) and past it:
+        // what's removed, carried on to 1.5 from either side, is what's removed at it. Its slope needn't be the same each side, as the
+        // contact's corner turns sharp there
+        Shape shape = DShape();
+        Edge[] loop = [.. Top(shape, 10).AllEdges()];
+        double Removed(double length, ChamferOptions? options) => shape.IntegrateVolume() - shape.Chamfer(loop, length, options).Value.Shape.IntegrateVolume();
+        double below = 2 * Removed(1.4999, null) - Removed(1.4998, null), at = Removed(1.5, Collapse), above = 2 * Removed(1.5001, Collapse) - Removed(1.5002, Collapse);
+        output.WriteLine($"{below:R} {at:R} {above:R}");
+        Assert.Equal(at, below, 1e-5); // to the curvature over 1e-4, about 1e-6
+        Assert.Equal(at, above, 1e-5);
+        Assert.Equal(10, shape.Chamfer(loop, 1.5, Collapse).Value.Shape.AllFaces().Length);
+
+        // Short of the small arcs' radius, nothing is tight, and the algorithm builds it as before
+        Assert.Equal(shape.Chamfer(loop, 1).IsSuccess, shape.Chamfer(loop, 1, Collapse).IsSuccess);
+    }
+
+    [Fact]
+    public void A_tight_arc_between_two_convex_arcs()
+    {
+        // A Reuleaux triangle of 20, its corners rounded to 1.5: where two arcs' insets cross, each arc swallowed at both ends
+        Point3D[] v = [new(0, 0, 0), new(20, 0, 0), new(10, 10 * Math.Sqrt(3), 0)];
+        Edge[] arcs =
+        [
+            Edge.Arc(CircleAt(v[2].X, v[2].Y, 20), -2 * Math.PI / 3, -Math.PI / 3).Value,
+            Edge.Arc(CircleAt(v[0].X, v[0].Y, 20), 0, Math.PI / 3).Value,
+            Edge.Arc(CircleAt(v[1].X, v[1].Y, 20), 2 * Math.PI / 3, Math.PI).Value,
+        ];
+        Face face = Face.FromWire(Wire.FromEdges(arcs).Value, onlyPlane: true).Value;
+        Shape shape = face.Fillet2D([.. face.AllVertices()], 1.5).Value.Shape.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+        Result<Built<Shape>> made = shape.Chamfer([.. Top(shape, 10).AllEdges()], 2.5, Collapse);
+        LikeTheHull(shape, 10, 2.5, 2.5, made);
+        Assert.Equal(20, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Fact]
+    public void Corners_of_two_arcs_each_collapse_to_one_point()
+    {
+        // The user's prism, each corner's arc as two edges of the same circle, as an import may leave it: the same shape as one arc
+        const double R = 1.7;
+        Point3D At(double x, double y) => new(x, y, 0);
+        var edges = new List<Edge>();
+        (double X, double Y, double From)[] corners = [(40 - R, R, -Math.PI / 2), (40 - R, 30 - R, 0), (R, 30 - R, Math.PI / 2), (R, R, Math.PI)];
+        for (int i = 0; i < 4; i++)
+        {
+            (double x, double y, double from) = corners[i];
+            edges.Add(Edge.Arc(CircleAt(x, y, R), from, from + Math.PI / 4).Value);
+            edges.Add(Edge.Arc(CircleAt(x, y, R), from + Math.PI / 4, from + Math.PI / 2).Value);
+            (double nx, double ny, double nextFrom) = corners[(i + 1) % 4];
+            edges.Add(Edge.Line(At(x + R * Math.Cos(from + Math.PI / 2), y + R * Math.Sin(from + Math.PI / 2)),
+                                At(nx + R * Math.Cos(nextFrom), ny + R * Math.Sin(nextFrom))).Value);
+        }
+        Face face = Face.FromWire(Wire.FromEdges(edges).Value, onlyPlane: true).Value;
+        Shape prism = face.Extrude(new Vector3D(0, 0, 30)).Value.Shape;
+        foreach (double length in new[] { 2.0, 3 })
+        {
+            Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 30).AllEdges()], length, Collapse);
+            Right(made, PrismVolume(40, 30, 30, R) - Removed(40, 30, R, length, length), 26);
+            LikeTheHull(prism, 30, length, length, made);
+        }
+    }
+
+    // The user's prism, its sides drafted by 5 degrees about F's plane (sloping out going down, its corners on F 1.7) or by -5 about
+    // its foot (sloping in, its corners on F 1.7 + 30 tan 5°): planes and cones
+    private static Shape DraftedPrism(double degrees, bool aboutTop, int rounded = 4)
+    {
+        Solid box = Solid.Box(40, 30, 30).Value;
+        Edge[] vertical = [.. box.AllEdges().Where(e => Math.Abs(e.AllVertices()[0].Point.Z - e.AllVertices()[1].Point.Z) > 1e-9).Take(rounded)];
+        Shape prism = box.Fillet(vertical, 1.7).Value.Shape;
+        Face[] sides = [.. prism.AllFaces().Where(f => !f.AllVertices().All(v => Math.Abs(v.Point.Z - 30) < 1e-9) && !f.AllVertices().All(v => Math.Abs(v.Point.Z) < 1e-9))];
+        return prism.Draft(sides, new Direction3D(0, 0, 1), degrees * Math.PI / 180, new Plane3D(new Point3D(0, 0, aboutTop ? 30 : 0), new Direction3D(0, 0, 1))).Value.Shape;
+    }
+
+    private static readonly double Sine5 = Math.Sin(5 * Math.PI / 180);
+
+    [Theory]
+    [InlineData(1.7001)]
+    [InlineData(2.2)]
+    [InlineData(3)]
+    public void Drafted_sides_sloping_out(double length)
+    {
+        // The chamfer's length down a side is along its slope: its contact is the outline grown by b sin 5° at a depth of b cos 5°
+        Shape shape = DraftedPrism(5, aboutTop: true);
+        Result<Built<Shape>> made = shape.Chamfer([.. Top(shape, 30).AllEdges()], length, Collapse);
+        LikeTheHull(shape, 30, length, length * Math.Sqrt(1 - Sine5 * Sine5), made, length * Sine5);
+        Assert.Equal(18, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Theory]
+    [InlineData(0.0001)]
+    [InlineData(0.5)]
+    [InlineData(1.3)]
+    public void Drafted_sides_sloping_in(double past)
+    {
+        // Sloping in under F: the contact on a side is the outline shrunk, and the tool's walls are carried down to clear the overhang
+        Shape shape = DraftedPrism(-5, aboutTop: false);
+        double length = 1.7 + 30 * Math.Tan(5 * Math.PI / 180) + past;
+        Result<Built<Shape>> made = shape.Chamfer([.. Top(shape, 30).AllEdges()], length, Collapse);
+        LikeTheHull(shape, 30, length, length * Math.Sqrt(1 - Sine5 * Sine5), made, -length * Sine5);
+    }
+
+    [Fact]
+    public void Drafted_through_the_corners_radius_nothing_jumps_and_ChFi3d_agrees_below_it()
+    {
+        // ChFi3d measures the length down a drafted side along its slope too: below the corners it agrees with the hull, and the
+        // collapse runs on from it
+        Shape shape = DraftedPrism(5, aboutTop: true);
+        Edge[] loop = [.. Top(shape, 30).AllEdges()];
+        double before = shape.IntegrateVolume();
+        double Removed(double length, ChamferOptions? options) => before - shape.Chamfer(loop, length, options).Value.Shape.IntegrateVolume();
+        double hull = ChamferHull.Removed(ChamferHull.OfFace(Top(shape, 30)), 1.6999, 1.6999 * Math.Sqrt(1 - Sine5 * Sine5), 1.6999 * Sine5);
+        double at = Removed(1.7, Collapse);
+        Assert.Equal(hull, Removed(1.6999, null), 1e-8 * before);
+        double below = 2 * Removed(1.6999, null) - Removed(1.6998, null), above = 2 * Removed(1.7001, Collapse) - Removed(1.7002, Collapse);
+        output.WriteLine($"{below:R} {at:R} {above:R}, the hull's {hull:R}");
+        Assert.Equal(at, below, 1e-5); // to the curvature over 1e-4, about 1e-6
+        Assert.Equal(at, above, 1e-5);
+    }
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Drafted_with_sharp_corners_beside_tight_ones(double length)
+    {
+        // Two corners rounded, two sharp: the sharp ones' sides meet along a slanted edge, and the contact's lines meet at their mitre
+        Shape shape = DraftedPrism(5, aboutTop: true, rounded: 2);
+        LikeTheHull(shape, 30, length, length * Math.Sqrt(1 - Sine5 * Sine5), shape.Chamfer([.. Top(shape, 30).AllEdges()], length, Collapse), length * Sine5);
+    }
+
+    [Fact]
+    public void Sides_drafted_by_different_angles_are_refused()
+    {
+        // Two corners rounded; the flat end between the sharp ones drafted, the rest square
+        Solid box = Solid.Box(40, 30, 30).Value;
+        Edge[] vertical = [.. box.AllEdges().Where(e => Math.Abs(e.AllVertices()[0].Point.Z - e.AllVertices()[1].Point.Z) > 1e-9 && e.AllVertices()[0].Point.X < 1e-9)];
+        Shape prism = box.Fillet(vertical, 1.7).Value.Shape;
+        Face end = prism.AllFaces().First(f => f.AllVertices().All(v => Math.Abs(v.Point.X - 40) < 1e-9));
+        Shape drafted = prism.Draft([end], new Direction3D(0, 0, 1), 5 * Math.PI / 180, new Plane3D(new Point3D(0, 0, 30), new Direction3D(0, 0, 1))).Value.Shape;
+        Result<Built<Shape>> made = drafted.Chamfer([.. Top(drafted, 30).AllEdges()], 2, Collapse);
+        Assert.False(made.IsSuccess);
+        Assert.Equal(FilletOperations.TooLarge, made.Error!.Code);
+        Assert.Contains("drafted by different angles", made.Error.Message, StringComparison.Ordinal);
+    }
+
+
+    // A rectangle W by H, extruded 10, each corner a curve from one side's end at cx from it to the next side's start at cy from it, made by
+    // corner(i, from, to, centre), where centre is the rectangle's corner moved in by cx and cy
+    private static Shape CurvedPrism(double w, double h, double cx, double cy, Func<int, Point3D, Point3D, Point3D, Edge> corner)
+    {
+        Point3D[] p = [new(cx, 0, 0), new(w - cx, 0, 0), new(w, cy, 0), new(w, h - cy, 0), new(w - cx, h, 0), new(cx, h, 0), new(0, h - cy, 0), new(0, cy, 0)];
+        Point3D[] centres = [new(w - cx, cy, 0), new(w - cx, h - cy, 0), new(cx, h - cy, 0), new(cx, cy, 0)];
+        var edges = new List<Edge>();
+        for (int i = 0; i < 4; i++)
+        {
+            edges.Add(Edge.Line(p[2 * i], p[2 * i + 1]).Value);
+            edges.Add(corner(i, p[2 * i + 1], p[(2 * i + 2) % 8], centres[i]));
+        }
+        return Face.FromWire(Wire.FromEdges(edges).Value, onlyPlane: true).Value.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+    }
+
+    // The sharp corner a curve from a to b rounds, where the sides' lines meet
+    private static Point3D Vertex(int i, Point3D a, Point3D b) => i % 2 == 0 ? new Point3D(b.X, a.Y, 0) : new Point3D(a.X, b.Y, 0);
+
+    // A quarter circle as a rational B-spline of degree 2, as an import may give it
+    private static Edge RationalQuarter(int i, Point3D a, Point3D b, Point3D centre) =>
+        Edge.FromCurve(new BSplineCurve3D([a, Vertex(i, a, b), b], [0.0, 1.0], [3, 3], 2, weights: [1, Math.Sqrt(0.5), 1])).Value;
+
+    // A cubic tangent to both sides, its inner control points 0.6 of the way to the corner: tightest in its middle, 1.47
+    private static Edge Cubic(int i, Point3D a, Point3D b, Point3D centre)
+    {
+        Point3D v = Vertex(i, a, b);
+        Point3D m1 = new(a.X + (v.X - a.X) * 0.6, a.Y + (v.Y - a.Y) * 0.6, 0), m2 = new(b.X + (v.X - b.X) * 0.6, b.Y + (v.Y - b.Y) * 0.6, 0);
+        return Edge.FromCurve(new BSplineCurve3D([a, m1, m2, b], [0.0, 1.0], [4, 4], 3)).Value;
+    }
+
+    // A quarter of an ellipse of 2 by 1 about the corner's centre: radii of curvature from 4 where it leaves the long sides to 0.5 at the
+    // short ones
+    private static Edge QuarterEllipse(int i, Point3D a, Point3D b, Point3D centre)
+    {
+        var ellipse = new EllipseCurve3D(new Frame3D(centre, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2, 1);
+        double from = -Math.PI / 2 + i * Math.PI / 2;
+        return Edge.FromCurve(new TrimmedCurve3D(ellipse, from, from + Math.PI / 2)).Value;
+    }
+
+    [Theory]
+    [InlineData(1.7)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Corners_that_are_circles_as_B_splines_collapse_as_the_arcs_do(double length)
+    {
+        // The cone from P over each corner is the curve's own poles and weights in one row and P in the other: exact
+        Shape prism = CurvedPrism(40, 30, 1.7, 1.7, RationalQuarter);
+        Assert.All(Top(prism, 10).AllEdges(), e => Assert.Contains(new EdgeCurveAdaptor(e).GetType(), new[] { CurveKind.Line, CurveKind.BSplineCurve }));
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        Right(made, PrismVolume(40, 30, 10, 1.7) - Removed(40, 30, 1.7, length, length), 18);
+        if (length > 1.7)
+        {
+            // At the corners' radius exactly, the hull's sampled contact is degenerate there
+            LikeTheHull(prism, 10, length, length, made);
+        }
+    }
+
+    [Theory]
+    [InlineData(1.7)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Cubic_spline_corners_swallowed_whole(double length)
+    {
+        Shape prism = CurvedPrism(40, 30, 1.7, 1.7, Cubic);
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        LikeTheHull(prism, 10, length, length, made);
+        Assert.Equal(18, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void Elliptical_corners_swallowed_whole(double length)
+    {
+        Shape prism = CurvedPrism(40, 30, 2, 1, QuarterEllipse);
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        LikeTheHull(prism, 10, length, length, made);
+        Assert.Equal(18, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Theory]
+    [InlineData("ellipse", 0.6)]
+    [InlineData("ellipse", 1)]
+    [InlineData("cubic", 1.5)]
+    public void A_curve_only_partly_tighter_than_the_chamfer_is_refused(string kind, double length)
+    {
+        // Somewhere tighter than the length, so collapsing, but somewhere not, so not swallowed whole: the rest of it would need its inset
+        Shape prism = kind == "cubic" ? CurvedPrism(40, 30, 1.7, 1.7, Cubic) : CurvedPrism(40, 30, 2, 1, QuarterEllipse);
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        Assert.False(made.IsSuccess);
+        Assert.Equal(FilletOperations.TooLarge, made.Error!.Code);
+        Assert.Contains("tightest radius of curvature", made.Error.Message, StringComparison.Ordinal);
+        Assert.Contains("isn't swallowed whole", made.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_curve_bending_less_than_the_chamfer_is_refused()
+    {
+        // The user's outline at 10 high, its bottom side a B-spline, straight: nothing collapses it, and its inset isn't a B-spline's
+        const double R = 1.7;
+        Point3D At(double x, double y) => new(x, y, 0);
+        Edge[] edges =
+        [
+            Edge.FromCurve(new BSplineCurve3D([At(R, 0), At(10, 0), At(30, 0), At(40 - R, 0)], [0.0, 1.0], [4, 4], 3)).Value,
+            Edge.Arc(CircleAt(40 - R, R, R), -Math.PI / 2, 0).Value,
+            Edge.Line(At(40, R), At(40, 30 - R)).Value,
+            Edge.Arc(CircleAt(40 - R, 30 - R, R), 0, Math.PI / 2).Value,
+            Edge.Line(At(40 - R, 30), At(R, 30)).Value,
+            Edge.Arc(CircleAt(R, 30 - R, R), Math.PI / 2, Math.PI).Value,
+            Edge.Line(At(0, 30 - R), At(0, R)).Value,
+            Edge.Arc(CircleAt(R, R, R), Math.PI, 3 * Math.PI / 2).Value,
+        ];
+        RefusedFor(Extruded(edges), 2, "doesn't bend as tightly as the chamfer is long anywhere");
+    }
+
+    [Fact]
+    public void A_tight_arc_beside_a_concave_arc_is_refused()
+    {
+        // A square of 20 with a bite of 5 from its side, the bite's corners rounded to 1: each small arc between a line and the bite,
+        // which turns the other way, so the stretch of it swallowed would run to the corner's point against its direction
+        Edge[] edges =
+        [
+            Edge.Line(new Point3D(0, 0, 0), new Point3D(20, 0, 0)).Value,
+            Edge.Line(new Point3D(20, 0, 0), new Point3D(20, 5, 0)).Value,
+            Edge.Arc(CircleAt(20, 10, 5), Math.PI / 2, 3 * Math.PI / 2).Value,
+            Edge.Line(new Point3D(20, 15, 0), new Point3D(20, 20, 0)).Value,
+            Edge.Line(new Point3D(20, 20, 0), new Point3D(0, 20, 0)).Value,
+            Edge.Line(new Point3D(0, 20, 0), new Point3D(0, 0, 0)).Value,
+        ];
+        Face face = Face.FromWire(Wire.FromEdges(edges).Value, onlyPlane: true).Value;
+        Vertex[] bite = [.. face.AllVertices().Where(v => Math.Abs(v.Point.X - 20) < 1e-9 && (Math.Abs(v.Point.Y - 5) < 1e-9 || Math.Abs(v.Point.Y - 15) < 1e-9))];
+        Shape shape = face.Fillet2D(bite, 1).Value.Shape.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+        RefusedFor(shape, 2, "a tight arc is beside a concave arc");
+    }
     [Fact]
     public void A_sharp_corner_beside_an_arc_is_refused()
     {

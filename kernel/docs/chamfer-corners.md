@@ -66,6 +66,21 @@ support points), which is the rule above. It follows that its section at height 
 (1 - λ) R + λ E of the outline's region R and E. **For the check (section 4) only the ruled form matters,** which holds for
 outlines that aren't convex too.
 
+### Drafted sides
+
+With the sides drafted by an angle δ from square to F, each by the same angle (planes, and over arcs cones about the arcs' axes, as
+a draft or a tapered extrusion makes them), the chamfer's length b is measured down the slope, as ChFi3d measures it: its contact on
+the sides is at depth h = b cos δ, where the outline has grown by t = b sin δ (shrunk where the sides lean in going down). That
+contact σ is the outline grown by t, its lines moved out square to themselves and meeting at their mitres, its arcs of radius r ± t
+about the same centres. The contact on F is still the outline stepped in by a, which is σ stepped in by a + t. So **the chamfer is
+the one above from σ, at depth h, with a + t on F**: its rulings join points of the same normal, the outline and σ having the same
+normals, and a corner is tight just as before, r ≤ a being r + t ≤ a + t. What it removes is the sides' frustum down to h, whose
+section is the outline grown in proportion to the depth (an area quadratic in it), less the chamfer's; F loses its band to E as
+before, and each side a band b long down its slope, of mean length the outline's and σ's. ChFi3d below the corner's radius and this
+above it agree with the hull of σ and E, worked out apart, on both slopes of draft (the tests' `ChamferHull`). As with square sides,
+the shape runs on through the radius, though not smoothly: its contact's corner turns sharp there, so what's removed has a slope a
+little different either side (224.80 against 223.89 for each unit of length, on the guide's box drafted 5°).
+
 ### The alternative, and why not
 
 The other natural reading takes each section to be the outline eroded by λ a: the region of points at least λ a inside it.
@@ -84,13 +99,17 @@ isn't built.
 | A concave arc (its centre outside the material) | Its stepped arc has radius r + a, which never collapses: the ordinary right cone | **Yes**, beside the rest |
 | A convex arc with r > a | The ordinary right cone | **Yes**, beside the rest |
 | Two tight corners with a line between | Each its own P on the line's inset. If the two Ps meet or cross, the line's inset is used up and E loses a side; the corners would merge into one | **Yes** while the line's inset is longer than the shape's tolerance; **refused** after |
-| Two tight corners with no line between (arc to arc) | The neighbours aren't straight: below | **Refused** |
-| A tight arc beside an arc (not a line) | The stepped neighbours meet at a P that isn't on the bisector. Over the stretch of the neighbour from its foot under P to the joint, the neighbour's normals are E's only at P too, so the cone from P runs on over that stretch, as a second oblique cone (over the neighbour's circle), and the neighbour's own chamfer stops at the ruling to P. For a convex neighbour that's still the hull, and tangent throughout; a concave one isn't locally convex, and the rule there isn't proved | **Refused**: not built yet |
+| Two tight arcs or more together (one corner's arc in two edges, as an import may leave it) | The run's stepped arcs all turn inside out, and the insets of the pieces either side of the run meet at one P: every arc of the run is a cone from it, each tangent to the next along their shared ruling, as the arcs are tangent where they join | **Yes** (unit 13I) |
+| A tight arc beside a convex arc short of its corner | The stepped neighbours meet at a P that isn't on the bisector: where a line's inset meets the arc's stepped circle, or two stepped circles cross (of two points, the one whose feet lie on both pieces, swallowing least). Over the stretch of the neighbour from its foot under P to the joint, the neighbour's normals are E's only at P too, so the cone from P runs on over that stretch, as a second oblique cone (over the neighbour's circle), and the neighbour's own chamfer stops at the ruling to P. That's still the hull, and tangent throughout | **Yes** (unit 13I): the arc is split at its foot, one piece of the loop each way. **Refused** where the stretch swallowed uses the arc up |
+| A tight arc beside a concave arc | The concave arc's stepped circle grows, and P lies on it; but the stretch swallowed turns the other way from the tight arc, so its normals aren't E's at P, and the rulings to P wouldn't join points of the same normal. The ruled face from P is smooth, but it isn't the chamfer this note defines, and no other is proved | **Refused**, saying so |
+| A B-spline, ellipse or Bézier corner swallowed whole: it turns one way, round the material, and every point of it lies the length a or more from P, inwards square to its tangent | Its normals are E's only at P, as a tight arc's are, so its rulings all run to P: the cone from P over the curve, exactly a B-spline surface of the curve's own poles and weights in one row and P in the other (the curve made a B-spline exactly, a conic in its rational form). Its section is the curve moved part way to P, whose area is (1 - λ)² ∫ γ × γ' + λ (1 - λ) P × (end - start), quadratic in λ as ever; the cone's area is ½ ∫ \|γ' × (P - γ, b)\|, by Gauss-Legendre on each knot span | **Yes** (unit 13I), its side swept straight down from it |
+| A curve tighter than a somewhere but not swallowed whole, or nowhere tighter than a | The part not swallowed would need its inset: γ + a n is no B-spline, so its face can't be made exactly, as the method makes every face | **Refused**, saying so |
 | The face too narrow for the insets | E is empty or turns inside out (a side of zero length or less), or its sides cross | **Refused**, saying so |
 | Two-distance chamfers | All of the above with a on F and b on S: only a, the distance on the face whose outline has the arcs, decides what collapses. b > r with a < r collapses nothing | **Yes** |
 | Distance and angle | Two distances: with S square to F, the angle α from the reference face gives the other distance as the reference's times tan α | **Yes** |
 | Constant throat, with or without penetration | The throat isn't measured on the faces | **Not read:** the option leaves it to ChFi3d, as before |
-| The side face not square to F (a draft), or not a plane or such a cylinder | Not read | **Refused** |
+| The sides drafted, all by one angle: planes, and cones about the arcs' axes | The contact on the sides is the outline grown: below | **Yes** (unit 13I) |
+| Sides drafted by different angles, or not planes, or cylinders or cones about the arcs' axes | Not read | **Refused** |
 | Edges that aren't whole loops of one planar face | Not read: a chain that stops has ends of ChFi3d's kind | **Refused** |
 | The chamfer as deep as the side face, or deeper | Uses up the side | **Refused** |
 | Arcs in the other face of the edge | With S square to F, S is straight going down, so nothing in it collapses. A curved S isn't read | Nothing to do |
@@ -130,6 +149,8 @@ old, and the solid put together from them and the shape's other faces, unchanged
 
 - F has no loops but those chamfered, and no face of the shape but F and the loops' sides comes within depth b of F (by its
   box, which is larger than it);
+- each side is one piece's, and no two tight pieces are together: an arc split beside a collapsed corner, or a run of tight
+  arcs sharing a P, goes to the Boolean (unit 13I);
 - at each corner of a loop one straight edge runs square to F, down between the two sides, past depth b, and each side's
   other edges lie deeper than b;
 - seen from above, the band each piece's chamfer lies over (its edge, its stretch of the contact, the rulings between) meets
@@ -162,7 +183,8 @@ first, inside the same operation, so 12V's refusal is reached only where no corn
 **`MaxChamfer` and `ChamferLimit`** (unit 12V, decision 1987) take no options and give the default's limit: the tightest
 convex arc's radius, or a face's width. With `Collapse` a tight arc sets no limit; the most that fits is then where a
 straight edge's inset is used up or the face is too narrow, which they don't compute. They're left as they are
-(decision 1992).
+(decision 1992). Where the arc's radius itself can't be built, as the default's edge closes to a point there, `MaxChamfer`
+gives the radius less twice the shape's tolerance, which ChFi3d builds: 1.6999998 on the guide's box (decision 2047).
 
 ## 4. The check
 
@@ -190,8 +212,8 @@ A(1/2) is the area of the rectangle (W - r - a) by (H - r - a) grown by r / 2, a
 
 ## 5. What it doesn't do
 
-The cases refused above; outlines of B-splines or ellipses; the side faces drafted; open chains; chamfers of several faces'
-loops at once (several loops of one face, an outline and its holes, are built, each with its own tool, in one Boolean). A tight arc beside a convex arc is the next to build, if a user brings one: its geometry is above.
+The cases refused above; B-splines and ellipses not swallowed whole by a corner; sides drafted by different angles; open chains; chamfers of several faces'
+loops at once (several loops of one face, an outline and its holes, are built, each with its own tool, in one Boolean). A tight arc beside a concave arc.
 
 ## Sources
 

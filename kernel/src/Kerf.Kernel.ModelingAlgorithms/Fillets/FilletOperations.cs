@@ -26,6 +26,19 @@ public readonly record struct FilletSpec(Edge Edge, double Radius, double? EndRa
 /// <param name="ReferenceFace">The face <paramref name="Distance"/> is measured on, or null for the edge's first.</param>
 public readonly record struct ChamferSpec(Edge Edge, double Distance, double? Distance2 = null, double? Angle = null, Face? ReferenceFace = null);
 
+/// <summary>
+/// The most a fillet's radius or a chamfer's length can be on some edges, proved from their geometry, and how closely the shape knows
+/// it: a size within <paramref name="Tolerance"/> of <paramref name="Value"/> is taken as <paramref name="Value"/>, so one below by more
+/// is the largest asked of the algorithm as itself.
+/// </summary>
+/// <param name="Value">The limit: nothing larger fits.</param>
+/// <param name="Tolerance">The band about it, in the size's own units, from the tolerances of the faces, edges and vertices that set it.</param>
+public readonly record struct SizeLimit(double Value, double Tolerance)
+{
+    /// <summary>The largest size taken as itself rather than as the limit: below it by twice the band, so clear of it after rounding.</summary>
+    public double JustBelow => Value - 2 * Tolerance;
+}
+
 /// <summary>The fillet algorithm's tolerances (OCCT's <c>SetParams</c>, named).</summary>
 public sealed record FilletTolerances
 {
@@ -230,7 +243,10 @@ public static class FilletOperations
         /// fillet fits above it, so <c>Fillet</c> refuses one at once, though other things can stop one sooner, and at it the fillet
         /// may not be built. A radius within the shape's tolerance of this is taken as this. Null if the edges say nothing.
         /// </summary>
-        public double? FilletLimit(IEnumerable<Edge> edges)
+        public double? FilletLimit(IEnumerable<Edge> edges) => shape.FilletSizeLimit(edges)?.Value;
+
+        /// <summary>As <see cref="FilletLimit"/>, with the band about the limit within which a radius is taken as the limit.</summary>
+        public SizeLimit? FilletSizeLimit(IEnumerable<Edge> edges)
         {
             KernelArgumentNullException.ThrowIfNull(edges);
             Shape solid = shape.AsShape();
@@ -246,7 +262,10 @@ public static class FilletOperations
         /// <c>FilletLimit</c>, past which the chamfer fails. Other things can stop a chamfer sooner, and at it the chamfer may
         /// not be built. Null if the edges say nothing.
         /// </summary>
-        public double? ChamferLimit(IEnumerable<Edge> edges)
+        public double? ChamferLimit(IEnumerable<Edge> edges) => shape.ChamferSizeLimit(edges)?.Value;
+
+        /// <summary>As <see cref="ChamferLimit"/>, with the band about the limit within which a length is taken as the limit.</summary>
+        public SizeLimit? ChamferSizeLimit(IEnumerable<Edge> edges)
         {
             KernelArgumentNullException.ThrowIfNull(edges);
             Shape solid = shape.AsShape();
@@ -260,9 +279,14 @@ public static class FilletOperations
             }
             Face[] faces = [.. own.Select(e => FirstFaceOf(solid, e))];
             IReadOnlyList<FilletLimits.Bend> bends = FilletLimits.Bends(solid, chamfer, specs, faces, ChamferOptions.Default);
-            double? bend = bends.Count > 0 ? Math.Round(bends.Min(static b => b.Radius), 9) : null;
-            double? width = FilletLimits.LargestChamfer(solid, own);
-            return bend is { } b && width is { } w ? Math.Min(b, w) : bend ?? width;
+            SizeLimit? bend = null;
+            if (bends.Count > 0)
+            {
+                FilletLimits.Bend tightest = bends.MinBy(static b => b.Radius);
+                bend = new SizeLimit(Math.Round(tightest.Radius, 9), tightest.Tolerance);
+            }
+            SizeLimit? width = FilletLimits.LargestChamfer(solid, own);
+            return bend is { } b && width is { } w ? (b.Value <= w.Value ? b : w) : bend ?? width;
         }
 
         /// <summary>The shape with <paramref name="edges"/> chamfered by <paramref name="distance"/> on both faces.</summary>
