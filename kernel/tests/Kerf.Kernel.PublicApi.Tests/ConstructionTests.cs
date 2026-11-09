@@ -80,6 +80,36 @@ public class ConstructionTests
     }
 
     [Fact]
+    public void A_shell_of_polygons_shares_its_corners_and_edges()
+    {
+        // A unit cube's six squares, each anticlockwise about its outward normal (decision 1995)
+        Point3D[] corners = [new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0), new(0, 0, 1), new(1, 0, 1), new(1, 1, 1), new(0, 1, 1)];
+        (Plane3D, int[]) Side(Direction3D normal, double offset, params int[] loop) =>
+            (new Plane3D(new Point3D(0, 0, 0) + new Vector3D(normal) * offset, normal), loop);
+        var sides = new[]
+        {
+            Side(new Direction3D(0, 0, -1), 0, 0, 3, 2, 1), Side(Direction3D.UnitZ, 1, 4, 5, 6, 7),
+            Side(new Direction3D(0, -1, 0), 0, 0, 1, 5, 4), Side(Direction3D.UnitY, 1, 2, 3, 7, 6),
+            Side(new Direction3D(-1, 0, 0), 0, 0, 4, 7, 3), Side(Direction3D.UnitX, 1, 1, 2, 6, 5),
+        };
+        Shell shell = Shell.FromPolygons(corners, sides).Value;
+        Assert.Equal(6, shell.AllFaces().Length);
+        Assert.Equal(12, shell.AllEdges().Length);
+        Assert.Equal(8, shell.AllVertices().Length);
+        Solid solid = Solid.FromShells([shell]).Value;
+        Assert.Equal(1, solid.IntegrateVolume(), 12);
+
+        // Each face is as given: its normal the plane's, nothing turned round
+        Assert.All(shell.AllFaces(), f => Assert.Equal(Orientation.Forward, f.Orientation));
+        // A polygon crossing itself is refused
+        var wrong = sides.ToArray();
+        wrong[0] = Side(new Direction3D(0, 0, -1), 0, 0, 2, 3, 1);
+        Assert.False(Shell.FromPolygons(corners, wrong).IsSuccess);
+        Assert.Throws<ArgumentException>(() => Shell.FromPolygons(corners, [(sides[0].Item1, new[] { 0, 1 })]));
+        Assert.Throws<ArgumentException>(() => Shell.FromPolygons(corners, [(sides[0].Item1, new[] { 0, 1, 8 })]));
+    }
+
+    [Fact]
     public void An_edge_on_a_surface_gets_its_3D_curve()
     {
         var plane = new PlaneSurface(new Plane3D(Point3D.Origin, Direction3D.UnitZ));

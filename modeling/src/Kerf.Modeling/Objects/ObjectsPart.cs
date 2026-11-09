@@ -1,3 +1,5 @@
+using Kerf.Healing;
+using Kerf.Construction;
 
 namespace Kerf.Modeling;
 
@@ -198,10 +200,22 @@ public class Wedge : BasePartObject
     public Alignment Align { get; }
 }
 
-/// <summary>The convex solid enclosing a set of points (their convex hull); not aligned by default.</summary>
+/// <summary>
+/// The convex solid enclosing a set of points (their convex hull), with one planar face for each flat side; not aligned
+/// by default.
+/// </summary>
+/// <remarks>
+/// Points closer than <see cref="Constants.Tolerance"/> count as one, and a corner within that distance of the hull of
+/// the others is left out, so the solid is within that distance of the exact hull. Points within 5e-8 of a flat side's
+/// plane are on it.
+/// </remarks>
 public class ConvexPolyhedron : BasePartObject
 {
     /// <summary>The convex hull of the points.</summary>
+    /// <exception cref="ArgumentException">
+    /// The hull has no volume: fewer than four distinct points, or all of them on one line or in one plane (to within
+    /// <see cref="Constants.Tolerance"/>); or a coordinate isn't finite. The message says which.
+    /// </exception>
     public ConvexPolyhedron(IEnumerable<Point3D> points, Rotation? rotation = null, Alignment? align = null)
         : base(Make(points), rotation, align ?? Kerf.Modeling.Align.None)
     {
@@ -209,9 +223,15 @@ public class ConvexPolyhedron : BasePartObject
 
     private static Shape Make(IEnumerable<Point3D> points)
     {
-        var pts = points.ToList();
-        var faces = ConvexHull3D.Facets(pts).Select(f => Face.Make(Wire.MakePolygon(f.Select(i => pts[i])))).ToList();
-        return Solid.Make(Shell.Make(faces)).Clean();
+        var hull = ConvexHull3D.Sides(points);
+        // The faces share their corners and edges as built, so nothing is sewn
+        var polygons = hull.Sides.Select(s => (new Plane3D(s.Origin, new Direction3D(s.Normal)), s.Corners));
+        var shell = Failures.Get(Shell.FromPolygons(hull.Points, polygons), () => "convex polyhedron: shell");
+        var solid = Solid.Make(shell);
+        var report = solid.Validate();
+        if (!report.IsValid || solid.Volume <= 0)
+            throw Failures.Invalid(solid, report, "The convex polyhedron");
+        return solid;
     }
 }
 
@@ -303,60 +323,3 @@ public class Hole : BaseHole
     public double HoleDepth { get; }
 }
 
-/// <summary>Computes the triangular facets of a 3D convex hull, as <c>scipy.spatial.ConvexHull(points).simplices</c> does.</summary>
-internal static class ConvexHull3D
-{
-    /// <summary>The hull's facets as point-index triples, outward-facing (incremental hull; coplanar points left out).</summary>
-    internal static List<int[]> Facets(IReadOnlyList<Point3D> points)
-    {
-        var scale = points.Max(p => Math.Max(Math.Abs(p.X), Math.Max(Math.Abs(p.Y), Math.Abs(p.Z))));
-        var eps = 1e-10 * Math.Max(1, scale);
-        // An initial tetrahedron of four points not in one plane
-        int a = 0, b = -1, c = -1, d = -1;
-        for (int i = 1; i < points.Count && b < 0; i++)
-            if ((points[i] - points[a]).Magnitude > eps)
-                b = i;
-        for (int i = 1; i < points.Count && c < 0 && b >= 0; i++)
-            if ((points[b] - points[a]).Cross(points[i] - points[a]).Magnitude > eps)
-                c = i;
-        for (int i = 1; i < points.Count && d < 0 && c >= 0; i++)
-            if (Math.Abs(Volume(points, a, b, c, i)) > eps)
-                d = i;
-        if (d < 0)
-            throw new ArgumentException("The points of a convex polyhedron must not all lie in one plane");
-        var faces = new List<int[]>();
-        void AddFacet(int p, int q, int r, int inside)
-        {
-            // Orient each facet away from a point inside the hull
-            faces.Add(Volume(points, p, q, r, inside) > 0 ? [p, r, q] : [p, q, r]);
-        }
-        AddFacet(a, b, c, d);
-        AddFacet(a, b, d, c);
-        AddFacet(a, c, d, b);
-        AddFacet(b, c, d, a);
-        for (int i = 0; i < points.Count; i++)
-        {
-            if (i == a || i == b || i == c || i == d)
-                continue;
-            var visible = faces.Where(f => Volume(points, f[0], f[1], f[2], i) > eps).ToList();
-            if (visible.Count == 0)
-                continue;   // inside the hull (or on it)
-            // The horizon: edges of visible facets not shared with another visible facet
-            var edges = new Dictionary<(int, int), int>();
-            foreach (var f in visible)
-                for (int k = 0; k < 3; k++)
-                {
-                    var e = (f[k], f[(k + 1) % 3]);
-                    edges[e] = edges.GetValueOrDefault(e) + 1;
-                }
-            faces.RemoveAll(visible.Contains);
-            foreach (var ((p, q), _) in edges.Where(e => !edges.ContainsKey((e.Key.Item2, e.Key.Item1))))
-                faces.Add([p, q, i]);
-        }
-        return faces;
-    }
-
-    /// <summary>Six times the signed volume of the tetrahedron (p, q, r, s): positive when s is in front of the facet p, q, r.</summary>
-    private static double Volume(IReadOnlyList<Point3D> pts, int p, int q, int r, int s) =>
-        (pts[q] - pts[p]).Cross(pts[r] - pts[p]).Dot(pts[s] - pts[p]);
-}

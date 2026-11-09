@@ -4,6 +4,34 @@ namespace Kerf.Modeling;
 
 public static partial class Operations
 {
+    /// <summary>
+    /// The convex hull of the points as a solid, one planar face for each flat side: <see cref="ConvexPolyhedron"/>, as
+    /// a result rather than an exception (decision 1996).
+    /// </summary>
+    /// <param name="points">The points; those closer than <see cref="Constants.Tolerance"/> count as one.</param>
+    /// <param name="rotation">Angles to rotate it about X, Y and Z.</param>
+    /// <param name="align">How to align it; by default it isn't.</param>
+    /// <returns>
+    /// The polyhedron, or the failure <see cref="ModelingDiagnostics.HullFailed"/> saying why: the hull has no volume, a
+    /// coordinate isn't finite, or the solid wasn't valid (then carrying it, through <c>TryGetInvalid</c>).
+    /// </returns>
+    /// <exception cref="ArgumentNullException"><paramref name="points"/> is null.</exception>
+    public static Result<Part> MakeConvexPolyhedron(IEnumerable<Point3D> points, Rotation? rotation = null, Alignment? align = null)
+    {
+        ArgumentNullException.ThrowIfNull(points);
+        return Failures.Try<Part>(() =>
+        {
+            try
+            {
+                return new ConvexPolyhedron(points, rotation, align);
+            }
+            catch (ArgumentException e)
+            {
+                throw Failures.Expected(ModelingDiagnostics.HullFailed, e.Message, inner: e);
+            }
+        });
+    }
+
     // ---- draft ----
 
     /// <summary>

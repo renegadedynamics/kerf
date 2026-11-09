@@ -304,6 +304,20 @@ public enum TextAlign
 #pragma warning restore CS1591
 }
 
+/// <summary>
+/// What a chamfer does at a convex arc of its face whose radius is no more than the chamfer's length on that face (a Kerf
+/// addition, not build123d's; the kernel's docs/chamfer-corners.md).
+/// </summary>
+public enum TightCorners
+{
+    /// <summary>Refuse, saying what fits.</summary>
+    Refuse,
+
+    /// <summary>Let the corner collapse to a point: the straight insets beside it meet, and the chamfer over the arc is a cone
+    /// from there to the arc's contact on the other face. Whole loops of a planar face, their sides square to it.</summary>
+    Collapse,
+}
+
 /// <summary>Sweep discontinuity handling option.</summary>
 public enum Transition
 {

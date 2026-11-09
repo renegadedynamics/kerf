@@ -191,6 +191,10 @@ internal static partial class FilletLimits
     public static double? LargestRadius(Shape shape, IEnumerable<Edge> edges) =>
         Quietly(() => Judge(Corners(shape, edges), 0, static corner => corner.ContactPerRadius))?.Limit;
 
+    /// <summary>As <see cref="LargestRadius"/>, for one chamfer length on both faces, which has the same limit as a contact's distance.</summary>
+    public static double? LargestChamfer(Shape shape, IEnumerable<Edge> edges) =>
+        Quietly(() => Judge(Corners(shape, edges), 0, static _ => 1))?.Limit;
+
     /// <summary>How one radius on all these edges stands, or null if the specs don't give one radius or the edges give no limit.</summary>
     public static Fit? Judge(Shape shape, FilletSpec[] specs) =>
         specs.Any(s => s.EndRadius is not null) || specs.Any(s => s.Radius != specs[0].Radius)
