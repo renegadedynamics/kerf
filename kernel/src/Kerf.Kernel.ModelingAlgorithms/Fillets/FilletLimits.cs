@@ -1099,6 +1099,11 @@ internal static partial class FilletLimits
             {
                 others.Add(other);
 
+                // Two are as good as hundreds: no width either way, and the top of a plate of many holes holds them all
+                if (others.Count > 1)
+                {
+                    return null;
+                }
             }
         }
         Vector3D toCentre = new(at, circle.Location);
@@ -1147,7 +1152,17 @@ internal static partial class FilletLimits
 
         // A next face the algorithm calls tangent is no limit, as for a straight edge (decision 1899)
         Face[] beyond = [.. neighbours.Faces(far).Where(f => !f.IsSame(face))];
-        if (beyond.Length != 1 || Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(far, face, beyond[0]))
+        if (beyond.Length != 1)
+        {
+            return null;
+        }
+
+        // Its test samples the edge on both faces, and finds the bounds of each in its parameters first, which on a plate's top of
+        // hundreds of holes is hundreds of projections for every hole: a face beside it turned about the axis meets this one at the
+        // same angle all the way round, so faces well apart there, not coded tangent, are what that test would find, without it
+        bool wellApart = RimNormal(neighbours, beyond[0], farCircle, farAt) is { } next && RimNormal(neighbours, face, farCircle, farAt) is { } here
+                         && Math.Abs(next.Dot(here)) < WellApart && Tool.Continuity(far, face, beyond[0]) == Continuity.C0;
+        if (!wellApart && Kerf.Engine.Fillets.ChFi3d.IsTangentFaces(far, face, beyond[0]))
         {
             return null;
         }
