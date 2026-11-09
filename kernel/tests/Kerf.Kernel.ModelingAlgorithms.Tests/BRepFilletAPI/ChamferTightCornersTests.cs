@@ -392,4 +392,144 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
         Result<Built<Shape>> on = prism.Chamfer(loop, 1, throat), off = prism.Chamfer(loop, 1, new ChamferOptions { Mode = ChamferMode.ConstantThroat });
         Assert.Equal(off.IsSuccess, on.IsSuccess);
     }
+
+    // An outline of lines with its corners rounded, extruded 10 up: radii by corner, in the order of the points
+    private static Shape RoundedOutline(Point3D[] points, double[] radii)
+    {
+        Face face = Face.FromWire(Wire.Polygon(points, closed: true).Value, onlyPlane: true).Value;
+        foreach (double radius in radii.Distinct())
+        {
+            Vertex[] these = [.. face.AllVertices().Where(v => Enumerable.Range(0, points.Length).Any(i => radii[i] == radius && points[i].DistanceTo(v.Point) < 1e-9))];
+            face = face.Fillet2D(these, radius).Value.Shape;
+        }
+        return face.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+    }
+
+    public static TheoryData<string> BothWaysCases => ["prism 1.7", "prism 1.71", "prism 2", "prism 3", "two sharp 3", "two lengths", "angle", "hole", "an L", "mixed radii", "turned"];
+
+    private static (Shape Shape, ChamferSpec[] Specs, double Expected) Case(string name)
+    {
+        Shape prism = Prism(40, 30, 30, 1.7);
+        Face top = Top(prism, 30);
+        switch (name)
+        {
+            case "two sharp 3":
+            {
+                Solid box = Solid.Box(40, 30, 30).Value;
+                Edge[] vertical = [.. box.AllEdges().Where(e => Math.Abs(e.AllVertices()[0].Point.Z - e.AllVertices()[1].Point.Z) > 1e-9 && e.AllVertices()[0].Point.X < 1e-9)];
+                Shape two = box.Fillet(vertical, 1.7).Value.Shape;
+                return (two, [.. Top(two, 30).AllEdges().Select(e => new ChamferSpec(e, 3))], PrismVolume(40, 30, 30, 1.7, 2) - Removed(40, 30, 1.7, 3, 3, 2));
+            }
+            case "two lengths":
+                return (prism, [.. top.AllEdges().Select(e => new ChamferSpec(e, 3, 1, ReferenceFace: top))], PrismVolume(40, 30, 30, 1.7) - Removed(40, 30, 1.7, 3, 1));
+            case "angle":
+                return (prism, [.. top.AllEdges().Select(e => new ChamferSpec(e, 3, Angle: Math.Atan(0.5), ReferenceFace: top))], PrismVolume(40, 30, 30, 1.7) - Removed(40, 30, 1.7, 3, 1.5));
+            case "hole":
+            {
+                Shape outer = Prism(60, 50, 20, 1.7);
+                Shape holed = outer.Cut(Prism(20, 20, 20, 1.7).Moved(Transform3D.Translation(new Vector3D(20, 15, 0)))).Value.Shape;
+                double volume = PrismVolume(60, 50, 20, 1.7) - PrismVolume(20, 20, 20, 1.7) - Removed(60, 50, 1.7, 3, 3) - RemovedFromHole(20, 20, 1.7, 3, 3);
+                return (holed, [.. Top(holed, 20).AllEdges().Select(e => new ChamferSpec(e, 3))], volume);
+            }
+            case "an L":
+            {
+                // Its re-entrant corner's arc is concave: a right cone beside the collapsed ones
+                Shape l = RoundedOutline([new(0, 0, 0), new(30, 0, 0), new(30, 12, 0), new(12, 12, 0), new(12, 25, 0), new(0, 25, 0)], [1.5, 1.5, 1.5, 1.5, 1.5, 1.5]);
+                return (l, [.. Top(l, 10).AllEdges().Select(e => new ChamferSpec(e, 2))], double.NaN);
+            }
+            case "turned":
+            {
+                // Placed askew: F's normal along no axis, and the shape's location not the identity
+                Transform3D turn = Transform3D.Rotation(new Axis3D(new Point3D(3, -2, 5), new Direction3D(1, 1, 1)), 0.7);
+                Shape turned = prism.Moved(turn);
+                Point3D origin = new Point3D(0, 0, 0).Transformed(turn), above = new Point3D(0, 0, 1).Transformed(turn);
+                Face moved = turned.AllFaces().First(f => new FaceSurfaceAdaptor(f).GetType() == SurfaceKind.Plane
+                                                          && f.AllVertices().All(v => Math.Abs(new Vector3D(origin, v.Point).Dot(new Vector3D(origin, above)) - 30) < 1e-9));
+                return (turned, [.. moved.AllEdges().Select(e => new ChamferSpec(e, 3))], PrismVolume(40, 30, 30, 1.7) - Removed(40, 30, 1.7, 3, 3));
+            }
+            case "mixed radii":
+            {
+                // Two corners collapse at 2, two of 4 don't: right cones of a convex arc beside the collapsed ones
+                Shape mixed = RoundedOutline([new(0, 0, 0), new(30, 0, 0), new(30, 20, 0), new(0, 20, 0)], [1, 4, 1, 4]);
+                return (mixed, [.. Top(mixed, 10).AllEdges().Select(e => new ChamferSpec(e, 2))], double.NaN);
+            }
+            default:
+            {
+                double length = double.Parse(name[6..], System.Globalization.CultureInfo.InvariantCulture);
+                return (prism, [.. top.AllEdges().Select(e => new ChamferSpec(e, length))], PrismVolume(40, 30, 30, 1.7) - Removed(40, 30, 1.7, length, length));
+            }
+        }
+    }
+
+    // The collapse built one way: from its faces (unit 13B), or by the Boolean with its tool, as before
+    private static Built<Shape> Built(Shape shape, ChamferSpec[] specs, bool assemble)
+    {
+        Face[] references = [.. specs.Select(s => s.ReferenceFace ?? shape.AllFaces().First(f => f.AllEdges().Any(e => e.IsSame(s.Edge))))];
+        Kerf.Engine.Foundation.EngineOutcome outcome = FilletLimits.CollapseTightCorners(shape, specs, references, Collapse, assemble)!.Value;
+        Assert.True(outcome.IsDone, outcome.Failure?.Message);
+        return new Built<Shape>(outcome.Shape(), ShapeHistory.FromEngine(outcome.History));
+    }
+
+    [Theory]
+    [MemberData(nameof(BothWaysCases))]
+    public void Built_from_its_faces_it_is_what_the_Boolean_makes(string name)
+    {
+        (Shape shape, ChamferSpec[] specs, double expected) = Case(name);
+        Built<Shape> faces = Built(shape, specs, assemble: true), boolean = Built(shape, specs, assemble: false);
+        double volume = faces.Shape.IntegrateVolume(), area = faces.Shape.IntegrateArea();
+        output.WriteLine($"{name}: {volume:R} against {boolean.Shape.IntegrateVolume():R}, closed form {expected:R}");
+        Assert.Null(Kerf.Engine.Foundation.Validity.Problem(faces.Shape, "It"));
+        Assert.Equal(boolean.Shape.IntegrateVolume(), volume, 1e-9 * volume);
+        Assert.Equal(boolean.Shape.IntegrateArea(), area, 1e-9 * area);
+        if (!double.IsNaN(expected))
+        {
+            Assert.Equal(expected, volume, 1e-9 * expected);
+        }
+
+        // The same faces of the same kinds, edges and vertices; the faces' way has every edge exact, a line or a circle
+        static string Kinds(Shape s) => string.Join(",", s.AllFaces().Select(f => new FaceSurfaceAdaptor(f).GetType()).Order());
+        Assert.Equal(Kinds(boolean.Shape), Kinds(faces.Shape));
+        Assert.Equal(boolean.Shape.AllEdges().Length, faces.Shape.AllEdges().Length);
+        Assert.Equal(boolean.Shape.AllVertices().Length, faces.Shape.AllVertices().Length);
+        Assert.All(faces.Shape.AllEdges().Where(e => !Kerf.Engine.Topology.Brep.Tool.Degenerated(e)),
+                   e => Assert.Contains(new EdgeCurveAdaptor(e).GetType(), new[] { CurveKind.Line, CurveKind.Circle }));
+        Assert.Contains(boolean.Shape.AllEdges(), e => new EdgeCurveAdaptor(e).GetType() == CurveKind.BSplineCurve);
+        Assert.True(faces.Shape.AllEdges().Max(e => Kerf.Engine.Topology.Brep.Tool.Tolerance(e)) <= 1e-6);
+
+        // And the same history for the shape's own faces, edges and vertices
+        foreach (Shape part in shape.AllFaces().Select(f => (Shape)f).Concat(shape.AllEdges().Select(e => (Shape)e)).Concat(shape.AllVertices().Select(v => (Shape)v)))
+        {
+            Assert.Equal(boolean.History.IsRemoved(part), faces.History.IsRemoved(part));
+            Assert.Equal(boolean.History.Modified(part).Count, faces.History.Modified(part).Count);
+            Assert.Equal(boolean.History.Generated(part).Select(s => s.Type).Order(), faces.History.Generated(part).Select(s => s.Type).Order());
+        }
+    }
+
+    [Fact]
+    public void The_users_prism_is_built_without_a_Boolean()
+    {
+        // Counted, not timed: the Boolean with its tool allocated about 70 MB here, the faces' way about 2.5 (unit 13B)
+        Shape prism = Prism(40, 30, 30, 1.7);
+        Edge[] loop = [.. Top(prism, 30).AllEdges()];
+        Assert.True(prism.Chamfer(loop, 3, Collapse).IsSuccess);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        Result<Built<Shape>> made = prism.Chamfer(loop, 3, Collapse);
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        output.WriteLine($"{allocated / 1024} KB");
+        Right(made, PrismVolume(40, 30, 30, 1.7) - Removed(40, 30, 1.7, 3, 3), 18);
+        Assert.InRange(allocated, 0, 8L << 20);
+    }
+
+    [Fact]
+    public void Where_something_else_comes_near_the_Boolean_builds_it()
+    {
+        // The hollow housing's ceiling is 2.5 down and the chamfer 3: the faces' way can't know the hollow is clear, so the Boolean
+        // and its check decide, and the answer is as before
+        Shape outer = Prism(80, 50, 25, 1.5);
+        Shape housing = outer.Cut(Solid.Box(75, 45, 22.5, new Frame3D(new Point3D(2.5, 2.5, 0), Direction3D.D.Z)).Value.Shape).Value.Shape;
+        ChamferSpec[] specs = [.. Top(housing, 25).AllEdges().Select(e => new ChamferSpec(e, 3))];
+        Built<Shape> made = Built(housing, specs, assemble: true);
+        Assert.Contains(made.Shape.AllEdges(), e => new EdgeCurveAdaptor(e).GetType() == CurveKind.BSplineCurve);
+        Assert.Equal(Built(housing, specs, assemble: false).Shape.IntegrateVolume(), made.Shape.IntegrateVolume());
+    }
 }

@@ -1,13 +1,33 @@
-// Ported from build123d tests/test_direct_api/test_projection.py.
-// Omitted:
-// - flat_projection, text_projection: need Compound.make_text (text isn't ported yet); text_projection also needs
-//   Solid.project_faces.
+// Ported from build123d tests/test_direct_api/test_projection.py. Compound.make_text is Operations.MakeText's shape
+// (unit 13E); build123d's default font, Arial, is Liberation Sans where it isn't installed.
 namespace Kerf.Modeling.Tests.Topology;
 
 using Kerf.Modeling;
 
 public class ProjectionTests
 {
+    [Fact]
+    public void FlatProjection()
+    {
+        var sphere = Solid.MakeSphere(50);
+        var projectionDirection = new Vector3D(0, -1, 0);
+        var planarTextFaces = Operations.MakeText("Flat", 30, align: new Alignment(Align.Center, Align.Center)).Value
+            .Rotate(Axis.X, 90).Faces();
+        var projectedTextFaces = planarTextFaces.Select(f => f.ProjectToShape(sphere, projectionDirection)[0]).ToList();
+        Assert.Equal(4, projectedTextFaces.Count);
+    }
+
+    [Fact]
+    public void TextProjection()
+    {
+        var sphere = Solid.MakeSphere(50);
+        var archPath = sphere.Cut(Solid.MakeCylinder(80, 100, new Plane(new Point3D(-50, 0, -70), zDir: new Vector3D(1, 0, 0))))
+            .Edges().OrderBy(Axis.Z)[0];
+        var projectedText = sphere.ProjectFaces(Operations.MakeText("dog", 14).Value.Faces(), archPath, start: 0.01);
+        Assert.Empty(projectedText.SelectMany(f => f.Solids()));
+        Assert.Equal(3, projectedText.Count);
+    }
+
     [Fact]
     public void MultipleOutputWires()
     {

@@ -70,6 +70,8 @@ public class ConstructorFailureTests
         C<Trapezoid>(NoSolution, [10.0, 5.0, 45.0, D, D, D], [10.0, 2.0, 45.0, D, D, D]),
         C<Triangle>(NoSolution, [(double?)1, (double?)1, (double?)3, D, D, D, D, D], [(double?)3, (double?)4, (double?)5, D, D, D, D, D]),
 
+        C<Text>(Any, ["Rate 中", 10.0, D, D, D, D, D, D, D, D, D], ["Rate", 10.0, D, D, D, D, D, D, D, D, D]),
+
         // Curves
         C<Airfoil>(Any, ["2412", 0, D], ["2412", D, D]),
         C<Bezier>(Any, [new List<Point3D> { O, X1, X2 }, new double[] { 1, -1, 1 }], [new List<Point3D> { O, XY1, X2 }, D]),
@@ -189,7 +191,7 @@ public class ConstructorFailureTests
         var covered = Cases.Select(ConstructorOf).ToHashSet();
         var missing = objects.SelectMany(t => t.GetConstructors()).Where(k => !covered.Contains(k)).Select(k => $"{k.DeclaringType!.Name}{k}").ToList();
         Assert.True(missing.Count == 0, "No case for: " + string.Join("; ", missing));
-        Assert.Equal(66, covered.Count);
+        Assert.Equal(67, covered.Count);
 
         // Every Make… of an object is one of these constructors' twins
         var makes = typeof(Kerf.Modeling.Operations).GetMethods(BindingFlags.Public | BindingFlags.Static)

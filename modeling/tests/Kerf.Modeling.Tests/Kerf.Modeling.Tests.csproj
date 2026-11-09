@@ -42,4 +42,9 @@
     <!-- The kernel's refusals of an argument, where a test calls the kernel itself (decision 25801) -->
     <Compile Include="..\..\..\kernel\tests\Shared\KernelAssert.cs" Link="Shared\KernelAssert.cs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Two of the kernel's test fonts (kernel/tests/Kerf.Kernel.ModelingAlgorithms.Tests/Fonts/Data), for Text (unit 13E) -->
+    <EmbeddedResource Include="Objects\Fonts\*.ttf" LogicalName="Fonts.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

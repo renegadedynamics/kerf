@@ -16,7 +16,7 @@ public class PublicSurfaceTests
     /// <summary>The public namespaces, so that a new one is added here on purpose. The checks read every public type.</summary>
     private static readonly string[] PublicNamespaces =
     [
-        "Kerf", "Kerf.Booleans", "Kerf.Construction", "Kerf.Drawing", "Kerf.Exchange", "Kerf.Features", "Kerf.Fillets",
+        "Kerf", "Kerf.Booleans", "Kerf.Construction", "Kerf.Drawing", "Kerf.Exchange", "Kerf.Features", "Kerf.Fillets", "Kerf.Fonts",
         "Kerf.Geometry", "Kerf.Healing", "Kerf.Measurement", "Kerf.Meshing", "Kerf.Offsets", "Kerf.Topology",
     ];
 

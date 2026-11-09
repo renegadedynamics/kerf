@@ -1,6 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_compound.py.
 // Omitted:
-// - TestCompound.make_text, triad: text and make_triad aren't ported yet.
+// - TestCompound.make_text: Objects/TextTests.Make_text_along_an_arc, as Text; triad: make_triad isn't ported yet.
 // - TestCompound.remove: Compound._remove is private and has no counterpart.
 // - TestCompound.repr: the simple case compares a repr with a memory address; only the assembly's label and child
 //   count are checked, against the port's ToString.

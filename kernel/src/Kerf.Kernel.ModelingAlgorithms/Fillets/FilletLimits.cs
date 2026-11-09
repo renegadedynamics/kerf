@@ -506,14 +506,30 @@ internal static partial class FilletLimits
 
     // The answer against the geometry, then what it's coded with and where it came from. To one part in a million: of the whole on a
     // straight edge at a limit, as it was; of the shape's own size elsewhere, as a small shape's figures are small, with what the shape's
-    // tolerance can move a face by over its area, which is the larger part only at the smallest sizes
-    private static EngineOutcome? Checked(Shape shape, Shape solid, History history, double volumeChange, double areaChange, (Shape Source, Func<Face, bool> IsNew)[] made, bool ownSize)
+    // tolerance can move a face by over its area, which is the larger part only at the smallest sizes. Where it's known which faces the
+    // answer kept, the shape's figures are those faces' and the ones it lost, and the answer's those kept and the new: the faces kept
+    // are integrated once, not twice, and each face adds the same as in the whole (unit 13B)
+    private static EngineOutcome? Checked(Shape shape, Shape solid, History history, double volumeChange, double areaChange, (Shape Source, Func<Face, bool> IsNew)[] made, bool ownSize,
+                                          FacesChanged? changed = null)
     {
-        double volume = Integral.Volume(shape) + volumeChange;
-        double area = Integral.Area(shape) + areaChange;
+        double before, after, areaBefore, areaAfter;
+        if (changed is { } lists)
+        {
+            Shape kept = Faces(lists.Kept), gone = Faces(lists.Gone), added = Faces(lists.Added);
+            double keptVolume = Integral.Volume(kept, shape), keptArea = Integral.AreaOfFaces(kept);
+            (before, areaBefore) = (keptVolume + Integral.Volume(gone, shape), keptArea + Integral.AreaOfFaces(gone));
+            (after, areaAfter) = (keptVolume + Integral.Volume(added, shape), keptArea + Integral.AreaOfFaces(added));
+        }
+        else
+        {
+            (before, areaBefore) = (Integral.Volume(shape), Integral.Area(shape));
+            (after, areaAfter) = (Integral.Volume(solid), Integral.Area(solid));
+        }
+        double volume = before + volumeChange;
+        double area = areaBefore + areaChange;
         double slack = ownSize ? Tolerance * area : 0;
         double perimeter = ownSize ? 10 * Tolerance * Math.Sqrt(area) : 0;
-        if (Math.Abs(Integral.Volume(solid) - volume) > Allowed(volume, ownSize) + slack || Math.Abs(Integral.Area(solid) - area) > Allowed(area, ownSize) + perimeter
+        if (Math.Abs(after - volume) > Allowed(volume, ownSize) + slack || Math.Abs(areaAfter - area) > Allowed(area, ownSize) + perimeter
             || Validity.Problem(solid, "The fillet") is not null)
         {
             return null;
@@ -538,8 +554,24 @@ internal static partial class FilletLimits
             }
             history.Remove(source);
         }
+        // Checked valid above: the operation needn't check it again, as the coding of its edges doesn't change that
         Shape built = solid;
-        return new EngineOutcome(true, () => built, history);
+        return new EngineOutcome(true, () => built, history, Valid: true);
+    }
+
+    /// <summary>The faces an answer kept from the shape as they were, those the shape lost, and those the answer added.</summary>
+    private sealed record FacesChanged(List<Face> Kept, List<Face> Gone, List<Face> Added);
+
+    private static Compound Faces(List<Face> faces)
+    {
+        var builder = new BrepBuilder();
+        var compound = new Compound();
+        builder.MakeCompound(ref compound);
+        foreach (Face face in faces)
+        {
+            builder.Add(compound, face);
+        }
+        return compound;
     }
 
     private static double Allowed(double expected, bool ownSize) => 1e-6 * (ownSize ? Math.Abs(expected) : Math.Max(1, expected));
@@ -1296,6 +1328,12 @@ internal static partial class FilletLimits
         private static readonly Kerf.Measurement.MassOptions Fixed = new() { Tolerance = 0 };
 
         public static double Volume(in Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, Fixed);
+
+        // What some of a solid's faces add to its volume, about the point the whole solid's is taken about, and their area: planar
+        // faces of lines and circles in closed form, which the fixed points are exact on too but slower (unit 13B)
+        public static double Volume(in Shape faces, in Shape solid) => Kerf.Engine.Measurement.MassPropertiesBuilder.VolumeOfFaces(faces, solid);
+
+        public static double AreaOfFaces(in Shape faces) => Kerf.Engine.Measurement.MassPropertiesBuilder.AreaOfFaces(faces);
 
         public static double Area(in Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateArea(shape, Fixed);
     }

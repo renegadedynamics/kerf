@@ -116,6 +116,39 @@ Extrude(face, Until.Next, target);
 Sweep([section], path, new SweepOptions { IsFrenet = true });
 ```
 
+### Text: embossing and engraving
+
+`Text` is a sketch of a string's faces, the holes in letters as holes, as build123d's is. Extrude it up from a face to
+emboss it, or down into one to engrave it:
+
+```csharp
+using Kerf.Fonts;   // FontStyle, TextAlign
+
+Part plate = new Box(80, 30, 4);
+Sketch label = new Text("KERF 0.5", 10, font: "Liberation Sans", fontStyle: FontStyle.Bold);
+Sketch onTop = label.Moved(new Location(new Vector3D(0, 0, 2)));   // on the plate's top face
+Part embossed = plate + Extrude(onTop, 1).Value;                   // 9600 + 129.622 = 9729.622
+Part engraved = plate - Extrude(onTop, -0.5).Value;                // 9600 - 129.622 / 2 = 9535.189
+
+// A note in lines, its box's top left at the origin
+Sketch note = new Text("Line one\nLine two", 5, "Liberation Sans", textAlign: (TextAlign.Left, TextAlign.Top),
+                       align: new Alignment(Align.Min, Align.Max));
+
+// Along a path: each character upright on the curve
+Sketch arc = new Text("ROUND THE ARC", 6, "Liberation Sans", textAlign: (TextAlign.Left, TextAlign.Bottom),
+                      path: Edge.MakeCircle(30, startAngle: 0, endAngle: 180), positionOnPath: 0.05);
+```
+
+- The size is the font's em in model units, as in build123d: a capital is about 0.7 of it.
+- Fonts are found by family among those installed for everyone and for you, on Windows, macOS and Linux, or read
+  from `fontPath`. build123d's default is Arial; where Arial, or any family asked for, isn't installed, Kerf's own
+  Liberation Sans stands in, which has Arial's widths, with a warning (`Warnings.Capture()`, or `font.substituted` on
+  `MakeText`'s result). Name `"Liberation Sans"` to get the same text on every machine.
+- `MakeText(…)` gives the same as a `Result<Text>`: a character the font has no glyph for fails as
+  `text.missing-glyph`, naming it, where build123d draws an empty box; an empty text as `text.empty`.
+- A single-stroke engraving font (one whose family starts with "olf " or says "SingleLine") draws its strokes at
+  `singleLineWidth`, 4% of the size by default.
+
 ## 4. Selecting faces and edges
 
 Selections are lists you filter, order and group, with LINQ alongside:
