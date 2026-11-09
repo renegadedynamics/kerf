@@ -17,6 +17,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `Align2D`, `Align3D` (an `Align` or a tuple of them) | `Alignment`: an `Align` converts implicitly; `new Alignment(x, y)` or `new Alignment(x, y, z)` |
 | `Mode.ADD`, `SUBTRACT`, … (`mode=` on objects and operations) | Not ported: algebra mode only, combined with operators |
 | `SortBy.LENGTH`, … | `ShapeKey.Length`, … |
+| `FontStyle.BOLD`, `TextAlign.TOPFIRSTLINE`, … | The kernel's `Kerf.Fonts.FontStyle.Bold`, `Kerf.Fonts.TextAlign.TopFirstLine`, … (`using Kerf.Fonts;`) |
 | `to_align_offset(min, max, align, center)` | `Alignment.Offset(min, max, center)` |
 
 ## Geometry
@@ -129,6 +130,10 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `CenterArc(c, r, start, arc_size)` with a float or a limit (`Shape`, `Axis`, …) | Two overloads: `double arcSize`, or a `CurveLimit` (from a shape, axis, location, plane or point); the same for `JernArc`, the conic arcs and `PolarLine`'s length |
 | `ConstrainedArcs(…, selector=lambda arcs: …)` | `new ConstrainedArcs(…, selector: arcs => …)`, the selector returning edges; `center_on` with two targets is `ConstrainedArcs.CenteredOn(…)` |
 | `GridLocations(…) * Circle(1)` | The same operator over the `LocationList` |
+| `Text(txt, font_size, font=, font_path=, font_style=, text_align=(h, v), align=, path=, position_on_path=, single_line_width=, rotation=)` | `new Text(txt, fontSize, font, fontPath, fontStyle, textAlign: (h, v), align, path, positionOnPath, singleLineWidth, rotation)`; `Operations.MakeText(…)` for a `Result<Text>` (unit 13E) |
+| `text.txt`, `.font_size`, `.font`, `.font_path`, `.text_path`, … | `Txt`, `FontSize`, `Font`, `FontPath`, `TextPath`, …: the font and path used, as build123d resolves them (`FontPath` null for Kerf's own Liberation Sans) |
+| `Compound.make_text(…)` | `Operations.MakeText(…).Value.Shape`: the text's compound |
+| `FontManager().available_fonts()`, `find_font(name, style)`, `register_font(path)` | The kernel's `FontLibrary.System.Fonts`, `FontLibrary.System.Find(name, style)`, `FontLibrary.Scan(folders)` or `Font.Read(stream)` (`Kerf.Fonts`) |
 | An object that can't be made from its values (`ValueError`, `RuntimeError`, an OCCT error: `Triangle(a=1, b=1, c=3)`, `RadiusArc` too small, a `Spline` through points too close) | `ModelingException` (an `InvalidOperationException`), carrying the error a `Result` would: `Error`, with its `Code`, and `Diagnostics`. An argument wrong on its own (a null, too few points, a missing angle) stays an `ArgumentException` (kernel decision 2013) |
 | (none: a Kerf addition) | Each object's constructor as an operation returning a `Result`: `Operations.MakeBox(…)`, `MakeSpline(…)`, `MakeTriangle(…)`, …, `Make` and the class's name, with the constructor's parameters; `ConstrainedArcs.CenteredOn` is `MakeConstrainedArcsCenteredOn`. A `Result<Part>`, `Result<Sketch>` or `Result<Curve>`, holding the object |
 
@@ -177,7 +182,6 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 
 ## Not yet ported
 
-- Text (`Compound.make_text`, fonts and the `Text` object): phase 7.
 - Builder mode (`BuildLine`, `BuildSketch`, `BuildPart` and the objects' and operations' builder behaviour): phase 5.
 - `export_obj`, `export_to_pcbway`, `Mesher` as a class (its metadata, `read`, STL through lib3mf), `import_svg` and
   `ExportSVG` (the kernel's `Kerf.Drawing` projects hidden lines and writes SVG, guide.md section 8); `ExportDXF`'s
@@ -186,6 +190,14 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 
 ## Deliberate differences
 
+- `Text` (unit 13E; the kernel's decisions 25403 to 25407): a character the font has no glyph for fails, naming it, where
+  build123d draws the font's empty box; an empty text fails where build123d gives no faces, and a size of 0 fails where
+  build123d crashes the process. Kerning is GPOS's where a font has it, which FreeType, and so build123d, ignores; a tab's
+  stops are at whole multiples of eight; a synthesised italic is a 10° shear, not also 1.5% smaller; a character of
+  several faces follows a path as one, where build123d turns each face to the tangent at its own centre; a font missing
+  is Liberation Sans, with a warning; a single-stroke font is known by its name ("olf …", or "SingleLine"), not by being
+  build123d's bundled one; and the outlines are the font's exactly, not FreeType's 26.6 pixels (the same to 1e-13 on a
+  TrueType font of 2,048 units to the em, 2e-6 on others).
 - `ExportDxf` writes splines exactly, rational ones with their weights, where build123d's `to_splines` makes every
   spline a polynomial cubic within 1e-3; scales line types to the unit, where build123d's are 10 times too long in
   inches and 2.54 times or more in centimetres and metres; projects edges off the XY plane (a tilted circle is an

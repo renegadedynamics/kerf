@@ -44,6 +44,12 @@ public static class ModelingDiagnostics
     public static DiagnosticCode HullFailed { get; } = new("modeling.hull-failed");
 
     /// <summary>
+    /// A single-stroke font's text couldn't be outlined: its strokes' width makes faces that aren't valid:
+    /// <c>modeling.text-failed</c>. The kernel's own failures keep their codes (<c>text.missing-glyph</c>, <c>font.malformed</c>).
+    /// </summary>
+    public static DiagnosticCode TextFailed { get; } = new("modeling.text-failed");
+
+    /// <summary>
     /// No shape fits the values an object was given, each valid on its own: no arc of that radius touches both targets, no
     /// triangle has those sides, a rounded rectangle's radius is too large for it: <c>modeling.no-solution</c>.
     /// </summary>

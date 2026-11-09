@@ -29,6 +29,13 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 - **An operation reports the kernel's refusal of a value as a failure every time,** `kernel.invalid-argument` in context
   ("box 0 × 1 × 1 failed: …"), where after many calls the JIT's optimisation could make one throw `ArgumentException`
   instead (an extrusion along a zero vector, a box of size 0; kernel decision 2014).
+- **`Text`** (unit 13E): build123d's text, a sketch of a string's faces with holes in letters as holes, to emboss or
+  engrave, with its font, style, alignment, text on a path, single-line width and rotation; `Operations.MakeText` gives
+  it as a `Result`. On the same font file it gives build123d's faces, areas and bounding boxes to 1e-13. Fonts are found
+  among the installed ones, or read from a file, by the kernel's own reader; where one isn't installed, Kerf's own
+  Liberation Sans stands in, which has Arial's widths, with a warning. A character the font has no glyph for fails,
+  naming it (the kernel's decisions 25401 to 25407). **Breaking:** the unused `FontStyle` and `TextAlign` enums of
+  Kerf.Modeling are the kernel's `Kerf.Fonts.FontStyle` and `TextAlign`, with the same members.
 
 ## 0.4.0
 
