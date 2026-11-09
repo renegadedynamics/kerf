@@ -23,6 +23,8 @@
 //   ... -- construction [filter]: prisms, revolutions, pipes, lofts and the makers on frozen inputs (unit 10H3,
 //     Construction.cs);
 //   ... -- wasm-compare report.json data-folder: the WebAssembly demo's report against win-x64 (run-headless.ps1).
+//   ... -- vectors [BenchmarkDotNet arguments]: loops by vectors against their scalar forms, on one processor (unit 14E,
+//     Vectors.cs).
 // OCCT's source and test data come from kernel/.deps (tools/get-occt.ps1, tools/get-occt-testdata.ps1), or wherever
 // -p:OcctSourceDir and -p:OcctTestDataDir say.
 
@@ -41,6 +43,12 @@ using Kerf.Kernel.Benchmarks;
 if (args.Length > 1 && args[0] == "step-phases")
 {
     StepPhases.Run(args[1]);
+    return 0;
+}
+
+if (args.Length > 0 && args[0] == "vectors")
+{
+    Vectors.Run(args[1..]);
     return 0;
 }
 
