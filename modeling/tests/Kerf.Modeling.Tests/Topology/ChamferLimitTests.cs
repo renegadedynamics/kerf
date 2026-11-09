@@ -71,19 +71,27 @@ public class ChamferLimitTests
         Edge rim = disc.Edges().OrderBy(e => e.Center().Z).Last();
         Assert.Equal(5, disc.MaxChamfer([rim]));
 
-        // The prism: 1.7 doesn't build, so the halving below it, as MaxFillet's, to within 0.1 of one that works
+        // The prism: 1.7 doesn't build, as the arcs' edge on the end closes to a point, but the largest length below it by more than
+        // the shape's tolerance does, a cone of radius 2e-7 at each corner; it was the halving's 1.594 (decision 2047)
         Part prism = Prism();
         ShapeList<Edge> outline = Outline(prism);
         Assert.Equal(1.7, prism.AsShape().ChamferLimit(outline));
+        SizeLimit limit = prism.AsShape().ChamferSizeLimit(outline)!.Value;
+        Assert.Equal(1.7, limit.Value);
+        Assert.Equal(1e-7, limit.Tolerance, 1e-20);
         double most = prism.MaxChamfer(outline);
-        Assert.InRange(most, 1.7 - 0.11, 1.7);
-        Assert.True(Chamfer(prism, outline, most).IsSuccess);
+        Assert.Equal(limit.JustBelow, most);
+        Assert.Equal(1.6999998, most, 1e-15);
+        Result<Part> made = Chamfer(prism, outline, most);
+        Assert.True(made.IsSuccess);
+        Assert.True(made.Value.IsValid);
+        Assert.True(Chamfer(prism, outline, 1.7).IsFailure);
     }
 
     [Fact]
     public void MaxChamfer_doesnt_try_past_the_limit()
     {
-        // The prism's search, counted: the limit, then halvings of (0, 116.6), none at or past 1.7 asked of ChFi3d
+        // The prism's tries, counted: the limit, then just below it, which builds; none past 1.7 asked of ChFi3d
         Part prism = Prism();
         ShapeList<Edge> outline = Outline(prism);
         var asked = new List<double>();
@@ -93,16 +101,16 @@ public class ChamferLimitTests
             return prism.AsShape().Chamfer(outline, d).IsSuccess;
         }
         double window = 2 * prism.Bounds().Diagonal;
-        double most = Shape3DExtensions.Largest(1.7, Works, window, 0.1, 10);
+        double most = Shape3DExtensions.Largest(new SizeLimit(1.7, 1e-7), Works, window, 0.1, 10);
         Assert.Equal(prism.MaxChamfer(outline), most);
-        Assert.Equal(1.7, asked[0]);
-        Assert.All(asked.Skip(1), d => Assert.True(d < 1.7));
-        int withLimit = asked.Count;
+        Assert.Equal([1.7, 1.7 - 2e-7], asked);
 
-        // Without it, the same answer from more tries, each past 1.7 refused at once by the chamfer itself
+        // Without it, the halving's answer, within 0.1 of a length that works, from 10 tries, each past 1.7 refused at once by the
+        // chamfer itself
         asked.Clear();
-        Assert.Equal(most, Shape3DExtensions.Largest(null, Works, window, 0.1, 10));
-        Assert.True(asked.Count > withLimit);
+        double searched = Shape3DExtensions.Largest(null, Works, window, 0.1, 10);
+        Assert.InRange(searched, 1.7 - 0.11, most);
+        Assert.Equal(10, asked.Count);
     }
 
     [Fact]

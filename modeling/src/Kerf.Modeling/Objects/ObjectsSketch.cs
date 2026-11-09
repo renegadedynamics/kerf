@@ -18,9 +18,37 @@ public abstract class BaseSketchObject : Sketch
 
     private static ShapeList<Face> Prepare(Shape obj, double rotation, Alignment? align)
     {
+        var bounds = obj.Bounds();
+        RefuseNoArea(obj, bounds);
         if (align is { } a)
-            obj = obj.Moved(new Location(obj.Bounds().ToAlignOffset(TwoAxes(a))));
+            obj = obj.Moved(new Location(bounds.ToAlignOffset(TwoAxes(a))));
         return rotation != 0 ? obj.Moved(new Rotation(0, 0, rotation)).Faces() : obj.Faces();
+    }
+
+    // The width under which the box's faces are measured: a hundred times the confusion tolerance, as the kernel's
+    // primitives are checked under 1e-5 (decision 2029), so an ordinary sketch costs only the box its alignment reads
+    private const double Small = 1e-5;
+
+    // Kerf: a face narrower than the confusion tolerance on average, twice its area over its perimeter, has sides that
+    // coincide within the tolerance, and no area to speak of: an ellipse 1e-12 across, a trapezoid or rectangle 1e-8 high, a
+    // circle of 1e-12. The validity check passes them (each edge is fine on its own), so they were successes; now they
+    // fail carrying the face, as a primitive too small to be valid does (decisions 1742, 2029 and 2059)
+    private static void RefuseNoArea(Shape obj, BoundingBox bounds)
+    {
+        if (bounds.IsEmpty)
+            return;
+        double[] sizes = [bounds.Size.X, bounds.Size.Y, bounds.Size.Z];
+        Array.Sort(sizes);
+        if (sizes[1] >= Small)
+            return;
+        foreach (var face in obj.Faces())
+        {
+            double perimeter = face.Edges().Sum(e => e.Length);
+            double width = perimeter > 0 ? 2 * face.Area / perimeter : 0;
+            if (width < Tolerances.Confusion)
+                throw Failures.Wrong(face, Diagnostic.Error(ModelingDiagnostics.ObjectFailed,
+                    $"The face is {Formatting.Number(width)} wide on average (twice its area over its perimeter), under the tolerance of {Formatting.Number(Tolerances.Confusion)}: its sides coincide and it has no area."));
+        }
     }
 
     /// <summary>An alignment on X and Y only, as build123d's sketches take it.</summary>

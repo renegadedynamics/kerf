@@ -2029,6 +2029,8 @@ public static class Kerf.Fillets.FilletOperations
   public static Result<Built<Shape>> Chamfer<TShape>(this TShape shape, IEnumerable<Edge> edges, double distance, ChamferOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> Fillet<TShape>(this TShape shape, IEnumerable<Edge> edges, double radius, FilletOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> Fillet<TShape>(this TShape shape, IEnumerable<FilletSpec> edges, FilletOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static SizeLimit? ChamferSizeLimit<TShape>(this TShape shape, IEnumerable<Edge> edges)
+  public static SizeLimit? FilletSizeLimit<TShape>(this TShape shape, IEnumerable<Edge> edges)
   public static double? ChamferLimit<TShape>(this TShape shape, IEnumerable<Edge> edges)
   public static double? FilletLimit<TShape>(this TShape shape, IEnumerable<Edge> edges)
 public sealed record Kerf.Fillets.FilletOptions : IEquatable<FilletOptions>
@@ -2057,6 +2059,11 @@ public sealed record Kerf.Fillets.FilletTolerances : IEquatable<FilletTolerances
   public double Parametric { get; init; }
   public double Spine { get; init; }
   public static FilletTolerances Default { get; }
+public readonly record struct Kerf.Fillets.SizeLimit : IEquatable<SizeLimit>
+  public SizeLimit(double Value, double Tolerance)
+  public double JustBelow { get; }
+  public double Tolerance { get; init; }
+  public double Value { get; init; }
 public enum Kerf.Fillets.TightCorners
   Refuse = 0
   Collapse = 1

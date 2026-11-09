@@ -47,6 +47,15 @@ internal abstract class BaseMeshAlgo : MeshAlgo
                                  in ToolParameters parameters,
                                  ProgressRange range)
     {
+        // Kerf: an edge found the face's surface out of all proportion to it, as a surface damaged to 1e300 is: refused at
+        // once, as a face out of proportion to its mesh is, before its nodes are made (decision 2060)
+        if (dFace.EdgesOffSurface)
+        {
+            dFace.SetStatus(StatusModel.Failure);
+            parameters.Budget?.RefuseFace();
+            return;
+        }
+
         try
         {
             _dFace = dFace;

@@ -182,15 +182,22 @@ its edge is the outline stepped in by the length, and past the arc's radius that
 the radius of the tightest convex arc in a face beside them …"), as `Fillet` does for a radius wider than a face.
 With two lengths, or a length and an angle, it's the length on that face that counts. A chain of tangent edges is
 chamfered all round, so one straight edge of a rounded outline is held to the arcs too. `MaxChamfer(edges)`, as
-`MaxFillet`, finds the largest single length that builds. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
+`MaxFillet`, finds the largest single length that builds: the proved limit where it builds, or else just under it, by
+twice the shape's tolerance there, where that builds (1.6999998 on the box above, whose corners close to a point at
+1.7), and otherwise a search to within 0.1. The kernel's `ChamferSizeLimit` and `FilletSizeLimit` give the limit with
+that tolerance. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
 too, with `Kind` (`Arc`, `Intersection`) and `Side` in `OffsetOptions`.
 
 **Chamfers past tight corners** (a Kerf addition: build123d and OCCT have nothing like it). A chamfer longer than the
 radius of a convex arc on its face can't step that arc in, and is refused. With
 `new ChamferOptions { TightCorners = TightCorners.Collapse }` the corner collapses to a point instead: the straight
 edges' insets meet, and the chamfer over the arc is a cone from there, tangent to the planes beside it, as the convex
-hull a user would otherwise build by hand. It's built for whole loops of a planar face of lines and arcs, their sides
-square to it (the end of a rounded prism or a housing), and refused, saying why, otherwise:
+hull a user would otherwise build by hand. It's built for whole loops of a planar face, their sides square to it or
+drafted by one angle (the end of a rounded prism, a housing, a moulding), with the length down a drafted side measured
+along its slope: tight arcs beside lines or convex arcs (a convex arc's end beside the corner runs to its point too),
+corners of several arcs together, and corners that are B-splines or ellipses where the collapse swallows them whole. A
+tight arc beside a concave arc, a curve the corner swallows only in part, and sides drafted by different angles are
+refused, saying why:
 
 ```csharp
 Part block = new Box(40, 30, 30);

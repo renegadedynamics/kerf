@@ -7,13 +7,13 @@ using Kerf.Geometry;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>
-/// For a sphere at an absolute deflection, whose grid alone OCCT trusts (decision 1953): after the grid's nodes, measures
+/// For a sphere, whose grid alone OCCT trusts (decision 1953): after the grid's nodes, measures
 /// each triangle's and link's distance from the sphere exactly, and inserts a node at the point of the sphere nearest the
 /// worst point of each that is further than the deflection asked, for up to 11 passes. The cause of a sphere's misses was
 /// the scaling of its parameters, which <see cref="SphereRangeSplitter"/> now takes at the latitude nearest the equator;
 /// this is the check that the grid then meets the deflection, and adds nothing where it does, as on every sphere surveyed.
 /// OCCT's control tests a parameter midpoint, which overstates the distance near the poles and refines a sphere already
-/// within it. Not for a relative deflection, which asks nothing of the face itself (as decision 1929's torus).
+/// within it. At a relative deflection the limit is the face's own, as the torus's (decision 2056).
 /// </summary>
 internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<SphereRangeSplitter>
 {
@@ -42,7 +42,7 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
         Sphere3D sphere = GetDFace().GetSurface().Sphere();
         Point3D centre = sphere.Location;
         double radius = sphere.Radius;
-        double deflection = Math.Max(GetParameters().Deflection, GetDFace().GetDeflection());
+        double deflection = Deflection.SurfaceLimit(GetDFace(), GetParameters());
         double minSize = GetParameters().MinSize;
         double sqMinSize = minSize * minSize;
         double angle = GetParameters().AngleInterior;
@@ -51,6 +51,8 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
         Span<int> indices = stackalloc int[3];
         Span<Point3D> points = stackalloc Point3D[3];
         Span<Point2D> uvs = stackalloc Point2D[3];
+        Span<Point2D> scaled = stackalloc Point2D[3];
+        Span<bool> frontier = stackalloc bool[3];
         double worst = -1;
 
         const int passes = 11;
@@ -78,8 +80,15 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
                 for (int i = 0; i < 3; i++)
                 {
                     MeshVertex vertex = GetStructure().GetNode(indices[i]);
-                    uvs[i] = GetRangeSplitter().Scale(new Point2D(vertex.Coord()), false);
+                    scaled[i] = new Point2D(vertex.Coord());
+                    uvs[i] = GetRangeSplitter().Scale(scaled[i], false);
                     points[i] = GetNodesMap()[vertex.Location3d()];
+                }
+
+                Triangle.Int3 edges = triangle._edges;
+                for (int i = 0; i < 3; i++)
+                {
+                    frontier[i] = GetStructure().GetLink(edges[i]).Movability() == DegreeOfFreedom.Frontier;
                 }
 
                 // The triangle's nearest point to the centre, where it is furthest inside the sphere, when that is inside it
@@ -93,19 +102,21 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
                     {
                         double distance = radius - centre.DistanceTo(foot);
                         worst = Math.Max(worst, distance);
-                        if (distance > deflection)
+                        if (distance > deflection && Use(sphere, centre, foot, uvs, points, sqMinSize, out Point2D uv))
                         {
-                            Use(sphere, centre, foot, uvs, points, sqMinSize, nodes);
+                            // Off a frontier link, where Delaunay would skip it (decision 2057)
+                            Point2D node = GetRangeSplitter().Scale(uv, true);
+                            Point2D cleared = FrontierClearance.Clear(node, scaled, frontier);
+                            nodes.Append(cleared.X == node.X && cleared.Y == node.Y ? uv : GetRangeSplitter().Scale(cleared, false));
                         }
                     }
                 }
 
                 // Its links, each once (a link's index is its pair of nodes while the structure doesn't change): the chord's
                 // middle is its furthest point from the sphere
-                Triangle.Int3 edges = triangle._edges;
                 for (int i = 0; i < 3; i++)
                 {
-                    if (GetStructure().GetLink(edges[i]).Movability() == DegreeOfFreedom.Frontier)
+                    if (frontier[i])
                     {
                         continue;
                     }
@@ -131,7 +142,10 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
                     {
                         Span<Point2D> ends = [uvs[i], uvs[j]];
                         Span<Point3D> ends3d = [points[i], points[j]];
-                        Use(sphere, centre, middle, ends, ends3d, sqMinSize, nodes);
+                        if (Use(sphere, centre, middle, ends, ends3d, sqMinSize, out Point2D uv))
+                        {
+                            nodes.Append(uv);
+                        }
                     }
                 }
             }
@@ -160,14 +174,15 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
         return true;
     }
 
-    // Queues the parameters of the sphere's point nearest the given one, its u taken to the period of the points', unless
-    // it would come nearer to one of them than the smallest size
-    private static void Use(in Sphere3D sphere, in Point3D centre, in Point3D point, ReadOnlySpan<Point2D> uvs,
-                            ReadOnlySpan<Point3D> points, double sqMinSize, NCollection_List<Point2D> nodes)
+    // The parameters of the sphere's point nearest the given one, its u taken to the period of the points', unless it
+    // would come nearer to one of them than the smallest size
+    private static bool Use(in Sphere3D sphere, in Point3D centre, in Point3D point, ReadOnlySpan<Point2D> uvs,
+                            ReadOnlySpan<Point3D> points, double sqMinSize, out Point2D node)
     {
+        node = default;
         if (centre.SquareDistanceTo(point) < 1e-24)
         {
-            return;
+            return false;
         }
 
         Point3D onSphere = centre.Translated(new Vector3D(centre, point).Normalized().Multiplied(sphere.Radius));
@@ -175,7 +190,7 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
         {
             if (onSphere.SquareDistanceTo(points[i]) < sqMinSize)
             {
-                return;
+                return false;
             }
         }
 
@@ -188,6 +203,7 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
 
         reference /= uvs.Length;
         u += 2 * Math.PI * Math.Round((reference - u) / (2 * Math.PI));
-        nodes.Append(new Point2D(u, v));
+        node = new Point2D(u, v);
+        return true;
     }
 }
