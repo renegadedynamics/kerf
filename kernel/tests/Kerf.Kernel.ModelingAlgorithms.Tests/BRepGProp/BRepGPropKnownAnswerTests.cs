@@ -714,4 +714,43 @@ public class BRepGPropKnownAnswerTests
             Assert.Equal(aAlone[k], AdaptiveArea(KnottedSquare(aCounts[k])));
         }
     }
+
+    [Fact]
+    public void A_volume_of_many_faces_integrated_on_several_threads_is_the_serial_sum()
+    {
+        // Unit 14F: from MassPropertiesBuilder.ParallelFacesFrom faces to integrate, the faces are integrated on several
+        // threads and added in their order: the same bits as one after another. 24 spheres of radii 1 to 3.3, apart.
+        var aB = new BrepBuilder();
+        Shell aShell = new();
+        aB.MakeShell(ref aShell);
+        double aVolume = 0;
+        for (int i = 0; i < 24; i++)
+        {
+            double r = 1 + 0.1 * i;
+            Face aF = BRepGPropTestShapes.NaturalFace(new SphericalSurface(
+                new CoordinateSystem(new Point3D(10 * i, (i % 3) * 7.0, (i % 5) * 3.0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r));
+            aB.Add(aShell, aF);
+            aVolume += 4.0 / 3.0 * Math.PI * r * r * r;
+        }
+
+        Assert.True(24 >= MassPropertiesBuilder.ParallelFacesFrom);
+        Shape aSolid = TestShapes.Frozen(BRepGPropTestShapes.SolidOf(aShell));
+        foreach (double anEps in new[] { 1e-6, 1e-9, 2.0 })
+        {
+            var aParallel = new Properties();
+            double anError = MassPropertiesBuilder.VolumeProperties(aSolid, aParallel, anEps);
+            var aSerial = new Properties();
+            double aSerialError;
+            using (OsdParallel.ForceSerialScope())
+            {
+                aSerialError = MassPropertiesBuilder.VolumeProperties(aSolid, aSerial, anEps);
+            }
+
+            Assert.Equal(aSerial.Mass(), aParallel.Mass());
+            Assert.Equal(aSerial.CentreOfMass(), aParallel.CentreOfMass());
+            Assert.Equal(aSerial.MatrixOfInertia(), aParallel.MatrixOfInertia());
+            Assert.Equal(aSerialError, anError);
+            Assert.Equal(aVolume, aParallel.Mass(), 1e-6 * aVolume);
+        }
+    }
 }

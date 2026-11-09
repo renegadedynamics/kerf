@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Collections;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Meshing;
@@ -359,6 +360,12 @@ internal static class MassPropertiesBuilder
                                                 bool massOnly = false,
                                                 bool exactPlanes = false)
     {
+        if (!useTriangulation && !OsdParallel.IsSerial
+            && TryVolumeFacesInParallel(s, props, refPnt, eps, skipShared, massOnly, exactPlanes, out double inParallel))
+        {
+            return inParallel;
+        }
+
         int i;
         double errorMax = 0.0, error = 0.0;
         var ex = new Explorer();
@@ -460,6 +467,158 @@ internal static class MassPropertiesBuilder
         }
 
         return errorMax;
+    }
+
+    /// <summary>
+    /// How many faces a volume must integrate (not exactly planar, not meshed) before they are integrated on several
+    /// threads (unit 14F): below it, the loop's cost is a larger share than the faces', and short operations stay serial.
+    /// </summary>
+    internal const int ParallelFacesFrom = 16;
+
+    /// <summary>
+    /// <see cref="VolumePropertiesFaces"/> with the faces integrated on several threads, each with its own integrand,
+    /// domain and system, and added to <paramref name="props"/> in the faces' order, as the loop adds them, so the sums
+    /// are the same to the bit (decision 27606). False, with <paramref name="props"/> untouched, where a face would be
+    /// measured on its mesh or fewer than <see cref="ParallelFacesFrom"/> faces need integrating: the loop does those.
+    /// </summary>
+    private static bool TryVolumeFacesInParallel(in Shape s,
+                                                 Properties props,
+                                                 in Point3D refPnt,
+                                                 double eps,
+                                                 bool skipShared,
+                                                 bool massOnly,
+                                                 bool exactPlanes,
+                                                 out double errorMax)
+    {
+        errorMax = 0.0;
+        var bd = new Domain();
+        var fwdFMap = new HashSet<Shape>(ShapeHasher.Instance);
+        var rvsFMap = new HashSet<Shape>(ShapeHasher.Instance);
+        // Each face in the loop's order: an exact planar volume, or a face to integrate
+        var faces = new List<(Face Face, bool Integrate, double Planar)>();
+        int integrated = 0;
+        var ex = new Explorer();
+        for (ex.Init(s, ShapeType.Face); ex.More(); ex.Next())
+        {
+            Face f = ShapeCasts.Face(ex.Current());
+            Orientation ori = f.Orientation;
+            bool isFwd = ori == Forward;
+            bool isRvs = !isFwd && ori == Reversed;
+            if (skipShared && ((isFwd && !fwdFMap.Add(f)) || (isRvs && !rvsFMap.Add(f))))
+            {
+                continue;
+            }
+
+            bool noSurf = Tool.Surface(f, out _) is null;
+            if (noSurf)
+            {
+                Triangulation? tri = Tool.Triangulation(f, out _);
+                if (tri is null || tri.NodeCount == 0 || tri.TriangleCount == 0)
+                {
+                    continue;
+                }
+
+                // Measured on its mesh: the loop's
+                return false;
+            }
+
+            if (!isFwd && !isRvs)
+            {
+                continue;
+            }
+
+            if (((massOnly && eps < 1.0) || exactPlanes) && PlanarFaceMass.TryVolume(f, bd, refPnt, out double planar))
+            {
+                faces.Add((f, false, planar));
+            }
+            else
+            {
+                faces.Add((f, true, 0.0));
+                integrated++;
+            }
+        }
+
+        if (integrated < ParallelFacesFrom)
+        {
+            return false;
+        }
+
+        var systems = new global::Kerf.Engine.Measurement.Vinert?[faces.Count];
+        var failures = new Exception?[faces.Count];
+        Point3D location = refPnt;
+        OsdParallel.For(0, faces.Count, k =>
+        {
+            if (!faces[k].Integrate)
+            {
+                return;
+            }
+
+            try
+            {
+                Face f = faces[k].Face;
+                var bf = new FaceIntegrand();
+                var d = new Domain();
+                var g = new global::Kerf.Engine.Measurement.Vinert();
+                g.SetLocation(location);
+                bf.Load(f);
+                bool isNatRestr = f.ChildCount == 0;
+                if (!isNatRestr)
+                {
+                    d.Init(f);
+                }
+
+                if (eps < 1.0)
+                {
+                    g.Perform(bf, d, eps);
+                }
+                else if (isNatRestr)
+                {
+                    g.Perform(bf);
+                }
+                else
+                {
+                    g.Perform(bf, d);
+                }
+
+                systems[k] = g;
+            }
+            catch (Exception e)
+            {
+                // The loop would have stopped at the first face that threw
+                failures[k] = e;
+            }
+        });
+
+        for (int k = 0; k < faces.Count; k++)
+        {
+            if (failures[k] is { } failure)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+            }
+        }
+
+        for (int k = 0; k < faces.Count; k++)
+        {
+            if (!faces[k].Integrate)
+            {
+                props.AddMass(faces[k].Planar);
+                continue;
+            }
+
+            var g = systems[k]!;
+            if (eps < 1.0)
+            {
+                double error = g.GetEpsilon();
+                if (errorMax < error)
+                {
+                    errorMax = error;
+                }
+            }
+
+            props.Add(g);
+        }
+
+        return true;
     }
 
     private sealed class SolidCacheEntry
