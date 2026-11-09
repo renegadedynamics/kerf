@@ -271,9 +271,15 @@ public static class ShapeFactory
                     ? new MakeFace(surface, b.U.Min, b.U.Max, b.V.Min, b.V.Max, Tolerances.Confusion)
                     : new MakeFace(surface, Tolerances.Confusion));
             // A surface's own bounds make a good face; bounds off the surface don't (mkface/after_extsurf_and_offset C6 to C9,
-            // decision 1919), and wires may not bound one
-            return Validity.Checked(made, checkResult && (boundary is not null || (bounds is { } limits && IsOff(surface, limits))), "The face");
+            // decision 1919), nor bounds so narrow that an edge is shorter than its tolerance (a rectangle 1e-9 wide,
+            // decision 25802), and wires may not bound one
+            return Validity.Checked(made, checkResult && (boundary is not null || (bounds is { } limits && (IsOff(surface, limits) || IsNarrow(limits)))),
+                                    "The face");
         }
+
+        // Bounds narrower than this, in the surface's parameters, are checked: from 2e-7 up a rectangle was valid as built
+        private static bool IsNarrow((Interval U, Interval V) limits) =>
+            limits.U.Max - limits.U.Min < 1e-5 || limits.V.Max - limits.V.Min < 1e-5;
 
         private static bool IsOff(Surface surface, (Interval U, Interval V) limits)
         {

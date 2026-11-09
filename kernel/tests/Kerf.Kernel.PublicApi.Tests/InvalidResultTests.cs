@@ -232,4 +232,21 @@ public class InvalidResultTests
         Assert.Equal(cylinder.IntegrateVolume(), result.Value.Shape.IntegrateVolume(), 1e-3 * cylinder.IntegrateVolume());
         Assert.All(result.Value.Shape.AllEdges(), e => Assert.True(e.Tolerance < 0.02));
     }
+
+    [Fact]
+    public void A_primitive_too_small_to_be_valid_fails_carrying_it()
+    {
+        // OCCT builds these, and they aren't valid (decision 25802); a primitive made of a length under 1e-5 is checked
+        Carries(Solid.Cylinder(1e-8, 1), static b => b.Shape, "The cylinder");
+        Carries(Solid.Cylinder(1, 1, 1e-9), static b => b.Shape, "The cylinder");
+        Carries(Solid.Sphere(1e-8), static b => b.Shape, "The sphere");
+        Carries(Solid.Torus(1, 1e-8), static b => b.Shape, "The torus");
+        Carries(Solid.Wedge(1, 1, 1, new WedgeOptions { TopMin = (0.5, 0.5), TopMax = (0.5 + 1e-9, 0.5 + 1e-9) }), static b => b.Shape, "The wedge");
+        Carries(Face.FromSurface(new PlaneSurface(new Plane3D(new CoordinateSystem(Frame3D.World))), (new Interval(0, 1e-9), new Interval(0, 1))),
+                static f => f, "The face");
+        // Small and valid: built as before
+        Assert.True(Solid.Cylinder(2e-7, 1).Value.Shape.Validate().IsValid);
+        Assert.True(Solid.Sphere(2e-7).IsSuccess);
+        Assert.True(Solid.Wedge(1, 1, 1, new WedgeOptions { TopLength = 0 }).IsSuccess);
+    }
 }
