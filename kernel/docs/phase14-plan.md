@@ -34,6 +34,17 @@ The Kerf model at `products/rowing-strain/enclosure/kerf/` in renegadedynamics/h
 | **14C** The script | Where the script could do the same work for less in Kerf (caching, order of operations, an operation Kerf has that it hand-builds, work it repeats per size), each with what it would save, measured. | A note for the owner to pass to Renegade's agent. |
 | **14D** The user case | 13C's `enclosure` case moved to v0.16 (or a second case beside it), so the release check covers the model as it's built now. | The release check runs it. |
 
+## 2. Vector instructions, parallelism and async (the owner, decision 2046)
+
+| Unit | What | Done when |
+|---|---|---|
+| **14E** Vector instructions | Led by 14A's profile and the rig's hottest loops: loops over many values of one kind (points classified against a solid, boxes and trees in the classifiers and the mesher, B-spline bases and polynomials over many parameters, the mesher's triangle and circle tests, the renderer, mesh export). Points stay `Point3D` and `Point2D` in `double` (`System.Numerics`' `Vector3` and its kin are `float`, too coarse for CAD's tolerances, and .NET has no `double` versions); where a loop pays, it holds its points as arrays of x, y and z inside and uses `TensorPrimitives` or `Vector256<double>`. Each prototype measured; results bit-identical, or a change in results brought to the owner. | Each hot loop vectorised where it meets the bar, or written down as not worth it. |
+| **14F** Parallelism | First, the ambient state (`Cancellation.Current`, `Warnings.Capture`, `SkipClean`: 13P's decision 2045) checked for callers on many threads, and the thread-safety of operations and shapes documented as a guarantee. Then the enclosure built with its independent parts in parallel, as a client would: if it pays, script feedback and a guide section. Then parallelism inside long operations where the profile shows them (a Boolean's face pairs, the checks' points, fillets of many edges, exports). | The guarantee written and tested; each candidate measured on a quiet machine. |
+| **14G** Async | No async versions of the modelling operations: they're CPU work, and wrapping them in tasks hides the cost and takes the choice of threads from the caller. Async reading and writing of files and streams (STEP, STL, glTF, 3MF, DXF, SVG), and a guide section on running operations in parallel. | The readers and writers have async forms; the guide says how to parallelise. |
+
+14E and 14F start when 14A has reported and the machine is free of phase 13's helpers, and take their final figures in a
+quiet window. 14G can start when a helper's slot frees.
+
 ## How the work runs
 
 As in phase 13, and alongside it: helpers on branches and worktrees of their own, the merge gate one at a time.
