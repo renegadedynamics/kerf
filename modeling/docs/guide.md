@@ -4,7 +4,7 @@ Kerf.Modeling is a .NET 10 CAD modelling library: build123d's API, in C#, over K
 Open CASCADE). This guide gets you from nothing to a part, a mesh and a STEP file, and covers what most often
 trips people up. If you know build123d, [name-map.md](name-map.md) lists every name that changed.
 
-Every example here was compiled and run against Kerf 0.3.0 from nuget.org, and its volumes checked by hand.
+Every example here was compiled and run against Kerf 0.4.0, and its volumes checked by hand.
 
 ## 1. Setting up
 
@@ -12,7 +12,7 @@ You need the .NET 10 SDK (`dotnet --version` shows 10.0 or later). The quickest 
 `dotnet run`: no project file needed.
 
 ```csharp
-#:package Kerf.Modeling@0.3.0
+#:package Kerf.Modeling@0.4.0
 #:property PublishAot=false
 using Kerf;
 using Kerf.Geometry;
@@ -31,7 +31,7 @@ runs are quick.
 
 - `#:property PublishAot=false` stops a file-based app from pulling in the native-compilation package, which isn't
   needed and gives a NuGet warning.
-- In a project instead: `dotnet add package Kerf.Modeling --version 0.3.0`. It brings the four kernel packages with it.
+- In a project instead: `dotnet add package Kerf.Modeling --version 0.4.0`. It brings the four kernel packages with it.
 - The namespaces: `Kerf` (`Result<T>`, `Diagnostic`), `Kerf.Geometry` (`Point3D`, `Vector3D`, `Direction3D`),
   `Kerf.Topology` (the kernel's `Shape`, `Face`, `Edge`…), `Kerf.Modeling` (everything in this guide), and
   `using static Kerf.Modeling.Operations;` so that `Extrude(…)`, `Fillet(…)` and the rest read as in build123d.
@@ -205,8 +205,7 @@ var m = result.Value;                                            // Positions, N
 - **Deflection is a distance in the model's units,** the most a triangle may be from the surface. Pick it from the
   part's size: `MeshTolerances.For(part.Shape)` gives 0.1% of the bounding box's diagonal. A tiny deflection on a
   large part asks for millions of triangles. `MeshOptions.MaxTriangles` (10 million by default) refuses a mesh it
-  expects to go past the limit, as `meshing.too-large`; in 0.3.0 that expectation is an estimate, so a mesh can come
-  out somewhat larger.
+  expects to go past the limit, as `meshing.too-large`.
 - `MeshOptions { Relative = true }` makes the deflection a proportion of each edge's size, as OCCT's relative mode.
 - Exports mesh for you: `ExportStl`, `ExportGltf` and `Export3mf` take the deflections in their options.
 
