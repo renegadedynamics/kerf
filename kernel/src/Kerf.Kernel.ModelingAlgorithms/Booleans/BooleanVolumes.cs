@@ -317,12 +317,14 @@ public static class BooleanVolumes
                 continue;
             }
 
+            // One classifier of the face for its points, not one each (unit 13A)
+            var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
             for (int i = 1; i <= FaceGrid; i++)
             {
                 for (int j = 1; j <= FaceGrid; j++)
                 {
                     double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
-                    if (face.Classify(new Point2D(u, v)) != Containment.In)
+                    if (inFace.Perform(new Point2D(u, v)) != Containment.In)
                     {
                         continue;
                     }
