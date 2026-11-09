@@ -325,6 +325,7 @@ Unit 12D (decisions 1896 and 1897) adds no shared state to Kerf. The rig's `Firs
 Units 12K to 12M (decisions 1904 to 1911) add no shared state: `FilletLimits`'s tools, `Neighbours` and `Mitre` are local to the call, its Gauss points are constant arrays read only, and its Booleans and `UnifySameDomain` run on the caller's thread, on copies (`SetNonDestructive`, `SetSafeInputMode`).
 
 Unit 12V (decision 1985) adds no shared state: `FilletLimits.Bends`, its `Neighbours` and the bends it finds are local to one chamfer's call, read from that call's `MakeChamfer` and frozen shapes (decisions 1985 to 1987); `ChamferLimit` makes its own `MakeChamfer`, and `MaxChamfer`'s search keeps its window in locals.
+Unit 12W (decisions 1988 to 1991) adds no shared state: the loops, their pieces and the tool are local to one call, the Gauss points are constant arrays read only, and the sewing and the Boolean run on the caller's thread, on the caller's frozen shape (`Sewing` has no parallel part).
 
 Unit 12C (decisions 1898 to 1901) adds no shared state: `FilletLimits.Judge` and its `Neighbours` are local to the call, on frozen shapes, `WellApart` is a constant, and `MaxFillet` holds its limit in a local.
 

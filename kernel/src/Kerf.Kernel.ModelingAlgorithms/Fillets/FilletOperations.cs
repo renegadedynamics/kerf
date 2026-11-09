@@ -97,6 +97,10 @@ public sealed record ChamferOptions
 
     /// <summary>How the distances are measured.</summary>
     public ChamferMode Mode { get; init; } = ChamferMode.Classic;
+
+    /// <summary>What to do at a convex arc whose radius is no more than the length on its face: refuse (the default), or collapse
+    /// the corner to a point (docs/chamfer-corners.md).</summary>
+    public TightCorners TightCorners { get; init; } = TightCorners.Refuse;
 }
 
 /// <summary>
@@ -305,6 +309,11 @@ public static class FilletOperations
             ChamferSpec[] specs = given;
             Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
             {
+                // Past a tight corner, where asked: collapsed, beside ChFi3d, which isn't asked (decision 1988)
+                if (FilletLimits.CollapseTightCorners(solid, specs, faces, options) is { } collapsed)
+                {
+                    return collapsed;
+                }
                 var chamfer = new MakeChamfer(solid);
                 chamfer.SetMode(mode);
                 for (int i = 0; i < specs.Length; i++)
