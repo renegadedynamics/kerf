@@ -41,6 +41,8 @@ internal class MeshCurveTessellator : CurveTessellator
     private double _edgeSqTol;
     private readonly double[] _faceRangeU = new double[2];
     private readonly double[] _faceRangeV = new double[2];
+    private double _squareReach;
+    private FaceModel? _splitFace;
 
     /// <summary>A tessellator of the edge's 3D curve.</summary>
     /// <exception cref="FailureException">The parameters' MinSize isn't positive.</exception>
@@ -173,6 +175,8 @@ internal class MeshCurveTessellator : CurveTessellator
                 }
 
                 Edge currEdge = ShapeCasts.Edge(_edge.Oriented(pCurve.GetOrientation()));
+                _splitFace = pCurve.GetFace();
+                _squareReach = SquareReach(nodesNb);
 
                 Curve2D curve2d = Tool.CurveOnSurface(currEdge, face, out double _, out double _)!;
                 NCollection_Array1<double> paramArray = new(1, nodesNb);
@@ -187,6 +191,25 @@ internal class MeshCurveTessellator : CurveTessellator
                 }
             }
         }
+    }
+
+    // Kerf: how far, squared, the surface may be from the edge before it's out of all proportion to it (decision 26602):
+    // ten thousand times the size of the edge's box, as tessellated, or of a thousand times its tolerance if that's more.
+    // Over the corpus's meshes the farthest was 17.7 times that (an offset surface's loose pcurve), and the nearest of
+    // the damaged files it refuses 41 million times; damaged files in between mesh as before
+    private double SquareReach(int nodesNb)
+    {
+        Point3D first = _discretTool.Value(1);
+        double minX = first.X, minY = first.Y, minZ = first.Z, maxX = minX, maxY = minY, maxZ = minZ;
+        for (int i = 2; i <= nodesNb; ++i)
+        {
+            Point3D p = _discretTool.Value(i);
+            (minX, minY, minZ) = (Min(minX, p.X), Min(minY, p.Y), Min(minZ, p.Z));
+            (maxX, maxY, maxZ) = (Max(maxX, p.X), Max(maxY, p.Y), Max(maxZ, p.Z));
+        }
+        double size = Math.Sqrt((maxX - minX) * (maxX - minX) + (maxY - minY) * (maxY - minY) + (maxZ - minZ) * (maxZ - minZ));
+        double reach = 1.0e4 * Max(size, 1000.0 * Math.Sqrt(_edgeSqTol));
+        return reach * reach;
     }
 
     // Adds internal vertices to discrete polygon.
@@ -313,6 +336,17 @@ internal class MeshCurveTessellator : CurveTessellator
 
         midpar = (first + last) * 0.5;
         _curve.D0(midpar, out Point3D midP3d);
+
+        // Kerf: the edge is SameParameter, so the surface at its pcurve is where the edge is, to its tolerance. A surface
+        // damaged to 1e300 beside an edge that isn't is nowhere near it, and splitting can't close the gap: each segment
+        // went 10 levels down, 44,000 points on an edge of a loft, which its other face then had to mesh for minutes. The
+        // face is marked, to be refused when it's meshed, and the edge keeps the points it has (decision 26602)
+        if (midP3dFromSurf.SquareDistanceTo(midP3d) > _squareReach)
+        {
+            _splitFace!.MarkEdgesOffSurface();
+            return;
+        }
+
         _discretTool.AddPoint(midP3d, midpar, false);
         _parameters.Budget?.Check(_discretTool.PointCount);
         if ((_discretTool.PointCount & 63) == 0)

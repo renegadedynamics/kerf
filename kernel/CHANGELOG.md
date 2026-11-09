@@ -5,6 +5,10 @@ version may break the API.
 
 ## Unreleased
 
+- **A mesh of a face whose surface is damaged far from its edges fails at once:** `Mesh` returns
+  `meshing.faces-refused`, carrying the other faces, as soon as an edge finds the face's surface more than ten thousand
+  times the edge's size away from it, where two lofts with a surface pole of 1e300 took 2 to 5 minutes and a gigabyte
+  before they were refused (under a second and 23 MB now). Sound shapes mesh as before (decision 26602).
 - **Notes and sheets in drawings** (unit 13F2): `DrawingNote` puts text on a `LineDrawing` (`WithNotes`), in any font,
   at a size, alignment and rotation; `Svg` writes notes as filled outlines by default or as `<text>` with
   `SvgOptions.TextOutput`. `Sheet` lays views of a part out on ISO A0 to A10, US or ANSI C to E paper with a border and a

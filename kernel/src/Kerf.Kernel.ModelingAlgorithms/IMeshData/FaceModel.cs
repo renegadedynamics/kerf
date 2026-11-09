@@ -48,6 +48,18 @@ internal abstract class FaceModel : TessellatedShapeModel, IStatusOwnerModel
     /// </summary>
     internal Triangulation? MadeTriangulation { get; set; }
 
+    private int _edgesOffSurface;
+
+    /// <summary>
+    /// Kerf: whether an edge's tessellation found the face's surface, where its pcurve puts the edge, out of all
+    /// proportion to the edge (decision 26602): a surface damaged to 1e300 beside an edge that isn't. Set from the edges'
+    /// tessellations, which may run in parallel, and read when the face is meshed, after them.
+    /// </summary>
+    internal bool EdgesOffSurface => Volatile.Read(ref _edgesOffSurface) != 0;
+
+    /// <summary>Kerf: marks that an edge's tessellation found the surface out of proportion to it.</summary>
+    internal void MarkEdgesOffSurface() => Volatile.Write(ref _edgesOffSurface, 1);
+
     /// <summary>Whether the face's discrete model is valid.</summary>
     public bool IsValid
     {

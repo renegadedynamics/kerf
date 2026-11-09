@@ -62,6 +62,31 @@ public class DamagedFileTests
         Assert.True(rest.TriangleCount > 0);
     }
 
+    // Lofts whose surface has a pole damaged to 1e300 beside an edge that isn't (decision 26602): the edges between that
+    // face and the next were split 10 levels down on every segment, to 44,000 points, as the surface never came near
+    // them. The damaged face walked its frontier for 25 s before it was refused, and the next face meshed those points
+    // for 270 s, 1 GB allocated (a loaded machine); now the edges find the surface out of proportion to them, and the
+    // face is refused before it's meshed: under a second, 23 MB
+    [Theory]
+    [InlineData("846-loft.brep")]
+    [InlineData("1822-loft.brep")]
+    [InlineData("78-loft.brep")]
+    public void A_mesh_of_a_loft_whose_surface_is_damaged_to_1e300_beside_its_edges_is_refused_at_once(string file)
+    {
+        using Stream resource = typeof(DamagedFileTests).Assembly.GetManifestResourceStream("DamagedFiles." + file)!;
+        Result<Shape> read = Brep.Read(resource);
+        Assert.True(read.IsSuccess);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+
+        Result<ShapeMesh> mesh = read.Value.Mesh(new MeshOptions { Parallel = false });
+
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, 100_000_000);
+        Assert.False(mesh.IsSuccess);
+        Assert.Equal(Mesher.FacesRefused, mesh.Error!.Code);
+        Assert.True(mesh.TryGetInvalid(out ShapeMesh? rest));
+        Assert.True(rest.TriangleCount > 0);
+    }
+
     // A loft damaged to 1e300: its frontier's walks went on for hours and couldn't be cancelled (decision 1944)
     [Fact]
     public async Task A_mesh_of_a_loft_damaged_to_1e300_can_be_stopped()

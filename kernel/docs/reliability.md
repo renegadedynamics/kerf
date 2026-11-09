@@ -282,13 +282,24 @@ Of those read, 13 could spin or ran for minutes, and are bounded: the walk and t
 
 **The edge-order cases** (decision 1946): as decision 1738 left them.
 
+## 4e. The lofts damaged to 1e300 (13J, decision 26602)
+
+Section 4d left two lofts, a pole of a side's surface set to 1e300, running out of a 1.5 GB heap. Since decision 1955 sweeps deleted triangles' circles from their cells they no longer do, but they were refused only after 2 to 5 minutes and a gigabyte. **Where it went, measured face by face:** the edges between the damaged side and its neighbour were split against the damaged surface, which is nowhere near them, every segment 10 levels down: 44,000 points. The damaged face walked its frontier for 25 s before section 4d's bound refused it; its sound neighbour, given those 44,000 points on its boundary, meshed them for 267 s with 205 million circles in cells. **Now** an edge that finds its surface more than ten thousand times its own size away marks the face, which is refused before it's meshed.
+
+| | Before | Now |
+|---|---|---|
+| The two lofts, and section 4d's loft 78 | 117 to 295 s, about 1 GB allocated | 0.3 to 0.9 s, 23 MB |
+| The corpus's meshes and lofts (`mesh/`, `bugs/mesh/`, `de_mesh/`, `hlr/poly_hlr/`, `thrusection/`, `offset/`) | | No status changed; 720 meshes of its lofts, all done; the farthest sound edge 17.7 times its size from its surface |
+| 750 Bento-style lofts, 1,500 meshes | | All done |
+| The sweep's 752 BREP files | | 17 refused at once, each invalid by the check: 6 refused before too, 7 ran on for minutes or out of triangles, 4 meshed a face its edges don't bound |
+
 ## 5. What's left
 
 - **For unit 11Q:** writing a large solid to STEP spends about 85% of its time in shape processing, nearly all of it `SplitCommonVertexFixer` and the check. That fixer goes over all pairs of a face's wires and makes an `ExtendWireData` for each pair, so a face of 3,600 holes costs seconds, to find vertices shared between wires, which it could do with one map. From one trace of `write-plate 60`, 6.3 s.
 - **Bento's line** in `ModelFunctions.Run`. Nothing above about cells helps until then.
 - **Island 1:** radius 500 is better and not done, and radii of 0.05 and under are up to 0.79% out near a tolerance's offset (section 4c).
 - **Fillets that fail slowly,** if anyone wants them to fail quickly. A question below.
-- **About 480 `while` and `do` loops not read** (section 4d), most in the intersection walkers and HLR. **A mesh of a face of tens of thousands of nodes damaged to 1e300** still reaches 3.7 GB before it's refused, as the circles of deleted triangles stay in their cells until a search meets them (section 4d); it can be cancelled.
+- **About 480 `while` and `do` loops not read** (section 4d), most in the intersection walkers and HLR. The mesh of a face damaged to 1e300 that section 4d left is refused at once (section 4e).
 - **An unknown stack overflow** in code not walked here can still end the process. The tests cover what could be found by building deep input, not every recursion.
 
 **Tested on:** Reliability 35, Foundation 2,533, ModelingData 3,338, PublicApi 400, DataExchange 348, ModelingAlgorithms 5,712 (9 skipped), DrawLite 737, Kerf.Modeling 2,097, all passing; `KERF_CORPUS_FULL=1` on the fillet, Boolean, STEP, STEP-CAF, offset and hidden-line corpus classes, 23 tests passing in 18 minutes. The full corpus wasn't run.
