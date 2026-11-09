@@ -163,6 +163,38 @@ public static class Svg
         }
     }
 
+    /// <summary>
+    /// <see cref="Write"/> with its output written asynchronously: the SVG is made in memory, synchronously, on the
+    /// caller's thread, then written to the stream without blocking a thread, and the stream flushed. The same bytes and
+    /// result as the synchronous form.
+    /// </summary>
+    /// <returns>Success, or a failure (<see cref="WriteFailed"/>) if the stream couldn't be written.</returns>
+    /// <exception cref="ArgumentNullException">The drawing or the stream is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(LineDrawing drawing, Stream stream, SvgOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(drawing);
+        return WriteText();
+
+        async Task<Result> WriteText()
+        {
+            CancellationToken effective = Cancellation.Effective(cancellationToken);
+            effective.ThrowIfCancellationRequested();
+            byte[] bytes = new UTF8Encoding(false).GetBytes(WriteToString(drawing, options, cancellationToken));
+            try
+            {
+                await stream.WriteAsync(bytes, effective).ConfigureAwait(false);
+                await stream.FlushAsync(effective).ConfigureAwait(false);
+                return Result.Success();
+            }
+            catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
+            {
+                return Result.Failure(Diagnostic.Error(WriteFailed, $"The SVG couldn't be written: {FailureDiagnostics.PublicText(e)}"));
+            }
+        }
+    }
+
     /// <summary>The drawing as SVG text.</summary>
     /// <exception cref="ArgumentNullException">The drawing is null.</exception>
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>

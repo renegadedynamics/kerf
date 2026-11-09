@@ -5,6 +5,34 @@ version may break the API.
 
 ## Unreleased
 
+- **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
+  too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
+  refused them; beside a concave arc it still refuses, saying why (decision 2048).
+- **`TightCorners.Collapse` builds on drafted sides** (planes and cones, as a draft or a tapered extrusion makes them), all
+  drafted by one angle, the length down a side measured along its slope as ChFi3d measures it, where it refused any side
+  not square to the face (decision 2049).
+- **`TightCorners.Collapse` builds corners that are B-splines, ellipses or Béziers** where the corner collapsing swallows
+  them whole, exactly, as a cone from its point; one it would only swallow in part, or that bends less tightly than the
+  chamfer is long, is refused, saying why, as its inset isn't a B-spline (decision 2050).
+- **`FilletSizeLimit` and `ChamferSizeLimit`** give a fillet's or chamfer's proved limit with the shape's tolerance about
+  it, as a `SizeLimit`; `FilletLimit` and `ChamferLimit` are its value, as before (decision 2047).
+- **Rendering and PNG writing are lighter** (unit 14A): a render keeps only a band of its supersampled samples at a
+  time (an 1800 × 1100 picture supersampled twice allocated 63 MB, now about 8), and `Png.Encode` filters and
+  compresses sixteen bytes at a time, in about 40% of the time. The same pixels and the same PNG bytes (decisions 2051
+  and 2052).
+- **A sphere's and a torus's meshes keep to the deflection at a relative deflection too** (`MeshOptions.Relative`): they kept OCCT's meshes, up to 5.5 times out on small fillet tori and twice on whole spheres, silently. Now within the deflection relative mode works out for each face, with 3.5% more triangles over the survey, all on spheres and tori, but for some small fillet tori, up to 1.14 times out beside a long boundary edge (decision 2057); meshes at an absolute deflection, and other kinds of surface, are the same to the byte (decision 2056).
+- **A mesh of a face whose surface is damaged far from its edges fails at once:** `Mesh` returns
+  `meshing.faces-refused`, carrying the other faces, as soon as an edge finds the face's surface more than ten thousand
+  times the edge's size away from it, where two lofts with a surface pole of 1e300 took 2 to 5 minutes and a gigabyte
+  before they were refused (under a second and 23 MB now). Sound shapes mesh as before (decision 2060).
+- **Async reading and writing** (unit 14G): `Brep`, `Step`, `Stl` and `Gltf` have `ReadAsync` and `WriteAsync`,
+  `ThreeMf` and `Obj` `WriteAsync`, `Svg` and `Png` `WriteAsync`, and `Font` `ReadAsync` and `ReadCollectionAsync`,
+  each with a `CancellationToken`, returning a `Task<Result>` or `Task<Result<T>>`. Only the I/O is asynchronous: a
+  reader reads its stream (or `Step.ReadAsync(path)` its file) into memory, up to the limit, then parses it on the
+  thread the read finished on; a writer builds its output in memory on the calling thread, then writes and flushes it,
+  and writes nothing on a failure. The same results and bytes as the synchronous forms, for the price of holding the
+  file's bytes in memory (22 to 26 MB more allocated reading a 22 MB STEP file, beside 2.3 GB). Arguments are checked
+  before the task (decision 2061).
 - **A Boolean whose result nearly touched is checked at points, on by default** (decision 1924, unit 13K): within the rules
   of volume, a result with a tolerance over 1e-5 and at most 64 faces is classified at 64 points against its inputs, and
   two that disagree, well inside or outside all three, make it a failure with `result.invalid`, carrying the shape. A fuse

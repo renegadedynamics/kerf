@@ -145,7 +145,7 @@ public static class Exporters3D
             var written = Step.Write(StepTree(toExport), text, writeOptions, cancellationToken: cancellationToken);
             if (written.IsFailure)
                 return written;
-            stream.Write(StepHeader.WithFileName(text.ToArray(), toExport is ModelShape { Label.Length: > 0 } labelled ? labelled.Label : null, options.Timestamp, "Kerf.Modeling"));
+            StepHeader.Write(stream, text.GetBuffer().AsSpan(0, (int)text.Length), toExport is ModelShape { Label.Length: > 0 } labelled ? labelled.Label : null, options.Timestamp, "Kerf.Modeling");
             return written;
         });
     }
@@ -226,6 +226,119 @@ public static class Exporters3D
     /// <summary>Writes a shape or assembly to a 3MF file.</summary>
     public static Result Export3mf(IShape toExport, string filePath, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
         => ToFile(filePath, s => Export3mf(toExport, s, options, cancellationToken));
+
+    /// <summary>
+    /// <see cref="ExportBrep(IShape, Stream)"/> with the data written asynchronously: the BREP is made in memory,
+    /// synchronously, then written to the stream without blocking a thread, and the stream flushed. The same bytes;
+    /// nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportBrepAsync(IShape toExport, Stream stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        return AsyncIo.ToStreamAsync(stream, s => ExportBrep(toExport, s), cancellationToken);
+    }
+
+    /// <summary>Writes a shape to a BREP file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> ExportBrepAsync(IShape toExport, string filePath, CancellationToken cancellationToken = default)
+        => AsyncIo.ToFileAsync(filePath, s => ExportBrep(toExport, s), cancellationToken);
+
+    /// <summary>
+    /// <see cref="ExportStep(IShape, Stream, StepExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the STEP is made in memory, synchronously, then written to the stream without blocking a thread,
+    /// and the stream flushed. The same bytes (given a <see cref="StepExportOptions.Timestamp"/>; the time of writing
+    /// otherwise); nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportStepAsync(IShape toExport, Stream stream, StepExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ExchangeUnits.LengthUnit((options ?? StepExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToStreamAsync(stream, s => ExportStep(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>Writes a shape to a STEP file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> ExportStepAsync(IShape toExport, string filePath, StepExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ExchangeUnits.LengthUnit((options ?? StepExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToFileAsync(filePath, s => ExportStep(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="ExportStl(IShape, Stream, StlExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the shape is meshed and the STL made in memory, synchronously, then written to the stream without
+    /// blocking a thread, and the stream flushed. The same bytes; nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportStlAsync(IShape toExport, Stream stream, StlExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        return AsyncIo.ToStreamAsync(stream, s => ExportStl(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>Writes a shape's mesh to an STL file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> ExportStlAsync(IShape toExport, string filePath, StlExportOptions? options = null, CancellationToken cancellationToken = default)
+        => AsyncIo.ToFileAsync(filePath, s => ExportStl(toExport, s, options, cancellationToken), cancellationToken);
+
+    /// <summary>
+    /// <see cref="ExportGltf(IShape, Stream, GltfExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the shape is meshed and the glTF made in memory, synchronously, then written to the stream
+    /// without blocking a thread, and the stream flushed. The same bytes; nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> ExportGltfAsync(IShape toExport, Stream stream, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ExchangeUnits.LengthUnit((options ?? GltfExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToStreamAsync(stream, s => ExportGltf(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// Writes a shape or assembly to a glTF 2.0 file asynchronously (see the stream form): binary, or JSON with its
+    /// buffer in a <c>.bin</c> file of the same name beside it, written after it. A missing folder throws at once.
+    /// </summary>
+    public static Task<Result> ExportGltfAsync(IShape toExport, string filePath, GltfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+        options ??= GltfExportOptions.Default;
+        var writeOptions = GltfOptions(options);
+        if (options.Binary)
+            return AsyncIo.ToFileAsync(filePath, s => ExportGltf(toExport, s, options, cancellationToken), cancellationToken);
+        AsyncIo.CheckFolder(filePath);
+        var binPath = Path.ChangeExtension(filePath, ".bin");
+        return WriteFiles();
+
+        async Task<Result> WriteFiles()
+        {
+            var token = AsyncIo.Effective(cancellationToken);
+            token.ThrowIfCancellationRequested();
+            using var json = new MemoryStream();
+            using var bin = new MemoryStream();
+            var done = Export(toExport, () => Gltf.Write(MeshTree(toExport), json, bin, Path.GetFileName(binPath), writeOptions, cancellationToken));
+            if (done.IsFailure)
+                return done;
+            if (await AsyncIo.WriteFileAsync(filePath, json, token).ConfigureAwait(false) is { } jsonFailed)
+                return jsonFailed;
+            if (bin.Length == 0)
+                return done;
+            return await AsyncIo.WriteFileAsync(binPath, bin, token).ConfigureAwait(false) ?? done;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="Export3mf(IShape, Stream, ThreeMfExportOptions?, CancellationToken)"/> with the data written
+    /// asynchronously: the shape is meshed and the 3MF made in memory, synchronously, then written to the stream without
+    /// blocking a thread, and the stream flushed. The same bytes; nothing is written on a failure.
+    /// </summary>
+    public static Task<Result> Export3mfAsync(IShape toExport, Stream stream, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        ExchangeUnits.LengthUnit((options ?? ThreeMfExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToStreamAsync(stream, s => Export3mf(toExport, s, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>Writes a shape or assembly to a 3MF file asynchronously (see the stream form). A missing folder throws at once.</summary>
+    public static Task<Result> Export3mfAsync(IShape toExport, string filePath, ThreeMfExportOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        ExchangeUnits.LengthUnit((options ?? ThreeMfExportOptions.Default).Unit, "unit");
+        return AsyncIo.ToFileAsync(filePath, s => Export3mf(toExport, s, options, cancellationToken), cancellationToken);
+    }
 
     // An export's failures as its result: nothing to write, a failure carried up from the kernel, or a stream or
     // file that can't be written
@@ -315,35 +428,49 @@ internal static class StepHeader
     /// </summary>
     internal static byte[] WithFileName(byte[] step, string? name, string? timestamp, string? originatingSystem)
     {
-        // Part 21 text is 8-bit; Latin-1 maps each byte to one char and back, so nothing else changes
-        var text = Encoding.Latin1.GetString(step);
-        int start = text.IndexOf("FILE_NAME(", StringComparison.Ordinal);
-        int data = text.IndexOf("DATA;", StringComparison.Ordinal);
-        if (start < 0 || (data >= 0 && start > data))
-            return step;
-        var spans = Arguments(text, start + "FILE_NAME(".Length);
+        using var output = new MemoryStream(step.Length + 256);
+        Write(output, step, name, timestamp, originatingSystem);
+        return output.ToArray();
+    }
+
+    /// <summary>
+    /// Writes the STEP text to the stream with FILE_NAME's name, time stamp and originating system replaced, as
+    /// <see cref="WithFileName"/>. Only the record is rewritten: the text before and after it is written as it is, so a
+    /// large file isn't copied (unit 14A: as a string and back it was three to five copies of each file).
+    /// </summary>
+    internal static void Write(Stream output, ReadOnlySpan<byte> step, string? name, string? timestamp, string? originatingSystem)
+    {
+        // Part 21 text is 8-bit, a byte to a character (Latin-1)
+        int start = step.IndexOf("FILE_NAME("u8);
+        int data = step.IndexOf("DATA;"u8);
+        List<(int From, int To)> spans = start < 0 || (data >= 0 && start > data) ? [] : Arguments(step, start + "FILE_NAME(".Length);
         if (spans.Count != 7)
-            return step;
-        var replacements = new (int Index, string? Value)[] { (5, originatingSystem), (1, timestamp), (0, name) };
-        foreach (var (index, value) in replacements)
+        {
+            output.Write(step);
+            return;
+        }
+        int written = 0;
+        foreach (var (index, value) in new (int Index, string? Value)[] { (0, name), (1, timestamp), (5, originatingSystem) })
         {
             if (value is null)
                 continue;
             var (from, to) = spans[index];
-            text = string.Concat(text.AsSpan(0, from), Encode(value), text.AsSpan(to));
+            output.Write(step[written..from]);
+            output.Write(Encoding.Latin1.GetBytes(Encode(value)));
+            written = to;
         }
-        return Encoding.Latin1.GetBytes(text);
+        output.Write(step[written..]);
     }
 
     // The spans of the record's top-level arguments, trimmed of the white space around them
-    private static List<(int From, int To)> Arguments(string text, int i)
+    private static List<(int From, int To)> Arguments(ReadOnlySpan<byte> text, int i)
     {
         var spans = new List<(int, int)>();
         int depth = 0, argument = i;
         bool quoted = false;
         for (; i < text.Length; i++)
         {
-            char c = text[i];
+            char c = (char)text[i];
             if (quoted)
             {
                 if (c == '\'')
@@ -372,11 +499,11 @@ internal static class StepHeader
         return [];
     }
 
-    private static (int, int) Trimmed(string text, int from, int to)
+    private static (int, int) Trimmed(ReadOnlySpan<byte> text, int from, int to)
     {
-        while (from < to && char.IsWhiteSpace(text[from]))
+        while (from < to && char.IsWhiteSpace((char)text[from]))
             from++;
-        while (to > from && char.IsWhiteSpace(text[to - 1]))
+        while (to > from && char.IsWhiteSpace((char)text[to - 1]))
             to--;
         return (from, to);
     }

@@ -357,6 +357,8 @@ public sealed class Kerf.Modeling.ExportDxf : Export2D
   public ExportDxf AddShape<T>(IEnumerable<T> shapes, string layer = "")
   public Result Write(Stream stream, CancellationToken cancellationToken = default)
   public Result Write(string path, CancellationToken cancellationToken = default)
+  public Task<Result> WriteAsync(Stream stream, CancellationToken cancellationToken = default)
+  public Task<Result> WriteAsync(string path, CancellationToken cancellationToken = default)
   public string WriteToString(CancellationToken cancellationToken = default)
 public static class Kerf.Modeling.Exporters3D
   public static Result Export3mf(IShape toExport, Stream stream, ThreeMfExportOptions? options = default, CancellationToken cancellationToken = default)
@@ -369,6 +371,16 @@ public static class Kerf.Modeling.Exporters3D
   public static Result ExportStep(IShape toExport, string filePath, StepExportOptions? options = default, CancellationToken cancellationToken = default)
   public static Result ExportStl(IShape toExport, Stream stream, StlExportOptions? options = default, CancellationToken cancellationToken = default)
   public static Result ExportStl(IShape toExport, string filePath, StlExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> Export3mfAsync(IShape toExport, Stream stream, ThreeMfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> Export3mfAsync(IShape toExport, string filePath, ThreeMfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportBrepAsync(IShape toExport, Stream stream, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportBrepAsync(IShape toExport, string filePath, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportGltfAsync(IShape toExport, Stream stream, GltfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportGltfAsync(IShape toExport, string filePath, GltfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportStepAsync(IShape toExport, Stream stream, StepExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportStepAsync(IShape toExport, string filePath, StepExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportStlAsync(IShape toExport, Stream stream, StlExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> ExportStlAsync(IShape toExport, string filePath, StlExportOptions? options = default, CancellationToken cancellationToken = default)
 public enum Kerf.Modeling.Extrinsic
   XYZ = 0
   XZY = 1
@@ -520,6 +532,14 @@ public static class Kerf.Modeling.Importers
   public static Result<ModelShape> ImportStep(string fileName, ImportLimits? limits = default, CancellationToken cancellationToken = default)
   public static Result<Shape> ImportBrep(Stream stream, ImportLimits? limits = default, CancellationToken cancellationToken = default)
   public static Result<Shape> ImportBrep(string fileName, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<Face>> ImportStlAsync(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<Face>> ImportStlAsync(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<ModelShape>> ImportGltfAsync(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<ModelShape>> ImportGltfAsync(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<ModelShape>> ImportStepAsync(Stream stream, ImportLimits? limits = default, string name = "STEP data", CancellationToken cancellationToken = default)
+  public static Task<Result<ModelShape>> ImportStepAsync(string fileName, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<Shape>> ImportBrepAsync(Stream stream, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<Shape>> ImportBrepAsync(string fileName, ImportLimits? limits = default, CancellationToken cancellationToken = default)
 public class Kerf.Modeling.IntersectingLine : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
   public IntersectingLine(Point3D start, Vector3D direction, Shape other)
 public enum Kerf.Modeling.Intrinsic

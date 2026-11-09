@@ -5,6 +5,32 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`TightCorners.Collapse` builds more of what it refused:** a tight arc beside a convex arc, corners of several arcs
+  together, sides drafted by one angle, and corners that are B-splines, ellipses or Béziers where the collapse swallows
+  them whole; a tight arc beside a concave arc, a curve swallowed only in part, and sides drafted by different angles
+  are still refused, saying why (kernel decisions 2048 to 2050; the guide's section 5).
+- **`MaxChamfer` and `MaxFillet` give the proved limit, less twice the shape's tolerance, where the limit itself can't be
+  built and that can:** 1.6999998 for the guide's rounded box, whose corners close to a point at 1.7, where the search
+  gave 1.594, and 9.9999998 for a fillet using up a face beside a slanted end, where it gave 9.944. Where the limit
+  builds, or none is proved, the answers are as they were (kernel decision 2047).
+- **STEP export copies less:** the header's FILE_NAME is rewritten in place, where the whole file was turned into a
+  string and back; 13% to 18% fewer bytes on an enclosure's parts, the same files (kernel decision 2053).
+- **A mesh at relative tolerances** (`MeshTolerances` with `Relative`) keeps spheres and tori within the deflection worked out for each face, where they could be several times out; some small fillet tori stay up to 1.14 times out beside a long boundary edge (kernel decisions 2056 and 2057).
+- **A sketch object narrower than the tolerance fails, carrying its face,** where it was a valid face of no area returned
+  as a success: `Ellipse(1, 1e-12)`, a `Trapezoid` or `Rectangle` 1e-8 high, `Circle(1e-12)`. A face whose mean width
+  (twice its area over its perimeter) is under 1e-7 fails with `modeling.object-failed`, as a `ModelingException` from
+  the constructor or a failure from `Operations.Make…` (`TryGetInvalid` gives the face). From 2e-7 they are valid as
+  before (kernel decision 2059).
+- **Async import and export** (unit 14G): `Importers.ImportBrepAsync`, `ImportStepAsync`, `ImportStlAsync` and
+  `ImportGltfAsync`, `Exporters3D.ExportBrepAsync`, `ExportStepAsync`, `ExportStlAsync`, `ExportGltfAsync` and
+  `Export3mfAsync`, by stream and by file, and `ExportDxf.WriteAsync`: the data read into memory asynchronously and
+  then parsed, or made in memory and then written asynchronously, with the same results and bytes as the synchronous
+  forms. A missing file or folder throws before the task starts. There are no async modelling operations: they're CPU
+  work, run on the threads the caller chooses (kernel decision 2061).
+- **The guide's section 9, "Running operations in parallel":** shapes and parts shared between threads, operations on
+  many threads at once giving what they give on one (a new test builds, meshes, draws and exports parts on several
+  threads against one), and how `Cancellation.Use`, `Warnings.Capture` and `SkipClean` follow threads and `await`s,
+  with a `Parallel.ForEach` and a `Task.WhenAll` example. Its later sections are now 10 and 11 (kernel decision 2062).
 - **A Boolean whose result nearly touched is checked at points** (the kernel's decision 26104): a result with a tolerance
   over 1e-5 and at most 64 faces that points prove wrong now throws, as a wrong volume does; a fuse of cylinders of radius
   5000 nearly crossing, 16.5% short, was a success. Checking results also costs less: ordinary parts' Booleans allocate

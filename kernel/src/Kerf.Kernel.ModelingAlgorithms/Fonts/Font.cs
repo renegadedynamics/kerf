@@ -2,6 +2,7 @@
 
 using System.Collections.Immutable;
 using Kerf.Engine.Fonts;
+using Kerf.Engine.Foundation;
 
 namespace Kerf.Fonts;
 
@@ -274,6 +275,32 @@ public sealed class Font
 
             return Result<IReadOnlyList<Font>>.Success(fonts.MoveToImmutable());
         });
+    }
+
+    /// <summary>
+    /// <see cref="Read"/> with its input read asynchronously: the stream's bytes are read into memory without blocking a
+    /// thread (up to <see cref="FontReadLimits.MaxBytes"/> and one more, so a file past the limit is refused as the
+    /// synchronous form refuses it), then read synchronously. The same result as the synchronous form.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="faceIndex"/> is negative.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result<Font>> ReadAsync(Stream stream, int faceIndex = 0, FontReadLimits? limits = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(faceIndex);
+        limits ??= FontReadLimits.Default;
+        return MemorySpool.ReadThenAsync(stream, limits.MaxBytes, data => Read(data, faceIndex, limits, cancellationToken), cancellationToken);
+    }
+
+    /// <summary><see cref="ReadCollection"/> with its input read asynchronously, as <see cref="ReadAsync"/> reads it.</summary>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result<IReadOnlyList<Font>>> ReadCollectionAsync(Stream stream, FontReadLimits? limits = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        limits ??= FontReadLimits.Default;
+        return MemorySpool.ReadThenAsync(stream, limits.MaxBytes, data => ReadCollection(data, limits, cancellationToken), cancellationToken);
     }
 
     /// <summary>The font at <paramref name="faceIndex"/> of a file's bytes, already read.</summary>

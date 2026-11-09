@@ -180,6 +180,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `LineType.HIDDEN`, `LineType.ISO_DASH`, … | `LineType.Hidden`, `LineType.IsoDash`, …; the DXF name from `Export2D.LineTypeDefinition(type).Name` |
 | `ColorIndex.RED`, … `LIGHT_GRAY` | `ColorIndex.Red`, … `LightGray` |
 | `Export2D.LINETYPE_DEFS`, `LTYPE_SCALE`, `DEFAULT_LINE_WEIGHT`, `PARAMETRIC_TOLERANCE` | `Export2D.LineTypeDefinition(type)`, `LineTypeScale(unit)`, `DefaultLineWeight`, `ParametricTolerance` |
+| (none: async I/O) | `Importers.ImportBrepAsync`, `ImportStepAsync`, `ImportStlAsync`, `ImportGltfAsync`, `Exporters3D.ExportBrepAsync`, `ExportStepAsync`, `ExportStlAsync`, `ExportGltfAsync`, `Export3mfAsync` and `ExportDxf.WriteAsync`, by stream or path, with a token: the file read into memory asynchronously, then parsed, or made in memory, then written asynchronously (unit 14G; guide.md section 8). The modelling operations have no async forms (guide.md section 9) |
 | `ValueError` from a reader | `ArgumentException`; past an `ImportLimits` limit, `InvalidDataException` |
 | `FileNotFoundError` (no file, or `export_stl`'s missing folder) | `FileNotFoundException`, `DirectoryNotFoundException` (every exporter) |
 

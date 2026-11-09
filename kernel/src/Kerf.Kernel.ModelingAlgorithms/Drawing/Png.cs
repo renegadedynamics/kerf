@@ -4,6 +4,7 @@ using Kerf.Engine.Foundation;
 using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 using System.Text;
 
 namespace Kerf.Drawing;
@@ -56,6 +57,38 @@ public static class Png
         catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
         {
             return Result.Failure(Diagnostic.Error(WriteFailed, $"The PNG couldn't be written: {FailureDiagnostics.PublicText(e)}"));
+        }
+    }
+
+    /// <summary>
+    /// <see cref="Write"/> with its output written asynchronously: the PNG is encoded in memory, synchronously, on the
+    /// caller's thread, then written to the stream without blocking a thread, and the stream flushed. The same bytes and
+    /// result as the synchronous form.
+    /// </summary>
+    /// <returns>Success, or a failure (<see cref="WriteFailed"/>) if the stream couldn't be written.</returns>
+    /// <exception cref="ArgumentNullException">The picture or the stream is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(RgbaImage image, Stream stream, PngOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(image);
+        return WriteBytes();
+
+        async Task<Result> WriteBytes()
+        {
+            CancellationToken effective = Cancellation.Effective(cancellationToken);
+            effective.ThrowIfCancellationRequested();
+            byte[] bytes = Encode(image, options);
+            try
+            {
+                await stream.WriteAsync(bytes, effective).ConfigureAwait(false);
+                await stream.FlushAsync(effective).ConfigureAwait(false);
+                return Result.Success();
+            }
+            catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
+            {
+                return Result.Failure(Diagnostic.Error(WriteFailed, $"The PNG couldn't be written: {FailureDiagnostics.PublicText(e)}"));
+            }
         }
     }
 
@@ -150,12 +183,57 @@ public static class Png
         return value < 128 ? value : 256 - value;
     }
 
+    // The same, summed over sixteen filtered bytes: a byte's distance from zero is the lesser of it and its negation
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint Cost(Vector128<byte> filtered)
+    {
+        (Vector128<ushort> low, Vector128<ushort> high) = Vector128.Widen(Vector128.Min(filtered, Vector128<byte>.Zero - filtered));
+        return Vector128.Sum(low + high);
+    }
+
+    // The rows are filtered sixteen bytes at a time (unit 14A: filtering and compressing were a fifth of the time the blade
+    // bumper's renders took). Each predictor is the one byte by byte below, and a cost is checked against its limit every
+    // sixteen bytes: a filter's cost is the whole row's when that's under the limit, and at least the limit when it isn't,
+    // as before, so the same filter wins every row
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<byte> At(ReadOnlySpan<byte> bytes, int i) => Vector128.Create(bytes.Slice(i, 16));
+
+    // The average of the left (a) and up (b) bytes, rounded down
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<byte> Average(Vector128<byte> a, Vector128<byte> b) => (a & b) + Vector128.ShiftRightLogical(a ^ b, 1);
+
+    // Paeth's predictor of the left (a), up (b) and upper left (c) bytes
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<byte> Paeth(Vector128<byte> a, Vector128<byte> b, Vector128<byte> c)
+    {
+        (Vector128<ushort> aLow, Vector128<ushort> aHigh) = Vector128.Widen(a);
+        (Vector128<ushort> bLow, Vector128<ushort> bHigh) = Vector128.Widen(b);
+        (Vector128<ushort> cLow, Vector128<ushort> cHigh) = Vector128.Widen(c);
+        return Vector128.Narrow(Paeth(aLow.AsInt16(), bLow.AsInt16(), cLow.AsInt16()), Paeth(aHigh.AsInt16(), bHigh.AsInt16(), cHigh.AsInt16()));
+    }
+
+    // With p = a + b - c: |p - a| = |b - c|, |p - b| = |a - c| and |p - c| = |a + b - 2c|
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<ushort> Paeth(Vector128<short> a, Vector128<short> b, Vector128<short> c)
+    {
+        Vector128<short> pa = Vector128.Abs(b - c), pb = Vector128.Abs(a - c), pc = Vector128.Abs(a + b - c - c);
+        Vector128<short> takeA = Vector128.LessThanOrEqual(pa, pb) & Vector128.LessThanOrEqual(pa, pc);
+        Vector128<short> takeB = Vector128.LessThanOrEqual(pb, pc);
+        return Vector128.ConditionalSelect(takeA, a, Vector128.ConditionalSelect(takeB, b, c)).AsUInt16();
+    }
+
     private static long CostOfNone(ReadOnlySpan<byte> row)
     {
         long cost = 0;
-        foreach (byte value in row)
+        int i = 0;
+        for (; i + 16 <= row.Length; i += 16)
         {
-            cost += Cost(value);
+            cost += Cost(At(row, i));
+        }
+
+        for (; i < row.Length; i++)
+        {
+            cost += Cost(row[i]);
         }
 
         return cost;
@@ -164,9 +242,20 @@ public static class Png
     private static long CostOfSub(ReadOnlySpan<byte> row, long limit)
     {
         long cost = 0;
-        for (int i = 0; i < row.Length && cost < limit; i++)
+        int i = 0;
+        for (; i < 4 && i < row.Length; i++)
         {
-            cost += Cost(row[i] - (i >= 4 ? row[i - 4] : 0));
+            cost += Cost(row[i]);
+        }
+
+        for (; i + 16 <= row.Length && cost < limit; i += 16)
+        {
+            cost += Cost(At(row, i) - At(row, i - 4));
+        }
+
+        for (; i < row.Length && cost < limit; i++)
+        {
+            cost += Cost(row[i] - row[i - 4]);
         }
 
         return cost;
@@ -175,7 +264,13 @@ public static class Png
     private static long CostOfUp(ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, long limit)
     {
         long cost = 0;
-        for (int i = 0; i < row.Length && cost < limit; i++)
+        int i = 0;
+        for (; i + 16 <= row.Length && cost < limit; i += 16)
+        {
+            cost += Cost(At(row, i) - At(up, i));
+        }
+
+        for (; i < row.Length && cost < limit; i++)
         {
             cost += Cost(row[i] - up[i]);
         }
@@ -186,9 +281,20 @@ public static class Png
     private static long CostOfAverage(ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, long limit)
     {
         long cost = 0;
-        for (int i = 0; i < row.Length && cost < limit; i++)
+        int i = 0;
+        for (; i < 4 && i < row.Length; i++)
         {
-            cost += Cost(row[i] - (((i >= 4 ? row[i - 4] : 0) + up[i]) >> 1));
+            cost += Cost(row[i] - (up[i] >> 1));
+        }
+
+        for (; i + 16 <= row.Length && cost < limit; i += 16)
+        {
+            cost += Cost(At(row, i) - Average(At(row, i - 4), At(up, i)));
+        }
+
+        for (; i < row.Length && cost < limit; i++)
+        {
+            cost += Cost(row[i] - ((row[i - 4] + up[i]) >> 1));
         }
 
         return cost;
@@ -197,9 +303,20 @@ public static class Png
     private static long CostOfPaeth(ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, long limit)
     {
         long cost = 0;
-        for (int i = 0; i < row.Length && cost < limit; i++)
+        int i = 0;
+        for (; i < 4 && i < row.Length; i++)
         {
-            cost += Cost(row[i] - (i >= 4 ? Paeth(row[i - 4], up[i], up[i - 4]) : Paeth(0, up[i], 0)));
+            cost += Cost(row[i] - Paeth(0, up[i], 0));
+        }
+
+        for (; i + 16 <= row.Length && cost < limit; i += 16)
+        {
+            cost += Cost(At(row, i) - Paeth(At(row, i - 4), At(up, i), At(up, i - 4)));
+        }
+
+        for (; i < row.Length && cost < limit; i++)
+        {
+            cost += Cost(row[i] - Paeth(row[i - 4], up[i], up[i - 4]));
         }
 
         return cost;
@@ -207,19 +324,43 @@ public static class Png
 
     private static void Apply(int filter, ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, Span<byte> target)
     {
-        for (int i = 0; i < row.Length; i++)
+        // The first pixel has no left neighbour: byte by byte, then sixteen at a time
+        int i = 0;
+        for (; i < 4 && i < row.Length; i++)
         {
-            int a = i >= 4 ? row[i - 4] : 0, b = up[i], c = i >= 4 ? up[i - 4] : 0;
-            int predictor = filter switch
-            {
-                0 => 0,
-                1 => a,
-                2 => b,
-                3 => (a + b) >> 1,
-                _ => Paeth(a, b, c),
-            };
-            target[i] = (byte)(row[i] - predictor);
+            target[i] = (byte)(row[i] - Predictor(filter, row, up, i));
         }
+
+        for (; i + 16 <= row.Length; i += 16)
+        {
+            Vector128<byte> predictor = filter switch
+            {
+                0 => Vector128<byte>.Zero,
+                1 => At(row, i - 4),
+                2 => At(up, i),
+                3 => Average(At(row, i - 4), At(up, i)),
+                _ => Paeth(At(row, i - 4), At(up, i), At(up, i - 4)),
+            };
+            (At(row, i) - predictor).CopyTo(target.Slice(i, 16));
+        }
+
+        for (; i < row.Length; i++)
+        {
+            target[i] = (byte)(row[i] - Predictor(filter, row, up, i));
+        }
+    }
+
+    private static int Predictor(int filter, ReadOnlySpan<byte> row, ReadOnlySpan<byte> up, int i)
+    {
+        int a = i >= 4 ? row[i - 4] : 0, b = up[i], c = i >= 4 ? up[i - 4] : 0;
+        return filter switch
+        {
+            0 => 0,
+            1 => a,
+            2 => b,
+            3 => (a + b) >> 1,
+            _ => Paeth(a, b, c),
+        };
     }
 
     private static int Paeth(int a, int b, int c)
@@ -298,12 +439,8 @@ public static class Png
                     {
                         if (data[candidate + bestLength] == data[pos + bestLength])
                         {
-                            int length = 0;
-                            while (length < maxLength && data[candidate + length] == data[pos + length])
-                            {
-                                length++;
-                            }
-
+                            // How far the bytes agree, compared many at a time; a candidate is before pos, so its bytes are there
+                            int length = data.AsSpan(candidate, maxLength).CommonPrefixLength(data.AsSpan(pos, maxLength));
                             if (length > bestLength)
                             {
                                 bestLength = length;
@@ -362,50 +499,80 @@ public static class Png
 
         private static void WriteLiteral(BitWriter bits, int literal) => WriteCode(bits, literal);
 
+        // The fixed Huffman table's codes, their bits reversed as they're written (least significant first), and their lengths;
+        // and each length's and each distance's code, found once rather than by a search for each match
+        private static readonly (int Code, int Bits)[] Codes = MakeCodes();
+        private static readonly byte[] LengthCodes = MakeCodes(LengthBase, MaxMatch);
+        private static readonly byte[] DistanceCodes = MakeCodes(DistanceBase, WindowSize);
+        private static readonly int[] ReversedDistanceCodes = [.. Enumerable.Range(0, DistanceBase.Length).Select(code => Reversed(code, 5))];
+
+        private static (int, int)[] MakeCodes()
+        {
+            var codes = new (int, int)[288];
+            for (int symbol = 0; symbol < codes.Length; symbol++)
+            {
+                (int code, int bits) = symbol < 144 ? (0x30 + symbol, 8) : symbol < 256 ? (0x190 + symbol - 144, 9)
+                    : symbol < 280 ? (symbol - 256, 7) : (0xC0 + symbol - 280, 8);
+                codes[symbol] = (Reversed(code, bits), bits);
+            }
+
+            return codes;
+        }
+
+        // For each value up to the largest, the index of the last base no larger than it
+        private static byte[] MakeCodes(int[] bases, int largest)
+        {
+            var codes = new byte[largest + 1];
+            for (int value = bases[0]; value <= largest; value++)
+            {
+                int code = bases.Length - 1;
+                while (bases[code] > value)
+                {
+                    code--;
+                }
+
+                codes[value] = (byte)code;
+            }
+
+            return codes;
+        }
+
+        private static int Reversed(int code, int count)
+        {
+            int reversed = 0;
+            for (int i = 0; i < count; i++)
+            {
+                reversed = (reversed << 1) | ((code >> i) & 1);
+            }
+
+            return reversed;
+        }
+
         // A literal or length code of the fixed Huffman table, most significant bit first
         private static void WriteCode(BitWriter bits, int symbol)
         {
-            if (symbol < 144)
-            {
-                bits.WriteReversed(0x30 + symbol, 8);
-            }
-            else if (symbol < 256)
-            {
-                bits.WriteReversed(0x190 + symbol - 144, 9);
-            }
-            else if (symbol < 280)
-            {
-                bits.WriteReversed(symbol - 256, 7);
-            }
-            else
-            {
-                bits.WriteReversed(0xC0 + symbol - 280, 8);
-            }
+            (int code, int count) = Codes[symbol];
+            bits.Write(code, count);
         }
 
         private static void WriteLength(BitWriter bits, int length)
         {
-            int code = LengthBase.Length - 1;
-            while (LengthBase[code] > length)
-            {
-                code--;
-            }
-
+            int code = LengthCodes[length];
             WriteCode(bits, 257 + code);
             bits.Write(length - LengthBase[code], LengthExtra[code]);
         }
 
         private static void WriteDistance(BitWriter bits, int distance)
         {
-            int code = DistanceBase.Length - 1;
-            while (DistanceBase[code] > distance)
-            {
-                code--;
-            }
-
-            bits.WriteReversed(code, 5);
+            int code = DistanceCodes[distance];
+            bits.Write(ReversedDistanceCodes[code], 5);
             bits.Write(distance - DistanceBase[code], DistanceExtra[code]);
         }
+
+        // Sixteen bytes at a time: over sixteen bytes x0 to x15, a grows by their sum and b by 16a + 16 x0 + 15 x1 + ... + x15,
+        // which is what adding them one by one gives; 5552 is a multiple of 16, so the sums are reduced where they were
+        private static readonly Vector128<ushort> FirstWeights = Vector128.Create((ushort)16, 15, 14, 13, 12, 11, 10, 9);
+        private static readonly Vector128<ushort> LastWeights = Vector128.Create((ushort)8, 7, 6, 5, 4, 3, 2, 1);
 
         private static uint Adler32(byte[] data)
         {
@@ -414,6 +581,13 @@ public static class Png
             while (i < data.Length)
             {
                 int end = Math.Min(data.Length, i + 5552);
+                for (; i + 16 <= end; i += 16)
+                {
+                    (Vector128<ushort> first, Vector128<ushort> last) = Vector128.Widen(Vector128.Create(data.AsSpan(i, 16)));
+                    b += 16 * a + Vector128.Sum(first * FirstWeights + last * LastWeights);
+                    a += Vector128.Sum(first + last);
+                }
+
                 for (; i < end; i++)
                 {
                     a += data[i];
@@ -448,17 +622,6 @@ public static class Png
                     _buffer >>= 8;
                     _count -= 8;
                 }
-            }
-
-            public void WriteReversed(int code, int count)
-            {
-                int reversed = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    reversed = (reversed << 1) | ((code >> i) & 1);
-                }
-
-                Write(reversed, count);
             }
 
             public void Align()

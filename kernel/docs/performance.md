@@ -1717,6 +1717,133 @@ In IL builds (project references) after 60 fuses, an earlier set of six: the bos
 
 **The boss is 1.3 to 1.4 times 0.3.0's time, over the bar, and named for the owner** (decision 2038). Its check is 4.6 MB and about 5 to 7 ms: the result's classifier, whose first point fills its trees (about 3 ms), and the 150 points inside the door, each classified once (about 4 ms). That is the proof decision 1937 asks for, as the volume can't tell a small part inside the door from one lost. Keeping a frozen solid's tree of edges and vertices with its TShape, as decision 2001 keeps its map, would let a result's tree serve the next Boolean's classifiers; a quicker classifier would do the rest; keeping `PointInTheFace`'s grid for the next point was tried, and saved 5% of a classification's bytes and no time. An order of asking decision 1881's grid was tried and left out (decision 2038): asking whichever input last ruled a point out took `buc60462_2`'s check from 132 to 226 MB, found by comparing the corpus's check times case by case. **The pattern** (decision 2038), each check counted on a small part against the door: decision 1924's check doesn't run (it was reverted); decision 1932's, a 4 × 4 face against the door, 81 points for a common and 162 for a cut, 4.6 and 5.5 MB beside a Boolean of 2.7 (0.4.0's 8.6 and 13.3); decision 1985's bends, 0.7 MB and 0.6 ms of a 5 MB chamfer, under the bar; decision 1866 on a cut of the bump that removes nothing, 392 points and 7.2 MB beside 6.5 (0.4.0's 26). Decision 1932's and 1866's checks cost more than their Booleans on this shape, as they did in 0.3.0, and aren't 0.4.0's rise; they go with 13K.
 
+## The blade bumper enclosure, phase 14
+
+*9 November 2026, units 14A to 14D, decisions 2051 to 2055. Seven helpers shared the machine with the owner, every core at
+100% for most of the unit: **every time here is from a loaded machine.** Wall times moved by up to six times between
+identical runs, so the verdicts rest on bytes allocated (over all threads), processor time (the process's, all threads,
+which loading inflates less) and samples. Each process had two processors (affinity and `DOTNET_PROCESSOR_COUNT=2`).*
+
+**The script:** renegadedynamics/hardware `9ab5fb0` (v0.16), `products/rowing-strain/enclosure/kerf/`: `BladeBumper`
+builds 13 printed parts, a print aid and 34 placed components for a shaft size (35, 50 or 58 mm), exports each part as
+STL (in its print pose) and STEP, the assembly as one STEP, and with `--publish` renders and A3 drawings of every part.
+Its twin `blade_bumper.py` builds the same on native OCCT 8.0.1 through build123d 0.13 (in the hardware repository's
+`.venv`). The harness that ran them (the script's three model files and `Publisher.cs` unchanged, its `Program.cs`'s steps
+copied with a timer round each, `--publish` writing to a folder of my own through `RENEGADE_PUBLISH_DIR`) and every
+figure below are in the scratchpad's `p14a` folder, not in the tree.
+
+### The build, cold and warm
+
+Processor time in ms (the process's, all threads) and MB allocated. *Cold*: a fresh process, the script's steps once, as
+`dotnet run` runs it (the process, ReadyToRun Kerf, the median of 2). *Warm*: the median of repeats 2 to 4 in one process,
+each building everything again. Native: build123d's process time (one thread), warm the same way.
+
+| Size | 0.4.0 cold | main cold | 0.4.0 warm | main warm | native warm | 0.4.0 MB | main MB |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 35 | 17,296 | 14,211 | 14,470 | 12,375 | 9,970 | 5,239 | 3,864 |
+| 50 | 19,797 | 17,234 | 15,719 | 10,268 | 10,891 | 5,782 | 4,375 |
+| 58 | 18,968 | 16,602 | 13,577 | 13,626 | 11,392 | 6,006 | 4,312 |
+
+Main allocates 24% to 28% less than 0.4.0 on every size: 13A's checks (the door 1,450 to 414 MB) and 13B's collapsing
+chamfer (the housing's prism 181 to 6 MB). The bytes are steady to 1%; the processor times only to about 20%, so main
+against native is "about 1.0 to 1.3 times", and the parts alone 1.1 to 1.5 times (native 6.3 to 7.1 s, main 7.3 to 9.5).
+A cold process costs about 2 to 3 s of processor time more than a warm build, on both versions (the JIT's and loading's
+share: decisions 1891 and 1892). Native's own cold start is its import of build123d, 3.4 to 5 s on the best runs. The
+script's spec and reference tests (561, all three sizes) passed on both, in 63 s on 0.4.0's packages; their time is three
+builds of the model and 224 point classifications on the housing for each size (below).
+
+### Where it goes
+
+Main, warm, size 35, the script's steps (Program.cs) without publishing: 3,864 MB and 12.4 s of processor time.
+
+| Step | MB | Processor ms |
+|---|---:|---:|
+| The parts (13 and their shared sections) | 2,988 | 9,359 |
+| Components (34) | 182 | 359 |
+| STEP export, 15 files | 149 | 406 |
+| STEP export of the assembly | 186 | 781 |
+| STL export, 14 files (deflection 0.01) | 167 | 1,109 |
+| The boot's print file: the boot fused with its print aid | 107 | 141 |
+| Print poses, layout, figures | 60 | 140 |
+
+The parts, one by one (the probe of every `x op= y` the model does, warm, size 35):
+
+| Part | MB | Booleans | What costs |
+|---|---:|---:|---|
+| housing | 1,081 | 14 | twelve cuts of small tools from a solid of 278 to 342 faces, 57 to 159 MB each |
+| door | 414 | 21 | fuses of bosses and lips onto the door (62 to 100 faces), 15 to 33 MB each |
+| housing envelope | 362 | 3 | the ramp's convex hull (`ConvexPolyhedron`, 237 faces with the prism) and its fuse |
+| body | 296 | 15 | eight holes cut one by one from a body of about 100 faces |
+| body bumper | 205 | 10 | |
+| boot | 190 | 6 | |
+| components | 181 | 30 | |
+| sleds | 170 | 18 | |
+| clamps, plug, saddle, adapter, sections | 263 | | |
+
+By Kerf operation and kernel phase (an EventPipe trace of three builds, main, 2,864 samples and 11.2 GB in allocation
+ticks; samples count a thread stopped for a collection under whatever it was doing): **Booleans 66% of the samples and 77%
+of the bytes.** Of those: the pave filler (its jobs on worker threads included) 26% of the samples and 16% of the bytes,
+the builder 19% and 27%, decision 1860's volume checks 9% and 8%, the validity check 7% and 11%, the clean
+(UnifySameDomain) 4% and 7%. STEP export 8% and 9%, STL export and its meshing 6% and 5%, offsets, extrusions, hulls and
+sketches the rest. Threads stopped for a collection were 40% of all samples: 3.9 GB a build is a collection about every
+few milliseconds.
+
+**Native, part by part** (process time, warm, size 35): housing 1,239 ms against Kerf's 2,781; door 1,745 against 1,312;
+body 1,297 against 688; body bumper 791 against 547; envelope 750 against 891; boot 385 against 391. A small cut from the
+housing takes native 54 to 78 ms (a nut shaft or a bolt hole into 253 to 284 faces), Kerf about 100 ms and 57 to 60 MB:
+Kerf's housing is about twice native's, its door and body quicker. The twin builds the housing's end and ramp as hulls of
+points too, so the two housings have similar face counts (285 and 342).
+
+**Publishing** (`--publish`: 26 part renders, 13 drawings, 3 assembly renders, 5 section renders, 2 of the boot's print),
+main, warm: 5,247 MB and about 16 s of processor time more. Rendering was 87% of it in bytes: each 1800 × 1100 render
+supersampled twice made 63 MB of samples. PNG writing was 18% of the publish's samples, Kerf's own deflate and the row
+filters byte by byte. The section renders' 235 commons (every part and component against each slice) were 1,350 MB, of
+which 166 commons whose boxes miss the slice.
+
+### The hot paths, ranked
+
+| # | Hot path | Share (main, warm, 35) | Kerf | Native | What it would take |
+|---:|---|---|---|---|---|
+| 1 | A small tool cut from, or fused onto, a large solid: every Boolean pays for the whole of the large one | housing 28% of the build's bytes and 22% of its time; with the door, body and the rest, the parts' 2,988 MB | ~100 ms, 57 MB a small cut from the housing | 54 to 78 ms | The pave filler, builder and checks each go over every face of both inputs: 89% of the faces of these Booleans' results are the object's own, unchanged (8,096 of 9,066). Keeping what a frozen solid's faces are known to be (decision 1801's check memory, `phase11/valid-cache`, not merged: it found nothing to skip in the Boolean suites, but here each object is the last result, checked) would skip most of the validity check (11% of the bytes); the pave filler's and builder's per-face work wants its data structure kept with the frozen solid, as decision 2038 named for the classifier. Larger fixes, for the owner. In the script: one cut with all the tools (14C), 67% of the housing's bytes |
+| 2 | Allocation, and the collections it brings | 40% of samples stopped for a collection | 3.9 GB a build | | Follows from 1 and 3 |
+| 3 | Rendering's samples (publish) | 87% of the publish's bytes | 63 MB a render | (pyvista, not timed) | **Done** (decision 2052): each band its own samples, 3,668 to 1,840 MB |
+| 4 | PNG writing (publish) | 18% of the publish's samples | 3.4 s for 36 pictures | | **Done** (decision 2051): 1.5 s, the same bytes |
+| 5 | The section renders' commons (publish) | 1,350 MB, 235 Booleans | | | In the script: skip what misses the slice (20%); a common of solids whose boxes are apart could be answered as empty before the pave filler, but it must still be checked as decision 1866 asks (13K's) |
+| 6 | STEP export | 9% of bytes | 335 MB and 1.2 s for 16 files | 1.3 s | **Done** in part (decision 2053): the header's rewrite copied each file three to five times; 13% to 18% less. The writer itself (EntityGraph, StepWriter.Print) is the rest |
+| 7 | Decision 1860's volume checks, and 1866's points | 9% of samples, 8% of bytes | | none | 13K's (decisions 1866, 1881, 1924, 1932, 1937 not touched here) |
+| 8 | Point classification (`IsInside`), the spec tests | 2.3 GB for 224 points on the housing, both versions | ~10 MB and ~8 ms a point | | Each call builds a classifier, filling its trees for the 342 faces: keeping one with the frozen solid, as for its volume (decision 2001), would make the rest of the points cheap. A larger fix (a classifier isn't safe to share between threads as it stands) |
+| 9 | A cold process | 2 to 3 s of processor time | | import 3.4 to 5 s | Decisions 1891 and 1892's ground; nothing new here |
+
+### What changed in Kerf (14B), and its effect elsewhere
+
+| Change | The enclosure | Elsewhere |
+|---|---|---|
+| PNG rows filtered and matched sixteen bytes at a time (decision 2051) | its 36 pictures written in 40% of the time (3.4 to 1.5 s, median of 5 interleaved rounds), the same bytes | the rig's `images` suite, 11 examples: the same PNGs (by length, and the tests' reference writer byte for byte) |
+| A band's samples, not the picture's (decision 2052) | publishing 3,668 to 1,840 MB in `Publisher.Publish`, 1,350 to 1,083 in the section renders, 225 to 127 in the boot's; the 36 PNG files byte for byte the same | `images`: png MB 19.9–27.2 to 5.3–12.5 on all 11 examples (−54% to −74%), the same results; 192 renders hash for hash against main |
+| STEP's FILE_NAME rewritten in place (decision 2053) | STEP export 149 to 130 MB, the assembly 186 to 152 (−13%, −18%), the files the same but for their time stamps | Bento's first load (fillet, cut, STEP): no rows of bytes; the users' cases don't export |
+
+With all three, a published build (main, warm, size 35) allocates 8,385 MB against 10,630 (−21%), and took 76.8 s of
+processor time against 85.4 (−10%, loaded). The build alone: −1.4% of its bytes. None slows anything: the users' cases
+don't render or export, and their results are the same (`check`: 8 of 8); the corpus's Draw-lite doesn't reach the PNG
+writer, the renderer or Kerf.Modeling's STEP header (its groups `v3d/` and `de_mesh/` were run as a check: the same
+statuses as `corpus-13.txt`). Nothing was held back for the owner.
+
+Found on the way: **the rig's `first-load bytes` suite crashes now and then** on main as on this branch (6 of 12
+processes: "AssemblyLoadContext is unloading or was already unloaded" in `ExtensionContext.FromBytes`): the collectible
+context it loads Kerf into can be collected while Kerf is still loading from it. A harness bug, not Kerf's; for the owner.
+
+### The script (14C)
+
+`kernel/docs/enclosure-feedback.md`, for the owner to pass on: the cuts and fuses of each part as one Boolean with many
+tools (the same parts, to 1e-12 of their volumes, with the same faces and edges), the boot's print file as a compound, and
+the section renders' commons skipped where they miss. On 0.4.0 they take the build's parts from 4,277 to about 1,770 MB.
+
+### The user case (14D)
+
+`enclosure-v0.16` in `Kerf.UserCases`, beside v0.11's `enclosure`: decision 2054. `release-check.ps1 -Last 0.4.0 -Only
+enclosure,enclosure-v0.16 -Runs 3` builds and runs it on both sides, with the same results: 4,551 MB a run on 0.4.0's
+packages, 3,238 on this branch (−29%; v0.11's 4,507 and 3,269). Its times came from a machine at 100% and say nothing.
+
 ## The checks' share of a Boolean (unit 13K)
 
 *9 November 2026, on a machine shared with the owner and several helpers: times here are from a loaded machine, and the verdicts rest on bytes and counts. Decisions 26101 to 26106.*
