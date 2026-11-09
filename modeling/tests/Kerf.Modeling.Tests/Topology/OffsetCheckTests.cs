@@ -75,7 +75,7 @@ public class OffsetCheckTests
 
         foreach (Func<Shape> offset in new Func<Shape>[] { () => cone.Offset3D(null, distance, kind: kind), () => cone.Hollow(top, distance, kind: kind) })
         {
-            var failure = Assert.Throws<InvalidOperationException>(() => offset());
+            var failure = Assert.Throws<ModelingException>(() => offset());
             Assert.StartsWith("The thick solid is wrong", failure.Message, StringComparison.Ordinal);
             Assert.True(ModelingDiagnostics.TryGetInvalid(failure, out _));
         }
@@ -91,8 +91,8 @@ public class OffsetCheckTests
         var cone = Solid.MakeCone(0, 5, 12);
         var top = cone.Faces().Where(GeomType.Plane);
 
-        Assert.Throws<InvalidOperationException>(() => cone.Hollow(top, thickness, kind: Kind.Intersection));
-        Assert.Throws<InvalidOperationException>(() => cone.Offset3D(top, thickness, kind: Kind.Intersection));
+        Assert.Throws<ModelingException>(() => cone.Hollow(top, thickness, kind: Kind.Intersection));
+        Assert.Throws<ModelingException>(() => cone.Offset3D(top, thickness, kind: Kind.Intersection));
     }
 
     // Outwards, round joins are right as they are, by Steiner's formula, for both cones and both ways of asking: no warning

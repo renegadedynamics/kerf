@@ -54,7 +54,7 @@ public class FailureDiagnosticsTests
     [Fact]
     public void ARefusalAndADiagnosticNameNoOcctType()
     {
-        var refusal = Assert.Throws<ArgumentException>(
+        var refusal = KernelAssert.Throws<ArgumentException>(
             () => Refusal.ArgumentIf(true, FailureKind.ConstructionError, "gp_Circ() - radius should be positive number"));
         Assert.Equal("The geometry can't be constructed: radius should be positive number.", refusal.Message.Split(" (Parameter")[0]);
         Assert.Equal("the geometry can't be constructed: radius should be positive number", FailureDiagnostics.ToDiagnostic(refusal).Message);

@@ -81,7 +81,7 @@ public sealed record Camera
         get
         {
             Vector3D v = Target - Eye;
-            return v.Magnitude > 0 ? new Direction3D(v) : throw new ArgumentException("The camera's eye is its target.");
+            return v.Magnitude > 0 ? new Direction3D(v) : throw new KernelArgumentException("The camera's eye is its target.");
         }
     }
 
@@ -99,12 +99,12 @@ public sealed record Camera
             Direction3D up = Up;
             if (up.X == 0 && up.Y == 0 && up.Z == 0)
             {
-                throw new ArgumentException("The camera's up direction is a default one.");
+                throw new KernelArgumentException("The camera's up direction is a default one.");
             }
 
             if (up.IsParallel(z, 1e-9))
             {
-                throw new ArgumentException("The camera's up direction is along its view direction.");
+                throw new KernelArgumentException("The camera's up direction is along its view direction.");
             }
 
             return new Frame3D(Target, z, up.Crossed(z));

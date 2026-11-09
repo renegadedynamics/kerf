@@ -4,6 +4,7 @@ using Kerf.Engine.Foundation;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
+using Kerf.Fonts;
 using Kerf.Geometry;
 
 namespace Kerf.Drawing;
@@ -43,7 +44,7 @@ public sealed record LineStyle
     public double Width
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The width must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The width must be more than zero.");
     } = 0.35;
 
     /// <summary>The dash pattern, lengths on and off in turn; empty for a solid line.</summary>
@@ -74,7 +75,7 @@ public sealed record SvgOptions
     public double Margin
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The margin must be zero or more.");
+        init => field = value >= 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The margin must be zero or more.");
     } = 5;
 
     /// <summary>Page units per model unit; null to fit the page (or 1 without a page size).</summary>
@@ -96,18 +97,37 @@ public sealed record SvgOptions
     public double Tolerance
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
     } = 0.01;
+
+    /// <summary>How the drawing's notes are written: as filled outlines (the default), or as <c>&lt;text&gt;</c> in the
+    /// font's family, which a reader draws in the font it has.</summary>
+    public TextOutput TextOutput { get; init; }
+
+    /// <summary>The notes' colour.</summary>
+    public Color NoteColor { get; init; } = new(0, 0, 0);
+
+    /// <summary>
+    /// The part of the view plane the page shows, placed as the drawing's extent would be (fitted and centred); null for
+    /// the drawing's extent. A sheet gives its page, so that the page's corner is the view plane's origin.
+    /// </summary>
+    public (Point2D Min, Point2D Max)? Area
+    {
+        get;
+        init => field = value is null || (value.Value.Min.X < value.Value.Max.X && value.Value.Min.Y < value.Value.Max.Y)
+            ? value
+            : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The area's minimum must be below its maximum.");
+    }
 
     /// <summary>The decimals written for coordinates (0 to 10).</summary>
     public int Decimals
     {
         get;
-        init => field = value is >= 0 and <= 10 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The decimals must be from 0 to 10.");
+        init => field = value is >= 0 and <= 10 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The decimals must be from 0 to 10.");
     } = 3;
 
     private static double? Positive(double? value)
-        => value is null or > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The value must be more than zero.");
+        => value is null or > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The value must be more than zero.");
 }
 
 /// <summary>
@@ -128,7 +148,7 @@ public static class Svg
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(LineDrawing drawing, Stream stream, SvgOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         string text = WriteToString(drawing, options, cancellationToken);
         try
         {
@@ -148,7 +168,7 @@ public static class Svg
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static string WriteToString(LineDrawing drawing, SvgOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(drawing);
+        KernelArgumentNullException.ThrowIfNull(drawing);
         options ??= SvgOptions.Default;
         var page = Page.Of(drawing, options);
         var svg = new StringBuilder();
@@ -184,6 +204,11 @@ public static class Svg
         }
 
         Layer(svg, "visible", drawing.Visible, options.VisibleStyle, paths, format, cancellationToken);
+        if (!drawing.Notes.IsEmpty)
+        {
+            Notes(svg, drawing.Notes, options, page, paths, format, cancellationToken);
+        }
+
         svg.Append("</svg>\n");
         return svg.ToString();
     }
@@ -215,6 +240,128 @@ public static class Svg
         svg.Append("  </g>\n");
     }
 
+    // The notes, over the lines: each a path of its glyphs' outlines, filled by the non-zero rule (a glyph's holes run
+    // the other way), or its lines as text
+    private static void Notes(StringBuilder svg, IEnumerable<DrawingNote> notes, SvgOptions options, Page page, PathWriter paths,
+                              NumberFormat format, CancellationToken cancellationToken)
+    {
+        svg.Append("  <g id=\"notes\" fill=\"").Append(Hex(options.NoteColor)).Append('"');
+        if (options.NoteColor.A < 1)
+        {
+            svg.Append(" fill-opacity=\"").Append(format.N(options.NoteColor.A)).Append('"');
+        }
+
+        svg.Append(" stroke=\"none\">\n");
+        foreach (DrawingNote note in notes)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (options.TextOutput == TextOutput.Text)
+            {
+                TextOf(svg, note, page, format);
+                continue;
+            }
+
+            svg.Append("    <path class=\"note\" d=\"");
+            foreach (var contour in note.Contours)
+            {
+                for (int i = 0; i < contour.Length; i++)
+                {
+                    paths.Append(svg, contour[i], continuing: i > 0);
+                }
+
+                svg.Append(" Z");
+            }
+
+            svg.Append("\"/>\n");
+        }
+
+        svg.Append("  </g>\n");
+    }
+
+    // A note's lines as <text>, each at its anchor, in the font's family, size, weight and style
+    private static void TextOf(StringBuilder svg, DrawingNote note, Page page, NumberFormat format)
+    {
+        Font font = note.Style.Font;
+        string anchor = note.Style.Horizontal switch
+        {
+            TextAlign.Center => "middle",
+            TextAlign.Right => "end",
+            _ => "start",
+        };
+        // Liberation Sans has Arial's widths: a reader without it sets the text the same size in Arial
+        string family = Escape(font.FamilyName.Length > 0 ? font.FamilyName : font.PostScriptName).Replace("'", "", StringComparison.Ordinal);
+        string families = font.FamilyName == FontLibrary.DefaultFamily
+            ? $"'{family}', Arial, sans-serif"
+            : $"'{family}', {(font.IsFixedPitch ? "monospace" : "sans-serif")}";
+        foreach (NoteLine line in note.Lines)
+        {
+            (double x, double y) = page.ToPage(line.Anchor);
+            svg.Append("    <text class=\"note\" x=\"").Append(format.N(x)).Append("\" y=\"").Append(format.N(y))
+               .Append("\" font-family=\"").Append(families).Append("\" font-size=\"").Append(format.N(note.Style.Size * page.Scale)).Append('"');
+            if (font.Weight is > 0 and not 400)
+            {
+                svg.Append(" font-weight=\"").Append(font.Weight.ToString(CultureInfo.InvariantCulture)).Append('"');
+            }
+
+            if (font.Style is FontStyle.Italic or FontStyle.BoldItalic)
+            {
+                svg.Append(" font-style=\"italic\"");
+            }
+
+            if (anchor != "start")
+            {
+                svg.Append(" text-anchor=\"").Append(anchor).Append('"');
+            }
+
+            if (note.Style.Rotation != 0)
+            {
+                // Counter-clockwise in the view (Y up) is clockwise on the page (Y down)
+                svg.Append(" transform=\"rotate(").Append(format.N(-note.Style.Rotation)).Append(' ').Append(format.N(x)).Append(' ')
+                   .Append(format.N(y)).Append(")\"");
+            }
+
+            svg.Append(" xml:space=\"preserve\">").Append(Escape(line.Text)).Append("</text>\n");
+        }
+    }
+
+    // Text for XML: the five characters XML escapes, and what XML 1.0 can't hold (controls, lone surrogates) left out
+    private static string Escape(string text)
+    {
+        var escaped = new StringBuilder(text.Length);
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            switch (c)
+            {
+                case '&':
+                    escaped.Append("&amp;");
+                    break;
+                case '<':
+                    escaped.Append("&lt;");
+                    break;
+                case '>':
+                    escaped.Append("&gt;");
+                    break;
+                case '"':
+                    escaped.Append("&quot;");
+                    break;
+                default:
+                    if (char.IsHighSurrogate(c) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+                    {
+                        escaped.Append(c).Append(text[++i]);
+                    }
+                    else if (!char.IsSurrogate(c) && c >= ' ' && c is not ('\uFFFE' or '\uFFFF'))
+                    {
+                        escaped.Append(c);
+                    }
+
+                    break;
+            }
+        }
+
+        return escaped.ToString();
+    }
+
     private static string ClassOf(LineKind kind) => kind switch
     {
         LineKind.Sharp => "sharp",
@@ -234,7 +381,7 @@ public static class Svg
     {
         public static Page Of(LineDrawing drawing, SvgOptions options)
         {
-            (Point2D min, Point2D max) = drawing.GetBounds(options.IncludeHidden) ?? (Point2D.Origin, Point2D.Origin);
+            (Point2D min, Point2D max) = options.Area ?? drawing.GetBounds(options.IncludeHidden) ?? (Point2D.Origin, Point2D.Origin);
             double w = max.X - min.X, h = max.Y - min.Y, m = options.Margin;
             double scale;
             if (options.Scale is { } s)
@@ -283,6 +430,16 @@ public static class Svg
     /// <summary>A curve's path data, on the page.</summary>
     private sealed class PathWriter(Page page, NumberFormat format, double tolerance)
     {
+        private bool _continuing;
+
+        /// <summary>Appends the curve; <paramref name="continuing"/> carries on from the last curve's end, which is this
+        /// one's start, without a move (a contour's next curve).</summary>
+        public void Append(StringBuilder d, Curve2D curve, bool continuing)
+        {
+            _continuing = continuing;
+            Append(d, curve);
+        }
+
         public void Append(StringBuilder d, Curve2D curve)
         {
             switch (curve)
@@ -439,6 +596,12 @@ public static class Svg
 
         private void Move(StringBuilder d, Point2D p)
         {
+            if (_continuing)
+            {
+                _continuing = false;
+                return;
+            }
+
             if (d.Length > 0 && d[^1] != '"')
             {
                 d.Append(' ');

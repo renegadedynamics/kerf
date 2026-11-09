@@ -547,7 +547,7 @@ internal abstract class Reader : Transient
     /// </summary>
     internal InputStream? OpenStream(Stream stream)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         long max = _limits.MaxBytes;
         if (stream.CanSeek)
         {

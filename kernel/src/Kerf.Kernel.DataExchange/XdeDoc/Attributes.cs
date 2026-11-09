@@ -48,7 +48,7 @@ internal sealed record Attributes
         ColorType.ColorGen => GenericColor,
         ColorType.ColorSurf => SurfaceColor,
         ColorType.ColorCurv => CurveColor,
-        _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        _ => throw new KernelArgumentOutOfRangeException(nameof(type)),
     };
 
     /// <summary>The set with the colour of the type replaced (removed if null).</summary>
@@ -57,7 +57,7 @@ internal sealed record Attributes
         ColorType.ColorGen => this with { GenericColor = color },
         ColorType.ColorSurf => this with { SurfaceColor = color },
         ColorType.ColorCurv => this with { CurveColor = color },
-        _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        _ => throw new KernelArgumentOutOfRangeException(nameof(type)),
     };
 
     /// <summary>The set with the name replaced.</summary>

@@ -70,8 +70,8 @@ internal sealed class TreeWriter
     /// <summary>Writes the tree as a 3MF package to the stream. False if cancelled or the stream fails.</summary>
     public bool Write(Tree tree, Stream stream, ProgressRange progress = default)
     {
-        ArgumentNullException.ThrowIfNull(tree);
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(tree);
+        KernelArgumentNullException.ThrowIfNull(stream);
         using var ps = new ProgressScope(progress, "Writing 3MF", Options.MeshParameters is null ? 1 : 2);
         Tree aTree = tree;
         if (Options.MeshParameters is ToolParameters aParams)

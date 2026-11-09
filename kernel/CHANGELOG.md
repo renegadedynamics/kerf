@@ -5,6 +5,27 @@ version may break the API.
 
 ## Unreleased
 
+- **Notes and sheets in drawings** (unit 13F2): `DrawingNote` puts text on a `LineDrawing` (`WithNotes`), in any font,
+  at a size, alignment and rotation; `Svg` writes notes as filled outlines by default or as `<text>` with
+  `SvgOptions.TextOutput`. `Sheet` lays views of a part out on ISO A0 to A10, US or ANSI C to E paper with a border and a
+  title block the caller fills, as one drawing in millimetres; `SvgOptions.Area` places a page on the view plane, and
+  `Sheet.PageOptions` gives the paper's. Drawings without notes are written as before (decisions 2030 to 2033).
+- **Fonts and text** (unit 13D): `Kerf.Fonts` reads TrueType and OpenType fonts (`.ttf`, `.otf`, `.ttc`) with a managed
+  reader of Kerf's own, giving FreeType's outlines (to 4.4e-7 of the em over half a million glyphs of 376 fonts), pair
+  kerning from GPOS or `kern`, and FreeType's metrics; finds installed fonts by family and style on Windows, macOS and
+  Linux; ships Liberation Sans as the default font (SIL Open Font Licence 1.1, in THIRD-PARTY-NOTICES.md); and draws
+  text as faces with `TextShapes.Make`, holes in letters as holes: on a TrueType font of 2,048 units to the em the same
+  faces, areas and boxes as build123d's `Text` on native OCCT to 1e-13, and within FreeType's rounding (2e-6) on others. A damaged or hostile font fails with `font.malformed` or `font.limit-exceeded`; a character the
+  font hasn't fails with `text.missing-glyph`, naming it (decisions 2018 to 2023).
+- **`TightCorners.Collapse` is about 10 times quicker on the guide's box and on a user's housing end, allocating about a 40th,** with the same faces, edges and history: where nothing else of the part comes near the chamfer it's built from its faces, not by a Boolean, and its edges are exact lines and circles where they were B-splines (decisions 2025 to 2027). The faces over arcs that don't collapse are OCCT's cones, where they were B-splines.
+- **The kernel's argument exceptions are types of its own,** each derived from .NET's of the same name
+  (`ArgumentException`, `ArgumentOutOfRangeException`, `ArgumentNullException`) with the same message, and recognised
+  by the new `Diagnostic.IsKernelArgumentError`, so a caller can tell the kernel's refusal of a value from its own
+  errors however the runtime compiled the call. `catch (ArgumentException)` catches them as before; a check of the
+  exact type sees the subclass (decision 2028).
+- **A primitive too small to be valid fails, carrying the shape,** where it was a success: a cylinder, sphere or torus
+  of a radius under 1e-7, an arc of a nanometre, a wedge's top as narrow, and a face on a surface's bounds as narrow
+  (decision 2029).
 - **A small part fused onto a large one is checked at few points again:** 0.4.0's proof that a fuse lost nothing (decision 1937) classified points of the small part's faces that were already on the result, and measured their distances. A detent bump's fuse onto a user's door was 351 MB and about 4 times 0.3.0's time; it is now 24 MB and quicker than 0.3.0. A screw boss's fuse is 85 to 17 MB, at 1.3 to 1.4 times 0.3.0's time. The verdicts are the same (decisions 25101 to 25105). **A solid's classifier no longer intersects its ray with the planes, cylinders, cones and spheres it passes well clear of,** with the same states, so the Booleans' checks over the corpus take about a third less time.
 
 ## 0.4.0

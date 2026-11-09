@@ -40,7 +40,7 @@ internal static partial class FailureDiagnostics
     /// <summary>The code for an exception of type <paramref name="exceptionType"/>.</summary>
     public static DiagnosticCode CodeOf(Type exceptionType)
     {
-        ArgumentNullException.ThrowIfNull(exceptionType);
+        KernelArgumentNullException.ThrowIfNull(exceptionType);
         if (!typeof(FailureException).IsAssignableFrom(exceptionType))
             return Fault;
         return Codes.GetOrAdd(exceptionType, static type =>
@@ -50,7 +50,7 @@ internal static partial class FailureDiagnostics
     /// <summary>The error for an exception that escaped the engine.</summary>
     public static Diagnostic ToDiagnostic(Exception exception)
     {
-        ArgumentNullException.ThrowIfNull(exception);
+        KernelArgumentNullException.ThrowIfNull(exception);
         exception = Refusal.Unwrapped(exception);
         var own = PublicText(exception);
         var kind = Describe(exception);

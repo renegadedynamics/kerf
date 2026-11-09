@@ -189,8 +189,8 @@ public class Fillet2DTests
         Check.AlmostEqual(20 * 10 - 4 * 1 + Math.PI * 1, r.Area, 5);
         Check.Near(new Vector3D(0, 0, 1), r.Faces()[0].NormalAt());
 
-        Assert.Throws<ArgumentException>(() => new RectangleRounded(20, 10, 5));
-        Assert.Throws<ArgumentException>(() => new RectangleRounded(10, 20, 5));
+        Assert.Throws<ModelingException>(() => new RectangleRounded(20, 10, 5));
+        Assert.Throws<ModelingException>(() => new RectangleRounded(10, 20, 5));
     }
 
     [Fact]

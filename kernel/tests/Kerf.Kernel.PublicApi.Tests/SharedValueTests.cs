@@ -69,8 +69,8 @@ public class SharedValueTests
         Assert.Equal(new Point3D(9, 0, 3), moved.Min);
         Assert.Equal(new Point3D(1, 2, 5), box.Including(new Point3D(0, 0, 4)).Max);
         Assert.False(box.IsInfinite);
-        Assert.Throws<ArgumentException>(() => new BoundingBox(new Point3D(1, 0, 0), Point3D.Origin));
-        Assert.Throws<ArgumentOutOfRangeException>(() => box.Enlarged(-1));
+        KernelAssert.Throws<ArgumentException>(() => new BoundingBox(new Point3D(1, 0, 0), Point3D.Origin));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => box.Enlarged(-1));
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class SharedValueTests
         Assert.Equal(3, grid.ColumnCount);
         Assert.Equal(1, grid[0, 0]);
         Assert.Equal(6, grid[1, 2]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => grid[2, 0]);
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => grid[2, 0]);
         Assert.True(default(Grid<int>).IsEmpty);
     }
 }

@@ -2,6 +2,30 @@ namespace Kerf.Modeling;
 
 public static partial class Operations
 {
+    // ---- text ----
+
+    /// <summary>
+    /// <see cref="Text"/>, as a result rather than an exception (build123d's <c>Compound.make_text</c> gives the shapes;
+    /// <c>Shape</c> of this): the failure has the kernel's code, <c>text.missing-glyph</c> naming the characters,
+    /// <c>text.empty</c>, <c>input.invalid</c> for a size that isn't positive, <c>font.malformed</c> or
+    /// <c>font.limit-exceeded</c> for a font file that can't be read, <c>result.invalid</c> carrying the text where a glyph's face
+    /// isn't valid, or <see cref="ModelingDiagnostics.TextFailed"/>; a font replaced by Liberation Sans is a success with the
+    /// warning <c>font.substituted</c>. The parameters are <see cref="Text"/>'s.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="txt"/> or <paramref name="font"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="singleLineWidth"/> isn't positive, or an alignment is for the
+    /// other direction.</exception>
+    /// <exception cref="FileNotFoundException"><paramref name="fontPath"/> doesn't exist.</exception>
+    public static Result<Text> MakeText(string txt, double fontSize, string font = "Arial", string? fontPath = null,
+        Kerf.Fonts.FontStyle fontStyle = Kerf.Fonts.FontStyle.Regular, (Kerf.Fonts.TextAlign Horizontal, Kerf.Fonts.TextAlign Vertical)? textAlign = null,
+        Alignment? align = null, IShape1D? path = null, double positionOnPath = 0.0, double? singleLineWidth = null, double rotation = 0.0)
+    {
+        ArgumentNullException.ThrowIfNull(txt);
+        ArgumentNullException.ThrowIfNull(font);
+        return Failures.TryWarned(null, () => new Text(txt, fontSize, font, fontPath, fontStyle, textAlign, align, path, positionOnPath,
+                                                         singleLineWidth, rotation));
+    }
+
     // ---- full_round ----
 
     /// <summary>

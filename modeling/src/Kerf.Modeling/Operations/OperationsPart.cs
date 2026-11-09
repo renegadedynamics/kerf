@@ -6,7 +6,7 @@ public static partial class Operations
 {
     /// <summary>
     /// The convex hull of the points as a solid, one planar face for each flat side: <see cref="ConvexPolyhedron"/>, as
-    /// a result rather than an exception (decision 1996).
+    /// a result rather than an exception (decisions 1996 and 2008).
     /// </summary>
     /// <param name="points">The points; those closer than <see cref="Constants.Tolerance"/> count as one.</param>
     /// <param name="rotation">Angles to rotate it about X, Y and Z.</param>
@@ -19,17 +19,8 @@ public static partial class Operations
     public static Result<Part> MakeConvexPolyhedron(IEnumerable<Point3D> points, Rotation? rotation = null, Alignment? align = null)
     {
         ArgumentNullException.ThrowIfNull(points);
-        return Failures.Try<Part>(() =>
-        {
-            try
-            {
-                return new ConvexPolyhedron(points, rotation, align);
-            }
-            catch (ArgumentException e)
-            {
-                throw Failures.Expected(ModelingDiagnostics.HullFailed, e.Message, inner: e);
-            }
-        });
+        // The constructor's failure, a ModelingException, is the result's (decision 2008)
+        return Failures.Try<Part>(() => new ConvexPolyhedron(points, rotation, align));
     }
 
     // ---- draft ----
@@ -427,7 +418,12 @@ public static partial class Operations
         // Phase 5: in builder mode the object defaults to the builder's part and the planes to its workplanes
 
         var bbox = obj.Bounds(optimal: false);
-        var maxSize = bbox.IsEmpty ? 0 : new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
+        // Nothing has no section: the planes would be faces of no size, which aren't valid (decision 2029)
+        if (bbox.IsEmpty)
+            return new Sketch();
+        var maxSize = new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
+        // A point at the origin would make planes of no size too
+        maxSize = Math.Max(maxSize, 1.0);
 
         var planes = sectionBy.Select(plane =>
             Face.MakeRect(2 * maxSize, 2 * maxSize, new Plane(plane.Origin + plane.ZDir * height, zDir: plane.ZDir)));

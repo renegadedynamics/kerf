@@ -24,7 +24,7 @@ public class XdeDocTests
         Shape aBox = Box(1, 2, 3);
         DocumentProduct aPart = DocumentProduct.Part(aBox, "B");
         Assert.True(aPart.Shape.TShape()!.IsFrozen);
-        Assert.Throws<ArgumentException>(() => DocumentProduct.Part(new Shape()));
+        KernelAssert.Throws<ArgumentException>(() => DocumentProduct.Part(new Shape()));
 
         DocumentProduct anAssembly = DocumentProduct.Assembly("A", aPart.Placed(Translation(1, 0, 0)), aPart.Placed(Translation(2, 0, 0)));
         var aTree = new Tree(anAssembly.Placed(new Placement()));
@@ -339,7 +339,7 @@ public class XdeDocTests
         Instance aRoot = Assert.Single(aDoc.ToTree().Roots);
         Assert.Single(aRoot.Product.Components);
         Label aForeign = new ExchangeDocument().NewShape();
-        Assert.Throws<ArgumentException>(() => aDoc.SetName(aForeign, "x"));
-        Assert.Throws<ArgumentException>(() => aDoc.SetName(default, "x"));
+        KernelAssert.Throws<ArgumentException>(() => aDoc.SetName(aForeign, "x"));
+        KernelAssert.Throws<ArgumentException>(() => aDoc.SetName(default, "x"));
     }
 }

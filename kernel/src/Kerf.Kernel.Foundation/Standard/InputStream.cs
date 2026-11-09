@@ -34,10 +34,10 @@ internal sealed class InputStream
     /// <exception cref="ArgumentException">The stream can't read or can't seek.</exception>
     public InputStream(Stream stream)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         if (!stream.CanRead || !stream.CanSeek)
         {
-            throw new ArgumentException("The stream must be readable and seekable", nameof(stream));
+            throw new KernelArgumentException("The stream must be readable and seekable", nameof(stream));
         }
 
         _stream = stream;

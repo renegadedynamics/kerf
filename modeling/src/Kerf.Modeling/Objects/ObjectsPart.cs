@@ -40,7 +40,7 @@ public class Box : BasePartObject
 {
     /// <summary>A box; <paramref name="align"/> defaults to centred.</summary>
     public Box(double length, double width, double height, Rotation? rotation = null, Alignment? align = null)
-        : base(Solid.MakeBox(length, width, height), rotation, align ?? Centered)
+        : base(Failures.Building(() => "box", () => Solid.MakeBox(length, width, height)), rotation, align ?? Centered)
     {
         (Length, Width, Height) = (length, width, height);
     }
@@ -61,7 +61,7 @@ public class Cone : BasePartObject
     /// <summary>A cone; <paramref name="arcSize"/> is its angular size in degrees.</summary>
     public Cone(double bottomRadius, double topRadius, double height, double arcSize = 360, Rotation? rotation = null,
                 Alignment? align = null)
-        : base(Solid.MakeCone(bottomRadius, topRadius, height, angle: arcSize), rotation, align ?? Centered)
+        : base(Failures.Building(() => "cone", () => Solid.MakeCone(bottomRadius, topRadius, height, angle: arcSize)), rotation, align ?? Centered)
     {
         (BottomRadius, TopRadius, Height, ArcSize, Align) = (bottomRadius, topRadius, height, arcSize, align ?? Centered);
     }
@@ -87,7 +87,7 @@ public class Cylinder : BasePartObject
 {
     /// <summary>A cylinder; <paramref name="arcSize"/> is its angular size in degrees.</summary>
     public Cylinder(double radius, double height, double arcSize = 360, Rotation? rotation = null, Alignment? align = null)
-        : base(Solid.MakeCylinder(radius, height, angle: arcSize), rotation, align ?? Centered)
+        : base(Failures.Building(() => "cylinder", () => Solid.MakeCylinder(radius, height, angle: arcSize)), rotation, align ?? Centered)
     {
         (Radius, Height, ArcSize, Align) = (radius, height, arcSize, align ?? Centered);
     }
@@ -111,7 +111,8 @@ public class Sphere : BasePartObject
     /// <summary>A sphere from latitude <paramref name="arcSize1"/> to <paramref name="arcSize2"/>, revolved through <paramref name="arcSize3"/> degrees.</summary>
     public Sphere(double radius, double arcSize1 = -90, double arcSize2 = 90, double arcSize3 = 360, Rotation? rotation = null,
                   Alignment? align = null)
-        : base(Solid.MakeSphere(radius, angle1: arcSize1, angle2: arcSize2, angle3: arcSize3), rotation, align ?? Centered)
+        : base(Failures.Building(() => "sphere", () => Solid.MakeSphere(radius, angle1: arcSize1, angle2: arcSize2, angle3: arcSize3)), rotation,
+               align ?? Centered)
     {
         (Radius, ArcSize1, ArcSize2, ArcSize3, Align) = (radius, arcSize1, arcSize2, arcSize3, align ?? Centered);
     }
@@ -138,7 +139,8 @@ public class Torus : BasePartObject
     /// <summary>A torus whose minor arc runs from <paramref name="minorStartAngle"/> to <paramref name="minorEndAngle"/>, revolved through <paramref name="majorAngle"/> degrees.</summary>
     public Torus(double majorRadius, double minorRadius, double minorStartAngle = 0, double minorEndAngle = 360, double majorAngle = 360,
                  Rotation? rotation = null, Alignment? align = null)
-        : base(Solid.MakeTorus(majorRadius, minorRadius, startAngle: minorStartAngle, endAngle: minorEndAngle, majorAngle: majorAngle),
+        : base(Failures.Building(() => "torus", () => Solid.MakeTorus(majorRadius, minorRadius, startAngle: minorStartAngle, endAngle: minorEndAngle,
+                                                                   majorAngle: majorAngle)),
                rotation, align ?? Centered)
     {
         (MajorRadius, MinorRadius, MinorStartAngle, MinorEndAngle, MajorAngle, Align) =
@@ -183,7 +185,7 @@ public class Wedge : BasePartObject
     {
         if (xsize <= 0 || ysize <= 0 || zsize <= 0)
             throw new ArgumentException("xsize, ysize & zsize must all be greater than zero");
-        return Solid.MakeWedge(xsize, ysize, zsize, xmin, zmin, xmax, zmax);
+        return Failures.Building(() => "wedge", () => Solid.MakeWedge(xsize, ysize, zsize, xmin, zmin, xmax, zmax));
     }
 
 #pragma warning disable CS1591 // The constructor's parameters
@@ -212,18 +214,30 @@ public class Wedge : BasePartObject
 public class ConvexPolyhedron : BasePartObject
 {
     /// <summary>The convex hull of the points.</summary>
-    /// <exception cref="ArgumentException">
-    /// The hull has no volume: fewer than four distinct points, or all of them on one line or in one plane (to within
-    /// <see cref="Constants.Tolerance"/>); or a coordinate isn't finite. The message says which.
+    /// <exception cref="ArgumentNullException"><paramref name="points"/> is null.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.HullFailed"/>: the hull has no volume (fewer than four distinct points, or all of them
+    /// on one line or in one plane, to within <see cref="Constants.Tolerance"/>), or a coordinate isn't finite. The message
+    /// says which. <see cref="Operations.MakeConvexPolyhedron"/> gives the same as a result.
     /// </exception>
     public ConvexPolyhedron(IEnumerable<Point3D> points, Rotation? rotation = null, Alignment? align = null)
-        : base(Make(points), rotation, align ?? Kerf.Modeling.Align.None)
+        : base(Make(points ?? throw new ArgumentNullException(nameof(points))), rotation, align ?? Kerf.Modeling.Align.None)
     {
     }
 
-    private static Shape Make(IEnumerable<Point3D> points)
+    private static Shape Make(IEnumerable<Point3D> points) => Failures.Building(() => "convex polyhedron", () => Build(points));
+
+    private static Shape Build(IEnumerable<Point3D> points)
     {
-        var hull = ConvexHull3D.Sides(points);
+        ConvexHull3D.Hull hull;
+        try
+        {
+            hull = ConvexHull3D.Sides(points);
+        }
+        catch (ArgumentException e)
+        {
+            throw Failures.Expected(ModelingDiagnostics.HullFailed, e.Message, inner: e);
+        }
         // The faces share their corners and edges as built, so nothing is sewn
         var polygons = hull.Sides.Select(s => (new Plane3D(s.Origin, new Direction3D(s.Normal)), s.Corners));
         var shell = Failures.Get(Shell.FromPolygons(hull.Points, polygons), () => "convex polyhedron: shell");
@@ -253,7 +267,7 @@ public class CounterBoreHole : BaseHole
         : this(radius, counterBoreRadius, counterBoreDepth, depth ?? ThroughHoleDepth(), true) { }
 
     private CounterBoreHole(double radius, double counterBoreRadius, double counterBoreDepth, double depth, bool _)
-        : base(Make(radius, counterBoreRadius, counterBoreDepth, depth), null)
+        : base(Failures.Building(() => "counterbored hole", () => Make(radius, counterBoreRadius, counterBoreDepth, depth)), null)
     {
         (Radius, CounterBoreRadius, CounterBoreDepth, HoleDepth) = (radius, counterBoreRadius, counterBoreDepth, depth);
     }
@@ -278,7 +292,7 @@ public class CounterSinkHole : BaseHole
         : this(radius, counterSinkRadius, depth ?? ThroughHoleDepth(), counterSinkAngle, true) { }
 
     private CounterSinkHole(double radius, double counterSinkRadius, double depth, double counterSinkAngle, bool _)
-        : base(Make(radius, counterSinkRadius, depth, counterSinkAngle), null)
+        : base(Failures.Building(() => "countersunk hole", () => Make(radius, counterSinkRadius, depth, counterSinkAngle)), null)
     {
         (Radius, CounterSinkRadius, HoleDepth, CounterSinkAngle) = (radius, counterSinkRadius, depth, counterSinkAngle);
     }
@@ -310,7 +324,8 @@ public class Hole : BaseHole
         : this(radius, 2 * (depth ?? ThroughHoleDepth()), depth is null) { }
 
     private Hole(double radius, double holeDepth, bool through)
-        : base(Solid.MakeCylinder(radius, holeDepth, new Plane(through ? new Point3D(0, 0, holeDepth / 2) : new Point3D(0, 0, 0), zDir: new Vector3D(0, 0, -1))),
+        : base(Failures.Building(() => "hole", () => Solid.MakeCylinder(radius, holeDepth, new Plane(through ? new Point3D(0, 0, holeDepth / 2) : new Point3D(0, 0, 0),
+                                                                                         zDir: new Vector3D(0, 0, -1)))),
                Centered)
     {
         (Radius, HoleDepth) = (radius, holeDepth);

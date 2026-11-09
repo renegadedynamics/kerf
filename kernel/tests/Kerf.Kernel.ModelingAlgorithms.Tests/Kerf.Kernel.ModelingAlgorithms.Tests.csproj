@@ -95,6 +95,8 @@
     <EmbeddedResource Include="ChFi2d\Recordings\chfi2drec.txt.gz" LogicalName="ChFi2d.chfi2drec.txt.gz" />
     <!-- Native OCCT's fair curves (FairCurve_Batten, MinimalVariation, the energies), recorded by tools/fairrec (unit 5Q) -->
     <EmbeddedResource Include="FairCurve\Recordings\fairrec.txt.gz" LogicalName="FairCurve.fairrec.txt.gz" />
+    <!-- Fonts made for the font reader's tests, the default font's FreeType outlines (FreeType 2.13.2), unit 13D -->
+    <EmbeddedResource Include="Fonts\Data\*.otf;Fonts\Data\*.ttf;Fonts\Data\*.txt;Fonts\Data\*.gz" LogicalName="Fonts.%(Filename)%(Extension)" />
     <!-- Native OCCT's TKHelix (HelixBRep_BuilderHelix and HelixGeom's builders) on the helix grid's parameters, recorded by tools/helixrec (unit 7D) -->
     <EmbeddedResource Include="HelixBRep\Recordings\helixrec.txt.gz" LogicalName="HelixBRep.helixrec.txt.gz" />
   </ItemGroup>

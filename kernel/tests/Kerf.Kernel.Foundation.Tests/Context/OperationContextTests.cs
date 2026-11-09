@@ -26,7 +26,7 @@ public class OperationContextTests
         Assert.Equal(3, context.Get(Number)); // contexts are immutable
         Assert.Equal(7, context.Without(Number).Get(Number));
         Assert.Same(OperationContext.Default, OperationContext.Default.With(Number, 1).Without(Number));
-        Assert.Throws<ArgumentException>(() => new ContextKey<int>("", 0));
+        KernelAssert.Throws<ArgumentException>(() => new ContextKey<int>("", 0));
     }
 
     [Fact]

@@ -24,7 +24,7 @@ public static class DiagnosticShapes
         /// <summary>The diagnostic, concerning <paramref name="shapes"/> in place of any it named.</summary>
         public Diagnostic WithShapes(IEnumerable<Shape> shapes)
         {
-            ArgumentNullException.ThrowIfNull(shapes);
+            KernelArgumentNullException.ThrowIfNull(shapes);
             var array = shapes.ToImmutableArray();
             return diagnostic with { ShapeData = array.IsEmpty ? null : array };
         }
@@ -44,13 +44,13 @@ public sealed record Built<TShape>(TShape Shape, ShapeHistory History) where TSh
     public ShapeHistory History
     {
         get;
-        init => field = value ?? throw new ArgumentNullException(nameof(value));
-    } = History ?? throw new ArgumentNullException(nameof(History));
+        init => field = value ?? throw new KernelArgumentNullException(nameof(value));
+    } = History ?? throw new KernelArgumentNullException(nameof(History));
 
     /// <summary>The shape built.</summary>
     public static implicit operator TShape(Built<TShape> built)
     {
-        ArgumentNullException.ThrowIfNull(built);
+        KernelArgumentNullException.ThrowIfNull(built);
         return built.Shape;
     }
 }

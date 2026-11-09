@@ -38,7 +38,7 @@ public class Circle : BaseSketchObject
 {
     /// <summary>A circle of a radius; <paramref name="arcSize"/> below 360 makes a sector.</summary>
     public Circle(double radius, double arcSize = 360.0, Alignment? align = null)
-        : base(Make(radius, arcSize), 0, align ?? Centered)
+        : base(Failures.Building(() => "circle", () => Make(radius, arcSize)), 0, align ?? Centered)
     {
         (Radius, ArcSize, Align) = (radius, arcSize, TwoAxes(align ?? Centered));
     }
@@ -61,7 +61,7 @@ public class Ellipse : BaseSketchObject
 {
     /// <summary>An ellipse, rotated by <paramref name="rotation"/> degrees.</summary>
     public Ellipse(double xRadius, double yRadius, double rotation = 0, Alignment? align = null)
-        : base(Face.Make(Wire.MakeEllipse(xRadius, yRadius)), rotation, align ?? Centered)
+        : base(Failures.Building(() => "ellipse", () => Face.Make(Wire.MakeEllipse(xRadius, yRadius))), rotation, align ?? Centered)
     {
         (XRadius, YRadius, Align) = (xRadius, yRadius, TwoAxes(align ?? Centered));
     }
@@ -90,7 +90,8 @@ public class Polygon : BaseSketchObject
     public Polygon(params Point3D[] points) : this((IEnumerable<Point3D>)points) { }
 
     private Polygon(List<Point3D> pts, double rotation, Alignment? align)
-        : base(Face.Make(Wire.MakePolygon(pts)), rotation, align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None))
+        : base(Failures.Building(() => "polygon", () => Face.Make(Wire.MakePolygon(pts))), rotation,
+               align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None))
     {
         (Points, Align) = (pts, TwoAxes(align ?? new Alignment(Kerf.Modeling.Align.None, Kerf.Modeling.Align.None)));
     }
@@ -107,10 +108,18 @@ public class Rectangle : BaseSketchObject
 {
     /// <summary>A rectangle, rotated by <paramref name="rotation"/> degrees.</summary>
     public Rectangle(double width, double height, double rotation = 0, Alignment? align = null)
-        : base(Face.MakeRect(width, height), rotation, align ?? Centered)
+        : base(Failures.Building(() => "rectangle", () => Make(width, height)), rotation, align ?? Centered)
     {
         (Width, Height, Align) = (width, height, TwoAxes(align ?? Centered));
     }
+
+    // A size that isn't positive is refused, as a box's is, where the kernel made a face that isn't valid and reported
+    // success (decisions 1742 and 2008)
+    private static Face Make(double width, double height) =>
+        width > 0 && height > 0
+            ? Face.MakeRect(width, height)
+            : throw Failures.Expected(ModelingDiagnostics.KernelInvalidArgument,
+                                      $"rectangle {Formatting.Number(width)} × {Formatting.Number(height)} failed: The value must be a positive number.");
 
     /// <summary>The size along X.</summary>
     public double Width { get; }
@@ -125,8 +134,12 @@ public class Rectangle : BaseSketchObject
 /// <summary>A rectangle with its corners filleted to a radius; centred by default.</summary>
 public class RectangleRounded : BaseSketchObject
 {
-    /// <summary>A rounded rectangle.</summary>
-    /// <exception cref="ArgumentException">The width or height is no more than twice the radius.</exception>
+    /// <summary>A rounded rectangle; a radius of 0 gives a plain rectangle.</summary>
+    /// <exception cref="ArgumentException">The radius is negative.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: the width or height is no more than twice the radius; or the rectangle
+    /// couldn't be made (<see cref="Operations.MakeRectangleRounded"/> gives the same as a result).
+    /// </exception>
     public RectangleRounded(double width, double height, double radius, double rotation = 0, Alignment? align = null)
         : base(Make(width, height, radius), rotation, align ?? Centered)
     {
@@ -135,10 +148,16 @@ public class RectangleRounded : BaseSketchObject
 
     private static Face Make(double width, double height, double radius)
     {
-        if (width <= 2 * radius || height <= 2 * radius)
-            throw new ArgumentException("width and height must be > 2*radius");
-        var face = Face.MakeRect(width, height);
-        return face.Fillet2D(radius, face.Vertices());
+        if (radius < 0)
+            throw new ArgumentException($"The radius must not be negative, not {Formatting.Number(radius)}.", nameof(radius));
+        return Failures.Building(() => "rounded rectangle", () =>
+        {
+            if (width <= 2 * radius || height <= 2 * radius)
+                throw Failures.Expected(ModelingDiagnostics.NoSolution, "width and height must be > 2*radius");
+            var face = Face.MakeRect(width, height);
+            // A radius of 0 is the rectangle, which the 2D fillet refuses (decision 1999)
+            return radius == 0 ? face : face.Fillet2D(radius, face.Vertices());
+        });
     }
 
     /// <summary>The size along X.</summary>
@@ -175,6 +194,11 @@ public class RegularPolygon : BaseSketchObject
     {
         if (sideCount < 3)
             throw new ArgumentException($"RegularPolygon must have at least three sides, not {sideCount}");
+        return Failures.Building(() => "regular polygon", () => Build(radius, sideCount, majorRadius, rotation, align));
+    }
+
+    private static Face Build(double radius, int sideCount, bool majorRadius, double rotation, Alignment align)
+    {
         var rad = majorRadius ? radius : radius / Math.Cos(Math.PI / sideCount);
         var pts = Enumerable.Range(0, sideCount + 1)
             .Select(i => new Point3D(rad * Math.Cos(i * 2 * Math.PI / sideCount + rotation * Constants.DegToRad),
@@ -203,7 +227,7 @@ public class SlotCurve : BaseSketchObject
 {
     /// <summary>A slot round a curve.</summary>
     public SlotCurve(IShape1D curve, double height, double rotation = 0)
-        : base(Face.Make((Wire)TopoUtil.AsWire(curve).Offset2D(height / 2).AsShape()), rotation, null)
+        : base(Failures.Building(() => "slot", () => Face.Make((Wire)TopoUtil.AsWire(curve).Offset2D(height / 2).AsShape())), rotation, null)
     {
         (Curve, Height) = (curve, height);
     }
@@ -219,9 +243,12 @@ public class SlotCurve : BaseSketchObject
 public class SlotCenterPoint : BaseSketchObject
 {
     /// <summary>A slot of a height (its width across).</summary>
-    /// <exception cref="ArgumentException">The centre and point coincide.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: the centre and point coincide; or the slot couldn't be made
+    /// (<see cref="Operations.MakeSlotCenterPoint"/> gives the same as a result).
+    /// </exception>
     public SlotCenterPoint(Point3D center, Point3D point, double height, double rotation = 0)
-        : base(Make(center, point, height), rotation, null)
+        : base(Failures.Building(() => "slot", () => Make(center, point, height)), rotation, null)
     {
         (SlotCenter, Point, Height) = (center, point, height);
     }
@@ -230,7 +257,7 @@ public class SlotCenterPoint : BaseSketchObject
     {
         var halfLine = point - center;
         if (halfLine.Magnitude <= 0)
-            throw new ArgumentException(
+            throw Failures.Expected(ModelingDiagnostics.NoSolution,
                 $"Distance between center and point must be greater than 0 Got: distance = {Formatting.Number(halfLine.Magnitude)} (computed)");
         var wires = Wire.Combine([Edge.MakeLine(point, center), Edge.MakeLine(center, center - halfLine)]);
         return Face.Make((Wire)wires[0].Offset2D(height / 2));
@@ -261,6 +288,11 @@ public class SlotCenterToCenter : BaseSketchObject
     {
         if (separation < 0)
             throw new ArgumentException($"The centre separation must be positive, not {Formatting.Number(separation)}.");
+        return Failures.Building(() => "slot", () => Build(separation, height));
+    }
+
+    private static Face Build(double separation, double height)
+    {
         if (separation > 0)
             return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Point3D(-separation / 2, 0, 0), new Point3D(0, 0, 0)),
                                             Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(separation / 2, 0, 0))]).Offset2D(height / 2));
@@ -278,9 +310,12 @@ public class SlotCenterToCenter : BaseSketchObject
 public class SlotOverall : BaseSketchObject
 {
     /// <summary>A slot <paramref name="width"/> long overall and <paramref name="height"/> across, turned by <paramref name="rotation"/> degrees about Z.</summary>
-    /// <exception cref="ArgumentException">The width is less than the height.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: the width is less than the height; or the slot couldn't be made
+    /// (<see cref="Operations.MakeSlotOverall"/> gives the same as a result).
+    /// </exception>
     public SlotOverall(double width, double height, double rotation = 0, Alignment? align = null)
-        : base(Make(width, height), rotation, align ?? Centered)
+        : base(Failures.Building(() => "slot", () => Make(width, height)), rotation, align ?? Centered)
     {
         (Width, Height) = (width, height);
     }
@@ -288,7 +323,7 @@ public class SlotOverall : BaseSketchObject
     private static Face Make(double width, double height)
     {
         if (width < height)
-            throw new ArgumentException($"Slot requires that width > height. Got: width={Formatting.Number(width)}, height={Formatting.Number(height)}");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, $"Slot requires that width > height. Got: width={Formatting.Number(width)}, height={Formatting.Number(height)}");
         if (width > height)
             return Face.Make((Wire)Wire.Make([Edge.MakeLine(new Point3D(-width / 2 + height / 2, 0, 0), new Point3D(0, 0, 0)),
                                             Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(width / 2 - height / 2, 0, 0))]).Offset2D(height / 2));
@@ -320,6 +355,11 @@ public class Superellipse : BaseSketchObject
     {
         if (order <= 0)
             throw new ArgumentException("Order must be greater than zero.");
+        return Failures.Building(() => "superellipse", () => Build(width, height, order, pointCount));
+    }
+
+    private static Face Build(double width, double height, double order, int pointCount)
+    {
         Edge topRight;
         if (order == 1)
             topRight = Edge.MakeLine(new Point3D(width / 2, 0, 0), new Point3D(0, height / 2, 0));
@@ -366,10 +406,14 @@ public class Superellipse : BaseSketchObject
 public class Trapezoid : BaseSketchObject
 {
     /// <summary>A trapezoid with these bottom interior angles, in degrees; <paramref name="rightSideAngle"/> defaults to the left one.</summary>
-    /// <exception cref="ArgumentException">The angles make an invalid trapezoid.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: the angles bring the top or bottom to less than nothing; or the
+    /// trapezoid couldn't be made (<see cref="Operations.MakeTrapezoid"/> gives the same as a result).
+    /// </exception>
     public Trapezoid(double width, double height, double leftSideAngle, double? rightSideAngle = null, double rotation = 0,
                      Alignment? align = null)
-        : base(Make(width, height, leftSideAngle, rightSideAngle is { } r && r != 0 ? r : leftSideAngle), rotation, align ?? Centered)
+        : base(Failures.Building(() => "trapezoid", () => Make(width, height, leftSideAngle, rightSideAngle is { } r && r != 0 ? r : leftSideAngle)),
+               rotation, align ?? Centered)
     {
         (Width, Height, LeftSideAngle, RightSideAngle, Align) =
             (width, height, leftSideAngle, rightSideAngle is { } r2 && r2 != 0 ? r2 : leftSideAngle, TwoAxes(align ?? Centered));
@@ -389,9 +433,9 @@ public class Trapezoid : BaseSketchObject
         else
             botRight += reductionRight;
         if (botLeft + botRight < 0)
-            throw new ArgumentException("Trapezoid bottom invalid - change angles");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, "Trapezoid bottom invalid - change angles");
         if (topLeft + topRight < 0)
-            throw new ArgumentException("Trapezoid top invalid - change angles");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, "Trapezoid top invalid - change angles");
         Point3D[] pts = [new(-botLeft, -height / 2, 0), new(botRight, -height / 2, 0), new(topRight, height / 2, 0), new(-topLeft, height / 2, 0), new(-botLeft, -height / 2, 0)];
         return Face.Make(Wire.MakePolygon(pts));
     }
@@ -420,23 +464,38 @@ public class Trapezoid : BaseSketchObject
 public class Triangle : BaseSketchObject
 {
     /// <summary>A triangle; give one side and two other values (angles in degrees).</summary>
-    /// <exception cref="ArgumentException">One length and two other values weren't given, or no such triangle exists.</exception>
+    /// <exception cref="ArgumentException">One length and two other values weren't given.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: no triangle has these values, or two do; or the triangle couldn't be
+    /// made (<see cref="Operations.MakeTriangle"/> gives the same as a result).
+    /// </exception>
     public Triangle(double? sideA = null, double? sideB = null, double? sideC = null, double? angleA = null, double? angleB = null, double? angleC = null,
                     Alignment? align = null, double rotation = 0)
         : this(Solve(sideA, sideB, sideC, angleA, angleB, angleC), align, rotation) { }
 
     private Triangle((double a, double b, double c, double angleA, double angleB, double angleC) t, Alignment? align, double rotation)
-        : base(Make(t), rotation, align)
+        : base(Failures.Building(() => "triangle", () => Make(t)), rotation, align)
     {
         (SideA, SideB, SideC) = (t.a, t.b, t.c);
         (AngleA, AngleB, AngleC) = (t.angleA * Constants.RadToDeg, t.angleB * Constants.RadToDeg, t.angleC * Constants.RadToDeg);
         var edges = Edges();
-        EdgeA = edges.First(e => Math.Abs(e.Length - t.a) < Constants.Tolerance);
-        EdgeB = edges.First(e => Math.Abs(e.Length - t.b) < Constants.Tolerance && e != EdgeA);
+        EdgeA = Side(edges, t.a, null);
+        EdgeB = Side(edges, t.b, EdgeA);
         EdgeC = edges.First(e => e != EdgeA && e != EdgeB);
         VertexA = (Vertex)Vertex.CommonVertex(EdgeB, EdgeC);
         VertexB = (Vertex)Vertex.CommonVertex(EdgeA, EdgeC);
         VertexC = (Vertex)Vertex.CommonVertex(EdgeA, EdgeB);
+    }
+
+    // The edge of a side's length: the first within the tolerance, as build123d finds it, or else the nearest, as a
+    // large triangle's lengths can differ from the solver's by more (decision 1999)
+    private static Edge Side(ShapeList<Edge> edges, double length, Edge? other)
+    {
+        var candidates = edges.Where(e => other is not { } o || e != o).ToList();
+        foreach (var e in candidates)
+            if (Math.Abs(e.Length - length) < Constants.Tolerance)
+                return e;
+        return candidates.MinBy(e => Math.Abs(e.Length - length));
     }
 
     private static (double, double, double, double, double, double) Solve(double? a, double? b, double? c, double? angleA, double? angleB, double? angleC)
@@ -445,12 +504,15 @@ public class Triangle : BaseSketchObject
         if (a is null && b is null && c is null || all.Count(v => v is null) != 3)
             throw new ArgumentException("Give one length and two other values.");
         double? Rad(double? deg) => deg * Constants.DegToRad;
-        return TriangleSolver.Solve(a, b, c, Rad(angleA), Rad(angleB), Rad(angleC));
+        return Failures.Building(() => "triangle", () => TriangleSolver.Solve(a, b, c, Rad(angleA), Rad(angleB), Rad(angleC)));
     }
 
     private static Face Make((double a, double b, double c, double angleA, double angleB, double angleC) t)
     {
         var triangle = Face.Make(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(t.a, 0, 0), new Vector3D(t.c, 0, 0).Rotate(Axis.Z, t.angleB * Constants.RadToDeg).ToPoint()]));
+        // A side under the tolerance joins its corners, and the face has two edges (decision 2029)
+        if (triangle.Edges().Count != 3)
+            throw Failures.Expected(ModelingDiagnostics.ObjectFailed, $"A side is too short to make: the triangle has {triangle.Edges().Count} edges, not 3.");
         var center = triangle.Vertices().Aggregate(Vector3D.Zero, (sum, v) => sum + v.Point.ToVector()) * (1.0 / 3);
         return triangle.Moved(new Location(-center));
     }
@@ -486,7 +548,7 @@ internal static class TriangleSolver
         if (sides.All(x => x is null))
             throw new ArgumentException("Must provide at least 1 side length");
         if (sides.Concat(angles).Any(x => x is <= 0) || angles.Any(x => x >= Math.PI))
-            throw new ArgumentException("No such triangle");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, "No such triangle");
         int known = sides.Count(x => x is not null);
         if (known == 3)
             return Sss(a!.Value, b!.Value, c!.Value);
@@ -507,7 +569,7 @@ internal static class TriangleSolver
         double bb = angleB ?? Math.PI - aa - angleC!.Value;
         double cc = angleC ?? Math.PI - aa - bb;
         if (aa <= 0 || bb <= 0 || cc <= 0)
-            throw new ArgumentException("No such triangle");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, "No such triangle");
         if (c is { } cs)
             return Aaas(aa, bb, cc, cs);
         if (a is { } asd)
@@ -527,7 +589,7 @@ internal static class TriangleSolver
     private static (double, double, double, double, double, double) Sss(double d, double e, double f)
     {
         if (!(d + e > f && e + f > d && f + d > e))
-            throw new ArgumentException("No such triangle");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, "No such triangle");
         var angleF = Math.Acos((d * d + e * e - f * f) / (2 * d * e));
         var angleE = Math.Acos((d * d + f * f - e * e) / (2 * d * f));
         return (d, e, f, Math.PI - angleF - angleE, angleE, angleF);
@@ -545,15 +607,15 @@ internal static class TriangleSolver
         else
         {
             if (!(sinE < 1))
-                throw new ArgumentException("No such triangle");
+                throw Failures.Expected(ModelingDiagnostics.NoSolution, "No such triangle");
             var acute = Math.Asin(sinE);
             var obtuse = Math.PI - acute;
             bool acuteValid = 0 < Math.PI - angleD - acute && Math.PI - angleD - acute < Math.PI;
             bool obtuseValid = 0 < Math.PI - angleD - obtuse && Math.PI - angleD - obtuse < Math.PI;
             if (acuteValid && obtuseValid)
-                throw new ArgumentException("Two different triangles fit this description");
+                throw Failures.Expected(ModelingDiagnostics.NoSolution, "Two different triangles fit this description");
             if (!acuteValid && !obtuseValid)
-                throw new ArgumentException("No such triangle");
+                throw Failures.Expected(ModelingDiagnostics.NoSolution, "No such triangle");
             angleE = acuteValid ? acute : obtuse;
         }
         var angleF = Math.PI - angleD - angleE;

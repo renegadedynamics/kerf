@@ -27,9 +27,9 @@ public readonly partial record struct DiagnosticCode
     /// <exception cref="ArgumentException">The value isn't a well-formed code.</exception>
     public DiagnosticCode(string value)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        KernelArgumentNullException.ThrowIfNull(value);
         if (!IsPlainlyWellFormed(value) && !Format().IsMatch(value))
-            throw new ArgumentException($"'{value}' isn't a diagnostic code: lower-case words of letters, digits and hyphens, separated by dots", nameof(value));
+            throw new KernelArgumentException($"'{value}' isn't a diagnostic code: lower-case words of letters, digits and hyphens, separated by dots", nameof(value));
         Value = value;
     }
 
@@ -88,21 +88,21 @@ public sealed record Diagnostic
     public required Severity Severity
     {
         get;
-        init => field = Enum.IsDefined(value) ? value : throw new ArgumentOutOfRangeException(nameof(value));
+        init => field = Enum.IsDefined(value) ? value : throw new KernelArgumentOutOfRangeException(nameof(value));
     }
 
     /// <summary>The code, stable for programs.</summary>
     public required DiagnosticCode Code
     {
         get;
-        init => field = value.Value is null ? throw new ArgumentException("A diagnostic needs a code", nameof(value)) : value;
+        init => field = value.Value is null ? throw new KernelArgumentException("A diagnostic needs a code", nameof(value)) : value;
     }
 
     /// <summary>What happened, in plain English.</summary>
     public required string Message
     {
         get;
-        init => field = value ?? throw new ArgumentNullException(nameof(value));
+        init => field = value ?? throw new KernelArgumentNullException(nameof(value));
     }
 
     /// <summary>
@@ -133,6 +133,16 @@ public sealed record Diagnostic
     /// opposed to one that didn't come from the kernel's checks.
     /// </summary>
     public static bool IsKernelFailure(Exception exception) => Kerf.Engine.Foundation.Refusal.IsFailure(exception);
+
+    /// <summary>
+    /// Whether an exception is one of the kernel's argument exceptions: an <see cref="ArgumentException"/> (or
+    /// <see cref="ArgumentOutOfRangeException"/>, or <see cref="ArgumentNullException"/>) that a kernel member threw when it
+    /// refused an argument, including the refusals <see cref="IsKernelFailure"/> knows, as opposed to one thrown by a
+    /// caller's own checks or by .NET's code.
+    /// </summary>
+    /// <remarks>It is told by the exception's type, so it doesn't depend on where the runtime compiled the check: a check
+    /// the JIT has inlined into the caller's method throws the same exception (decision 2028).</remarks>
+    public static bool IsKernelArgumentError(Exception exception) => exception is Kerf.Engine.Foundation.IKernelArgumentError;
 
     /// <summary>Whether this is an error.</summary>
     public bool IsError => Severity == Severity.Error;
@@ -179,12 +189,12 @@ public sealed record Diagnostic
             diagnostics = [];
         foreach (var diagnostic in diagnostics)
             if (diagnostic is null)
-                throw new ArgumentException("A diagnostic is null", name);
+                throw new KernelArgumentException("A diagnostic is null", name);
         var error = FirstError(diagnostics);
         if (success && error is not null)
-            throw new ArgumentException($"A success can't carry an error ({error})", name);
+            throw new KernelArgumentException($"A success can't carry an error ({error})", name);
         if (!success && error is null)
-            throw new ArgumentException("A failure needs an error", name);
+            throw new KernelArgumentException("A failure needs an error", name);
         return diagnostics;
     }
 }

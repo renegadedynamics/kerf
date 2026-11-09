@@ -11,6 +11,8 @@ that share one camera:
 | `Camera`, `Projection` | A view: eye, target, up; orthographic or perspective. `Top`, `Front`, `Right`, `Isometric`, `LookAt`, `Along` |
 | `DrawingOperations` | `ProjectLines`: hidden-line removal of shapes, giving a `LineDrawing` |
 | `LineDrawing`, `DrawnEdge`, `LineKind`, `DrawingOptions`, `HiddenLineMethod` | The drawing: 2D curves, visible or hidden, by kind, with their sources |
+| `DrawingNote`, `NoteStyle`, `NoteLine`, `TextOutput` | Notes: text on a drawing, set in a font, written as outlines or as text (unit 13F2) |
+| `Sheet`, `SheetView`, `TitleBlock`, `PageSize`, `PageOrientation` | A drawing sheet: paper, border, title block and views (unit 13F2) |
 | `Svg`, `SvgOptions`, `LineStyle`, `SvgUnit` | The SVG writer |
 | `Renderer`, `Scene`, `SceneItem`, `RenderOptions`, `Shading`, `EdgeDisplay`, `DirectionalLight` | The software renderer of meshes |
 | `RgbaImage` | A picture, 8-bit RGBA |
@@ -73,7 +75,60 @@ Result written = Svg.Write(drawing, stream);
   `Scale`, at that scale. Always centred. The view's Y up becomes SVG's Y down.
 - **Bytes:** UTF-8 without a byte order mark, `\n` line ends, numbers rounded to `Decimals` (3) under the invariant
   culture, no negative zero: the same drawing and options give the same bytes on every machine.
+- **Notes** are a third layer, `<g id="notes">`, over the lines: each note a `<path class="note">` of its glyphs'
+  outlines, one closed subpath a contour, filled in `NoteColor` by the non-zero rule; or, with `TextOutput.Text`, a
+  `<text>` a line, at its anchor, in the font's family (Liberation Sans with Arial, which has its widths, after it),
+  size, weight and style, `text-anchor` for its alignment, `rotate` for its rotation and `xml:space="preserve"`.
+- **`Area`** fixes the part of the view plane the page shows in place of the drawing's extent: a sheet's page.
 - A stream that can't be written is `svg.write-failed`.
+
+## Notes
+
+*Unit 13F2, 9 November 2026: decisions 2030 to 2033 (placeholders). Decision 2008: text in SVG and DXF as outlines by
+default, as text as an option.*
+
+```csharp
+Result<DrawingNote> note = DrawingNote.Make("Ø8 through", new Point2D(20, 15),
+    new NoteStyle { Size = 3.5, Horizontal = TextAlign.Center, Rotation = 90 });   // Kerf.Fonts' TextAlign
+LineDrawing annotated = drawing.WithNotes(note.Value);
+string svg = Svg.WriteToString(annotated, new SvgOptions { TextOutput = TextOutput.Text });
+```
+
+- A note is text at a point of the view plane: `Size` the font's em, as `TextShapes.Make` and build123d's `Text` size it
+  (a capital is about 0.7 of it), `Font` (Liberation Sans by default), `Horizontal` and `Vertical` alignment on its
+  position as `TextOptions` has them, and `Rotation` in degrees about it. `Make` draws it once with `TextShapes.Make`
+  and fails as that does (`text.empty`, `text.missing-glyph`, `result.invalid`).
+- **`Contours`** are its outlines, placed: closed loops of lines and Bézier curves, outer contours counter-clockwise and
+  holes clockwise. **`Lines`** are its lines for writing as text: each line's characters (a tab as the spaces it
+  advances) and its anchor, the point on its baseline where the alignment puts the line's start, centre or end, so a
+  reader's own text lands where the outlines do. **`CapHeight`** is the height of the font's H, which DXF's TEXT takes.
+- A drawing keeps its notes (`LineDrawing.Notes`, `WithNotes`, or the constructor), and `GetBounds` counts them, so a
+  page fitted to the drawing fits its notes too. A drawing without notes is written as before.
+
+## Sheets
+
+```csharp
+var sheet = new Sheet(PageSize.A3)            // landscape; PageOrientation.Portrait
+{
+    TitleBlock = new TitleBlock { Title = "Bracket", PartNumber = "KF-0042", Date = "2026-11-09", Author = "J. Davies" },
+    Views = [new SheetView(part.ProjectLines(Camera.Front).Value, new Point2D(120, 180), 0.5)],   // 1:2, centred there
+};
+Result<LineDrawing> drawn = sheet.Draw();
+string svg = Svg.WriteToString(drawn.Value, sheet.PageOptions());
+```
+
+- **Paper:** ISO A0 to A10 and US letter, legal and ledger (build123d's `PageSize`), with ANSI C, D and E; `AnsiA` is
+  `Letter` and `AnsiB` `Ledger`. Either way up.
+- **Plain, not a drafting standard:** a border 20 mm from the left edge, for filing, as ISO 5457 has it, and 10 mm from
+  the others (less in proportion on paper smaller than A4); a title block in the frame's bottom right corner, 180 × 25 mm (smaller in proportion where the frame is
+  narrower), of a title and part number above and scale, units, date, author and sheet below, each cell its label and the
+  caller's text. The scale is the views' (`1:2`, `2:1`), "As shown" where they differ, or what `TitleBlock.Scale` says.
+- **Views:** each a line drawing, the centre of its extent placed at a point of the paper, drawn at a scale (paper
+  millimetres to the drawing's unit); its curves are transformed, its notes made again at the scale.
+- **`Draw`** gives the sheet as one `LineDrawing` in millimetres from the paper's bottom left corner, so it is written
+  as any drawing is: `Svg` on a page of the paper's size with `PageOptions` (or any `SvgOptions` with `PageOptions(style)`),
+  Kerf.Modeling's `ExportDxf.AddDrawing` as it is. A view outside the border or over the title block, and an entry wider
+  than its cell, are warnings (`drawing.sheet-overflow`); an entry the default font can't set fails.
 
 ## Pictures
 
@@ -131,8 +186,7 @@ the passes after the first): the exact drawing, isometric, and its SVG take 2.4 
 
 ## Left
 
-- A view of several cameras on one page (a drawing sheet: front, top, side, isometric), title blocks and dimensions;
-  `LineDrawing`'s constructor and `GetBounds` let a caller compose them now.
+- Dimensions, leaders and section views on a sheet; a title block of a standard's layout (ISO 7200's fields).
 - Section views (a cut by a plane, hatched).
 - Feature edges for meshes without a shape (STL): crease detection from the triangles.
 - Shadows, and anti-aliasing other than supersampling.

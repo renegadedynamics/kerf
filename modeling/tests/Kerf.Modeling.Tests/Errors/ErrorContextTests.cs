@@ -8,7 +8,7 @@ using Kerf.Modeling;
 /// A kernel failure says what was being done, for someone reading it in a cell: the native backend's "box 0.0 × 1.0 ×
 /// 1.0 failed: …", lost in unit 10B (decision 1342), restored in 10F through the kernel's diagnostics. Since unit 10M3 a
 /// failure is a failed result's diagnostics (Failures.Try, as the public operations return them); the shorthands that
-/// can't return one throw InvalidOperationException with the same message, the kernel's failure inside. The tests keep
+/// can't return one throw ModelingException (decision 2013) with the same message, the kernel's failure inside. The tests keep
 /// their names, under which native OCCT's differential log is recorded.
 /// </summary>
 public class ErrorContextTests
@@ -21,9 +21,76 @@ public class ErrorContextTests
         Assert.Equal("kernel.invalid-argument", failed.Error!.Code.Value);
         Assert.StartsWith("box 0 × 1 × 1 failed: The value must be a positive number", failed.Error.Message);
         // A constructor can't return a result: it throws, with the kernel's failure inside
-        var e = Assert.Throws<InvalidOperationException>(() => new Box(0, 1, 1));
+        var e = Assert.Throws<ModelingException>(() => new Box(0, 1, 1));
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
         Assert.StartsWith("box 0 × 1 × 1 failed: The value must be a positive number", e.Message);
+    }
+
+    [Fact]
+    public void A_kernel_refusal_is_the_kernel_s_whichever_frame_throws_it()
+    {
+        // Decision 2028: once a call is hot, the JIT inlines the kernel's small checks, and the public methods calling
+        // them, into the layer's methods, so a refusal is thrown from a frame of the layer's. Each refusal here is thrown
+        // again from this test's frame, as the inlined check throws it, with nothing of the kernel's on its stack: the layer
+        // must still take it for the kernel's, said in context. When the layer told them by the frame that threw
+        // (decisions 2014, 2017), every one escaped Failures.Try as a bare argument exception
+        Exception[] refusals =
+        [
+            Assert.Throws<ModelingException>(() => new Box(0, 1, 1)).InnerException!,                     // ArgumentOutOfRangeException
+            Assert.Throws<ModelingException>(() => new Cone(0, 0, 1)).InnerException!,                    // ArgumentException
+            Assert.Throws<ModelingException>(() => Solid.Extrude(Face.MakeRect(1, 1), new Vector3D(0, 0, 0))).InnerException!,
+            new Kerf.Engine.Foundation.KernelArgumentNullException("profile"),                            // ArgumentNullException
+        ];
+        foreach (var refusal in refusals)
+        {
+            Assert.True(Diagnostic.IsKernelArgumentError(refusal), refusal.GetType().Name);
+            var tried = Failures.Try<int>(() => throw refusal);
+            Assert.Equal("kernel.invalid-argument", tried.Error!.Code.Value);
+            Assert.StartsWith("operation failed: ", tried.Error.Message);
+            // Thrown from here: no frame on its stack is the kernel's
+            Assert.DoesNotContain(new System.Diagnostics.StackTrace(refusal).GetFrames(),
+                                  f => System.Diagnostics.DiagnosticMethodInfo.Create(f)?.DeclaringAssemblyName.StartsWith("Kerf.Kernel.", StringComparison.Ordinal) == true);
+            var built = Assert.Throws<ModelingException>(() => Failures.Building<int>(() => "box", () => throw refusal));
+            Assert.Equal("kernel.invalid-argument", built.Error.Code.Value);
+            Assert.StartsWith("box failed: ", built.Message);
+            var done = Assert.Throws<ModelingException>(() => Failures.Doing<int>(() => "extrude", () => throw refusal));
+            Assert.Equal("kernel.invalid-argument", done.Error.Code.Value);
+        }
+
+        // And the layer's own misuse, an argument exception of .NET's, still passes through as it is
+        var misuse = new ArgumentException("Locations doesn't accept type Int32");
+        Assert.Same(misuse, Assert.Throws<ArgumentException>(() => Failures.Try<int>(() => throw misuse)));
+    }
+
+    [Fact]
+    public void A_kernel_refusal_is_the_kernel_s_once_the_JIT_has_optimised_the_call()
+    {
+        // The refusals that became the layer's own once hot, before decision 2028: the box and the extrusion (decision 2014),
+        // and the cone, sphere, torus, circle and Bezier curve that went on doing so, measured on main after 13G (each said
+        // modeling.object-failed, without its context, after about 450 rounds of ConstructorFailureTests' failing values).
+        // Run long enough to be optimised (tiering waits 100 ms after 30 calls), each must still be the kernel's, every time
+        Func<object>[] refused =
+        [
+            () => new Box(0, 1, 1),
+            () => new Cone(0, 0, 1),
+            () => new Sphere(1, 10, 10),
+            () => new Torus(1, 1),
+            () => new Circle(1, 0),
+            () => new Bezier([new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0)], [1, -1, 1]),
+            () => Solid.Extrude(Face.MakeRect(1, 1), new Vector3D(0, 0, 0)),
+        ];
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        int runs = 0;
+        while (watch.ElapsedMilliseconds < 1500 || runs < 200)
+        {
+            foreach (var make in refused)
+            {
+                var result = Failures.Try(make);
+                Assert.Equal("kernel.invalid-argument", result.Error!.Code.Value);
+                Assert.Contains(" failed: ", result.Error.Message);
+            }
+            runs++;
+        }
     }
 
     [Theory]
@@ -88,7 +155,7 @@ public class ErrorContextTests
         Assert.Contains(fillet.Diagnostics.Skip(1), d => d.IsError && !d.Code.Value.StartsWith("modeling.", StringComparison.Ordinal));
         // The shorthand throws with the same message, the kernel's failure inside
         var box = new Box(1, 1, 1);
-        var e = Assert.Throws<InvalidOperationException>(() => box.Fillet(5, box.Edges()));
+        var e = Assert.Throws<ModelingException>(() => box.Fillet(5, box.Edges()));
         Assert.Contains("It failed on 12 of 12 edges", e.Message);
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
     }
@@ -99,7 +166,7 @@ public class ErrorContextTests
         // OCCT reports why a boolean failed as alerts, which the kernel's public Booleans turn into diagnostics (unit
         // 10L1); the modelling layer reads them from the result. A Boolean without arguments is refused before OCCT
         // (its BOPAlgo_AlertTooFewArguments can't arise), and a good one has no errors
-        Assert.Throws<ArgumentException>(() => TopoUtil.Boolean(BooleanKind.Fuse, [], []));
+        KernelAssert.Throws<ArgumentException>(() => TopoUtil.Boolean(BooleanKind.Fuse, [], []));
         var box = new Box(1, 1, 1).Shape;
         var common = TopoUtil.Boolean(BooleanKind.Common, [box], [box]);
         Assert.True(common.IsSuccess);

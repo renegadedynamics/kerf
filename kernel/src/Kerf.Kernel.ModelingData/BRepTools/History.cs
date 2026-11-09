@@ -81,7 +81,7 @@ internal class History : Transient
     /// </summary>
     public History(History other)
     {
-        ArgumentNullException.ThrowIfNull(other);
+        KernelArgumentNullException.ThrowIfNull(other);
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in other._shapeToModified)
         {
             _shapeToModified[pair.Key] = new NCollection_List<Shape>(pair.Value);

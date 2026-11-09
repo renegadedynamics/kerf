@@ -96,7 +96,7 @@ public class Standard_StreamInputTests
         Assert.True(StreamUtilities.GetLine(aReader, aBuffer, 8, '\n'));
         Assert.Equal("1234567", StreamUtilities.CString(aBuffer));
         Assert.Equal('x', (char)aReader.Peek());
-        Assert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.GetLine(aReader, aBuffer, 9, '\n'));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.GetLine(aReader, aBuffer, 9, '\n'));
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class Standard_StreamInputTests
         StreamUtilities.CheckCount(aReader, 5, 2, "items");
         EngineAssert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckCount(aReader, 6, 2, "items"));
         EngineAssert.Throws<StreamFormatErrorException>(() => StreamUtilities.CheckCount(aReader, -1, 2, "items"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(aReader, -1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(aReader, -1));
 
         var aStream = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes("12345")));
         Assert.Equal(5, StreamUtilities.InputLength(aStream));

@@ -73,8 +73,8 @@ public class MeasurementTests
         Compound twice = Compound.Create([box, box]);
         Assert.Equal(12000, twice.IntegrateVolume(), 1e-6);
         Assert.Equal(6000, twice.IntegrateVolume(new MassOptions { SkipShared = true }), 1e-6);
-        Assert.Throws<ArgumentOutOfRangeException>(() => new MassOptions { Tolerance = -1 });
-        Assert.Throws<ArgumentOutOfRangeException>(() => box.MassProperties((Dimension)7));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new MassOptions { Tolerance = -1 });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => box.MassProperties((Dimension)7));
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class MeasurementTests
         Assert.True(box.Intersects(OrientedBox.FromBoundingBox(new BoundingBox(new Point3D(9, 0, 0), new Point3D(12, 1, 1)))));
         Assert.True(default(OrientedBox).IsEmpty);
         Assert.Throws<InvalidOperationException>(() => default(OrientedBox).Centre);
-        Assert.Throws<ArgumentException>(() => new OrientedBox(Point3D.Origin, Direction3D.UnitX, Direction3D.UnitX, Direction3D.UnitZ, Vector3D.Zero));
+        KernelAssert.Throws<ArgumentException>(() => new OrientedBox(Point3D.Origin, Direction3D.UnitX, Direction3D.UnitX, Direction3D.UnitZ, Vector3D.Zero));
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class MeasurementTests
         Assert.Equal(15, hits[1].LineParameter, Tol);
         Assert.Equal(0, hits[0].Point.X, Tol);
         Assert.Equal(Containment.In, hits[0].State);
-        Assert.Throws<ArgumentException>(() => box.Intersect(default(Line3D)));
+        KernelAssert.Throws<ArgumentException>(() => box.Intersect(default(Line3D)));
     }
 
     // A cut by a crossing cylinder of equal radius has faces bounded by walked curves. The fixed points gave 139.90 here for 118.73, 18% out
@@ -213,8 +213,8 @@ public class MeasurementTests
     [Fact]
     public void A_null_shape_is_misuse()
     {
-        Assert.Throws<ArgumentException>(() => default(Shape).IntegrateVolume());
-        Assert.Throws<ArgumentException>(() => default(Shape).BoundingBox());
-        Assert.Throws<ArgumentException>(() => Fixtures.Box().Distance(default(Shape)));
+        KernelAssert.Throws<ArgumentException>(() => default(Shape).IntegrateVolume());
+        KernelAssert.Throws<ArgumentException>(() => default(Shape).BoundingBox());
+        KernelAssert.Throws<ArgumentException>(() => Fixtures.Box().Distance(default(Shape)));
     }
 }

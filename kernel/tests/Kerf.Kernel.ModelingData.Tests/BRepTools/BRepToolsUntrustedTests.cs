@@ -77,7 +77,7 @@ public class BRepToolsUntrustedTests
         var aStreamReader = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes(aText)));
         Assert.Equal(aText.Length, StreamUtilities.InputLength(aStreamReader));
         EngineAssert.Throws<StreamFormatErrorException>(() => BrepTools.Read(out _, aStreamReader));
-        Assert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(new StringReader(""), -1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => StreamUtilities.SetInputLength(new StringReader(""), -1));
     }
 
     [Fact]

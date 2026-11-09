@@ -36,8 +36,8 @@ public class CurveTests
         Assert.True(d.D2.IsEqual(new Vector3D(0, -2, 0), 1e-12, 1e-12));
         Assert.Equal(Vector3D.Zero, d.D3);
         Assert.True(circle.DerivativeN(0, 3).IsEqual(new Vector3D(0, -2, 0), 1e-12, 1e-12));
-        Assert.Throws<ArgumentOutOfRangeException>(() => circle.Derivatives(0, 4));
-        Assert.Throws<ArgumentOutOfRangeException>(() => circle.DerivativeN(0, 0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => circle.Derivatives(0, 4));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => circle.DerivativeN(0, 0));
         Assert.Equal(new Circle3D(Frame3D.World, 2), circle.Circle);
     }
 

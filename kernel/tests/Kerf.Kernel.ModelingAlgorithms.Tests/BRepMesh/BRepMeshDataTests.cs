@@ -107,7 +107,7 @@ public class BRepMeshDataTests
         aCurve.RemovePoint(1);
         Assert.Equal(3, aCurve.ParametersNb());
         Assert.Equal(2.0, aCurve.GetParameter(1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => aCurve.GetParameter(3));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => aCurve.GetParameter(3));
 
         var anAdaptor = new ParametersListArrayAdaptorModel<CurveModel>(aCurve);
         Assert.Equal(0, anAdaptor.Lower());

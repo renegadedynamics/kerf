@@ -188,7 +188,7 @@ internal sealed class ExchangeDocument
     {
         if (!ReferenceEquals(label.Document, this))
         {
-            throw new ArgumentException(label.IsNull ? "Null label" : "Label of another document", nameof(label));
+            throw new KernelArgumentException(label.IsNull ? "Null label" : "Label of another document", nameof(label));
         }
         return label.Index;
     }
@@ -1422,7 +1422,7 @@ internal sealed class ExchangeDocument
         int color = this.Index(colorLabel);
         if (_nodes[color].Color is null)
         {
-            throw new ArgumentException("Not a colour label", nameof(colorLabel));
+            throw new KernelArgumentException("Not a colour label", nameof(colorLabel));
         }
         SetColorRef(this.Index(label), color, type);
     }

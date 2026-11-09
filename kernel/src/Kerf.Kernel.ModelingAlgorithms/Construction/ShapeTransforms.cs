@@ -58,7 +58,7 @@ public static class ShapeTransforms
         {
             if (!(Math.Abs(factor) > Tolerances.Confusion) || double.IsInfinity(factor))
             {
-                throw new ArgumentOutOfRangeException(nameof(factor), factor, "The scale factor must be a non-zero number.");
+                throw new KernelArgumentOutOfRangeException(nameof(factor), factor, "The scale factor must be a non-zero number.");
             }
             return shape.Transformed(Transform3D.Scale(centre, factor));
         }

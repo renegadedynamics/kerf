@@ -33,7 +33,7 @@ public sealed record MassOptions
     public double Tolerance
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The tolerance must be zero or more.");
+        init => field = value >= 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The tolerance must be zero or more.");
     } = 1e-6;
 
     /// <summary>Count a sub-shape met again (the same face, edge or shell) once.</summary>
@@ -80,7 +80,7 @@ public sealed record MassProperties
         Direction3D d = axis.Direction;
         if (d.X == 0 && d.Y == 0 && d.Z == 0)
         {
-            throw new ArgumentException("The axis must be a valid axis, not a default one.", nameof(axis));
+            throw new KernelArgumentException("The axis must be a valid axis, not a default one.", nameof(axis));
         }
 
         // Huygens' theorem: the inertia about the centre of mass moved to the axis's location (GProp::HOperator)
@@ -122,7 +122,7 @@ public sealed record DistanceOptions
     public double Deflection
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The deflection must be zero or more.");
+        init => field = value >= 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The deflection must be zero or more.");
     } = Tolerances.Confusion;
 
     /// <summary>Compute in parallel.</summary>

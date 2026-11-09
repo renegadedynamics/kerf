@@ -17,6 +17,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `Align2D`, `Align3D` (an `Align` or a tuple of them) | `Alignment`: an `Align` converts implicitly; `new Alignment(x, y)` or `new Alignment(x, y, z)` |
 | `Mode.ADD`, `SUBTRACT`, … (`mode=` on objects and operations) | Not ported: algebra mode only, combined with operators |
 | `SortBy.LENGTH`, … | `ShapeKey.Length`, … |
+| `FontStyle.BOLD`, `TextAlign.TOPFIRSTLINE`, … | The kernel's `Kerf.Fonts.FontStyle.Bold`, `Kerf.Fonts.TextAlign.TopFirstLine`, … (`using Kerf.Fonts;`) |
 | `to_align_offset(min, max, align, center)` | `Alignment.Offset(min, max, center)` |
 
 ## Geometry
@@ -129,6 +130,12 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `CenterArc(c, r, start, arc_size)` with a float or a limit (`Shape`, `Axis`, …) | Two overloads: `double arcSize`, or a `CurveLimit` (from a shape, axis, location, plane or point); the same for `JernArc`, the conic arcs and `PolarLine`'s length |
 | `ConstrainedArcs(…, selector=lambda arcs: …)` | `new ConstrainedArcs(…, selector: arcs => …)`, the selector returning edges; `center_on` with two targets is `ConstrainedArcs.CenteredOn(…)` |
 | `GridLocations(…) * Circle(1)` | The same operator over the `LocationList` |
+| `Text(txt, font_size, font=, font_path=, font_style=, text_align=(h, v), align=, path=, position_on_path=, single_line_width=, rotation=)` | `new Text(txt, fontSize, font, fontPath, fontStyle, textAlign: (h, v), align, path, positionOnPath, singleLineWidth, rotation)`; `Operations.MakeText(…)` for a `Result<Text>` (unit 13E) |
+| `text.txt`, `.font_size`, `.font`, `.font_path`, `.text_path`, … | `Txt`, `FontSize`, `Font`, `FontPath`, `TextPath`, …: the font and path used, as build123d resolves them (`FontPath` null for Kerf's own Liberation Sans) |
+| `Compound.make_text(…)` | `Operations.MakeText(…).Value.Shape`: the text's compound |
+| `FontManager().available_fonts()`, `find_font(name, style)`, `register_font(path)` | The kernel's `FontLibrary.System.Fonts`, `FontLibrary.System.Find(name, style)`, `FontLibrary.Scan(folders)` or `Font.Read(stream)` (`Kerf.Fonts`) |
+| An object that can't be made from its values (`ValueError`, `RuntimeError`, an OCCT error: `Triangle(a=1, b=1, c=3)`, `RadiusArc` too small, a `Spline` through points too close) | `ModelingException` (an `InvalidOperationException`), carrying the error a `Result` would: `Error`, with its `Code`, and `Diagnostics`. An argument wrong on its own (a null, too few points, a missing angle) stays an `ArgumentException` (kernel decision 2013) |
+| (none: a Kerf addition) | Each object's constructor as an operation returning a `Result`: `Operations.MakeBox(…)`, `MakeSpline(…)`, `MakeTriangle(…)`, …, `Make` and the class's name, with the constructor's parameters; `ConstrainedArcs.CenteredOn` is `MakeConstrainedArcsCenteredOn`. A `Result<Part>`, `Result<Sketch>` or `Result<Curve>`, holding the object |
 
 ## Operations
 
@@ -162,19 +169,45 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `export_stl(shape, path, tolerance, angular_tolerance, ascii_format)` | `Exporters3D.ExportStl(shape, stream or path, StlExportOptions, token)` |
 | `export_gltf(shape, path, unit, binary, linear_deflection, angular_deflection)` | `Exporters3D.ExportGltf(shape, stream or path, GltfExportOptions, token)`; to a stream, a `.gltf` embeds its buffer |
 | `Mesher(unit).add_shape(shape, linear_deflection, angular_deflection)` then `write("x.3mf")` | `Exporters3D.Export3mf(shape, stream or path, ThreeMfExportOptions, token)` |
+| `ExportDXF(version=DXF2013, unit=Unit.MM, color, line_weight, line_type)` | `new ExportDxf(DxfVersion.R2013, Unit.Millimeter, color, lineWeight, lineType, tolerance)`: immutable, each `Add…` returning a new exporter; `DxfVersion.R12` as well (kernel decision 2011) |
+| `exporter.add_layer(name, color=, line_weight=, line_type=)` | `AddLayer(name, color, lineWeight, lineType)`; a duplicate name, a forbidden character or a weight DXF hasn't got is `ArgumentException` |
+| `exporter.add_shape(shape or shapes, layer="")` | `AddShape(shape, layer)`, `AddShape(shapes, layer)`; the layer must have been added (`""` is `"0"`) |
+| `ExportDXF().add_shape(drawing.visible_lines).add_shape(drawing.hidden_lines, layer=…)` | `AddDrawing(lineDrawing, visibleLayer, hiddenLayer)`, from `Kerf.Drawing`'s `ProjectLines` |
+| `exporter.write(path)` | `Write(stream or path, token)`: a `Result`, warning `modeling.dxf-not-planar` of edges off the XY plane; `WriteToString()` |
+| (none: text in an exported drawing) | `Kerf.Drawing`'s `DrawingNote.Make(text, position, NoteStyle)` and `LineDrawing.WithNotes(…)`; `ExportDxf(textOutput: TextOutput.Text)`, `AddDrawing(…, notesLayer)`, `AddNotes(notes, layer)` (unit 13F2) |
+| `TechnicalDrawing(designed_by, design_date, page_size, title, sub_title, drawing_number, sheet_number, drawing_scale, …)` | `new Sheet(pageSize, orientation) { TitleBlock = new TitleBlock { Title, PartNumber, Scale, Units, Date, Author, Sheet }, Views = [new SheetView(drawing, center, scale)] }.Draw()`: a `LineDrawing` in millimetres with the views on it, not a sketch of faces (`Kerf.Drawing`, unit 13F2) |
+| `PageSize.A4`, `PageSize.LETTER`, `LEGAL`, `LEDGER` | `Kerf.Drawing.PageSize.A4`, `Letter`, `Legal`, `Ledger`; and `AnsiC`, `AnsiD`, `AnsiE` (`AnsiA` is `Letter`, `AnsiB` `Ledger`) |
+| `LineType.HIDDEN`, `LineType.ISO_DASH`, … | `LineType.Hidden`, `LineType.IsoDash`, …; the DXF name from `Export2D.LineTypeDefinition(type).Name` |
+| `ColorIndex.RED`, … `LIGHT_GRAY` | `ColorIndex.Red`, … `LightGray` |
+| `Export2D.LINETYPE_DEFS`, `LTYPE_SCALE`, `DEFAULT_LINE_WEIGHT`, `PARAMETRIC_TOLERANCE` | `Export2D.LineTypeDefinition(type)`, `LineTypeScale(unit)`, `DefaultLineWeight`, `ParametricTolerance` |
 | `ValueError` from a reader | `ArgumentException`; past an `ImportLimits` limit, `InvalidDataException` |
 | `FileNotFoundError` (no file, or `export_stl`'s missing folder) | `FileNotFoundException`, `DirectoryNotFoundException` (every exporter) |
 
 ## Not yet ported
 
-- Text (`Compound.make_text`, fonts and the `Text` object): phase 7.
 - Builder mode (`BuildLine`, `BuildSketch`, `BuildPart` and the objects' and operations' builder behaviour): phase 5.
+- The drafting module's sketch objects (`Draft`, `DimensionLine`, `ExtensionLine`, `Arrow`, `ArrowHead`, and
+  `TechnicalDrawing` as a sketch of traced lines and text faces): `Kerf.Drawing`'s `Sheet` makes a sheet as a line drawing
+  instead.
 - `export_obj`, `export_to_pcbway`, `Mesher` as a class (its metadata, `read`, STL through lib3mf), `import_svg` and
-  the 2D exporters as classes (`ExportSVG`, `ExportDXF`; for SVG, the kernel's `Kerf.Drawing` projects hidden lines
-  and writes SVG, guide.md section 8); STEP's names, colours and assemblies natively (XCAF isn't bound); the glTF
+  `ExportSVG` (the kernel's `Kerf.Drawing` projects hidden lines and writes SVG, guide.md section 8); `ExportDXF`'s
+  binary DXF (`write(…, ascii_format=False)`); STEP's names, colours and assemblies natively (XCAF isn't bound); the glTF
   export's UVs and PBR materials.
 
 ## Deliberate differences
+
+- `Text` (unit 13E; the kernel's decisions 2020 to 2024): a character the font has no glyph for fails, naming it, where
+  build123d draws the font's empty box; an empty text fails where build123d gives no faces, and a size of 0 fails where
+  build123d crashes the process. Kerning is GPOS's where a font has it, which FreeType, and so build123d, ignores; a tab's
+  stops are at whole multiples of eight; a synthesised italic is a 10° shear, not also 1.5% smaller; a character of
+  several faces follows a path as one, where build123d turns each face to the tangent at its own centre; a font missing
+  is Liberation Sans, with a warning; a single-stroke font is known by its name ("olf …", or "SingleLine"), not by being
+  build123d's bundled one; and the outlines are the font's exactly, not FreeType's 26.6 pixels (the same to 1e-13 on a
+  TrueType font of 2,048 units to the em, 2e-6 on others).
+- `ExportDxf` writes splines exactly, rational ones with their weights, where build123d's `to_splines` makes every
+  spline a polynomial cubic within 1e-3; scales line types to the unit, where build123d's are 10 times too long in
+  inches and 2.54 times or more in centimetres and metres; projects edges off the XY plane (a tilted circle is an
+  ellipse) where build123d drops Z; and refuses a shape on a layer that wasn't added (kernel decision 2010).
 
 - `Color(0)` (black as a hex code) is black. build123d treats the 0 as "no colour code" and
   returns white.
@@ -184,15 +217,16 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
   counterpart, because the compiler rules those calls out.
 - Exceptions: a failure a caller should expect (a fillet, chamfer, offset, loft, draft or spline that can't be
   built, a Boolean that fails, a file that can't be read) is a failed `Result<T>` with diagnostic codes; the operators
-  and constructors, which can't return one, throw `InvalidOperationException` (unit 10M3). Misuse
+  and constructors, which can't return one, throw `ModelingException`, an `InvalidOperationException` carrying the same
+  error (unit 10M3; kernel decision 2013), and each object has a `Make…` operation returning the `Result`. Misuse
   stays .NET's: `ValueError` becomes `ArgumentException` (`ArgumentNullException` for a missing input), except where
   the shape being operated on is empty, which throws `InvalidOperationException` (the object's state, not an argument,
   is at fault). `RuntimeError` becomes `InvalidOperationException`. The messages are .NET sentences (unit 10M2).
 - `ConvexPolyhedron` merges points closer than 1e-6, leaves out a corner within 1e-6 of the hull of the others where
   it would make a face thinner than that, and builds each flat side (corners within 5e-8 of one plane) as one face;
-  build123d makes a face of each of Qhull's triangles and cleans. A set with no volume throws `ArgumentException`, where
-  SciPy raises `QhullError`. `Operations.MakeConvexPolyhedron` gives the same as a `Result<Part>` (kernel decisions
-  1993 and 1996).
+  build123d makes a face of each of Qhull's triangles and cleans. A set with no volume throws `ModelingException`
+  (`modeling.hull-failed`), where SciPy raises `QhullError`. `Operations.MakeConvexPolyhedron` gives the same as a
+  `Result<Part>` (kernel decisions 1993, 1996 and 2013).
 - `Wire.MakePolygon(…, close: true)` closes a polygon whose ends are 1e-7 to 1e-6 apart, which build123d leaves open
   (kernel decision 1994).
 - `Wire.MakeConvexHull` samples curves to a deflection, not 2 / tolerance points an edge, and makes each joining line

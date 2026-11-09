@@ -75,9 +75,9 @@ public class FilletTests
     {
         Solid box = Solid.Box(2, 2, 2).Value;
         Edge stranger = Edge.Line(new(0, 0, 9), new(1, 0, 9)).Value;
-        Assert.Throws<ArgumentException>(() => box.Fillet([stranger], 1));
-        Assert.Throws<ArgumentException>(() => box.Fillet(Array.Empty<Edge>(), 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => box.Fillet([box.AllEdges()[0]], 0));
+        KernelAssert.Throws<ArgumentException>(() => box.Fillet([stranger], 1));
+        KernelAssert.Throws<ArgumentException>(() => box.Fillet(Array.Empty<Edge>(), 1));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => box.Fillet([box.AllEdges()[0]], 0));
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class FilletTests
         Assert.Equal(7, box.Chamfer([edge], 1).Value.Shape.AllFaces().Length);
         Assert.Equal(7, box.Chamfer([new ChamferSpec(edge, 1, Distance2: 2)]).Value.Shape.AllFaces().Length);
         Assert.Equal(7, box.Chamfer([new ChamferSpec(edge, 1, Angle: Math.PI / 6)]).Value.Shape.AllFaces().Length);
-        Assert.Throws<ArgumentException>(() => box.Chamfer([new ChamferSpec(edge, 1, 2, Math.PI / 6)]));
+        KernelAssert.Throws<ArgumentException>(() => box.Chamfer([new ChamferSpec(edge, 1, 2, Math.PI / 6)]));
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class FilletTests
         var tooLarge = square.Fillet2D([square.AllVertices()[0]], 50);
         Assert.False(tooLarge.IsSuccess);
         Assert.StartsWith("fillet.", tooLarge.Error!.Code.Value, StringComparison.Ordinal);
-        Assert.Throws<ArgumentException>(() => square.Fillet2D([Vertex.At(new Point3D(50, 50, 0))], 1));
+        KernelAssert.Throws<ArgumentException>(() => square.Fillet2D([Vertex.At(new Point3D(50, 50, 0))], 1));
     }
 
     [Fact]

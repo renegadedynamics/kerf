@@ -205,7 +205,7 @@ internal class NCollection_List<T> : IEnumerable<T>
     {
         if ((uint)position >= (uint)_count)
         {
-            throw new ArgumentOutOfRangeException(nameof(position));
+            throw new KernelArgumentOutOfRangeException(nameof(position));
         }
 
         return _items[position];
@@ -314,7 +314,7 @@ internal class NCollection_List<T> : IEnumerable<T>
     {
         if ((uint)iter.Index >= (uint)_count)
         {
-            throw new ArgumentOutOfRangeException(nameof(iter));
+            throw new KernelArgumentOutOfRangeException(nameof(iter));
         }
 
         RemoveAt(iter.Index);
@@ -419,7 +419,7 @@ internal class NCollection_List<T> : IEnumerable<T>
     {
         if ((uint)index > (uint)_count)
         {
-            throw new ArgumentOutOfRangeException(nameof(index));
+            throw new KernelArgumentOutOfRangeException(nameof(index));
         }
 
         if (_count == _items.Length)

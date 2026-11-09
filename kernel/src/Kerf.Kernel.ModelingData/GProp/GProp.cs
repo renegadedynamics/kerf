@@ -114,7 +114,7 @@ internal static class GProp
             (1, 2) => s * s * s / 3.0,
             (2, 2) => (v - Math.Sin(4.0 * v) / 4.0) / 8.0,
             (3, 2) => s * s * s / 3.0 - s * s * s * s * s / 5.0,
-            _ => throw new ArgumentOutOfRangeException(nameof(k)),
+            _ => throw new KernelArgumentOutOfRangeException(nameof(k)),
         };
     }
 

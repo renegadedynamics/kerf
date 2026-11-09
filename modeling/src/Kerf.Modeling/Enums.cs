@@ -174,14 +174,6 @@ public enum Kind
 }
 
 
-/// <summary>Text font styles.</summary>
-public enum FontStyle
-{
-#pragma warning disable CS1591
-    Regular, Bold, Italic, BoldItalic,
-#pragma warning restore CS1591
-}
-
 /// <summary>Which of the two arcs through the same end points to take.</summary>
 public enum Sagitta
 {
@@ -228,14 +220,6 @@ public enum NumberDisplay
 {
 #pragma warning disable CS1591
     Decimal, Fraction,
-#pragma warning restore CS1591
-}
-
-/// <summary>Standard paper sizes: ISO A and US.</summary>
-public enum PageSize
-{
-#pragma warning disable CS1591
-    A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, Letter, Legal, Ledger,
 #pragma warning restore CS1591
 }
 
@@ -293,14 +277,6 @@ public enum ShapeKey
 {
 #pragma warning disable CS1591
     Length, Radius, Area, Volume, Distance,
-#pragma warning restore CS1591
-}
-
-/// <summary>How text sits relative to its insertion point.</summary>
-public enum TextAlign
-{
-#pragma warning disable CS1591
-    Bottom, Center, Left, Right, Top, TopFirstLine,
 #pragma warning restore CS1591
 }
 

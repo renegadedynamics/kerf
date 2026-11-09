@@ -120,7 +120,7 @@ internal class WorkSession : Transient
     /// </summary>
     public virtual void SetStatics(StaticSet statics)
     {
-        _thestatics = statics ?? throw new ArgumentNullException(nameof(statics));
+        _thestatics = statics ?? throw new KernelArgumentNullException(nameof(statics));
         _thestatics.Standards();
     }
 

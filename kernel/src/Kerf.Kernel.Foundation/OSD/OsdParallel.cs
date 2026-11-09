@@ -63,7 +63,7 @@ internal static class OsdParallel
     {
         if (maxDegree < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(maxDegree), "The degree of parallelism must be at least 1.");
+            throw new KernelArgumentOutOfRangeException(nameof(maxDegree), "The degree of parallelism must be at least 1.");
         }
         int previous = OsdParallel.MaxDegree.Value;
         OsdParallel.MaxDegree.Value = maxDegree;

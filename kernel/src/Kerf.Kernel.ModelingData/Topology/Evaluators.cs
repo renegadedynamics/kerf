@@ -75,7 +75,7 @@ public sealed class EdgeCurve
                 return new CurveDerivatives(3, r.Point, r.D1, r.D2, r.D3);
             }
             default:
-                throw new ArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3.");
+                throw new KernelArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3.");
         }
     }
 
@@ -86,7 +86,7 @@ public sealed class EdgeCurve
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is less than 1.</exception>
     public Vector3D DerivativeN(double u, int n)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
+        KernelArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
         return _curve.EvalDN(u, n);
     }
 
@@ -120,7 +120,7 @@ public sealed class EdgeCurve
     public Continuity ContinuityWith(EdgeCurve other, double u, double otherU, double linearTolerance = Tolerances.Confusion,
                                      double angularTolerance = Tolerances.Angular)
     {
-        ArgumentNullException.ThrowIfNull(other);
+        KernelArgumentNullException.ThrowIfNull(other);
         try
         {
             return Engine.Topology.Properties.BRepLProp.Continuity(_curve, other._curve, u, otherU, linearTolerance, angularTolerance);
@@ -253,7 +253,7 @@ public sealed class WireCurve
                 return new CurveDerivatives(3, r.Point, r.D1, r.D2, r.D3);
             }
             default:
-                throw new ArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3.");
+                throw new KernelArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3.");
         }
     }
 
@@ -261,7 +261,7 @@ public sealed class WireCurve
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="n"/> is less than 1.</exception>
     public Vector3D DerivativeN(double u, int n)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
+        KernelArgumentOutOfRangeException.ThrowIfLessThan(n, 1);
         return _curve.EvalDN(u, n);
     }
 
@@ -329,7 +329,7 @@ internal static class CurveMeasures
     {
         if (!(deflection > 0))
         {
-            throw new ArgumentOutOfRangeException(nameof(deflection), deflection, "The deflection must be more than zero.");
+            throw new KernelArgumentOutOfRangeException(nameof(deflection), deflection, "The deflection must be more than zero.");
         }
 
         double first = curve.FirstParameter(), last = curve.LastParameter();
@@ -417,7 +417,7 @@ public sealed class FaceSurface
                 return new SurfaceDerivatives(3, r.Point, r.D1U, r.D1V, r.D2U, r.D2V, r.D2UV, r.D3U, r.D3V, r.D3UUV, r.D3UVV);
             }
             default:
-                throw new ArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3.");
+                throw new KernelArgumentOutOfRangeException(nameof(order), order, "The order must be 0 to 3.");
         }
     }
 
@@ -432,7 +432,7 @@ public sealed class FaceSurface
         Vector3D normal = r.D1U.Crossed(r.D1V);
         if (normal.Magnitude <= Tolerances.Confusion * Tolerances.Confusion)
         {
-            throw new ArgumentException($"The normal is undefined at ({u}, {v}): the surface is singular there.");
+            throw new KernelArgumentException($"The normal is undefined at ({u}, {v}): the surface is singular there.");
         }
 
         var direction = new Direction3D(normal);
@@ -484,11 +484,11 @@ public sealed class FaceSurface
     /// <exception cref="ArgumentOutOfRangeException">An order is negative, or both are zero.</exception>
     public Vector3D DerivativeN(double u, double v, int uOrder, int vOrder)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(uOrder);
-        ArgumentOutOfRangeException.ThrowIfNegative(vOrder);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(uOrder);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(vOrder);
         if (uOrder + vOrder == 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(uOrder), "The orders can't both be zero.");
+            throw new KernelArgumentOutOfRangeException(nameof(uOrder), "The orders can't both be zero.");
         }
 
         return _surface.EvalDN(u, v, uOrder, vOrder);

@@ -45,9 +45,10 @@ runs are quick.
    are copies; there's no `shape.location = …`.
 3. **Operations that can fail return `Result<T>`.** Fillet, chamfer, offset, loft, sweep, extrude, revolve, draft,
    thicken, imports and exports return a `Result`, never throw for a geometric failure. Check it (section 6).
-4. **Operators can't return a `Result`,** so `a - b` throws `InvalidOperationException` if the Boolean fails. Use
-   the methods `a.Subtract(b)`, `a.Add(b)` and `a.Common(b)`, which return a `Result<Part>` (or `Sketch`, `Curve`),
-   where a failure is possible and you want to handle it.
+4. **Operators and constructors can't return a `Result`,** so `a - b` throws `ModelingException` if the Boolean
+   fails, and `new Triangle(…)` if no triangle has those sides. Use the methods `a.Subtract(b)`, `a.Add(b)` and
+   `a.Common(b)`, which return a `Result<Part>` (or `Sketch`, `Curve`), and each object's `Make…` twin
+   (`MakeTriangle(…)`, `MakeSpline(…)`), where a failure is possible and you want to handle it.
 5. **Python names become .NET names:** `fillet` → `Fillet`, `Align.MIN` → `Align.Min`, `edges()` → `Edges()`,
    `sort_by(Axis.Z)` → `OrderBy(Axis.Z)`, `group_by(Axis.Z)[-1]` → `GroupBy(Axis.Z).Last()`. See
    [name-map.md](name-map.md).
@@ -87,6 +88,22 @@ Sketch objects: `Rectangle`, `RectangleRounded`, `Circle`, `Ellipse`, `Polygon`,
 `Triangle`, the `Slot…` family, `Superellipse`. Curves: `Line`, `Polyline`, `CenterArc`, `ThreePointArc`,
 `TangentArc`, `RadiusArc`, `Spline`, `Bezier`, `Helix`, `FilletPolyline` and others, as in build123d.
 
+**An object that can't be made from its values throws `ModelingException`,** carrying the error a `Result` would
+(`Error`, with its `Code`, and `Diagnostics`): no triangle has sides 1, 1 and 3, no arc of radius 1 joins points 4
+apart, no spline passes through points closer than 1e-6. It's an `InvalidOperationException`. **Each object has a twin
+in `Operations` returning a `Result`,** `Make` and its name, with the same parameters, for values that may not make a
+shape:
+
+```csharp
+Result<Sketch> tri = MakeTriangle(sideA: 1, sideB: 1, sideC: 3);   // modeling.no-solution: No such triangle
+Result<Curve> arc = MakeRadiusArc(new Point3D(0, 0, 0), new Point3D(4, 0, 0), 1);   // modeling.no-solution
+try { var s = new Spline(points); }
+catch (ModelingException e) { Console.WriteLine(e.Error.Code); }   // modeling.spline-failed
+```
+
+An argument that is wrong on its own (a null, too few points, a missing angle, a negative radius the object checks)
+is still an `ArgumentException`, from the constructor and its `Make…` alike.
+
 Objects are centred by default, as in build123d. `align: new Alignment(Align.Min, Align.Min, Align.Min)` puts the
 minimum corner at the origin; `GridLocations(xSpacing, ySpacing, xCount, yCount)` takes the spacing between
 centres, not the overall size.
@@ -98,6 +115,39 @@ Extrude(face, 10, new ExtrudeOptions { Both = true, Taper = 5 });
 Extrude(face, Until.Next, target);
 Sweep([section], path, new SweepOptions { IsFrenet = true });
 ```
+
+### Text: embossing and engraving
+
+`Text` is a sketch of a string's faces, the holes in letters as holes, as build123d's is. Extrude it up from a face to
+emboss it, or down into one to engrave it:
+
+```csharp
+using Kerf.Fonts;   // FontStyle, TextAlign
+
+Part plate = new Box(80, 30, 4);
+Sketch label = new Text("KERF 0.5", 10, font: "Liberation Sans", fontStyle: FontStyle.Bold);
+Sketch onTop = label.Moved(new Location(new Vector3D(0, 0, 2)));   // on the plate's top face
+Part embossed = plate + Extrude(onTop, 1).Value;                   // 9600 + 129.622 = 9729.622
+Part engraved = plate - Extrude(onTop, -0.5).Value;                // 9600 - 129.622 / 2 = 9535.189
+
+// A note in lines, its box's top left at the origin
+Sketch note = new Text("Line one\nLine two", 5, "Liberation Sans", textAlign: (TextAlign.Left, TextAlign.Top),
+                       align: new Alignment(Align.Min, Align.Max));
+
+// Along a path: each character upright on the curve
+Sketch arc = new Text("ROUND THE ARC", 6, "Liberation Sans", textAlign: (TextAlign.Left, TextAlign.Bottom),
+                      path: Edge.MakeCircle(30, startAngle: 0, endAngle: 180), positionOnPath: 0.05);
+```
+
+- The size is the font's em in model units, as in build123d: a capital is about 0.7 of it.
+- Fonts are found by family among those installed for everyone and for you, on Windows, macOS and Linux, or read
+  from `fontPath`. build123d's default is Arial; where Arial, or any family asked for, isn't installed, Kerf's own
+  Liberation Sans stands in, which has Arial's widths, with a warning (`Warnings.Capture()`, or `font.substituted` on
+  `MakeText`'s result). Name `"Liberation Sans"` to get the same text on every machine.
+- `MakeText(…)` gives the same as a `Result<Text>`: a character the font has no glyph for fails as
+  `text.missing-glyph`, naming it, where build123d draws an empty box; an empty text as `text.empty`.
+- A single-stroke engraving font (one whose family starts with "olf " or says "SingleLine") draws its strokes at
+  `singleLineWidth`, 4% of the size by default.
 
 ## 4. Selecting faces and edges
 
@@ -228,7 +278,7 @@ Every exporter and importer returns a `Result`. A missing folder or file is `Dir
 
 ### Drawings: hidden lines and SVG
 
-build123d's `ExportSVG` class isn't ported, but the kernel's `Kerf.Drawing` does the same job: a hidden-line
+build123d's `ExportSVG` class isn't ported (`ExportDxf` is, below), but the kernel's `Kerf.Drawing` does the same job: a hidden-line
 projection of any shape through a camera, written as SVG with the hidden lines in their own dashed layer.
 
 ```csharp
@@ -246,7 +296,82 @@ string front = Svg.WriteToString(part.Shape.ProjectLines(Camera.Front).Value,
   `PageHeight`, `Scale`, `Unit`, `VisibleStyle`, `HiddenStyle`, `Background`).
 - `DrawingOptions` chooses the method (exact, or the faster polygonal one) and whether hidden lines are computed at all.
 - `DrawingOperations.ProjectLines(shapes, camera)` draws several shapes together, each hiding the others' lines.
-- DXF export isn't available.
+
+### DXF: for other CAD programs and laser cutters
+
+`ExportDxf` is build123d's `ExportDXF`: layers with colours, line types and weights, then shapes or drawings on them.
+
+```csharp
+// A sketch's outline to cut, and a hole's to engrave, in millimetres
+Result written = new ExportDxf(unit: Unit.Millimeter)
+    .AddLayer("cut", ColorIndex.Red)
+    .AddLayer("engrave", ColorIndex.Blue, lineWeight: 0.25)
+    .AddShape(new Rectangle(50, 20) - new Circle(4), "cut")
+    .AddShape(new Pos(18, 0) * new Circle(2), "engrave")
+    .Write("plate.dxf");
+
+// A drawing: the visible lines on "visible", the hidden ones on "hidden" (grey, dashed)
+Result<LineDrawing> drawing = part.Shape.ProjectLines(Camera.Isometric);
+new ExportDxf().AddDrawing(drawing.Value).Write("part.dxf");
+```
+
+- **Each call returns a new exporter;** chain them, or keep the result: `dxf.AddShape(s);` on its own adds nothing.
+- Edges are drawn in the XY plane: lines, circles, arcs, ellipses and splines exactly (a rational spline with its
+  weights), anything else as a polyline within `tolerance` (1e-3). An edge off the plane is projected onto it, and
+  `Write` warns (`modeling.dxf-not-planar`). Coordinates aren't scaled: `unit` names them in the header.
+- `new ExportDxf(DxfVersion.R12)` writes the old R12 format, which some laser cutters' software reads better:
+  ellipses and splines become polylines, and the header has no units.
+- A layer must be added before a shape goes on it; `""` is the default layer, `"0"`. Line weights are DXF's standard
+  ones (0.05, 0.09, 0.13 … 2.11 mm).
+- `Text`'s faces are written as their edges, as any other shape's. A drawing's notes (next) are written as closed
+  polylines of their outlines by default, or as TEXT with `new ExportDxf(textOutput: TextOutput.Text)`.
+
+### Drawing sheets
+
+A sheet is paper of a standard size with a border, a title block and views of a part at chosen scales: a `Kerf.Drawing`
+addition, as build123d has no drawing sheets (its `TechnicalDrawing` is a sketch of a frame and text faces). The sheet
+is a line drawing in millimetres, so it goes to SVG and to DXF as any drawing does.
+
+```csharp
+using Kerf.Drawing;
+using Kerf.Fonts;   // TextAlign, for notes
+
+Part plate = new Box(30, 20, 10) - new Cylinder(4, 10);
+var sheet = new Sheet(PageSize.A4)          // landscape by default; ISO A0 to A10, Letter, Legal, Ledger, ANSI C to E
+{
+    TitleBlock = new TitleBlock { Title = "Plate", PartNumber = "KF-0001", Date = "2026-11-09", Author = "Kerf" },
+    Views =
+    [
+        new SheetView(plate.Shape.ProjectLines(Camera.Top).Value, new Point2D(90, 140), 2),    // 2:1, centred there
+        new SheetView(plate.Shape.ProjectLines(Camera.Front).Value, new Point2D(200, 140), 2),
+        new SheetView(plate.Shape.ProjectLines(Camera.Isometric).Value, new Point2D(90, 60), 1),
+    ],
+};
+LineDrawing drawn = sheet.Draw().Value;      // a Result: it warns of a view or an entry that doesn't fit
+File.WriteAllText("plate.svg", Svg.WriteToString(drawn, sheet.PageOptions()));   // a page of the paper's size
+new ExportDxf().AddDrawing(drawn).Write("plate.dxf");                             // millimetres from its corner
+
+// A note on any drawing: text at a point, set in a font
+DrawingNote note = DrawingNote.Make("Ø8 through", new Point2D(20, 15), new NoteStyle { Size = 3.5 }).Value;
+LineDrawing annotated = plate.Shape.ProjectLines(Camera.Top).Value.WithNotes(note);
+string asText = Svg.WriteToString(annotated, new SvgOptions { TextOutput = TextOutput.Text });
+new ExportDxf(textOutput: TextOutput.Text).AddDrawing(annotated).Write("plate-top.dxf");
+```
+
+- **Text is outlines by default,** in both formats: SVG fills each note's glyph outlines, DXF writes each contour as a
+  closed polyline within the exporter's `tolerance`, so the file looks the same everywhere and a laser cutter can engrave
+  it. **`TextOutput.Text`** writes text instead: SVG's `<text>` in the font's family, DXF's TEXT with a text style for
+  each font (`LiberationSans-Regular.ttf`), smaller and editable but drawn in whatever font the reader has. R12's text is
+  ASCII, so a note that isn't is written as outlines there, with a warning (`modeling.dxf-text-as-outlines`).
+- A note's size is the font's em, as `Text`'s is; `NoteStyle` sets the font, the alignment on the note's position
+  (`TextAlign.Left`, `Center`, `Right`; `Bottom`, `Center`, `Top`, `TopFirstLine`) and a rotation in degrees.
+  `DrawingNote.Make` fails as `MakeText` does (`text.missing-glyph`, `text.empty`).
+- The title block's fields are plain text the caller fills: title, part number, scale (the views' own, `2:1`, unless
+  given), units (`mm`), date, author and sheet (`1 of 1`). Nothing reads the clock, so the same sheet is the same file.
+- A view is placed by the centre of its drawing's extent, at a scale of paper millimetres to the model's unit; a view
+  outside the border or over the title block, or an entry too long for its cell, is a warning (`drawing.sheet-overflow`).
+- `ExportDxf.AddDrawing` puts notes on a layer `"notes"` (`notesLayer:` to change it, null to leave them out);
+  `AddNotes(notes, layer)` adds notes alone.
 
 ### Pictures: shaded PNG
 
@@ -279,7 +404,8 @@ using (var file = File.Create("part.png"))
   part first.
 - **Angles are degrees** in objects and operations (`Rotation`, `Revolve`, `Taper`), as in build123d; mesh angular
   deflections are radians.
-- **Not ported yet:** text, builder mode, DXF export, `import_svg`. SVG drawings come from `Kerf.Drawing` (section 8). [name-map.md](name-map.md) lists the rest.
+- **Not ported yet:** text, builder mode, `import_svg`. SVG drawings come from `Kerf.Drawing`, DXF from `ExportDxf`
+  (section 8). [name-map.md](name-map.md) lists the rest.
 
 ## 10. Coming from build123d
 

@@ -5,6 +5,49 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **Text in DXF:** `ExportDxf` writes a drawing's notes (`Kerf.Drawing.DrawingNote`) on a `"notes"` layer, as closed
+  polylines of their outlines by default or as TEXT with a text style for each font (`textOutput: TextOutput.Text`;
+  R12's text is ASCII, so other notes stay outlines there, with the warning `modeling.dxf-text-as-outlines`), and
+  `AddNotes` adds notes alone. A drawing sheet (`Kerf.Drawing.Sheet`) is written as any drawing is; the guide's
+  section 8 has one (kernel decisions 2030 to 2033).
+- **Breaking:** Kerf.Modeling's unused `PageSize` enum has gone; `Kerf.Drawing.PageSize` has its values, and ANSI C to E.
+- **DXF export:** `ExportDxf`, build123d's `ExportDXF`, writes sketches, faces, wires, edges and line drawings to DXF
+  for other CAD programs and laser cutters: layers with colours, line types and weights, units in the header, lines,
+  arcs, circles, ellipses and splines exactly (rational ones with their weights, where build123d approximates), and the
+  hidden lines of a drawing on their own layer. DXF 2013 by default, R12 for older programs (kernel decisions 2009
+  to 2011).
+- **Breaking: an object that can't be made from its values throws `ModelingException`,** one type carrying the error a
+  `Result` would (`Error`, with its code, and `Diagnostics`), where it threw `ArgumentException`,
+  `InvalidOperationException` or, from a few, the kernel's own exceptions. **Each object has a `Make…` operation
+  returning a `Result`** instead (`Operations.MakeTriangle`, `MakeSpline`, `MakeConstrainedArcs`, …, as
+  `MakeConvexPolyhedron` was). New codes: `modeling.no-solution`, `modeling.limit-not-reached` and
+  `modeling.object-failed`. `ModelingException` is an `InvalidOperationException`, and the operators' and topological
+  methods' failures are one too; code catching `ArgumentException` for an object's geometric failure must catch
+  `ModelingException` (kernel decision 2013). An argument wrong on its own (a null, too few points, a missing angle)
+  is still an `ArgumentException`.
+- **`RectangleRounded` of radius 0 is the rectangle,** where it threw; a negative radius is an `ArgumentException`.
+  **A large `Triangle`** (sides of 1e10, whose lengths come out 8e-6 from the solver's) finds its edges, where it
+  threw. **`Rectangle` of a size 0** fails as `Box` does, where it returned a face that isn't valid as a success. **A
+  closed `FilletPolyline` of two points** fails saying so, where it threw an index error. **`SlotCenterToCenter`
+  and `SlotOverall` too short to have a side** fail as `ModelingException`, where the kernel's internal exception
+  escaped. **`ConstrainedArcs` and `ConstrainedLines` with no solution** say so (`modeling.no-solution`), where
+  they said the selector returned nothing (kernel decision 2013).
+- **An operation reports the kernel's refusal of a value as a failure every time,** `kernel.invalid-argument` in context
+  ("box 0 × 1 × 1 failed: …"), where after many calls the JIT's optimisation could make one throw `ArgumentException`
+  instead (an extrusion along a zero vector, a box of size 0; kernel decision 2014).
+- **`Text`** (unit 13E): build123d's text, a sketch of a string's faces with holes in letters as holes, to emboss or
+  engrave, with its font, style, alignment, text on a path, single-line width and rotation; `Operations.MakeText` gives
+  it as a `Result`. On the same font file it gives build123d's faces, areas and bounding boxes to 1e-13. Fonts are found
+  among the installed ones, or read from a file, by the kernel's own reader; where one isn't installed, Kerf's own
+  Liberation Sans stands in, which has Arial's widths, with a warning. A character the font has no glyph for fails,
+  naming it (the kernel's decisions 2018 to 2024). **Breaking:** the unused `FontStyle` and `TextAlign` enums of
+  Kerf.Modeling are the kernel's `Kerf.Fonts.FontStyle` and `TextAlign`, with the same members.
+  or lose its context (an extrusion along a zero vector, a box of size 0, and a cone, sphere, torus, circle or Bezier
+  curve refused; kernel decisions 2014 and 2028).
+- **A `Cylinder`, `Hole`, `Sphere`, `Torus` or `Wedge` too small to be valid fails, and a `Rectangle` 1e-9 wide,**
+  where each returned a shape that isn't valid as a success; **a `Superellipse` about 1.5e-7 wide and a `Triangle`
+  with a side under the tolerance** fail as `ModelingException`, where they threw `InvalidCastException` and
+  `InvalidOperationException` (kernel decision 2029).
 - **Fusing a small part onto a large one is quick again:** a detent bump on an enclosure's door now takes less time than in 0.3.0 (0.4.0 took 4 to 5 times as long). A screw boss inside the door takes 1.3 to 1.4 times 0.3.0's time, against 4 to 5 in 0.4.0. The results are the same (the kernel's decisions 25101 to 25105).
 
 ## 0.4.0

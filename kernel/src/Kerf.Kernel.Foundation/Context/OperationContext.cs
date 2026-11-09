@@ -18,7 +18,7 @@ internal sealed class ContextKey<T>
     /// <summary>A setting named <paramref name="name"/> (for messages and debugging), with its default value.</summary>
     public ContextKey(string name, T defaultValue)
     {
-        ArgumentException.ThrowIfNullOrEmpty(name);
+        KernelArgumentException.ThrowIfNullOrEmpty(name);
         Name = name;
         Default = defaultValue;
     }
@@ -112,7 +112,7 @@ internal sealed class OperationContext
     /// <summary>This context with the setting <paramref name="key"/> set to <paramref name="value"/>.</summary>
     public OperationContext With<T>(ContextKey<T> key, T value)
     {
-        ArgumentNullException.ThrowIfNull(key);
+        KernelArgumentNullException.ThrowIfNull(key);
         for (int i = 0; i < _values.Length; i++)
         {
             if (ReferenceEquals(_values[i].Key, key))
@@ -155,7 +155,7 @@ internal sealed class OperationContext
     /// </summary>
     public static Scope Begin(OperationContext context)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        KernelArgumentNullException.ThrowIfNull(context);
         OperationContext? previous = CurrentContext.Value;
         CurrentContext.Value = ReferenceEquals(context, Default) ? null : context;
         return new Scope(previous);
