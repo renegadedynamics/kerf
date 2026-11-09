@@ -53,6 +53,80 @@ public static class Step
     }
 
     /// <summary>
+    /// <see cref="Read(Stream, StepReadOptions?, IProgress{double}?, CancellationToken)"/> with its input read
+    /// asynchronously: the stream's bytes are read into memory without blocking a thread (up to
+    /// <see cref="ReadLimits.MaxBytes"/> and one more, so data past the limit is refused as the synchronous form refuses
+    /// it), then parsed and translated synchronously, on the thread the read finished on. The same result as the
+    /// synchronous form, which parses as it reads: this one holds the file's bytes in memory while it parses.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result<ModelNode>> ReadAsync(Stream stream, StepReadOptions? options = null, IProgress<double>? progress = null,
+                                                    CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        options ??= StepReadOptions.Default;
+        return MemorySpool.ReadThenAsync(stream, options.Limits.MaxBytes,
+                                         data => ReadCore("STEP data", data, options, null, progress, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="Read(string, StepReadOptions?, IProgress{double}?, CancellationToken)"/> with the file read
+    /// asynchronously, as the stream form reads its stream. The file is opened before the task is returned, so a
+    /// missing one throws as it does in the synchronous form. The other STEP files it refers to, with
+    /// <see cref="StepReadOptions.ExternalReferences"/>, are read synchronously while it is translated.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="path"/> is null.</exception>
+    /// <exception cref="FileNotFoundException">There is no such file.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result<ModelNode>> ReadAsync(string path, StepReadOptions? options = null, IProgress<double>? progress = null,
+                                                    CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(path);
+        options ??= StepReadOptions.Default;
+        string full = Path.GetFullPath(path);
+        var file = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        return ReadFile(file, full, options, progress, cancellationToken);
+
+        static async Task<Result<ModelNode>> ReadFile(FileStream file, string full, StepReadOptions options, IProgress<double>? progress,
+                                                     CancellationToken cancellationToken)
+        {
+            MemorySpool data;
+            using (file)
+            {
+                data = await MemorySpool.ReadFromAsync(file, options.Limits.MaxBytes, Cancellation.Effective(cancellationToken)).ConfigureAwait(false);
+            }
+
+            using (data)
+            {
+                return ReadCore(full, data, options, options.ExternalReferences ? Path.GetDirectoryName(full) : null, progress, cancellationToken);
+            }
+        }
+    }
+
+    /// <summary>
+    /// <see cref="Write(ModelNode, Stream, StepWriteOptions?, IProgress{double}?, CancellationToken)"/> with its output
+    /// written asynchronously: the STEP is built in memory, synchronously, on the caller's thread, then written to the
+    /// stream without blocking a thread, and the stream flushed. The same bytes as the synchronous form, but for the
+    /// time of writing in the header; nothing is written on a failure.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">An argument is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(ModelNode model, Stream stream, StepWriteOptions? options = null, IProgress<double>? progress = null,
+                                          CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(stream);
+        return MemorySpool.WriteThenAsync(stream, data => Write(model, data, options, progress, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>Writes a shape as STEP asynchronously: one part (see the model form).</summary>
+    /// <exception cref="ArgumentException">The shape is null.</exception>
+    public static Task<Result> WriteAsync(Shape shape, Stream stream, StepWriteOptions? options = null, IProgress<double>? progress = null,
+                                          CancellationToken cancellationToken = default)
+        => WriteAsync(ModelNode.Part(shape), stream, options, progress, cancellationToken);
+
+    /// <summary>
     /// Writes a model as STEP (AP214): a product per part and assembly, the parts of one shape, name and colour written
     /// once and placed by each of their instances. The shapes are written as they are, without OCCT's shape processing.
     /// </summary>

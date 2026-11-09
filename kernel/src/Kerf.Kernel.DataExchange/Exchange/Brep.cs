@@ -60,6 +60,41 @@ public static class Brep
     }
 
     /// <summary>
+    /// <see cref="Read(Stream, ReadLimits?, CancellationToken)"/> with its input read asynchronously: the stream's bytes
+    /// are read into memory without blocking a thread (up to <see cref="ReadLimits.MaxBytes"/> and one more, so data past
+    /// the limit is refused as the synchronous form refuses it), then parsed synchronously, on the thread the read
+    /// finished on. The same result as the synchronous form.
+    /// </summary>
+    /// <returns>The shape, or a failure: <c>exchange.malformed</c>, <c>exchange.limit-exceeded</c>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result<Shape>> ReadAsync(Stream stream, ReadLimits? limits = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        limits ??= ReadLimits.Default;
+        return MemorySpool.ReadThenAsync(stream, limits.MaxBytes, data => Read(data, limits, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="Write"/> with its output written asynchronously: the BREP is built in memory, synchronously, on the
+    /// caller's thread, then written to the stream without blocking a thread, and the stream flushed. The same bytes as
+    /// the synchronous form; nothing is written on a failure.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+    /// <exception cref="ArgumentException">The shape is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(Shape shape, Stream stream, BrepWriteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        if (shape.IsNull)
+        {
+            throw new KernelArgumentException("The shape is null.", nameof(shape));
+        }
+
+        return MemorySpool.WriteThenAsync(stream, data => Write(shape, data, options), cancellationToken);
+    }
+
+    /// <summary>
     /// Writes a shape as BREP: OCCT's text (the current version, LF line ends, no Draw header line) or its binary
     /// format, with the meshes stored on its faces unless <see cref="BrepWriteOptions.WithTriangles"/> is false.
     /// </summary>
