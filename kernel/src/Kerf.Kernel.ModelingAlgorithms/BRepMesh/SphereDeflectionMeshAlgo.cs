@@ -7,13 +7,13 @@ using Kerf.Geometry;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>
-/// For a sphere at an absolute deflection, whose grid alone OCCT trusts (decision 1953): after the grid's nodes, measures
+/// For a sphere, whose grid alone OCCT trusts (decision 1953): after the grid's nodes, measures
 /// each triangle's and link's distance from the sphere exactly, and inserts a node at the point of the sphere nearest the
 /// worst point of each that is further than the deflection asked, for up to 11 passes. The cause of a sphere's misses was
 /// the scaling of its parameters, which <see cref="SphereRangeSplitter"/> now takes at the latitude nearest the equator;
 /// this is the check that the grid then meets the deflection, and adds nothing where it does, as on every sphere surveyed.
 /// OCCT's control tests a parameter midpoint, which overstates the distance near the poles and refines a sphere already
-/// within it. Not for a relative deflection, which asks nothing of the face itself (as decision 1929's torus).
+/// within it. At a relative deflection the limit is the face's own, as the torus's (decision 26301).
 /// </summary>
 internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<SphereRangeSplitter>
 {
@@ -42,7 +42,7 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
         Sphere3D sphere = GetDFace().GetSurface().Sphere();
         Point3D centre = sphere.Location;
         double radius = sphere.Radius;
-        double deflection = Math.Max(GetParameters().Deflection, GetDFace().GetDeflection());
+        double deflection = Deflection.SurfaceLimit(GetDFace(), GetParameters());
         double minSize = GetParameters().MinSize;
         double sqMinSize = minSize * minSize;
         double angle = GetParameters().AngleInterior;

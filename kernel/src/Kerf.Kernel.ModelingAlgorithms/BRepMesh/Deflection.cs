@@ -146,6 +146,15 @@ internal static class Deflection
     }
 
     /// <summary>
+    /// Kerf: the largest distance the mesh of a sphere or a torus may have from its surface (decisions 1929, 1953 and
+    /// 26301): the deflection asked, or the face's if larger, at an absolute deflection; at a relative one, where the
+    /// deflection asked is a coefficient of a size, the face's, which <see cref="ComputeDeflection(FaceModel, in ToolParameters)"/>
+    /// worked out from the face's and its edges' sizes.
+    /// </summary>
+    public static double SurfaceLimit(FaceModel dFace, in ToolParameters parameters) =>
+        parameters.Relative ? dFace.GetDeflection() : Max(parameters.Deflection, dFace.GetDeflection());
+
+    /// <summary>
     /// True if the current deflection of a polygonal representation fits the required one: below it (with the ratio
     /// as margin), and, if <paramref name="allowDecrease"/>, also about the same.
     /// </summary>

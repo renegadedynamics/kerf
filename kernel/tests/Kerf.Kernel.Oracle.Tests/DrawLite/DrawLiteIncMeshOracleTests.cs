@@ -200,10 +200,10 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
             Same($"Incremental Mesh, multi-threading {(theInParallel ? "ON" : "OFF")}\n{Statuses(aNativeFlags)}", aResult, $"{theWhat} result");
         }
 
-        // Decisions 1929 and 1953: a torus and a sphere are meshed to the deflection asked, where native's grid can miss it,
-        // so a shape with tori meshed at an absolute deflection gets more nodes than native's, and one with spheres other
+        // Decisions 1929, 1953 and 26301: a torus and a sphere are meshed to the deflection asked, or relative mode's, where
+        // native's grid can miss it, so a shape with tori gets more nodes than native's, and one with spheres other
         // triangles. Its run is made, with native's calls, and not compared
-        myTorusCase = !theIsRelative && HasTorusOrSphere(aDI.GetShape("s"));
+        myTorusCase = HasTorusOrSphere(aDI.GetShape("s"));
         if (myTorusCase)
         {
             myTorusMeshes++;
@@ -380,7 +380,7 @@ public sealed partial class DrawLiteIncMeshOracleTests(ITestOutputHelper output)
         }
 
         output.WriteLine($"{myRuns} runs: {myTextsSame} BRep texts byte-identical, {myTextsSameButChecked} but for the Checked flags "
-                         + $"(decision 551), {myRuns - myTextsSame - myTextsSameButChecked - myTorusMeshes} different, {myTorusMeshes} with tori or spheres not compared (decisions 1929 and 1953); {mySubShapes} exploded faces; {myValues} other values compared, "
+                         + $"(decision 551), {myRuns - myTextsSame - myTextsSameButChecked - myTorusMeshes} different, {myTorusMeshes} with tori or spheres not compared (decisions 1929, 1953 and 26301); {mySubShapes} exploded faces; {myValues} other values compared, "
                          + $"{myDisagreements.Count} disagreements");
         Assert.Empty(myDisagreements);
     }

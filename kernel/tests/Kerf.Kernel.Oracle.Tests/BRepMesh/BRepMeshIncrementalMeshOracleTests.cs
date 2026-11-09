@@ -324,16 +324,18 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     }
 
     /// <summary>Meshes F1 on both sides with the setting and compares the results.</summary>
-    // Decision 1953: a sphere at an absolute deflection is meshed with its parameters scaled at its widest latitude, where
-    // native's scaling can miss the deflection, so its triangles differ. Its meshing is made, with native's calls, and not
-    // counted in the comparison
+    // Decisions 1953 and 26301: a sphere is meshed with its parameters scaled at its widest latitude, where native's scaling
+    // can miss the deflection, so its triangles differ; and at a relative deflection a torus's mesh may have nodes native's
+    // hasn't. Its meshing is made, with native's calls, and not counted in the comparison
     private int mySphereMeshings;
 
-    private static bool HasSphere(in Shape theShape)
+    // Decision 26301: at a relative deflection too, and a torus's meshing may insert nodes native's doesn't
+    private static bool MeshesDiffer(in Shape theShape, bool isRelative)
     {
         for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
-            if (new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current())).GetType() == SurfaceKind.Sphere)
+            SurfaceKind aKind = new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current())).GetType();
+            if (aKind == SurfaceKind.Sphere || (isRelative && aKind == SurfaceKind.Torus))
             {
                 return true;
             }
@@ -344,7 +346,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     private void Compare(Tally theTally, string theName, string theF1, Setting theSetting, in Shape? thePortInput = null)
     {
         Shape aPortF1 = thePortInput ?? PortRead(theF1);
-        if (!theSetting.Relative && HasSphere(aPortF1))
+        if (MeshesDiffer(aPortF1, theSetting.Relative))
         {
             CompareCore(new Tally(), theName, theF1, theSetting, aPortF1);
             mySphereMeshings++;
@@ -445,7 +447,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             + $"{theTally.Faces} faces ({theTally.Nodes} nodes, {theTally.Triangles} triangles): {theTally.BitSame} bit-identical "
             + $"({100.0 * theTally.Share:F3}% of meshed faces), {theTally.SameTopology} same topology, {theTally.Different} different "
             + $"({theTally.OneUnmeshed} meshed by one side only), {theTally.BothUnmeshed} unmeshed by both; "
-            + $"{mySphereMeshings} with spheres at an absolute deflection not compared (decision 1953)"));
+            + $"{mySphereMeshings} with spheres, or tori at a relative deflection, not compared (decisions 1953, 26301)"));
         foreach (string aLine in theTally.TextDifferences.Take(theMaxLines))
         {
             output.WriteLine("  TEXT " + aLine);
@@ -784,8 +786,13 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                 using (new N.BRepMesh_IncrementalMesh(aNative, aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel))
                 {
                 }
-                Shape aPort = new IncrementalMesh(PortRead(aF1), aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel).Shape();
+                Shape aPortF1 = PortRead(aF1);
+                Shape aPort = new IncrementalMesh(aPortF1, aSetting.Deflection, aSetting.Relative, aSetting.Angle, aSetting.Parallel).Shape();
                 string aWhat = $"{Path.GetFileName(aFile)} ({aSetting})";
+
+                // Decisions 1953 and 26301: meshes with spheres, or tori at a relative deflection, aren't native's, so neither
+                // are their properties. Measured with native's calls, and not compared
+                anOracle.NotComparing = MeshesDiffer(aPortF1, aSetting.Relative);
 
                 using (var aN = new N.GProp_GProps())
                 {
@@ -816,6 +823,7 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
                         anOracle.Same(a4, b4, aWhat + " box"); anOracle.Same(a5, b5, aWhat + " box"); anOracle.Same(a6, b6, aWhat + " box");
                     }
                 }
+                anOracle.NotComparing = false;
                 aNative.Dispose();
                 aShapes++;
             }

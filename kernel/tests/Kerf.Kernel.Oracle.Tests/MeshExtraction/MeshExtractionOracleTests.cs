@@ -184,7 +184,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
 
     /// <summary>Compares the port's buffers with native's, face by face and edge by edge, every float bit for bit.</summary>
     private static void Compare(Tally theTally, string theWhat, global::Kerf.Engine.Meshing.MeshBuffers thePort, N.MeshBuffers theNative,
-                                bool theSpheresDiffer = false)
+                                bool theSpheresDiffer = false, bool theToriDiffer = false)
     {
         theTally.Shapes++;
         Assert.Equal(theNative.FaceTypes.Length, thePort.FaceTypes.Length);
@@ -208,10 +208,12 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             {
                 theTally.FacesSame++;
             }
-            else if (theSpheresDiffer && thePort.FaceTypes[f] == (int)SurfaceKind.Sphere)
+            else if ((theSpheresDiffer && thePort.FaceTypes[f] == (int)SurfaceKind.Sphere)
+                     || (theToriDiffer && thePort.FaceTypes[f] == (int)SurfaceKind.Torus))
             {
-                // Decision 1953: a sphere at an absolute deflection has other triangles than native's. Not compared, and read
-                // from native as a face that matched, so the native calls stay those recorded
+                // Decisions 1953 and 26301: a sphere has other triangles than native's, and a torus at a relative deflection
+                // may have more. Not compared, and read from native as a face that matched, so the native calls stay those
+                // recorded
                 isShapeSame = false;
                 theTally.Faces--;
                 theTally.SpheresNotCompared++;
@@ -256,7 +258,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
             $"{theWhat}: {theTally.Shapes} extractions, {theTally.ShapesSame} identical; faces {theTally.FacesSame}/{theTally.Faces} "
             + $"({theTally.FaceShare:P3}), edges {theTally.EdgesSame}/{theTally.Edges} ({theTally.EdgeShare:P3}), floats "
             + $"{theTally.FloatsSame}/{theTally.Floats} ({theTally.FloatShare:P4}) bit-identical; {theTally.SpheresNotCompared} spheres' "
-            + $"faces at an absolute deflection not compared (decision 1953)"));
+            + $"faces, and tori's at a relative deflection, not compared (decisions 1953, 26301)"));
         foreach (string aLine in theTally.Differences.Take(60))
         {
             output.WriteLine("  " + aLine);
@@ -307,7 +309,7 @@ public sealed class MeshExtractionOracleTests(ITestOutputHelper output) : IDispo
 
         Shape aMeshed = new global::Kerf.Engine.Meshing.IncrementalMesh(aPortF1, aDeflection, theRelative, theAngle, theParallel).Shape();
         global::Kerf.Engine.Meshing.MeshBuffers aPortBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, aDeflection, theAngle);
-        Compare(theTally, theName, aPortBuffers, aNativeBuffers, theSpheresDiffer: !theRelative);
+        Compare(theTally, theName, aPortBuffers, aNativeBuffers, theSpheresDiffer: true, theToriDiffer: theRelative);
     }
 
     private static IEnumerable<string> DataOccFiles()

@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A sphere's and a torus's meshes keep to the deflection at a relative deflection too** (`MeshOptions.Relative`): they kept OCCT's meshes, up to 5.5 times out on small fillet tori and twice on whole spheres, silently. Now within the deflection relative mode works out for each face, with 3.5% more triangles over the survey, all on spheres and tori; meshes at an absolute deflection, and other kinds of surface, are the same to the byte (decision 26301).
 - **Notes and sheets in drawings** (unit 13F2): `DrawingNote` puts text on a `LineDrawing` (`WithNotes`), in any font,
   at a size, alignment and rotation; `Svg` writes notes as filled outlines by default or as `<text>` with
   `SvgOptions.TextOutput`. `Sheet` lays views of a part out on ISO A0 to A10, US or ANSI C to E paper with a border and a
