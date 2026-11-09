@@ -10,7 +10,7 @@ namespace Kerf.Modeling;
 /// surface over <c>data/occ</c>, spheres, tori, cylinders, cones and Bento's examples (the kernel's decision 1954). It is
 /// measured, not proved: a face the survey didn't meet could stray. Relative to each edge's size, a sphere and a torus
 /// keep within the deflection worked out for each face, but for some small fillet tori, up to 1.14 times out beside a long
-/// boundary edge (the kernel's decisions 26301 and 26302); other kinds keep OCCT's meshes.
+/// boundary edge (the kernel's decisions 2056 and 2057); other kinds keep OCCT's meshes.
 /// </remarks>
 public readonly record struct MeshTolerances(double Linear, double Angular, bool Relative = false)
 {
