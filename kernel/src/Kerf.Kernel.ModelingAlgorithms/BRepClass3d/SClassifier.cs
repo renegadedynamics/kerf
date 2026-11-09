@@ -205,8 +205,8 @@ internal class SClassifier
             return;
         }
 
-        var mapEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(solidExplorer.GetShape(), ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, mapEF);
+        // Kerf: kept by the explorer for a frozen shape (unit 12Y)
+        IndexedMap<Shape, NCollection_List<Shape>> mapEF = solidExplorer.GetMapEF();
 
         var selectorLine = new BndBoxTreeSelectorLine(mapEV);
 

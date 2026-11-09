@@ -1545,3 +1545,66 @@ So a frozen 2D B-spline keeps the boxes of up to 64 arcs, which it can't change:
 Over the 561 cases the same statuses, 26,383 to 25,405 MB (-3.7%), and -0.4% without `volumemaker` and `bug25232_9`: `bug24359` 410 to 335 MB, `boolean/cells_test/B1` 21 to 16; `boolean/simplify/A3` 1,704 to 1,715 MB, a Boolean in parallel whose bytes move by that much between runs.
 
 **Tested on:** Foundation 2,544, ModelingData 3,376, ModelingAlgorithms 5,871 (9 skipped), DataExchange 444 (2 skipped), PublicApi 541, Reliability 41 and Kerf.Modeling 2,251, all passing in Release; and the whole corpus, 17,872 cases four at a time, against `corpus-11e`: only main's two (`bugs/mesh/bug31461`, `bugs/modalg_7/bug27928`) and `bugs/modalg_5/bug24639`'s check that parallel beats serial, a time on a loaded machine, which passes alone.
+
+## Booleans on ordinary parts: the gap a user sees (unit 12Y)
+
+*8 and 9 November 2026, on a machine shared with the owner and two other helpers: every time here is from a loaded machine, each process pinned to four logical processors, and the verdicts rest on bytes and on runs alternated back to back. Decisions 2000 and 2001.*
+
+**The report** (a user's agent, on `Kerf.Modeling` 0.3.0): ordinary extrude-and-cut parts' Booleans take 1.3 to 1.4 times build123d's, and its test suite about twice as long. **Both reproduce, and neither is the kernel's Booleans.** Without `Kerf.Modeling`'s checks, Kerf's Booleans and clean take about 0.5 to 0.7 times native OCCT's. The warm gap was the two checks Kerf adds on purpose (decisions 1742 and 1860), about as much again as the Boolean; two changes take a third of the checks off with the same results, and the parts now take 0.94 times native's at the quietest (0.85 to 1.05 under more load). The rest of "twice as long" is a fresh process: the JIT and tiering, two to three times native's for the first few hundred Booleans, ReadyToRun or not.
+
+### The rig
+
+Eight parts, 145 Booleans in all, each a plate or block extruded from a sketch of lines and arcs with 8 to 47 cuts and fuses one at a time, as `p -= Pos(...) * hole` does: a bracket with holes, a slot, two bosses and a pocket; a block with a pocket and holes in three faces; a flange with a hub, a keyway and counterbored bolt holes; a plate of 45 vent holes and two ribs; an angle from lines and an arc, with holes, slots and gussets; a lid with a pocket, bosses, holes and ten vent slots; a wheel with slots, a hub and twelve notches; a manifold of crossing bores and a tab. Kerf made the inputs and wrote them as BREP, and each side reads the same text, so both start from the same shapes. Native is OCCT 8.0.1 (MSVC) through build123d.NET's binding, run as build123d runs it: `BRepAlgoAPI_Cut` or `_Fuse` in parallel, non-destructive as Kerf's, then `ShapeUpgrade_UnifySameDomain(shape, true, true, true)` without internal edges; asking for both histories made no difference. Python's OCP couldn't be used: its native libraries are missing from the build123d checkout's environment. Both sides give the same faces and edges, and the same volumes to 1e-9 but the manifold's, 1.5e-6 apart (each measured by its own side's default integration). The rig is in the unit's scratch folder, not the repository.
+
+### Warm: where the time goes
+
+Medians of nine passes after three, alternating fresh processes; ms a pass of the 145 Booleans. The last three columns are from 01:00 on 9 November, when the machine was quietest: three pairs of before and after, and three runs of native and the kernel just before.
+
+| | Earlier runs, under more load, before | Quietest, before | Quietest, after both | Of native's, after |
+|---|---:|---:|---:|---:|
+| Native: Boolean and clean | 1,115 to 1,375 | 1,012 to 1,022 | (the same) | 1 |
+| Kerf, the kernel: Boolean and clean (not changed) | 584 to 791 | 563 to 570 | (the same) | 0.56 |
+| `Kerf.Modeling`'s operators | 1,354 to 2,163 (1.0 to 1.6 times native) | 1,132 to 1,147 (1.12 times) | 950 to 953 (-16%) | 0.94 |
+| `Kerf.Modeling`, MB a pass | 1,113 | 1,113 to 1,116 | 1,078 to 1,079 (-3.2%) | |
+
+By phase, the kernel's Boolean with each of `Kerf.Modeling`'s checks timed apart (the parts' own runs; native's rig times only its Boolean and its clean):
+
+| Share of a pass | Kerf before | Kerf after both | Native |
+|---|---:|---:|---:|
+| The Boolean (pave filler and builder) | 47% to 57% | 55% to 57% | 83% |
+| The clean (`UnifySameDomain`) | 4.5% to 5% | 5% | 17% |
+| The volume check (`BooleanVolumes.Check`) | 33% to 37% (388 to 390 ms at the quietest) | 22% (211 to 214 ms) | |
+| The validity check | 15% to 19% (171 to 177 ms) | 19% (179 to 184 ms) | |
+| `Kerf.Modeling`'s own work around the kernel (history, compounds, names) | under 1% of the samples | the same | |
+
+In samples (EventPipe, `Kerf.Modeling`'s run): the pave filler 30% and the builder 15%, the volume check 21% (19.4% of it integrating volumes), the validity check 11%, the clean 5%. A sample lands at a safe point, so 43% of them sit in `PollGC`; the collector's own pauses were measured at 50 to 75 ms a pass, 5%, and neither the server collector (pauses halved) nor a 64 MB first generation changes the wall time. Bytes: the kernel 785 MB a pass, `Kerf.Modeling` 1,113 before, 1,078 after both changes; the pave filler is half of them.
+
+**What was avoidable, and changed** (each the same result by construction, the suites and the corpus's Boolean and `modalg` groups as before):
+
+1. **The volume check measured each result twice** (decision 2000): once as the check's result, again as the next Boolean's object. A frozen shape's volume is now kept with its TShape. The check's own time 388 to 212 ms a pass at the quietest (490 to 230 under load); the parts in `Kerf.Modeling` 16% quicker in the quietest pairs, 12% to 30% in the loaded ones.
+2. **A fuse of a second boss or rib mapped the part's edges for every point of decision 1881's grid** (decision 2001). The first boss on a face only touches it and the check skips the slab (decision 1887); from the second on the part's box takes in the first boss's height and all 343 points are classified in the part, each mapping the faces of every edge again: a 40 MB check after a 7 MB Boolean. The map is kept for a frozen shape. That fuse 30% to 36% fewer bytes (the vents plate's 53.7 to 34.6 MB, the bracket's 20.9 to 14.5), the parts 2.4%.
+
+**What's left, for the owner:** the two checks are still about 40% of `Kerf.Modeling`'s Boolean time on these parts (the volume check 211 to 214 ms a pass at the quietest, the validity check 179 to 184), against a kernel Boolean that is already ahead of native's. With them, `Kerf.Modeling` is 0.94 times native; without them it would be 0.56. What would take more:
+
+- **The result's volume** is most of what's left of the volume check: every face integrated, each Boolean, so a plate of 45 holes integrates its 45 cylinders 47 times. Keeping each face's share would make it the new faces only, but the integration is about the shape's rough barycentre, which moves with every Boolean, so the last digits would change: a deliberate change of the check's figures, not done.
+- **The grid of decision 1881** still classifies 343 points in the part for each further boss (the rest of that check: rays meeting the part's faces, 2D classification of the hits). A tighter region than the boxes' overlap, or the tool classified first when it's the cheaper, are the ideas; neither changes a verdict, neither was measured to the bar.
+- **The validity check** is OCCT's `BRepCheck_Analyzer` on the whole result each time; 11R's "new faces only" (option 3) is the large saving and changes what is checked.
+
+### Cold: a fresh process
+
+The rig's 145 Booleans in fresh processes, one at a time, five of each (medians, ms; "JIT" is the runtime's own count of methods compiled and their time, all threads):
+
+| | First Boolean | First pass | Second pass | Methods the JIT compiled | Their time |
+|---|---:|---:|---:|---:|---:|
+| Native | 9.3 | 1,024 | 990 | | |
+| Kerf, the kernel, IL (a project reference) | 326 | 2,922 | 1,657 | 15,500 | 2,750 |
+| Kerf, the kernel, ReadyToRun | 102 | 1,702 | 1,519 | 4,700 | 800 |
+| `Kerf.Modeling`, IL | 383 | 4,415 | 2,251 | 18,200 | 4,300 |
+| `Kerf.Modeling`, ReadyToRun (as the packages ship) | 124 | 3,059 | 2,730 | 6,700 | 1,660 |
+
+Before the two changes, against a settled pass of about 1,300 ms. The process's start to `Main` was 70 to 140 ms on every side, and reading the cases about 100 ms. So in a fresh process `Kerf.Modeling` pays about 1.7 s more than settled for its first 145 Booleans, ReadyToRun or not, and still about 1.4 s more for the next 145: ReadyToRun code runs until tiering replaces it, and the second pass is still about twice the settled one. Native pays nothing. The ReadyToRun builds were published from the rig, compiling Kerf's assemblies with the application's settings, not the packages' exact ones (decision 1689); the counts are within a few percent of 11C's.
+
+### How much of the agent's figures each explains
+
+- **"1.3 to 1.4 times build123d's" Booleans, warm:** all of it is the checks. `Kerf.Modeling` was 1.0 to 1.6 times native on this machine, 1.12 at its quietest; the kernel's Boolean and clean alone 0.5 to 0.7. After the two changes, 0.94 at the quietest (0.85 to 1.05 under load). build123d itself adds Python's calls over native's, which this rig can't measure (its OCP is broken), so against build123d Kerf is if anything a little better than these ratios.
+- **"About twice as long" for a test suite:** mostly the fresh process. A test assembly is one process: `dotnet test` of an empty test took 0.9 s (five runs, 0.90 to 0.91 after the first), and a test making the rig's bracket (construction and its 10 Booleans, against the ReadyToRun build) 370 ms inside it, against 60 to 100 ms for the same Booleans settled and about 80 ms native. On the rig's figures a fresh process pays `Kerf.Modeling` about 3 s more than settled over its first 300 Booleans; with the checks' 1.3 times on top, a suite of up to about 500 Booleans takes twice native's time or more, and a larger one tends to the settled ratio, now about 1. xUnit also runs a suite's tests in parallel, where 9E found a fifth of the run stopped for collections. Python's start (importing build123d and OCP) wasn't measurable here; it isn't free either, so the figure against build123d would be a little better than against native. Without the agent's suite, how the two divide its figure can't be said more closely.

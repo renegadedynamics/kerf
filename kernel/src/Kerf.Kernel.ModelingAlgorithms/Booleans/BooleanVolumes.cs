@@ -1,9 +1,11 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Kerf.Engine.Classification;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Construction;
@@ -44,6 +46,13 @@ public static class BooleanVolumes
     // As Kerf.Modeling measures: the default integration can be 3.7% off on swept and B-spline faces (decision 1802), which is
     // more than most of what a rule could find, and on #1659 and #1643 it reported a Cut larger than its object where there was none
     private static readonly MassOptions Measured = new() { Tolerance = 1e-6 };
+
+    // The volumes measured of frozen shapes, kept with their TShapes (unit 12Y). A chain of Booleans checks each result, and the
+    // next one measures it again as its object: about half of what the check integrated on ordinary parts
+    private static readonly ConditionalWeakTable<TShape, KeptVolume> Kept = new();
+
+    // At most this many placements and orientations of one TShape: a solid moved about as a tool has one a move
+    private const int KeptPerShape = 4;
 
     // How far past a rule, for the size of the inputs, a result may be (decision 1861). The corpus's worst good result is 6.8e-5
     // of its larger input, with tolerances of 0.6, and otherwise 6.7e-6
@@ -177,7 +186,7 @@ public static class BooleanVolumes
         // bottle's neck on its body took 343 points of each, a quarter of its bytes (decision 1887)
         if (smallerVolume < 0)
         {
-            smallerVolume = Math.Min(a.IntegrateVolume(Measured), b.IntegrateVolume(Measured));
+            smallerVolume = Math.Min(VolumeOf(a), VolumeOf(b));
         }
         double size = Math.Cbrt(smallerVolume);
         if (Math.Min(toX - fromX, Math.Min(toY - fromY, toZ - fromZ)) < 2 * OverlapDepth * size)
@@ -275,7 +284,7 @@ public static class BooleanVolumes
         }
 
         List<SolidClassifier> classifiers = [.. solids.SelectMany(static s => s.AllSolids()).Select(static s => new SolidClassifier(s))];
-        double size = Math.Cbrt(solids.Sum(static s => s.IntegrateVolume(Measured)));
+        double size = Math.Cbrt(solids.Sum(static s => VolumeOf(s)));
         double depth = OverlapDepth * size + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
         int found = 0;
         Point3D first = default;
@@ -344,7 +353,7 @@ public static class BooleanVolumes
             return null;
         }
 
-        bool argumentIsSmaller = arguments[0].IntegrateVolume(Measured) <= tools[0].IntegrateVolume(Measured);
+        bool argumentIsSmaller = VolumeOf(arguments[0]) <= VolumeOf(tools[0]);
         Shape smaller = argumentIsSmaller ? arguments[0] : tools[0], larger = argumentIsSmaller ? tools[0] : arguments[0];
         if (smaller.AllFaces().Length > FacesLooked)
         {
@@ -538,13 +547,72 @@ public static class BooleanVolumes
                 BoundingBox box = solid.BoundingBox();
                 Vector3D size = box.Max - box.Min;
                 double room = Math.Abs(size.X * size.Y * size.Z);
-                if (!double.IsFinite(room) || room >= 1e60 || solid.IntegrateVolume(Measured) < room * SmallestOfBox)
+                if (!double.IsFinite(room) || room >= 1e60 || VolumeOf(solid) < room * SmallestOfBox)
                 {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    // A shape's volume as Measured integrates it. A frozen TShape, its children and their geometry never change again, and
+    // the volume is a function of them, the placement (by its datums, which fix its transformation) and the orientation, so
+    // one measured before is the same bits. Not inside an open working overlay, where a frozen TShape may read as its working
+    // copy; nothing is kept from there either
+    internal static double VolumeOf(Shape shape)
+    {
+        if (shape.TShape() is not { IsFrozen: true } tShape || WorkingOverlay.Current is not null)
+        {
+            return shape.IntegrateVolume(Measured);
+        }
+        KeptVolume kept = Kept.GetValue(tShape, static _ => new KeptVolume());
+        if (kept.TryGet(shape, out double volume))
+        {
+            return volume;
+        }
+        volume = shape.IntegrateVolume(Measured);
+        kept.Add(shape, volume);
+        return volume;
+    }
+
+    // A TShape's measured volumes: a list whose nodes never change, read and published with Volatile, so a reader sees whole
+    // nodes; two threads keeping one at once can lose one, which is only a volume measured again
+    private sealed class KeptVolume
+    {
+        private Node? _first;
+
+        public bool TryGet(in Shape shape, out double volume)
+        {
+            for (Node? node = Volatile.Read(ref _first); node is not null; node = node.Next)
+            {
+                if (node.Orientation == shape.Orientation && node.Placement.IsEqual(shape.Placement))
+                {
+                    volume = node.Volume;
+                    return true;
+                }
+            }
+            volume = 0;
+            return false;
+        }
+
+        public void Add(in Shape shape, double volume)
+        {
+            Node? first = Volatile.Read(ref _first);
+            if ((first?.Count ?? 0) < KeptPerShape)
+            {
+                Volatile.Write(ref _first, new Node(shape.Placement, shape.Orientation, volume, first));
+            }
+        }
+
+        private sealed class Node(Placement placement, Orientation orientation, double volume, Node? next)
+        {
+            public readonly Placement Placement = placement;
+            public readonly Orientation Orientation = orientation;
+            public readonly double Volume = volume;
+            public readonly Node? Next = next;
+            public readonly int Count = (next?.Count ?? 0) + 1;
+        }
     }
 
     // What a side's solids hold
@@ -559,7 +627,7 @@ public static class BooleanVolumes
         {
             if (shape.Type == ShapeType.Solid)
             {
-                double volume = shape.IntegrateVolume(Measured);
+                double volume = VolumeOf(shape);
                 Smallest = Count == 0 ? volume : Math.Min(Smallest, volume);
                 Largest = Count == 0 ? volume : Math.Max(Largest, volume);
                 Sum += volume;
