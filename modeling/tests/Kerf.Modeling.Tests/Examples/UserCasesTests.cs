@@ -9,7 +9,7 @@ namespace Kerf.Modeling.Tests.Examples;
 /// <remarks>
 /// They run in this process. They once ran in a process of their own, as their thousands of operations warmed this one's
 /// runtime until the kernel's refusals in other tests escaped as bare argument exceptions (decision 2017); the layer now
-/// tells those by their type, wherever the JIT compiled the check (decision 25801).
+/// tells those by their type, wherever the JIT compiled the check (decision 2028).
 /// </remarks>
 public class UserCasesTests
 {

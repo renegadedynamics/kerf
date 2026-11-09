@@ -204,7 +204,7 @@ internal static partial class TopoUtil
         var made = Face.FromWires(topoWire, holes, onlyPlane: true, checkResult: false);
         if (!made.TryGetValue(out var face))
             throw new ArgumentException($"Cannot build face(s): {made.Error!.Code.Value}");
-        // The fix can split a face too narrow for its tolerance into pieces (a superellipse 1.5e-7 wide, decision 25802)
+        // The fix can split a face too narrow for its tolerance into pieces (a superellipse 1.5e-7 wide, decision 2029)
         var fixedFace = Failures.Get(face.FixFace(checkResult), () => "fix face").Shape;
         return fixedFace.TryAs(out Face one) ? one : throw new ArgumentException($"Cannot build face(s): fixing the face made a {fixedFace.Type}");
     }

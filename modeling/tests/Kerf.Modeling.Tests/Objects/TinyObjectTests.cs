@@ -1,7 +1,7 @@
 namespace Kerf.Modeling.Tests.Objects;
 
 /// <summary>
-/// Objects at sizes near the tolerance (decision 25802): each either builds a valid shape or fails as a
+/// Objects at sizes near the tolerance (decision 2029): each either builds a valid shape or fails as a
 /// <see cref="ModelingException"/>, never a success that isn't valid or another exception. The sizes are those that gave
 /// one before.
 /// </summary>

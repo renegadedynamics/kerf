@@ -17,10 +17,10 @@ version may break the API.
   (`ArgumentException`, `ArgumentOutOfRangeException`, `ArgumentNullException`) with the same message, and recognised
   by the new `Diagnostic.IsKernelArgumentError`, so a caller can tell the kernel's refusal of a value from its own
   errors however the runtime compiled the call. `catch (ArgumentException)` catches them as before; a check of the
-  exact type sees the subclass (decision 25801).
+  exact type sees the subclass (decision 2028).
 - **A primitive too small to be valid fails, carrying the shape,** where it was a success: a cylinder, sphere or torus
   of a radius under 1e-7, an arc of a nanometre, a wedge's top as narrow, and a face on a surface's bounds as narrow
-  (decision 25802).
+  (decision 2029).
 
 ## 0.4.0
 

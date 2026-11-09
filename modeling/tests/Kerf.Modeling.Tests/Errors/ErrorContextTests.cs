@@ -29,7 +29,7 @@ public class ErrorContextTests
     [Fact]
     public void A_kernel_refusal_is_the_kernel_s_whichever_frame_throws_it()
     {
-        // Decision 25801: once a call is hot, the JIT inlines the kernel's small checks, and the public methods calling
+        // Decision 2028: once a call is hot, the JIT inlines the kernel's small checks, and the public methods calling
         // them, into the layer's methods, so a refusal is thrown from a frame of the layer's. Each refusal here is thrown
         // again from this test's frame, as the inlined check throws it, with nothing of the kernel's on its stack: the layer
         // must still take it for the kernel's, said in context. When the layer told them by the frame that threw
@@ -65,7 +65,7 @@ public class ErrorContextTests
     [Fact]
     public void A_kernel_refusal_is_the_kernel_s_once_the_JIT_has_optimised_the_call()
     {
-        // The refusals that became the layer's own once hot, before decision 25801: the box and the extrusion (decision 2014),
+        // The refusals that became the layer's own once hot, before decision 2028: the box and the extrusion (decision 2014),
         // and the cone, sphere, torus, circle and Bezier curve that went on doing so, measured on main after 13G (each said
         // modeling.object-failed, without its context, after about 450 rounds of ConstructorFailureTests' failing values).
         // Run long enough to be optimised (tiering waits 100 ms after 30 calls), each must still be the kernel's, every time

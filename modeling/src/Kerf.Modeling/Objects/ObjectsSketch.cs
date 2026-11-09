@@ -510,7 +510,7 @@ public class Triangle : BaseSketchObject
     private static Face Make((double a, double b, double c, double angleA, double angleB, double angleC) t)
     {
         var triangle = Face.Make(Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(t.a, 0, 0), new Vector3D(t.c, 0, 0).Rotate(Axis.Z, t.angleB * Constants.RadToDeg).ToPoint()]));
-        // A side under the tolerance joins its corners, and the face has two edges (decision 25802)
+        // A side under the tolerance joins its corners, and the face has two edges (decision 2029)
         if (triangle.Edges().Count != 3)
             throw Failures.Expected(ModelingDiagnostics.ObjectFailed, $"A side is too short to make: the triangle has {triangle.Edges().Count} edges, not 3.");
         var center = triangle.Vertices().Aggregate(Vector3D.Zero, (sum, v) => sum + v.Point.ToVector()) * (1.0 / 3);
