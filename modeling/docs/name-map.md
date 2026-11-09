@@ -174,6 +174,9 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `exporter.add_shape(shape or shapes, layer="")` | `AddShape(shape, layer)`, `AddShape(shapes, layer)`; the layer must have been added (`""` is `"0"`) |
 | `ExportDXF().add_shape(drawing.visible_lines).add_shape(drawing.hidden_lines, layer=…)` | `AddDrawing(lineDrawing, visibleLayer, hiddenLayer)`, from `Kerf.Drawing`'s `ProjectLines` |
 | `exporter.write(path)` | `Write(stream or path, token)`: a `Result`, warning `modeling.dxf-not-planar` of edges off the XY plane; `WriteToString()` |
+| (none: text in an exported drawing) | `Kerf.Drawing`'s `DrawingNote.Make(text, position, NoteStyle)` and `LineDrawing.WithNotes(…)`; `ExportDxf(textOutput: TextOutput.Text)`, `AddDrawing(…, notesLayer)`, `AddNotes(notes, layer)` (unit 13F2) |
+| `TechnicalDrawing(designed_by, design_date, page_size, title, sub_title, drawing_number, sheet_number, drawing_scale, …)` | `new Sheet(pageSize, orientation) { TitleBlock = new TitleBlock { Title, PartNumber, Scale, Units, Date, Author, Sheet }, Views = [new SheetView(drawing, center, scale)] }.Draw()`: a `LineDrawing` in millimetres with the views on it, not a sketch of faces (`Kerf.Drawing`, unit 13F2) |
+| `PageSize.A4`, `PageSize.LETTER`, `LEGAL`, `LEDGER` | `Kerf.Drawing.PageSize.A4`, `Letter`, `Legal`, `Ledger`; and `AnsiC`, `AnsiD`, `AnsiE` (`AnsiA` is `Letter`, `AnsiB` `Ledger`) |
 | `LineType.HIDDEN`, `LineType.ISO_DASH`, … | `LineType.Hidden`, `LineType.IsoDash`, …; the DXF name from `Export2D.LineTypeDefinition(type).Name` |
 | `ColorIndex.RED`, … `LIGHT_GRAY` | `ColorIndex.Red`, … `LightGray` |
 | `Export2D.LINETYPE_DEFS`, `LTYPE_SCALE`, `DEFAULT_LINE_WEIGHT`, `PARAMETRIC_TOLERANCE` | `Export2D.LineTypeDefinition(type)`, `LineTypeScale(unit)`, `DefaultLineWeight`, `ParametricTolerance` |
@@ -183,6 +186,9 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 ## Not yet ported
 
 - Builder mode (`BuildLine`, `BuildSketch`, `BuildPart` and the objects' and operations' builder behaviour): phase 5.
+- The drafting module's sketch objects (`Draft`, `DimensionLine`, `ExtensionLine`, `Arrow`, `ArrowHead`, and
+  `TechnicalDrawing` as a sketch of traced lines and text faces): `Kerf.Drawing`'s `Sheet` makes a sheet as a line drawing
+  instead.
 - `export_obj`, `export_to_pcbway`, `Mesher` as a class (its metadata, `read`, STL through lib3mf), `import_svg` and
   `ExportSVG` (the kernel's `Kerf.Drawing` projects hidden lines and writes SVG, guide.md section 8); `ExportDXF`'s
   binary DXF (`write(…, ascii_format=False)`); STEP's names, colours and assemblies natively (XCAF isn't bound); the glTF

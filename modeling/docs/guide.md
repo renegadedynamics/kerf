@@ -323,7 +323,55 @@ new ExportDxf().AddDrawing(drawing.Value).Write("part.dxf");
   ellipses and splines become polylines, and the header has no units.
 - A layer must be added before a shape goes on it; `""` is the default layer, `"0"`. Line weights are DXF's standard
   ones (0.05, 0.09, 0.13 … 2.11 mm).
-- Text, when it comes (`Text`), is written as its outlines, as any other shape's edges.
+- `Text`'s faces are written as their edges, as any other shape's. A drawing's notes (next) are written as closed
+  polylines of their outlines by default, or as TEXT with `new ExportDxf(textOutput: TextOutput.Text)`.
+
+### Drawing sheets
+
+A sheet is paper of a standard size with a border, a title block and views of a part at chosen scales: a `Kerf.Drawing`
+addition, as build123d has no drawing sheets (its `TechnicalDrawing` is a sketch of a frame and text faces). The sheet
+is a line drawing in millimetres, so it goes to SVG and to DXF as any drawing does.
+
+```csharp
+using Kerf.Drawing;
+using Kerf.Fonts;   // TextAlign, for notes
+
+Part plate = new Box(30, 20, 10) - new Cylinder(4, 10);
+var sheet = new Sheet(PageSize.A4)          // landscape by default; ISO A0 to A10, Letter, Legal, Ledger, ANSI C to E
+{
+    TitleBlock = new TitleBlock { Title = "Plate", PartNumber = "KF-0001", Date = "2026-11-09", Author = "Kerf" },
+    Views =
+    [
+        new SheetView(plate.Shape.ProjectLines(Camera.Top).Value, new Point2D(90, 140), 2),    // 2:1, centred there
+        new SheetView(plate.Shape.ProjectLines(Camera.Front).Value, new Point2D(200, 140), 2),
+        new SheetView(plate.Shape.ProjectLines(Camera.Isometric).Value, new Point2D(90, 60), 1),
+    ],
+};
+LineDrawing drawn = sheet.Draw().Value;      // a Result: it warns of a view or an entry that doesn't fit
+File.WriteAllText("plate.svg", Svg.WriteToString(drawn, sheet.PageOptions()));   // a page of the paper's size
+new ExportDxf().AddDrawing(drawn).Write("plate.dxf");                             // millimetres from its corner
+
+// A note on any drawing: text at a point, set in a font
+DrawingNote note = DrawingNote.Make("Ø8 through", new Point2D(20, 15), new NoteStyle { Size = 3.5 }).Value;
+LineDrawing annotated = plate.Shape.ProjectLines(Camera.Top).Value.WithNotes(note);
+string asText = Svg.WriteToString(annotated, new SvgOptions { TextOutput = TextOutput.Text });
+new ExportDxf(textOutput: TextOutput.Text).AddDrawing(annotated).Write("plate-top.dxf");
+```
+
+- **Text is outlines by default,** in both formats: SVG fills each note's glyph outlines, DXF writes each contour as a
+  closed polyline within the exporter's `tolerance`, so the file looks the same everywhere and a laser cutter can engrave
+  it. **`TextOutput.Text`** writes text instead: SVG's `<text>` in the font's family, DXF's TEXT with a text style for
+  each font (`LiberationSans-Regular.ttf`), smaller and editable but drawn in whatever font the reader has. R12's text is
+  ASCII, so a note that isn't is written as outlines there, with a warning (`modeling.dxf-text-as-outlines`).
+- A note's size is the font's em, as `Text`'s is; `NoteStyle` sets the font, the alignment on the note's position
+  (`TextAlign.Left`, `Center`, `Right`; `Bottom`, `Center`, `Top`, `TopFirstLine`) and a rotation in degrees.
+  `DrawingNote.Make` fails as `MakeText` does (`text.missing-glyph`, `text.empty`).
+- The title block's fields are plain text the caller fills: title, part number, scale (the views' own, `2:1`, unless
+  given), units (`mm`), date, author and sheet (`1 of 1`). Nothing reads the clock, so the same sheet is the same file.
+- A view is placed by the centre of its drawing's extent, at a scale of paper millimetres to the model's unit; a view
+  outside the border or over the title block, or an entry too long for its cell, is a warning (`drawing.sheet-overflow`).
+- `ExportDxf.AddDrawing` puts notes on a layer `"notes"` (`notesLayer:` to change it, null to leave them out);
+  `AddNotes(notes, layer)` adds notes alone.
 
 ### Pictures: shaded PNG
 
