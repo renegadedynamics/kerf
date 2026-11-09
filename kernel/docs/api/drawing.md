@@ -94,8 +94,12 @@ byte[] png = Png.Encode(picture.Value);
   `Supersampling`² times larger (2 × 2 by default), averaged down with the colours weighted by opacity.
 - **Shading:** `Smooth` interpolates the mesh's normals; `Flat` uses each triangle's. The light is `Ambient` plus each
   `DirectionalLight`'s intensity times the cosine, the lights given in the view's frame so they follow the camera; the
-  colour is the face's sRGB colour times the light, clamped. Faces are opaque; a triangle seen from behind is lit as if
-  it faced the eye.
+  colour is the face's sRGB colour times the light, clamped. A triangle seen from behind is lit as if it faced the eye.
+- **See-through:** a colour's opacity under 1 (`new Color(r, g, b, a)`) makes those faces, and the item's edges,
+  see-through. Each sample keeps the see-through faces and edges in front of the nearest opaque face, sorts them by
+  depth and lays them over it from the back, so the order of the items doesn't matter and a see-through solid shows
+  its far side; shared edges of a see-through face's triangles are laid once (the top-left rule). A scene with nothing
+  see-through is drawn exactly as before (decision 24006).
 - **Colours:** `SceneItem.Color` (light grey by default), `FaceColors` by face index (`WithFaceColor(face, colour)` finds
   the index), and a model's colours inherited down its tree (`ModelNode.ToScene`).
 - **Edges** are drawn over the faces with a depth test (a small bias, so edges on a face show and edges behind it
@@ -131,5 +135,5 @@ the passes after the first): the exact drawing, isometric, and its SVG take 2.4 
   `LineDrawing`'s constructor and `GetBounds` let a caller compose them now.
 - Section views (a cut by a plane, hatched).
 - Feature edges for meshes without a shape (STL): crease detection from the triangles.
-- Transparency of faces, shadows, and anti-aliasing other than supersampling.
+- Shadows, and anti-aliasing other than supersampling.
 - Bento's spreadsheet functions making both (10N).

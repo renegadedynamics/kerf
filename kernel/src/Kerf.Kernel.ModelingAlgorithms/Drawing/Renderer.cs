@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using Kerf.Geometry;
 using Kerf.Meshing;
@@ -16,8 +17,14 @@ namespace Kerf.Drawing;
 /// <remarks>
 /// The same scene, camera and options give the same pixels on every machine: the arithmetic is IEEE double precision
 /// without library functions but square roots, and the bands of rows rasterised in parallel never share a pixel.
-/// Faces are opaque, and a triangle seen from behind is lit as if it faced the eye (open shells look right). Points
-/// at or behind a perspective camera's eye are left out with their triangles.
+/// A triangle seen from behind is lit as if it faced the eye (open shells look right). Points at or behind a
+/// perspective camera's eye are left out with their triangles.
+/// <para>
+/// A colour's opacity makes its faces see-through (decision 24006): each sample keeps every see-through face and edge in
+/// front of the nearest opaque face, sorts them by depth and lays them over it from the back, so the picture doesn't
+/// depend on the order of the items; a see-through item's edges take its opacity. A scene with nothing see-through is
+/// drawn as before, pixel for pixel.
+/// </para>
 /// </remarks>
 public static class Renderer
 {
@@ -115,13 +122,17 @@ public static class Renderer
         private double[] _sx = [], _sy = [], _depth = [];
         private readonly List<bool> _valid = [];
 
-        // Triangles: three nodes, a colour, whether it is seen from behind
+        // Triangles: three nodes, a colour (with its opacity), whether it is seen from behind
         private readonly List<int> _triangles = [];
-        private readonly List<(double R, double G, double B)> _colors = [];
+        private readonly List<(double R, double G, double B, double A)> _colors = [];
         private readonly List<bool> _back = [];
 
-        // Edges' segments: two nodes each (edge points are nodes too, without normals)
+        // Edges' segments: two nodes each (edge points are nodes too, without normals), and the opacity and index of
+        // the item they're from
         private readonly List<int> _segments = [];
+        private readonly List<(double Alpha, int Item)> _segmentItems = [];
+        private int _items;
+        private bool _seeThrough;
 
         private readonly (double X, double Y, double Z, double Intensity)[] _lights;
         private double _depthBias;
@@ -171,7 +182,7 @@ public static class Renderer
                 FaceMesh face = mesh.Faces[f];
                 Color color = item.FaceColors.TryGetValue(f, out Color c) ? c : item.Color;
                 int colorIndex = _colors.Count;
-                _colors.Add((color.R, color.G, color.B));
+                _colors.Add((color.R, color.G, color.B, color.A));
                 int offset = first + face.FirstNode;
                 for (int k = face.FirstTriangle; k < face.FirstTriangle + face.TriangleCount; k++)
                 {
@@ -203,8 +214,10 @@ public static class Renderer
 
             if (_options.Edges != EdgeDisplay.None)
             {
-                AddEdges(mesh, t);
+                AddEdges(mesh, t, item.Color.A, _items);
             }
+
+            _items++;
         }
 
         private readonly List<int> _faceColor = [];
@@ -221,7 +234,7 @@ public static class Renderer
         }
 
         // The edges to draw, as segments between new nodes
-        private void AddEdges(ShapeMesh mesh, Transform3D t)
+        private void AddEdges(ShapeMesh mesh, Transform3D t, double alpha, int itemIndex)
         {
             Dictionary<(int, int, int), List<int>>? nodesAt = null;
             double cosFeature = Math.Cos(_options.FeatureAngle * Math.PI / 180);
@@ -254,6 +267,7 @@ public static class Renderer
                     {
                         _segments.Add(start + i);
                         _segments.Add(start + i + 1);
+                        _segmentItems.Add((alpha, itemIndex));
                     }
                 }
             }
@@ -453,17 +467,22 @@ public static class Renderer
 
             int bands = (_height + BandHeight - 1) / BandHeight;
             var triangleBins = new List<int>[bands];
+            var glassBins = new List<int>[bands];
             var segmentBins = new List<int>[bands];
             for (int b = 0; b < bands; b++)
             {
                 triangleBins[b] = [];
+                glassBins[b] = [];
                 segmentBins[b] = [];
             }
 
+            _seeThrough = _segmentItems.Any(s => s.Alpha < 1);
             for (int t = 0; t < _triangles.Count / 3; t++)
             {
                 int a = _triangles[3 * t], b = _triangles[3 * t + 1], c = _triangles[3 * t + 2];
-                Bin(triangleBins, Math.Min(_sy[a], Math.Min(_sy[b], _sy[c])), Math.Max(_sy[a], Math.Max(_sy[b], _sy[c])), t);
+                bool glass = _colors[_faceColor[t]].A < 1;
+                _seeThrough |= glass;
+                Bin(glass ? glassBins : triangleBins, Math.Min(_sy[a], Math.Min(_sy[b], _sy[c])), Math.Max(_sy[a], Math.Max(_sy[b], _sy[c])), t);
             }
 
             double radius = Math.Max(0.5, 0.5 * _options.EdgeWidth * _samples);
@@ -479,13 +498,32 @@ public static class Renderer
                 int y0 = band * BandHeight, y1 = Math.Min(_height, y0 + BandHeight);
                 foreach (int t in triangleBins[band])
                 {
-                    Triangle(t, y0, y1, color, depth);
+                    Triangle(t, y0, y1, color, depth, null);
                 }
 
+                if (!_seeThrough)
+                {
+                    foreach (int s in segmentBins[band])
+                    {
+                        Segment(s, y0, y1, radius, edgePacked, color, depth, null);
+                    }
+
+                    return;
+                }
+
+                // In front of the opaque faces, every see-through face and every edge, sorted at each sample
+                using var fragments = new Fragments(y0 * _width, (y1 - y0) * _width);
                 foreach (int s in segmentBins[band])
                 {
-                    Segment(s, y0, y1, radius, edgePacked, color, depth);
+                    Segment(s, y0, y1, radius, edgePacked, color, depth, fragments);
                 }
+
+                foreach (int t in glassBins[band])
+                {
+                    Triangle(t, y0, y1, color, depth, fragments);
+                }
+
+                fragments.Resolve(color);
             }
 
             if (_options.Parallel)
@@ -518,7 +556,8 @@ public static class Renderer
             }
         }
 
-        private void Triangle(int t, int y0, int y1, uint[] color, float[] depth)
+        // A see-through triangle (or, with fragments null, an opaque one)
+        private void Triangle(int t, int y0, int y1, uint[] color, float[] depth, Fragments? fragments)
         {
             int ia = _triangles[3 * t], ib = _triangles[3 * t + 1], ic = _triangles[3 * t + 2];
             double ax = _sx[ia], ay = _sy[ia], bx = _sx[ib], by = _sy[ib], cx = _sx[ic], cy = _sy[ic];
@@ -531,7 +570,7 @@ public static class Renderer
             int xMin = Math.Max(0, (int)Math.Floor(Math.Min(ax, Math.Min(bx, cx)))), xMax = Math.Min(_width - 1, (int)Math.Ceiling(Math.Max(ax, Math.Max(bx, cx))));
             int yMin = Math.Max(y0, (int)Math.Floor(Math.Min(ay, Math.Min(by, cy)))), yMax = Math.Min(y1 - 1, (int)Math.Ceiling(Math.Max(ay, Math.Max(by, cy))));
             double da = _depth[ia], db = _depth[ib], dc = _depth[ic];
-            (double r, double g, double b) = _colors[_faceColor[t]];
+            (double r, double g, double b, double alpha) = _colors[_faceColor[t]];
             bool back = _back[t], smooth = _options.Shading == Shading.Smooth;
             uint flat = 0;
             if (!smooth)
@@ -546,6 +585,10 @@ public static class Renderer
             }
 
             double inverse = 1 / area;
+            // A see-through triangle covers a sample on its border only from one side, or the two triangles meeting there
+            // would both be laid over it: the edge function's direction, as the triangle winds anticlockwise, decides
+            double sense = area > 0 ? 1 : -1;
+            bool own0 = Owns(sense * (cx - bx), sense * (cy - by)), own1 = Owns(sense * (ax - cx), sense * (ay - cy)), own2 = Owns(sense * (bx - ax), sense * (by - ay));
             // A sliver's weights are mostly rounding, so which pixels pass is only known by asking each one
             bool useSpans = Math.Abs(area) >= 1;
             for (int y = yMin; y <= yMax; y++)
@@ -581,6 +624,11 @@ public static class Renderer
                         continue;
                     }
 
+                    if (fragments is not null && ((w0 == 0 && !own0) || (w1 == 0 && !own1) || (w2 == 0 && !own2)))
+                    {
+                        continue;
+                    }
+
                     float d = (float)(w0 * da + w1 * db + w2 * dc);
                     int i = row + x;
                     if (!(d > depth[i]))
@@ -588,30 +636,51 @@ public static class Renderer
                         continue;
                     }
 
-                    depth[i] = d;
+                    if (fragments is null)
+                    {
+                        depth[i] = d;
+                    }
                     if (smooth)
                     {
                         double nx = w0 * _nx[ia] + w1 * _nx[ib] + w2 * _nx[ic];
                         double ny = w0 * _ny[ia] + w1 * _ny[ib] + w2 * _ny[ic];
                         double nz = w0 * _nz[ia] + w1 * _nz[ib] + w2 * _nz[ic];
                         double m = Math.Sqrt(nx * nx + ny * ny + nz * nz);
+                        uint shaded;
                         if (m > 0)
                         {
                             m = back ? -1 / m : 1 / m;
-                            color[i] = Shade(nx * m, ny * m, nz * m, r, g, b);
+                            shaded = Shade(nx * m, ny * m, nz * m, r, g, b);
                         }
                         else
                         {
-                            color[i] = Shade(0, 0, 1, r, g, b);
+                            shaded = Shade(0, 0, 1, r, g, b);
                         }
+
+                        if (fragments is null)
+                        {
+                            color[i] = shaded;
+                        }
+                        else
+                        {
+                            fragments.Add(i, d, shaded, alpha, -1);
+                        }
+                    }
+                    else if (fragments is null)
+                    {
+                        color[i] = flat;
                     }
                     else
                     {
-                        color[i] = flat;
+                        fragments.Add(i, d, flat, alpha, -1);
                     }
                 }
             }
         }
+
+        // The top-left rule: of two triangles sharing an edge, exactly one runs it with this direction
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool Owns(double dx, double dy) => dy > 0 || (dy == 0 && dx < 0);
 
         // Where an edge crosses a row, widening what's known of the row's span
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -631,8 +700,10 @@ public static class Renderer
             right = Math.Max(right, xb);
         }
 
-        private void Segment(int s, int y0, int y1, double radius, uint packed, uint[] color, float[] depth)
+        // An edge's segment, drawn over the faces (or, in a scene with something see-through, kept to sort with them)
+        private void Segment(int s, int y0, int y1, double radius, uint packed, uint[] color, float[] depth, Fragments? fragments)
         {
+            (double alpha, int item) = _segmentItems[s];
             int ia = _segments[2 * s], ib = _segments[2 * s + 1];
             double ax = _sx[ia], ay = _sy[ia], bx = _sx[ib], by = _sy[ib], da = _depth[ia], db = _depth[ib];
             double dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, r2 = radius * radius;
@@ -653,9 +724,17 @@ public static class Renderer
                     }
 
                     int i = row + x;
-                    if ((float)(da + t * (db - da) + _depthBias) >= depth[i])
+                    float d = (float)(da + t * (db - da) + _depthBias);
+                    if (d >= depth[i])
                     {
-                        color[i] = packed;
+                        if (fragments is null)
+                        {
+                            color[i] = packed;
+                        }
+                        else
+                        {
+                            fragments.Add(i, d, packed, alpha, item);
+                        }
                     }
                 }
             }
@@ -680,6 +759,109 @@ public static class Renderer
         private static byte Byte(double c) => c >= 1 ? (byte)255 : c <= 0 ? (byte)0 : (byte)(int)(c * 255 + 0.5);
 
         private static uint Pack(byte r, byte g, byte b, byte a) => r | ((uint)g << 8) | ((uint)b << 16) | ((uint)a << 24);
+
+        /// <summary>
+        /// One band's see-through faces and edges, by sample: a list each, sorted by depth when the band is done and laid
+        /// over the opaque picture from the back. An item's edges give a sample one fragment, the nearest, so the joins
+        /// of its segments aren't laid twice. A band's lists are its own, so bands in parallel share nothing.
+        /// </summary>
+        private sealed class Fragments(int first, int count) : IDisposable
+        {
+            private struct Fragment
+            {
+                public float Depth;
+                public uint Color;
+                public float Alpha;
+                public int Item;
+                public int Next;
+            }
+
+            // From the shared pool, given back when the band is done: a band's buffers are its own while it has them
+            private readonly int[] _head = Heads(count);
+            private Fragment[] _all = ArrayPool<Fragment>.Shared.Rent(1024);
+            private int _count;
+
+            private static int[] Heads(int count)
+            {
+                int[] heads = ArrayPool<int>.Shared.Rent(count);
+                Array.Fill(heads, -1, 0, count);
+                return heads;
+            }
+
+            public void Add(int sample, float depth, uint color, double alpha, int item)
+            {
+                int slot = sample - first;
+                if (item >= 0)
+                {
+                    for (int k = _head[slot]; k >= 0; k = _all[k].Next)
+                    {
+                        if (_all[k].Item == item)
+                        {
+                            if (depth > _all[k].Depth)
+                            {
+                                (_all[k].Depth, _all[k].Color, _all[k].Alpha) = (depth, color, (float)alpha);
+                            }
+
+                            return;
+                        }
+                    }
+                }
+
+                if (_count == _all.Length)
+                {
+                    Fragment[] larger = ArrayPool<Fragment>.Shared.Rent(2 * _all.Length);
+                    Array.Copy(_all, larger, _count);
+                    ArrayPool<Fragment>.Shared.Return(_all);
+                    _all = larger;
+                }
+
+                _all[_count] = new Fragment { Depth = depth, Color = color, Alpha = (float)alpha, Item = item, Next = _head[slot] };
+                _head[slot] = _count++;
+            }
+
+            // Each sample's fragments from the farthest (lowest depth) to the nearest, ties in the order they were
+            // made, each laid over what's behind it
+            public void Resolve(uint[] color)
+            {
+                var here = new List<int>();
+                for (int slot = 0; slot < count; slot++)
+                {
+                    if (_head[slot] < 0)
+                    {
+                        continue;
+                    }
+
+                    here.Clear();
+                    for (int k = _head[slot]; k >= 0; k = _all[k].Next)
+                    {
+                        here.Add(k);
+                    }
+
+                    here.Sort((p, q) => _all[p].Depth != _all[q].Depth ? _all[p].Depth.CompareTo(_all[q].Depth) : p.CompareTo(q));
+                    int i = first + slot;
+                    uint c = color[i];
+                    double a = (c >> 24) / 255.0;
+                    double r = (c & 0xFF) / 255.0 * a, g = ((c >> 8) & 0xFF) / 255.0 * a, b = ((c >> 16) & 0xFF) / 255.0 * a;
+                    foreach (int k in here)
+                    {
+                        uint f = _all[k].Color;
+                        double alpha = _all[k].Alpha;
+                        r = alpha * (f & 0xFF) / 255.0 + (1 - alpha) * r;
+                        g = alpha * ((f >> 8) & 0xFF) / 255.0 + (1 - alpha) * g;
+                        b = alpha * ((f >> 16) & 0xFF) / 255.0 + (1 - alpha) * b;
+                        a = alpha + (1 - alpha) * a;
+                    }
+
+                    color[i] = a > 0 ? Pack(Byte(r / a), Byte(g / a), Byte(b / a), Byte(a)) : 0;
+                }
+            }
+
+            public void Dispose()
+            {
+                ArrayPool<int>.Shared.Return(_head);
+                ArrayPool<Fragment>.Shared.Return(_all);
+            }
+        }
 
         // The supersampled buffer averaged to the picture's pixels, colours weighted by their opacity
         private byte[] Downsample(uint[] color)

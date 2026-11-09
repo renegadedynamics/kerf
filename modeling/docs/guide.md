@@ -240,7 +240,8 @@ using (var file = File.Create("part.png"))
 - A `SceneItem` has a colour, colours for single faces (`WithFaceColor`) and a `Transform`.
 - `RenderOptions` sets the size, the background (an opacity of 0 makes it transparent), flat or smooth shading, the
   lights and which edges are drawn over the faces.
-- Faces are opaque: there's no transparency yet.
+- A colour with an opacity under 1, `new Color(0.2, 0.5, 0.9, 0.35)`, makes an item (its faces and edges) see-through,
+  whatever the order of the items.
 
 ## 9. Common mistakes
 

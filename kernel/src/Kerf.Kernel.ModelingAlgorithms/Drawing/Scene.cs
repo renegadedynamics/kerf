@@ -54,7 +54,7 @@ public sealed record SceneItem
     /// <summary>The mesh.</summary>
     public ShapeMesh Mesh { get; init; }
 
-    /// <summary>The colour of its faces (opaque: the opacity isn't used).</summary>
+    /// <summary>The colour of its faces; an opacity under 1 makes them, and its edges, see-through (decision 24006).</summary>
     public Color Color { get; init; }
 
     /// <summary>Colours of single faces, by their index in <see cref="ShapeMesh.Faces"/>.</summary>
