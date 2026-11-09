@@ -21,6 +21,7 @@ file is corrected.
 | `Kerf.Meshing` | Triangulation and meshes |
 | `Kerf.Exchange` | STEP, STL, glTF, 3MF, BREP |
 | `Kerf.Fillets`, `Kerf.Offsets`, `Kerf.Features`, `Kerf.Healing`, `Kerf.Measurement` | The areas decision 1349 (65) added |
+| `Kerf.Fonts` | Fonts and text as shapes (unit 13D, decision 25401) |
 | `Kerf.Engine.<Area>` | Everything else, internal: the algorithms (`Kerf.Engine.Booleans.PaveFiller`) |
 | `Kerf.Modeling` | The modelling layer |
 

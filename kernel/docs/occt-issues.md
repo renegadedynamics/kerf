@@ -2288,3 +2288,13 @@ Found by unit 12J:
 |---|---|---|---|
 | `BRepBuilderAPI_Sewing::SameParameterEdge` through `BRepTools_ReShape::Apply` (Kerf's `ReShape.ApplyImpl`) | The reshape recurses (the trace has `ApplyImpl` 990 frames deep, cut off there), and sewing about a thousand triangles overflowed the stack, which ends the process and cannot be caught; the cause of the depth is not yet read | 0.3.0's `ConvexPolyhedron` of 2,000 points (about 1,000 triangles sewn) | **open**, for the owner: `ConvexPolyhedron` no longer sews (decision 1995), but `Shell.Make` of many faces still can |
 | `GCPnts_UniformDeflection` (the kernel's `EdgeCurve.Discretize`, `Positions(deflection)`) | On a cubic B-spline through four points with a tight lobe, at a deflection of 0.21 it gave 14 points and left the lobe 5.5 out: the deflection isn't kept | A random set in `ConvexHullOfEdgesTests` (seed 1, set 38) | **open**, for the owner; `MakeConvexHull` checks its own samples (decision 1997) |
+
+## Found by unit 13D
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `Font_TextFormatter::Append` (Font_TextFormatter.cxx) | A tab's spaces are `myTabSize - (aSymbolsCounter - 1) % myTabSize`: the count is one short, so a tab at the start of a line is nine spaces' advance, and its stops are a space past the multiples of eight | Reading the port's source | settled (decision 25404) |
+| `Font_TextFormatter` | Positions are single-precision pixels of a 4,800-pixel em (`NCollection_Vec2<float>`), which round at about 1e-7 em a character | Reading the port's source | settled (decision 25404) |
+| `Font_FTFont::Init`, `ToSynthesizeItalic` | The shear matrix's diagonal is cos 10°, so a synthesised italic is also 1.5% smaller | Reading the port's source | settled (decision 25405) |
+| `Font_FTFont::getKerning` | Asks FreeType's `FT_Get_Kerning`, which reads only the `kern` table: a font with GPOS kerning and no kern table isn't kerned | Reading the port's source; Liberation Sans has both | settled (decision 25403) |
+| `Font_FTFont::loadGlyph`, `StdPrs_BRepFont::renderGlyph` | A character with no glyph is drawn as the font's missing glyph (or a fallback font's), with no warning | Reading the port's source | settled (decision 25405) |
