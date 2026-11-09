@@ -1,0 +1,1760 @@
+# Kerf's public API, by reflection (unit 13P; design-rules.md, section 3). Generated: run PublicApiBaselineTests
+# with KERF_API_UPDATE=1 to rewrite it. Each type's line, then its public and protected members', sorted.
+
+assembly Kerf.Modeling
+public class Kerf.Modeling.Airfoil : BaseLineObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public Airfoil(string airfoilCode, int pointCount = 50, bool finiteTE = false)
+  public Edge CamberLine { get; }
+  public bool FiniteTE { get; }
+  public double CamberPos { get; }
+  public double MaxCamber { get; }
+  public double Thickness { get; }
+  public string Code { get; }
+  public static (double, double, double) ParseNaca4(string value)
+public enum Kerf.Modeling.Align
+  Min = 0
+  Center = 1
+  Max = 2
+  None = 3
+public readonly record struct Kerf.Modeling.Alignment : IEquatable<Alignment>
+  public Alignment(Align x, Align y)
+  public Alignment(Align x, Align y, Align z)
+  public Align? this[int axis] { get; }
+  public int Count { get; }
+  public Vector3D Offset(Point3D min, Point3D max, Point3D? center = default)
+  public static Alignment op_Implicit(Align align)
+public enum Kerf.Modeling.AngularDirection
+  Clockwise = 0
+  CounterClockwise = 1
+public enum Kerf.Modeling.ApproxOption
+  Arc = 0
+  None = 1
+  Spline = 2
+public class Kerf.Modeling.Assembly : ModelShape, IEquatable<ModelShape>, IShape, IShape3D
+  public Assembly(IEnumerable<ModelShape> children, string label = "", Color? color = default)
+  public Assembly(Shape shape, string label = "", Color? color = default)
+  public IReadOnlyList<ModelShape> Children { get; }
+  public (bool, (ModelShape?, ModelShape?), double) DoChildrenIntersect(bool includeParent = false, double tolerance = 1E-05)
+  public Assembly WithChildren(IEnumerable<ModelShape> children)
+  public override string ToString()
+public readonly struct Kerf.Modeling.Axis : IEquatable<Axis>, IFormattable, IGeometry
+  public Axis(Axis3D axis)
+  public Axis(Edge edge)
+  public Axis(Location location)
+  public Axis(Point3D origin, Vector3D direction)
+  public Direction3D Direction { get; }
+  public Location Location { get; }
+  public Point3D Position { get; }
+  public static Axis X { get; }
+  public static Axis Y { get; }
+  public static Axis Z { get; }
+  public Axis Located(Location location)
+  public Axis Reverse()
+  public Axis WithDirection(Vector3D direction)
+  public Axis WithPosition(Point3D position)
+  public Axis3D ToAxis3D()
+  public IGeometry? Intersect(Axis axis)
+  public IGeometry? Intersect(Location location)
+  public IGeometry? Intersect(Plane plane)
+  public Point3D? Intersect(Point3D point)
+  public ShapeList<Shape> Intersect(Shape shape)
+  public bool Equals(Axis other)
+  public bool IsCoaxial(Axis other, double angularTolerance = 1E-05, double linearTolerance = 1E-05)
+  public bool IsNormal(Axis other, double angularTolerance = 1E-05)
+  public bool IsOpposite(Axis other, double angularTolerance = 1E-05)
+  public bool IsParallel(Axis other, double angularTolerance = 1E-05)
+  public bool IsSkew(Axis other, double tolerance = 1E-05)
+  public double AngleBetween(Axis other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Axis FromPoints(Point3D origin, Point3D endPoint)
+  public static Axis op_UnaryNegation(Axis a)
+  public static bool op_Equality(Axis a, Axis b)
+  public static bool op_Inequality(Axis a, Axis b)
+  public string ToString(string? format, IFormatProvider? formatProvider = default)
+public class Kerf.Modeling.BSpline : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public BSpline(IEnumerable<Point3D> controlPoints, IEnumerable<double> knots, int degree, IEnumerable<double>? weights = default, bool periodic = false)
+public abstract class Kerf.Modeling.BaseCurveObject : Curve, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  protected BaseCurveObject(Curve curve)
+public abstract class Kerf.Modeling.BaseEdgeObject : Curve, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  protected BaseEdgeObject(Edge curve)
+  public Edge Edge { get; }
+  public static Edge op_Implicit(BaseEdgeObject line)
+public abstract class Kerf.Modeling.BaseHole : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+public abstract class Kerf.Modeling.BaseLineObject : Curve, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  protected BaseLineObject(Wire curve)
+  public Wire Wire { get; }
+  public static Wire op_Implicit(BaseLineObject line)
+public abstract class Kerf.Modeling.BasePartObject : Part, IEquatable<ModelShape>, IShape, IShape3D
+  protected BasePartObject(Shape part, Rotation? rotation = default, Alignment? align = default)
+  public Rotation Rotation { get; }
+public abstract class Kerf.Modeling.BaseSketchObject : Sketch, IEquatable<ModelShape>, IShape, IShape3D
+  protected BaseSketchObject(Shape obj, double rotation = 0, Alignment? align = default)
+  public double Rotation { get; }
+public enum Kerf.Modeling.BendPosition
+  Center = 0
+  MaterialInside = 1
+  MaterialOutside = 2
+  BendOutside = 3
+public class Kerf.Modeling.Bezier : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public Bezier(IEnumerable<Point3D> controlPoints, IReadOnlyList<double>? weights = default)
+  public Bezier(params Point3D[] controlPoints)
+public class Kerf.Modeling.BlendCurve : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public BlendCurve(Edge curve0, Edge curve1, ContinuityLevel continuity = ContinuityLevel.C2, (Point3D, Point3D)? endPoints = default, (double, double)? tangentScalars = default)
+public static class Kerf.Modeling.BoundingBoxExtensions
+  public static Point3D Center(this BoundingBox box)
+  public static Vector3D ToAlignOffset(this BoundingBox box, Alignment align)
+  public static bool Contains(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool ContainsProperly(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool CoveredBy(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool Covers(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool Disjoint(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool IntersectsNear(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool Overlaps(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool Touches(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static bool Within(this BoundingBox box, BoundingBox other, double tolerance = 1E-06)
+  public static double get_Diagonal(BoundingBox box)
+  public static double get_Measure(BoundingBox box)
+  public static string Describe(this BoundingBox box)
+public class Kerf.Modeling.Box : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Box(double length, double width, double height, Rotation? rotation = default, Alignment? align = default)
+  public double Height { get; }
+  public double Length { get; }
+  public double Width { get; }
+public readonly record struct Kerf.Modeling.BoxCorners : IEquatable<BoxCorners>
+  public BoxCorners(Point3D Min, Point3D Max)
+  public Point3D Max { get; init; }
+  public Point3D Min { get; init; }
+  public BoundingBox ToBoundingBox()
+public class Kerf.Modeling.CenterArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public CenterArc(Point3D center, double radius, double startAngle, CurveLimit arcLimit)
+  public CenterArc(Point3D center, double radius, double startAngle, double arcSize)
+public enum Kerf.Modeling.CenterOf
+  Geometry = 0
+  Mass = 1
+  BoundingBox = 2
+public class Kerf.Modeling.Circle : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Circle(double radius, double arcSize = 360, Alignment? align = default)
+  public Alignment Align { get; }
+  public double ArcSize { get; }
+  public double Radius { get; }
+public static class Kerf.Modeling.ColorExtensions
+  public static Color FromCode(int colorCode, int alpha = 255)
+  public static Color Parse(string name, double alpha = 1)
+  public static Color Rgb(double red, double green = 1, double blue = 1, double alpha = 1)
+  public static Color get_White()
+  public static IReadOnlyList<Color> CategoricalSet(int count, Color startingColor, double alpha = 1)
+  public static IReadOnlyList<Color> CategoricalSet(int count, double startingHue = 0, double alpha = 1)
+  public static IReadOnlyList<Color> CategoricalSet(int count, double startingHue, IReadOnlyList<double> alphas)
+  public static string Describe(this Color color)
+  public static void Deconstruct(this Color color, out double r, out double g, out double b, out double a)
+public enum Kerf.Modeling.ColorIndex
+  Red = 1
+  Yellow = 2
+  Green = 3
+  Cyan = 4
+  Blue = 5
+  Magenta = 6
+  Black = 7
+  Gray = 8
+  LightGray = 9
+public static class Kerf.Modeling.CompoundExtensions
+  public static Compound Extrude(Shell obj, Vector3D direction)
+  public static Compound Make(IEnumerable<Shape> shapes)
+  public static Compound Make<T>(IEnumerable<T> shapes)
+  public static IEnumerable<Shape> ChildShapes<TSelf>(this TSelf self)
+  public static Shape Unwrap<TSelf>(this TSelf self, bool fully = true)
+  public static ShapeList<Compound> Compounds<TSelf>(this TSelf self)
+  public static ShapeList<T> ElementsOfType<T>(this IShape3D self)
+  public static int get_Count<TSelf>(TSelf self)
+public class Kerf.Modeling.Cone : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Cone(double bottomRadius, double topRadius, double height, double arcSize = 360, Rotation? rotation = default, Alignment? align = default)
+  public Alignment Align { get; }
+  public double ArcSize { get; }
+  public double BottomRadius { get; }
+  public double Height { get; }
+  public double TopRadius { get; }
+public static class Kerf.Modeling.Constants
+  public const double LooseTolerance = 0.01
+  public const double Tolerance = 1E-06
+  public const int ToleranceDigits = 6
+public class Kerf.Modeling.ConstrainedArcs : BaseCurveObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public ConstrainedArcs(Tangent tangencyOne, Point3D center, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public ConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, Tangent tangencyThree, Sagitta sagitta = Sagitta.Short, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public ConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, double radius, Sagitta sagitta = Sagitta.Short, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public ConstrainedArcs(Tangent tangencyOne, double radius, Tangent centerOn, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static ConstrainedArcs CenteredOn(Tangent tangencyOne, Tangent tangencyTwo, Tangent centerOn, Sagitta sagitta = Sagitta.Short, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+public class Kerf.Modeling.ConstrainedLines : BaseCurveObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public ConstrainedLines(Tangent tangencyOne, Axis reference, Vector3D direction, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public ConstrainedLines(Tangent tangencyOne, Axis reference, double angle, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public ConstrainedLines(Tangent tangencyOne, Tangent tangencyTwo, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+public enum Kerf.Modeling.ContinuityLevel
+  C0 = 0
+  C1 = 1
+  C2 = 2
+public class Kerf.Modeling.ConvexPolyhedron : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+  public ConvexPolyhedron(IEnumerable<Point3D> points, Rotation? rotation = default, Alignment? align = default)
+public enum Kerf.Modeling.Convexity
+  Convex = 0
+  Concave = 1
+  Smooth = 2
+  Saddle = 3
+public class Kerf.Modeling.CounterBoreHole : BaseHole, IEquatable<ModelShape>, IShape, IShape3D
+  public CounterBoreHole(double radius, double counterBoreRadius, double counterBoreDepth, double? depth = default)
+  public double CounterBoreDepth { get; }
+  public double CounterBoreRadius { get; }
+  public double HoleDepth { get; }
+  public double Radius { get; }
+public class Kerf.Modeling.CounterSinkHole : BaseHole, IEquatable<ModelShape>, IShape, IShape3D
+  public CounterSinkHole(double radius, double counterSinkRadius, double? depth = default, double counterSinkAngle = 82)
+  public double CounterSinkAngle { get; }
+  public double CounterSinkRadius { get; }
+  public double HoleDepth { get; }
+  public double Radius { get; }
+public class Kerf.Modeling.Curve : ModelShape, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public Curve()
+  public Curve(IEnumerable<Edge> edges, string label = "", Color? color = default)
+  public Curve(IEnumerable<Shape> shapes, string label = "", Color? color = default)
+  public Curve(IEnumerable<Wire> wires, string label = "", Color? color = default)
+  public Curve(Shape shape, string label = "", Color? color = default)
+  public Location LocationAt(double position)
+  public Point3D PositionAt(double position)
+  public Result<Curve> Add(params IEnumerable<Shape> others)
+  public Result<Curve> Add<T>(IEnumerable<T> others)
+  public Result<Curve> Common(params IEnumerable<Shape> others)
+  public Result<Curve> Common<T>(IEnumerable<T> others)
+  public Result<Curve> Subtract(params IEnumerable<Shape> others)
+  public Result<Curve> Subtract<T>(IEnumerable<T> others)
+  public Vector3D TangentAt(double position)
+  public override ShapeList<Wire> Wires(Select select = Select.All)
+  public static Curve op_Addition(Curve a, IEnumerable<ModelShape> b)
+  public static Curve op_Addition(Curve a, IEnumerable<Shape> b)
+  public static Curve op_Addition(Curve a, Shape b)
+  public static Curve op_BitwiseAnd(Curve a, Shape b)
+  public static Curve op_Subtraction(Curve a, IEnumerable<ModelShape> b)
+  public static Curve op_Subtraction(Curve a, IEnumerable<Shape> b)
+  public static Curve op_Subtraction(Curve a, Shape b)
+public readonly struct Kerf.Modeling.CurveLimit
+  public object Target { get; }
+  public override string ToString()
+  public static CurveLimit op_Implicit(Axis axis)
+  public static CurveLimit op_Implicit(Compound shape)
+  public static CurveLimit op_Implicit(Edge shape)
+  public static CurveLimit op_Implicit(Face shape)
+  public static CurveLimit op_Implicit(Location location)
+  public static CurveLimit op_Implicit(ModelShape shape)
+  public static CurveLimit op_Implicit(Plane plane)
+  public static CurveLimit op_Implicit(Point3D point)
+  public static CurveLimit op_Implicit(Shape shape)
+  public static CurveLimit op_Implicit(Shell shape)
+  public static CurveLimit op_Implicit(Solid shape)
+  public static CurveLimit op_Implicit(Vertex shape)
+  public static CurveLimit op_Implicit(Wire shape)
+public readonly record struct Kerf.Modeling.CurvePosition : IEquatable<CurvePosition>
+  public Point3D? Point { get; }
+  public double? Value { get; }
+  public static CurvePosition op_Implicit(Point3D point)
+  public static CurvePosition op_Implicit(Vertex vertex)
+  public static CurvePosition op_Implicit(double value)
+public class Kerf.Modeling.Cylinder : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Cylinder(double radius, double height, double arcSize = 360, Rotation? rotation = default, Alignment? align = default)
+  public Alignment Align { get; }
+  public double ArcSize { get; }
+  public double Height { get; }
+  public double Radius { get; }
+public class Kerf.Modeling.DoubleTangentArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public DoubleTangentArc(Point3D point, Vector3D tangent, IShape1D other, Keep keep = Keep.Top)
+public sealed record Kerf.Modeling.DxfLayer : IEquatable<DxfLayer>
+  public DxfLayer(string Name, ColorIndex? Color, double? LineWeight, LineType? LineType)
+  public ColorIndex? Color { get; init; }
+  public LineType? LineType { get; init; }
+  public double? LineWeight { get; init; }
+  public string Name { get; init; }
+public enum Kerf.Modeling.DxfVersion
+  R12 = 12
+  R2013 = 2013
+public static class Kerf.Modeling.EdgeExtensions
+  public static Edge Extrude(Vertex obj, Vector3D direction)
+  public static Edge FromAxis(Axis axis)
+  public static Edge MakeBSpline(IEnumerable<Point3D> controlPoints, IEnumerable<double> knots, int degree, IEnumerable<double>? weights = default, bool periodic = false)
+  public static Edge MakeBezier(IReadOnlyList<Point3D> controlPoints, IReadOnlyList<double>? weights = default)
+  public static Edge MakeBezier(params Point3D[] controlPoints)
+  public static Edge MakeCircle(double radius, Plane? plane = default, double startAngle = 360, double endAngle = 360, AngularDirection angularDirection = AngularDirection.CounterClockwise)
+  public static Edge MakeEllipse(double xRadius, double yRadius, Plane? plane = default, double startAngle = 360, double endAngle = 360, AngularDirection angularDirection = AngularDirection.CounterClockwise)
+  public static Edge MakeHelix(double pitch, double height, double radius, Point3D? center = default, Vector3D? normal = default, double angle = 0, bool leftHanded = false)
+  public static Edge MakeHyperbola(double xRadius, double yRadius, Plane? plane = default, double startAngle = 360, double endAngle = 360, AngularDirection angularDirection = AngularDirection.CounterClockwise)
+  public static Edge MakeLine(Point3D point1, Point3D point2)
+  public static Edge MakeMidWay(Edge first, Edge second, double middle = 0.5)
+  public static Edge MakeParabola(double focalLength, Plane? plane = default, double startAngle = 0, double endAngle = 90, AngularDirection angularDirection = AngularDirection.CounterClockwise)
+  public static Edge MakeSpline(IReadOnlyList<Point3D> points, IReadOnlyList<Vector3D?>? tangents = default, bool periodic = false, IReadOnlyList<double>? parameters = default, bool scale = true, double tolerance = 1E-06)
+  public static Edge MakeSplineApprox(IReadOnlyList<Point3D> points, double tolerance = 0.001, (double, double, double)? smoothing = default, int minDeg = 1, int maxDeg = 6)
+  public static Edge MakeTangentArc(Point3D start, Vector3D tangent, Point3D end)
+  public static Edge MakeThreePointArc(Point3D point1, Point3D point2, Point3D point3)
+  public static Edge Reversed(this Edge self, bool reconstruct)
+  public static Edge Trim(this Edge self, CurvePosition start, CurvePosition end)
+  public static Edge TrimInfinite(this Edge self, double halfLength)
+  public static Edge TrimToLength(this Edge self, CurvePosition start, double length)
+  public static Edge TrimToOther(this Edge self, CurveLimit other)
+  public static EdgeCurve AsCurve(this Edge self)
+  public static IReadOnlyList<Point3D> FindIntersections(this Edge self, Axis other, double tolerance = 1E-06)
+  public static IReadOnlyList<Point3D> FindIntersections(this Edge self, Edge other, double tolerance = 1E-06)
+  public static IReadOnlyList<Point3D> FindIntersections(this Edge self, double tolerance = 1E-06)
+  public static IReadOnlyList<double> FindTangent(this Edge self, double angle)
+  public static IShape1D Close(this Edge self)
+  public static Point3D get_ArcCenter(Edge self)
+  public static ShapeList<Edge> ConnectedEdges(this Edge self, Shape parent, ContinuityLevel continuity = ContinuityLevel.C0)
+  public static ShapeList<Edge> MakeConstrainedArcs(Tangent tangencyOne, Point3D center)
+  public static ShapeList<Edge> MakeConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, Tangent tangencyThree, Sagitta sagitta = Sagitta.Short)
+  public static ShapeList<Edge> MakeConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, double radius, Sagitta sagitta = Sagitta.Short)
+  public static ShapeList<Edge> MakeConstrainedArcs(Tangent tangencyOne, double radius, Tangent centerOn)
+  public static ShapeList<Edge> MakeConstrainedArcsCenteredOn(Tangent tangencyOne, Tangent tangencyTwo, Tangent centerOn, Sagitta sagitta = Sagitta.Short)
+  public static ShapeList<Edge> MakeConstrainedLines(Tangent tangencyOne, Axis reference, Vector3D direction)
+  public static ShapeList<Edge> MakeConstrainedLines(Tangent tangencyOne, Axis reference, double angle)
+  public static ShapeList<Edge> MakeConstrainedLines(Tangent tangencyOne, Tangent tangencyTwo)
+  public static ShapeList<Edge> ProjectToShape(this Edge self, Shape targetObject, Vector3D? direction = default, Point3D? center = default)
+  public static ShapeList<Face> ConnectedFaces(this Edge self, Shape parent)
+  public static ShapeList<Vertex> FindIntersectionPoints(this Edge self, Axis other, double tolerance = 1E-06)
+  public static ShapeList<Vertex> FindIntersectionPoints(this Edge self, Edge other, double tolerance = 1E-06)
+  public static ShapeList<Vertex> FindIntersectionPoints(this Edge self, double tolerance = 1E-06)
+  public static bool GeomEqual(this Edge self, Edge other, double tolerance = 1E-06, int numInterpolationPoints = 5)
+  public static bool get_IsInfinite(Edge self)
+public sealed class Kerf.Modeling.EdgeMesh
+  public GeomType Type { get; }
+  public ReadOnlyMemory<float> Points { get; }
+  public int PointCount { get; }
+public class Kerf.Modeling.Ellipse : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Ellipse(double xRadius, double yRadius, double rotation = 0, Alignment? align = default)
+  public Alignment Align { get; }
+  public double XRadius { get; }
+  public double YRadius { get; }
+public class Kerf.Modeling.EllipticalCenterArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public EllipticalCenterArc(Point3D center, double xRadius, double yRadius, double startAngle = 0, double arcSize = 90, double rotation = 0)
+  public EllipticalCenterArc(Point3D center, double xRadius, double yRadius, double startAngle, CurveLimit arcLimit, double rotation = 0)
+public class Kerf.Modeling.EllipticalStartArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public EllipticalStartArc(Point3D startPoint, Vector3D startTangent, double xRadius, double yRadius, double arcSize, double? startAngle = default, Vector3D? majorAxisDir = default)
+public abstract class Kerf.Modeling.Export2D
+  public const ColorIndex DefaultColorIndex = ColorIndex.Black
+  public const LineType DefaultLineType = LineType.Continuous
+  public const double DefaultLineWeight = 0.09
+  public const double ParametricTolerance = 1E-09
+  public static LineTypeDefinition LineTypeDefinition(LineType lineType)
+  public static double LineTypeScale(Unit unit)
+public sealed class Kerf.Modeling.ExportDxf : Export2D
+  public ExportDxf(DxfVersion version = DxfVersion.R2013, Unit unit = Unit.Millimeter, ColorIndex? color = default, double? lineWeight = default, LineType? lineType = default, double tolerance = 0.001, TextOutput textOutput = TextOutput.Outlines)
+  public DxfVersion Version { get; }
+  public IReadOnlyList<DxfLayer> Layers { get; }
+  public TextOutput TextOutput { get; }
+  public Unit Unit { get; }
+  public double Tolerance { get; }
+  public int EntityCount { get; }
+  public int NotPlanarEdgeCount { get; }
+  public ExportDxf AddDrawing(LineDrawing drawing, string visibleLayer = "visible", string? hiddenLayer = "hidden", string? notesLayer = "notes")
+  public ExportDxf AddLayer(string name, ColorIndex? color = default, double? lineWeight = default, LineType? lineType = default)
+  public ExportDxf AddNotes(IEnumerable<DrawingNote> notes, string layer = "")
+  public ExportDxf AddShape(IShape shape, string layer = "")
+  public ExportDxf AddShape<T>(IEnumerable<T> shapes, string layer = "")
+  public Result Write(Stream stream, CancellationToken cancellationToken = default)
+  public Result Write(string path, CancellationToken cancellationToken = default)
+  public string WriteToString(CancellationToken cancellationToken = default)
+public static class Kerf.Modeling.Exporters3D
+  public static Result Export3mf(IShape toExport, Stream stream, ThreeMfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result Export3mf(IShape toExport, string filePath, ThreeMfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result ExportBrep(IShape toExport, Stream stream)
+  public static Result ExportBrep(IShape toExport, string filePath)
+  public static Result ExportGltf(IShape toExport, Stream stream, GltfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result ExportGltf(IShape toExport, string filePath, GltfExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result ExportStep(IShape toExport, Stream stream, StepExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result ExportStep(IShape toExport, string filePath, StepExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result ExportStl(IShape toExport, Stream stream, StlExportOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result ExportStl(IShape toExport, string filePath, StlExportOptions? options = default, CancellationToken cancellationToken = default)
+public enum Kerf.Modeling.Extrinsic
+  XYZ = 0
+  XZY = 1
+  YZX = 2
+  YXZ = 3
+  ZXY = 4
+  ZYX = 5
+  XYX = 6
+  XZX = 7
+  YZY = 8
+  YXY = 9
+  ZXZ = 10
+  ZYZ = 11
+public static class Kerf.Modeling.FaceExtensions
+  public static (double, double) ParamAtPoint(this Face self, Point3D point, bool normalize = true)
+  public static (double, double)? get_Radii(Face self)
+  public static Axis? get_AxisOfRotation(Face self)
+  public static Convexity get_Convexity(Face self)
+  public static Face Chamfer2D(this Face self, double distance, double distance2, IEnumerable<Vertex> vertices, Edge? edge = default)
+  public static Face Extrude(Edge obj, Vector3D direction)
+  public static Face Fillet2D(this Face self, double radius, IEnumerable<Vertex> vertices)
+  public static Face FromPlane(Plane plane)
+  public static Face Make(Wire outerWire, IEnumerable<Wire>? innerWires = default, Face? surface = default)
+  public static Face MakeBezierSurface(IReadOnlyList<IReadOnlyList<Point3D>> points, IReadOnlyList<IReadOnlyList<double>>? weights = default)
+  public static Face MakeHoles(this Face self, IEnumerable<Wire> interiorWires)
+  public static Face MakeRect(double width, double height, Plane? plane = default)
+  public static Face MakeSurface(IEnumerable<Edge> exterior, IEnumerable<Point3D>? surfacePoints = default, IEnumerable<Wire>? interiorWires = default)
+  public static Face MakeSurface(Wire exterior, IEnumerable<Point3D>? surfacePoints = default, IEnumerable<Wire>? interiorWires = default)
+  public static Face MakeSurfaceFromArrayOfPoints(IReadOnlyList<IReadOnlyList<Point3D>> points, double tolerance = 0.01, (double, double, double)? smoothing = default, int minDeg = 1, int maxDeg = 3)
+  public static Face MakeSurfaceFromCurves(Edge edge1, Edge edge2)
+  public static Face MakeSurfacePatch(IEnumerable<(Edge, Face, ContinuityLevel)>? edgeFaceConstraints = default, IEnumerable<Edge>? edgeConstraints = default, IEnumerable<Point3D>? pointConstraints = default)
+  public static Face Revolve(Edge profile, double angle, Axis axis)
+  public static Face Sweep(Shape profile, Shape path, Transition transition = Transition.Transformed)
+  public static Face WithoutHoles(this Face self)
+  public static IReadOnlyList<Axis> get_AxesOfSymmetry(Face self)
+  public static IReadOnlyList<ShapeList<Face>> SewFaces(IEnumerable<Face> faces)
+  public static Location LocationAt(this Face self, Point3D? surfacePoint = default, Vector3D? xDir = default)
+  public static Location LocationAt(this Face self, double u, double v, Vector3D? xDir = default)
+  public static Location get_CenterLocation(Face self)
+  public static Plane? get_IsPlanar(Face self)
+  public static Point3D PositionAt(this Face self, double u, double v)
+  public static Shape MakeSurfaceFromCurves(Wire wire1, Wire wire2)
+  public static ShapeList<Edge> get_Seams(Face self)
+  public static ShapeList<IShape2D> ProjectToShape(this Face self, Shape targetObject, Vector3D direction)
+  public static ShapeList<Wire> InnerWires(this Face self)
+  public static Surface AsSurface(this Face self)
+  public static Vector3D DerivativeAt(this Face self, double u, double v, int uOrder, int vOrder, bool normalize = true)
+  public static Vector3D NormalAt(this Face self, Point3D? surfacePoint = default)
+  public static Vector3D NormalAt(this Face self, double u, double v)
+  public static Wire OuterWire(this Face self)
+  public static bool IsCoplanar(this Face self, Plane plane)
+  public static bool IsInside(this Face self, Point3D point, double tolerance = 1E-06)
+  public static bool get_IsCircularConcave(Face self)
+  public static bool get_IsCircularConvex(Face self)
+  public static double get_AreaWithoutHoles(Face self)
+  public static double? get_Length(Face self)
+  public static double? get_Radius(Face self)
+  public static double? get_SemiAngle(Face self)
+  public static double? get_Width(Face self)
+  public static string? get_Geometry(Face self)
+public sealed class Kerf.Modeling.FaceMesh
+  public GeomType Type { get; }
+  public ReadOnlyMemory<float> Normals { get; }
+  public ReadOnlyMemory<float> Positions { get; }
+  public ReadOnlyMemory<int> Triangles { get; }
+  public int NodeCount { get; }
+  public int TriangleCount { get; }
+public class Kerf.Modeling.FilletPolyline : BaseLineObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public FilletPolyline(IEnumerable<Point3D> points, IEnumerable<double> radii, bool close = false)
+  public FilletPolyline(IEnumerable<Point3D> points, double radius, bool close = false)
+public enum Kerf.Modeling.FrameMethod
+  Frenet = 0
+  Corrected = 1
+public enum Kerf.Modeling.GeomType
+  Plane = 0
+  Cylinder = 1
+  Cone = 2
+  Sphere = 3
+  Torus = 4
+  Bezier = 5
+  BSpline = 6
+  Revolution = 7
+  Extrusion = 8
+  Offset = 9
+  Line = 10
+  Circle = 11
+  Ellipse = 12
+  Hyperbola = 13
+  Parabola = 14
+  Other = 15
+public sealed record Kerf.Modeling.GltfExportOptions : IEquatable<GltfExportOptions>
+  public GltfExportOptions()
+  public Unit Unit { get; init; }
+  public bool Binary { get; init; }
+  public double AngularDeflection { get; init; }
+  public double LinearDeflection { get; init; }
+  public static GltfExportOptions Default { get; }
+public class Kerf.Modeling.GridLocations : LocationList, IEnumerable, IEnumerable<Location>, IReadOnlyCollection<Location>, IReadOnlyList<Location>
+  public GridLocations(double xSpacing, double ySpacing, int xCount, int yCount, Alignment? align = default)
+  public Alignment Align { get; }
+  public Point3D Max { get; }
+  public Point3D Min { get; }
+  public Vector3D Size { get; }
+  public double XSpacing { get; }
+  public double YSpacing { get; }
+  public int XCount { get; }
+  public int YCount { get; }
+public enum Kerf.Modeling.HeadType
+  Straight = 0
+  Curved = 1
+  Filleted = 2
+public class Kerf.Modeling.Helix : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public Helix(double pitch, double height, double radius, Point3D? center = default, Vector3D? direction = default, double coneAngle = 0, bool leftHanded = false)
+public enum Kerf.Modeling.HemType
+  Flat = 0
+  Open = 1
+  Teardrop = 2
+  Rolled = 3
+public class Kerf.Modeling.HexLocations : LocationList, IEnumerable, IEnumerable<Location>, IReadOnlyCollection<Location>, IReadOnlyList<Location>
+  public HexLocations(double radius, int xCount, int yCount, bool majorRadius = false, Alignment? align = default)
+  public Alignment Align { get; }
+  public bool MajorRadius { get; }
+  public double Apothem { get; }
+  public double Diagonal { get; }
+  public double Radius { get; }
+  public int XCount { get; }
+  public int YCount { get; }
+public class Kerf.Modeling.Hole : BaseHole, IEquatable<ModelShape>, IShape, IShape3D
+  public Hole(double radius, double? depth = default)
+  public double HoleDepth { get; }
+  public double Radius { get; }
+public class Kerf.Modeling.HyperbolicCenterArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public HyperbolicCenterArc(Point3D center, double xRadius, double yRadius, double startAngle = 0, double arcSize = 90, double rotation = 0)
+  public HyperbolicCenterArc(Point3D center, double xRadius, double yRadius, double startAngle, CurveLimit arcLimit, double rotation = 0)
+public sealed record Kerf.Modeling.ImportLimits : IEquatable<ImportLimits>
+  public ImportLimits(long MaxBytes = 1073741824, int MaxEntities = 20000000, int MaxDepth = 1000, long MaxTriangles = 50000000, int MaxNodes = 1000000)
+  public int MaxDepth { get; init; }
+  public int MaxEntities { get; init; }
+  public int MaxNodes { get; init; }
+  public long MaxBytes { get; init; }
+  public long MaxTriangles { get; init; }
+  public static ImportLimits Default { get; }
+public static class Kerf.Modeling.Importers
+  public static Result<Face> ImportStl(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Result<Face> ImportStl(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Result<ModelShape> ImportGltf(Stream stream, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Result<ModelShape> ImportGltf(string fileName, Unit modelUnit = Unit.Millimeter, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Result<ModelShape> ImportStep(Stream stream, ImportLimits? limits = default, CancellationToken cancellationToken = default, string name = "STEP data")
+  public static Result<ModelShape> ImportStep(string fileName, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Result<Shape> ImportBrep(Stream stream, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Result<Shape> ImportBrep(string fileName, ImportLimits? limits = default, CancellationToken cancellationToken = default)
+public class Kerf.Modeling.IntersectingLine : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public IntersectingLine(Point3D start, Vector3D direction, Shape other)
+public enum Kerf.Modeling.Intrinsic
+  XYZ = 0
+  XZY = 1
+  YZX = 2
+  YXZ = 3
+  ZXY = 4
+  ZYX = 5
+  XYX = 6
+  XZX = 7
+  YZY = 8
+  YXY = 9
+  ZXZ = 10
+  ZYZ = 11
+public class Kerf.Modeling.JernArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public JernArc(Point3D start, Vector3D tangent, double radius, CurveLimit arcLimit)
+  public JernArc(Point3D start, Vector3D tangent, double radius, double arcSize)
+  public Point3D CenterPoint { get; }
+  public Point3D EndOfArc { get; }
+  public Point3D Start { get; }
+public enum Kerf.Modeling.Keep
+  All = 0
+  Bottom = 1
+  Both = 2
+  Inside = 3
+  Outside = 4
+  Top = 5
+public enum Kerf.Modeling.Kind
+  Arc = 0
+  Intersection = 1
+public enum Kerf.Modeling.LengthFrom
+  Tangent = 0
+  InnerSharp = 1
+  OuterSharp = 2
+public enum Kerf.Modeling.LengthMode
+  Diagonal = 0
+  Horizontal = 1
+  Vertical = 2
+public class Kerf.Modeling.Line : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public Line(IEnumerable<Point3D> points)
+  public Line(Point3D start, Point3D end)
+public enum Kerf.Modeling.LineType
+  Continuous = 0
+  Border = 1
+  Border2 = 2
+  BorderX2 = 3
+  Center = 4
+  Center2 = 5
+  CenterX2 = 6
+  DashDot = 7
+  DashDot2 = 8
+  DashDotX2 = 9
+  Dashed = 10
+  Dashed2 = 11
+  DashedX2 = 12
+  Divide = 13
+  Divide2 = 14
+  DivideX2 = 15
+  Dot = 16
+  Dot2 = 17
+  DotX2 = 18
+  Hidden = 19
+  Hidden2 = 20
+  HiddenX2 = 21
+  Phantom = 22
+  Phantom2 = 23
+  PhantomX2 = 24
+  IsoDash = 25
+  IsoDashSpace = 26
+  IsoLongDashDot = 27
+  IsoLongDashDoubleDot = 28
+  IsoLongDashTripleDot = 29
+  IsoDot = 30
+  IsoLongDashShortDash = 31
+  IsoLongDashDoubleShortDash = 32
+  IsoDashDot = 33
+  IsoDoubleDashDot = 34
+  IsoDashDoubleDot = 35
+  IsoDoubleDashDoubleDot = 36
+  IsoDashTripleDot = 37
+  IsoDoubleDashTripleDot = 38
+public sealed record Kerf.Modeling.LineTypeDefinition : IEquatable<LineTypeDefinition>
+  public LineTypeDefinition(string Name, string Description, ImmutableArray<double> Pattern)
+  public ImmutableArray<double> Pattern { get; init; }
+  public string Description { get; init; }
+  public string Name { get; init; }
+public class Kerf.Modeling.Location : IEquatable<Location>, IFormattable, IGeometry
+  public Location()
+  public Location(Location location)
+  public Location(Placement location)
+  public Location(Plane plane)
+  public Location(Point3D position)
+  public Location(Point3D position, Vector3D direction, double angle)
+  public Location(Point3D position, Vector3D orientation, RotationOrder ordering = default)
+  public Location(Point3D position, double angle)
+  public Location(Transform3D transform)
+  public Location(Vector3D offset)
+  public Axis XAxis { get; }
+  public Axis YAxis { get; }
+  public Axis ZAxis { get; }
+  public Point3D Position { get; }
+  public Vector3D Orientation { get; }
+  public IGeometry? Intersect(Axis axis)
+  public IGeometry? Intersect(Location location)
+  public IGeometry? Intersect(Plane plane)
+  public Location Inverse()
+  public Location Mirror(Plane mirrorPlane)
+  public Location Pow(int exponent)
+  public Location WithOrientation(Vector3D orientation)
+  public Location WithPosition(Point3D position)
+  public Placement ToPlacement()
+  public Point3D Center()
+  public Point3D? Intersect(Point3D point)
+  public ShapeList<Shape> Intersect(Shape shape)
+  public Transform3D ToTransform3D()
+  public bool Equals(Location? other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static IReadOnlyList<Location> op_Multiply(Location a, IEnumerable<Location> locations)
+  public static Location op_Multiply(Location a, Location b)
+  public static Location op_UnaryNegation(Location a)
+  public static bool op_Equality(Location? a, Location? b)
+  public static bool op_Inequality(Location? a, Location? b)
+  public string ToString(string? format, IFormatProvider? formatProvider = default)
+  public void Deconstruct(out Point3D position, out Vector3D orientation)
+public class Kerf.Modeling.LocationList : IEnumerable, IEnumerable<Location>, IReadOnlyCollection<Location>, IReadOnlyList<Location>
+  public LocationList(IEnumerable<Location> locations)
+  public const int MaxCount = 10000000
+  public IReadOnlyList<Location> LocalLocations { get; }
+  public IReadOnlyList<Location> Locations { get; }
+  public Location this[int index] { get; }
+  public int Count { get; }
+  public IEnumerator<Location> GetEnumerator()
+public class Kerf.Modeling.Locations : LocationList, IEnumerable, IEnumerable<Location>, IReadOnlyCollection<Location>, IReadOnlyList<Location>
+  public Locations(params IEnumerable<object> points)
+public sealed class Kerf.Modeling.MeshNode
+  public Color? Color { get; }
+  public IReadOnlyList<MeshNode> Children { get; }
+  public Location Location { get; }
+  public ShapeMesh? Mesh { get; }
+  public string Label { get; }
+public readonly record struct Kerf.Modeling.MeshTolerances : IEquatable<MeshTolerances>
+  public MeshTolerances(double Linear, double Angular, bool Relative = false)
+  public bool Relative { get; init; }
+  public double Angular { get; init; }
+  public double Linear { get; init; }
+  public static MeshTolerances For(Shape shape, double deviation = 0.1, double angular = 0.2)
+public enum Kerf.Modeling.MeshType
+  Other = 0
+  Model = 1
+  Support = 2
+  SolidSupport = 3
+public sealed class Kerf.Modeling.ModelHistory
+  public ModelHistory(IEnumerable<Shape>? before = default, IEnumerable<Shape>? brought = default)
+  public IReadOnlyList<Shape> Before { get; }
+  public IReadOnlyList<Shape> Brought { get; }
+  public ImmutableArray<Shape> Generated(Shape shape)
+  public ImmutableArray<Shape> Modified(Shape shape)
+  public ModelHistory AddModified(Shape before, Shape after)
+  public ModelHistory Merge(ModelHistory? later)
+  public ModelHistory WithInputs(IEnumerable<Shape> before, IEnumerable<Shape> brought)
+  public ShapeHistory ToHistory()
+  public ShapeTrace TraceOf(IEnumerable<Shape> inputs)
+  public bool IsLast(Shape shape)
+  public bool IsNew(Shape shape)
+  public bool IsRemoved(Shape shape)
+  public static ModelHistory FromHistory(ShapeHistory? history, IEnumerable<Shape>? before = default, IEnumerable<Shape>? brought = default)
+  public static ModelHistory FromRelocation(Shape before, Shape after)
+  public static ModelHistory? Of<T>(IEnumerable<T> shapes)
+public abstract class Kerf.Modeling.ModelShape : IEquatable<ModelShape>, IShape, IShape3D
+  public Color? Color { get; }
+  public ModelHistory? History { get; }
+  public Shape Shape { get; }
+  public ShapeType ShapeType { get; }
+  public bool ForConstruction { get; }
+  public string Label { get; }
+  public Shape AsShape()
+  public ShapeList<Edge> Edges(Select select = Select.All)
+  public ShapeList<Face> Faces(Select select = Select.All)
+  public ShapeList<Shell> Shells(Select select = Select.All)
+  public ShapeList<Solid> Solids(Select select = Select.All)
+  public ShapeList<Vertex> Vertices(Select select = Select.All)
+  public bool Equals(ModelShape? other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static Compound op_Explicit(ModelShape model)
+  public static Edge op_Explicit(ModelShape model)
+  public static Face op_Explicit(ModelShape model)
+  public static ModelShape For(Shape shape)
+  public static ModelShape op_Implicit(Compound shape)
+  public static ModelShape op_Implicit(Edge shape)
+  public static ModelShape op_Implicit(Face shape)
+  public static ModelShape op_Implicit(Shape shape)
+  public static ModelShape op_Implicit(Shell shape)
+  public static ModelShape op_Implicit(Solid shape)
+  public static ModelShape op_Implicit(Vertex shape)
+  public static ModelShape op_Implicit(Wire shape)
+  public static Shape op_Implicit(ModelShape model)
+  public static Shell op_Explicit(ModelShape model)
+  public static Solid op_Explicit(ModelShape model)
+  public static Vertex op_Explicit(ModelShape model)
+  public static Wire op_Explicit(ModelShape model)
+  public static bool op_Equality(ModelShape? a, ModelShape? b)
+  public static bool op_Inequality(ModelShape? a, ModelShape? b)
+  public virtual ShapeList<Wire> Wires(Select select = Select.All)
+public static class Kerf.Modeling.ModelShapeOperations
+  public static IReadOnlyList<T> op_Multiply<T>(IEnumerable<Location> locations, T s)
+  public static IReadOnlyList<T> op_Multiply<T>(IEnumerable<Plane> planes, T s)
+  public static T Clean<T>(this T shape)
+  public static T Fix<T>(this T shape)
+  public static T Located<T>(this T shape, Location location)
+  public static T Mirror<T>(this T shape, Plane? mirrorPlane = default)
+  public static T Moved<T>(this T shape, Location location)
+  public static T Moved<T>(this T shape, Plane plane)
+  public static T Rotate<T>(this T shape, Axis axis, double angle, bool transform = false)
+  public static T Scale<T>(this T shape, Vector3D factors, Point3D? about = default)
+  public static T Scale<T>(this T shape, double factor, Point3D? about = default)
+  public static T ToSplines<T>(this T shape, int degree = 3, double tolerance = 0.001, bool nurbs = false)
+  public static T TransformGeometry<T>(this T shape, GeneralTransform3D matrix)
+  public static T TransformShape<T>(this T shape, GeneralTransform3D matrix)
+  public static T Transformed<T>(this T shape, Vector3D? rotate = default, Vector3D? offset = default)
+  public static T Translate<T>(this T shape, Vector3D vector, bool transform = false)
+  public static T WithColor<T>(this T shape, Color? color)
+  public static T WithForConstruction<T>(this T shape, bool forConstruction = true)
+  public static T WithLabel<T>(this T shape, string label)
+  public static T WithLocation<T>(this T shape, Location location)
+  public static T WithOrientation<T>(this T shape, Vector3D orientation)
+  public static T WithPosition<T>(this T shape, Point3D position)
+  public static T op_Multiply<T>(Location location, T s)
+  public static T op_Multiply<T>(Plane plane, T s)
+public static class Kerf.Modeling.ModelingDiagnostics
+  public static DiagnosticCode ChamferFailed { get; }
+  public static DiagnosticCode DraftFailed { get; }
+  public static DiagnosticCode DxfNotPlanar { get; }
+  public static DiagnosticCode DxfTextAsOutlines { get; }
+  public static DiagnosticCode FilletFailed { get; }
+  public static DiagnosticCode HullFailed { get; }
+  public static DiagnosticCode KernelInvalidArgument { get; }
+  public static DiagnosticCode LimitNotReached { get; }
+  public static DiagnosticCode LoftFailed { get; }
+  public static DiagnosticCode NoSolution { get; }
+  public static DiagnosticCode ObjectFailed { get; }
+  public static DiagnosticCode OffsetFailed { get; }
+  public static DiagnosticCode SplineFailed { get; }
+  public static DiagnosticCode SweepWarning { get; }
+  public static DiagnosticCode TextFailed { get; }
+  public static DiagnosticCode ThickenFailed { get; }
+  public static bool TryGetInvalid(Exception failure, out Shape invalid)
+public sealed class Kerf.Modeling.ModelingException : InvalidOperationException, ISerializable
+  public Diagnostic Error { get; }
+  public ImmutableArray<Diagnostic> Diagnostics { get; }
+  public bool TryGetInvalid(out Shape invalid)
+public enum Kerf.Modeling.NumberDisplay
+  Decimal = 0
+  Fraction = 1
+public static class Kerf.Modeling.Operations
+  public static Curve Mirror(Curve obj, Plane? about = default)
+  public static Curve Scale(Curve obj, Vector3D by, Point3D? about = default)
+  public static Curve Scale(Curve obj, double by, Point3D? about = default)
+  public static Curve Split(Curve obj, IShape2D bisectBy, Keep keep = Keep.Top)
+  public static Curve Split(Curve obj, Plane? bisectBy = default, Keep keep = Keep.Top)
+  public static IReadOnlyList<Point3D> ProjectPoints(IEnumerable<Point3D> points, Plane workplane)
+  public static IReadOnlyList<Point3D> ProjectPoints(IEnumerable<Vertex> points, Plane workplane)
+  public static IReadOnlyList<Point3D> ProjectPoints(Point3D point, Plane workplane)
+  public static IReadOnlyList<Point3D> ProjectPoints(Vertex point, Plane workplane)
+  public static ModelShape BoundingBox(IEnumerable<Shape> objects)
+  public static ModelShape BoundingBox(Part obj)
+  public static ModelShape BoundingBox(Shape obj)
+  public static ModelShape BoundingBox(Sketch obj)
+  public static ModelShape BoundingBox<T>(IEnumerable<T> objects)
+  public static ModelShape Mirror(IEnumerable<Shape> objects, Plane? about = default)
+  public static ModelShape Mirror(Shape obj, Plane? about = default)
+  public static ModelShape Mirror<T>(IEnumerable<T> objects, Plane? about = default)
+  public static ModelShape Project(IEnumerable<Shape> objects, Plane workplane)
+  public static ModelShape Project(Shape obj, Plane workplane)
+  public static ModelShape Project<T>(IEnumerable<T> objects, Plane workplane)
+  public static ModelShape Scale(IEnumerable<Shape> objects, Vector3D by, Point3D? about = default)
+  public static ModelShape Scale(IEnumerable<Shape> objects, double by = 1, Point3D? about = default)
+  public static ModelShape Scale(Shape obj, Vector3D by, Point3D? about = default)
+  public static ModelShape Scale(Shape obj, double by = 1, Point3D? about = default)
+  public static ModelShape Scale<T>(IEnumerable<T> objects, Vector3D by, Point3D? about = default)
+  public static ModelShape Scale<T>(IEnumerable<T> objects, double by = 1, Point3D? about = default)
+  public static ModelShape Split(IEnumerable<Shape> objects, IShape2D bisectBy, Keep keep = Keep.Top)
+  public static ModelShape Split(IEnumerable<Shape> objects, Plane? bisectBy = default, Keep keep = Keep.Top)
+  public static ModelShape Split(Shape obj, IShape2D bisectBy, Keep keep = Keep.Top)
+  public static ModelShape Split(Shape obj, Plane? bisectBy = default, Keep keep = Keep.Top)
+  public static ModelShape Split<T>(IEnumerable<T> objects, IShape2D bisectBy, Keep keep = Keep.Top)
+  public static ModelShape Split<T>(IEnumerable<T> objects, Plane? bisectBy = default, Keep keep = Keep.Top)
+  public static Part Mirror(Part obj, Plane? about = default)
+  public static Part Scale(Part obj, Vector3D by, Point3D? about = default)
+  public static Part Scale(Part obj, double by, Point3D? about = default)
+  public static Part Split(Part obj, IShape2D bisectBy, Keep keep = Keep.Top)
+  public static Part Split(Part obj, Plane? bisectBy = default, Keep keep = Keep.Top)
+  public static Plane ProjectWorkplane(Point3D origin, Vector3D xDir, Vector3D projectionDir, double distance)
+  public static Plane ProjectWorkplane(Vertex origin, Vertex xDir, Vector3D projectionDir, double distance)
+  public static Result<Curve> MakeAirfoil(string airfoilCode, int pointCount = 50, bool finiteTE = false)
+  public static Result<Curve> MakeBSpline(IEnumerable<Point3D> controlPoints, IEnumerable<double> knots, int degree, IEnumerable<double>? weights = default, bool periodic = false)
+  public static Result<Curve> MakeBezier(IEnumerable<Point3D> controlPoints, IReadOnlyList<double>? weights = default)
+  public static Result<Curve> MakeBezier(params Point3D[] controlPoints)
+  public static Result<Curve> MakeBlendCurve(Edge curve0, Edge curve1, ContinuityLevel continuity = ContinuityLevel.C2, (Point3D, Point3D)? endPoints = default, (double, double)? tangentScalars = default)
+  public static Result<Curve> MakeCenterArc(Point3D center, double radius, double startAngle, CurveLimit arcLimit)
+  public static Result<Curve> MakeCenterArc(Point3D center, double radius, double startAngle, double arcSize)
+  public static Result<Curve> MakeConstrainedArcs(Tangent tangencyOne, Point3D center, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, Tangent tangencyThree, Sagitta sagitta = Sagitta.Short, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, double radius, Sagitta sagitta = Sagitta.Short, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeConstrainedArcs(Tangent tangencyOne, double radius, Tangent centerOn, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeConstrainedArcsCenteredOn(Tangent tangencyOne, Tangent tangencyTwo, Tangent centerOn, Sagitta sagitta = Sagitta.Short, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeConstrainedLines(Tangent tangencyOne, Axis reference, Vector3D direction, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeConstrainedLines(Tangent tangencyOne, Axis reference, double angle, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeConstrainedLines(Tangent tangencyOne, Tangent tangencyTwo, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = default)
+  public static Result<Curve> MakeDoubleTangentArc(Point3D point, Vector3D tangent, IShape1D other, Keep keep = Keep.Top)
+  public static Result<Curve> MakeEllipticalCenterArc(Point3D center, double xRadius, double yRadius, double startAngle = 0, double arcSize = 90, double rotation = 0)
+  public static Result<Curve> MakeEllipticalCenterArc(Point3D center, double xRadius, double yRadius, double startAngle, CurveLimit arcLimit, double rotation = 0)
+  public static Result<Curve> MakeEllipticalStartArc(Point3D startPoint, Vector3D startTangent, double xRadius, double yRadius, double arcSize, double? startAngle = default, Vector3D? majorAxisDir = default)
+  public static Result<Curve> MakeFilletPolyline(IEnumerable<Point3D> points, IEnumerable<double> radii, bool close = false)
+  public static Result<Curve> MakeFilletPolyline(IEnumerable<Point3D> points, double radius, bool close = false)
+  public static Result<Curve> MakeHelix(double pitch, double height, double radius, Point3D? center = default, Vector3D? direction = default, double coneAngle = 0, bool leftHanded = false)
+  public static Result<Curve> MakeHyperbolicCenterArc(Point3D center, double xRadius, double yRadius, double startAngle = 0, double arcSize = 90, double rotation = 0)
+  public static Result<Curve> MakeHyperbolicCenterArc(Point3D center, double xRadius, double yRadius, double startAngle, CurveLimit arcLimit, double rotation = 0)
+  public static Result<Curve> MakeIntersectingLine(Point3D start, Vector3D direction, Shape other)
+  public static Result<Curve> MakeJernArc(Point3D start, Vector3D tangent, double radius, CurveLimit arcLimit)
+  public static Result<Curve> MakeJernArc(Point3D start, Vector3D tangent, double radius, double arcSize)
+  public static Result<Curve> MakeLine(IEnumerable<Point3D> points)
+  public static Result<Curve> MakeLine(Point3D start, Point3D end)
+  public static Result<Curve> MakeParabolicCenterArc(Point3D vertex, double focalLength, double startAngle = 0, double arcSize = 90, double rotation = 0)
+  public static Result<Curve> MakeParabolicCenterArc(Point3D vertex, double focalLength, double startAngle, CurveLimit arcLimit, double rotation = 0)
+  public static Result<Curve> MakePolarLine(Point3D start, CurveLimit lengthLimit, double? angle = default, Vector3D? direction = default)
+  public static Result<Curve> MakePolarLine(Point3D start, double length, double? angle = default, Vector3D? direction = default, LengthMode lengthMode = LengthMode.Diagonal)
+  public static Result<Curve> MakePolyline(IEnumerable<Point3D> points, bool close = false)
+  public static Result<Curve> MakePolyline(params Point3D[] points)
+  public static Result<Curve> MakeRadiusArc(Point3D startPoint, Point3D endPoint, double radius, bool shortSagitta = true)
+  public static Result<Curve> MakeSagittaArc(Point3D startPoint, Point3D endPoint, double sagitta)
+  public static Result<Curve> MakeSpline(IEnumerable<Point3D> points, IEnumerable<Vector3D>? tangents = default, IEnumerable<double>? tangentScalars = default, bool periodic = false)
+  public static Result<Curve> MakeSpline(params Point3D[] points)
+  public static Result<Curve> MakeTangentArc(IEnumerable<Point3D> points, Vector3D tangent, bool tangentFromFirst = true)
+  public static Result<Curve> MakeTangentArc(Point3D start, Point3D end, Vector3D tangent, bool tangentFromFirst = true)
+  public static Result<Curve> MakeThreePointArc(IEnumerable<Point3D> points)
+  public static Result<Curve> MakeThreePointArc(Point3D point1, Point3D point2, Point3D point3)
+  public static Result<Curve> Offset(Curve obj, double amount, Operations.OffsetOptions? options = default)
+  public static Result<ModelShape> Chamfer(IEnumerable<Vertex> vertices, double length, double? length2 = default, double? angle = default, Edge? reference = default)
+  public static Result<ModelShape> Chamfer(Shape target, IEnumerable<Vertex> vertices, double length, double? length2 = default, double? angle = default, Edge? reference = default)
+  public static Result<ModelShape> Chamfer(Shape target, Vertex vertex, double length, double? length2 = default, double? angle = default, Edge? reference = default)
+  public static Result<ModelShape> Fillet(IEnumerable<Vertex> vertices, double radius)
+  public static Result<ModelShape> Fillet(Shape target, IEnumerable<Vertex> vertices, double radius)
+  public static Result<ModelShape> Fillet(Shape target, Vertex vertex, double radius)
+  public static Result<ModelShape> Offset(IEnumerable<Shape> objects, double amount, Operations.OffsetOptions? options = default)
+  public static Result<ModelShape> Offset(Shape obj, double amount, Operations.OffsetOptions? options = default)
+  public static Result<ModelShape> Offset<T>(IEnumerable<T> objects, double amount, Operations.OffsetOptions? options = default)
+  public static Result<ModelShape> Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, Operations.SweepOptions? options = default)
+  public static Result<ModelShape> Sweep(IEnumerable<Shape> sections, Shape path, Operations.SweepOptions? options = default)
+  public static Result<ModelShape> Sweep(Shape section, IEnumerable<Edge> path, Operations.SweepOptions? options = default)
+  public static Result<ModelShape> Sweep(Shape section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<ModelShape> Sweep<T>(IEnumerable<T> sections, IEnumerable<Edge> path, Operations.SweepOptions? options = default)
+  public static Result<ModelShape> Sweep<T>(IEnumerable<T> sections, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Part> Chamfer(IEnumerable<Edge> edges, double length, double? length2 = default, double? angle = default, Face? reference = default, Operations.ChamferOptions? options = default)
+  public static Result<Part> Chamfer(Shape target, Edge edge, double length, double? length2 = default, double? angle = default, Face? reference = default, Operations.ChamferOptions? options = default)
+  public static Result<Part> Chamfer(Shape target, IEnumerable<Edge> edges, double length, double? length2 = default, double? angle = default, Face? reference = default, Operations.ChamferOptions? options = default)
+  public static Result<Part> Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
+  public static Result<Part> Draft(Shape target, Face face, Plane neutralPlane, double angle)
+  public static Result<Part> Draft(Shape target, IEnumerable<Face> faces, Plane neutralPlane, double angle)
+  public static Result<Part> Extrude(IEnumerable<Face> toExtrude, Until until, Shape target, Operations.ExtrudeOptions? options = default)
+  public static Result<Part> Extrude(IEnumerable<Face> toExtrude, double amount, Operations.ExtrudeOptions? options = default)
+  public static Result<Part> Extrude(Shape toExtrude, Until until, Shape target, Operations.ExtrudeOptions? options = default)
+  public static Result<Part> Extrude(Shape toExtrude, double amount, Operations.ExtrudeOptions? options = default)
+  public static Result<Part> Fillet(IEnumerable<Edge> edges, double radius)
+  public static Result<Part> Fillet(Shape target, Edge edge, double radius)
+  public static Result<Part> Fillet(Shape target, IEnumerable<Edge> edges, double radius)
+  public static Result<Part> Loft(IEnumerable<Shape> sections, bool ruled = false, bool clean = true)
+  public static Result<Part> Loft<T>(IEnumerable<T> sections, bool ruled = false, bool clean = true)
+  public static Result<Part> MakeBox(double length, double width, double height, Rotation? rotation = default, Alignment? align = default)
+  public static Result<Part> MakeCone(double bottomRadius, double topRadius, double height, double arcSize = 360, Rotation? rotation = default, Alignment? align = default)
+  public static Result<Part> MakeConvexPolyhedron(IEnumerable<Point3D> points, Rotation? rotation = default, Alignment? align = default)
+  public static Result<Part> MakeCounterBoreHole(double radius, double counterBoreRadius, double counterBoreDepth, double? depth = default)
+  public static Result<Part> MakeCounterSinkHole(double radius, double counterSinkRadius, double? depth = default, double counterSinkAngle = 82)
+  public static Result<Part> MakeCylinder(double radius, double height, double arcSize = 360, Rotation? rotation = default, Alignment? align = default)
+  public static Result<Part> MakeHole(double radius, double? depth = default)
+  public static Result<Part> MakeSphere(double radius, double arcSize1 = -90, double arcSize2 = 90, double arcSize3 = 360, Rotation? rotation = default, Alignment? align = default)
+  public static Result<Part> MakeTorus(double majorRadius, double minorRadius, double minorStartAngle = 0, double minorEndAngle = 360, double majorAngle = 360, Rotation? rotation = default, Alignment? align = default)
+  public static Result<Part> MakeWedge(double xSize, double ySize, double zSize, double xMin, double zMin, double xMax, double zMax, Rotation? rotation = default, Alignment? align = default)
+  public static Result<Part> Offset(Part obj, double amount, Operations.OffsetOptions? options = default)
+  public static Result<Part> Revolve(IEnumerable<Shape> profiles, Axis? axis = default, double revolutionArc = 360, bool clean = true)
+  public static Result<Part> Revolve(Shape profile, Axis? axis = default, double revolutionArc = 360, bool clean = true)
+  public static Result<Part> Revolve<T>(IEnumerable<T> profiles, Axis? axis = default, double revolutionArc = 360, bool clean = true)
+  public static Result<Part> Sweep(Face section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Part> Sweep(Shell section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Part> Sweep(Sketch section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Part> Thicken(IEnumerable<Face> toThicken, double amount, Operations.ThickenOptions? options = default)
+  public static Result<Part> Thicken(Shape toThicken, double amount, Operations.ThickenOptions? options = default)
+  public static Result<Sketch> MakeCircle(double radius, double arcSize = 360, Alignment? align = default)
+  public static Result<Sketch> MakeEllipse(double xRadius, double yRadius, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakePolygon(IEnumerable<Point3D> points, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakePolygon(params Point3D[] points)
+  public static Result<Sketch> MakeRectangle(double width, double height, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakeRectangleRounded(double width, double height, double radius, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakeRegularPolygon(double radius, int sideCount, bool majorRadius = true, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakeSlotCenterPoint(Point3D center, Point3D point, double height, double rotation = 0)
+  public static Result<Sketch> MakeSlotCenterToCenter(double centerSeparation, double height, double rotation = 0)
+  public static Result<Sketch> MakeSlotCurve(IShape1D curve, double height, double rotation = 0)
+  public static Result<Sketch> MakeSlotOverall(double width, double height, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakeSuperellipse(double width, double height, double order = 4, int pointCount = 16, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakeTrapezoid(double width, double height, double leftSideAngle, double? rightSideAngle = default, double rotation = 0, Alignment? align = default)
+  public static Result<Sketch> MakeTriangle(double? sideA = default, double? sideB = default, double? sideC = default, double? angleA = default, double? angleB = default, double? angleC = default, Alignment? align = default, double rotation = 0)
+  public static Result<Sketch> Offset(Sketch obj, double amount, Operations.OffsetOptions? options = default)
+  public static Result<Sketch> Sweep(BaseEdgeObject section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Sketch> Sweep(BaseLineObject section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Sketch> Sweep(Curve section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Sketch> Sweep(Edge section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Sketch> Sweep(Wire section, Shape path, Operations.SweepOptions? options = default)
+  public static Result<Text> MakeText(string txt, double fontSize, string font = "Arial", string? fontPath = default, FontStyle fontStyle = FontStyle.Regular, (TextAlign, TextAlign)? textAlign = default, Alignment? align = default, IShape1D? path = default, double positionOnPath = 0, double? singleLineWidth = default, double rotation = 0)
+  public static Sketch FullRound(Edge edge, Shape parent, bool invert = false, int voronoiPointCount = 100)
+  public static Sketch MakeFace(IEnumerable<Shape> edges)
+  public static Sketch MakeFace(Shape edges)
+  public static Sketch MakeFace<T>(IEnumerable<T> edges)
+  public static Sketch MakeHull(Edge edge)
+  public static Sketch MakeHull(IEnumerable<Edge> edges)
+  public static Sketch Mirror(Sketch obj, Plane? about = default)
+  public static Sketch Scale(Sketch obj, Vector3D by, Point3D? about = default)
+  public static Sketch Scale(Sketch obj, double by, Point3D? about = default)
+  public static Sketch Section(Shape obj, IEnumerable<Plane> sectionBy, double height = 0, bool clean = true)
+  public static Sketch Section(Shape obj, Plane? sectionBy = default, double height = 0, bool clean = true)
+  public static Sketch Split(Sketch obj, IShape2D bisectBy, Keep keep = Keep.Top)
+  public static Sketch Split(Sketch obj, Plane? bisectBy = default, Keep keep = Keep.Top)
+  public static Sketch Trace(IEnumerable<Shape> lines, double lineWidth = 1)
+  public static Sketch Trace(Shape lines, double lineWidth = 1)
+  public static Sketch Trace<T>(IEnumerable<T> lines, double lineWidth = 1)
+public sealed record Kerf.Modeling.Operations.ChamferOptions : IEquatable<Operations.ChamferOptions>
+  public ChamferOptions()
+  public TightCorners TightCorners { get; init; }
+  public static Operations.ChamferOptions Default { get; }
+public sealed record Kerf.Modeling.Operations.ExtrudeOptions : IEquatable<Operations.ExtrudeOptions>
+  public ExtrudeOptions()
+  public Vector3D? Direction { get; init; }
+  public bool Both { get; init; }
+  public bool Clean { get; init; }
+  public double Taper { get; init; }
+  public static Operations.ExtrudeOptions Default { get; }
+public sealed record Kerf.Modeling.Operations.OffsetOptions : IEquatable<Operations.OffsetOptions>
+  public OffsetOptions()
+  public ImmutableArray<Face> Openings { get; init; }
+  public Kind Kind { get; init; }
+  public Side Side { get; init; }
+  public bool Closed { get; init; }
+  public double? MinEdgeLength { get; init; }
+  public static Operations.OffsetOptions Default { get; }
+public sealed record Kerf.Modeling.Operations.SweepOptions : IEquatable<Operations.SweepOptions>
+  public SweepOptions()
+  public IShape1D? Binormal { get; init; }
+  public Transition Transition { get; init; }
+  public Vector3D? Normal { get; init; }
+  public bool Clean { get; init; }
+  public bool IsFrenet { get; init; }
+  public bool Multisection { get; init; }
+  public static Operations.SweepOptions Default { get; }
+public sealed record Kerf.Modeling.Operations.ThickenOptions : IEquatable<Operations.ThickenOptions>
+  public ThickenOptions()
+  public Vector3D? NormalOverride { get; init; }
+  public bool Both { get; init; }
+  public bool Clean { get; init; }
+  public static Operations.ThickenOptions Default { get; }
+public sealed class Kerf.Modeling.OrientedBoundBox
+  public Direction3D XDirection { get; }
+  public Direction3D YDirection { get; }
+  public Direction3D ZDirection { get; }
+  public IReadOnlyList<Point3D> Corners { get; }
+  public Location Location { get; }
+  public Plane Plane { get; }
+  public Vector3D Size { get; }
+  public bool IsEmpty { get; }
+  public double Diagonal { get; }
+  public Point3D Center()
+  public bool IsCompletelyInside(OrientedBoundBox other)
+  public bool IsOutside(Point3D point)
+  public override string ToString()
+  public static OrientedBoundBox FromOrientedBox(OrientedBox box)
+public class Kerf.Modeling.ParabolicCenterArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public ParabolicCenterArc(Point3D vertex, double focalLength, double startAngle = 0, double arcSize = 90, double rotation = 0)
+  public ParabolicCenterArc(Point3D vertex, double focalLength, double startAngle, CurveLimit arcLimit, double rotation = 0)
+public class Kerf.Modeling.Part : ModelShape, IEquatable<ModelShape>, IShape, IShape3D
+  public Part()
+  public Part(IEnumerable<Shape> shapes, string label = "", Color? color = default)
+  public Part(IEnumerable<Solid> solids, string label = "", Color? color = default)
+  public Part(Shape shape, string label = "", Color? color = default)
+  public Result<Part> Add(params IEnumerable<Shape> others)
+  public Result<Part> Add<T>(IEnumerable<T> others)
+  public Result<Part> Common(params IEnumerable<Shape> others)
+  public Result<Part> Common<T>(IEnumerable<T> others)
+  public Result<Part> Subtract(params IEnumerable<Shape> others)
+  public Result<Part> Subtract<T>(IEnumerable<T> others)
+  public static Part op_Addition(Part a, IEnumerable<ModelShape> b)
+  public static Part op_Addition(Part a, IEnumerable<Shape> b)
+  public static Part op_Addition(Part a, Shape b)
+  public static Part op_BitwiseAnd(Part a, IEnumerable<Shape> b)
+  public static Part op_BitwiseAnd(Part a, Shape b)
+  public static Part op_Subtraction(Part a, IEnumerable<ModelShape> b)
+  public static Part op_Subtraction(Part a, IEnumerable<Shape> b)
+  public static Part op_Subtraction(Part a, Shape b)
+public sealed class Kerf.Modeling.Plane : IEquatable<Plane>, IFormattable, IGeometry
+  public Plane(Axis axis, Vector3D? xDir = default)
+  public Plane(Face face, Vector3D? xDir = default)
+  public Plane(Location location)
+  public Plane(Plane3D plane)
+  public Plane(Point3D origin, Vector3D? xDir = default, Vector3D? zDir = default)
+  public Direction3D XDir { get; }
+  public Direction3D YDir { get; }
+  public Direction3D ZDir { get; }
+  public GeneralTransform3D ForwardTransform { get; }
+  public GeneralTransform3D ReverseTransform { get; }
+  public Location Location { get; }
+  public Point3D Origin { get; }
+  public static Plane Back { get; }
+  public static Plane Bottom { get; }
+  public static Plane Front { get; }
+  public static Plane Isometric { get; }
+  public static Plane Left { get; }
+  public static Plane Right { get; }
+  public static Plane Top { get; }
+  public static Plane XY { get; }
+  public static Plane XZ { get; }
+  public static Plane YX { get; }
+  public static Plane YZ { get; }
+  public static Plane ZX { get; }
+  public static Plane ZY { get; }
+  public BoxCorners FromLocalCoords(BoundingBox box)
+  public BoxCorners ToLocalCoords(BoundingBox box)
+  public CoordinateSystem ToCoordinateSystem()
+  public Frame3D ToFrame3D()
+  public IGeometry? Intersect(Axis axis)
+  public IGeometry? Intersect(Location location)
+  public IGeometry? Intersect(Plane plane)
+  public Location LocationBetween(Plane other)
+  public Plane Moved(Location location)
+  public Plane Moved(Plane plane)
+  public Plane Offset(double amount)
+  public Plane Reverse()
+  public Plane Rotated(Vector3D rotation, RotationOrder ordering = default)
+  public Plane ShiftOrigin(Axis axis)
+  public Plane ShiftOrigin(Point3D point)
+  public Plane ShiftOrigin(Vertex vertex)
+  public Plane ShiftOriginBy(double x, double y)
+  public Plane WithOrigin(Point3D origin)
+  public Plane WithXDir(Vector3D xDir)
+  public Plane WithYDir(Vector3D yDir)
+  public Plane3D ToPlane3D()
+  public Point3D FromLocalCoords(Point3D point)
+  public Point3D ToLocalCoords(Point3D point)
+  public Point3D? Intersect(Point3D point)
+  public ShapeList<Shape> Intersect(Shape shape)
+  public T FromLocalCoords<T>(T shape)
+  public T ToLocalCoords<T>(T shape)
+  public bool Contains(Axis axis, double tolerance = 1E-06)
+  public bool Contains(Point3D point, double tolerance = 1E-06)
+  public bool Equals(Plane? other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static IReadOnlyList<Location> op_Multiply(Plane p, IEnumerable<Location> locations)
+  public static IReadOnlyList<Location> op_Multiply(Plane p, IEnumerable<Plane> planes)
+  public static IReadOnlyList<Plane> op_Multiply(IEnumerable<Location> locations, Plane p)
+  public static IReadOnlyList<Plane> op_Multiply(IEnumerable<Plane> planes, Plane p)
+  public static Location op_Multiply(Plane p, Location l)
+  public static Location op_Multiply(Plane p, Plane q)
+  public static Plane FromXAndYDirections(Point3D origin, Vector3D xDir, Vector3D yDir)
+  public static Plane ThroughPoints(Point3D p0, Point3D p1, Point3D p2)
+  public static Plane op_Multiply(Location l, Plane p)
+  public static Plane op_UnaryNegation(Plane p)
+  public static bool op_Equality(Plane? a, Plane? b)
+  public static bool op_Inequality(Plane? a, Plane? b)
+  public string ToString(string? format, IFormatProvider? formatProvider = default)
+public sealed class Kerf.Modeling.PointComparer : IEqualityComparer<Point3D>
+  public PointComparer()
+  public static PointComparer Near { get; }
+  public bool Equals(Point3D a, Point3D b)
+  public int GetHashCode(Point3D p)
+public static class Kerf.Modeling.PointExtensions
+  public static Direction3D ToDirection(this Direction3D d)
+  public static Direction3D ToDirection(this Vector3D v)
+  public static Point3D Center(this Point3D p)
+  public static Point3D ProjectToPlane(this Point3D p, Plane plane)
+  public static Point3D Round(this Point3D p, int digits)
+  public static Point3D ToPoint(this Vector3D v)
+  public static Point3D Transform(this Point3D p, GeneralTransform3D transform)
+  public static Point3D? Intersect(this Point3D p, Axis axis)
+  public static Point3D? Intersect(this Point3D p, Location location)
+  public static Point3D? Intersect(this Point3D p, Plane plane)
+  public static Point3D? Intersect(this Point3D p, Point3D other)
+  public static ShapeList<Shape> Intersect(this Point3D p, Shape shape)
+  public static Vector3D Cross(this Direction3D d, Vector3D other)
+  public static Vector3D Cross(this Vector3D v, Vector3D other)
+  public static Vector3D ProjectToLine(this Vector3D v, Vector3D line)
+  public static Vector3D Rotate(this Vector3D v, Axis axis, double angle)
+  public static Vector3D Round(this Vector3D v, int digits)
+  public static Vector3D ToVector(this Point3D p)
+  public static Vector3D Transform(this Vector3D v, GeneralTransform3D transform, bool isDirection = false)
+  public static bool IsNear(this Direction3D d, Direction3D other)
+  public static bool IsNear(this Point3D p, Point3D other)
+  public static bool IsNear(this Vector3D v, Vector3D other)
+  public static double DistanceToPlane(this Point3D p, Plane plane)
+  public static double Dot(this Direction3D d, Vector3D other)
+  public static double GetAngle(this Direction3D d, Vector3D other)
+  public static double GetAngle(this Vector3D v, Vector3D other)
+  public static double GetSignedAngle(this Direction3D d, Vector3D other, Vector3D? normal = default)
+  public static double GetSignedAngle(this Vector3D v, Vector3D other, Vector3D? normal = default)
+  public static double SignedDistanceFromPlane(this Point3D p, Plane plane)
+  public static string Describe(this Direction3D d)
+  public static string Describe(this Direction3D d, string? format)
+  public static string Describe(this Point3D p)
+  public static string Describe(this Point3D p, string? format)
+  public static string Describe(this Vector3D v)
+  public static string Describe(this Vector3D v, string? format)
+public class Kerf.Modeling.PolarLine : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public PolarLine(Point3D start, CurveLimit lengthLimit, double? angle = default, Vector3D? direction = default)
+  public PolarLine(Point3D start, double length, double? angle = default, Vector3D? direction = default, LengthMode lengthMode = LengthMode.Diagonal)
+public class Kerf.Modeling.PolarLocations : LocationList, IEnumerable, IEnumerable<Location>, IReadOnlyCollection<Location>, IReadOnlyList<Location>
+  public PolarLocations(double radius, int count, double startAngle = 0, double angularRange = 360, bool rotate = true, bool endpoint = false)
+public class Kerf.Modeling.Polygon : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Polygon(IEnumerable<Point3D> points, double rotation = 0, Alignment? align = default)
+  public Polygon(params Point3D[] points)
+  public Alignment Align { get; }
+  public IReadOnlyList<Point3D> Points { get; }
+public class Kerf.Modeling.Polyline : BaseLineObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public Polyline(IEnumerable<Point3D> points, bool close = false)
+  public Polyline(params Point3D[] points)
+public class Kerf.Modeling.Pos : Location, IEquatable<Location>, IFormattable, IGeometry
+  public Pos(Point3D p)
+  public Pos(Vector3D v)
+  public Pos(double x = 0, double y = 0, double z = 0)
+public enum Kerf.Modeling.PositionMode
+  Length = 0
+  Parameter = 1
+public enum Kerf.Modeling.PrecisionMode
+  Least = -1
+  Average = 0
+  Greatest = 1
+  Session = 2
+public class Kerf.Modeling.RadiusArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public RadiusArc(Point3D startPoint, Point3D endPoint, double radius, bool shortSagitta = true)
+public class Kerf.Modeling.Rectangle : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Rectangle(double width, double height, double rotation = 0, Alignment? align = default)
+  public Alignment Align { get; }
+  public double Height { get; }
+  public double Width { get; }
+public class Kerf.Modeling.RectangleRounded : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public RectangleRounded(double width, double height, double radius, double rotation = 0, Alignment? align = default)
+  public Alignment Align { get; }
+  public double Height { get; }
+  public double Radius { get; }
+  public double Width { get; }
+public class Kerf.Modeling.RegularPolygon : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public RegularPolygon(double radius, int sideCount, bool majorRadius = true, double rotation = 0, Alignment? align = default)
+  public Alignment Align { get; }
+  public double Apothem { get; }
+  public double Radius { get; }
+  public int SideCount { get; }
+public enum Kerf.Modeling.ReliefType
+  Round = 0
+  Square = 1
+  Obround = 2
+  ConstantWidth = 3
+public class Kerf.Modeling.Rotation : Location, IEquatable<Location>, IFormattable, IGeometry
+  public Rotation(Axis axis, double angle)
+  public Rotation(Rotation rotation)
+  public Rotation(Vector3D angles, RotationOrder ordering = default)
+  public Rotation(double x = 0, double y = 0, double z = 0, RotationOrder ordering = default)
+public readonly record struct Kerf.Modeling.RotationOrder : IEquatable<RotationOrder>
+  public Extrinsic? Extrinsic { get; }
+  public Intrinsic? Intrinsic { get; }
+  public bool IsExtrinsic { get; }
+  public override string ToString()
+  public static RotationOrder op_Implicit(Extrinsic order)
+  public static RotationOrder op_Implicit(Intrinsic order)
+public enum Kerf.Modeling.Sagitta
+  Long = -1
+  Short = 0
+  Both = 1
+public class Kerf.Modeling.SagittaArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public SagittaArc(Point3D startPoint, Point3D endPoint, double sagitta)
+public enum Kerf.Modeling.Select
+  All = 0
+  Last = 1
+  New = 2
+public sealed class Kerf.Modeling.Selector : IEquatable<Selector>
+  public Selector(ShapeType of, IEnumerable<Selector.Step> steps)
+  public IReadOnlyList<Selector.Step> Steps { get; }
+  public ShapeType Of { get; }
+  public ShapeList<Shape> Apply(Shape shape)
+  public bool Equals(Selector? other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static IReadOnlyList<Selector> For(Shape shape, Shape picked, int count = 3, int maxSteps = 3)
+public sealed record Kerf.Modeling.Selector.GroupByAxis : Selector.Step, IEquatable<Selector.GroupByAxis>, IEquatable<Selector.Step>
+  public GroupByAxis(Axis Axis, int Index)
+  public Axis Axis { get; init; }
+  public int Index { get; init; }
+  public override string ToString()
+public sealed record Kerf.Modeling.Selector.GroupByKey : Selector.Step, IEquatable<Selector.GroupByKey>, IEquatable<Selector.Step>
+  public GroupByKey(ShapeKey Key, int Index)
+  public ShapeKey Key { get; init; }
+  public int Index { get; init; }
+  public override string ToString()
+public sealed record Kerf.Modeling.Selector.OfGeomType : Selector.Step, IEquatable<Selector.OfGeomType>, IEquatable<Selector.Step>
+  public OfGeomType(GeomType GeomType)
+  public GeomType GeomType { get; init; }
+  public override string ToString()
+public sealed record Kerf.Modeling.Selector.ParallelTo : Selector.Step, IEquatable<Selector.ParallelTo>, IEquatable<Selector.Step>
+  public ParallelTo(Axis Axis)
+  public Axis Axis { get; init; }
+  public override string ToString()
+public abstract record Kerf.Modeling.Selector.Step : IEquatable<Selector.Step>
+public static class Kerf.Modeling.Shape1DExtensions
+  public static Edge PerpendicularLine<TSelf>(this TSelf self, double length, double uValue, Plane? plane = default)
+  public static IReadOnlyList<Location> DistributeLocations<TSelf>(this TSelf self, int count, double start = 0, double stop = 1, bool positionsOnly = false)
+  public static IReadOnlyList<Location> Locations<TSelf>(this TSelf self, IEnumerable<double> distances, PositionMode mode = PositionMode.Parameter, FrameMethod frameMethod = FrameMethod.Frenet, Vector3D? xDir = default)
+  public static IReadOnlyList<Location> Locations<TSelf>(this TSelf self, double deflection, FrameMethod frameMethod = FrameMethod.Frenet, Vector3D? xDir = default)
+  public static IReadOnlyList<Point3D> Positions<TSelf>(this TSelf self, IEnumerable<double> distances, PositionMode mode = PositionMode.Parameter)
+  public static IReadOnlyList<Point3D> Positions<TSelf>(this TSelf self, double deflection)
+  public static IShape1D Offset2D<TSelf>(this TSelf self, double distance, Kind kind = Kind.Arc, Side side = Side.Both, bool closed = true, Plane? plane = default, bool asBSpline = true)
+  public static Location LocationAt<TSelf>(this TSelf self, double distance, PositionMode mode = PositionMode.Parameter, FrameMethod frameMethod = FrameMethod.Frenet, Vector3D? xDir = default)
+  public static Plane? CommonPlane<TSelf, T>(this TSelf self, IEnumerable<T> lines, double tolerance = 1E-06)
+  public static Plane? CommonPlane<TSelf>(this TSelf self, IEnumerable<IShape1D?> lines, double tolerance = 1E-06)
+  public static Plane? CommonPlane<TSelf>(this TSelf self, params IShape1D?[] lines)
+  public static Point3D EndPoint<TSelf>(this TSelf self)
+  public static Point3D PositionAt<TSelf>(this TSelf self, double position, PositionMode mode = PositionMode.Parameter)
+  public static Point3D StartPoint<TSelf>(this TSelf self)
+  public static ShapeList<Edge> CurvatureComb<TSelf>(this TSelf self, int count = 100, double? maxToothSize = default)
+  public static ShapeList<IShape1D> Project<TSelf>(this TSelf self, Face face, Vector3D direction, bool closest = true)
+  public static Vector3D DerivativeAt<TSelf>(this TSelf self, CurvePosition position, int order = 2, PositionMode mode = PositionMode.Parameter)
+  public static Vector3D Normal<TSelf>(this TSelf self)
+  public static Vector3D TangentAt<TSelf>(this TSelf self)
+  public static Vector3D TangentAt<TSelf>(this TSelf self, CurvePosition position, PositionMode mode = PositionMode.Parameter)
+  public static bool get_IsForward<TSelf>(TSelf self)
+  public static double ParamAt<TSelf>(this TSelf self, double position)
+  public static double ParamAtPoint<TSelf>(this TSelf self, Point3D point, bool normalize = true)
+  public static double TangentAngleAt<TSelf>(this TSelf self, double locationParam = 0.5, PositionMode mode = PositionMode.Parameter, Plane? plane = default)
+  public static double get_Length<TSelf>(TSelf self)
+  public static double get_Radius<TSelf>(TSelf self)
+public static class Kerf.Modeling.Shape2DExtensions
+  public static (IReadOnlyList<Face>, IReadOnlyList<Face>) SplitByPerimeter<TSelf>(this TSelf self, IShape1D perimeter)
+  public static IReadOnlyList<(Point3D, Vector3D)> FindIntersectionPoints<TSelf>(this TSelf self, Axis other, double tolerance = 1E-06)
+  public static Shape SplitByPerimeter<TSelf>(this TSelf self, IShape1D perimeter, Keep keep)
+public static class Kerf.Modeling.Shape2DOperations
+  public static T Offset<T>(this T shape, double amount)
+public static class Kerf.Modeling.Shape2DOperators
+  public static T op_UnaryNegation<T>(T shape)
+public static class Kerf.Modeling.Shape3DExtensions
+  public static IReadOnlyList<(Point3D, Vector3D)> FindIntersectionPoints<TSelf>(this TSelf self, Axis other, double tolerance = 1E-06)
+  public static Shape Chamfer<TSelf>(this TSelf self, double length, double? length2, IEnumerable<Edge> edgeList, Face? face = default, Operations.ChamferOptions? options = default)
+  public static Shape DraftPrism<TSelf>(this TSelf self, Face? basis, IReadOnlyList<IShape2D> bounds, double? depth = default, double taper = 0, Face? upToFace = default, bool thruAll = true, bool additive = true)
+  public static Shape DraftPrism<TSelf>(this TSelf self, Face? basis, IReadOnlyList<Wire> bounds, double? depth = default, double taper = 0, Face? upToFace = default, bool thruAll = true, bool additive = true)
+  public static Shape Fillet<TSelf>(this TSelf self, double radius, IEnumerable<Edge> edgeList)
+  public static Shape Hollow<TSelf>(this TSelf self, IEnumerable<Face>? faces, double thickness, double tolerance = 0.0001, Kind kind = Kind.Arc)
+  public static Shape Offset3D<TSelf>(this TSelf self, IEnumerable<Face>? openings, double thickness, double tolerance = 0.0001, Kind kind = Kind.Arc)
+  public static bool IsInside<TSelf>(this TSelf self, Point3D point, double tolerance = 1E-06)
+  public static double MaxChamfer<TSelf>(this TSelf self, IEnumerable<Edge> edgeList, double tolerance = 0.1, int maxIterations = 10)
+  public static double MaxFillet<TSelf>(this TSelf self, IEnumerable<Edge> edgeList, double tolerance = 0.1, int maxIterations = 10)
+public static class Kerf.Modeling.ShapeExtensions
+  public static (IReadOnlyList<Point3D>, IReadOnlyList<(int, int, int)>) Tessellate<TSelf>(this TSelf self, double tolerance, double angularTolerance = 0.1)
+  public static (Point3D, Point3D) ClosestPoints<TSelf>(this TSelf self, Point3D point)
+  public static (Point3D, Point3D) ClosestPoints<TSelf>(this TSelf self, Shape other)
+  public static (ShapeList<Shape>, ShapeList<Shape>) SplitBoth<TSelf>(this TSelf self, Plane tool)
+  public static (ShapeList<Shape>, ShapeList<Shape>) SplitBoth<TSelf>(this TSelf self, Shape tool)
+  public static (double, Point3D, Point3D) DistanceToWithClosestPoints<TSelf>(this TSelf self, Point3D point)
+  public static (double, Point3D, Point3D) DistanceToWithClosestPoints<TSelf>(this TSelf self, Shape other)
+  public static (double, double, double) get_StaticMoments<TSelf>(TSelf self)
+  public static BoundingBox Bounds<TSelf>(this TSelf self, bool optimal = true)
+  public static Compound SingleCompound<TSelf>(this TSelf self)
+  public static Convexity ConvexityOf<TSelf>(this TSelf self, Edge edge)
+  public static Convexity ConvexityOf<TSelf>(this TSelf self, Face face)
+  public static Convexity ConvexityOf<TSelf>(this TSelf self, Vertex vertex, Face? through = default)
+  public static Edge SingleEdge<TSelf>(this TSelf self)
+  public static Face SingleFace<TSelf>(this TSelf self)
+  public static GeomType get_GeomType<TSelf>(TSelf self)
+  public static IEnumerable<double> Distances<TSelf>(this TSelf self, params IEnumerable<Shape> others)
+  public static IReadOnlyList<(Direction3D, double)> get_PrincipalProperties<TSelf>(TSelf self)
+  public static IReadOnlyList<Shape> Entities<TSelf>(this TSelf self, ShapeType type)
+  public static ImmutableArray<ImmutableArray<double>> get_MatrixOfInertia<TSelf>(TSelf self)
+  public static Location get_Location<TSelf>(TSelf self)
+  public static MeshNode TriangulateTree<TSelf>(this TSelf self, MeshTolerances? tolerances = default)
+  public static OrientedBoundBox OrientedBoundingBox<TSelf>(this TSelf self)
+  public static Point3D Center<TSelf>(this TSelf self)
+  public static Point3D Center<TSelf>(this TSelf self, CenterOf centerOf)
+  public static Point3D CombinedCenter<T>(IEnumerable<T> objects, CenterOf centerOf = CenterOf.Mass)
+  public static Point3D get_Position<TSelf>(TSelf self)
+  public static Shape Cut<TSelf, T>(this TSelf self, IEnumerable<T> toCut)
+  public static Shape Cut<TSelf>(this TSelf self, params IEnumerable<Shape> toCut)
+  public static Shape Fuse<TSelf, T>(this TSelf self, IEnumerable<T> toFuse, bool glue = false, double? tolerance = default)
+  public static Shape Fuse<TSelf>(this TSelf self, IEnumerable<Shape> toFuse, bool glue = false, double? tolerance = default)
+  public static Shape Fuse<TSelf>(this TSelf self, params Shape[] toFuse)
+  public static Shape ShapeOf(Axis axis)
+  public static Shape ShapeOf(IShape shape)
+  public static Shape ShapeOf(Location location)
+  public static Shape ShapeOf(Plane plane)
+  public static Shape ShapeOf(Point3D point)
+  public static ShapeList<Edge> Edges<TSelf>(this TSelf self)
+  public static ShapeList<Face> Faces<TSelf>(this TSelf self)
+  public static ShapeList<Face> FacesIntersectedByAxis<TSelf>(this TSelf self, Axis axis, double tolerance = 0.0001)
+  public static ShapeList<Face> ProjectFaces<TSelf>(this TSelf self, Compound faces, IShape1D path, double start = 0)
+  public static ShapeList<Face> ProjectFaces<TSelf>(this TSelf self, IEnumerable<Face> faces, IShape1D path, double start = 0)
+  public static ShapeList<Shape> GetTopLevelShapes<TSelf>(this TSelf self)
+  public static ShapeList<Shape> Intersect<TSelf>(this TSelf self, IEnumerable<CurveLimit> toIntersect, double tolerance = 1E-06, bool includeTouched = false)
+  public static ShapeList<Shape> Intersect<TSelf>(this TSelf self, IEnumerable<Shape> toIntersect, double tolerance = 1E-06, bool includeTouched = false)
+  public static ShapeList<Shape> Intersect<TSelf>(this TSelf self, params CurveLimit[] toIntersect)
+  public static ShapeList<Shape> Split<TSelf>(this TSelf self, Plane tool, Keep keep = Keep.Top)
+  public static ShapeList<Shape> Split<TSelf>(this TSelf self, Shape tool, Keep keep = Keep.Top)
+  public static ShapeList<Shape> Touch<TSelf>(this TSelf self, Shape other, double tolerance = 1E-06)
+  public static ShapeList<Shell> Shells<TSelf>(this TSelf self)
+  public static ShapeList<Solid> Solids<TSelf>(this TSelf self)
+  public static ShapeList<Vertex> Vertices<TSelf>(this TSelf self)
+  public static ShapeList<Wire> Wires<TSelf>(this TSelf self)
+  public static ShapeMesh Triangulate<TSelf>(this TSelf self, MeshTolerances? tolerances = default)
+  public static ShapeMesh Triangulate<TSelf>(this TSelf self, double linearDeflection, double angularDeflection = 0.2, bool relative = false)
+  public static ShapeType get_ShapeType<TSelf>(TSelf self)
+  public static Shell SingleShell<TSelf>(this TSelf self)
+  public static Solid SingleSolid<TSelf>(this TSelf self)
+  public static Vector3D get_OrientationAngles<TSelf>(TSelf self)
+  public static Vertex SingleVertex<TSelf>(this TSelf self)
+  public static Wire SingleWire<TSelf>(this TSelf self)
+  public static bool SameAs<TSelf, TOther>(this TSelf self, TOther other)
+  public static bool get_IsEmpty<TSelf>(TSelf self)
+  public static bool get_IsManifold<TSelf>(TSelf self)
+  public static bool get_IsValid<TSelf>(TSelf self)
+  public static double ComputeVolume<TSelf>(this TSelf self)
+  public static double Distance<TSelf>(this TSelf self, Shape other)
+  public static double DistanceTo<TSelf>(this TSelf self, Point3D point)
+  public static double DistanceTo<TSelf>(this TSelf self, Shape other)
+  public static double RadiusOfGyration<TSelf>(this TSelf self, Axis axis)
+  public static double get_Area<TSelf>(TSelf self)
+  public static double get_Volume<TSelf>(TSelf self)
+  public static string Describe<TSelf>(this TSelf self)
+  public static string ShowTopology<TSelf>(this TSelf self, ShapeType limitClass = ShapeType.Vertex, bool? showCenter = default)
+public sealed class Kerf.Modeling.ShapeGroups<T, TKey> : IEnumerable, IEnumerable<ShapeList<T>>, IReadOnlyCollection<ShapeList<T>>, IReadOnlyList<ShapeList<T>>
+  public IReadOnlyList<TKey?> Keys { get; }
+  public ShapeList<T> this[int index] { get; }
+  public int Count { get; }
+  public IEnumerator<ShapeList<T>> GetEnumerator()
+  public ShapeList<T> Group(TKey? key)
+  public ShapeList<T> GroupFor(T shape)
+  public override string ToString()
+public enum Kerf.Modeling.ShapeKey
+  Length = 0
+  Radius = 1
+  Area = 2
+  Volume = 3
+  Distance = 4
+public static class Kerf.Modeling.ShapeList
+  public static ShapeList<T> Create<T>(ReadOnlySpan<T> shapes)
+public sealed class Kerf.Modeling.ShapeList<T> : IEnumerable, IEnumerable<T>, IEquatable<ShapeList<T>>, IReadOnlyCollection<T>, IReadOnlyList<T>
+  public ShapeList(IEnumerable<T> shapes)
+  public IShape? Origin { get; }
+  public ShapeList<T> this[Range range] { get; }
+  public T this[int index] { get; }
+  public int Count { get; }
+  public static ShapeList<T> Empty { get; }
+  public Compound SingleCompound()
+  public Edge SingleEdge()
+  public Face SingleFace()
+  public IEnumerator<T> GetEnumerator()
+  public Point3D Center()
+  public ShapeList<Compound> Compounds()
+  public ShapeList<Edge> Edges()
+  public ShapeList<Face> Faces()
+  public ShapeList<Shape> Expand()
+  public ShapeList<Shape> Upcast()
+  public ShapeList<Shell> Shells()
+  public ShapeList<Solid> Solids()
+  public ShapeList<T> Add(T shape)
+  public ShapeList<T> AddRange(IEnumerable<T> shapes)
+  public ShapeList<T> Except(IEnumerable<T> other)
+  public ShapeList<T> Intersect(IEnumerable<T> other)
+  public ShapeList<T> Where(Func<T, bool> predicate)
+  public ShapeList<TOther> OfType<TOther>()
+  public ShapeList<Vertex> Vertices()
+  public ShapeList<Wire> Wires()
+  public Shell SingleShell()
+  public Solid SingleSolid()
+  public Vertex SingleVertex()
+  public Wire SingleWire()
+  public bool Equals(ShapeList<T>? other)
+  public override bool Equals(object? obj)
+  public override int GetHashCode()
+  public override string ToString()
+  public static bool op_Equality(ShapeList<T>? a, ShapeList<T>? b)
+  public static bool op_Inequality(ShapeList<T>? a, ShapeList<T>? b)
+public sealed class Kerf.Modeling.ShapeMesh
+  public IReadOnlyList<EdgeMesh> Edges { get; }
+  public IReadOnlyList<FaceMesh> Faces { get; }
+  public IReadOnlyList<Point3D> Vertices { get; }
+  public MeshTolerances Tolerances { get; }
+  public int NodeCount { get; }
+  public int TriangleCount { get; }
+  public static ShapeMesh Empty { get; }
+public static class Kerf.Modeling.ShapeOperations
+  public static IReadOnlyList<T> op_Multiply<T>(IEnumerable<Location> locations, T s)
+  public static IReadOnlyList<T> op_Multiply<T>(IEnumerable<Plane> planes, T s)
+  public static ModelShape WithColor<T>(this T shape, Color? color)
+  public static ModelShape WithForConstruction<T>(this T shape, bool forConstruction = true)
+  public static ModelShape WithLabel<T>(this T shape, string label)
+  public static T Clean<T>(this T shape)
+  public static T Fix<T>(this T shape)
+  public static T Located<T>(this T shape, Location location)
+  public static T Mirror<T>(this T shape, Plane? mirrorPlane = default)
+  public static T Moved<T>(this T shape, Location location)
+  public static T Moved<T>(this T shape, Plane plane)
+  public static T Rotate<T>(this T shape, Axis axis, double angle, bool transform = false)
+  public static T Scale<T>(this T shape, Vector3D factors, Point3D? about = default)
+  public static T Scale<T>(this T shape, double factor, Point3D? about = default)
+  public static T ToSplines<T>(this T shape, int degree = 3, double tolerance = 0.001, bool nurbs = false)
+  public static T TransformGeometry<T>(this T shape, GeneralTransform3D matrix)
+  public static T TransformShape<T>(this T shape, GeneralTransform3D matrix)
+  public static T Transformed<T>(this T shape, Vector3D? rotate = default, Vector3D? offset = default)
+  public static T Translate<T>(this T shape, Vector3D vector, bool transform = false)
+  public static T WithLocation<T>(this T shape, Location location)
+  public static T WithOrientation<T>(this T shape, Vector3D orientation)
+  public static T WithPosition<T>(this T shape, Point3D position)
+  public static T op_Multiply<T>(Location location, T s)
+  public static T op_Multiply<T>(Plane plane, T s)
+public static class Kerf.Modeling.ShapeOperators
+  public static Shape op_Addition<T>(T a, IEnumerable<Shape> b)
+  public static Shape op_Addition<T>(T a, IEnumerable<T> b)
+  public static Shape op_Addition<T>(T a, Shape b)
+  public static Shape op_BitwiseAnd<T>(T a, IEnumerable<Shape> b)
+  public static Shape op_BitwiseAnd<T>(T a, Shape b)
+  public static Shape op_Subtraction<T>(T a, IEnumerable<Shape> b)
+  public static Shape op_Subtraction<T>(T a, IEnumerable<T> b)
+  public static Shape op_Subtraction<T>(T a, Shape b)
+public static class Kerf.Modeling.ShapeSelection
+  public static ShapeGroups<T, Convexity> GroupByConvexity<T>(this IEnumerable<T> shapes)
+  public static ShapeGroups<T, TKey> GroupByValue<T, TKey>(this IEnumerable<T> shapes, Func<T, TKey> key, IComparer<TKey>? comparer = default)
+  public static ShapeGroups<T, double> GroupBy<T>(this IEnumerable<T> shapes, Axis axis, int digits = 6)
+  public static ShapeGroups<T, double> GroupBy<T>(this IEnumerable<T> shapes, IShape1D path, int digits = 6)
+  public static ShapeGroups<T, double> GroupBy<T>(this IEnumerable<T> shapes, ShapeKey key, int digits = 6)
+  public static ShapeGroups<T, double> GroupByValue<T>(this IEnumerable<T> shapes, Func<T, double> key, int digits = 6)
+  public static ShapeList<T> Between<T>(this IEnumerable<T> shapes, Axis axis, double minimum, double maximum, bool includeMinimum = true, bool includeMaximum = true)
+  public static ShapeList<T> NotParallelTo<T>(this IEnumerable<T> shapes, Axis axis, double tolerance = 1E-05)
+  public static ShapeList<T> NotParallelTo<T>(this IEnumerable<T> shapes, Plane plane, double tolerance = 1E-05)
+  public static ShapeList<T> OrderBy<T>(this IEnumerable<T> shapes, Axis axis)
+  public static ShapeList<T> OrderBy<T>(this IEnumerable<T> shapes, IShape1D path)
+  public static ShapeList<T> OrderBy<T>(this IEnumerable<T> shapes, ShapeKey key)
+  public static ShapeList<T> OrderByDescending<T>(this IEnumerable<T> shapes, Axis axis)
+  public static ShapeList<T> OrderByDescending<T>(this IEnumerable<T> shapes, IShape1D path)
+  public static ShapeList<T> OrderByDescending<T>(this IEnumerable<T> shapes, ShapeKey key)
+  public static ShapeList<T> OrderByDescendingDistanceTo<T>(this IEnumerable<T> shapes, Point3D point)
+  public static ShapeList<T> OrderByDescendingDistanceTo<T>(this IEnumerable<T> shapes, Shape other)
+  public static ShapeList<T> OrderByDistanceTo<T>(this IEnumerable<T> shapes, Point3D point)
+  public static ShapeList<T> OrderByDistanceTo<T>(this IEnumerable<T> shapes, Shape other)
+  public static ShapeList<T> ParallelTo<T>(this IEnumerable<T> shapes, Axis axis, double tolerance = 1E-05)
+  public static ShapeList<T> ParallelTo<T>(this IEnumerable<T> shapes, Plane plane, double tolerance = 1E-05)
+  public static ShapeList<T> ToShapeList<T>(this IEnumerable<T> shapes)
+  public static ShapeList<T> Where<T>(this IEnumerable<T> shapes, Convexity convexity)
+  public static ShapeList<T> Where<T>(this IEnumerable<T> shapes, GeomType geomType)
+  public static ShapeList<T> WhereNot<T>(this IEnumerable<T> shapes, Convexity convexity)
+  public static ShapeList<T> WhereNot<T>(this IEnumerable<T> shapes, GeomType geomType)
+  public static ShapeList<T> WithValue<T, TValue>(this IEnumerable<T> shapes, Func<T, TValue> measure, TValue value, double tolerance = 1E-06)
+  public static ShapeList<T> WithValue<T>(this IEnumerable<T> shapes, ShapeKey key, double value, double tolerance = 1E-06)
+  public static ShapeList<T> WithoutValue<T, TValue>(this IEnumerable<T> shapes, Func<T, TValue> measure, TValue value, double tolerance = 1E-06)
+  public static ShapeList<T> WithoutValue<T>(this IEnumerable<T> shapes, ShapeKey key, double value, double tolerance = 1E-06)
+public sealed class Kerf.Modeling.ShapeTrace
+  public bool IsDescendant(Shape shape)
+  public bool IsGenerated(Shape shape)
+  public bool IsModified(Shape shape)
+  public bool IsUntouched(Shape shape)
+public enum Kerf.Modeling.SheetSurface
+  Inside = 0
+  Outside = 1
+  Mid = 2
+  Neutral = 3
+public static class Kerf.Modeling.ShellExtensions
+  public static Location LocationAt(this Shell self, Point3D surfacePoint, Vector3D? xDir = default)
+  public static ShapeList<Edge> FoldLines(this Shell self)
+  public static ShapeList<Edge> Rims(this Shell self)
+  public static ShapeList<Face> Bends(this Shell self)
+  public static ShapeList<Face> Flats(this Shell self)
+  public static Shell CutSheet(this Shell self, params IEnumerable<Shape> cutters)
+  public static Shell Extrude(Wire obj, Vector3D direction)
+  public static Shell Make(Face face)
+  public static Shell Make(IEnumerable<Face> faces, double tolerance = 1E-06)
+  public static Shell MakeLoft(IEnumerable<Shape> objects, bool ruled = false)
+  public static Shell MakeSheet(IEnumerable<Face> faces, IEnumerable<Face> fresh)
+  public static Shell MakeSheet(IEnumerable<Face> faces, bool mergeCoplanar = false)
+  public static Shell Revolve(Shape profile, double angle, Axis axis)
+  public static Shell Sweep(Shape profile, Shape path, Transition transition = Transition.Transformed)
+public enum Kerf.Modeling.Side
+  Left = 0
+  Right = 1
+  Both = 2
+public class Kerf.Modeling.Sketch : ModelShape, IEquatable<ModelShape>, IShape, IShape3D
+  public Sketch()
+  public Sketch(IEnumerable<Face> faces, string label = "", Color? color = default)
+  public Sketch(IEnumerable<Shape> shapes, string label = "", Color? color = default)
+  public Sketch(Shape shape, string label = "", Color? color = default)
+  public Result<Sketch> Add(params IEnumerable<Shape> others)
+  public Result<Sketch> Add<T>(IEnumerable<T> others)
+  public Result<Sketch> Common(params IEnumerable<Shape> others)
+  public Result<Sketch> Common<T>(IEnumerable<T> others)
+  public Result<Sketch> Subtract(params IEnumerable<Shape> others)
+  public Result<Sketch> Subtract<T>(IEnumerable<T> others)
+  public static Sketch op_Addition(Sketch a, IEnumerable<ModelShape> b)
+  public static Sketch op_Addition(Sketch a, IEnumerable<Shape> b)
+  public static Sketch op_Addition(Sketch a, Shape b)
+  public static Sketch op_BitwiseAnd(Sketch a, IEnumerable<Shape> b)
+  public static Sketch op_BitwiseAnd(Sketch a, Shape b)
+  public static Sketch op_Subtraction(Sketch a, IEnumerable<ModelShape> b)
+  public static Sketch op_Subtraction(Sketch a, IEnumerable<Shape> b)
+  public static Sketch op_Subtraction(Sketch a, Shape b)
+public sealed class Kerf.Modeling.SkipClean : IDisposable
+  public SkipClean()
+  public static bool Clean { get; }
+  public void Dispose()
+public class Kerf.Modeling.SlotCenterPoint : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public SlotCenterPoint(Point3D center, Point3D point, double height, double rotation = 0)
+  public Point3D Point { get; }
+  public Point3D SlotCenter { get; }
+  public double Height { get; }
+public class Kerf.Modeling.SlotCenterToCenter : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public SlotCenterToCenter(double centerSeparation, double height, double rotation = 0)
+  public double CenterSeparation { get; }
+  public double Height { get; }
+public class Kerf.Modeling.SlotCurve : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public SlotCurve(IShape1D curve, double height, double rotation = 0)
+  public IShape1D Curve { get; }
+  public double Height { get; }
+public class Kerf.Modeling.SlotOverall : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public SlotOverall(double width, double height, double rotation = 0, Alignment? align = default)
+  public double Height { get; }
+  public double Width { get; }
+public static class Kerf.Modeling.SolidExtensions
+  public static Shape Sweep(IShape2D section, IShape1D path, bool makeSolid = true, bool isFrenet = false, SweepMode? mode = default, Transition transition = Transition.Transformed)
+  public static Shape Sweep(Wire section, IShape1D path, IEnumerable<Wire>? innerWires = default, bool makeSolid = true, bool isFrenet = false, SweepMode? mode = default, Transition transition = Transition.Transformed)
+  public static Solid Draft(this Solid self, IEnumerable<Face> faces, Plane neutralPlane, double angle)
+  public static Solid Extrude(Face obj, Vector3D direction)
+  public static Solid ExtrudeLinearWithRotation(IShape2D section, Point3D center, Vector3D normal, double angle)
+  public static Solid ExtrudeLinearWithRotation(Wire section, Point3D center, Vector3D normal, double angle, IEnumerable<Wire>? innerWires = default)
+  public static Solid ExtrudeTaper(Face profile, Vector3D direction, double taper, bool flipInner = true)
+  public static Solid ExtrudeUntil(Face profile, Shape target, Vector3D direction, Until until = Until.Next)
+  public static Solid FromBoundingBox(BoundingBox box)
+  public static Solid FromBoundingBox(OrientedBoundBox box)
+  public static Solid Make(Shell shell)
+  public static Solid MakeBox(double length, double width, double height, Plane? plane = default)
+  public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = default, double angle = 360)
+  public static Solid MakeCylinder(double radius, double height, Plane? plane = default, double angle = 360)
+  public static Solid MakeLoft(IEnumerable<Shape> objects, bool ruled = false)
+  public static Solid MakeLoft<T>(IEnumerable<T> objects, bool ruled = false)
+  public static Solid MakeSphere(double radius, Plane? plane = default, double angle1 = -90, double angle2 = 90, double angle3 = 360)
+  public static Solid MakeTorus(double majorRadius, double minorRadius, Plane? plane = default, double startAngle = 0, double endAngle = 360, double majorAngle = 360)
+  public static Solid MakeWedge(double deltaX, double deltaY, double deltaZ, double minX, double minZ, double maxX, double maxZ, Plane? plane = default)
+  public static Solid Revolve(Face section, double angle, Axis axis)
+  public static Solid Revolve(Wire section, double angle, Axis axis, IEnumerable<Wire>? innerWires = default)
+  public static Solid SweepMulti(IEnumerable<Face> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, SweepMode? binormal = default)
+  public static Solid SweepMulti(IEnumerable<Wire> profiles, IShape1D path, bool makeSolid = true, bool isFrenet = false, SweepMode? binormal = default)
+  public static Solid Thicken(IShape2D surface, double depth, Vector3D? normalOverride = default)
+public class Kerf.Modeling.Sphere : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Sphere(double radius, double arcSize1 = -90, double arcSize2 = 90, double arcSize3 = 360, Rotation? rotation = default, Alignment? align = default)
+  public Alignment Align { get; }
+  public double ArcSize1 { get; }
+  public double ArcSize2 { get; }
+  public double ArcSize3 { get; }
+  public double Radius { get; }
+public class Kerf.Modeling.Spline : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public Spline(IEnumerable<Point3D> points, IEnumerable<Vector3D>? tangents = default, IEnumerable<double>? tangentScalars = default, bool periodic = false)
+  public Spline(params Point3D[] points)
+public sealed record Kerf.Modeling.StepExportOptions : IEquatable<StepExportOptions>
+  public StepExportOptions()
+  public PrecisionMode PrecisionMode { get; init; }
+  public Unit Unit { get; init; }
+  public bool CleanDuplicates { get; init; }
+  public bool WritePcurves { get; init; }
+  public static StepExportOptions Default { get; }
+  public string? Timestamp { get; init; }
+public sealed record Kerf.Modeling.StlExportOptions : IEquatable<StlExportOptions>
+  public StlExportOptions()
+  public bool Ascii { get; init; }
+  public double AngularDeflection { get; init; }
+  public double LinearDeflection { get; init; }
+  public static StlExportOptions Default { get; }
+public class Kerf.Modeling.Superellipse : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Superellipse(double width, double height, double order = 4, int pointCount = 16, double rotation = 0, Alignment? align = default)
+  public Alignment Align { get; }
+  public double Height { get; }
+  public double SuperOrder { get; }
+  public double Width { get; }
+  public int PointCount { get; }
+public sealed class Kerf.Modeling.SweepMode
+  public static SweepMode op_Implicit(Direction3D direction)
+  public static SweepMode op_Implicit(Edge spine)
+  public static SweepMode op_Implicit(Vector3D direction)
+  public static SweepMode op_Implicit(Wire spine)
+public readonly record struct Kerf.Modeling.Tangent : IEquatable<Tangent>
+  public Tangent(Axis axis, Tangency tangency)
+  public Tangent(Edge edge, Tangency tangency)
+  public Axis? Axis { get; }
+  public Edge? Edge { get; }
+  public Point3D? Point { get; }
+  public Tangency Tangency { get; }
+  public static Tangent op_Implicit(Axis axis)
+  public static Tangent op_Implicit(BaseEdgeObject edge)
+  public static Tangent op_Implicit(Edge edge)
+  public static Tangent op_Implicit(Point3D point)
+  public static Tangent op_Implicit(Vertex vertex)
+public class Kerf.Modeling.TangentArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public TangentArc(IEnumerable<Point3D> points, Vector3D tangent, bool tangentFromFirst = true)
+  public TangentArc(Point3D start, Point3D end, Vector3D tangent, bool tangentFromFirst = true)
+public class Kerf.Modeling.Text : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Text(string txt, double fontSize, string font = "Arial", string? fontPath = default, FontStyle fontStyle = FontStyle.Regular, (TextAlign, TextAlign)? textAlign = default, Alignment? align = default, IShape1D? path = default, double positionOnPath = 0, double? singleLineWidth = default, double rotation = 0)
+  public (TextAlign, TextAlign) TextAlign { get; }
+  public Alignment? Align { get; }
+  public FontStyle FontStyle { get; }
+  public IShape1D? TextPath { get; }
+  public double FontSize { get; }
+  public double PositionOnPath { get; }
+  public double SingleLineWidth { get; }
+  public string Font { get; }
+  public string Txt { get; }
+  public string? FontPath { get; }
+public sealed record Kerf.Modeling.ThreeMfExportOptions : IEquatable<ThreeMfExportOptions>
+  public ThreeMfExportOptions()
+  public Unit Unit { get; init; }
+  public double AngularDeflection { get; init; }
+  public double LinearDeflection { get; init; }
+  public static ThreeMfExportOptions Default { get; }
+public class Kerf.Modeling.ThreePointArc : BaseEdgeObject, IEquatable<ModelShape>, IShape, IShape1D, IShape3D
+  public ThreePointArc(IEnumerable<Point3D> points)
+  public ThreePointArc(Point3D point1, Point3D point2, Point3D point3)
+public enum Kerf.Modeling.TightCorners
+  Refuse = 0
+  Collapse = 1
+public class Kerf.Modeling.Torus : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Torus(double majorRadius, double minorRadius, double minorStartAngle = 0, double minorEndAngle = 360, double majorAngle = 360, Rotation? rotation = default, Alignment? align = default)
+  public Alignment Align { get; }
+  public double MajorAngle { get; }
+  public double MajorRadius { get; }
+  public double MinorEndAngle { get; }
+  public double MinorRadius { get; }
+  public double MinorStartAngle { get; }
+public static class Kerf.Modeling.TransformExtensions
+  public static (GeneralTransform3D, Vector3D, GeneralTransform3D) Svd(this GeneralTransform3D m)
+  public static GeneralTransform3D Compose(this GeneralTransform3D m, GeneralTransform3D other)
+  public static GeneralTransform3D FromValues(double[,] values)
+  public static GeneralTransform3D Rotated(this GeneralTransform3D m, Axis axis, double angle)
+  public static double At(this GeneralTransform3D m, int row, int column)
+  public static double[] TransposedList(this GeneralTransform3D m)
+  public static string Describe(this GeneralTransform3D m)
+public enum Kerf.Modeling.Transition
+  Right = 0
+  Round = 1
+  Transformed = 2
+public class Kerf.Modeling.Trapezoid : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Trapezoid(double width, double height, double leftSideAngle, double? rightSideAngle = default, double rotation = 0, Alignment? align = default)
+  public Alignment Align { get; }
+  public double Height { get; }
+  public double LeftSideAngle { get; }
+  public double RightSideAngle { get; }
+  public double Width { get; }
+public class Kerf.Modeling.Triangle : BaseSketchObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Triangle(double? sideA = default, double? sideB = default, double? sideC = default, double? angleA = default, double? angleB = default, double? angleC = default, Alignment? align = default, double rotation = 0)
+  public Edge EdgeA { get; }
+  public Edge EdgeB { get; }
+  public Edge EdgeC { get; }
+  public Vertex VertexA { get; }
+  public Vertex VertexB { get; }
+  public Vertex VertexC { get; }
+  public double AngleA { get; }
+  public double AngleB { get; }
+  public double AngleC { get; }
+  public double SideA { get; }
+  public double SideB { get; }
+  public double SideC { get; }
+public enum Kerf.Modeling.Unit
+  Micrometer = 0
+  Millimeter = 1
+  Centimeter = 2
+  Meter = 3
+  Inch = 4
+  Foot = 5
+  Gram = 6
+  Kilogram = 7
+  Pound = 8
+public static class Kerf.Modeling.UnitExtensions
+  public static string Symbol(this Unit unit)
+public enum Kerf.Modeling.Until
+  Next = 0
+  Last = 1
+  Previous = 2
+  First = 3
+public static class Kerf.Modeling.VertexExtensions
+  public static Vertex CommonVertex(Edge edge1, Edge edge2)
+  public static Vertex Make(Point3D point)
+  public static Vertex Make(double x, double y, double z = 0)
+  public static double get_X(Vertex self)
+  public static double get_Y(Vertex self)
+  public static double get_Z(Vertex self)
+  public static void Deconstruct(this Vertex self, out double x, out double y, out double z)
+public static class Kerf.Modeling.VertexOperators
+  public static Vertex op_Addition(Vertex a, Vector3D b)
+  public static Vertex op_Addition(Vertex a, Vertex b)
+  public static Vertex op_Subtraction(Vertex a, Vector3D b)
+  public static Vertex op_Subtraction(Vertex a, Vertex b)
+public sealed class Kerf.Modeling.WarningScope : IDisposable
+  public IReadOnlyList<string> Messages { get; }
+  public void Dispose()
+public static class Kerf.Modeling.Warnings
+  public static WarningScope Capture()
+public class Kerf.Modeling.Wedge : BasePartObject, IEquatable<ModelShape>, IShape, IShape3D
+  public Wedge(double xSize, double ySize, double zSize, double xMin, double zMin, double xMax, double zMax, Rotation? rotation = default, Alignment? align = default)
+  public Alignment Align { get; }
+  public double XMax { get; }
+  public double XMin { get; }
+  public double XSize { get; }
+  public double YSize { get; }
+  public double ZMax { get; }
+  public double ZMin { get; }
+  public double ZSize { get; }
+public static class Kerf.Modeling.WireExtensions
+  public static (Edge, Edge) OrderChamferEdges(Edge? referenceEdge, (Edge, Edge) edges)
+  public static ShapeList<Edge> OrderEdges(this Wire self)
+  public static ShapeList<Wire> Combine(IEnumerable<Edge> edges, double tolerance = 1E-09)
+  public static ShapeList<Wire> Combine(IEnumerable<IShape1D> wires, double tolerance = 1E-09)
+  public static ShapeList<Wire> ProjectToShape(this Wire self, Shape targetObject, Vector3D? direction = default, Point3D? center = default)
+  public static Wire Chamfer2D(this Wire self, double distance, double distance2, IEnumerable<Vertex> vertices, Edge? edge = default)
+  public static Wire Close(this Wire self)
+  public static Wire Extrude(Shape obj, Vector3D direction)
+  public static Wire Fillet2D(this Wire self, double radius, IEnumerable<Vertex> vertices)
+  public static Wire FixDegenerateEdges(this Wire self, double precision)
+  public static Wire Make(BaseEdgeObject curve)
+  public static Wire Make(BaseLineObject curve)
+  public static Wire Make(Curve curve)
+  public static Wire Make(Edge edge)
+  public static Wire Make(IEnumerable<Edge> edges, bool sequenced = false)
+  public static Wire MakeCircle(double radius, Plane? plane = default)
+  public static Wire MakeConvexHull(IEnumerable<Edge> edges, double tolerance = 0.001)
+  public static Wire MakeEllipse(double xRadius, double yRadius, Plane? plane = default, double startAngle = 360, double endAngle = 360, AngularDirection angularDirection = AngularDirection.CounterClockwise, bool closed = true)
+  public static Wire MakePolygon(IEnumerable<Point3D> vertices, bool close = true)
+  public static Wire MakeRect(double width, double height, Plane? plane = default)
+  public static Wire Stitch(this Wire self, Wire other)
+  public static Wire Trim(this Wire self, CurvePosition start, CurvePosition end)
+  public static WireCurve AsCurve(this Wire self)
+  public static bool GeomEqual(this Wire self, Wire other, double tolerance = 1E-06, int numInterpolationPoints = 5)
