@@ -19,7 +19,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// the corpus cases it makes runnable: the cases that use it, before and after it. The captures tools/borec records
 /// from are written when KERF_BOREC_CAPTURE names a directory.
 /// </summary>
-public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
+public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static DrawInterpreter Load()
     {
@@ -58,20 +58,20 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
         theInterpreter.Eval("rename removefeatures {}");
     }
 
+    /// <summary>The cases the corpus test runs, a row each in DrawRemoveFeaturesCommandsShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(2, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("removefeatures")).Where(s => s.IsRunnable).Select(s => s.Case));
+
     /// <summary>The corpus cases that use removefeatures: runnable before and after, and how they end.</summary>
     [Fact]
     public void Removefeatures_cases_of_the_corpus_run()
     {
         string aTests = Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
-        var aCorpus = new DrawCorpus(aTests);
-        DrawInterpreter anAfter = Load();
         DrawInterpreter aBefore = Load();
         Before6G(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anAfter))
-                                           .Where(s => s.Commands.Contains("removefeatures")).ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => s.Commands.Contains("removefeatures"))];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
+        int aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore).Count;
         output.WriteLine($"{aScans.Count} cases use removefeatures: {aRunnableBefore} runnable before, {aRunnable.Count} after");
         foreach (var aGroup in aScans.Where(s => !s.IsRunnable).SelectMany(s => s.Missing).GroupBy(c => c)
                                      .OrderByDescending(g => g.Count()).Take(12))
@@ -79,9 +79,8 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
             output.WriteLine($"  still missing {aGroup.Key,-20} {aGroup.Count()} cases");
         }
 
-        List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        List<DrawCaseRun> aRuns = SharedCorpus.RunAll(aRunnable)
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));

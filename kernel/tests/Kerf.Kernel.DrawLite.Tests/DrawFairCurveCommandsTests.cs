@@ -164,13 +164,7 @@ public class DrawFairCurveCommandsTests(ITestOutputHelper output)
         Assert.True(Directory.Exists(aTests), $"No OCCT source at {aTests}: run tools/get-occt.ps1");
         string[] aNames = ["battencurve", "minvarcurve", "setpoint", "setangle", "setslide", "freeangle", "freeslide",
                            "setheight", "setslope", "setcurvature", "freecurvature", "setphysicalratio"];
-        var aCorpus = new DrawCorpus(aTests);
-        var anInterpreter = new DrawInterpreter();
-        anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => aNames.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => aNames.Any(s.Commands.Contains))];
         output.WriteLine($"{aScans.Count} cases use the fair curve commands");
         Assert.Empty(aScans);
     }

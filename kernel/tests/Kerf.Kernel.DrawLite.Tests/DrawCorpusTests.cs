@@ -15,10 +15,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
 
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        var anInterpreter = new DrawInterpreter();
-        anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
-        var aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
+        IReadOnlyList<DrawCaseScan> aScans = SharedCorpus.Scans;
 
         var aMissing = aScans.SelectMany(s => s.Missing)
                              .GroupBy(c => c)
@@ -227,9 +224,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
     public void Runnable_cases_run_and_OCCTs_log_check_judges_them()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        var anInterpreter = new DrawInterpreter();
-        anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
+        DrawCorpus aCorpus = SharedCorpus.Corpus;
         var aBefore = new DrawInterpreter();
         aBefore.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
         Before4L2(aBefore);
@@ -237,7 +232,7 @@ public class DrawCorpusTests(ITestOutputHelper output)
 
         List<DrawTestCase> aCases = aCorpus.Cases().ToList();
         HashSet<string> aListed = aCases.Where(aCorpus.IsListed).Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
-        var aScans = aCases.AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anInterpreter)).ToList();
+        IReadOnlyList<DrawCaseScan> aScans = SharedCorpus.Scans;
         List<DrawTestCase> aRunnableBefore = aCases.AsParallel().AsOrdered().Where(c => aCorpusBefore.Scan(c, aBefore).IsRunnable).ToList();
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         output.WriteLine($"{aCases.Count} cases ({aCases.Count - aListed.Count} in the former grids, {aListed.Count} in the cases.list grids)");

@@ -10,7 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// cases that use it, runnable before and after the unit, and how they end (slanted profile edges are swept by
 /// BRepFill_Pipe since unit 5S2; <c>-v</c> needs BRepFill_AdvancedEvolved, phase 7).
 /// </summary>
-public class DrawEvolvedCommandsTests(ITestOutputHelper output)
+public class DrawEvolvedCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -58,30 +58,27 @@ public class DrawEvolvedCommandsTests(ITestOutputHelper output)
         Assert.Contains("This shape seems to be valid", aDI.Eval("checkshape r"));
     }
 
+    /// <summary>The cases the corpus test runs, a row each in DrawEvolvedCommandsShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("evolved")).Where(s => s.IsRunnable).Select(s => s.Case));
+
     [Fact]
     public void Corpus_cases_using_evolved_before_and_after_5O2()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before5O2Evolved(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => s.Commands.Contains("evolved"))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => s.Commands.Contains("evolved"))];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use evolved; runnable before 5O2: {aRunnableBefore.Count}, after: {aRunnable.Count}");
         foreach (DrawCaseScan aScan in aScans.Where(s => !s.IsRunnable))
         {
             output.WriteLine($"  {aScan.Case.Id} misses {string.Join(", ", aScan.Missing)}");
         }
 
-        var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                             .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5O2: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

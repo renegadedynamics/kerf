@@ -10,7 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// (Draw's core commands, the geometry and topology commands over ported packages), run as OCCT's harness runs them and
 /// judged by OCCT's log check.
 /// </summary>
-public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
+public class DrawCheapGapsCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -66,27 +66,32 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
     /// </summary>
     internal static bool MeasuresMemory(DrawCaseScan theScan) => theScan.Commands.Contains("meminfo");
 
+    private static IEnumerable<DrawCaseScan> Using7W => SharedCorpus.Scans.Where(s => Unit7WCommands.Any(s.Commands.Contains));
+
+    /// <summary>The cases the corpus test runs, those only 7W made runnable, a row each in DrawCheapGapsCorpusShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(18, () => SharedCorpus.NewlyRunnable(Using7W, Before7W), Check);
+
+    // a case passes, or has no data, or fails for an attributed reason
+    private static void Check(DrawCaseRun theRun)
+        => Assert.True(theRun.Passed || theRun.Status.StartsWith("SKIPPED", StringComparison.Ordinal) || KnownFailures.ContainsKey(theRun.Case.Id)
+                       || DrawFilletCorpusTests.KnownFailures.ContainsKey(theRun.Case.Id),
+                       $"{theRun.Case.Id}: {theRun.Status}");
+
     [Fact]
     public void Corpus_cases_the_cheap_gaps_make_runnable_run_and_pass()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before7W(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit7WCommands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. Using7W];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aRunnable.Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aRunnable, aBefore);
         List<DrawTestCase> aNew = aRunnable.Except(aRunnableBefore).ToList();
         output.WriteLine($"{aScans.Count} cases use 7W's commands; runnable {aRunnable.Count}, of which {aNew.Count} only with 7W's commands");
 
-        DrawCaseRun RunOne(DrawTestCase theCase)
-            => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
-        List<DrawCaseRun> aRuns = [.. aNew.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2)).Select(RunOne)];
+        Assert.Equal(aNew, Corpus.Cases);
+        List<DrawCaseRun> aRuns = [.. SharedCorpus.RunAll(aNew)];
         aRuns.Sort((x, y) => StringComparer.Ordinal.Compare(x.Case.Id, y.Case.Id));
         output.WriteLine("after 7W: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                .OrderBy(g => g.Key, StringComparer.Ordinal)
@@ -117,8 +122,6 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
         // DrawFilletCorpusTests.KnownFailures); 627 now, with de_mesh/shape_write_stl/B1 (8H1's writestl; FAILED, progress)
         Assert.True(aNew.Count >= 512, $"{aNew.Count}");
         Assert.True(aRuns.Count(r => r.Status == "OK") >= 337, $"{aRuns.Count(r => r.Status == "OK")}");
-        Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
-                                           || DrawFilletCorpusTests.KnownFailures.ContainsKey(r.Case.Id),
-                                           $"{r.Case.Id}: {r.Status}"));
+        Assert.All(aRuns, Check);
     }
 }

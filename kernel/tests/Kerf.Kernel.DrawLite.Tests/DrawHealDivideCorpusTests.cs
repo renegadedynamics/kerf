@@ -10,7 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// ShapeProcess's <c>DT_ApplySeq</c> and <c>SPApply</c>) on OCCT's corpus: the cases that use them, runnable after the
 /// unit and not before, run as OCCT's harness runs them and judged by OCCT's log check.
 /// </summary>
-public class DrawHealDivideCorpusTests(ITestOutputHelper output)
+public class DrawHealDivideCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -43,21 +43,26 @@ public class DrawHealDivideCorpusTests(ITestOutputHelper output)
         return anInterpreter;
     }
 
+    private static IEnumerable<DrawCaseScan> Using7C => SharedCorpus.Scans.Where(s => Unit7CCommands.Any(s.Commands.Contains));
+
+    // a case fails only for an attributed reason
+    private static void Check(DrawCaseRun theRun)
+        => Assert.True(!theRun.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.Contains(theRun.Case.Id)
+                       || DrawBooleanCorpusTests.KnownFailures.Contains(theRun.Case.Id), $"{theRun.Case.Id}: {theRun.Status}");
+
+    /// <summary>The cases the corpus test runs, those only 7C made runnable, a row each in DrawHealDivideCorpusShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(34, () => SharedCorpus.NewlyRunnable(Using7C, Before7C, "OCCTNET_7C_FILTER"), Check);
+
     [Fact]
     public void Corpus_cases_using_the_healing_commands_of_7C_run()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before7C(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit7CCommands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. Using7C];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        var aRunnableBefore = new HashSet<string>(aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable)
+        var aRunnableBefore = new HashSet<string>(SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore)
                                                         .Select(c => c.Id), StringComparer.Ordinal);
         List<DrawTestCase> aNew = aRunnable.Where(c => !aRunnableBefore.Contains(c.Id)).ToList();
         output.WriteLine($"{aScans.Count} cases use the commands of 7C; runnable before 7C: {aRunnableBefore.Count}, after: {aRunnable.Count}, newly: {aNew.Count}");
@@ -70,9 +75,8 @@ public class DrawHealDivideCorpusTests(ITestOutputHelper output)
             aNew = aNew.Where(c => c.Id.Contains(aFilter!, StringComparison.Ordinal)).ToList();
         }
 
-        var aRuns = aNew.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                        .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                         TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aNew, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aNew)
                         .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                         .ToList();
         output.WriteLine("after 7C: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
@@ -115,8 +119,7 @@ public class DrawHealDivideCorpusTests(ITestOutputHelper output)
         // the commands still miss others (testreadiges, the offset commands, vhlr, igesbrep)
         Assert.Equal(2607, aNew.Count);
         Assert.Equal(1584, aRuns.Count(r => r.Status == "OK"));
-        Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.Contains(r.Case.Id)
-                                           || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id), $"{r.Case.Id}: {r.Status}"));
+        Assert.All(aRuns, Check);
     }
 
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 7C).</summary>

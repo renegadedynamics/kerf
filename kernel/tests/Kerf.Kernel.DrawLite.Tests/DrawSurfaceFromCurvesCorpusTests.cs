@@ -10,7 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// corpus: the cases that use them, runnable before and after the commands, run as OCCT's harness runs them and judged
 /// by OCCT's log check.
 /// </summary>
-public class DrawSurfaceFromCurvesCorpusTests(ITestOutputHelper output)
+public class DrawSurfaceFromCurvesCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -69,27 +69,24 @@ public class DrawSurfaceFromCurvesCorpusTests(ITestOutputHelper output)
         Assert.ThrowsAny<Exception>(() => aDI.Eval("appsurf s t1 nothing"));
     }
 
+    /// <summary>The cases the corpus test runs, a row each in DrawSurfaceFromCurvesCorpusShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => Unit5L3Commands.Any(s.Commands.Contains)).Where(s => s.IsRunnable).Select(s => s.Case));
+
     [Fact]
     public void Corpus_cases_using_appsurf_or_fillcurves_run_before_and_after_5L3()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before5L3(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit5L3Commands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => Unit5L3Commands.Any(s.Commands.Contains))];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use appsurf or fillcurves; runnable before 5L3: {aRunnableBefore.Count}, "
                          + $"after: {aRunnable.Count}");
 
-        var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                             .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5L3: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

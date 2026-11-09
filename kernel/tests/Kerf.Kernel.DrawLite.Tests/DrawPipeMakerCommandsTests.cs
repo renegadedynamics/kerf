@@ -9,7 +9,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// Unit 5S1's <c>pipe</c> (BRepTest_SweepCommands.cxx, BRepOffsetAPI_MakePipe) and the corpus's cases that use it.
 /// BRepFill_Sweep is unit 5S2's (decision 933): every runnable corpus case passes, or is a known problem of OCCT's.
 /// </summary>
-public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
+public class DrawPipeMakerCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -42,27 +42,32 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
         }
     }
 
+    private static IEnumerable<DrawCaseScan> UsingPipe => SharedCorpus.Scans.Where(s => s.Commands.Contains("pipe"));
+
+    // every runnable case passes, or is a known problem of OCCT's, or has no data
+    private static void Check(DrawCaseRun theRun)
+        => Assert.True(theRun.Status.StartsWith("OK", StringComparison.Ordinal) || theRun.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
+                       || theRun.Status.StartsWith("BAD", StringComparison.Ordinal), $"{theRun.Case.Id}: {theRun.Status}");
+
+    /// <summary>The cases the corpus test runs, a row each in DrawPipeMakerCommandsShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(3, () => UsingPipe.Where(s => s.IsRunnable).Select(s => s.Case), Check);
+
     [Fact]
     public void Corpus_cases_using_pipe_run_before_and_after_5S1()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before5S1(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => s.Commands.Contains("pipe"))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. UsingPipe];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use pipe; runnable before 5S1: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        var aRuns = aRunnable.Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
-                             .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
-                             .ToList();
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
+                                .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
+                                .ToList();
         output.WriteLine("after 5S1: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                 .OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                 .Select(g => $"{g.Key} {g.Count()}")));
@@ -85,8 +90,7 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output)
         // (three more cases using them): 106 runnable, OK 71, BAD 4, SKIPPED 31. With unit 7C's healing commands
         // (bugs/modalg_7/bug30140 calls offsetcurve): 107 runnable, OK 72. With unit 7G's offset and draft commands: 141
         // runnable, OK 103, BAD 7, SKIPPED 31. With unit 7N3's fillet and chamfer commands: 159 runnable, OK 121.
-        Assert.All(aRuns, r => Assert.True(r.Status.StartsWith("OK", StringComparison.Ordinal) || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)
-                                           || r.Status.StartsWith("BAD", StringComparison.Ordinal), $"{r.Case.Id}: {r.Status}"));
+        Assert.All(aRuns, Check);
         Assert.Equal(121, aRuns.Count(r => r.Status.StartsWith("OK", StringComparison.Ordinal)));
     }
 }

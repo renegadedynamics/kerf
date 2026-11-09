@@ -16,7 +16,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// Unit 6U's command, <c>unifysamedom</c> (SWDRAW_ShapeUpgrade.cxx), with its options, and the corpus cases it makes
 /// runnable: the cases that use it, before and after it.
 /// </summary>
-public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
+public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static DrawInterpreter Load()
     {
@@ -83,6 +83,9 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
         theInterpreter.Eval("rename unifysamedom {}");
     }
 
+    /// <summary>The cases the corpus test runs, a row each in DrawShapeUpgradeCommandsShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(17, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("unifysamedom")).Where(s => s.IsRunnable).Select(s => s.Case));
+
     /// <summary>
     /// The corpus cases that use unifysamedom: how many are runnable before and after unit 6U, and how the newly
     /// runnable ones end under OCCT's _check_log.
@@ -92,15 +95,12 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
     {
         string aTests = Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
         Assert.True(Directory.Exists(aTests), $"No OCCT source at {aTests}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(aTests);
-        DrawInterpreter anAfter = Load();
         DrawInterpreter aBefore = Load();
         Before6U(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anAfter))
-                                           .Where(s => s.Commands.Contains("unifysamedom")).ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => s.Commands.Contains("unifysamedom"))];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
+        int aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore).Count;
         output.WriteLine($"{aScans.Count} cases use unifysamedom: {aRunnableBefore} runnable before 6U, {aRunnable.Count} after");
         foreach (var aGroup in aScans.Where(s => !s.IsRunnable).SelectMany(s => s.Missing).GroupBy(c => c)
                                      .OrderByDescending(g => g.Count()).Take(12))
@@ -108,9 +108,8 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
             output.WriteLine($"  still missing {aGroup.Key,-20} {aGroup.Count()} cases");
         }
 
-        List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        List<DrawCaseRun> aRuns = SharedCorpus.RunAll(aRunnable)
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));

@@ -11,7 +11,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// parameters and on OCCT's corpus: the cases that use them, runnable after the commands and not before, run as OCCT's
 /// harness runs them and judged by OCCT's log check.
 /// </summary>
-public class DrawHelixCorpusTests(ITestOutputHelper output)
+public class DrawHelixCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -73,26 +73,23 @@ public class DrawHelixCorpusTests(ITestOutputHelper output)
         Assert.Equal(aDI.Eval("lprops h"), anOther.Eval("lprops h"));
     }
 
+    /// <summary>The cases the corpus test runs, a row each in DrawHelixCorpusShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => Unit7DCommands.Any(s.Commands.Contains)).Where(s => s.IsRunnable).Select(s => s.Case));
+
     [Fact]
     public void Corpus_cases_using_the_helix_commands_run_after_7D()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before7D(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit7DCommands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => Unit7DCommands.Any(s.Commands.Contains))];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use the helix commands; runnable before 7D: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                             .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 7D: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

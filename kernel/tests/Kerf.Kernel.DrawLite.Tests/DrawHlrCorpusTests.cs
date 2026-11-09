@@ -15,7 +15,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// OCCT's corpus: the cases that use them, runnable after the commands and not before, run as OCCT's harness runs
 /// them and judged by OCCT's log check.
 /// </summary>
-public class DrawHlrCorpusTests(ITestOutputHelper output)
+public class DrawHlrCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -113,29 +113,34 @@ public class DrawHlrCorpusTests(ITestOutputHelper output)
         Assert.Matches(@"Mass :\s+62\.83", aDI.Eval("lprops h2"));
     }
 
+    private static IEnumerable<DrawCaseScan> UsingHlr => SharedCorpus.Scans.Where(s => Unit7Q2Commands.Any(s.Commands.Contains));
+
+    // OCCTNET_7Q2_FILTER: only the cases whose id contains it
+    private static List<DrawTestCase> ToRun(IEnumerable<DrawTestCase> theRunnable, string? theFilter)
+        => [.. theRunnable.Where(c => theFilter is null || c.Id.Contains(theFilter, StringComparison.Ordinal))];
+
+    /// <summary>The cases the corpus test runs, a row each in DrawHlrCorpusShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } =
+        new(8, () => ToRun(UsingHlr.Where(s => s.IsRunnable).Select(s => s.Case), Environment.GetEnvironmentVariable("OCCTNET_7Q2_FILTER")));
+
     [Fact]
     public void Corpus_cases_using_the_HLR_commands_run_after_7Q2()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before7Q2(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit7Q2Commands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. UsingHlr];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_7Q2_FILTER");
         string? aLogDir = Environment.GetEnvironmentVariable("OCCTNET_7Q2_LOG");
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use the HLR commands; runnable before 7Q2: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        var aRuns = aRunnable.Where(c => aFilter is null || c.Id.Contains(aFilter, StringComparison.Ordinal)).AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                             .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
-                             .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
+        List<DrawTestCase> aToRun = ToRun(aRunnable, aFilter);
+        Assert.Equal(aToRun, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aToRun)
+                                .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 7Q2: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                 .OrderBy(g => g.Key, StringComparer.Ordinal)

@@ -78,13 +78,7 @@ public class DrawBisecCommandsTests(ITestOutputHelper output)
     {
         string aTests = Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
         Assert.True(Directory.Exists(aTests), $"No OCCT source at {aTests}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(aTests);
-        var anInterpreter = new DrawInterpreter();
-        anInterpreter.LoadDrawResources(DrawResourcesTests.ResourcesDirectory);
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => s.Commands.Contains("bisec"))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => s.Commands.Contains("bisec"))];
         output.WriteLine($"{aScans.Count} cases use bisec");
         Assert.Empty(aScans);
     }

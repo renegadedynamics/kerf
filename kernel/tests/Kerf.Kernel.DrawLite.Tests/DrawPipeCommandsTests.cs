@@ -12,7 +12,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// on OCCT's corpus: the cases that use them, runnable before and after the commands, run as OCCT's harness runs them
 /// and judged by OCCT's log check.
 /// </summary>
-public class DrawPipeCommandsTests(ITestOutputHelper output)
+public class DrawPipeCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -84,26 +84,26 @@ public class DrawPipeCommandsTests(ITestOutputHelper output)
         Assert.ThrowsAny<DrawException>(() => i.Eval("sweep s path"));
     }
 
+    private static IEnumerable<DrawCaseScan> UsingSweep => SharedCorpus.Scans.Where(s => s.Commands.Contains("sweep") || s.Commands.Contains("tuyau"));
+
+    /// <summary>The cases the corpus test runs, a row each in DrawPipeCommandsShard*Tests (decision 27801).</summary>
+    public static CorpusPlan Corpus { get; } = new(1, () => UsingSweep.Where(s => s.IsRunnable).Select(s => s.Case));
+
     [Fact]
     public void Corpus_cases_using_sweep_and_tuyau_run_before_and_after_5L2()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before5L2(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => s.Commands.Contains("sweep") || s.Commands.Contains("tuyau"))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. UsingSweep];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use sweep or tuyau; runnable before 5L2: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        var aRuns = aRunnable.Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
-                             .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
+                                .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5L2: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                 .OrderBy(g => g.Key, StringComparer.Ordinal)
