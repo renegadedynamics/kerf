@@ -17010,3 +17010,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        make sure we continue to apply the principles of immutability and functional programming in Kerf".
 2040. **Phase 12 is closed** (the owner, 9 November 2026), at Kerf 0.4.0. Its units 12A to 12Z are done as their rows say, and
        what's open (12F, 12G, 12J, 12Q, 12R) is phase 13's 13H.
+2041. **Phase 14, real-world scripts, beside phase 13; its first script the blade bumper enclosure** ([phase14-plan.md](phase14-plan.md);
+       the owner, 9 November 2026: "Add a phase for a thorough performance review of the Renegade enclosure script. Find the
+       hot paths and look for improvements in Kerf. If you find that changes in the script could improve performance, let me
+       know what they are"). A change that speeds a real script and slows another case past decision 1829's bar waits for the
+       owner ("Report back when improving a real-world case has a negative impact on other test cases"). The script is
+       changed only by its own agent, through the owner.
