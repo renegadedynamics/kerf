@@ -5,6 +5,9 @@ version may break the API.
 
 ## Unreleased
 
+- **Rendering is quicker** (unit 14E): the renderer draws opaque triangles, edges over them and its 2 × 2 supersampling
+  four pixels at a time where the processor has AVX2, in 35% to 45% less time on one thread, with the same pixels;
+  elsewhere it draws as before (decisions 27501 and 27504).
 - **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
   too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
   refused them; beside a concave arc it still refuses, saying why (decision 2048).
