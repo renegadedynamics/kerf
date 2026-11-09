@@ -16965,3 +16965,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        part fused onto a large one 4 to 5 times 0.3.0's time and `TightCorners.Collapse` 30 to 80 times a plain chamfer, and user
        cases in the release check so a release can't miss such a thing again; then fonts, `Text` and DXF export (decision 2004);
        then failures as `Result`s (decision 1999). Five questions for the owner decide the details. Not started.
+2008. **Phase 13 is agreed, with the owner's answers** (9 November 2026; [phase13-plan.md](phase13-plan.md)). The enclosure model from
+       renegadedynamics/hardware may go in the rig (13C). A default font ships in the packages: Liberation Sans (SIL Open Font
+       Licence 1.1), chosen for Arial's advance widths, build123d's default font, so text is the size build123d gives. Text in SVG
+       and DXF is outlines by default, text as an option. Constructors that can throw get one exception type and `Result` versions
+       (decision 1999). Kerf's checks stay on by default, and making them cheaper is investigated first.
