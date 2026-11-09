@@ -5,6 +5,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Warnings.Capture` and `SkipClean` last until they are disposed, wherever that happens** (unit 14F): a scope disposed
+  in another task ends on the flow that opened it too, where it stayed open (that flow went on skipping the clean, or
+  collecting warnings); a task that outlives a scope no longer uses it, so its later warnings go to the enclosing scope
+  still open, and its Booleans clean again; and `Cancellation.Use` likewise. Within one flow, nested and disposed with
+  `using`, nothing changes. The guide's section 9 now says what may be shared between threads, Kerf's kept volumes and
+  checks included (kernel decision 27601).
 - **`TightCorners.Collapse` builds more of what it refused:** a tight arc beside a convex arc, corners of several arcs
   together, sides drafted by one angle, and corners that are B-splines, ellipses or Béziers where the collapse swallows
   them whole; a tight arc beside a concave arc, a curve swallowed only in part, and sides drafted by different angles

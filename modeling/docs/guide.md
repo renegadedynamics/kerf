@@ -434,6 +434,10 @@ writing files have async forms (section 8).
   the same meshes and the same files. Kerf's tests build parts with fillets, chamfers, shells, extrusions,
   revolutions, lofts, sweeps, hulls and text on several threads, and mesh, draw, render and export them, against the
   same run on one thread.
+- **What Kerf keeps between operations is safe too.** A solid's measured volume and the faces a check found valid are
+  kept with the shape's immutable data, for the next Boolean on it: two threads reading or keeping them at once
+  get the same answers, and the worst a race does is measure or check something again. Nothing kept changes a
+  result, and nothing keeps a shape alive.
 - Independent parts are the natural unit of work: one part a thread. Meshing, and a few of the kernel's algorithms,
   use .NET's thread pool themselves; many parts at once share the pool rather than multiply its threads.
 
@@ -467,9 +471,11 @@ keeps its state in an `AsyncLocal`):
 - A scope collects the warnings of a `Parallel` loop started inside it, from every thread. A cancelled operation in
   a loop's body throws `OperationCanceledException`, which `Parallel` gathers into an `AggregateException`.
 - An `async` method's scopes end with it, even one it never disposed: its caller doesn't see them.
-- **Open and end a scope on the same flow, with `using`.** Disposed on another thread or task, a scope ends nothing
-  where it was opened: that flow goes on skipping the clean, or collecting warnings, until it finishes. And a task
-  started inside a scope that outlives it keeps the scope: its later warnings still go to it.
+- **A scope lasts from its opening until it is disposed, wherever the `Dispose` runs.** Disposed in another task, it
+  ends on the flow that opened it too. A task started inside a scope that outlives it doesn't keep it: once the
+  scope is disposed the task cleans again, obeys the token outside, and its warnings go to the enclosing scope still
+  open, if any. So await what you start inside a scope before it ends, if it's to apply to them; `using` does the
+  rest.
 
 ## 10. Common mistakes
 

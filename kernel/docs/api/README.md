@@ -317,6 +317,12 @@ public readonly struct Edge : IShape<Edge>, IEquatable<Edge>       // and Vertex
   OCCTNET0002's rule (name the comparer) stays.
 - **Published shapes are immutable.** Nothing in the public API changes one; operations return new shapes that share
   the sub-shapes they didn't change (10H). `Freeze`, `Locked` and `Checked` flags leave the public API.
+- **Threads** (unit 14F): a shape, and every value and options record, may be shared between threads without a lock;
+  any number of operations may read one at once, each giving what it gives alone. What the kernel keeps about a frozen
+  shape (its volume, decision 2000; the faces a check found clean, decision 2067) is keyed by its immutable data in a
+  `ConditionalWeakTable`, published whole, and changes no result. The ambient scopes (`Cancellation.Use`, and the
+  modelling layer's `Warnings.Capture` and `SkipClean`) apply from their opening until they are disposed, on the flow
+  that opened them and the tasks and loops started from it, wherever the `Dispose` runs.
 
 [topology.md](topology.md) has the members: traversal, geometry access, placement, history.
 

@@ -5,6 +5,10 @@ version may break the API.
 
 ## Unreleased
 
+- **`Cancellation.Use`'s scope lasts until it is disposed, wherever that happens** (unit 14F): disposed in another task,
+  it ends on the flow that opened it too, where it stayed in force; and a task that outlives the scope goes back to
+  the token outside it, where it kept the scope's. Within one flow, nested and disposed with `using`, nothing changes
+  (decision 27601).
 - **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
   too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
   refused them; beside a concave arc it still refuses, saying why (decision 2048).
