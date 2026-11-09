@@ -1716,3 +1716,33 @@ In IL builds (project references) after 60 fuses, an earlier set of six: the bos
 ### What's left
 
 **The boss is 1.3 to 1.4 times 0.3.0's time, over the bar, and named for the owner** (decision 2038). Its check is 4.6 MB and about 5 to 7 ms: the result's classifier, whose first point fills its trees (about 3 ms), and the 150 points inside the door, each classified once (about 4 ms). That is the proof decision 1937 asks for, as the volume can't tell a small part inside the door from one lost. Keeping a frozen solid's tree of edges and vertices with its TShape, as decision 2001 keeps its map, would let a result's tree serve the next Boolean's classifiers; a quicker classifier would do the rest; keeping `PointInTheFace`'s grid for the next point was tried, and saved 5% of a classification's bytes and no time. An order of asking decision 1881's grid was tried and left out (decision 2038): asking whichever input last ruled a point out took `buc60462_2`'s check from 132 to 226 MB, found by comparing the corpus's check times case by case. **The pattern** (decision 2038), each check counted on a small part against the door: decision 1924's check doesn't run (it was reverted); decision 1932's, a 4 × 4 face against the door, 81 points for a common and 162 for a cut, 4.6 and 5.5 MB beside a Boolean of 2.7 (0.4.0's 8.6 and 13.3); decision 1985's bends, 0.7 MB and 0.6 ms of a 5 MB chamfer, under the bar; decision 1866 on a cut of the bump that removes nothing, 392 points and 7.2 MB beside 6.5 (0.4.0's 26). Decision 1932's and 1866's checks cost more than their Booleans on this shape, as they did in 0.3.0, and aren't 0.4.0's rise; they go with 13K.
+
+## The checks' share of a Boolean (unit 13K)
+
+*9 November 2026, on a machine shared with the owner and several helpers: times here are from a loaded machine, and the verdicts rest on bytes and counts. Decisions 26101 to 26106.*
+
+**Where it went** (a throwaway probe around each part of `Kerf.Modeling`'s checks; MB on the checking thread):
+
+| | 12Y's 8 parts, a pass | Enclosure, a build | Boss, a fuse | Bump, a fuse |
+|---|---:|---:|---:|---:|
+| Whole, before | 1,062 MB | 3,344 MB | 17.4 MB | 25.2 MB |
+| Validity check | 169 | 296 | 1.1 | 1.7 |
+| Volume check, all | 44 | 276 | 4.5 | 10.5 |
+| of which the volumes' integration | 35 | 88 | 0.3 | 0.5 |
+| of which 1866's and 1881's grids | 9 | 167 | | 6.9 |
+| of which 1937's points | | 21 | 4.2 | 3.1 |
+| Whole, after | 951 (-10%) | 2,941 (-12%) | 15.2 | 21.9 |
+| Validity check, after | 118 | 154 | 0.8 | 0.4 |
+
+On ordinary parts the checks are the result's validity and its volume, about half each; the point questions matter on a small part against a large one and on results with spline edges.
+
+**What changed:**
+
+1. **One check's questions share** its classifiers, boxes, tolerance and the inputs' validation (decision 26102). Same verdicts by construction; small.
+2. **A classifier doesn't look for the extrema of a spline edge whose poles keep it away** (decision 26103). The same states on 90,448 points of the dataset; the corpus's `buc60462_2` check 10.9 to 0.8 s.
+3. **Decision 1924's point check is on by default** (decision 26104): it doesn't run on 12Y's parts, the users' cases or the enclosure (0.03% of bytes for its gate), catches the radius-5000 fuse 16.5% out that 0.4.0 called a success, and fired falsely on none of the corpus's 4,026 Booleans (296 asked).
+4. **A check skips the frozen faces a whole check found clean** (decision 26105): 85% of a chain's results' faces were checked as the last result. 38,751 remembered checks made again in full: no difference.
+
+**The corpus's filtered groups** (`boolean/`, `blend/`, `bugs/modalg_*`, `bugs/moddata_*`; the check run on every Common, Cut and Fuse through the hook, two cases at a time): statuses as `corpus-13.txt`; checks 32.1 s and 4,251 MB before, 36.0 s and 7,117 MB after, the point check's 296 Booleans the rise (about 50 ms and 10 MB each on average, a median of 6 ms, the dearest about 3 s), the other 3,730 8.8 to 7.0 s.
+
+**The boss** (fresh processes in turn, IL, 9 fuses after 3, heavily loaded): 59.5 ms against 0.3.0's 46.6 and 0.4.0's 79.2, 15.4 MB against 14.3 and 84.4; the bump 48.0 against 88.7 and 184.7. Within 10% of 0.3.0's bytes, not of its time here; what's left is decision 1937's 150 points inside the door (decision 26106).
