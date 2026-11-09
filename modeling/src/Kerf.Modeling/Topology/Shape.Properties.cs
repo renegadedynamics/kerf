@@ -291,7 +291,7 @@ public static partial class ShapeExtensions
                 throw new InvalidOperationException("Cannot tessellate an empty shape");
             // The kernel's mesher leaves the shape alone and hands the meshes back (unit 10L3)
             var options = new MeshOptions { LinearDeflection = tolerance, AngularDeflection = angularTolerance, Relative = true, Parallel = true };
-            var mesh = Failures.Get(self.AsShape().Mesh(options), () => "tessellate");
+            var mesh = Failures.GetWarnedWithCodes(self.AsShape().Mesh(options), () => "tessellate");
             var meshes = new Dictionary<Shape, global::Kerf.Meshing.FaceMesh>(ShapeComparer.Same);
             foreach (var faceMesh in mesh.Faces)
                 meshes.TryAdd(faceMesh.Face, faceMesh);

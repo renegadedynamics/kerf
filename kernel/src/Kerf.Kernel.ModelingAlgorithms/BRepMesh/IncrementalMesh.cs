@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2013-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Collections.Immutable;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
@@ -56,6 +57,10 @@ internal class IncrementalMesh : DiscretRoot
     // Kerf: the history of a frozen shape's meshing (decision 489)
     private History _history = new();
     private bool _toCopyAlways;
+
+    // Kerf: the faces still over their deflection after their guards, by TShape, and the shape meshed (decision 2071)
+    private Dictionary<object, (double Limit, double Deviation)>? _exceeded;
+    private Shape _target;
 
     /// <summary>An algorithm without a shape.</summary>
     public IncrementalMesh()
@@ -146,6 +151,22 @@ internal class IncrementalMesh : DiscretRoot
     /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
     internal static T? ReadMeshed<T>(in Shape shape, in ToolParameters parameters, Func<Shape, T> read, ProgressRange range,
                                      out int status)
+        => ReadMeshed(shape, parameters, read, range, out status, out _);
+
+    /// <summary>
+    /// <see cref="ReadMeshed{T}(in Shape, in ToolParameters, Func{Shape, T}, ProgressRange, out int)"/>, with the faces
+    /// whose meshes a sphere's or a torus's guard left further from the surface than their deflection (decision 2071).
+    /// </summary>
+    /// <param name="shape">The shape to mesh.</param>
+    /// <param name="parameters">The meshing parameters.</param>
+    /// <param name="read">What to read of the meshes, given the shape they are on.</param>
+    /// <param name="range">The progress range.</param>
+    /// <param name="status">The status flags (<see cref="StatusModel"/>) met while meshing.</param>
+    /// <param name="exceeded">Those faces, as <paramref name="shape"/>'s, in the order of <see cref="MeshExtraction.Faces"/>.</param>
+    /// <returns>What <paramref name="read"/> returned, or default if the meshing was stopped.</returns>
+    /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
+    internal static T? ReadMeshed<T>(in Shape shape, in ToolParameters parameters, Func<Shape, T> read, ProgressRange range,
+                                     out int status, out ImmutableArray<ExceededFace> exceeded)
     {
         KernelArgumentNullException.ThrowIfNull(read);
         IncrementalMesh algo = new();
@@ -156,13 +177,60 @@ internal class IncrementalMesh : DiscretRoot
         using WorkingOverlay overlay = WorkingOverlay.Begin(target);
         algo.Perform(new MeshContext(algo._parameters.MeshAlgo), target, overlay, copies, range, finish: false);
         status = algo._status;
+        exceeded = algo.ExceededFaces(shape, target);
         return algo.IsDone ? read(target) : default;
+    }
+
+    /// <summary>
+    /// <see cref="Meshed(in Shape, in ToolParameters)"/>, with the faces whose meshes a sphere's or a torus's guard left
+    /// further from the surface than their deflection (decision 2071), as <paramref name="shape"/>'s.
+    /// </summary>
+    /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
+    /// <param name="shape">The shape to mesh.</param>
+    /// <param name="parameters">The meshing parameters.</param>
+    /// <param name="history">The history from the input's sub-shapes to the result's.</param>
+    /// <param name="exceeded">Those faces, as <paramref name="shape"/>'s, in the order of <see cref="MeshExtraction.Faces"/>.</param>
+    internal static Shape Meshed(in Shape shape, in ToolParameters parameters, out History history, out ImmutableArray<ExceededFace> exceeded)
+    {
+        IncrementalMesh algo = new();
+        algo._parameters = parameters;
+        algo._toCopyAlways = true;
+        algo.SetShape(shape);
+        algo.Perform();
+        history = algo.History();
+        exceeded = algo.ExceededFaces(shape, algo._target);
+        return algo.Shape();
+    }
+
+    // The faces the guards marked, from the shape meshed (the input, or a copy of it with the same structure) to the
+    // input's, in the order of MeshExtraction.Faces: each place a marked face's TShape takes in the shape
+    private ImmutableArray<ExceededFace> ExceededFaces(in Shape input, in Shape target)
+    {
+        if (_exceeded is null)
+        {
+            return [];
+        }
+
+        List<Shape> targetFaces = MeshExtraction.Faces(target);
+        List<Shape> inputFaces = ReferenceEquals(input.TShape(), target.TShape()) ? targetFaces : MeshExtraction.Faces(input);
+        var found = ImmutableArray.CreateBuilder<ExceededFace>();
+        for (int i = 0; i < targetFaces.Count && i < inputFaces.Count; i++)
+        {
+            if (_exceeded.TryGetValue(targetFaces[i].TShape()!, out (double Limit, double Deviation) figures))
+            {
+                found.Add(new ExceededFace(i, inputFaces[i], figures.Limit, figures.Deviation));
+            }
+        }
+
+        return found.ToImmutable();
     }
 
     // Meshes target (the input, or the input with its unfrozen TShapes copied) in the overlay, if any.
     private void Perform(ToolContext context, in Shape target, WorkingOverlay? overlay,
                          Dictionary<TShape, TShape>? copies, ProgressRange range, bool finish)
     {
+        _target = target;
+        _exceeded = null;
         context.SetShape(target);
         context.ChangeParameters() = _parameters;
         context.ChangeParameters().CleanModel = false;
@@ -183,6 +251,11 @@ internal class IncrementalMesh : DiscretRoot
             {
                 FaceModel dFace = model.GetFace(faceIt);
                 _status |= dFace.GetStatusMask();
+                if (dFace.ExceededLimit > 0)
+                {
+                    // Kerf: a face still over its deflection after its guard (decision 2071)
+                    (_exceeded ??= new(ReferenceEqualityComparer.Instance))[dFace.GetFace().TShape()!] = (dFace.ExceededLimit, dFace.GetDeflection());
+                }
 
                 for (int wireIt = 0; wireIt < dFace.WiresNb(); ++wireIt)
                 {
@@ -218,15 +291,7 @@ internal class IncrementalMesh : DiscretRoot
     /// </summary>
     public static Shape Meshed(in Shape shape, in ToolParameters parameters,
                                       out History history)
-    {
-        IncrementalMesh algo = new();
-        algo._parameters = parameters;
-        algo._toCopyAlways = true;
-        algo.SetShape(shape);
-        algo.Perform();
-        history = algo.History();
-        return algo.Shape();
-    }
+        => Meshed(shape, parameters, out history, out _);
 
     // accessing to parameters
 

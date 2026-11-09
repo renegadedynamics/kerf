@@ -193,7 +193,8 @@ public static class Gltf
     /// into metres, as glTF wants; a material per colour; a node per assembly child, named by its name. The parts'
     /// shapes are meshed with <see cref="GltfWriteOptions.Mesh"/>; meshes are written as they are.
     /// </summary>
-    /// <returns>Success, or a failure (<c>exchange.write-failed</c>).</returns>
+    /// <returns>Success, with a warning (<c>meshing.deflection-exceeded</c>) for each part meshed further from its surfaces than
+    /// the deflection; or a failure (<c>exchange.write-failed</c>).</returns>
     /// <exception cref="ArgumentNullException">An argument is null.</exception>
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(ModelNode model, Stream stream, GltfWriteOptions? options = null, CancellationToken cancellationToken = default)
@@ -293,9 +294,10 @@ public static class Gltf
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new GltfTreeWriter(new GltfWriterOptions { InputLengthUnit = options.Unit.Millimetres() / 1000.0, Generator = options.Generator });
         Engine.Exchange.Documents.Tree tree;
+        var warnings = new List<Diagnostic>();
         try
         {
-            tree = ExchangeTree.ToTree(model, options.Mesh);
+            tree = ExchangeTree.ToTree(model, options.Mesh, warnings);
         }
         catch (Exception e) when (ExchangeTree.IsMeshRefused(e))
         {
@@ -331,7 +333,7 @@ public static class Gltf
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as glTF."));
+        return done ? Result.Success([.. warnings]) : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as glTF."), [.. warnings]);
     }
 }
 
@@ -342,7 +344,8 @@ public static class ThreeMf
     /// Writes a model as 3MF: a mesh object per part, a components object per assembly, a base material per colour, in
     /// <see cref="ThreeMfWriteOptions.Unit"/>. The parts' shapes are meshed with <see cref="ThreeMfWriteOptions.Mesh"/>.
     /// </summary>
-    /// <returns>Success, or a failure (<c>exchange.write-failed</c>).</returns>
+    /// <returns>Success, with a warning (<c>meshing.deflection-exceeded</c>) for each part meshed further from its surfaces than
+    /// the deflection; or a failure (<c>exchange.write-failed</c>).</returns>
     /// <exception cref="ArgumentNullException">An argument is null.</exception>
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(ModelNode model, Stream stream, ThreeMfWriteOptions? options = null, CancellationToken cancellationToken = default)
@@ -355,9 +358,10 @@ public static class ThreeMf
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new TreeWriter(new WriteOptions { InputLengthUnit = options.Unit.Millimetres() / 1000.0 });
         Engine.Exchange.Documents.Tree tree;
+        var warnings = new List<Diagnostic>();
         try
         {
-            tree = ExchangeTree.ToTree(model, options.Mesh);
+            tree = ExchangeTree.ToTree(model, options.Mesh, warnings);
         }
         catch (Exception e) when (ExchangeTree.IsMeshRefused(e))
         {
@@ -366,7 +370,7 @@ public static class ThreeMf
 
         bool done = writer.Write(tree, stream, new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
-        return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as 3MF."));
+        return done ? Result.Success([.. warnings]) : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as 3MF."), [.. warnings]);
     }
 
     /// <summary>
@@ -392,7 +396,8 @@ public static class Obj
     /// if given, which the OBJ names <paramref name="materialsName"/>. The parts' shapes are meshed with
     /// <see cref="ObjWriteOptions.Mesh"/>.
     /// </summary>
-    /// <returns>Success, or a failure (<c>exchange.write-failed</c>).</returns>
+    /// <returns>Success, with a warning (<c>meshing.deflection-exceeded</c>) for each part meshed further from its surfaces than
+    /// the deflection; or a failure (<c>exchange.write-failed</c>).</returns>
     /// <exception cref="ArgumentNullException"><paramref name="model"/> or <paramref name="obj"/> is null.</exception>
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result Write(ModelNode model, Stream obj, Stream? materials = null, string materialsName = "model.mtl",
@@ -407,9 +412,10 @@ public static class Obj
         cancellationToken.ThrowIfCancellationRequested();
         var writer = new ObjTreeWriter(new ObjWriterOptions { Scale = options.Scale, ZUpToYUp = options.YUp, WriteNormals = options.Normals });
         Engine.Exchange.Documents.Tree tree;
+        var warnings = new List<Diagnostic>();
         try
         {
-            tree = ExchangeTree.ToTree(model, options.Mesh);
+            tree = ExchangeTree.ToTree(model, options.Mesh, warnings);
         }
         catch (Exception e) when (ExchangeTree.IsMeshRefused(e))
         {
@@ -419,7 +425,7 @@ public static class Obj
 
         bool done = writer.Write(tree, obj, materials, materialsName, new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
-        return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as OBJ."));
+        return done ? Result.Success([.. warnings]) : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as OBJ."), [.. warnings]);
     }
 
     /// <summary>

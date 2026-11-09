@@ -161,9 +161,11 @@ public static class Exporters3D
         options ??= StlExportOptions.Default;
         return Export(toExport, () =>
         {
-            var mesh = Failures.Get(Mesher.Mesh(toExport.AsShape(), MeshOptions(options.LinearDeflection, options.AngularDeflection), cancellationToken: cancellationToken),
-                                    () => "mesh");
-            return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = options.Ascii }, cancellationToken);
+            var meshed = Mesher.Mesh(toExport.AsShape(), MeshOptions(options.LinearDeflection, options.AngularDeflection), cancellationToken: cancellationToken);
+            var mesh = Failures.Get(meshed, () => "mesh");
+            // The mesh's warnings (meshing.deflection-exceeded, say) before the writer's, as the other mesh formats give them
+            return Result.Success([.. meshed.Diagnostics.Where(d => !d.IsError)])
+                         .Bind(() => Stl.Write(mesh, stream, new StlWriteOptions { Ascii = options.Ascii }, cancellationToken));
         });
     }
 

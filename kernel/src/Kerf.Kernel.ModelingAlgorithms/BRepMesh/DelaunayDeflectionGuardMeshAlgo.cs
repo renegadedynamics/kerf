@@ -16,4 +16,7 @@ internal sealed class DelaunayDeflectionGuardMeshAlgo<RangeSplitter> : DelaunayD
 
     /// <inheritdoc/>
     protected override bool ClearsFrontier => true;
+
+    /// <inheritdoc/>
+    protected override bool ReportsExceeded => true;
 }

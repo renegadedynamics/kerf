@@ -2481,6 +2481,7 @@ public sealed record Kerf.Meshing.MeshOptions : IEquatable<MeshOptions>
   public long MaxTriangles { get; init; }
   public static MeshOptions Default { get; }
 public static class Kerf.Meshing.Mesher
+  public static DiagnosticCode DeflectionExceeded { get; }
   public static DiagnosticCode FacesNotMeshed { get; }
   public static DiagnosticCode FacesRefused { get; }
   public static DiagnosticCode MeshFailed { get; }

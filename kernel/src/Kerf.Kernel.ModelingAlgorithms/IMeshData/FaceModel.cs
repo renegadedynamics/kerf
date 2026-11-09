@@ -60,6 +60,17 @@ internal abstract class FaceModel : TessellatedShapeModel, IStatusOwnerModel
     /// <summary>Kerf: marks that an edge's tessellation found the surface out of proportion to it.</summary>
     internal void MarkEdgesOffSurface() => Volatile.Write(ref _edgesOffSurface, 1);
 
+    /// <summary>
+    /// Kerf: the deflection a sphere's or a torus's guard kept the face to (decisions 1929, 1953, 2056) when its last
+    /// measure of the mesh was still further from the surface than that, or 0 (decision 2071). The face's
+    /// <see cref="TessellatedShapeModel.GetDeflection"/> is then that measure. Set by the face's own algorithm, on its
+    /// thread, and read once the faces' parallel loop has finished.
+    /// </summary>
+    internal double ExceededLimit { get; private set; }
+
+    /// <summary>Kerf: marks the face as further from its surface than <paramref name="limit"/>, the deflection it was kept to.</summary>
+    internal void MarkDeflectionExceeded(double limit) => ExceededLimit = limit;
+
     /// <summary>Whether the face's discrete model is valid.</summary>
     public bool IsValid
     {

@@ -64,6 +64,33 @@ public readonly record struct Triangle(int A, int B, int C);   // 0-based
 - The flat buffers are the ones `MeshExtraction`/`MeshBuffers` build today for build123d.NET and Bento's viewer;
   `ShapeModels.Part` in Bento reads `Positions`, `Normals`, `Triangles` per face and `Points` per edge exactly so.
 
+## What a mesh reports
+
+`Mesh` fails with `meshing.failed` (no face could be meshed: the failure carries the edges' polylines),
+`meshing.too-large` (past `MaxTriangles`) or `meshing.faces-refused` (the failure carries the other faces' mesh). It
+succeeds with these warnings:
+
+- `meshing.faces-not-meshed` (`Mesher.FacesNotMeshed`): some faces have no triangles.
+- `meshing.deflection-exceeded` (`Mesher.DeflectionExceeded`, decision 2071): some faces are further from their
+  surfaces than the deflection. Spheres and tori are measured as they're meshed and refined until they keep to it; a face
+  that can't be refined further is left as it is, and the warning names it: `Shapes` holds the faces, and the message
+  gives how many, their indices in `ShapeMesh.Faces` (the first ten), and the furthest one's distance from its surface
+  in model units and as a share of its deflection (at a relative deflection, the one relative mode works out for that
+  face). The figures are the mesher's own measure, a point a triangle, which finds the misses over 3.5% and can miss
+  smaller ones. Met only at relative deflections, on small fillet tori beside a long boundary edge, up to 1.14 times out
+  (decisions 2056, 2057); other kinds of surface aren't measured, so it says nothing of them. The mesh is the same with
+  or without it.
+
+```csharp
+Result<ShapeMesh> meshed = part.Mesh(new MeshOptions { LinearDeflection = 0.005, Relative = true });
+foreach (Diagnostic d in meshed.Diagnostics.Where(d => d.Code == Mesher.DeflectionExceeded))
+    Console.WriteLine($"{d.Message} ({d.Shapes.Length} faces)");
+```
+
+The writers that mesh a model (`Gltf.Write`, `ThreeMf.Write`, `Obj.Write`) give the same warning in their results, one
+for each part with such faces, naming the part (`Face 2 of knob is …`). `Render` of a shape and `ModelNode.ToScene`
+pass the mesh's warnings on.
+
 ## Examples
 
 ```csharp

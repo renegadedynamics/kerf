@@ -5,6 +5,15 @@ version may break the API.
 
 ## Unreleased
 
+- **A solid's classifier allocates about a quarter less a point**, which every Boolean's check and builder use: a small
+  part fused onto a large one 5% to 10% fewer bytes (decision 2070).
+- **A mesh further from its surfaces than the deflection says so,** with the warning `meshing.deflection-exceeded`
+  (`Mesher.DeflectionExceeded`): where a sphere's or a torus's face can't be refined to the deflection, the mesh
+  succeeds as before, the same to the byte, and the warning names the faces (`Shapes`, and their indices in the message)
+  and gives the furthest one's distance from its surface in model units and as a share of its deflection. It is met at
+  relative deflections, on small fillet tori beside a long boundary edge, up to 1.14 times out, where the mesh said
+  nothing; it finds every face over by more than 3.5% and some nearer it. `Gltf.Write`, `ThreeMf.Write` and `Obj.Write`
+  give it for each part, naming the part, and `Render` and `ModelNode.ToScene` pass it on (decision 2071).
 - **Rendering is quicker** (unit 14E): the renderer draws opaque triangles, edges over them and its 2 × 2 supersampling
   four pixels at a time where the processor has AVX2, in 35% to 45% less time on one thread, with the same pixels;
   elsewhere it draws as before (decisions 27501 and 27504).
