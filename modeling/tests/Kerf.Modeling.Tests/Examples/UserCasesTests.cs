@@ -9,7 +9,7 @@ namespace Kerf.Modeling.Tests.Examples;
 /// </summary>
 /// <remarks>
 /// The program runs in a process of its own, as the rig and the release check run it, so its thousands of operations
-/// don't warm this one's runtime for other tests (decision 25303).
+/// don't warm this one's runtime for other tests (decision 2017).
 /// </remarks>
 public class UserCasesTests(ITestOutputHelper output)
 {
