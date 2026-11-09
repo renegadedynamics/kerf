@@ -418,63 +418,16 @@ public static partial class WireExtensions
         /// The shortest wire enclosing the edges (which mustn't overlap), in the XY plane: their convex hull, built of
         /// trimmed pieces of the edges and lines joining them.
         /// </summary>
+        /// <remarks>
+        /// A line adds its two ends; any other edge is sampled so that the polygon through its samples is within
+        /// <paramref name="tolerance"/> times its length of it, so the hull of the samples is within that of the edges'
+        /// hull. Each joining line is then moved to touch the curves it joins (Newton's method on the tangency, to
+        /// 1e-12 of the parameter), and bumps the samples missed are added, so the hull is exact where it converges;
+        /// where it doesn't, the samples' hull, within the bound, is kept (decision 24005).
+        /// </remarks>
         /// <param name="edges">The edges to enclose.</param>
         /// <param name="tolerance">The allowable error, as a fraction of each edge's length.</param>
-        public static Wire MakeConvexHull(IEnumerable<Edge> edges, double tolerance = 1e-3)
-        {
-            // A cloud of points along the edges, its convex hull as pairs of point indices, and from those the lines
-            // joining the edges and the pieces of each edge on the hull
-            var edgeList = edges.ToList();
-            int fragments = (int)(2 / tolerance);
-            var lookup = new Dictionary<int, (int Edge, double Param)>();
-            var points = new List<(double X, double Y)>();
-            for (int e = 0; e < edgeList.Count; e++)
-                for (int i = 0; i < fragments; i++)
-                {
-                    var param = i / (double)(fragments - 1);
-                    var p = edgeList[e].PositionAt(param);
-                    points.Add((p.X, p.Y));
-                    lookup[e * fragments + i] = (e, param);
-                }
-
-            var connecting = new List<((int Edge, double Param), (int Edge, double Param))>();
-            var trimPoints = new Dictionary<int, List<int>>();
-            void AddTrim(int edge, params int[] indices)
-            {
-                if (!trimPoints.TryGetValue(edge, out var list))
-                    trimPoints[edge] = list = [];
-                list.AddRange(indices);
-            }
-            foreach (var (s0, s1) in ConvexHull2D.Simplices(points))
-            {
-                int edge0 = lookup[s0].Edge, edge1 = lookup[s1].Edge;
-                if (edge0 != edge1)
-                {
-                    // A line joining two edges
-                    AddTrim(edge0, s0);
-                    AddTrim(edge1, s1);
-                    connecting.Add((lookup[s0], lookup[s1]));
-                }
-                else if (Math.Abs(s0 - s1) != 1)
-                {
-                    // A line across one edge
-                    int start = Math.Min(s0, s1), end = Math.Max(s0, s1);
-                    AddTrim(edge0, start, end);
-                    connecting.Add((lookup[start], lookup[end]));
-                }
-            }
-            var trimmedEdges = new List<Edge>();
-            foreach (var (edgeIndex, indices) in trimPoints)
-            {
-                var sorted = indices.Order().ToList();
-                for (int i = 0; i + 1 < sorted.Count; i += 2)
-                    if (sorted[i] != sorted[i + 1])
-                        trimmedEdges.Add(edgeList[edgeIndex].Trim(lookup[sorted[i]].Param, lookup[sorted[i + 1]].Param));
-            }
-            var connectingEdges = connecting.Select(c =>
-                Edge.MakeLine(edgeList[c.Item1.Edge].PositionAt(c.Item1.Param), edgeList[c.Item2.Edge].PositionAt(c.Item2.Param)));
-            return Wire.Make([.. connectingEdges, .. trimmedEdges], sequenced: true);
-        }
+        public static Wire MakeConvexHull(IEnumerable<Edge> edges, double tolerance = 1e-3) => ConvexHullOfEdges.Make(edges, tolerance);
 
         /// <summary>A wire extruded: not possible.</summary>
         public static Wire Extrude(Shape obj, Vector3D direction) => throw new ArgumentException("Wires can't be created by extrusion");

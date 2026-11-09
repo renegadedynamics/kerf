@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Wire.MakeConvexHull` and `MakeHull` are 100 to 5,000 times quicker and touch curves exactly:** a section of lines and arcs in about a millisecond, where 120 lines took 29 s and 4.6 GB. Areas agree with before to 1e-4 or better, closer to the exact hull (kernel decision 24005).
 - **`ConvexPolyhedron` gives a valid solid for any points whose hull has volume, with one face for each flat side,** where points 1e-7 to 1e-6 apart, or a side with a run of close points, threw. It's about 50 times quicker on a few hundred points, and no longer crashes on a few thousand. Points closer than 1e-6 count as one. A set with no volume throws `ArgumentException` saying why; **`Operations.MakeConvexPolyhedron`** returns the same as a `Result<Part>`, failing with `modeling.hull-failed` (kernel decisions 24001 and 24004).
 - **`Wire.MakePolygon(…, close: true)` closes a polygon whose ends are within 1e-6,** where ends 1e-7 to 1e-6 apart gave an open wire (kernel decision 24002).
 - **`Kind.Tangent` has gone** (a breaking change): an offset's kind is `Kind.Arc` or `Kind.Intersection`. In a 2D offset the tangent join gave the intersection join's result or nothing at all, and `Offset3D`, `Hollow` and a solid's `Offset` threw on it (kernel decision 1982). Use `Kind.Intersection`.
