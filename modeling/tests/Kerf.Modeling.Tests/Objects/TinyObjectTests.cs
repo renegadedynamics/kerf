@@ -22,7 +22,7 @@ public class TinyObjectTests
         ["rectangle 1e-9 wide"] = () => new Rectangle(1e-9, 1),
         ["superellipse 1.5e-7 wide"] = () => new Superellipse(1.5e-7, 1),
         ["triangle side 1e-8"] = () => new Triangle(sideA: 1e-8, sideB: 1, sideC: 1),
-        // Valid by the check, but of no area: narrower than the tolerance on average (decision 26603)
+        // Valid by the check, but of no area: narrower than the tolerance on average (decision 2059)
         ["ellipse 1e-12 across"] = () => new Ellipse(1, 1e-12),
         ["trapezoid 1e-8 high"] = () => new Trapezoid(1, 1e-8, 60),
         ["trapezoid 1e-12 high"] = () => new Trapezoid(1, 1e-12, 60),
@@ -55,7 +55,7 @@ public class TinyObjectTests
     [Fact]
     public void A_face_of_no_area_fails_carrying_it()
     {
-        // Ellipse(1, 1e-12) was a valid face of no area, returned as a success (decision 26603)
+        // Ellipse(1, 1e-12) was a valid face of no area, returned as a success (decision 2059)
         var made = Kerf.Modeling.Operations.MakeEllipse(1, 1e-12);
         Assert.True(made.IsFailure);
         Assert.Equal(ModelingDiagnostics.ObjectFailed, made.Diagnostics.First(d => d.IsError).Code);

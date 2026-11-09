@@ -32,7 +32,7 @@ public abstract class BaseSketchObject : Sketch
     // Kerf: a face narrower than the confusion tolerance on average, twice its area over its perimeter, has sides that
     // coincide within the tolerance, and no area to speak of: an ellipse 1e-12 across, a trapezoid or rectangle 1e-8 high, a
     // circle of 1e-12. The validity check passes them (each edge is fine on its own), so they were successes; now they
-    // fail carrying the face, as a primitive too small to be valid does (decisions 1742, 2029 and 26603)
+    // fail carrying the face, as a primitive too small to be valid does (decisions 1742, 2029 and 2059)
     private static void RefuseNoArea(Shape obj, BoundingBox bounds)
     {
         if (bounds.IsEmpty)

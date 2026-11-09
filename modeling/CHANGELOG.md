@@ -20,7 +20,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   as a success: `Ellipse(1, 1e-12)`, a `Trapezoid` or `Rectangle` 1e-8 high, `Circle(1e-12)`. A face whose mean width
   (twice its area over its perimeter) is under 1e-7 fails with `modeling.object-failed`, as a `ModelingException` from
   the constructor or a failure from `Operations.Make…` (`TryGetInvalid` gives the face). From 2e-7 they are valid as
-  before (kernel decision 26603).
+  before (kernel decision 2059).
 - **Notes as outlines are filled in DXF 2013:** each letter's contours (outer and holes) are a solid `HATCH` in the
   notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
   SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a

@@ -24,7 +24,7 @@ version may break the API.
 - **A mesh of a face whose surface is damaged far from its edges fails at once:** `Mesh` returns
   `meshing.faces-refused`, carrying the other faces, as soon as an edge finds the face's surface more than ten thousand
   times the edge's size away from it, where two lofts with a surface pole of 1e300 took 2 to 5 minutes and a gigabyte
-  before they were refused (under a second and 23 MB now). Sound shapes mesh as before (decision 26602).
+  before they were refused (under a second and 23 MB now). Sound shapes mesh as before (decision 2060).
 - **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
   the caller's own list, so changing the list after making the options changed them. A collection expression
   (`Points = [p1, p2]`) works as before; a list is passed as `[.. list]` (unit 13P, decision 2044).
