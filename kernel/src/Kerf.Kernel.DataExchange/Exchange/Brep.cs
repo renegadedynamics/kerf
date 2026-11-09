@@ -24,7 +24,7 @@ public static class Brep
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<Shape> Read(Stream stream, ReadLimits? limits = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         limits ??= ReadLimits.Default;
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
@@ -67,10 +67,10 @@ public static class Brep
     /// <exception cref="ArgumentException">The shape is null.</exception>
     public static Result Write(Shape shape, Stream stream, BrepWriteOptions? options = null)
     {
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(stream);
         if (shape.IsNull)
         {
-            throw new ArgumentException("The shape is null.", nameof(shape));
+            throw new KernelArgumentException("The shape is null.", nameof(shape));
         }
 
         options ??= BrepWriteOptions.Default;

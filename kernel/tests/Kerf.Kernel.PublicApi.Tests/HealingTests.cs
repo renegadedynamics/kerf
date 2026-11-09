@@ -116,15 +116,15 @@ public class HealingTests
         Result<Built<Shape>> wireframe = Fixtures.Box().FixWireframe(1e-4);
         Assert.True(wireframe.IsSuccess);
         Assert.Equal(12, wireframe.Value.Shape.AllEdges().Length);
-        Assert.Throws<ArgumentOutOfRangeException>(() => Fixtures.Box().FixWireframe(0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => Fixtures.Box().FixWireframe(0));
     }
 
     [Fact]
     public void A_null_shape_is_misuse()
     {
-        Assert.Throws<ArgumentException>(() => default(Shape).Validate());
-        Assert.Throws<ArgumentException>(() => default(Shape).Fix());
-        Assert.Throws<ArgumentException>(() => HealingOperations.Sew([default(Shape)]));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new SewOptions { Tolerance = 0 });
+        KernelAssert.Throws<ArgumentException>(() => default(Shape).Validate());
+        KernelAssert.Throws<ArgumentException>(() => default(Shape).Fix());
+        KernelAssert.Throws<ArgumentException>(() => HealingOperations.Sew([default(Shape)]));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new SewOptions { Tolerance = 0 });
     }
 }

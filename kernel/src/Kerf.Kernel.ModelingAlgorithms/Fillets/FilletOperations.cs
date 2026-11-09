@@ -124,7 +124,7 @@ public static class FilletOperations
         public Result<Built<Shape>> Fillet(IEnumerable<Edge> edges, double radius, FilletOptions? options = null,
                                            IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             return shape.Fillet(edges.Select(e => new FilletSpec(e, radius)), options, progress, cancellationToken);
         }
 
@@ -133,7 +133,7 @@ public static class FilletOperations
         public Result<Built<Shape>> Fillet(IEnumerable<FilletSpec> edges, FilletOptions? options = null,
                                            IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             options ??= FilletOptions.Default;
             Shape solid = shape.AsShape();
             FilletSpec[] given = [.. edges];
@@ -232,7 +232,7 @@ public static class FilletOperations
         /// </summary>
         public double? FilletLimit(IEnumerable<Edge> edges)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             Shape solid = shape.AsShape();
             Edge[] own = [.. edges];
             Owned(solid, own);
@@ -248,7 +248,7 @@ public static class FilletOperations
         /// </summary>
         public double? ChamferLimit(IEnumerable<Edge> edges)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             Shape solid = shape.AsShape();
             Edge[] own = [.. edges];
             Owned(solid, own);
@@ -269,7 +269,7 @@ public static class FilletOperations
         public Result<Built<Shape>> Chamfer(IEnumerable<Edge> edges, double distance, ChamferOptions? options = null,
                                             IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             return shape.Chamfer(edges.Select(e => new ChamferSpec(e, distance)), options, progress, cancellationToken);
         }
 
@@ -279,7 +279,7 @@ public static class FilletOperations
         public Result<Built<Shape>> Chamfer(IEnumerable<ChamferSpec> edges, ChamferOptions? options = null,
                                             IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(edges);
+            KernelArgumentNullException.ThrowIfNull(edges);
             options ??= ChamferOptions.Default;
             Shape solid = shape.AsShape();
             ChamferSpec[] given = [.. edges];
@@ -291,7 +291,7 @@ public static class FilletOperations
                 MakerOutcome.Positive(spec.Distance, nameof(edges));
                 if (spec.Distance2 is not null && spec.Angle is not null)
                 {
-                    throw new ArgumentException("A chamfer takes a second distance or an angle, not both.", nameof(edges));
+                    throw new KernelArgumentException("A chamfer takes a second distance or an angle, not both.", nameof(edges));
                 }
                 if (spec.Distance2 is { } d2)
                 {
@@ -304,7 +304,7 @@ public static class FilletOperations
                 ChamferMode.Classic => ChamfMode.ClassicChamfer,
                 ChamferMode.ConstantThroat => ChamfMode.ConstThroatChamfer,
                 ChamferMode.ConstantThroatWithPenetration => ChamfMode.ConstThroatWithPenetrationChamfer,
-                _ => throw new ArgumentOutOfRangeException(nameof(options), options.Mode, "An unknown chamfer mode."),
+                _ => throw new KernelArgumentOutOfRangeException(nameof(options), options.Mode, "An unknown chamfer mode."),
             };
             ChamferSpec[] specs = given;
             Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
@@ -364,7 +364,7 @@ public static class FilletOperations
         /// (OCCT's <c>BRepFilletAPI_MakeFillet2d</c>); its history maps each vertex to its new edge.</summary>
         public Result<Built<Face>> Fillet2D(IEnumerable<Vertex> vertices, double radius, bool checkResult = true)
         {
-            ArgumentNullException.ThrowIfNull(vertices);
+            KernelArgumentNullException.ThrowIfNull(vertices);
             MakerOutcome.Positive(radius, nameof(radius));
             Vertex[] corners = Corners(face, vertices);
             Face f = face;
@@ -375,7 +375,7 @@ public static class FilletOperations
         /// along both edges, or <paramref name="distance2"/> along the second.</summary>
         public Result<Built<Face>> Chamfer2D(IEnumerable<Vertex> vertices, double distance, double? distance2 = null, bool checkResult = true)
         {
-            ArgumentNullException.ThrowIfNull(vertices);
+            KernelArgumentNullException.ThrowIfNull(vertices);
             MakerOutcome.Positive(distance, nameof(distance));
             double second = distance2 ?? distance;
             MakerOutcome.Positive(second, nameof(distance2));
@@ -398,7 +398,7 @@ public static class FilletOperations
         /// <exception cref="ArgumentOutOfRangeException">A distance isn't more than zero.</exception>
         public Result<Built<Face>> Chamfer2D(IEnumerable<(Edge First, Edge Second)> corners, double distance, double? distance2 = null, bool checkResult = true)
         {
-            ArgumentNullException.ThrowIfNull(corners);
+            KernelArgumentNullException.ThrowIfNull(corners);
             MakerOutcome.Positive(distance, nameof(distance));
             double second = distance2 ?? distance;
             MakerOutcome.Positive(second, nameof(distance2));
@@ -540,12 +540,12 @@ public static class FilletOperations
             count++;
             if (e.IsNull || !own.Any(o => o.IsSame(e)))
             {
-                throw new ArgumentException("An edge isn't one of the shape's.", nameof(edges));
+                throw new KernelArgumentException("An edge isn't one of the shape's.", nameof(edges));
             }
         }
         if (count == 0)
         {
-            throw new ArgumentException("There are no edges.", nameof(edges));
+            throw new KernelArgumentException("There are no edges.", nameof(edges));
         }
         return own;
     }
@@ -559,12 +559,12 @@ public static class FilletOperations
         Vertex[] corners = [.. vertices];
         if (corners.Length == 0)
         {
-            throw new ArgumentException("There are no vertices.", nameof(vertices));
+            throw new KernelArgumentException("There are no vertices.", nameof(vertices));
         }
         ImmutableArray<Vertex> own = face.AllVertices();
         if (corners.Any(v => v.IsNull || !own.Any(o => o.IsSame(v))))
         {
-            throw new ArgumentException("A vertex isn't one of the face's.", nameof(vertices));
+            throw new KernelArgumentException("A vertex isn't one of the face's.", nameof(vertices));
         }
         return corners;
     }
@@ -582,12 +582,12 @@ public static class FilletOperations
             }
         }
 
-        throw new ArgumentException("A corner's edges don't meet at a vertex.", "corners");
+        throw new KernelArgumentException("A corner's edges don't meet at a vertex.", "corners");
     }
 
     private static (Edge, Edge) EdgesAt(Face face, Vertex vertex)
     {
         Edge[] at = [.. face.AllEdges().Where(e => e.AllVertices().Any(v => v.IsSame(vertex)))];
-        return at.Length == 2 ? (at[0], at[1]) : throw new ArgumentException("A vertex isn't a corner between two edges.", "vertices");
+        return at.Length == 2 ? (at[0], at[1]) : throw new KernelArgumentException("A vertex isn't a corner between two edges.", "vertices");
     }
 }

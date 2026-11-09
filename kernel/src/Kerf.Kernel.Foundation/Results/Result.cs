@@ -87,7 +87,7 @@ public readonly struct Result<T>
     /// <summary>The value passed through <paramref name="map"/>, keeping the warnings; a failure stays one.</summary>
     public Result<TOut> Map<TOut>(Func<T, TOut> map)
     {
-        ArgumentNullException.ThrowIfNull(map);
+        KernelArgumentNullException.ThrowIfNull(map);
         return IsSuccess ? new(true, map(_value), _diagnostics) : Result<TOut>.Carry(Diagnostics);
     }
 
@@ -97,7 +97,7 @@ public readonly struct Result<T>
     /// </summary>
     public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> next)
     {
-        ArgumentNullException.ThrowIfNull(next);
+        KernelArgumentNullException.ThrowIfNull(next);
         if (!IsSuccess)
             return Result<TOut>.Carry(Diagnostics);
         var then = next(_value);
@@ -110,8 +110,8 @@ public readonly struct Result<T>
     /// </summary>
     public TOut Match<TOut>(Func<T, TOut> success, Func<Diagnostic, TOut> failure)
     {
-        ArgumentNullException.ThrowIfNull(success);
-        ArgumentNullException.ThrowIfNull(failure);
+        KernelArgumentNullException.ThrowIfNull(success);
+        KernelArgumentNullException.ThrowIfNull(failure);
         return IsSuccess ? success(_value) : failure(Error!);
     }
 
@@ -124,8 +124,8 @@ public readonly struct Result<T>
     /// </summary>
     public Result<TOut> SelectMany<TNext, TOut>(Func<T, Result<TNext>> next, Func<T, TNext, TOut> selector)
     {
-        ArgumentNullException.ThrowIfNull(next);
-        ArgumentNullException.ThrowIfNull(selector);
+        KernelArgumentNullException.ThrowIfNull(next);
+        KernelArgumentNullException.ThrowIfNull(selector);
         return Bind(value => next(value).Map(nextValue => selector(value, nextValue)));
     }
 
@@ -138,9 +138,9 @@ public readonly struct Result<T>
     /// <exception cref="ArgumentException"><paramref name="error"/> isn't an error.</exception>
     public static Result<T> Failure(Diagnostic error, ImmutableArray<Diagnostic> warnings = default)
     {
-        ArgumentNullException.ThrowIfNull(error);
+        KernelArgumentNullException.ThrowIfNull(error);
         if (!error.IsError)
-            throw new ArgumentException($"A failure needs an error, not a {error.Severity}", nameof(error));
+            throw new KernelArgumentException($"A failure needs an error, not a {error.Severity}", nameof(error));
         return new(false, default!, [.. Diagnostic.Check(warnings, success: true), error]);
     }
 
@@ -156,9 +156,9 @@ public readonly struct Result<T>
     /// <exception cref="ArgumentException"><paramref name="error"/> isn't an error.</exception>
     public static Result<T> Invalid(T invalid, Diagnostic error, ImmutableArray<Diagnostic> warnings = default)
     {
-        ArgumentNullException.ThrowIfNull(error);
+        KernelArgumentNullException.ThrowIfNull(error);
         if (!error.IsError)
-            throw new ArgumentException($"A failure needs an error, not a {error.Severity}", nameof(error));
+            throw new KernelArgumentException($"A failure needs an error, not a {error.Severity}", nameof(error));
         return new(false, invalid, [.. Diagnostic.Check(warnings, success: true), error], carriesInvalid: true);
     }
 
@@ -210,22 +210,22 @@ public readonly struct Result
     /// <summary><paramref name="success"/>, or <paramref name="failure"/> of the first error.</summary>
     public TOut Match<TOut>(Func<TOut> success, Func<Diagnostic, TOut> failure)
     {
-        ArgumentNullException.ThrowIfNull(success);
-        ArgumentNullException.ThrowIfNull(failure);
+        KernelArgumentNullException.ThrowIfNull(success);
+        KernelArgumentNullException.ThrowIfNull(failure);
         return IsSuccess ? success() : failure(Error!);
     }
 
     /// <summary>The value <paramref name="next"/> gives after a success, keeping the warnings; a failure stays one.</summary>
     public Result<T> Map<T>(Func<T> next)
     {
-        ArgumentNullException.ThrowIfNull(next);
+        KernelArgumentNullException.ThrowIfNull(next);
         return IsSuccess ? Result<T>.Success(next(), _diagnostics) : Result<T>.Carry(Diagnostics);
     }
 
     /// <summary>The result of <paramref name="next"/> after a success, with this result's warnings before its own.</summary>
     public Result Bind(Func<Result> next)
     {
-        ArgumentNullException.ThrowIfNull(next);
+        KernelArgumentNullException.ThrowIfNull(next);
         if (!IsSuccess)
             return this;
         var then = next();
@@ -241,9 +241,9 @@ public readonly struct Result
     /// <exception cref="ArgumentException"><paramref name="error"/> isn't an error.</exception>
     public static Result Failure(Diagnostic error, ImmutableArray<Diagnostic> warnings = default)
     {
-        ArgumentNullException.ThrowIfNull(error);
+        KernelArgumentNullException.ThrowIfNull(error);
         if (!error.IsError)
-            throw new ArgumentException($"A failure needs an error, not a {error.Severity}", nameof(error));
+            throw new KernelArgumentException($"A failure needs an error, not a {error.Severity}", nameof(error));
         return new(false, [.. Diagnostic.Check(warnings, success: true), error]);
     }
 

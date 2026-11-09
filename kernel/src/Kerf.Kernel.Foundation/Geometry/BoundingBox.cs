@@ -23,7 +23,7 @@ public readonly struct BoundingBox : IEquatable<BoundingBox>
     {
         if (!(min.X <= max.X && min.Y <= max.Y && min.Z <= max.Z))
         {
-            throw new ArgumentException($"The box's minimum {min} is not below its maximum {max} in every coordinate.", nameof(min));
+            throw new KernelArgumentException($"The box's minimum {min} is not below its maximum {max} in every coordinate.", nameof(min));
         }
 
         _min = min;
@@ -96,7 +96,7 @@ public readonly struct BoundingBox : IEquatable<BoundingBox>
     {
         if (!(gap >= 0))
         {
-            throw new ArgumentOutOfRangeException(nameof(gap), gap, "The gap must be zero or more.");
+            throw new KernelArgumentOutOfRangeException(nameof(gap), gap, "The gap must be zero or more.");
         }
 
         return _isSet

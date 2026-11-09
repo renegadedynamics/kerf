@@ -27,21 +27,21 @@ public static class Surfaces
     public static Result<Built<Face>> Fill(IReadOnlyList<FillBoundary> boundaries, FillOptions? options = null,
                                            IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(boundaries);
+        KernelArgumentNullException.ThrowIfNull(boundaries);
         options ??= FillOptions.Default;
         FillBoundary[] constraints = [.. boundaries];
         if (!constraints.Any(static b => b?.IsBoundary == true))
         {
-            throw new ArgumentException("A filling needs at least one bounding edge.", nameof(boundaries));
+            throw new KernelArgumentException("A filling needs at least one bounding edge.", nameof(boundaries));
         }
         var inputs = new List<Shape>(constraints.Length);
         foreach (FillBoundary boundary in constraints)
         {
-            ArgumentNullException.ThrowIfNull(boundary, nameof(boundaries));
+            KernelArgumentNullException.ThrowIfNull(boundary, nameof(boundaries));
             MakerOutcome.NotNull(boundary.Edge, nameof(boundaries));
             if (boundary.Continuity is not (Continuity.C0 or Continuity.G1 or Continuity.G2))
             {
-                throw new ArgumentException($"A filling's continuity is C0, G1 or G2, not {boundary.Continuity}.", nameof(boundaries));
+                throw new KernelArgumentException($"A filling's continuity is C0, G1 or G2, not {boundary.Continuity}.", nameof(boundaries));
             }
             inputs.Add(boundary.Edge);
             if (boundary.Support is { IsNull: false } support)

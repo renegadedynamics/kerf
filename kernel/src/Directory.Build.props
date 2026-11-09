@@ -11,6 +11,10 @@
     <!-- OCCT's typedefs math_Vector and math_IntegerVector: using aliases of math_VectorBase<T> -->
     <Using Include="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" Alias="math_Vector" />
     <Using Include="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
+    <!-- The kernel's argument errors, which the modelling layer tells from its own by type (decision 25801; KERF0004) -->
+    <Using Include="Kerf.Engine.Foundation.KernelArgumentException" Alias="KernelArgumentException" />
+    <Using Include="Kerf.Engine.Foundation.KernelArgumentOutOfRangeException" Alias="KernelArgumentOutOfRangeException" />
+    <Using Include="Kerf.Engine.Foundation.KernelArgumentNullException" Alias="KernelArgumentNullException" />
     <!-- Checks ported code for mutating calls that would land on a defensive copy (docs/translation-rules.md) -->
     <ProjectReference Include="$(MSBuildThisFileDirectory)Kerf.Analyzers/Kerf.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

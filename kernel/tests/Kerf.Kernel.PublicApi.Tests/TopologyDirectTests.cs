@@ -139,7 +139,7 @@ public class TopologyDirectTests
         Assert.Equal(24, shape.Explore<Edge>().Count());
         // what sits under an avoided kind isn't reached
         Assert.Empty(shape.Explore<Vertex>(ShapeType.Edge));
-        Assert.Throws<ArgumentException>(() => shape.Explore<Shape>());
+        KernelAssert.Throws<ArgumentException>(() => shape.Explore<Shape>());
         Edge edge = box.AllEdges()[0];
         Assert.Equal(2, edge.Explore<Vertex>().Count());
         Assert.Empty(edge.Explore<Face>());

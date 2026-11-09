@@ -39,7 +39,7 @@ public static partial class GeometryOperations
         /// <exception cref="InvalidOperationException">The law can't be set up on the curve.</exception>
         public ImmutableArray<CurveFrame> Frames(ReadOnlySpan<double> parameters, FrameLaw law = FrameLaw.Frenet)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             return FramesOf(curve.Adaptor, parameters, law);
         }
     }
@@ -51,7 +51,7 @@ public static partial class GeometryOperations
         /// <exception cref="InvalidOperationException">The law can't be set up on the curve.</exception>
         public ImmutableArray<CurveFrame> Frames(ReadOnlySpan<double> parameters, FrameLaw law = FrameLaw.Frenet)
         {
-            ArgumentNullException.ThrowIfNull(curve);
+            KernelArgumentNullException.ThrowIfNull(curve);
             return FramesOf(curve.Adaptor, parameters, law);
         }
     }
@@ -62,7 +62,7 @@ public static partial class GeometryOperations
         {
             FrameLaw.Frenet => new Frenet(),
             FrameLaw.CorrectedFrenet => new CorrectedFrenet(),
-            _ => throw new ArgumentOutOfRangeException(nameof(law), law, "An unknown frame law."),
+            _ => throw new KernelArgumentOutOfRangeException(nameof(law), law, "An unknown frame law."),
         };
         trihedron.SetCurve(adaptor);
         var frames = ImmutableArray.CreateBuilder<CurveFrame>(parameters.Length);

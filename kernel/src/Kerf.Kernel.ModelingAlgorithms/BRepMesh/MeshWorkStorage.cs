@@ -161,7 +161,7 @@ internal sealed class MeshWorkList<T>(int capacity, int largestKept = 1 << 13)
     {
         get
         {
-            ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)_count, nameof(index));
+            KernelArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)index, (uint)_count, nameof(index));
             return ref _items[index];
         }
     }

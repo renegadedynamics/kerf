@@ -43,8 +43,8 @@ internal static class EngineOperation
                                                     string? checkedAs = null, Func<Shape, Diagnostic?>? alsoCheck = null)
         where TShape : struct, IShape<TShape>
     {
-        ArgumentNullException.ThrowIfNull(run);
-        ArgumentNullException.ThrowIfNull(failure);
+        KernelArgumentNullException.ThrowIfNull(run);
+        KernelArgumentNullException.ThrowIfNull(failure);
         cancellationToken = Cancellation.Effective(cancellationToken);
         using Cancellation.Scope cancellation = Cancellation.Enter(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();

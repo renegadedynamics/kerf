@@ -1123,7 +1123,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     {
         if (mat.Length < 16)
         {
-            throw new ArgumentException("A 4x4 matrix needs 16 elements.", nameof(mat));
+            throw new KernelArgumentException("A 4x4 matrix needs 16 elements.", nameof(mat));
         }
 
         if (_shape == TransformForm.Identity)

@@ -55,13 +55,13 @@ public sealed class ShapeHistory
     /// <exception cref="ArgumentException">An entry's initial shape is null.</exception>
     public static ShapeHistory Create(IEnumerable<ShapeHistoryEntry> entries)
     {
-        ArgumentNullException.ThrowIfNull(entries);
+        KernelArgumentNullException.ThrowIfNull(entries);
         var history = new History();
         foreach (ShapeHistoryEntry entry in entries)
         {
             if (entry.Initial.IsNull)
             {
-                throw new ArgumentException("A history entry's initial shape is null.", nameof(entries));
+                throw new KernelArgumentException("A history entry's initial shape is null.", nameof(entries));
             }
 
             switch (entry.Kind)
@@ -84,7 +84,7 @@ public sealed class ShapeHistory
 
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(entries), entry.Kind, "An unknown history kind.");
+                    throw new KernelArgumentOutOfRangeException(nameof(entries), entry.Kind, "An unknown history kind.");
             }
         }
 
@@ -139,7 +139,7 @@ public sealed class ShapeHistory
     /// <exception cref="ArgumentNullException"><paramref name="next"/> is null.</exception>
     public ShapeHistory Then(ShapeHistory next)
     {
-        ArgumentNullException.ThrowIfNull(next);
+        KernelArgumentNullException.ThrowIfNull(next);
         History merged = ToEngine();
         merged.Merge(next._history);
         return new ShapeHistory(merged);
@@ -154,10 +154,10 @@ public sealed class ShapeHistory
             return Empty;
         }
 
-        ShapeHistory result = histories[0] ?? throw new ArgumentNullException(nameof(histories));
+        ShapeHistory result = histories[0] ?? throw new KernelArgumentNullException(nameof(histories));
         foreach (ShapeHistory history in histories[1..])
         {
-            result = result.Then(history ?? throw new ArgumentNullException(nameof(histories)));
+            result = result.Then(history ?? throw new KernelArgumentNullException(nameof(histories)));
         }
 
         return result;

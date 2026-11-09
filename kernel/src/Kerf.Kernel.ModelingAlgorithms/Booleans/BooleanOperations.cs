@@ -106,10 +106,10 @@ public static class BooleanOperations
     public static Result<Built<Shape>> FuseAll(IReadOnlyList<Shape> shapes, BooleanOptions? options = null,
                                                IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(shapes);
+        KernelArgumentNullException.ThrowIfNull(shapes);
         if (shapes.Count < 2)
         {
-            throw new ArgumentException("FuseAll needs at least two shapes.", nameof(shapes));
+            throw new KernelArgumentException("FuseAll needs at least two shapes.", nameof(shapes));
         }
         return Run(new EngineFuse(), [shapes[0]], [.. shapes.Skip(1)], options, progress, cancellationToken);
     }
@@ -140,7 +140,7 @@ public static class BooleanOperations
     public static Result<Built<Shape>> Split(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = null,
                                              IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(tools);
+        KernelArgumentNullException.ThrowIfNull(tools);
         var splitter = new SplitterOperation();
         splitter.SetTools(List(tools, nameof(tools)));
         return Run(splitter, arguments, options, progress, cancellationToken);
@@ -155,7 +155,7 @@ public static class BooleanOperations
     private static Result<Built<Shape>> Run(BooleanOperation operation, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
                                             BooleanOptions? options, IProgress<double>? progress, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(tools);
+        KernelArgumentNullException.ThrowIfNull(tools);
         operation.SetTools(List(tools, nameof(tools)));
         Result<Built<Shape>> result = Run((BuilderAlgo)operation, arguments, options, progress, cancellationToken);
 
@@ -218,9 +218,9 @@ public static class BooleanOperations
     private static Result<Built<Shape>> Run(BuilderAlgo operation, IReadOnlyList<Shape> arguments, BooleanOptions? options,
                                             IProgress<double>? progress, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(arguments);
+        KernelArgumentNullException.ThrowIfNull(arguments);
         options ??= BooleanOptions.Default;
-        ArgumentOutOfRangeException.ThrowIfNegative(options.FuzzyValue, nameof(options));
+        KernelArgumentOutOfRangeException.ThrowIfNegative(options.FuzzyValue, nameof(options));
         operation.SetArguments(List(arguments, nameof(arguments)));
         operation.SetFuzzyValue(options.FuzzyValue);
         operation.SetGlue(options.Glue);
@@ -258,7 +258,7 @@ public static class BooleanOperations
         }
         if (list.IsEmpty())
         {
-            throw new ArgumentException("There are no shapes.", name);
+            throw new KernelArgumentException("There are no shapes.", name);
         }
         return list;
     }

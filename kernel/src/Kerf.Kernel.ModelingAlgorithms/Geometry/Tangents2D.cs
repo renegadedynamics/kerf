@@ -61,10 +61,10 @@ public readonly record struct TangentTarget2D
     /// <exception cref="ArgumentNullException"><paramref name="curve"/> is null.</exception>
     public static TangentTarget2D Tangent(Curve2D curve, Tangency tangency = Tangency.Unqualified)
     {
-        ArgumentNullException.ThrowIfNull(curve);
+        KernelArgumentNullException.ThrowIfNull(curve);
         if (!Enum.IsDefined(tangency))
         {
-            throw new ArgumentOutOfRangeException(nameof(tangency), tangency, "An unknown tangency.");
+            throw new KernelArgumentOutOfRangeException(nameof(tangency), tangency, "An unknown tangency.");
         }
 
         return new TangentTarget2D(curve, default, tangency);
@@ -80,7 +80,7 @@ public readonly record struct TangentTarget2D
         TangentTarget2D whole = Tangent(curve, tangency);
         if (!(range.Min < range.Max))
         {
-            throw new ArgumentException("The range must run from a lower parameter to a higher one.", nameof(range));
+            throw new KernelArgumentException("The range must run from a lower parameter to a higher one.", nameof(range));
         }
 
         return new TangentTarget2D(whole.Curve, default, tangency, range);
@@ -137,7 +137,7 @@ public static class Tangents2D
         Check(second, nameof(second));
         if (first.IsPoint && second.IsPoint)
         {
-            throw new ArgumentException("A tangent line needs a curve to touch, not two points.", nameof(second));
+            throw new KernelArgumentException("A tangent line needs a curve to touch, not two points.", nameof(second));
         }
 
         (TangentTarget2D[] ordered, int[] order) = CurvesFirst([first, second]);
@@ -224,7 +224,7 @@ public static class Tangents2D
         Check(target, nameof(target));
         if (target.IsPoint)
         {
-            throw new ArgumentException("A circle about a centre is tangent to a curve; a point gives one circle, made directly.", nameof(target));
+            throw new KernelArgumentException("A circle about a centre is tangent to a curve; a point gives one circle, made directly.", nameof(target));
         }
 
         TangentTarget2D[] ordered = [target];
@@ -325,12 +325,12 @@ public static class Tangents2D
         Check(target, nameof(target));
         if (target.IsPoint)
         {
-            throw new ArgumentException("A line at an angle through a point is a single line, made directly; this needs a curve to touch.", nameof(target));
+            throw new KernelArgumentException("A line at an angle through a point is a single line, made directly; this needs a curve to touch.", nameof(target));
         }
 
         if (!double.IsFinite(angle))
         {
-            throw new ArgumentOutOfRangeException(nameof(angle), angle, "The angle must be a finite number.");
+            throw new KernelArgumentOutOfRangeException(nameof(angle), angle, "The angle must be a finite number.");
         }
 
         return Solve(() =>
@@ -373,12 +373,12 @@ public static class Tangents2D
     {
         if (target is { IsPoint: true, Point: var p } && (double.IsNaN(p.X) || double.IsNaN(p.Y)))
         {
-            throw new ArgumentException("The point isn't a number.", name);
+            throw new KernelArgumentException("The point isn't a number.", name);
         }
 
         if (target.Curve is LineCurve2D && target.Tangency == Tangency.Enclosing)
         {
-            throw new ArgumentException("A line can't be enclosed: qualify it Enclosed, Outside or Unqualified.", name);
+            throw new KernelArgumentException("A line can't be enclosed: qualify it Enclosed, Outside or Unqualified.", name);
         }
     }
 

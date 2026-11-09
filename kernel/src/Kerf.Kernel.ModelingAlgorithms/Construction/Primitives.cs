@@ -46,7 +46,7 @@ public static class Primitives
             if (Math.Abs(corner1.X - corner2.X) <= Tolerances.Confusion || Math.Abs(corner1.Y - corner2.Y) <= Tolerances.Confusion
                 || Math.Abs(corner1.Z - corner2.Z) <= Tolerances.Confusion)
             {
-                throw new ArgumentException("The corners must differ in every coordinate.", nameof(corner2));
+                throw new KernelArgumentException("The corners must differ in every coordinate.", nameof(corner2));
             }
             return Run(() => new MakeBox(corner1, corner2));
         }
@@ -75,11 +75,11 @@ public static class Primitives
         /// <summary>A cone on <paramref name="frame"/>'s axis.</summary>
         public static Result<Built<Solid>> Cone(double radius1, double radius2, double height, in Frame3D frame, double angle = 2 * Math.PI)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(radius1);
-            ArgumentOutOfRangeException.ThrowIfNegative(radius2);
+            KernelArgumentOutOfRangeException.ThrowIfNegative(radius1);
+            KernelArgumentOutOfRangeException.ThrowIfNegative(radius2);
             if (Math.Abs(radius1 - radius2) <= Tolerances.Confusion)
             {
-                throw new ArgumentException("A cone's radii must differ; use a cylinder.", nameof(radius2));
+                throw new KernelArgumentException("A cone's radii must differ; use a cylinder.", nameof(radius2));
             }
             MakerOutcome.Positive(height, nameof(height));
             Angle(angle, nameof(angle));
@@ -100,7 +100,7 @@ public static class Primitives
             if (!(options.MinLatitude < options.MaxLatitude) || options.MinLatitude < -Math.PI / 2 - Tolerances.Angular
                 || options.MaxLatitude > Math.PI / 2 + Tolerances.Angular)
             {
-                throw new ArgumentException("The latitudes must increase, within -π/2 to π/2.", nameof(options));
+                throw new KernelArgumentException("The latitudes must increase, within -π/2 to π/2.", nameof(options));
             }
             MakerOutcome.Valid(frame, nameof(frame));
             Frame3D f = frame;
@@ -120,7 +120,7 @@ public static class Primitives
             MakerOutcome.Positive(minorRadius, nameof(minorRadius));
             if (majorRadius + minorRadius * LeastCosine(options.MinorStart, options.MinorEnd) <= Tolerances.Confusion)
             {
-                throw new ArgumentException("The torus's minor circle reaches its axis, so the solid would pass through itself.", nameof(minorRadius));
+                throw new KernelArgumentException("The torus's minor circle reaches its axis, so the solid would pass through itself.", nameof(minorRadius));
             }
 
             Angle(options.Angle, nameof(options));
@@ -140,7 +140,7 @@ public static class Primitives
         /// <exception cref="ArgumentException">The options give neither a top length nor both top corners.</exception>
         public static Result<Built<Solid>> Wedge(double dx, double dy, double dz, WedgeOptions options, in Frame3D frame)
         {
-            ArgumentNullException.ThrowIfNull(options);
+            KernelArgumentNullException.ThrowIfNull(options);
             MakerOutcome.Positive(dx, nameof(dx));
             MakerOutcome.Positive(dy, nameof(dy));
             MakerOutcome.Positive(dz, nameof(dz));
@@ -148,14 +148,14 @@ public static class Primitives
             Frame3D f = frame;
             if (options.TopLength is { } ltx)
             {
-                ArgumentOutOfRangeException.ThrowIfNegative(ltx, nameof(options));
+                KernelArgumentOutOfRangeException.ThrowIfNegative(ltx, nameof(options));
                 return Run(() => new MakeWedge(f, dx, dy, dz, ltx));
             }
             if (options is { TopMin: { } min, TopMax: { } max })
             {
                 return Run(() => new MakeWedge(f, dx, dy, dz, min.X, min.Z, max.X, max.Z));
             }
-            throw new ArgumentException("Give the wedge's top length, or both of its top corners.", nameof(options));
+            throw new KernelArgumentException("Give the wedge's top length, or both of its top corners.", nameof(options));
         }
 
         /// <summary>The half-space on <paramref name="inside"/>'s side of a face (an infinite solid, for Booleans).</summary>
@@ -177,7 +177,7 @@ public static class Primitives
     {
         if (!(angle > Tolerances.Angular) || angle > 2 * Math.PI + Tolerances.Angular)
         {
-            throw new ArgumentOutOfRangeException(name, angle, "The angle must be more than 0 and at most 2π.");
+            throw new KernelArgumentOutOfRangeException(name, angle, "The angle must be more than 0 and at most 2π.");
         }
     }
 

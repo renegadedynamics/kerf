@@ -38,7 +38,7 @@ public sealed record ValidationReport
     /// <param name="what">What to call the result, starting with a capital.</param>
     public Diagnostic ToDiagnostic(string what)
     {
-        ArgumentNullException.ThrowIfNull(what);
+        KernelArgumentNullException.ThrowIfNull(what);
         string[] kinds = [.. Problems.Select(static p => p.Message.TrimEnd('.')).Distinct()];
         string said = kinds.Length == 0 ? "a fault was found" : kinds[0];
         string more = (kinds.Length - 1) switch
@@ -126,7 +126,7 @@ public sealed record SewOptions
     public double Tolerance
     {
         get;
-        init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
+        init => field = value > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
     } = 1e-6;
 
     /// <summary>Edges and faces smaller than this are degenerate; null for OCCT's, a ten-thousandth of

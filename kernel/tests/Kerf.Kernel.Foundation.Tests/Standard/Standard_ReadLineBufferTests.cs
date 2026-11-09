@@ -106,7 +106,7 @@ public class Standard_ReadLineBufferTests
         Span<byte> aBuffer = stackalloc byte[1];
         aStream.Read(aBuffer);
         Assert.Equal(7, aBuffer[0]);
-        Assert.Throws<ArgumentException>(() => new InputStream(new NonSeekableStream()));
+        KernelAssert.Throws<ArgumentException>(() => new InputStream(new NonSeekableStream()));
     }
 
     private sealed class NonSeekableStream : MemoryStream

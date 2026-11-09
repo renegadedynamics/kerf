@@ -189,7 +189,7 @@ internal class CafWriter
     /// </summary>
     public ReturnStatus WriteStream(Stream stream, ExternFileWriter externStreams)
     {
-        ArgumentNullException.ThrowIfNull(externStreams);
+        KernelArgumentNullException.ThrowIfNull(externStreams);
         if (_isCleanDuplicates)
         {
             _writer.CleanDuplicateEntities();

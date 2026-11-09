@@ -54,7 +54,7 @@ internal static class MakerOutcome
     {
         if (shape.IsNull)
         {
-            Refuse(new ArgumentException("The shape is null.", name));
+            Refuse(new KernelArgumentException("The shape is null.", name));
         }
     }
 
@@ -63,7 +63,7 @@ internal static class MakerOutcome
     {
         if (!(value > 0) || double.IsInfinity(value))
         {
-            Refuse(new ArgumentOutOfRangeException(name, value, "The value must be a positive number."));
+            Refuse(new KernelArgumentOutOfRangeException(name, value, "The value must be a positive number."));
         }
     }
 
@@ -72,7 +72,7 @@ internal static class MakerOutcome
     {
         if (frame.Direction.Equals(default(Direction3D)))
         {
-            Refuse(new ArgumentException("The frame is default (zero); use Frame3D.World or a frame of your own.", name));
+            Refuse(new KernelArgumentException("The frame is default (zero); use Frame3D.World or a frame of your own.", name));
         }
     }
 
@@ -81,7 +81,7 @@ internal static class MakerOutcome
     {
         if (axis.Direction.Equals(default(Direction3D)))
         {
-            Refuse(new ArgumentException("The axis is default (zero).", name));
+            Refuse(new KernelArgumentException("The axis is default (zero).", name));
         }
     }
 
@@ -90,7 +90,7 @@ internal static class MakerOutcome
     {
         if (direction.Equals(default(Direction3D)))
         {
-            Refuse(new ArgumentException("The direction is default (zero).", name));
+            Refuse(new KernelArgumentException("The direction is default (zero).", name));
         }
     }
 

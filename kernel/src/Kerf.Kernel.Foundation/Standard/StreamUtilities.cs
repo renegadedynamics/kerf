@@ -370,7 +370,7 @@ internal static class StreamUtilities
     {
         if (count > buffer.Length)
         {
-            throw new ArgumentOutOfRangeException(nameof(count));
+            throw new KernelArgumentOutOfRangeException(nameof(count));
         }
 
         InputState state = State(IS);
@@ -475,7 +475,7 @@ internal static class StreamUtilities
     /// </summary>
     public static void SetInputLength(TextReader IS, long length)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        KernelArgumentOutOfRangeException.ThrowIfNegative(length);
         State(IS).Length = length;
     }
 

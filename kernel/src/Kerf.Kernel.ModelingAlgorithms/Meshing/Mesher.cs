@@ -47,7 +47,7 @@ public static class Mesher
             Shape input = shape.AsShape();
             if (input.IsNull)
             {
-                throw new ArgumentException("The shape is null.", nameof(shape));
+                throw new KernelArgumentException("The shape is null.", nameof(shape));
             }
 
             options ??= MeshOptions.Default;

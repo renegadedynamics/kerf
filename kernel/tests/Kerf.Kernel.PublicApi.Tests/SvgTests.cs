@@ -168,6 +168,6 @@ public class SvgTests
         Result written = Svg.Write(SvgTests.HandDrawing(), stream);
         Assert.False(written.IsSuccess);
         Assert.Equal(Svg.WriteFailed, written.Error!.Code);
-        Assert.Throws<ArgumentNullException>(() => Svg.WriteToString(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => Svg.WriteToString(null!));
     }
 }

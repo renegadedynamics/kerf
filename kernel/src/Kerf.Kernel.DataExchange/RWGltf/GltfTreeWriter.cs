@@ -46,8 +46,8 @@ internal sealed class GltfTreeWriter
     /// <summary>Writes the tree as binary glTF (<c>.glb</c>). False if cancelled or the stream fails.</summary>
     public bool WriteGlb(Tree tree, Stream stream, ProgressRange progress = default)
     {
-        ArgumentNullException.ThrowIfNull(tree);
-        ArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(tree);
+        KernelArgumentNullException.ThrowIfNull(stream);
         Model? model = Build(tree, null, progress);
         if (model is null)
         {
@@ -86,10 +86,10 @@ internal sealed class GltfTreeWriter
     /// </summary>
     public bool WriteGltf(Tree tree, Stream json, Stream bin, string binUri, ProgressRange progress = default)
     {
-        ArgumentNullException.ThrowIfNull(tree);
-        ArgumentNullException.ThrowIfNull(json);
-        ArgumentNullException.ThrowIfNull(bin);
-        ArgumentNullException.ThrowIfNull(binUri);
+        KernelArgumentNullException.ThrowIfNull(tree);
+        KernelArgumentNullException.ThrowIfNull(json);
+        KernelArgumentNullException.ThrowIfNull(bin);
+        KernelArgumentNullException.ThrowIfNull(binUri);
         Model? model = Build(tree, binUri, progress);
         if (model is null)
         {

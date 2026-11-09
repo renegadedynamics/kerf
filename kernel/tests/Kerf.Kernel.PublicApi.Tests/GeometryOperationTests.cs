@@ -59,8 +59,8 @@ public class GeometryOperationTests
         var withTangents = BSplineCurve3D.Interpolate(points, new InterpolationOptions { Tangents = [Vector3D.UnitX, Vector3D.UnitX] }).Value;
         Vector3D start = withTangents.Derivatives(withTangents.Range.Min, 1).D1;
         Assert.True(start.Y < 1e-9 && start.X > 0);
-        Assert.Throws<ArgumentException>(() => BSplineCurve3D.Interpolate([Point3D.Origin]));
-        Assert.Throws<ArgumentException>(() => BSplineCurve3D.Interpolate(points, new InterpolationOptions { Tangents = [Vector3D.UnitX] }));
+        KernelAssert.Throws<ArgumentException>(() => BSplineCurve3D.Interpolate([Point3D.Origin]));
+        KernelAssert.Throws<ArgumentException>(() => BSplineCurve3D.Interpolate(points, new InterpolationOptions { Tangents = [Vector3D.UnitX] }));
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class GeometryOperationTests
         Point3D[] points = [.. Enumerable.Range(0, 20).Select(i => new Point3D(i, Math.Sin(i / 3.0), 0))];
         BSplineCurve3D curve = BSplineCurve3D.Approximate(points, new ApproximationOptions { Tolerance = 1e-3 }).Value;
         Assert.All(points, p => Assert.True(curve.Project(p)[0].Distance < 2e-3));
-        Assert.Throws<ArgumentOutOfRangeException>(() => BSplineCurve3D.Approximate(points, new ApproximationOptions { MinDegree = 5, MaxDegree = 3 }));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => BSplineCurve3D.Approximate(points, new ApproximationOptions { MinDegree = 5, MaxDegree = 3 }));
 
         var grid = new Grid<Point3D>(Enumerable.Range(0, 16).Select(i => new Point3D(i / 4, i % 4, (i / 4) * (i % 4) * 0.1)).ToArray(), 4, 4);
         BSplineSurface surface = BSplineSurface.Approximate(grid).Value;
@@ -94,7 +94,7 @@ public class GeometryOperationTests
         Assert.True(joined.EndPoint.IsEqual(new Point3D(1, 1, 0), 1e-9));
         var gap = BSplineCurve3D.Join([a, far]);
         Assert.Equal(GeometryOperations.NotConnected, gap.Error!.Code);
-        Assert.Throws<ArgumentException>(() => BSplineCurve3D.Join([]));
+        KernelAssert.Throws<ArgumentException>(() => BSplineCurve3D.Join([]));
     }
 
     [Fact]
@@ -168,16 +168,16 @@ public class GeometryOperationTests
         BSplineCurve3D weighted = spline.WithWeight(0, 2);
         Assert.True(weighted.IsRational);
         Assert.Equal(2, weighted.Weights[0]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => spline.WithPole(3, Point3D.Origin));
-        Assert.Throws<ArgumentOutOfRangeException>(() => spline.WithWeight(0, 0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => spline.WithPole(3, Point3D.Origin));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => spline.WithWeight(0, 0));
         Assert.Equal(-1, spline.WithKnot(0, -1).Knots[0]);
-        Assert.Throws<ArgumentException>(() => spline.WithKnot(0, 2));
+        KernelAssert.Throws<ArgumentException>(() => spline.WithKnot(0, 2));
 
         var bezier = new BezierCurve2D([new(0, 0), new(1, 1), new(2, 0)]);
         Assert.Equal(new Point2D(1, 3), bezier.WithPole(1, new Point2D(1, 3)).Poles[1]);
 
         var surface = new BezierSurface(new Grid<Point3D>(new Point3D[] { new(0, 0, 0), new(0, 1, 0), new(1, 0, 0), new(1, 1, 0) }, 2, 2));
         Assert.Equal(new Point3D(1, 1, 5), surface.WithPole(1, 1, new Point3D(1, 1, 5)).Poles[1, 1]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => surface.WithPole(2, 0, Point3D.Origin));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => surface.WithPole(2, 0, Point3D.Origin));
     }
 }

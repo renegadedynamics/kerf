@@ -176,7 +176,7 @@ public partial struct Edge
     public readonly double ParameterOf(Vertex vertex)
         => Tool.Parameter(ShapeChecks.NotNull(vertex), ShapeChecks.NotNull(this), out double parameter)
             ? parameter
-            : throw new ArgumentException("The vertex is not on the edge.", nameof(vertex));
+            : throw new KernelArgumentException("The vertex is not on the edge.", nameof(vertex));
 
     /// <summary>An evaluator of the edge's curve in world coordinates.</summary>
     /// <exception cref="InvalidOperationException">The edge is null.</exception>
@@ -224,14 +224,14 @@ internal static class ShapeChecks
 
     public static TResult Make<TPart, TResult>(IEnumerable<TPart> parts, Maker<TResult> make) where TPart : struct, IShape<TPart>
     {
-        ArgumentNullException.ThrowIfNull(parts);
+        KernelArgumentNullException.ThrowIfNull(parts);
         var shapes = new List<Shape>();
         foreach (TPart part in parts)
         {
             Shape shape = part.AsShape();
             if (shape.IsNull)
             {
-                throw new ArgumentException("A shape to assemble is null.", nameof(parts));
+                throw new KernelArgumentException("A shape to assemble is null.", nameof(parts));
             }
 
             shapes.Add(shape);
@@ -243,7 +243,7 @@ internal static class ShapeChecks
         }
         catch (Exception e) when (Refusal.IsFailure(e) && e is IncompatibleShapesException or ConstructionErrorException)
         {
-            throw new ArgumentException(FailureDiagnostics.PublicText(e), nameof(parts), e);
+            throw new KernelArgumentException(FailureDiagnostics.PublicText(e), nameof(parts), e);
         }
     }
 

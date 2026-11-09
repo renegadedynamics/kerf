@@ -36,7 +36,7 @@ public class SurfaceTests
         SurfaceDerivatives d = cylinder.Derivatives(0, 0, 2);
         Assert.True(d.DUU.IsEqual(new Vector3D(-2, 0, 0), 1e-12, 1e-12));
         Assert.True(cylinder.DerivativeN(0, 0, 0, 1).IsEqual(new Vector3D(0, 0, 1), 1e-12, 1e-12));
-        Assert.Throws<ArgumentOutOfRangeException>(() => cylinder.DerivativeN(0, 0, 0, 0));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => cylinder.DerivativeN(0, 0, 0, 0));
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public class SurfaceTests
         var surface = new BezierSurface(new Grid<Point3D>(values, 2, 2));
         Assert.Equal(SurfaceKind.BezierSurface, surface.Kind);
         Assert.Equal(new Point3D(0.5, 0.5, 0), surface.Evaluate(0.5, 0.5));
-        Assert.Throws<ArgumentException>(() => new BezierSurface(new Grid<Point3D>(new[] { Point3D.Origin }, 1, 1)));
+        KernelAssert.Throws<ArgumentException>(() => new BezierSurface(new Grid<Point3D>(new[] { Point3D.Origin }, 1, 1)));
     }
 
     [Fact]

@@ -49,7 +49,7 @@ public sealed record ModelNode
 
             if (nesting > MaxNesting)
             {
-                throw new ArgumentException($"Assemblies are nested more than {MaxNesting} deep.", nameof(value));
+                throw new KernelArgumentException($"Assemblies are nested more than {MaxNesting} deep.", nameof(value));
             }
 
             _nesting = nesting;
@@ -70,22 +70,22 @@ public sealed record ModelNode
     /// <summary>A part of a shape (placed by its own placement).</summary>
     /// <exception cref="ArgumentException">The shape is null.</exception>
     public static ModelNode Part(Shape shape, string? name = null, Color? color = null)
-        => shape.IsNull ? throw new ArgumentException("The shape is null.", nameof(shape)) : new() { Shape = shape, Name = name, Color = color };
+        => shape.IsNull ? throw new KernelArgumentException("The shape is null.", nameof(shape)) : new() { Shape = shape, Name = name, Color = color };
 
     /// <summary>A part of a mesh.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="mesh"/> is null.</exception>
     public static ModelNode Part(ShapeMesh mesh, string? name = null, Color? color = null)
-        => new() { Mesh = mesh ?? throw new ArgumentNullException(nameof(mesh)), Name = name, Color = color };
+        => new() { Mesh = mesh ?? throw new KernelArgumentNullException(nameof(mesh)), Name = name, Color = color };
 
     /// <summary>An assembly of children at a placement.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="children"/> is null.</exception>
     public static ModelNode Assembly(IEnumerable<ModelNode> children, string? name = null, Placement? placement = null, Color? color = null)
     {
-        ArgumentNullException.ThrowIfNull(children);
+        KernelArgumentNullException.ThrowIfNull(children);
         ImmutableArray<ModelNode> list = [.. children];
         if (list.Any(c => c is null))
         {
-            throw new ArgumentException("A child is null.", nameof(children));
+            throw new KernelArgumentException("A child is null.", nameof(children));
         }
 
         return new() { Children = list, Name = name, Placement = placement ?? new Placement(), Color = color };
@@ -207,7 +207,7 @@ public static class LengthUnits
         LengthUnit.Metre => 1000.0,
         LengthUnit.Inch => 25.4,
         LengthUnit.Foot => 304.8,
-        _ => throw new ArgumentOutOfRangeException(nameof(unit), unit, "Not a length unit."),
+        _ => throw new KernelArgumentOutOfRangeException(nameof(unit), unit, "Not a length unit."),
     };
 }
 

@@ -198,7 +198,7 @@ internal class CafReader
     /// </summary>
     public void SetExternFileLimits(ExternFileLimits limits)
     {
-        ArgumentNullException.ThrowIfNull(limits);
+        KernelArgumentNullException.ThrowIfNull(limits);
         _externLimits = limits;
     }
 
@@ -229,7 +229,7 @@ internal class CafReader
     /// </summary>
     public static ExternFileResolver FolderResolver(string root)
     {
-        ArgumentException.ThrowIfNullOrEmpty(root);
+        KernelArgumentException.ThrowIfNullOrEmpty(root);
         string aRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)) + Path.DirectorySeparatorChar;
         StringComparison cmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return (fileName, referencingName) =>

@@ -185,9 +185,9 @@ public class MeshingTests
     [Fact]
     public void Options_are_checked_and_meshing_can_be_cancelled()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new MeshOptions { LinearDeflection = 0 });
-        Assert.Throws<ArgumentOutOfRangeException>(() => new MeshOptions { AngularDeflection = -1 });
-        Assert.Throws<ArgumentException>(() => default(Shape).Mesh());
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new MeshOptions { LinearDeflection = 0 });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new MeshOptions { AngularDeflection = -1 });
+        KernelAssert.Throws<ArgumentException>(() => default(Shape).Mesh());
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         Assert.ThrowsAny<OperationCanceledException>(() => Fixtures.Box().Mesh(cancellationToken: cancelled.Token));

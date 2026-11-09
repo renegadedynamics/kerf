@@ -54,11 +54,11 @@ public static class Renderer
         public Result<RgbaImage> Render(Camera camera, RenderOptions? options = null, Color? color = null, MeshOptions? meshOptions = null,
                                         CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(camera);
+            KernelArgumentNullException.ThrowIfNull(camera);
             Shape s = shape.AsShape();
             if (s.IsNull)
             {
-                throw new ArgumentException("The shape is null.", nameof(shape));
+                throw new KernelArgumentException("The shape is null.", nameof(shape));
             }
 
             meshOptions ??= DefaultMeshOptions(s);
@@ -74,7 +74,7 @@ public static class Renderer
     {
         if (shape.IsNull)
         {
-            throw new ArgumentException("The shape is null.", nameof(shape));
+            throw new KernelArgumentException("The shape is null.", nameof(shape));
         }
 
         return new MeshOptions { LinearDeflection = DrawingOperations.Size([shape]) / 1000, AngularDeflection = 0.3 };
@@ -87,8 +87,8 @@ public static class Renderer
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<RgbaImage> Render(Scene scene, Camera camera, RenderOptions? options = null, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(scene);
-        ArgumentNullException.ThrowIfNull(camera);
+        KernelArgumentNullException.ThrowIfNull(scene);
+        KernelArgumentNullException.ThrowIfNull(camera);
         options ??= RenderOptions.Default;
         ViewTransform view = ViewTransform.Of(camera);
         cancellationToken.ThrowIfCancellationRequested();

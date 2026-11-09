@@ -197,12 +197,12 @@ public class DrawingTests
     {
         Solid box = Fixtures.Box();
         Assert.Empty(box.ProjectLines(Camera.Isometric, new DrawingOptions { IncludeHidden = false }).Value.Hidden);
-        Assert.Throws<ArgumentException>(() => default(Solid).ProjectLines(Camera.Top));
-        Assert.Throws<ArgumentException>(() => box.ProjectLines(Camera.Top with { Up = Direction3D.UnitZ }));
-        Assert.Throws<ArgumentException>(() => box.ProjectLines(Camera.Top with { Eye = Point3D.Origin }));
-        Assert.Throws<ArgumentException>(() => box.ProjectLines(Camera.Isometric with { Projection = Projection.Perspective },
+        KernelAssert.Throws<ArgumentException>(() => default(Solid).ProjectLines(Camera.Top));
+        KernelAssert.Throws<ArgumentException>(() => box.ProjectLines(Camera.Top with { Up = Direction3D.UnitZ }));
+        KernelAssert.Throws<ArgumentException>(() => box.ProjectLines(Camera.Top with { Eye = Point3D.Origin }));
+        KernelAssert.Throws<ArgumentException>(() => box.ProjectLines(Camera.Isometric with { Projection = Projection.Perspective },
                                                                 new DrawingOptions { Method = HiddenLineMethod.Polygonal }));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new DrawingOptions { IsoLineCount = -1 });
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new DrawingOptions { IsoLineCount = -1 });
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         Assert.Throws<OperationCanceledException>(() => box.ProjectLines(Camera.Top, cancellationToken: cancelled.Token));

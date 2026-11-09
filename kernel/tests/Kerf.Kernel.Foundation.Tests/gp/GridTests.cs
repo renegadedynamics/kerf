@@ -24,11 +24,11 @@ public class GridTests
     public void ChecksItsBounds()
     {
         Grid<int> aGrid = new(new[] { 1, 2, 3, 4, 5, 6 }, 2, 3);
-        Assert.Throws<ArgumentOutOfRangeException>(() => aGrid[0, 3]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => aGrid[2, 0]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => aGrid[-1, 0]);
-        Assert.Throws<ArgumentOutOfRangeException>(() => aGrid.Row(2).Length);
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Grid<int>(new[] { 1, 2, 3 }, 2, 2));
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => aGrid[0, 3]);
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => aGrid[2, 0]);
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => aGrid[-1, 0]);
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => aGrid.Row(2).Length);
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => new Grid<int>(new[] { 1, 2, 3 }, 2, 2));
     }
 
     [Fact]

@@ -52,7 +52,7 @@ public class ModelingLayerApiTests
     [Fact]
     public void A_refusal_is_dotnets_exception_and_a_kernel_failure_with_a_diagnostic()
     {
-        Exception e = Assert.Throws<ArgumentException>(() => new Direction3D(0, 0, 0));
+        Exception e = KernelAssert.Throws<ArgumentException>(() => new Direction3D(0, 0, 0));
         Assert.True(Diagnostic.IsKernelFailure(e));
         Diagnostic diagnostic = Diagnostic.FromException(e);
         Assert.True(diagnostic.IsError);
@@ -224,7 +224,7 @@ public class ModelingLayerApiTests
 
         TangentTarget2D bounded = TangentTarget2D.Tangent(circle, new Interval(0, Math.PI));
         Assert.Equal(new Interval(0, Math.PI), bounded.Range);
-        Assert.Throws<ArgumentException>(() => TangentTarget2D.Tangent(circle, new Interval(1, 1)));
+        KernelAssert.Throws<ArgumentException>(() => TangentTarget2D.Tangent(circle, new Interval(1, 1)));
     }
 
     // ---------------------------------------------------------------------------------------------- construction

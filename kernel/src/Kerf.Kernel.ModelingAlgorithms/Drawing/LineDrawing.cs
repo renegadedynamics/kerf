@@ -54,7 +54,7 @@ public sealed record DrawingOptions
     public int IsoLineCount
     {
         get;
-        init => field = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The count must be zero or more.");
+        init => field = value >= 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The count must be zero or more.");
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public sealed record DrawingOptions
     public double? Tolerance
     {
         get;
-        init => field = value is null or > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
+        init => field = value is null or > 0 ? value : throw new KernelArgumentOutOfRangeException(nameof(value), value, "The tolerance must be more than zero.");
     }
 
     /// <summary>The mesh of the polygonal algorithm; null for a mesh whose deflection is a thousandth of the shapes'
@@ -106,15 +106,15 @@ public sealed class LineDrawing
     /// <exception cref="ArgumentNullException">The camera or the edges are null, or an edge is.</exception>
     public LineDrawing(Camera camera, IEnumerable<DrawnEdge> edges)
     {
-        ArgumentNullException.ThrowIfNull(camera);
-        ArgumentNullException.ThrowIfNull(edges);
+        KernelArgumentNullException.ThrowIfNull(camera);
+        KernelArgumentNullException.ThrowIfNull(edges);
         Camera = camera;
         Edges = [.. edges];
         foreach (DrawnEdge edge in Edges)
         {
             if (edge is null)
             {
-                throw new ArgumentNullException(nameof(edges), "An edge is null.");
+                throw new KernelArgumentNullException(nameof(edges), "An edge is null.");
             }
         }
     }
