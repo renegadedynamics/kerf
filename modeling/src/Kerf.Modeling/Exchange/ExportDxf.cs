@@ -1,0 +1,315 @@
+using System.Collections.Immutable;
+using Kerf.Drawing;
+
+namespace Kerf.Modeling;
+
+/// <summary>A layer of a DXF export: its name, and the colour, line weight and line type of what is drawn on it.</summary>
+/// <param name="Name">The name; <c>"0"</c> is the default layer, which every DXF file has.</param>
+/// <param name="Color">The colour; null for AutoCAD's default, white on black and black on white.</param>
+/// <param name="LineWeight">The line weight in millimetres; null for the default.</param>
+/// <param name="LineType">The line type; null for a solid line.</param>
+public sealed record DxfLayer(string Name, ColorIndex? Color, double? LineWeight, LineType? LineType);
+
+/// <summary>
+/// build123d's <c>ExportDXF</c>: shapes' edges, and line drawings, written as a DXF file of 2D entities on layers, for
+/// other CAD programs and laser cutters. Written by Kerf's own code (build123d uses ezdxf).
+/// </summary>
+/// <remarks>
+/// <para>
+/// An exporter is immutable: <see cref="AddLayer"/>, <see cref="AddShape(IShape, string)"/> and
+/// <see cref="AddDrawing"/> each return a new one, so chain them, as build123d's return values are used:
+/// <c>new ExportDxf().AddLayer("cut", ColorIndex.Red).AddShape(sketch, "cut").Write("part.dxf")</c>.
+/// </para>
+/// <para>
+/// Each edge is drawn in the XY plane, as it is seen from above: a line as a LINE, a circle as a CIRCLE, an arc of
+/// one as an ARC, an ellipse or an arc of one as an ELLIPSE, and a B-spline or Bézier curve as a SPLINE, exactly, with
+/// its weights if it's rational. A curve none of those can hold (an offset curve, a parabola) is a polyline within
+/// <see cref="Tolerance"/>. Edges off the XY plane are projected onto it, and <see cref="Write(Stream, CancellationToken)"/>
+/// warns of them (<see cref="ModelingDiagnostics.DxfNotPlanar"/>), as build123d does. Coordinates are written in the
+/// model's units as they are, and <see cref="Unit"/> names them in the header.
+/// </para>
+/// <para>
+/// Text is written as its outlines: <c>Text</c>'s faces are shapes like any other.
+/// </para>
+/// </remarks>
+public sealed class ExportDxf : Export2D
+{
+    private readonly ImmutableList<DxfLayer> _layers;
+    private readonly ImmutableList<DxfEntity> _entities;
+    private readonly int _notPlanar;
+
+    /// <summary>An exporter with nothing in it but the default layer, <c>"0"</c>.</summary>
+    /// <param name="version">The file's version: 2013 by default, as build123d; <see cref="DxfVersion.R12"/> for older
+    /// programs.</param>
+    /// <param name="unit">The unit the header gives for the coordinates: micrometres, millimetres (the default),
+    /// centimetres, metres, inches or feet.</param>
+    /// <param name="color">The default layer's colour; null for AutoCAD's default.</param>
+    /// <param name="lineWeight">The default layer's line weight in millimetres, one of DXF's standard weights (0.05,
+    /// 0.09, 0.13, 0.15, 0.18, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5 … 2.11); null for the default.</param>
+    /// <param name="lineType">The default layer's line type; null for a solid line.</param>
+    /// <param name="tolerance">How far a polyline written for a curve the version can't hold may be from the curve, in
+    /// model units.</param>
+    /// <exception cref="ArgumentException">The unit isn't a length, the version isn't one of the enum's, the line weight
+    /// isn't a standard one, or the tolerance isn't more than zero.</exception>
+    public ExportDxf(DxfVersion version = DxfVersion.R2013, Unit unit = Unit.Millimeter, ColorIndex? color = null,
+                     double? lineWeight = null, LineType? lineType = null, double tolerance = 1e-3)
+    {
+        if (version is not (DxfVersion.R12 or DxfVersion.R2013))
+            throw new ArgumentException($"{version} isn't a DXF version Kerf writes.", nameof(version));
+        _ = LineTypeScale(unit);
+        if (!(tolerance > 0) || double.IsInfinity(tolerance))
+            throw new ArgumentException("The tolerance must be more than zero.", nameof(tolerance));
+        Version = version;
+        Unit = unit;
+        Tolerance = tolerance;
+        _layers = [Layer("0", color, lineWeight, lineType, nameof(lineWeight))];
+        _entities = [];
+    }
+
+    private ExportDxf(ExportDxf from, ImmutableList<DxfLayer> layers, ImmutableList<DxfEntity> entities, int notPlanar)
+    {
+        Version = from.Version;
+        Unit = from.Unit;
+        Tolerance = from.Tolerance;
+        _layers = layers;
+        _entities = entities;
+        _notPlanar = notPlanar;
+    }
+
+    /// <summary>The file's version.</summary>
+    public DxfVersion Version { get; }
+
+    /// <summary>The unit of the coordinates, named in the header.</summary>
+    public Unit Unit { get; }
+
+    /// <summary>How far a polyline written for a curve may be from it, in model units.</summary>
+    public double Tolerance { get; }
+
+    /// <summary>The layers, the default layer <c>"0"</c> first.</summary>
+    public IReadOnlyList<DxfLayer> Layers => _layers;
+
+    /// <summary>The number of entities (lines, arcs, splines…) added so far.</summary>
+    public int EntityCount => _entities.Count;
+
+    /// <summary>The number of edges added that weren't in the XY plane, and were projected onto it.</summary>
+    public int NotPlanarEdgeCount => _notPlanar;
+
+    /// <summary>This exporter with a new layer.</summary>
+    /// <param name="name">The layer's name: not empty, unique (ignoring case, as DXF does), and without
+    /// <c>&lt; &gt; / \ " : ; ? * | = `</c> or control characters; in ASCII for <see cref="DxfVersion.R12"/>.</param>
+    /// <param name="color">The colour of what is drawn on it; null for AutoCAD's default.</param>
+    /// <param name="lineWeight">Its line weight in millimetres, one of DXF's standard weights; null for the default.</param>
+    /// <param name="lineType">Its line type; null for a solid line.</param>
+    /// <exception cref="ArgumentException">The name is empty, invalid or already used, or the line weight isn't a
+    /// standard one.</exception>
+    public ExportDxf AddLayer(string name, ColorIndex? color = null, double? lineWeight = null, LineType? lineType = null)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        CheckName(name, Version);
+        if (FindLayer(name) is not null)
+            throw new ArgumentException($"There is already a layer named {name}.", nameof(name));
+        return new ExportDxf(this, _layers.Add(Layer(name, color, lineWeight, lineType, nameof(lineWeight))), _entities, _notPlanar);
+    }
+
+    /// <summary>This exporter with a shape's edges added on a layer (each distinct edge once).</summary>
+    /// <param name="shape">The shape: an edge, a wire, a face, a sketch, or anything else with edges.</param>
+    /// <param name="layer">The layer's name; empty for the default layer, <c>"0"</c>.</param>
+    /// <exception cref="ArgumentException">There is no layer of that name: add it first with <see cref="AddLayer"/>.</exception>
+    public ExportDxf AddShape(IShape shape, string layer = "")
+    {
+        ArgumentNullException.ThrowIfNull(shape);
+        string name = LayerName(layer);
+        var entities = _entities.ToBuilder();
+        int notPlanar = _notPlanar;
+        AddEdges(shape, name, entities, ref notPlanar);
+        return new ExportDxf(this, _layers, entities.ToImmutable(), notPlanar);
+    }
+
+    /// <summary>This exporter with shapes' edges added on a layer.</summary>
+    /// <inheritdoc cref="AddShape(IShape, string)"/>
+    public ExportDxf AddShape<T>(IEnumerable<T> shapes, string layer = "") where T : IShape
+    {
+        ArgumentNullException.ThrowIfNull(shapes);
+        string name = LayerName(layer);
+        var entities = _entities.ToBuilder();
+        int notPlanar = _notPlanar;
+        foreach (T shape in shapes)
+        {
+            if (shape is null)
+                throw new ArgumentNullException(nameof(shapes), "A shape is null.");
+            AddEdges(shape, name, entities, ref notPlanar);
+        }
+        return new ExportDxf(this, _layers, entities.ToImmutable(), notPlanar);
+    }
+
+    /// <summary>
+    /// This exporter with a line drawing's lines added (from <c>ProjectLines</c>): its visible lines on one layer and
+    /// its hidden ones on another, as <c>Kerf.Drawing.Svg</c> separates them. In the view plane's coordinates, X right
+    /// and Y up, full size.
+    /// </summary>
+    /// <param name="drawing">The drawing.</param>
+    /// <param name="visibleLayer">The visible lines' layer; added, solid and 0.35 mm wide, if there's none of that name.</param>
+    /// <param name="hiddenLayer">The hidden lines' layer; added, grey, 0.18 mm wide and <see cref="LineType.Hidden2"/>, if
+    /// there's none of that name; null to leave the hidden lines out.</param>
+    /// <exception cref="ArgumentException">A layer name is invalid.</exception>
+    public ExportDxf AddDrawing(LineDrawing drawing, string visibleLayer = "visible", string? hiddenLayer = "hidden")
+    {
+        ArgumentNullException.ThrowIfNull(drawing);
+        ArgumentNullException.ThrowIfNull(visibleLayer);
+        var layers = _layers;
+        string visible = EnsureLayer(ref layers, visibleLayer, null, 0.35, null);
+        string? hidden = hiddenLayer is null ? null : EnsureLayer(ref layers, hiddenLayer, ColorIndex.Gray, 0.18, LineType.Hidden2);
+        var entities = _entities.ToBuilder();
+        var converter = new CurveConverter(Version, Tolerance);
+        foreach (DrawnEdge edge in drawing.Edges)
+        {
+            if (edge.IsVisible)
+                converter.Add(edge.Curve, edge.Curve.FirstParameter, edge.Curve.LastParameter, false, visible, entities);
+            else if (hidden is not null)
+                converter.Add(edge.Curve, edge.Curve.FirstParameter, edge.Curve.LastParameter, false, hidden, entities);
+        }
+        return new ExportDxf(this, layers, entities.ToImmutable(), _notPlanar);
+    }
+
+    /// <summary>Writes the DXF to a stream (UTF-8 for 2013, ASCII for R12; <c>\r\n</c> line ends). The same exporter
+    /// gives the same bytes on every machine.</summary>
+    /// <returns>Success, with a warning if edges were projected onto the XY plane; or a failure if the stream couldn't
+    /// be written.</returns>
+    /// <exception cref="ArgumentNullException">The stream is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
+    public Result Write(Stream stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        byte[] bytes = DxfWriter.Encode(WriteToString(cancellationToken), Version);
+        try
+        {
+            stream.Write(bytes, 0, bytes.Length);
+            stream.Flush();
+        }
+        catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
+        {
+            return Result.Failure(Diagnostic.Error(Exporters3D.WriteFailed, $"The DXF couldn't be written: {e.Message}"));
+        }
+        return Result.Success(Warnings());
+    }
+
+    /// <summary>Writes the DXF to a file, whole or not at all.</summary>
+    /// <inheritdoc cref="Write(Stream, CancellationToken)"/>
+    /// <exception cref="DirectoryNotFoundException">The file's folder doesn't exist.</exception>
+    public Result Write(string path, CancellationToken cancellationToken = default)
+        => Exporters3D.ToFile(path, s => Write(s, cancellationToken));
+
+    /// <summary>The DXF as text.</summary>
+    /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
+    public string WriteToString(CancellationToken cancellationToken = default)
+        => new DxfWriter(Version, Unit, _layers, _entities, cancellationToken).Write();
+
+    private ImmutableArray<Diagnostic> Warnings()
+        => _notPlanar == 0
+            ? []
+            : [Diagnostic.Warning(ModelingDiagnostics.DxfNotPlanar,
+                                  $"{_notPlanar} edge{(_notPlanar == 1 ? " wasn't" : "s weren't")} in the XY plane, and {(_notPlanar == 1 ? "was" : "were")} projected onto it")];
+
+    private void AddEdges(IShape shape, string layer, ImmutableList<DxfEntity>.Builder entities, ref int notPlanar)
+    {
+        if (shape.IsEmpty)
+            return;
+        var converter = new CurveConverter(Version, Tolerance);
+        var xy = new Plane3D();
+        foreach (Edge edge in shape.Edges())
+        {
+            if (!IsInPlane(edge))
+                notPlanar++;
+            // An offset curve's projection is only an approximation (OCCT's), of its own accuracy: flattened from the
+            // curve itself, within the tolerance
+            if (edge.TryGetCurve(out Curve3D? curve3D, out Interval range3D) && Basis(curve3D) is OffsetCurve3D)
+            {
+                converter.AddFlattened(u => { Point3D p = curve3D.Evaluate(u); return new Point2D(p.X, p.Y); },
+                                       range3D.Min, range3D.Max, layer, entities);
+                continue;
+            }
+            if (!edge.TryGetCurveOnPlane(xy, out Curve2D? curve, out Interval range))
+                continue;
+            converter.Add(curve, range.Min, range.Max, edge.AsShape().Orientation == Orientation.Reversed, layer, entities);
+        }
+    }
+
+    private static Curve3D Basis(Curve3D curve)
+    {
+        while (curve is TrimmedCurve3D trimmed)
+            curve = trimmed.BasisCurve;
+        return curve;
+    }
+
+    // Whether an edge lies in the XY plane: its ends and points along it within 1e-6 of z = 0, build123d's test of
+    // each point it writes
+    private static bool IsInPlane(Edge edge)
+    {
+        if (!edge.TryGetCurve(out Curve3D? curve, out Interval range))
+            return true;
+        const int samples = 16;
+        for (int i = 0; i <= samples; i++)
+        {
+            double u = i == samples ? range.Max : range.Min + (range.Max - range.Min) * i / samples;
+            if (Math.Abs(curve.Evaluate(u).Z) > 1e-6)
+                return false;
+        }
+        return true;
+    }
+
+    private string LayerName(string layer)
+    {
+        ArgumentNullException.ThrowIfNull(layer);
+        if (layer.Length == 0)
+            return "0";
+        return FindLayer(layer)?.Name
+               ?? throw new ArgumentException($"There is no layer named {layer}: add it first with AddLayer.", nameof(layer));
+    }
+
+    private DxfLayer? FindLayer(string name) => FindLayer(_layers, name);
+
+    private static DxfLayer? FindLayer(ImmutableList<DxfLayer> layers, string name)
+        => layers.FirstOrDefault(l => string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    private string EnsureLayer(ref ImmutableList<DxfLayer> layers, string name, ColorIndex? color, double? weight, LineType? type)
+    {
+        if (name.Length == 0)
+            return "0";
+        if (FindLayer(layers, name) is { } existing)
+            return existing.Name;
+        CheckName(name, Version);
+        layers = layers.Add(Layer(name, color, weight, type, nameof(name)));
+        return name;
+    }
+
+    private static DxfLayer Layer(string name, ColorIndex? color, double? lineWeight, LineType? lineType, string weightParameter)
+    {
+        if (color is { } c && !Enum.IsDefined(c))
+            throw new ArgumentException($"{c} isn't a colour of the index.", nameof(color));
+        if (lineType is { } t)
+            _ = LineTypeDefinition(t);
+        if (lineWeight is { } w && DxfWriter.LineWeight(w) is null)
+            throw new ArgumentException(
+                $"{w} mm isn't one of DXF's line weights: {string.Join(", ", DxfWriter.LineWeights.Where(v => v > 0).Select(v => (v / 100.0).ToString(System.Globalization.CultureInfo.InvariantCulture)))}.",
+                weightParameter);
+        return new DxfLayer(name, color, lineWeight, lineType);
+    }
+
+    // DXF's rule for table names (ezdxf's), with control characters, which would break the file's lines
+    private static void CheckName(string name, DxfVersion version)
+    {
+        if (name.Length == 0)
+            throw new ArgumentException("A layer's name can't be empty.", nameof(name));
+        if (name.Length > 255)
+            throw new ArgumentException("A layer's name can't be longer than 255 characters.", nameof(name));
+        foreach (char c in name)
+        {
+            if (c < ' ' || c == '\u007f' || "<>/\\\":;?*|=`".Contains(c))
+                throw new ArgumentException($"A layer's name can't contain '{(c < ' ' ? $"\\u{(int)c:x4}" : c)}': {name}", nameof(name));
+            if (version == DxfVersion.R12 && c > '~')
+                throw new ArgumentException($"An R12 file's layer names are ASCII: {name}", nameof(name));
+        }
+        if (name != name.Trim())
+            throw new ArgumentException($"A layer's name can't start or end with a space: '{name}'", nameof(name));
+    }
+}

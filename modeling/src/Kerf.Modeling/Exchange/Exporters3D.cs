@@ -106,7 +106,7 @@ public sealed record ThreeMfExportOptions
 public static class Exporters3D
 {
     private static readonly DiagnosticCode NothingDone = new("exchange.nothing-done");
-    private static readonly DiagnosticCode WriteFailed = new("exchange.write-failed");
+    internal static readonly DiagnosticCode WriteFailed =new("exchange.write-failed");
 
     /// <summary>Writes a shape as BREP (OCCT's text format, with any triangulations).</summary>
     public static Result ExportBrep(IShape toExport, Stream stream)
@@ -247,7 +247,7 @@ public static class Exporters3D
 
     // The data is made in memory and written only if it's whole, so a failure leaves no partial file. The folder must
     // exist, as build123d's export_stl requires.
-    private static Result ToFile(string filePath, Func<Stream, Result> write)
+    internal static Result ToFile(string filePath, Func<Stream, Result> write)
     {
         ArgumentNullException.ThrowIfNull(filePath);
         var folder = Path.GetDirectoryName(Path.GetFullPath(filePath));

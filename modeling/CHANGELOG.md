@@ -5,6 +5,11 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **DXF export:** `ExportDxf`, build123d's `ExportDXF`, writes sketches, faces, wires, edges and line drawings to DXF
+  for other CAD programs and laser cutters: layers with colours, line types and weights, units in the header, lines,
+  arcs, circles, ellipses and splines exactly (rational ones with their weights, where build123d approximates), and the
+  hidden lines of a drawing on their own layer. DXF 2013 by default, R12 for older programs (kernel decisions 2009
+  to 2011).
 - **Breaking: an object that can't be made from its values throws `ModelingException`,** one type carrying the error a
   `Result` would (`Error`, with its code, and `Diagnostics`), where it threw `ArgumentException`,
   `InvalidOperationException` or, from a few, the kernel's own exceptions. **Each object has a `Make…` operation
