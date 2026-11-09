@@ -5,6 +5,14 @@ version may break the API.
 
 ## Unreleased
 
+- **Async reading and writing** (unit 14G): `Brep`, `Step`, `Stl` and `Gltf` have `ReadAsync` and `WriteAsync`,
+  `ThreeMf` and `Obj` `WriteAsync`, `Svg` and `Png` `WriteAsync`, and `Font` `ReadAsync` and `ReadCollectionAsync`,
+  each with a `CancellationToken`, returning a `Task<Result>` or `Task<Result<T>>`. Only the I/O is asynchronous: a
+  reader reads its stream (or `Step.ReadAsync(path)` its file) into memory, up to the limit, then parses it on the
+  thread the read finished on; a writer builds its output in memory on the calling thread, then writes and flushes it,
+  and writes nothing on a failure. The same results and bytes as the synchronous forms, for the price of holding the
+  file's bytes in memory (22 to 26 MB more allocated reading a 22 MB STEP file, beside 2.3 GB). Arguments are checked
+  before the task (decision 27701).
 - **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
   the caller's own list, so changing the list after making the options changed them. A collection expression
   (`Points = [p1, p2]`) works as before; a list is passed as `[.. list]` (unit 13P, decision 2044).

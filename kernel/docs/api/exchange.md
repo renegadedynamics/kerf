@@ -81,6 +81,39 @@ public sealed record GltfWriteOptions { public bool Binary { get; init; } = true
   place; glTF and 3MF mesh with `options.Mesh` themselves.
 - **Units** in the API are explicit (`LengthUnit`): shapes are in millimetres unless a reader's options say otherwise.
 
+## Async reading and writing
+
+*Unit 14G, decision 27701.* Each reader and writer has an async form, `ReadAsync` or `WriteAsync`, with the same
+parameters and a `CancellationToken`, returning a `Task<Result<…>>` or `Task<Result>`:
+
+```csharp
+public static Task<Result<ModelNode>> ReadAsync(Stream stream, StepReadOptions? options = null, IProgress<double>? progress = null, CancellationToken cancellationToken = default);   // Step
+public static Task<Result<ModelNode>> ReadAsync(string path, …);                                                // Step: the file opened before the task
+public static Task<Result> WriteAsync(ModelNode model, Stream stream, StepWriteOptions? options = null, …);    // Step, Gltf, ThreeMf, Obj (two streams)
+public static Task<Result<Shape>> ReadAsync(Stream stream, ReadLimits? limits = null, CancellationToken cancellationToken = default);   // Brep
+public static Task<Result> WriteAsync(Shape shape, Stream stream, BrepWriteOptions? options = null, CancellationToken cancellationToken = default);
+public static Task<Result<ShapeMesh>> ReadAsync(Stream stream, StlReadOptions? options = null, …);              // Stl; Gltf's gives a ModelNode
+```
+
+- **Only the I/O is asynchronous.** A reader reads the stream from its position into memory (in chunks, at most the
+  limit's `MaxBytes` and one byte more, so data past the limit is refused with the synchronous form's diagnostic), then
+  parses it synchronously on the thread the read finished on. A writer builds its output in memory synchronously, on
+  the calling thread before the task is returned, then writes it and flushes the stream. Parsing and building are CPU
+  work: wrapped in a task they would hide their cost and take the choice of threads from the caller (decision 2046).
+- **The same results:** the same values, diagnostics and bytes as the synchronous forms (STEP's time of writing aside),
+  checked by tests through a stream that refuses synchronous reads and writes. A writer that fails writes nothing.
+- **The cost is memory:** the file's bytes, held while it's parsed (STEP's synchronous reader parses as it reads) or
+  before it's written. Measured on the largest STEP file of OCCT's dataset (`bug30790.step`, 22.4 MB; three runs of each
+  form, a process each, on a loaded machine): reading allocates 2,338 to 2,347 MB where the synchronous form allocates
+  2,316 to 2,325 MB, 22 to 26 MB more; writing its model back (31.1 MB) allocates 537 to 541 MB against 506 to 512 MB.
+  The peak heap and working set vary by more than that from run to run (sampled peaks of 280 to 410 MB either way),
+  so no difference shows in them.
+- **Arguments are checked before the task:** a null argument, and for `Step.ReadAsync(path)` a missing file, throw at
+  once, as the synchronous forms do; cancellation cancels the task. `Step.ReadAsync(path)` with
+  `ExternalReferences` reads the files the data refers to synchronously, while it is translated.
+- Fonts (`Font.ReadAsync`, `ReadCollectionAsync`) and drawings (`Svg.WriteAsync`, `Png.WriteAsync`) work the same way:
+  fonts.md, drawing.md.
+
 ## Examples
 
 ```csharp

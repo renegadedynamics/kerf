@@ -10,7 +10,7 @@ blocks (13F2) and the kernel's users can draw text without Kerf.Modeling.
 
 | Type | What |
 |---|---|
-| `Font` | A TrueType or OpenType font: `Read`, `ReadCollection` (`.ttc`), its names, style, weight and metrics, `GlyphOf(codePoint)`, `AdvanceWidth(glyph)`, `Kerning(left, right)`, `Outline(glyph)`. Immutable; reads its bytes for each request |
+| `Font` | A TrueType or OpenType font: `Read`, `ReadCollection` (`.ttc`) and their async forms `ReadAsync`, `ReadCollectionAsync` (the stream read into memory asynchronously, then read; unit 14G), its names, style, weight and metrics, `GlyphOf(codePoint)`, `AdvanceWidth(glyph)`, `Kerning(left, right)`, `Outline(glyph)`. Immutable; reads its bytes for each request |
 | `GlyphOutline`, `OutlineSegment`, `OutlineSegmentKind` | A glyph's contours of lines, quadratics (TrueType) and cubics (CFF), in font units, as FreeType decomposes them |
 | `FontReadLimits` | What the reader refuses: bytes, fonts in a collection, points to a glyph, components' depth, charstring operations |
 | `FontLibrary`, `FontEntry` | Fonts found by family and style: `System` (the machine's and the user's folders), `Scan(folders)`, `FromFonts(fonts)`, and `Default(style)`, Liberation Sans, which Kerf ships; `Find` puts Liberation Sans in place of what it hasn't, with a `font.substituted` warning |
