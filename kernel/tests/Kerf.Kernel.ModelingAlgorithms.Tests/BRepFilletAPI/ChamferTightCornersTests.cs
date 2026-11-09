@@ -501,6 +501,122 @@ public class ChamferTightCornersTests(ITestOutputHelper output)
     }
 
 
+    // A rectangle W by H, extruded 10, each corner a curve from one side's end at cx from it to the next side's start at cy from it, made by
+    // corner(i, from, to, centre), where centre is the rectangle's corner moved in by cx and cy
+    private static Shape CurvedPrism(double w, double h, double cx, double cy, Func<int, Point3D, Point3D, Point3D, Edge> corner)
+    {
+        Point3D[] p = [new(cx, 0, 0), new(w - cx, 0, 0), new(w, cy, 0), new(w, h - cy, 0), new(w - cx, h, 0), new(cx, h, 0), new(0, h - cy, 0), new(0, cy, 0)];
+        Point3D[] centres = [new(w - cx, cy, 0), new(w - cx, h - cy, 0), new(cx, h - cy, 0), new(cx, cy, 0)];
+        var edges = new List<Edge>();
+        for (int i = 0; i < 4; i++)
+        {
+            edges.Add(Edge.Line(p[2 * i], p[2 * i + 1]).Value);
+            edges.Add(corner(i, p[2 * i + 1], p[(2 * i + 2) % 8], centres[i]));
+        }
+        return Face.FromWire(Wire.FromEdges(edges).Value, onlyPlane: true).Value.Extrude(new Vector3D(0, 0, 10)).Value.Shape;
+    }
+
+    // The sharp corner a curve from a to b rounds, where the sides' lines meet
+    private static Point3D Vertex(int i, Point3D a, Point3D b) => i % 2 == 0 ? new Point3D(b.X, a.Y, 0) : new Point3D(a.X, b.Y, 0);
+
+    // A quarter circle as a rational B-spline of degree 2, as an import may give it
+    private static Edge RationalQuarter(int i, Point3D a, Point3D b, Point3D centre) =>
+        Edge.FromCurve(new BSplineCurve3D([a, Vertex(i, a, b), b], [0.0, 1.0], [3, 3], 2, weights: [1, Math.Sqrt(0.5), 1])).Value;
+
+    // A cubic tangent to both sides, its inner control points 0.6 of the way to the corner: tightest in its middle, 1.47
+    private static Edge Cubic(int i, Point3D a, Point3D b, Point3D centre)
+    {
+        Point3D v = Vertex(i, a, b);
+        Point3D m1 = new(a.X + (v.X - a.X) * 0.6, a.Y + (v.Y - a.Y) * 0.6, 0), m2 = new(b.X + (v.X - b.X) * 0.6, b.Y + (v.Y - b.Y) * 0.6, 0);
+        return Edge.FromCurve(new BSplineCurve3D([a, m1, m2, b], [0.0, 1.0], [4, 4], 3)).Value;
+    }
+
+    // A quarter of an ellipse of 2 by 1 about the corner's centre: radii of curvature from 4 where it leaves the long sides to 0.5 at the
+    // short ones
+    private static Edge QuarterEllipse(int i, Point3D a, Point3D b, Point3D centre)
+    {
+        var ellipse = new EllipseCurve3D(new Frame3D(centre, new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), 2, 1);
+        double from = -Math.PI / 2 + i * Math.PI / 2;
+        return Edge.FromCurve(new TrimmedCurve3D(ellipse, from, from + Math.PI / 2)).Value;
+    }
+
+    [Theory]
+    [InlineData(1.7)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Corners_that_are_circles_as_B_splines_collapse_as_the_arcs_do(double length)
+    {
+        // The cone from P over each corner is the curve's own poles and weights in one row and P in the other: exact
+        Shape prism = CurvedPrism(40, 30, 1.7, 1.7, RationalQuarter);
+        Assert.All(Top(prism, 10).AllEdges(), e => Assert.Contains(new EdgeCurveAdaptor(e).GetType(), new[] { CurveKind.Line, CurveKind.BSplineCurve }));
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        Right(made, PrismVolume(40, 30, 10, 1.7) - Removed(40, 30, 1.7, length, length), 18);
+        if (length > 1.7)
+        {
+            // At the corners' radius exactly, the hull's sampled contact is degenerate there
+            LikeTheHull(prism, 10, length, length, made);
+        }
+    }
+
+    [Theory]
+    [InlineData(1.7)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Cubic_spline_corners_swallowed_whole(double length)
+    {
+        Shape prism = CurvedPrism(40, 30, 1.7, 1.7, Cubic);
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        LikeTheHull(prism, 10, length, length, made);
+        Assert.Equal(18, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(5)]
+    public void Elliptical_corners_swallowed_whole(double length)
+    {
+        Shape prism = CurvedPrism(40, 30, 2, 1, QuarterEllipse);
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        LikeTheHull(prism, 10, length, length, made);
+        Assert.Equal(18, made.Value.Shape.AllFaces().Length);
+    }
+
+    [Theory]
+    [InlineData("ellipse", 0.6)]
+    [InlineData("ellipse", 1)]
+    [InlineData("cubic", 1.5)]
+    public void A_curve_only_partly_tighter_than_the_chamfer_is_refused(string kind, double length)
+    {
+        // Somewhere tighter than the length, so collapsing, but somewhere not, so not swallowed whole: the rest of it would need its inset
+        Shape prism = kind == "cubic" ? CurvedPrism(40, 30, 1.7, 1.7, Cubic) : CurvedPrism(40, 30, 2, 1, QuarterEllipse);
+        Result<Built<Shape>> made = prism.Chamfer([.. Top(prism, 10).AllEdges()], length, Collapse);
+        Assert.False(made.IsSuccess);
+        Assert.Equal(FilletOperations.TooLarge, made.Error!.Code);
+        Assert.Contains("tightest radius of curvature", made.Error.Message, StringComparison.Ordinal);
+        Assert.Contains("isn't swallowed whole", made.Error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_curve_bending_less_than_the_chamfer_is_refused()
+    {
+        // The user's outline at 10 high, its bottom side a B-spline, straight: nothing collapses it, and its inset isn't a B-spline's
+        const double R = 1.7;
+        Point3D At(double x, double y) => new(x, y, 0);
+        Edge[] edges =
+        [
+            Edge.FromCurve(new BSplineCurve3D([At(R, 0), At(10, 0), At(30, 0), At(40 - R, 0)], [0.0, 1.0], [4, 4], 3)).Value,
+            Edge.Arc(CircleAt(40 - R, R, R), -Math.PI / 2, 0).Value,
+            Edge.Line(At(40, R), At(40, 30 - R)).Value,
+            Edge.Arc(CircleAt(40 - R, 30 - R, R), 0, Math.PI / 2).Value,
+            Edge.Line(At(40 - R, 30), At(R, 30)).Value,
+            Edge.Arc(CircleAt(R, 30 - R, R), Math.PI / 2, Math.PI).Value,
+            Edge.Line(At(0, 30 - R), At(0, R)).Value,
+            Edge.Arc(CircleAt(R, R, R), Math.PI, 3 * Math.PI / 2).Value,
+        ];
+        RefusedFor(Extruded(edges), 2, "doesn't bend as tightly as the chamfer is long anywhere");
+    }
+
     [Fact]
     public void A_tight_arc_beside_a_concave_arc_is_refused()
     {

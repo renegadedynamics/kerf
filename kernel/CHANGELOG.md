@@ -11,6 +11,9 @@ version may break the API.
 - **`TightCorners.Collapse` builds on drafted sides** (planes and cones, as a draft or a tapered extrusion makes them), all
   drafted by one angle, the length down a side measured along its slope as ChFi3d measures it, where it refused any side
   not square to the face (decision 26503).
+- **`TightCorners.Collapse` builds corners that are B-splines, ellipses or Béziers** where the corner collapsing swallows
+  them whole, exactly, as a cone from its point; one it would only swallow in part, or that bends less tightly than the
+  chamfer is long, is refused, saying why, as its inset isn't a B-spline (decision 26504).
 - **`FilletSizeLimit` and `ChamferSizeLimit`** give a fillet's or chamfer's proved limit with the shape's tolerance about
   it, as a `SizeLimit`; `FilletLimit` and `ChamferLimit` are its value, as before (decision 26501).
 - **Notes and sheets in drawings** (unit 13F2): `DrawingNote` puts text on a `LineDrawing` (`WithNotes`), in any font,

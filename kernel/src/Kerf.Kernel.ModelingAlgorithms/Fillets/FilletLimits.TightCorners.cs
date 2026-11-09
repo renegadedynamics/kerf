@@ -87,9 +87,9 @@ internal static partial class FilletLimits
         /// <summary>An arc whose centre is on the material's side.</summary>
         public bool IsConvex => IsArc && Sweep > 0;
 
-        public Flat StartTangent => IsArc ? Flat.At(From).Left * Turn : Direction;
+        public Flat StartTangent => IsArc ? Flat.At(From).Left * Turn : IsCurve ? CurveStartTangent : Direction;
 
-        public Flat EndTangent => IsArc ? Flat.At(From + Sweep).Left * Turn : Direction;
+        public Flat EndTangent => IsArc ? Flat.At(From + Sweep).Left * Turn : IsCurve ? CurveEndTangent : Direction;
 
         public Flat Direction => (End - Start) * (1 / (End - Start).Length);
 
@@ -97,7 +97,24 @@ internal static partial class FilletLimits
 
         public Flat InwardAtEnd => IsArc ? Flat.At(From + Sweep) * -Turn : Direction.Left;
 
-        public double Length => IsArc ? Radius * Math.Abs(Sweep) : (End - Start).Length;
+        public double Length => IsArc ? Radius * Math.Abs(Sweep) : IsCurve ? CurveLength : (End - Start).Length;
+
+        /// <summary>A B-spline, ellipse or Bézier, as a B-spline on F running the way the loop does (unit 13I); null for a line or arc.</summary>
+        public BSplineCurve3D? Spline { get; init; }
+
+        public bool IsCurve => Spline is not null;
+
+        public Flat CurveStartTangent { get; init; }
+
+        public Flat CurveEndTangent { get; init; }
+
+        public double CurveLength { get; init; }
+
+        /// <summary>The curve's tightest radius of curvature where it bends round the material, or infinity where it never does.</summary>
+        public double CurveTightest { get; init; } = double.PositiveInfinity;
+
+        /// <summary>∫ γ × γ' along the curve, flat: twice the area it sweeps about F's origin.</summary>
+        public double CurveTwice { get; init; }
 
         // Set once the loop is read: where its contact on F runs, and P for a tight arc
         public Flat TopStart { get; set; }
@@ -146,7 +163,9 @@ internal static partial class FilletLimits
             return null;
         }
         Edge[] edges = [.. specs.Select(static s => s.Edge)];
-        string asked = $"The chamfer with a length of {first.Length:G6} on its face is longer than the radius {first.Radius:G6} of a convex arc of {Edges(edges)}";
+        bool curved = IsFreeCurve(new EdgeCurveAdaptor(first.Edge).GetType());
+        string asked = $"The chamfer with a length of {first.Length:G6} on its face is longer than {(curved ? "the tightest radius of curvature" : "the radius")} "
+                       + $"{first.Radius:G6} of a convex {(curved ? "curve" : "arc")} of {Edges(edges)}";
         try
         {
             if (ReadLoops(neighbours, first.Face, specs, referenceFaces, out string? why) is not { } loops)
@@ -188,6 +207,19 @@ internal static partial class FilletLimits
             Cancellation.ThrowIfRequested();
             Edge edge = specs[i].Edge;
             var curve = new EdgeCurveAdaptor(edge);
+            if (IsFreeCurve(curve.GetType()))
+            {
+                // A curve bending round the material more tightly than the length somewhere (unit 13I)
+                foreach (Face face in neighbours.Faces(edge))
+                {
+                    if (neighbours.Normal(face) is not null && TightestConvex(neighbours, face, edge) is { } radius
+                        && Lengths(specs[i], face, referenceFaces[i]).OnFace is var onFace && onFace >= radius - TightTolerance(edge, face))
+                    {
+                        return (edge, face, radius, onFace);
+                    }
+                }
+                continue;
+            }
             if (curve.GetType() != CurveKind.Circle)
             {
                 continue;
@@ -372,9 +404,15 @@ internal static partial class FilletLimits
         for (int i = 0; i < n; i++)
         {
             Piece piece = loop[i], before = loop[(i + n - 1) % n], after = loop[(i + 1) % n];
-            piece.Tight = piece.IsConvex && piece.Radius <= a + TightTolerance(piece.Edge, face);
+            piece.Tight = piece.IsCurve ? piece.CurveTightest <= a + TightTolerance(piece.Edge, face) : piece.IsConvex && piece.Radius <= a + TightTolerance(piece.Edge, face);
+            if (piece.IsCurve && !piece.Tight)
+            {
+                why = "a curved edge of the loop doesn't bend as tightly as the chamfer is long anywhere, so its chamfer would need its inset, "
+                      + "which isn't a B-spline, and its face can't be made exactly";
+                return null;
+            }
             bool sharpAfter = Math.Abs(piece.EndTangent.Cross(after.StartTangent)) > TangentJoint || piece.EndTangent.Dot(after.StartTangent) < 0;
-            if (sharpAfter && (piece.IsArc || after.IsArc))
+            if (sharpAfter && (piece.IsArc || after.IsArc || piece.IsCurve || after.IsCurve))
             {
                 why = "a corner beside an arc is sharp";
                 return null;
@@ -421,6 +459,12 @@ internal static partial class FilletLimits
             {
                 loop[k].Apex = corner.Apex;
                 loop[k].TopStart = loop[k].TopEnd = corner.Apex;
+                if (loop[k].IsCurve && !SwallowedWhole(frame, loop[k], corner.Apex, a, join))
+                {
+                    why = "a curved edge of the loop isn't swallowed whole by a corner collapsing, so its chamfer would need its inset, which "
+                          + "isn't a B-spline, and its face can't be made exactly";
+                    return null;
+                }
                 if (k == last)
                 {
                     break;
@@ -477,13 +521,13 @@ internal static partial class FilletLimits
         for (int i = 0; i < n; i++)
         {
             Piece piece = loop[i];
-            if (piece.IsArc)
+            if (piece.IsArc || piece.IsCurve)
             {
                 continue;
             }
             Piece before = loop[(i + n - 1) % n], after = loop[(i + 1) % n];
-            Flat? start = before.IsArc ? before.TopEnd : Math.Abs(before.Direction.Cross(piece.Direction)) > TangentJoint ? Meet(before, a, piece) : Inset(piece, a);
-            Flat? end = after.IsArc ? after.TopStart : Math.Abs(piece.Direction.Cross(after.Direction)) > TangentJoint ? Meet(piece, a, after) : piece.End + piece.Direction.Left * a;
+            Flat? start = before.IsArc || before.IsCurve ? before.TopEnd : Math.Abs(before.Direction.Cross(piece.Direction)) > TangentJoint ? Meet(before, a, piece) : Inset(piece, a);
+            Flat? end = after.IsArc || after.IsCurve ? after.TopStart : Math.Abs(piece.Direction.Cross(after.Direction)) > TangentJoint ? Meet(piece, a, after) : piece.End + piece.Direction.Left * a;
             if (start is not { } s || end is not { } e)
             {
                 why = "a corner's insets are parallel";
@@ -509,7 +553,7 @@ internal static partial class FilletLimits
         {
             for (int j = i + 2; j < n; j++)
             {
-                if ((i == 0 && j == n - 1) || loop[i].IsArc || loop[j].IsArc)
+                if ((i == 0 && j == n - 1) || loop[i].IsArc || loop[j].IsArc || loop[i].IsCurve || loop[j].IsCurve)
                 {
                     continue;
                 }
@@ -788,8 +832,10 @@ internal static partial class FilletLimits
                 lean = draft / Math.Sqrt(1 + draft * draft);
                 return arc;
             }
+            case CurveKind kind when IsFreeCurve(kind):
+                return ReadCurve(neighbours, face, frame, edge, side, out why);
             default:
-                why = "an edge of the loop isn't a line or a circular arc";
+                why = "an edge of the loop isn't a line, a circular arc, an ellipse or a B-spline";
                 return null;
         }
     }
@@ -801,6 +847,11 @@ internal static partial class FilletLimits
         double twice = 0;
         foreach (Piece piece in loop)
         {
+            if (piece.IsCurve)
+            {
+                twice += CurveSection(piece, lambda);
+                continue;
+            }
             if (!piece.IsArc)
             {
                 Flat p = Flat.Mix(piece.Start, piece.TopStart, lambda), q = Flat.Mix(piece.End, piece.TopEnd, lambda);
@@ -832,7 +883,7 @@ internal static partial class FilletLimits
 
     /// <summary>What a loop's chamfer does to the area: F loses the band to the contact, each side a band b deep, and the chamfer's faces
     /// are added.</summary>
-    private static double AreaChange(TightLoop loop)
+    private static double AreaChange(in FacePlane frame, TightLoop loop)
     {
         double a = loop.A, b = loop.B;
         double change = loop.Draft is { } draft
@@ -841,6 +892,11 @@ internal static partial class FilletLimits
             : -(SectionArea(loop.Pieces, a, 0) - SectionArea(loop.Pieces, a, 1)) - b * loop.Pieces.Sum(static p => p.Length);
         foreach (Piece piece in loop.Pieces)
         {
+            if (piece.IsCurve)
+            {
+                change += CurveConeArea(frame, piece, b);
+                continue;
+            }
             if (!piece.IsArc)
             {
                 // A trapezium: half the cross of its diagonals
@@ -896,7 +952,7 @@ internal static partial class FilletLimits
         foreach (TightLoop loop in loops)
         {
             volume -= RemovedVolume(loop);
-            area += AreaChange(loop);
+            area += AreaChange(frame, loop);
             foreach (Piece piece in loop.Pieces)
             {
                 FacePlane at = frame;
@@ -954,7 +1010,7 @@ internal static partial class FilletLimits
     /// <summary>Whether a face of the answer lies on a piece's chamfer: a plane on the strip's, or a surface whose points lie on the cone.</summary>
     private static bool IsChamferFace((bool Planar, Point3D[] Points) face, in FacePlane frame, TightLoop loop, Piece piece, double tolerance)
     {
-        if (piece.IsArc == face.Planar)
+        if ((piece.IsArc || piece.IsCurve) == face.Planar)
         {
             return false;
         }
@@ -973,6 +1029,10 @@ internal static partial class FilletLimits
     {
         double depth = frame.Depth(p), lambda = 1 - depth / loop.B;
         Flat q = frame.Flatten(p);
+        if (piece.IsCurve)
+        {
+            return OffCurveChamfer(frame, piece, q, lambda);
+        }
         if (!piece.IsArc)
         {
             Flat from = Flat.Mix(piece.Start, piece.TopStart, lambda), to = Flat.Mix(piece.End, piece.TopEnd, lambda);
@@ -991,6 +1051,11 @@ internal static partial class FilletLimits
         var sewing = new Sewing(sewingTolerance);
         foreach (Piece piece in loop.Pieces)
         {
+            if (piece.IsCurve)
+            {
+                CurveTool(sewing, frame, piece, deep, k);
+                continue;
+            }
             if (!piece.IsArc)
             {
                 Flat bs = Flat.Mix(piece.TopStart, piece.Start, k), be = Flat.Mix(piece.TopEnd, piece.End, k);
