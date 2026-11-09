@@ -6,6 +6,9 @@
 >
 > **0.4.0 prepared, 9 November 2026** (decision 2002), for the owner to test and publish: units 12A to 12Y as their
 > rows say. 12F, 12G, 12J, 12Q and 12R carry on. Phase 12 stays open until the owner closes it.
+>
+> **Closed, 9 November 2026** (the owner; decision 2040), at Kerf 0.4.0. What carries on is phase 13's 13H
+> ([phase13-plan.md](phase13-plan.md)).
 
 ## The goal
 

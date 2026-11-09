@@ -60,8 +60,10 @@ The gaps for drawing sheets: title blocks and notes in the model, and a file a l
 
 | Unit | What |
 |---|---|
-| **13K** The checks' share of a Boolean | After 12Y, Kerf's checks of each result are about 40% of a Boolean's time (0.56 times native without them, 0.94 with). Find which parts of the check could be cheaper without missing what they catch, All stay on by default (question 5). Goes with 13A. |
+| **13K** The checks' share of a Boolean | After 12Y, Kerf's checks of each result are about 40% of a Boolean's time (0.56 times native without them, 0.94 with). Find which parts of the check could be cheaper without missing what they catch. All stay on by default (question 5). With it, from 13A: the boss fuse, 1.3 to 1.4 times 0.3.0's time (decision 2038), and decisions 1932's and 1866's checks, which cost more than their Booleans on a small part fused onto a large one. And **decision 1924's point check, in a cheaper form, on by default** (the owner, decision 2039). |
 | **13L** Wasteful cases | Carries on to decision 1829's bar, with 13C's user cases in the list. |
+| **13N** Filled text in DXF | Notes written as outlines are their contours alone in DXF, so a viewer draws them hollow, where the SVG fills them (the owner, in LibreCAD). Fill them with solid hatches in DXF 2013, contours alone in R12 (decision 2039). |
+| **13O** Relative deflections | The torus's and sphere's meshes keep to the deflection only when it's absolute (decisions 1929, 1953); with a relative one they're OCCT's, which can miss it. Extend the fixes (the owner, decision 2039). |
 
 ## The owner's answers (decision 2008)
 
@@ -76,6 +78,11 @@ The gaps for drawing sheets: title blocks and notes in the model, and a file a l
 6. Still open from phase 12: Bento's `tight_corners` option (12w-bento.md), the point check (decision 1924),
    `bug27928` as a known difference, relative deflections, and closing phase 12.
 
+**Later answers (decision 2039):** the point check in a cheaper form, on by default (13K); `bug27928` kept as a known
+difference; the mesh fixes extended to relative deflections (13O); phase 12 closed (decision 2040). And Kerf has several
+clients now, Bento one of them: Kerf's work no longer changes Bento or writes notes for it. Each client takes what's new
+from the CHANGELOGs, the guide and the API docs, so those must say everything a client needs.
+
 ## Not in this phase
 
 - SVG and DXF import.
@@ -85,6 +92,7 @@ The gaps for drawing sheets: title blocks and notes in the model, and a file a l
 ## How the work runs
 
 As in phase 12: at most three helpers, each on a branch and worktree of its own, then the merge gate, one at a time.
-Results stay identical unless a unit says otherwise and records why. Timed claims come from a quiet machine; the rig
+Results stay identical unless a unit says otherwise and records why. Kerf keeps to immutability and a functional style:
+values that don't change once made, operations that return new values, and no hidden shared state (the owner, decision 2039). Timed claims come from a quiet machine; the rig
 compares against `docs/benchmarks/2026-11-09-2a330b9b7.tsv` (decision 2003), and from 13C also against the last
 release's packages on users' cases. Nothing is pushed, except by the owner.
