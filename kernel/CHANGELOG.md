@@ -6,7 +6,7 @@ version may break the API.
 ## Unreleased
 
 - **A solid's classifier allocates about a quarter less a point**, which every Boolean's check and builder use: a small
-  part fused onto a large one 5% to 10% fewer bytes (decision 26801).
+  part fused onto a large one 5% to 10% fewer bytes (decision 2070).
 - **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
   too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
   refused them; beside a concave arc it still refuses, saying why (decision 2048).
