@@ -101,10 +101,10 @@ public class CurveObjectTests
 
         var l9 = new EllipticalCenterArc(new Point3D(15, 0, 0), 10, 5, startAngle: 90, arcSize: 180);
         Assert.Throws<ArgumentException>(() => new DoubleTangentArc(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), l9, keep: Keep.Both));
-        Assert.Throws<ArgumentException>(() => new DoubleTangentArc(new Point3D(0, 0, 0), new Vector3D(0, 0, 1), l9));
+        Assert.Throws<ModelingException>(() => new DoubleTangentArc(new Point3D(0, 0, 0), new Vector3D(0, 0, 1), l9));
 
         var l11 = new Line(new Point3D(10, 0, 0), new Point3D(20, 0, 0));
-        Assert.Throws<InvalidOperationException>(() => new DoubleTangentArc(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), l11));
+        Assert.Throws<ModelingException>(() => new DoubleTangentArc(new Point3D(0, 0, 0), new Vector3D(1, 0, 0), l11));
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class CurveObjectTests
         var e2 = new EllipticalCenterArc(new Point3D(0, 0, 0), 2, 1, 0, arcLimit: l2);
         Check.AlmostEqual(new Point3D(0, -1, 0), e2.PositionAt(1), 5);
 
-        Assert.Throws<ArgumentException>(() => new EllipticalCenterArc(new Point3D(0, 0, 0), 2, 1, 0, arcLimit: new Point3D(0, 5, 0)));
+        Assert.Throws<ModelingException>(() => new EllipticalCenterArc(new Point3D(0, 0, 0), 2, 1, 0, arcLimit: new Point3D(0, 5, 0)));
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public class CurveObjectTests
         var e2 = new ParabolicCenterArc(new Point3D(0, 0, 0), 0.5, 0, arcLimit: l2);
         Check.AlmostEqual(new Point3D(1, Math.Sqrt(2), 0), e2.PositionAt(1), 5);
 
-        Assert.Throws<ArgumentException>(() => new ParabolicCenterArc(new Point3D(0, 0, 0), 0.5, 0, arcLimit: new Point3D(0, 5, 0)));
+        Assert.Throws<ModelingException>(() => new ParabolicCenterArc(new Point3D(0, 0, 0), 0.5, 0, arcLimit: new Point3D(0, 5, 0)));
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class CurveObjectTests
         Check.AlmostEqual(new Point3D(10 - Math.PI / 2, 20 + Math.PI * Math.PI / 32, 0), moved.PositionAt(0), 5);
         Check.AlmostEqual(26, moved.PositionAt(1).Y, 5);
 
-        Assert.Throws<ArgumentException>(() => new ParabolicCenterArc(new Point3D(0, 0, 0), 2, 90, arcLimit: new Axis(new Point3D(-1, 0, 0), new Vector3D(0, 1, 0))));
+        Assert.Throws<ModelingException>(() => new ParabolicCenterArc(new Point3D(0, 0, 0), 2, 90, arcLimit: new Axis(new Point3D(-1, 0, 0), new Vector3D(0, 1, 0))));
     }
 
     [Fact]
@@ -287,7 +287,7 @@ public class CurveObjectTests
         var e2 = new HyperbolicCenterArc(new Point3D(0, 0, 0), 2, 1, 0, arcLimit: l2);
         Check.AlmostEqual(new Point3D(3, Math.Sqrt(5) / 2, 0), e2.PositionAt(1), 4);
 
-        Assert.Throws<ArgumentException>(() => new HyperbolicCenterArc(new Point3D(0, 0, 0), 2, 1, 0, arcLimit: new Point3D(0, 5, 0)));
+        Assert.Throws<ModelingException>(() => new HyperbolicCenterArc(new Point3D(0, 0, 0), 2, 1, 0, arcLimit: new Point3D(0, 5, 0)));
     }
 
     [Fact]
@@ -310,7 +310,7 @@ public class CurveObjectTests
             Check.AlmostEqual(new Point3D(limitX, 2 * Math.Sqrt(37), 0), arc.PositionAt(1), 4);
         }
 
-        Assert.Throws<ArgumentException>(() => new HyperbolicCenterArc(new Point3D(0, 0, 0), 2, 1, 30, arcLimit: new Axis(new Point3D(1, 0, 0), new Vector3D(0, 1, 0))));
+        Assert.Throws<ModelingException>(() => new HyperbolicCenterArc(new Point3D(0, 0, 0), 2, 1, 30, arcLimit: new Axis(new Point3D(1, 0, 0), new Vector3D(0, 1, 0))));
     }
 
     [Fact]
@@ -382,7 +382,7 @@ public class CurveObjectTests
         Check.AlmostEqual(new Point3D(5, 5, 0), l4.PositionAt(1), 5);
         Check.IsShape(l4);
 
-        Assert.Throws<ArgumentException>(() => new IntersectingLine(new Point3D(0, 10, 0), new Vector3D(1, 1, 0), l3));
+        Assert.Throws<ModelingException>(() => new IntersectingLine(new Point3D(0, 10, 0), new Vector3D(1, 1, 0), l3));
     }
 
     [Fact]
@@ -449,7 +449,7 @@ public class CurveObjectTests
         var j2 = new JernArc(new Point3D(1, 0, 0), new Vector3D(0, 1, 0), 1, l2);
         Check.AlmostEqual(new Point3D(0, 1, 0), j2.PositionAt(1), 5);
 
-        Assert.Throws<ArgumentException>(() => new JernArc(new Point3D(1, 0, 0), new Vector3D(0, 1, 0), 1, (CurveLimit)new Point3D(5, 0, 0)));
+        Assert.Throws<ModelingException>(() => new JernArc(new Point3D(1, 0, 0), new Vector3D(0, 1, 0), 1, (CurveLimit)new Point3D(5, 0, 0)));
     }
 
     [Fact]
@@ -512,10 +512,10 @@ public class CurveObjectTests
             Check.AlmostEqual(1, polarLine.Length, 5);
         }
 
-        Assert.Throws<ArgumentException>(() => new PolarLine(new Point3D(Math.Sqrt(2), 0, 0), lengthLimit: new Point3D(0, 2, 0), angle: 135));
-        Assert.Throws<ArgumentException>(() => new PolarLine(new Point3D(Math.Sqrt(2), 0, 0), lengthLimit: new Line(new Point3D(3, 0, 0), new Point3D(3, 1, 0)), angle: 135));
+        Assert.Throws<ModelingException>(() => new PolarLine(new Point3D(Math.Sqrt(2), 0, 0), lengthLimit: new Point3D(0, 2, 0), angle: 135));
+        Assert.Throws<ModelingException>(() => new PolarLine(new Point3D(Math.Sqrt(2), 0, 0), lengthLimit: new Line(new Point3D(3, 0, 0), new Point3D(3, 1, 0)), angle: 135));
         // The "behind" case
-        Assert.Throws<ArgumentException>(() => new PolarLine(new Point3D(1, 0, 0), lengthLimit: Plane.YZ, angle: 45));
+        Assert.Throws<ModelingException>(() => new PolarLine(new Point3D(1, 0, 0), lengthLimit: Plane.YZ, angle: 45));
     }
 
     [Fact]
@@ -596,7 +596,7 @@ public class CurveObjectTests
         Check.AlmostEqual(Math.PI / 4, c2.Length, 5);
         Check.AlmostEqual(new Vector3D(0, -1, 0), c2.TangentAt(0), 5);
 
-        Assert.Throws<ArgumentException>(() => new CenterArc(new Point3D(1, 0, 0), 1, 0, (CurveLimit)new Point3D(5, 0, 0)));
+        Assert.Throws<ModelingException>(() => new CenterArc(new Point3D(1, 0, 0), 1, 0, (CurveLimit)new Point3D(5, 0, 0)));
     }
 
     [Fact]
@@ -623,7 +623,7 @@ public class CurveObjectTests
     {
         Assert.Throws<ArgumentException>(() => new Line([new Point3D(0, 0, 0)]));   // two points needed
         Assert.Throws<ArgumentException>(() => new Polyline(new Point3D(0, 0, 0)));   // two points needed
-        Assert.Throws<ArgumentException>(() => new RadiusArc(new Point3D(0, 0, 0), new Point3D(1, 0, 0), 0.1));   // radius too small
+        Assert.Throws<ModelingException>(() => new RadiusArc(new Point3D(0, 0, 0), new Point3D(1, 0, 0), 0.1));   // radius too small
         Assert.Throws<ArgumentException>(() => new TangentArc([new Point3D(0, 0, 0)], tangent: new Vector3D(1, 1, 0)));   // two points needed
         Assert.Throws<ArgumentException>(() => new ThreePointArc([new Point3D(0, 0, 0), new Point3D(1, 1, 0)]));   // three points needed
     }

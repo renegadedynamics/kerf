@@ -324,7 +324,7 @@ public class ConvexPolyhedronTests
             "flat to 1e-7" => [.. Enumerable.Range(0, 50).Select(_ => new Point3D(random.NextDouble(), random.NextDouble(), random.NextDouble() * 1e-7))],
             _ => [.. Cube, new(double.NaN, 0, 0)],
         };
-        var e = Assert.Throws<ArgumentException>(() => new ConvexPolyhedron(points));
+        var e = Assert.Throws<ModelingException>(() => new ConvexPolyhedron(points));
         var expected = what switch
         {
             "none" or "one" or "three" or "four close" => "at least four distinct points",

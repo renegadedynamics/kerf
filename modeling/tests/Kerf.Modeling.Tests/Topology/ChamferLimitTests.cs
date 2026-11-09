@@ -109,7 +109,7 @@ public class ChamferLimitTests
     public void The_shorthand_throws_the_same()
     {
         Part prism = Prism();
-        var failure = Assert.Throws<InvalidOperationException>(() => prism.Chamfer(1.71, null, Outline(prism)));
+        var failure = Assert.Throws<ModelingException>(() => prism.Chamfer(1.71, null, Outline(prism)));
         Assert.Contains("the most that fits is 1.7", failure.Message, StringComparison.Ordinal);
     }
 
