@@ -114,7 +114,11 @@ internal static partial class FilletLimits
 
     /// <summary>The chamfer with tight corners collapsed, or a refusal saying what isn't built; null where no corner is tight, for
     /// ChFi3d to build as it always has.</summary>
-    public static EngineOutcome? CollapseTightCorners(Shape shape, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options)
+    public static EngineOutcome? CollapseTightCorners(Shape shape, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options) =>
+        CollapseTightCorners(shape, specs, referenceFaces, options, assemble: true);
+
+    /// <summary>As above; <paramref name="assemble"/> false always builds by the Boolean, for the tests to compare the two.</summary>
+    internal static EngineOutcome? CollapseTightCorners(Shape shape, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options, bool assemble)
     {
         if (options.TightCorners != TightCorners.Collapse || options.Mode != ChamferMode.Classic || shape.AllSolids().Length != 1)
         {
@@ -142,7 +146,7 @@ internal static partial class FilletLimits
             {
                 return Refused(FilletOperations.TooLarge, $"{asked}, and collapsing that corner isn't built here: {why}.", edges);
             }
-            if (BuildCollapsed(shape, first.Face, loops) is { } built)
+            if (BuildCollapsed(shape, neighbours, first.Face, loops, assemble) is { } built)
             {
                 return built;
             }
@@ -570,18 +574,37 @@ internal static partial class FilletLimits
         return Math.Abs(sum);
     }
 
-    private static EngineOutcome? BuildCollapsed(Shape shape, Face face, List<TightLoop> loops)
+    // Built from its faces where that's known to be what the Boolean would make, and otherwise by the Boolean; checked either way
+    private static EngineOutcome? BuildCollapsed(Shape shape, Neighbours neighbours, Face face, List<TightLoop> loops, bool assemble)
     {
         Plane3D plane = new FaceSurfaceAdaptor(face).Plane();
-        Direction3D up = new Neighbours(shape).Normal(face)!.Value;
+        Direction3D up = neighbours.Normal(face)!.Value;
         Direction3D x = plane.Position.XDirection;
         var frame = new FacePlane(plane.Location, x, up.Crossed(x), up);
         double size = shape.AllVertices().Select(v => Tool.Pnt(v)).Max(p => Math.Max(Math.Abs(p.X), Math.Max(Math.Abs(p.Y), Math.Abs(p.Z))));
         double sewing = Math.Max(1e-6, 1e-9 * size);
 
-        var tools = new List<Shape>();
         var made = new List<(Shape Source, Func<Face, bool> IsNew)>();
+        var samples = new Dictionary<Shape, (bool Planar, Point3D[] Points)>(ShapeHasher.Instance);
         double volume = 0, area = 0;
+        foreach (TightLoop loop in loops)
+        {
+            volume -= RemovedVolume(loop);
+            area += AreaChange(loop);
+            foreach (Piece piece in loop.Pieces)
+            {
+                FacePlane at = frame;
+                TightLoop of = loop;
+                made.Add((piece.Edge, f => IsChamferFace(Sampled(samples, f), at, of, piece, sewing * 10)));
+            }
+        }
+        if (assemble && Assembled(shape, neighbours, face, frame, loops) is { } direct
+            && Checked(shape, direct.Solid, direct.History, volume, area, [.. made], ownSize: true, direct.Faces) is { } assembled)
+        {
+            return assembled;
+        }
+
+        var tools = new List<Shape>();
         foreach (TightLoop loop in loops)
         {
             double deepest = loop.Pieces.Min(p => p.Side.AllVertices().Max(v => frame.Depth(Tool.Pnt(v))));
@@ -591,14 +614,6 @@ internal static partial class FilletLimits
                 return null;
             }
             tools.Add(tool);
-            volume -= RemovedVolume(loop);
-            area += AreaChange(loop);
-            foreach (Piece piece in loop.Pieces)
-            {
-                FacePlane at = frame;
-                TightLoop of = loop;
-                made.Add((piece.Edge, f => IsChamferFace(f, at, of, piece, sewing * 10)));
-            }
         }
         if (Boolean(new EngineCut(), shape, tools, out History? cutting) is not { } result || result.AllSolids().Length != 1)
         {
@@ -607,19 +622,29 @@ internal static partial class FilletLimits
         return Checked(shape, result.AllSolids()[0], cutting ?? new History(), volume, area, [.. made], ownSize: true);
     }
 
-    /// <summary>Whether a face of the answer lies on a piece's chamfer: a plane on the strip's, or a surface whose points lie on the cone.</summary>
-    private static bool IsChamferFace(Face face, in FacePlane frame, TightLoop loop, Piece piece, double tolerance)
+    // Three points of a face of the answer, and whether it's planar: taken once a face, as every piece asks of every face
+    private static (bool Planar, Point3D[] Points) Sampled(Dictionary<Shape, (bool Planar, Point3D[] Points)> samples, Face face)
     {
-        var surface = new FaceSurfaceAdaptor(face);
-        SurfaceKind kind = surface.GetType();
-        if (piece.IsArc != (kind != SurfaceKind.Plane))
+        if (!samples.TryGetValue(face, out (bool Planar, Point3D[] Points) sampled))
+        {
+            var surface = new FaceSurfaceAdaptor(face);
+            BrepTools.UVBounds(face, out double u0, out double u1, out double v0, out double v1);
+            Point3D At(double s, double t) => surface.Value(u0 + s * (u1 - u0), v0 + t * (v1 - v0));
+            sampled = (surface.GetType() == SurfaceKind.Plane, [At(0.5, 0.5), At(0.25, 0.75), At(0.75, 0.25)]);
+            samples[face] = sampled;
+        }
+        return sampled;
+    }
+
+    /// <summary>Whether a face of the answer lies on a piece's chamfer: a plane on the strip's, or a surface whose points lie on the cone.</summary>
+    private static bool IsChamferFace((bool Planar, Point3D[] Points) face, in FacePlane frame, TightLoop loop, Piece piece, double tolerance)
+    {
+        if (piece.IsArc == face.Planar)
         {
             return false;
         }
-        BrepTools.UVBounds(face, out double u0, out double u1, out double v0, out double v1);
-        foreach ((double s, double t) in new[] { (0.5, 0.5), (0.25, 0.75), (0.75, 0.25) })
+        foreach (Point3D p in face.Points)
         {
-            Point3D p = surface.Value(u0 + s * (u1 - u0), v0 + t * (v1 - v0));
             if (OffChamfer(p, frame, loop, piece) > tolerance)
             {
                 return false;
