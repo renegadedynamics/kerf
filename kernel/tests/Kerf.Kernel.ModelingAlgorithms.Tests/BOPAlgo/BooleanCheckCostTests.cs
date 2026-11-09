@@ -48,14 +48,15 @@ public class BooleanCheckCostTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void A_boss_inside_a_part_asks_each_point_once()
+    public void A_boss_inside_a_part_asks_each_point_inside_once()
     {
-        // Every point of the boss's faces is inside the part or on it, its top on the part's, so one classification each is all
-        // it needs: 0.4.0 asked those on the top again, and measured their distances
+        // Every point of the boss's faces is inside the part or on it, its top on the part's: one classification each for the
+        // points inside, and none for those on the part's top. 0.4.0 asked 357, those on the top twice, and measured their
+        // distances
         Shape block = Solid.Box(20, 20, 20).Value.Shape;
         Shape boss = Moved(Solid.Cylinder(3, 5.5).Value.Shape, 10, 10, 14.5);
         Shape fused = block.Fuse(boss, Unchecked).Value.Shape;
-        Assert.True(Asked(block, boss, fused, out Diagnostic? said) <= 3 * 81);
+        Assert.True(Asked(block, boss, fused, out Diagnostic? said) <= 2 * 81);
         Assert.Null(said);
     }
 

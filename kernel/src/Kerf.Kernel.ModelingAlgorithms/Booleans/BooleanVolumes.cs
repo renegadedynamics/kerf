@@ -377,11 +377,13 @@ public static class BooleanVolumes
 
         // A point can prove something only if it's well outside the result, so a point on the result's boundary is passed over
         // before it's classified (unit 13A): a face of the smaller input that's one of the result's lies on it all over, and a
-        // point inside a face of the result on the same surface, placed the same, is on it too. A small part fused onto a large
-        // one keeps most of its faces, or pieces of them, and they were most of what this classified: a bump of 1.5 by 0.5 on
-        // a door 1,688 classifications and distances, 311 MB, after a Boolean of 8 MB
+        // point inside a face of the result on the same surface, placed the same, is on it too, as is one within a tolerance of
+        // a plane of the result and inside its face. A small part fused onto a large one keeps most of its faces, or pieces of
+        // them, or lies on the large one's, and they were most of what this classified: a bump of 1.5 by 0.5 on a door 1,688
+        // classifications and distances, 311 MB, after a Boolean of 8 MB
         var resultFaces = new HashSet<Shape>(ShapeHasher.Instance);
         var onSurface = new Dictionary<Surface, List<(Placement Placement, FaceClassifier2D Classifier)>>(ReferenceEqualityComparer.Instance);
+        var planes = new List<ResultPlane>();
         foreach (Face face in result.AllFaces())
         {
             resultFaces.Add(face);
@@ -391,7 +393,12 @@ public static class BooleanVolumes
                 {
                     onSurface[surface] = faces = [];
                 }
-                faces.Add((placement, new FaceClassifier2D(face, Tolerances.Confusion)));
+                var classifier = new FaceClassifier2D(face, Tolerances.Confusion);
+                faces.Add((placement, classifier));
+                if (surface is PlaneSurface plane)
+                {
+                    planes.Add(new ResultPlane(new FaceSurfaceAdaptor(face).Plane(), plane.Plane, placement, classifier, Math.Max(Tool.Tolerance(face), Tolerances.Confusion)));
+                }
             }
         }
 
@@ -418,9 +425,18 @@ public static class BooleanVolumes
 
             var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
             List<(Placement Placement, FaceClassifier2D Classifier)> resultFacesHere = [];
-            if (Tool.Surface(face, out Placement here) is { } own && onSurface.TryGetValue(own, out var sharing))
+            List<ResultPlane> planesHere = [];
+            if (Tool.Surface(face, out Placement here) is { } own)
             {
-                resultFacesHere.AddRange(sharing.Where(s => s.Placement.IsEqual(here)));
+                if (onSurface.TryGetValue(own, out var sharing))
+                {
+                    resultFacesHere.AddRange(sharing.Where(s => s.Placement.IsEqual(here)));
+                }
+                if (own is PlaneSurface)
+                {
+                    Direction3D normal = surface.Plane().Axis.Direction;
+                    planesHere.AddRange(planes.Where(p => p.World.Axis.Direction.IsParallel(normal, 1e-9)));
+                }
             }
 
             for (int i = 1; i <= FaceGrid; i++)
@@ -435,6 +451,10 @@ public static class BooleanVolumes
                     }
 
                     Point3D point = surface.Value(u, v);
+                    if (planesHere.Any(p => p.Holds(point)))
+                    {
+                        continue;
+                    }
                     // What's inside the larger input is in a fuse whatever its classifier says of the result; and a point on the
                     // boundary of either is within its tolerance of it, so can't be deep outside it
                     if (StateOf(inResult, point) is Containment.In or Containment.On || StateOf(inLarger, point) is Containment.In or Containment.On)
@@ -467,6 +487,20 @@ public static class BooleanVolumes
             }
         }
         return null;
+    }
+
+    // A planar face of a result: a point within its tolerance of the plane, and inside the face, is on the result's boundary
+    private sealed record ResultPlane(Plane3D World, Plane3D Own, Placement Placement, FaceClassifier2D Classifier, double Tolerance)
+    {
+        public bool Holds(in Point3D point)
+        {
+            if (World.DistanceTo(point) > Tolerance)
+            {
+                return false;
+            }
+            Engine.Geometry.ElSLib.Parameters(Own, point.Transformed(Placement.Transformation.Inverted()), out double u, out double v);
+            return Classifier.Perform(new Point2D(u, v)) == Containment.In;
+        }
     }
 
     // The points this thread's checks have classified or measured the distance of, for the tests that hold the checks' cost down
