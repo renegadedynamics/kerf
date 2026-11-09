@@ -5,9 +5,6 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
-- **A fillet of thousands of edges stops at once again when cancelled,** as in 0.3.0, and a fillet of every edge of a plate of 900
-  holes 2 s quicker (the kernel's decisions 2005 and 2006).
-
 ## 0.4.0
 
 - **Silent wrong answers found and fixed,** and failures that say why: a chamfer or fillet too large says what fits,
