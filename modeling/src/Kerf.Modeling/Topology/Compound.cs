@@ -94,7 +94,7 @@ public static partial class CompoundExtensions
     /// The shapes of one kind directly inside this compound and the compounds directly inside it (build123d's
     /// <c>get_type</c>): not, as <c>Faces</c> does, the faces of its solids.
     /// </summary>
-    public static List<T> ElementsOfType<T>(this IShape3D self) where T : struct, IShape<T> => ElementsOfTypeOf<T>(self.AsShape());
+    public static ShapeList<T> ElementsOfType<T>(this IShape3D self) where T : struct, IShape<T> => new(ElementsOfTypeOf<T>(self.AsShape()));
 
     private static List<T> ElementsOfTypeOf<T>(this Shape self) where T : struct, IShape<T>
     {
