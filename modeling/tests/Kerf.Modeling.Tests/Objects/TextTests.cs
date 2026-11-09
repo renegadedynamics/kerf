@@ -197,7 +197,7 @@ public sealed class TextTests : IDisposable
         var missing = MakeText("Rate 中", 10, fontPath: Liberation);
         Assert.Equal(TextShapes.MissingGlyph, missing.Error!.Code);
         Assert.Contains("'中' (U+4E2D)", missing.Error.Message, StringComparison.Ordinal);
-        var thrown = Assert.Throws<InvalidOperationException>(() => new Text("Rate 中", 10, fontPath: Liberation));
+        var thrown = Assert.Throws<ModelingException>(() => new Text("Rate 中", 10, fontPath: Liberation));
         Assert.Contains("U+4E2D", thrown.Message, StringComparison.Ordinal);
 
         Assert.Equal(TextShapes.Empty, MakeText("", 10).Error!.Code);
