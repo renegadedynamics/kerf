@@ -1669,3 +1669,50 @@ the end). Main's bytes are 1% to 3.5% over 0.4.0's on every case: not looked int
 each case `ms` and `alloc MB`, the medians of 9 warm runs in the process, and `result`, its shapes' count, total volume to
 0.001, invalid shapes and faces, which the rig compares exactly. Their times fall under the rig's single-operation
 threshold (60% and 10 ms), so the rig flags only a large move; the release check is the tight comparison.
+
+## Small parts fused onto a large one (unit 13A)
+
+*9 November 2026, on a machine shared with the owner and five other helpers: times here are from a loaded machine, each process given two processors, and the verdicts rest on bytes (over all threads) and on counts of points. Decisions 2034 to 2038.*
+
+**The report** (a user's agent, on `Kerf.Modeling` 0.4.0): fusing a screw boss (a cylinder, r 3.2) onto an enclosure's door took 86 ms where 0.3.0 took 18 and native OCCT 11, and a 1.5 × 0.5 × 1.5 detent bump on a slanted facet 225 ms against 59 and 11, with the same volumes, validity and faces. **Both reproduce,** from the operands the agent saved as STEP files (now in `Kerf.Kernel.DataExchange.Tests/UserCases`).
+
+### Where it went
+
+One fuse, `a + b` and the result's volume as the agent timed it, split by step in the kernel (the same Boolean, clean and checks as `Kerf.Modeling`'s); MB over all threads, warm. 0.4.0's sources are `main`'s.
+
+| MB | Boss: 0.3.0 | 0.4.0 | now | Bump: 0.3.0 | 0.4.0 | now |
+|---|---:|---:|---:|---:|---:|---:|
+| Pave filler | 2.1 | 2.1 | 2.1 | 2.0 | 1.9 | 1.9 |
+| Builder | 6.5 | 5.9 | 5.9 | 6.8 | 6.2 | 6.2 |
+| Clean | 1.8 | 1.8 | 1.8 | 2.0 | 2.0 | 2.0 |
+| Validity check | 3.1 | 2.9 | 2.9 | 3.9 | 4.1 | 4.2 |
+| Volume check | 0.45 | 71.5 | 4.6 | 54.4 | 337.5 | 10.1 |
+| of which decision 1937's proof of a lost part | | 70.9 | 4.0 | | 311.5 | 3.0 |
+| of which decision 1881's grid | | | | 53.3 | 25.2 | 6.4 |
+| The whole fuse (`Kerf.Modeling`) | 14.0 | 84.5 | 17.4 | 69.8 | 351.4 | 24.2 |
+| Points classified or measured | | 357 | 150 | | 1,688 | 473 |
+
+**Why there:** decision 1937 asks at points only when a fuse is no larger than its larger input, within the volume check's margin. The boss, as saved, lies wholly inside the door (the fuse's volume is the door's), and the bump's 0.6 is less than the margin of 3.8, so both take that path. Its 9 × 9 points on each face of the small part were all inside the result or on its boundary, and a point the classifier puts on the boundary went on to two distance measurements: the bump's 486 points became 1,688 classifications and distances.
+
+### What changed
+
+1. **Points on the result's boundary are passed over unclassified** (decisions 2035, 2037): a face of the small part that is the result's, a point inside a result face on the same surface, or within a plane's tolerance of a planar result face and inside it; and a point classified on a boundary isn't measured. The boss's fuse 84.5 to 26.5 MB, the bump's 351.5 to 48.9; the top of the boss, on the door's face, 219 to 150 points. The larger input's classifier and the result's faces' 2D classifiers are made only when a point asks for them: the boss's check 5.3 to 4.0 MB, about 3 ms.
+2. **A classifier's ray skips the elementary faces whose widened box it misses** (decision 2036): the boss 25.8 to 19.1 MB, the bump 46.1 to 27.5; the 12Y rig's eight parts 1,057 to 1,066 MB a pass to 1,033 to 1,051 (-2%), the same volumes, faces and edges; over the corpus's 3,997 Booleans, checked through decision 1937's throwaway hook, the checks' time 35.3 to 22.1 s (two runs, loaded), a median of 0.36 of it for the 125 whose check took over 20 ms.
+
+### Before and after, timed
+
+Fresh processes in turn, 0.3.0, 0.4.0, this branch and native (build123d 0.13 on OCP 8.0.1.1, the agent's script), six rounds; each Kerf process the agent's `a + b` with the result's volume, a median of 9 after 3 fuses (as the agent timed it) or after 60; Kerf ReadyToRun, as the packages ship. Milliseconds, the median of the six processes' medians, on a loaded machine, two processors a process.
+
+| | Boss, after 3 | after 60 | Bump, after 3 | after 60 |
+|---|---:|---:|---:|---:|
+| Native | 11 | 10.5 | 11 | 11 |
+| 0.3.0 | 22.8 | 19.7 | 70.1 | 42.3 |
+| 0.4.0 | 96.4 | 48.2 | 196.4 | 114.2 |
+| Now | 29.8 | 27.3 | 44.0 | 28.8 |
+| Now against 0.3.0 | 1.31 | 1.39 | 0.63 | 0.68 |
+
+In IL builds (project references) after 60 fuses, an earlier set of six: the boss 17.4, 37.5 and 19.5 ms (1.12 times 0.3.0's), the bump 33.7, 117.4 and 15.7. The agent's own figures were 18 and 59 ms at 0.3.0, 86 and 225 at 0.4.0, on a quiet machine.
+
+### What's left
+
+**The boss is 1.3 to 1.4 times 0.3.0's time, over the bar, and named for the owner** (decision 2038). Its check is 4.6 MB and about 5 to 7 ms: the result's classifier, whose first point fills its trees (about 3 ms), and the 150 points inside the door, each classified once (about 4 ms). That is the proof decision 1937 asks for, as the volume can't tell a small part inside the door from one lost. Keeping a frozen solid's tree of edges and vertices with its TShape, as decision 2001 keeps its map, would let a result's tree serve the next Boolean's classifiers; a quicker classifier would do the rest; keeping `PointInTheFace`'s grid for the next point was tried, and saved 5% of a classification's bytes and no time. An order of asking decision 1881's grid was tried and left out (decision 2038): asking whichever input last ruled a point out took `buc60462_2`'s check from 132 to 226 MB, found by comparing the corpus's check times case by case. **The pattern** (decision 2038), each check counted on a small part against the door: decision 1924's check doesn't run (it was reverted); decision 1932's, a 4 × 4 face against the door, 81 points for a common and 162 for a cut, 4.6 and 5.5 MB beside a Boolean of 2.7 (0.4.0's 8.6 and 13.3); decision 1985's bends, 0.7 MB and 0.6 ms of a 5 MB chamfer, under the bar; decision 1866 on a cut of the bump that removes nothing, 392 points and 7.2 MB beside 6.5 (0.4.0's 26). Decision 1932's and 1866's checks cost more than their Booleans on this shape, as they did in 0.3.0, and aren't 0.4.0's rise; they go with 13K.

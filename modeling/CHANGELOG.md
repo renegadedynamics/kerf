@@ -48,6 +48,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   where each returned a shape that isn't valid as a success; **a `Superellipse` about 1.5e-7 wide and a `Triangle`
   with a side under the tolerance** fail as `ModelingException`, where they threw `InvalidCastException` and
   `InvalidOperationException` (kernel decision 2029).
+- **Fusing a small part onto a large one is quick again:** a detent bump on an enclosure's door now takes less time than in 0.3.0 (0.4.0 took 4 to 5 times as long). A screw boss inside the door takes 1.3 to 1.4 times 0.3.0's time, against 4 to 5 in 0.4.0. The results are the same (the kernel's decisions 25101 to 25105).
 
 ## 0.4.0
 

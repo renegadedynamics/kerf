@@ -26,6 +26,7 @@ version may break the API.
 - **A primitive too small to be valid fails, carrying the shape,** where it was a success: a cylinder, sphere or torus
   of a radius under 1e-7, an arc of a nanometre, a wedge's top as narrow, and a face on a surface's bounds as narrow
   (decision 2029).
+- **A small part fused onto a large one is checked at few points again:** 0.4.0's proof that a fuse lost nothing (decision 1937) classified points of the small part's faces that were already on the result, and measured their distances. A detent bump's fuse onto a user's door was 351 MB and about 4 times 0.3.0's time; it is now 24 MB and quicker than 0.3.0. A screw boss's fuse is 85 to 17 MB, at 1.3 to 1.4 times 0.3.0's time. The verdicts are the same (decisions 25101 to 25105). **A solid's classifier no longer intersects its ray with the planes, cylinders, cones and spheres it passes well clear of,** with the same states, so the Booleans' checks over the corpus take about a third less time.
 
 ## 0.4.0
 

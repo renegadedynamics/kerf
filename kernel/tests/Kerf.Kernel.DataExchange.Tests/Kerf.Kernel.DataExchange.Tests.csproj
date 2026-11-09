@@ -31,6 +31,8 @@
     <EmbeddedResource Include="RWStl\Recordings\stlrec.txt.gz" LogicalName="RWStl.stlrec.txt.gz" />
     <!-- Hand-written STL inputs (read by the tests and by tools/stlrec) -->
     <None Include="RWStl\Inputs\*.stl" CopyToOutputDirectory="PreserveNewest" />
+    <!-- A user's parts, saved just before a small part was fused onto a large one (unit 13A) -->
+    <None Include="UserCases\*.step" CopyToOutputDirectory="PreserveNewest" />
     <!-- Native OCCT's STEP parser on the corpus's STEP files and on the hostile and mutated inputs of
          tools/steprec/gen-cases.py (cases.pack.gz), recorded by tools/steprec (unit 8P) -->
     <EmbeddedResource Include="StepFile\Recordings\steprec-corpus.txt.gz" LogicalName="StepFile.steprec-corpus.txt.gz" />
