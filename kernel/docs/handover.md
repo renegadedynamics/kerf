@@ -35,7 +35,7 @@ Build and test with `dotnet test OcctNet.slnx`. In a worktree outside the repo, 
 
 ## State
 
-- `main`: phases 0–11, phase 12 closed on 9 November 2026 at Kerf 0.4.0 ([phase12-plan.md](phase12-plan.md)), and phase 13 under way towards 0.5.0 ([phase13-plan.md](phase13-plan.md)). Phase 11 closed on 7 November 2026 at Kerf 0.3.0, and what carries on is in its banner:
+- `main`: phases 0–11, phase 12 closed on 9 November 2026 at Kerf 0.4.0 ([phase12-plan.md](phase12-plan.md)), phase 13 under way towards 0.5.0 ([phase13-plan.md](phase13-plan.md)), and phase 14, real-world scripts, beside it ([phase14-plan.md](phase14-plan.md)). Phase 11 closed on 7 November 2026 at Kerf 0.3.0, and what carries on is in its banner:
   [phase11-plan.md](phase11-plan.md); phase 10 on 5 November 2026 at Kerf 0.2.0: [phase10-plan.md](phase10-plan.md); phase 7 merged on 1 November 2026 from `phase7/finishing`, phases 8 and 9 on 2 November 2026,
   phase 9 from `phase9/switch`; phase 8 from
   `phase8/exchange`; see each plan's banner).

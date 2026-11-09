@@ -567,6 +567,9 @@ public class DxfTests
                 Assert.True(new ExportDxf(version, textOutput: text).AddDrawing(DxfNotesTests.Annotated()).Write(Path.Combine(folder, "notes" + mode + suffix + ".dxf")).IsSuccess);
                 Assert.True(new ExportDxf(version, textOutput: text).AddDrawing(sheet).Write(Path.Combine(folder, "sheet" + mode + suffix + ".dxf")).IsSuccess);
             }
+            // Outlines as contours alone, unfilled (unit 13N; the same as the filled ones in R12)
+            if (version == DxfVersion.R2013)
+                Assert.True(new ExportDxf(version, fillOutlines: false).AddDrawing(sheet).Write(Path.Combine(folder, "sheet_contours.dxf")).IsSuccess);
             Assert.True(new ExportDxf(version).WriteToString().Length > 0);
             Assert.True(new ExportDxf(version).Write(Path.Combine(folder, "empty" + suffix + ".dxf")).IsSuccess);
         }

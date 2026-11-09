@@ -191,7 +191,8 @@ public class EmptyShapeQueriesTests
             Assert.Equal(0, zero.Volume);
             Assert.Equal(0, zero.Area);
             Assert.Equal((0.0, 0.0, 0.0), zero.StaticMoments);
-            Assert.Equal([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], zero.MatrixOfInertia);
+            Assert.Equal(3, zero.MatrixOfInertia.Length);
+            Assert.All(zero.MatrixOfInertia, row => Assert.Equal<double>([0.0, 0.0, 0.0], row));
         }
     }
 
