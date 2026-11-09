@@ -1,5 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -52,7 +54,7 @@ internal static class MakerOutcome
     {
         if (shape.IsNull)
         {
-            throw new ArgumentException("The shape is null.", name);
+            Refuse(new ArgumentException("The shape is null.", name));
         }
     }
 
@@ -61,7 +63,7 @@ internal static class MakerOutcome
     {
         if (!(value > 0) || double.IsInfinity(value))
         {
-            throw new ArgumentOutOfRangeException(name, value, "The value must be a positive number.");
+            Refuse(new ArgumentOutOfRangeException(name, value, "The value must be a positive number."));
         }
     }
 
@@ -70,7 +72,7 @@ internal static class MakerOutcome
     {
         if (frame.Direction.Equals(default(Direction3D)))
         {
-            throw new ArgumentException("The frame is default (zero); use Frame3D.World or a frame of your own.", name);
+            Refuse(new ArgumentException("The frame is default (zero); use Frame3D.World or a frame of your own.", name));
         }
     }
 
@@ -79,7 +81,7 @@ internal static class MakerOutcome
     {
         if (axis.Direction.Equals(default(Direction3D)))
         {
-            throw new ArgumentException("The axis is default (zero).", name);
+            Refuse(new ArgumentException("The axis is default (zero).", name));
         }
     }
 
@@ -88,7 +90,17 @@ internal static class MakerOutcome
     {
         if (direction.Equals(default(Direction3D)))
         {
-            throw new ArgumentException("The direction is default (zero).", name);
+            Refuse(new ArgumentException("The direction is default (zero).", name));
         }
     }
+
+    /// <summary>
+    /// Throws an argument error from a frame of the kernel's own. The checks above are small, so the JIT inlines them, and
+    /// the public methods calling them, into a caller in another assembly; a throw inlined with them would come from the
+    /// caller's frame, and the modelling layer, which tells the kernel's refusals from its own by the assembly that threw,
+    /// would take it for its own. Never inlined, this frame is always the kernel's (decision 2014).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    [DoesNotReturn]
+    internal static void Refuse(ArgumentException error) => throw error;
 }

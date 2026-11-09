@@ -31,6 +31,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kerf.Modeling\Kerf.Modeling.csproj" />
+    <!-- Users' cases (unit 13C): UserCasesTests checks each gives its fixed result; its data comes with it -->
+    <ProjectReference Include="..\..\..\kernel\benchmarks\Kerf.UserCases\Kerf.UserCases.csproj" />
     <!-- The check as it was and the comparison with it (the check on small shapes): KERF_CHECK_COMPARE=file -->
     <Compile Include="..\..\..\kernel\tests\Shared\FullCheck\*.cs" Link="Shared\FullCheck\%(Filename)%(Extension)" />
   </ItemGroup>

@@ -45,9 +45,10 @@ runs are quick.
    are copies; there's no `shape.location = …`.
 3. **Operations that can fail return `Result<T>`.** Fillet, chamfer, offset, loft, sweep, extrude, revolve, draft,
    thicken, imports and exports return a `Result`, never throw for a geometric failure. Check it (section 6).
-4. **Operators can't return a `Result`,** so `a - b` throws `InvalidOperationException` if the Boolean fails. Use
-   the methods `a.Subtract(b)`, `a.Add(b)` and `a.Common(b)`, which return a `Result<Part>` (or `Sketch`, `Curve`),
-   where a failure is possible and you want to handle it.
+4. **Operators and constructors can't return a `Result`,** so `a - b` throws `ModelingException` if the Boolean
+   fails, and `new Triangle(…)` if no triangle has those sides. Use the methods `a.Subtract(b)`, `a.Add(b)` and
+   `a.Common(b)`, which return a `Result<Part>` (or `Sketch`, `Curve`), and each object's `Make…` twin
+   (`MakeTriangle(…)`, `MakeSpline(…)`), where a failure is possible and you want to handle it.
 5. **Python names become .NET names:** `fillet` → `Fillet`, `Align.MIN` → `Align.Min`, `edges()` → `Edges()`,
    `sort_by(Axis.Z)` → `OrderBy(Axis.Z)`, `group_by(Axis.Z)[-1]` → `GroupBy(Axis.Z).Last()`. See
    [name-map.md](name-map.md).
@@ -86,6 +87,22 @@ Part plate = new Box(100, 60, 5) - new GridLocations(40, 40, 3, 2) * new Cylinde
 Sketch objects: `Rectangle`, `RectangleRounded`, `Circle`, `Ellipse`, `Polygon`, `RegularPolygon`, `Trapezoid`,
 `Triangle`, the `Slot…` family, `Superellipse`. Curves: `Line`, `Polyline`, `CenterArc`, `ThreePointArc`,
 `TangentArc`, `RadiusArc`, `Spline`, `Bezier`, `Helix`, `FilletPolyline` and others, as in build123d.
+
+**An object that can't be made from its values throws `ModelingException`,** carrying the error a `Result` would
+(`Error`, with its `Code`, and `Diagnostics`): no triangle has sides 1, 1 and 3, no arc of radius 1 joins points 4
+apart, no spline passes through points closer than 1e-6. It's an `InvalidOperationException`. **Each object has a twin
+in `Operations` returning a `Result`,** `Make` and its name, with the same parameters, for values that may not make a
+shape:
+
+```csharp
+Result<Sketch> tri = MakeTriangle(sideA: 1, sideB: 1, sideC: 3);   // modeling.no-solution: No such triangle
+Result<Curve> arc = MakeRadiusArc(new Point3D(0, 0, 0), new Point3D(4, 0, 0), 1);   // modeling.no-solution
+try { var s = new Spline(points); }
+catch (ModelingException e) { Console.WriteLine(e.Error.Code); }   // modeling.spline-failed
+```
+
+An argument that is wrong on its own (a null, too few points, a missing angle, a negative radius the object checks)
+is still an `ArgumentException`, from the constructor and its `Make…` alike.
 
 Objects are centred by default, as in build123d. `align: new Alignment(Align.Min, Align.Min, Align.Min)` puts the
 minimum corner at the origin; `GridLocations(xSpacing, ySpacing, xCount, yCount)` takes the spacing between
@@ -261,7 +278,7 @@ Every exporter and importer returns a `Result`. A missing folder or file is `Dir
 
 ### Drawings: hidden lines and SVG
 
-build123d's `ExportSVG` class isn't ported, but the kernel's `Kerf.Drawing` does the same job: a hidden-line
+build123d's `ExportSVG` class isn't ported (`ExportDxf` is, below), but the kernel's `Kerf.Drawing` does the same job: a hidden-line
 projection of any shape through a camera, written as SVG with the hidden lines in their own dashed layer.
 
 ```csharp
@@ -279,7 +296,34 @@ string front = Svg.WriteToString(part.Shape.ProjectLines(Camera.Front).Value,
   `PageHeight`, `Scale`, `Unit`, `VisibleStyle`, `HiddenStyle`, `Background`).
 - `DrawingOptions` chooses the method (exact, or the faster polygonal one) and whether hidden lines are computed at all.
 - `DrawingOperations.ProjectLines(shapes, camera)` draws several shapes together, each hiding the others' lines.
-- DXF export isn't available.
+
+### DXF: for other CAD programs and laser cutters
+
+`ExportDxf` is build123d's `ExportDXF`: layers with colours, line types and weights, then shapes or drawings on them.
+
+```csharp
+// A sketch's outline to cut, and a hole's to engrave, in millimetres
+Result written = new ExportDxf(unit: Unit.Millimeter)
+    .AddLayer("cut", ColorIndex.Red)
+    .AddLayer("engrave", ColorIndex.Blue, lineWeight: 0.25)
+    .AddShape(new Rectangle(50, 20) - new Circle(4), "cut")
+    .AddShape(new Pos(18, 0) * new Circle(2), "engrave")
+    .Write("plate.dxf");
+
+// A drawing: the visible lines on "visible", the hidden ones on "hidden" (grey, dashed)
+Result<LineDrawing> drawing = part.Shape.ProjectLines(Camera.Isometric);
+new ExportDxf().AddDrawing(drawing.Value).Write("part.dxf");
+```
+
+- **Each call returns a new exporter;** chain them, or keep the result: `dxf.AddShape(s);` on its own adds nothing.
+- Edges are drawn in the XY plane: lines, circles, arcs, ellipses and splines exactly (a rational spline with its
+  weights), anything else as a polyline within `tolerance` (1e-3). An edge off the plane is projected onto it, and
+  `Write` warns (`modeling.dxf-not-planar`). Coordinates aren't scaled: `unit` names them in the header.
+- `new ExportDxf(DxfVersion.R12)` writes the old R12 format, which some laser cutters' software reads better:
+  ellipses and splines become polylines, and the header has no units.
+- A layer must be added before a shape goes on it; `""` is the default layer, `"0"`. Line weights are DXF's standard
+  ones (0.05, 0.09, 0.13 … 2.11 mm).
+- Text, when it comes (`Text`), is written as its outlines, as any other shape's edges.
 
 ### Pictures: shaded PNG
 
@@ -312,7 +356,8 @@ using (var file = File.Create("part.png"))
   part first.
 - **Angles are degrees** in objects and operations (`Rotation`, `Revolve`, `Taper`), as in build123d; mesh angular
   deflections are radians.
-- **Not ported yet:** text, builder mode, DXF export, `import_svg`. SVG drawings come from `Kerf.Drawing` (section 8). [name-map.md](name-map.md) lists the rest.
+- **Not ported yet:** text, builder mode, `import_svg`. SVG drawings come from `Kerf.Drawing`, DXF from `ExportDxf`
+  (section 8). [name-map.md](name-map.md) lists the rest.
 
 ## 10. Coming from build123d
 

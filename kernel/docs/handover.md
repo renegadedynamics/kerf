@@ -49,6 +49,24 @@ Build and test with `dotnet test OcctNet.slnx`. In a worktree outside the repo, 
   with native on all 1,853 cases.
 - **Decisions:** the last real number is 971.
 
+## Releasing
+
+As 0.4.0 was prepared (decision 2002), with the release check since unit 13C (decision 2015). From the repository's root:
+
+1. **Everything for the release merged**, and the full corpus run and compared with the last release's, each difference
+   attributed in a decision.
+2. **The version:** `VersionPrefix` in `kernel/Directory.Build.props` and `modeling/Directory.Build.props`, and the two
+   places `kernel/tools/pack-nuget.ps1` names it; each CHANGELOG's `Unreleased` becomes the version.
+3. **The rig, on a quiet machine:** `kernel/tools/bench.ps1 -Compare` the run named last in decisions.md; its run goes in
+   `kernel/docs/benchmarks/`, and a decision makes it the one to compare with.
+4. **The packages:** `kernel/tools/pack-nuget.ps1`, which builds the committed HEAD and runs its smoke test on them.
+5. **The release check:** `kernel/tools/release-check.ps1 -CandidatePackages <pack-nuget.ps1's folder> -Out
+   kernel/docs/benchmarks/<date>-release-check.txt`. It runs users' cases on the last release's packages from nuget.org
+   and on the new ones, and exits non-zero naming any case more than 20% slower or giving a different result
+   ([performance.md](performance.md#the-release-check-unit-13c)). The release waits until it passes, or until each case it
+   names is explained in a decision and given to it with `-Explained`.
+6. **The owner** tests the packages and publishes them.
+
 ## Remaining units
 
 Sizes are the plan's, in thousands of OCCT lines. Each row in `docs/phase5-6-plan.md` gives the unit's full scope and

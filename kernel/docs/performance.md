@@ -1613,3 +1613,59 @@ Before the two changes, against a settled pass of about 1,300 ms. The process's 
 
 - **"1.3 to 1.4 times build123d's" Booleans, warm:** all of it is the checks. `Kerf.Modeling` was 1.0 to 1.6 times native on this machine, 1.12 at its quietest; the kernel's Boolean and clean alone 0.5 to 0.7. After the two changes, 0.94 at the quietest (0.85 to 1.05 under load). build123d itself adds Python's calls over native's, which this rig can't measure (its OCP is broken), so against build123d Kerf is if anything a little better than these ratios.
 - **"About twice as long" for a test suite:** mostly the fresh process. A test assembly is one process: `dotnet test` of an empty test took 0.9 s (five runs, 0.90 to 0.91 after the first), and a test making the rig's bracket (construction and its 10 Booleans, against the ReadyToRun build) 370 ms inside it, against 60 to 100 ms for the same Booleans settled and about 80 ms native. On the rig's figures a fresh process pays `Kerf.Modeling` about 3 s more than settled over its first 300 Booleans; with the checks' 1.3 times on top, a suite of up to about 500 Booleans takes twice native's time or more, and a larger one tends to the settled ratio, now about 1. xUnit also runs a suite's tests in parallel, where 9E found a fifth of the run stopped for collections. Python's start (importing build123d and OCP) wasn't measurable here; it isn't free either, so the figure against build123d would be a little better than against native. Without the agent's suite, how the two divide its figure can't be said more closely.
+
+## The release check (unit 13C)
+
+*9 November 2026, decision 2015.* 0.4.0 shipped two slowdowns a user's agent found at once, a small part fused onto a
+large one and a chamfer collapsing tight corners, and the rig missed both: it had no part shaped like theirs. So users'
+parts are now cases of their own, in `benchmarks/Kerf.UserCases` ([its README](../benchmarks/Kerf.UserCases/README.md)):
+the agent's two fuses, its two collapsing chamfers with the plain chamfers on the same edges beside them, and the blade
+bumper's enclosure built whole (48 shapes). Each has a fixed result, every shape's volume to 1e-6 relative, validity and
+face count, which its test (`UserCasesTests`) checks on the tree, so a speed-up that changes an answer fails.
+
+**`tools/release-check.ps1`** runs them on the last release's packages from nuget.org and on the candidate: the packages
+`pack-nuget.ps1` made (`-CandidatePackages`), a version on nuget.org (`-Candidate`), or this tree. Each side is the cases'
+program built against its own Kerf, ReadyToRun as the packages are, restored into a package folder of its own (the
+packages' SHA-512 hashes are printed). Both programs stay running, so every run is warm: two warm-up rounds, then 9 timed
+runs of each case on each side, alternating case by case and taking turns to go first, so a machine's load falls on both
+alike; the figure is the median. A case stops the release when the candidate is more than 20% slower, or its result
+differs from the last release's, from its fixed result or between runs; the script exits 1 naming each. A stop that a
+decision explains is passed with `-Explained`. A case the last release can't run (a later API) has no baseline, and is
+checked against its fixed result only. The release steps are in [handover.md](handover.md#releasing).
+
+**It would have stopped 0.4.0.** 0.3.0 against 0.4.0, both from nuget.org, on a loaded machine (9% total CPU at the start,
+60% at the end; the sides share it alike), times in ms:
+
+| Case | 0.3.0 | 0.4.0 | | Verdict |
+|---|---:|---:|---:|---|
+| fuse-boss | 9.5 | 37.9 | 4.0 times | stops |
+| fuse-detent | 26.2 | 128.4 | 4.9 times | stops |
+| chamfer-guide-box | 1.9 | 2.2 | +15% | ok |
+| collapse-guide-box | 7.5 (refused) | 265.2 | 35 times | stops, and a different result |
+| chamfer-housing | 4.4 | 4.9 | +12% | ok |
+| collapse-housing | 11.4 (refused) | 433.5 | 38 times | stops, and a different result |
+| enclosure | can't run | 3,688 | | no baseline |
+
+0.3.0 has no `TightCorners`, so its collapsing cases run the same chamfer without it, which it refuses (its result isn't
+valid), quickly; the different result is right to stop on too, as it would need explaining. The enclosure needs 0.4.0's
+API, so its baseline starts with 0.4.0.
+
+**0.4.0 against main** (430fe8751, before 13A and 13B), also loaded:
+
+| Case | 0.4.0 | main | | MB, 0.4.0 / main |
+|---|---:|---:|---:|---:|
+| fuse-boss | 39.9 | 39.9 | 0% | 86.3 / 87.6 |
+| fuse-detent | 129.5 | 136.1 | +5% | 359.6 / 368.1 |
+| chamfer-guide-box | 2.1 | 2.2 | +7% | 1.8 / 1.8 |
+| collapse-guide-box | 134.0 | 137.5 | +3% | 76.3 / 79.0 |
+| chamfer-housing | 4.9 | 4.6 | -5% | 6.2 / 6.4 |
+| collapse-housing | 264.9 | 254.2 | -4% | 167.6 / 170.6 |
+| enclosure | 3,367 | 3,451 | +3% | 4,654 / 4,709 |
+
+Nothing stops it, and every result is the same, the enclosure's 48 shapes included (80% total CPU at the start, 18% at
+the end). Main's bytes are 1% to 3.5% over 0.4.0's on every case: not looked into here.
+
+**In the rig** the cases are the `user-cases` suite (2 processes in a full run, 1 in `-Quick`), group `user cases`: for
+each case `ms` and `alloc MB`, the medians of 9 warm runs in the process, and `result`, its shapes' count, total volume to
+0.001, invalid shapes and faces, which the rig compares exactly. Their times fall under the rig's single-operation
+threshold (60% and 10 ms), so the rig flags only a large move; the release check is the tight comparison.
