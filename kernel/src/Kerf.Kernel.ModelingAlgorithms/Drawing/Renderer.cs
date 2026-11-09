@@ -2,6 +2,7 @@
 
 using System.Buffers;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics;
 using Kerf.Geometry;
 using Kerf.Meshing;
 using Kerf.Topology;
@@ -86,13 +87,20 @@ public static class Renderer
     /// <exception cref="ArgumentException">The camera isn't valid (<see cref="Camera.ViewFrame"/>).</exception>
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<RgbaImage> Render(Scene scene, Camera camera, RenderOptions? options = null, CancellationToken cancellationToken = default)
+        => Render(scene, camera, options, vectors: true, cancellationToken);
+
+    /// <summary>
+    /// <see cref="Render(Scene, Camera, RenderOptions?, CancellationToken)"/>, with the rasteriser's loops over pixels by
+    /// vectors of four (where the processor has them) or one at a time: the same pixels either way (unit 14E).
+    /// </summary>
+    internal static Result<RgbaImage> Render(Scene scene, Camera camera, RenderOptions? options, bool vectors, CancellationToken cancellationToken)
     {
         KernelArgumentNullException.ThrowIfNull(scene);
         KernelArgumentNullException.ThrowIfNull(camera);
         options ??= RenderOptions.Default;
         ViewTransform view = ViewTransform.Of(camera);
         cancellationToken.ThrowIfCancellationRequested();
-        var rasteriser = new Rasteriser(view, options, cancellationToken);
+        var rasteriser = new Rasteriser(view, options, vectors && Vector256.IsHardwareAccelerated, cancellationToken);
         foreach (SceneItem item in scene.Items)
         {
             rasteriser.Add(item);
@@ -120,6 +128,9 @@ public static class Renderer
         private readonly CancellationToken _cancellationToken;
         private readonly int _width, _height, _samples;
 
+        // The loops over a row's pixels four at a time (unit 14E), each lane the scalar loop's operations in its order
+        private readonly bool _vectors;
+
         // Nodes: view coordinates, then screen coordinates and depth; unit normals in the view's frame
         private readonly List<double> _vx = [], _vy = [], _vz = [], _nx = [], _ny = [], _nz = [];
         private double[] _sx = [], _sy = [], _depth = [];
@@ -140,9 +151,10 @@ public static class Renderer
         private readonly (double X, double Y, double Z, double Intensity)[] _lights;
         private double _depthBias;
 
-        public Rasteriser(ViewTransform view, RenderOptions options, CancellationToken cancellationToken)
+        public Rasteriser(ViewTransform view, RenderOptions options, bool vectors, CancellationToken cancellationToken)
         {
             _view = view;
+            _vectors = vectors;
             _options = options;
             _cancellationToken = cancellationToken;
             _samples = options.Supersampling;
@@ -636,6 +648,11 @@ public static class Renderer
                     xTo = Math.Min(xMax, (int)Math.Ceiling(right) + 1);
                 }
 
+                if (_vectors && fragments is null)
+                {
+                    xFrom = TriangleRow(xFrom, xTo, py, row, color, depth, ia, ib, ic, inverse, back, smooth, flat, r, g, b);
+                }
+
                 for (int x = xFrom; x <= xTo; x++)
                 {
                     double px = x + 0.5;
@@ -699,6 +716,91 @@ public static class Renderer
                     }
                 }
             }
+        }
+
+        // The first pixels of a row of an opaque triangle, four at a time, as the scalar loop does them one at a time: each
+        // lane its operations in the same order (IEEE, no fused multiply-adds), so the same samples. Returns the first pixel
+        // left for the scalar loop.
+        private int TriangleRow(int xFrom, int xTo, double py, int row, uint[] color, float[] depth, int ia, int ib, int ic, double inverse,
+                                bool back, bool smooth, uint flat, double r, double g, double b)
+        {
+            Vector256<double> ax = Vector256.Create(_sx[ia]), ay = Vector256.Create(_sy[ia]), bx = Vector256.Create(_sx[ib]);
+            Vector256<double> by = Vector256.Create(_sy[ib]), cx = Vector256.Create(_sx[ic]), cy = Vector256.Create(_sy[ic]);
+            Vector256<double> vpy = Vector256.Create(py), vInverse = Vector256.Create(inverse);
+            Vector256<double> da = Vector256.Create(_depth[ia]), db = Vector256.Create(_depth[ib]), dc = Vector256.Create(_depth[ic]);
+            Vector256<double> zero = Vector256<double>.Zero, half = Vector256.Create(0.5);
+            Vector256<double> lanes = Vector256.Create(0.0, 1.0, 2.0, 3.0);
+            Vector128<uint> flatColor = Vector128.Create(flat);
+            int x = xFrom;
+            for (; x + 3 <= xTo; x += 4)
+            {
+                Vector256<double> px = Vector256.Create((double)x) + lanes + half;
+                Vector256<double> w0 = ((bx - px) * (cy - vpy) - (by - vpy) * (cx - px)) * vInverse;
+                Vector256<double> w1 = ((cx - px) * (ay - vpy) - (cy - vpy) * (ax - px)) * vInverse;
+                Vector256<double> w2 = ((ax - px) * (by - vpy) - (ay - vpy) * (bx - px)) * vInverse;
+                Vector256<double> outside = Vector256.LessThan(w0, zero) | Vector256.LessThan(w1, zero) | Vector256.LessThan(w2, zero);
+                if (outside == Vector256<double>.AllBitsSet)
+                {
+                    continue;
+                }
+
+                Vector256<double> wide = w0 * da + w1 * db + w2 * dc;
+                Vector128<float> d = Vector256.Narrow(wide, wide).GetLower();
+                Span<float> depths = depth.AsSpan(row + x, 4);
+                Vector128<float> before = Vector128.Create((ReadOnlySpan<float>)depths);
+                Vector128<int> inside = Vector256.Narrow(outside.AsInt64(), outside.AsInt64()).GetLower();
+                Vector128<float> nearer = Vector128.AndNot(Vector128.GreaterThan(d, before), inside.AsSingle());
+                if (nearer == Vector128<float>.Zero)
+                {
+                    continue;
+                }
+
+                Vector128.ConditionalSelect(nearer, d, before).CopyTo(depths);
+                Vector128<uint> shaded = flatColor;
+                if (smooth)
+                {
+                    shaded = SmoothShade(w0, w1, w2, ia, ib, ic, back, r, g, b);
+                }
+
+                Span<uint> colors = color.AsSpan(row + x, 4);
+                Vector128.ConditionalSelect(nearer.AsUInt32(), shaded, Vector128.Create((ReadOnlySpan<uint>)colors)).CopyTo(colors);
+            }
+
+            return x;
+        }
+
+        // Four samples' colours, smooth shaded: the normal by their weights, unit, towards the eye, and lit (Shade)
+        private Vector128<uint> SmoothShade(Vector256<double> w0, Vector256<double> w1, Vector256<double> w2, int ia, int ib, int ic, bool back,
+                                            double r, double g, double b)
+        {
+            Vector256<double> nx = w0 * Vector256.Create(_nx[ia]) + w1 * Vector256.Create(_nx[ib]) + w2 * Vector256.Create(_nx[ic]);
+            Vector256<double> ny = w0 * Vector256.Create(_ny[ia]) + w1 * Vector256.Create(_ny[ib]) + w2 * Vector256.Create(_ny[ic]);
+            Vector256<double> nz = w0 * Vector256.Create(_nz[ia]) + w1 * Vector256.Create(_nz[ib]) + w2 * Vector256.Create(_nz[ic]);
+            Vector256<double> m = Vector256.Sqrt(nx * nx + ny * ny + nz * nz);
+            Vector256<double> some = Vector256.GreaterThan(m, Vector256<double>.Zero);
+            m = Vector256.Create(back ? -1.0 : 1.0) / m;
+            // Where the normal is nothing, the scalar loop lights (0, 0, 1)
+            nx = Vector256.ConditionalSelect(some, nx * m, Vector256<double>.Zero);
+            ny = Vector256.ConditionalSelect(some, ny * m, Vector256<double>.Zero);
+            nz = Vector256.ConditionalSelect(some, nz * m, Vector256<double>.One);
+            Vector256<double> light = Vector256.Create(_options.Ambient);
+            foreach ((double x, double y, double z, double intensity) in _lights)
+            {
+                Vector256<double> dot = nx * Vector256.Create(x) + ny * Vector256.Create(y) + nz * Vector256.Create(z);
+                light = Vector256.ConditionalSelect(Vector256.GreaterThan(dot, Vector256<double>.Zero), light + Vector256.Create(intensity) * dot, light);
+            }
+
+            Vector128<uint> red = Byte(Vector256.Create(r) * light), green = Byte(Vector256.Create(g) * light), blue = Byte(Vector256.Create(b) * light);
+            return red | (green << 8) | (blue << 16) | Vector128.Create(255u << 24);
+        }
+
+        // Byte for four values, in the low byte of each lane
+        private static Vector128<uint> Byte(Vector256<double> c)
+        {
+            Vector256<long> scaled = Vector256.ConvertToInt64(c * Vector256.Create(255.0) + Vector256.Create(0.5));
+            scaled = Vector256.ConditionalSelect(Vector256.LessThanOrEqual(c, Vector256<double>.Zero).AsInt64(), Vector256<long>.Zero, scaled);
+            scaled = Vector256.ConditionalSelect(Vector256.GreaterThanOrEqual(c, Vector256<double>.One).AsInt64(), Vector256.Create(255L), scaled);
+            return Vector256.Narrow(scaled, scaled).GetLower().AsUInt32();
         }
 
         // The top-left rule: of two triangles sharing an edge, exactly one runs it with this direction
@@ -892,7 +994,8 @@ public static class Renderer
             int width = _options.Width, n = _samples * _samples;
             for (int y = y0 / _samples; y < y1 / _samples; y++)
             {
-                for (int x = 0; x < width; x++)
+                int first = _vectors && _samples == 2 ? DownsampleTwice(color, y0, y, pixels) : 0;
+                for (int x = first; x < width; x++)
                 {
                     long r = 0, g = 0, b = 0, a = 0;
                     for (int j = 0; j < _samples; j++)
@@ -920,6 +1023,49 @@ public static class Renderer
                     pixels[p + 3] = (byte)((a + n / 2) / n);
                 }
             }
+        }
+
+        // The first pixels of a row supersampled twice, four at a time, as Downsample does them one at a time; returns the first
+        // pixel left. Each sample's channel times its opacity fits 16 bits and a pixel's sums 18, so lanes of 32 bits hold
+        // them; the rounded quotients are worked in doubles, exactly: the numerator is below 2^20, so the quotient's rounding
+        // error is far less than the 1/1020 that separates it from the next whole number.
+        private int DownsampleTwice(uint[] color, int y0, int y, byte[] pixels)
+        {
+            int width = _options.Width;
+            Vector256<uint> low = Vector256.Create(0xFFu);
+            Vector256<ulong> lowWord = Vector256.Create(0xFFFFFFFFul), magic = Vector256.Create(0x4330000000000000ul);
+            Vector256<double> magicValue = Vector256.Create(4503599627370496.0); // 2^52
+            int top = (2 * y - y0) * _width, bottom = top + _width, x = 0;
+            for (; x + 4 <= width; x += 4)
+            {
+                Vector256<uint> c0 = Vector256.Create((ReadOnlySpan<uint>)color.AsSpan(top + 2 * x, 8)), c1 = Vector256.Create((ReadOnlySpan<uint>)color.AsSpan(bottom + 2 * x, 8));
+                Vector256<uint> a0 = c0 >>> 24, a1 = c1 >>> 24;
+                Vector256<uint> r = (c0 & low) * a0 + (c1 & low) * a1;
+                Vector256<uint> g = ((c0 >>> 8) & low) * a0 + ((c1 >>> 8) & low) * a1;
+                Vector256<uint> b = ((c0 >>> 16) & low) * a0 + ((c1 >>> 16) & low) * a1;
+                Vector256<uint> a = a0 + a1;
+
+                // A pixel's two samples side by side are a 64-bit lane's halves
+                static Vector256<ulong> Pairs(Vector256<uint> v, Vector256<ulong> lowWord) => (v.AsUInt64() & lowWord) + (v.AsUInt64() >>> 32);
+                Vector256<ulong> sumR = Pairs(r, lowWord), sumG = Pairs(g, lowWord), sumB = Pairs(b, lowWord), sumA = Pairs(a, lowWord);
+                Vector256<ulong> halfA = sumA >>> 1;
+                static Vector256<double> Exact(Vector256<ulong> v, Vector256<ulong> magic, Vector256<double> magicValue) => (v | magic).AsDouble() - magicValue;
+                Vector256<double> divisor = Exact(sumA, magic, magicValue);
+                Vector256<ulong> outR = Vector256.ConvertToUInt64(Exact(sumR + halfA, magic, magicValue) / divisor);
+                Vector256<ulong> outG = Vector256.ConvertToUInt64(Exact(sumG + halfA, magic, magicValue) / divisor);
+                Vector256<ulong> outB = Vector256.ConvertToUInt64(Exact(sumB + halfA, magic, magicValue) / divisor);
+                Vector256<ulong> outA = (sumA + Vector256.Create(2ul)) >>> 2;
+
+                Span<byte> target = pixels.AsSpan(4 * (y * width + x), 16);
+                Vector256<ulong> before = Vector256.WidenLower(Vector128.Create((ReadOnlySpan<byte>)target).AsUInt32().ToVector256());
+                Vector256<ulong> rgb = outR | (outG << 8) | (outB << 16);
+                // Where no sample has any opacity the colour is left as it was
+                rgb = Vector256.ConditionalSelect(Vector256.Equals(sumA, Vector256<ulong>.Zero), before & Vector256.Create(0xFFFFFFul), rgb);
+                Vector256<ulong> packed = rgb | (outA << 24);
+                Vector256.Narrow(packed, packed).GetLower().AsByte().CopyTo(target);
+            }
+
+            return x;
         }
     }
 }
