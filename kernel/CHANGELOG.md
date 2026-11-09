@@ -5,6 +5,10 @@ version may break the API.
 
 ## Unreleased
 
+- **A fillet of thousands of edges can be cancelled at once again,** as in 0.3.0: in 0.4.0 its limits were read before the
+  algorithm without a look at the token, and on a plate of 900 holes that took 2 s; now each edge is a check and the reading
+  30 ms, with the same results (decisions 24201 and 24202).
+
 ## 0.4.0
 
 - **Silent wrong answers found and fixed,** in line with phase 12's aim of trustworthy results first: Cuts of crossing
