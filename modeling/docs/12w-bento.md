@@ -15,4 +15,4 @@ TightCorners.Refuse)`, with a table `"refuse"`, `"collapse"` beside `ModelNames.
 | A 40 by 30 by 30 box with 1.7 corners, its top loop chamfered 3 | `#VALUE!`: invalid (unit 12V: refused, saying the most that fits) | `{tight_corners: "collapse"}`: volume 35336.538, the corners collapsed to points |
 | The same at 1.69 | 35734.872 | the same, with the option or without |
 
-Decisions 23901 to 23904 in the kernel's `docs/decisions.md`; the geometry in its `docs/chamfer-corners.md`.
+Decisions 1988 to 1991 in the kernel's `docs/decisions.md`; the geometry in its `docs/chamfer-corners.md`.
