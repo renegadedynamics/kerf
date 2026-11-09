@@ -21,6 +21,16 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   (twice its area over its perimeter) is under 1e-7 fails with `modeling.object-failed`, as a `ModelingException` from
   the constructor or a failure from `Operations.Make…` (`TryGetInvalid` gives the face). From 2e-7 they are valid as
   before (kernel decision 2059).
+- **Async import and export** (unit 14G): `Importers.ImportBrepAsync`, `ImportStepAsync`, `ImportStlAsync` and
+  `ImportGltfAsync`, `Exporters3D.ExportBrepAsync`, `ExportStepAsync`, `ExportStlAsync`, `ExportGltfAsync` and
+  `Export3mfAsync`, by stream and by file, and `ExportDxf.WriteAsync`: the data read into memory asynchronously and
+  then parsed, or made in memory and then written asynchronously, with the same results and bytes as the synchronous
+  forms. A missing file or folder throws before the task starts. There are no async modelling operations: they're CPU
+  work, run on the threads the caller chooses (kernel decision 27701).
+- **The guide's section 9, "Running operations in parallel":** shapes and parts shared between threads, operations on
+  many threads at once giving what they give on one (a new test builds, meshes, draws and exports parts on several
+  threads against one), and how `Cancellation.Use`, `Warnings.Capture` and `SkipClean` follow threads and `await`s,
+  with a `Parallel.ForEach` and a `Task.WhenAll` example. Its later sections are now 10 and 11 (kernel decision 27702).
 - **Notes as outlines are filled in DXF 2013:** each letter's contours (outer and holes) are a solid `HATCH` in the
   notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
   SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a

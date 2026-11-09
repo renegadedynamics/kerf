@@ -283,6 +283,26 @@ Every exporter and importer returns a `Result`. A missing folder or file is `Dir
 `FileNotFoundException`, as everywhere in .NET; a file past `ImportLimits` (size, nesting) is
 `InvalidDataException`.
 
+**Async forms.** Every importer and exporter, and `ExportDxf.Write`, has an async form named `…Async`, taking a
+`CancellationToken` and returning a `Task<Result>` or `Task<Result<…>>`; so do the kernel's readers and writers
+(`Step.ReadAsync`, `Stl.WriteAsync`, `Svg.WriteAsync`, `Png.WriteAsync`, `Font.ReadAsync` and the rest). Only the I/O
+is asynchronous: parsing and building a file are CPU work, which Kerf doesn't hide in a task.
+
+```csharp
+Result<ModelShape> read = await Importers.ImportStepAsync("part.step", cancellationToken: token);
+Result written = await Exporters3D.ExportStepAsync(part, "part.step", cancellationToken: token);
+```
+
+- A reader reads the whole file or stream into memory without blocking a thread, then parses it on the thread the
+  read finished on. In a UI, call it inside `Task.Run` to keep the parsing off the UI thread.
+- A writer builds the file in memory on the calling thread, then writes it without blocking one, and flushes the
+  stream. Nothing is written if it fails.
+- The results, diagnostics and bytes are the synchronous forms'. The cost is memory: the file's bytes, held while it
+  is parsed (STEP's synchronous reader parses as it reads) or before it is written. For the largest STEP file of
+  OCCT's test data, 22 MB, that is 22 to 26 MB more allocated beside the 2.3 GB that reading it allocates.
+- A missing file or folder, or a unit that isn't a length, throws before the task starts, as the synchronous forms
+  throw; a cancelled token cancels the task.
+
 ### Drawings: hidden lines and SVG
 
 build123d's `ExportSVG` class isn't ported (`ExportDxf` is, below), but the kernel's `Kerf.Drawing` does the same job: a hidden-line
@@ -402,7 +422,56 @@ using (var file = File.Create("part.png"))
 - A colour with an opacity under 1, `new Color(0.2, 0.5, 0.9, 0.35)`, makes an item (its faces and edges) see-through,
   whatever the order of the items.
 
-## 9. Common mistakes
+## 9. Running operations in parallel
+
+The modelling operations have no async forms: they're CPU work, and you choose the threads they run on. Reading and
+writing files have async forms (section 8).
+
+- **Shapes and parts are immutable,** so one can be shared between threads without a lock: every thread can measure
+  it, select from it, fillet it, cut from it, mesh it, draw it or export it at once, and gets what it would alone. The
+  options records, locations, meshes, drawings, fonts and exporters (`ExportDxf`) are immutable too.
+- **Operations run on many threads at once,** each giving exactly what it gives on one: the same parts to the bit,
+  the same meshes and the same files. Kerf's tests build parts with fillets, chamfers, shells, extrusions,
+  revolutions, lofts, sweeps, hulls and text on several threads, and mesh, draw, render and export them, against the
+  same run on one thread.
+- Independent parts are the natural unit of work: one part a thread. Meshing, and a few of the kernel's algorithms,
+  use .NET's thread pool themselves; many parts at once share the pool rather than multiply its threads.
+
+```csharp
+int[] sizes = [40, 50, 60, 70];
+
+// Each part built and written on a thread of its own
+Parallel.ForEach(sizes, size =>
+{
+    Part plate = new Box(size, 30, 8) - new GridLocations(size / 2.0, 15, 2, 2) * new Cylinder(3, 8);
+    Part part = Fillet(plate, plate.Edges().GroupBy(Axis.Z).Last(), 1.5).Value;
+    Exporters3D.ExportStep(part, $"plate-{size}.step");
+});
+
+// Or as tasks: each part built on the thread pool, then written asynchronously
+Result[] written = await Task.WhenAll(sizes.Select(async size =>
+{
+    Part part = await Task.Run(() => (Part)(new Box(size, 30, 8) - new Cylinder(3, 8)));
+    return await Exporters3D.ExportStepAsync(part, $"block-{size}.step");
+}));
+```
+
+**Cancellation, warnings and `SkipClean` follow the flow of control,** on a thread and through `await` alike (each
+keeps its state in an `AsyncLocal`):
+
+- `using (Cancellation.Use(token)) { … }`, `using (var warnings = Warnings.Capture()) { … }` and
+  `using (new SkipClean()) { … }` apply to the code inside: on its thread, after its `await`s, and in the tasks and
+  `Parallel` loops it starts. A token passed to an operation overrides the one in force.
+- Other callers don't see them: two cells computed at once on two threads each collect their own warnings, and one
+  that skips the clean, or is cancelled, doesn't change the other.
+- A scope collects the warnings of a `Parallel` loop started inside it, from every thread. A cancelled operation in
+  a loop's body throws `OperationCanceledException`, which `Parallel` gathers into an `AggregateException`.
+- An `async` method's scopes end with it, even one it never disposed: its caller doesn't see them.
+- **Open and end a scope on the same flow, with `using`.** Disposed on another thread or task, a scope ends nothing
+  where it was opened: that flow goes on skipping the clean, or collecting warnings, until it finishes. And a task
+  started inside a scope that outlives it keeps the scope: its later warnings still go to it.
+
+## 10. Common mistakes
 
 - **Not checking a `Result`.** `.Value` on a failure throws; use `IsFailure` or `TryGetValue` and print `Error`.
 - **`ShapeMesh` is ambiguous** with both `Kerf.Modeling` and `Kerf.Meshing` imported: qualify it or use `var`.
@@ -417,7 +486,7 @@ using (var file = File.Create("part.png"))
 - **Not ported yet:** text, builder mode, `import_svg`. SVG drawings come from `Kerf.Drawing`, DXF from `ExportDxf`
   (section 8). [name-map.md](name-map.md) lists the rest.
 
-## 10. Coming from build123d
+## 11. Coming from build123d
 
 ```python
 # build123d

@@ -5,6 +5,8 @@ assembly Kerf.Kernel.DataExchange
 public static class Kerf.Exchange.Brep
   public static Result Write(Shape shape, Stream stream, BrepWriteOptions? options = default)
   public static Result<Shape> Read(Stream stream, ReadLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<Shape>> ReadAsync(Stream stream, ReadLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(Shape shape, Stream stream, BrepWriteOptions? options = default, CancellationToken cancellationToken = default)
 public sealed record Kerf.Exchange.BrepWriteOptions : IEquatable<BrepWriteOptions>
   public BrepWriteOptions()
   public bool Binary { get; init; }
@@ -15,6 +17,9 @@ public static class Kerf.Exchange.Gltf
   public static Result Write(ModelNode model, Stream json, Stream buffer, string bufferUri, GltfWriteOptions? options = default, CancellationToken cancellationToken = default)
   public static Result Write(ModelNode model, Stream stream, GltfWriteOptions? options = default, CancellationToken cancellationToken = default)
   public static Result<ModelNode> Read(Stream stream, GltfReadOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result<ModelNode>> ReadAsync(Stream stream, GltfReadOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(ModelNode model, Stream json, Stream buffer, string bufferUri, GltfWriteOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(ModelNode model, Stream stream, GltfWriteOptions? options = default, CancellationToken cancellationToken = default)
 public sealed record Kerf.Exchange.GltfReadOptions : IEquatable<GltfReadOptions>
   public GltfReadOptions()
   public LengthUnit Unit { get; init; }
@@ -53,6 +58,7 @@ public sealed record Kerf.Exchange.ModelNode : IEquatable<ModelNode>
   public static ModelNode Part(ShapeMesh mesh, string? name = default, Color? color = default)
 public static class Kerf.Exchange.Obj
   public static Result Write(ModelNode model, Stream obj, Stream? materials = default, string materialsName = "model.mtl", ObjWriteOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(ModelNode model, Stream obj, Stream? materials = default, string materialsName = "model.mtl", ObjWriteOptions? options = default, CancellationToken cancellationToken = default)
 public sealed record Kerf.Exchange.ObjWriteOptions : IEquatable<ObjWriteOptions>
   public ObjWriteOptions()
   public MeshOptions Mesh { get; init; }
@@ -73,6 +79,10 @@ public static class Kerf.Exchange.Step
   public static Result Write(Shape shape, Stream stream, StepWriteOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<ModelNode> Read(Stream stream, StepReadOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<ModelNode> Read(string path, StepReadOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Task<Result<ModelNode>> ReadAsync(Stream stream, StepReadOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Task<Result<ModelNode>> ReadAsync(string path, StepReadOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(ModelNode model, Stream stream, StepWriteOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(Shape shape, Stream stream, StepWriteOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
 public enum Kerf.Exchange.StepPrecision
   Least = -1
   Average = 0
@@ -100,6 +110,8 @@ public sealed record Kerf.Exchange.StepWriteOptions : IEquatable<StepWriteOption
 public static class Kerf.Exchange.Stl
   public static Result Write(ShapeMesh mesh, Stream stream, StlWriteOptions? options = default, CancellationToken cancellationToken = default)
   public static Result<ShapeMesh> Read(Stream stream, StlReadOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result<ShapeMesh>> ReadAsync(Stream stream, StlReadOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(ShapeMesh mesh, Stream stream, StlWriteOptions? options = default, CancellationToken cancellationToken = default)
 public sealed record Kerf.Exchange.StlReadOptions : IEquatable<StlReadOptions>
   public StlReadOptions()
   public LengthUnit Unit { get; init; }
@@ -111,6 +123,7 @@ public sealed record Kerf.Exchange.StlWriteOptions : IEquatable<StlWriteOptions>
   public static StlWriteOptions Default { get; }
 public static class Kerf.Exchange.ThreeMf
   public static Result Write(ModelNode model, Stream stream, ThreeMfWriteOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(ModelNode model, Stream stream, ThreeMfWriteOptions? options = default, CancellationToken cancellationToken = default)
 public sealed record Kerf.Exchange.ThreeMfWriteOptions : IEquatable<ThreeMfWriteOptions>
   public ThreeMfWriteOptions()
   public LengthUnit Unit { get; init; }
@@ -1847,6 +1860,7 @@ public enum Kerf.Drawing.PageSize
 public static class Kerf.Drawing.Png
   public static DiagnosticCode WriteFailed { get; }
   public static Result Write(RgbaImage image, Stream stream, PngOptions? options = default)
+  public static Task<Result> WriteAsync(RgbaImage image, Stream stream, PngOptions? options = default, CancellationToken cancellationToken = default)
   public static byte[] Encode(RgbaImage image, PngOptions? options = default)
 public enum Kerf.Drawing.PngCompression
   Deterministic = 0
@@ -1924,6 +1938,7 @@ public sealed record Kerf.Drawing.SheetView : IEquatable<SheetView>
 public static class Kerf.Drawing.Svg
   public static DiagnosticCode WriteFailed { get; }
   public static Result Write(LineDrawing drawing, Stream stream, SvgOptions? options = default, CancellationToken cancellationToken = default)
+  public static Task<Result> WriteAsync(LineDrawing drawing, Stream stream, SvgOptions? options = default, CancellationToken cancellationToken = default)
   public static string WriteToString(LineDrawing drawing, SvgOptions? options = default, CancellationToken cancellationToken = default)
 public sealed record Kerf.Drawing.SvgOptions : IEquatable<SvgOptions>
   public SvgOptions()
@@ -2082,6 +2097,8 @@ public sealed class Kerf.Fonts.Font
   public override string ToString()
   public static Result<Font> Read(Stream stream, int faceIndex = 0, FontReadLimits? limits = default, CancellationToken cancellationToken = default)
   public static Result<IReadOnlyList<Font>> ReadCollection(Stream stream, FontReadLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<Font>> ReadAsync(Stream stream, int faceIndex = 0, FontReadLimits? limits = default, CancellationToken cancellationToken = default)
+  public static Task<Result<IReadOnlyList<Font>>> ReadCollectionAsync(Stream stream, FontReadLimits? limits = default, CancellationToken cancellationToken = default)
 public sealed record Kerf.Fonts.FontEntry : IEquatable<FontEntry>
   public FontEntry(string Family, FontStyle Style, string StyleName, string? Path, int FaceIndex)
   public FontStyle Style { get; init; }

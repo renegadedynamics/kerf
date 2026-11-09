@@ -60,6 +60,38 @@ public static class Png
         }
     }
 
+    /// <summary>
+    /// <see cref="Write"/> with its output written asynchronously: the PNG is encoded in memory, synchronously, on the
+    /// caller's thread, then written to the stream without blocking a thread, and the stream flushed. The same bytes and
+    /// result as the synchronous form.
+    /// </summary>
+    /// <returns>Success, or a failure (<see cref="WriteFailed"/>) if the stream couldn't be written.</returns>
+    /// <exception cref="ArgumentNullException">The picture or the stream is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(RgbaImage image, Stream stream, PngOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        KernelArgumentNullException.ThrowIfNull(image);
+        return WriteBytes();
+
+        async Task<Result> WriteBytes()
+        {
+            CancellationToken effective = Cancellation.Effective(cancellationToken);
+            effective.ThrowIfCancellationRequested();
+            byte[] bytes = Encode(image, options);
+            try
+            {
+                await stream.WriteAsync(bytes, effective).ConfigureAwait(false);
+                await stream.FlushAsync(effective).ConfigureAwait(false);
+                return Result.Success();
+            }
+            catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
+            {
+                return Result.Failure(Diagnostic.Error(WriteFailed, $"The PNG couldn't be written: {FailureDiagnostics.PublicText(e)}"));
+            }
+        }
+    }
+
     /// <summary>The picture as PNG bytes.</summary>
     /// <exception cref="ArgumentNullException">The picture is null.</exception>
     public static byte[] Encode(RgbaImage image, PngOptions? options = null)

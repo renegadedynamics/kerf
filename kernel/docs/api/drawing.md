@@ -81,6 +81,8 @@ Result written = Svg.Write(drawing, stream);
   size, weight and style, `text-anchor` for its alignment, `rotate` for its rotation and `xml:space="preserve"`.
 - **`Area`** fixes the part of the view plane the page shows in place of the drawing's extent: a sheet's page.
 - A stream that can't be written is `svg.write-failed`.
+- `await Svg.WriteAsync(drawing, stream, options, token)` writes the same bytes asynchronously: the SVG made in memory
+  on the calling thread, then written and the stream flushed without blocking a thread (unit 14G, exchange.md).
 
 ## Notes
 
@@ -179,7 +181,8 @@ average, Paeth) chosen by the smallest sum of magnitudes, CRC-32 per chunk, IHDR
 own by default (`PngCompression.Deterministic`: one block of fixed Huffman codes, greedy LZ77 on a hash chain of 32,
 Adler-32): .NET's `ZLibStream` uses the platform's zlib (zlib-ng), whose bytes aren't promised to be the same on every
 machine and version. `PngCompression.Smallest` uses it anyway, for smaller files. Rendered parts compress to 20 to 50 KB
-at 800 × 600 either way.
+at 800 × 600 either way. `Png.WriteAsync(image, stream, options, token)` encodes on the calling thread and writes the
+same bytes asynchronously (unit 14G).
 
 ## Measured
 

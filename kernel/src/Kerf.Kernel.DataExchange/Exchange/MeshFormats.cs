@@ -77,6 +77,35 @@ public static class Stl
         return ShapeMesh.FromMeshOnlyShape(face);
     }
 
+    /// <summary>
+    /// <see cref="Read"/> with its input read asynchronously: the stream's bytes are read into memory without blocking a
+    /// thread (up to <see cref="ReadLimits.MaxBytes"/> and one more, so data past the limit is refused as the synchronous
+    /// form refuses it), then parsed synchronously, on the thread the read finished on. The same result as the
+    /// synchronous form.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result<ShapeMesh>> ReadAsync(Stream stream, StlReadOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        options ??= StlReadOptions.Default;
+        return MemorySpool.ReadThenAsync(stream, options.Limits.MaxBytes, data => Read(data, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="Write"/> with its output written asynchronously: the STL is built in memory, synchronously, on the
+    /// caller's thread, then written to the stream without blocking a thread, and the stream flushed. The same bytes as
+    /// the synchronous form; nothing is written on a failure.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">An argument is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(ShapeMesh mesh, Stream stream, StlWriteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(mesh);
+        KernelArgumentNullException.ThrowIfNull(stream);
+        return MemorySpool.WriteThenAsync(stream, data => Write(mesh, data, options, cancellationToken), cancellationToken);
+    }
+
     /// <summary>Writes a mesh as STL (OCCT's <c>StlAPI_Writer</c>): binary, or ASCII with LF line ends.</summary>
     /// <returns>Success, or a failure (<c>exchange.write-failed</c>) for a mesh without triangles.</returns>
     /// <exception cref="ArgumentNullException">An argument is null.</exception>
@@ -191,6 +220,71 @@ public static class Gltf
         return WriteCore(model, json, buffer, bufferUri, (options ?? GltfWriteOptions.Default) with { Binary = false }, cancellationToken);
     }
 
+    /// <summary>
+    /// <see cref="Read"/> with its input read asynchronously: the stream's bytes are read into memory without blocking a
+    /// thread (up to <see cref="ReadLimits.MaxBytes"/> and one more, so data past the limit is refused as the synchronous
+    /// form refuses it), then parsed synchronously, on the thread the read finished on. The same result as the
+    /// synchronous form.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result<ModelNode>> ReadAsync(Stream stream, GltfReadOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(stream);
+        options ??= GltfReadOptions.Default;
+        return MemorySpool.ReadThenAsync(stream, options.Limits.MaxBytes, data => Read(data, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="Write(ModelNode, Stream, GltfWriteOptions?, CancellationToken)"/> with its output written
+    /// asynchronously: the glTF is built in memory, synchronously, on the caller's thread, then written to the stream
+    /// without blocking a thread, and the stream flushed. The same bytes as the synchronous form; nothing is written on
+    /// a failure.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">An argument is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(ModelNode model, Stream stream, GltfWriteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(stream);
+        return MemorySpool.WriteThenAsync(stream, data => Write(model, data, options, cancellationToken), cancellationToken);
+    }
+
+    /// <summary>
+    /// <see cref="Write(ModelNode, Stream, Stream, string, GltfWriteOptions?, CancellationToken)"/> with its output
+    /// written asynchronously: the JSON and the buffer are built in memory, synchronously, on the caller's thread, then
+    /// written to their streams (the JSON first) without blocking a thread, and each flushed. Nothing is written on a
+    /// failure.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">An argument is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(ModelNode model, Stream json, Stream buffer, string bufferUri, GltfWriteOptions? options = null,
+                                          CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(json);
+        KernelArgumentNullException.ThrowIfNull(buffer);
+        KernelArgumentNullException.ThrowIfNull(bufferUri);
+        return WriteBoth();
+
+        async Task<Result> WriteBoth()
+        {
+            CancellationToken effective = Cancellation.Effective(cancellationToken);
+            effective.ThrowIfCancellationRequested();
+            using var jsonData = new MemorySpool();
+            using var bin = new MemorySpool();
+            Result written = Write(model, jsonData, bin, bufferUri, options, cancellationToken);
+            if (written.IsFailure)
+            {
+                return written;
+            }
+
+            await jsonData.WriteToAsync(json, effective).ConfigureAwait(false);
+            await bin.WriteToAsync(buffer, effective).ConfigureAwait(false);
+            return written;
+        }
+    }
+
     private static Result WriteCore(ModelNode model, Stream stream, Stream? buffer, string? bufferUri, GltfWriteOptions options,
                                 CancellationToken cancellationToken)
     {
@@ -274,6 +368,20 @@ public static class ThreeMf
         cancellationToken.ThrowIfCancellationRequested();
         return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as 3MF."));
     }
+
+    /// <summary>
+    /// <see cref="Write"/> with its output written asynchronously: the 3MF is built in memory, synchronously, on the
+    /// caller's thread, then written to the stream without blocking a thread, and the stream flushed. The same bytes as
+    /// the synchronous form; nothing is written on a failure.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">An argument is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(ModelNode model, Stream stream, ThreeMfWriteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(stream);
+        return MemorySpool.WriteThenAsync(stream, data => Write(model, data, options, cancellationToken), cancellationToken);
+    }
 }
 
 /// <summary>Wavefront OBJ: models written (Kerf's RWObj tree writer), with their materials.</summary>
@@ -312,5 +420,42 @@ public static class Obj
         bool done = writer.Write(tree, obj, materials, materialsName, new ProgressIndicator(cancellationToken).Start());
         cancellationToken.ThrowIfCancellationRequested();
         return done ? Result.Success() : Result.Failure(Diagnostic.Error(ExchangeTree.WriteFailed, "The model couldn't be written as OBJ."));
+    }
+
+    /// <summary>
+    /// <see cref="Write"/> with its output written asynchronously: the OBJ and its materials are built in memory,
+    /// synchronously, on the caller's thread, then written to their streams (the OBJ first) without blocking a thread,
+    /// and each flushed. The same bytes as the synchronous form; nothing is written on a failure.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"><paramref name="model"/> or <paramref name="obj"/> is null.</exception>
+    /// <exception cref="OperationCanceledException">The operation was cancelled (the task is cancelled).</exception>
+    public static Task<Result> WriteAsync(ModelNode model, Stream obj, Stream? materials = null, string materialsName = "model.mtl",
+                                          ObjWriteOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        KernelArgumentNullException.ThrowIfNull(model);
+        KernelArgumentNullException.ThrowIfNull(obj);
+        KernelArgumentNullException.ThrowIfNull(materialsName);
+        return WriteBoth();
+
+        async Task<Result> WriteBoth()
+        {
+            CancellationToken effective = Cancellation.Effective(cancellationToken);
+            effective.ThrowIfCancellationRequested();
+            using var objData = new MemorySpool();
+            using MemorySpool? materialsData = materials is null ? null : new MemorySpool();
+            Result written = Write(model, objData, materialsData, materialsName, options, cancellationToken);
+            if (written.IsFailure)
+            {
+                return written;
+            }
+
+            await objData.WriteToAsync(obj, effective).ConfigureAwait(false);
+            if (materialsData is not null)
+            {
+                await materialsData.WriteToAsync(materials!, effective).ConfigureAwait(false);
+            }
+
+            return written;
+        }
     }
 }

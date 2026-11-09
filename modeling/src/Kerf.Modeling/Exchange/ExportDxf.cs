@@ -380,6 +380,41 @@ public sealed class ExportDxf : Export2D
     public Result Write(string path, CancellationToken cancellationToken = default)
         => Exporters3D.ToFile(path, s => Write(s, cancellationToken));
 
+    /// <summary>
+    /// <see cref="Write(Stream, CancellationToken)"/> with the DXF written asynchronously: it is made in memory,
+    /// synchronously, then written to the stream without blocking a thread, and the stream flushed. The same bytes and
+    /// result.
+    /// </summary>
+    /// <inheritdoc cref="Write(Stream, CancellationToken)"/>
+    public Task<Result> WriteAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        return WriteBytes();
+
+        async Task<Result> WriteBytes()
+        {
+            var token = AsyncIo.Effective(cancellationToken);
+            token.ThrowIfCancellationRequested();
+            byte[] bytes = DxfWriter.Encode(WriteToString(cancellationToken), Version);
+            try
+            {
+                await stream.WriteAsync(bytes, token).ConfigureAwait(false);
+                await stream.FlushAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception e) when (e is IOException or NotSupportedException or ObjectDisposedException or UnauthorizedAccessException)
+            {
+                return Result.Failure(Diagnostic.Error(Exporters3D.WriteFailed, $"The DXF couldn't be written: {e.Message}"));
+            }
+            return Result.Success(Warnings());
+        }
+    }
+
+    /// <summary>Writes the DXF to a file asynchronously, whole or not at all.</summary>
+    /// <inheritdoc cref="WriteAsync(Stream, CancellationToken)"/>
+    /// <exception cref="DirectoryNotFoundException">The file's folder doesn't exist (thrown at once).</exception>
+    public Task<Result> WriteAsync(string path, CancellationToken cancellationToken = default)
+        => AsyncIo.ToFileAsync(path, s => Write(s, cancellationToken), cancellationToken);
+
     /// <summary>The DXF as text.</summary>
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public string WriteToString(CancellationToken cancellationToken = default)
