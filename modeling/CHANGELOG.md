@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **The guide's section 9 on building parts in parallel and the runtime's settings** (unit 14F): parts built with
+  `Parallel.For` came out the same in 1.5 to 1.7 times less wall time on 4 processors; `TieredPGO` off and
+  `CallCountingDelayMs` 0 cut a parallel run's processor time by 35% to 45%; the server collector suits an application
+  that owns its machine, and the workstation collector a shared one (kernel decisions 27603 and 27605).
 - **`Warnings.Capture` and `SkipClean` last until they are disposed, wherever that happens** (unit 14F): a scope disposed
   in another task ends on the flow that opened it too, where it stayed open (that flow went on skipping the clean, or
   collecting warnings); a task that outlives a scope no longer uses it, so its later warnings go to the enclosing scope
