@@ -13,4 +13,7 @@ internal sealed class DelaunayDeflectionGuardMeshAlgo<RangeSplitter> : DelaunayD
 {
     /// <inheritdoc/>
     protected override double ControlledDeflection() => Deflection.SurfaceLimit(GetDFace(), GetParameters());
+
+    /// <inheritdoc/>
+    protected override bool ClearsFrontier => true;
 }

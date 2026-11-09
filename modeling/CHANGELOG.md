@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A mesh at relative tolerances** (`MeshTolerances` with `Relative`) keeps spheres and tori within the deflection worked out for each face, where they could be several times out; some small fillet tori stay up to 1.14 times out beside a long boundary edge (kernel decisions 26301 and 26302).
 - **Text in DXF:** `ExportDxf` writes a drawing's notes (`Kerf.Drawing.DrawingNote`) on a `"notes"` layer, as closed
   polylines of their outlines by default or as TEXT with a text style for each font (`textOutput: TextOutput.Text`;
   R12's text is ASCII, so other notes stay outlines there, with the warning `modeling.dxf-text-as-outlines`), and

@@ -16,7 +16,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 /// <summary>
 /// At a relative deflection a sphere's and a torus's meshes keep to the deflection relative mode works out for each face
 /// (decision 26301), measured from the surface: each triangle at 13 points, exactly. Before it, they were OCCT's, which
-/// missed it by the factors noted.
+/// missed it by the factors noted. A node for a triangle on a frontier link goes where Delaunay takes it (decision 26302).
 /// </summary>
 public class MeshRelativeDeflectionTests
 {
@@ -27,6 +27,7 @@ public class MeshRelativeDeflectionTests
         { "torus", 0.01, 0.5 },          // within before, and after
         { "Pump_Nut.brep", 0.005, 0.5 }, // its tori 2.59
         { "Ball.brep", 0.002, 0.5 },     // its spheres 3.91, its tori 2.94
+        { "Axis_of_bearing.brep", 0.001, 0.5 }, // its spheres 2.05, and 1.10 without decision 26302
     };
 
     [Theory]
@@ -67,6 +68,23 @@ public class MeshRelativeDeflectionTests
         }
 
         Assert.True(measured > 0);
+    }
+
+    [Fact]
+    public void A_node_near_a_frontier_link_moves_to_where_Delaunay_takes_it()
+    {
+        // A triangle on a frontier link from (0, 0) to (10, 0), its third node at (5, 6): a node 1 from the link (under a
+        // fifth of its length) goes to 3 from it, towards the third node; one 4 from it stays
+        Point2D[] corners = [new(0, 0), new(10, 0), new(5, 6)];
+        bool[] frontier = [true, false, false];
+        Point2D moved = FrontierClearance.Clear(new Point2D(4, 1), corners, frontier);
+        Assert.Equal(5, moved.X, 12);
+        Assert.Equal(3, moved.Y, 12);
+        Assert.Equal(new Point2D(4, 4), FrontierClearance.Clear(new Point2D(4, 4), corners, frontier));
+        Assert.Equal(new Point2D(4, 1), FrontierClearance.Clear(new Point2D(4, 1), corners, [false, false, false]));
+
+        // A third node already under 0.3 of the link's length from it: nothing to gain, so the node stays
+        Assert.Equal(new Point2D(4, 1), FrontierClearance.Clear(new Point2D(4, 1), [new(0, 0), new(10, 0), new(5, 2)], frontier));
     }
 
     // The largest distance from the surface over each triangle's 12 points on a grid of quarters (its corners left out) and
