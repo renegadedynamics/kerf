@@ -184,16 +184,18 @@ internal static partial class FilletLimits
     /// <param name="Above">Past the limit by more than the shape's tolerance: proved not to fit.</param>
     /// <param name="AtLimit">Within the shape's tolerance of the limit, either way: it is the limit.</param>
     /// <param name="Over">The edges that don't fit, when it's above.</param>
-    public readonly record struct Fit(double Limit, bool Above, bool AtLimit, IReadOnlyList<Edge> Over);
+    /// <param name="Band">How near the limit a size is taken as the limit, in the size's own units: the tolerance of the face that
+    /// sets it, over the contact's distance for each unit of size.</param>
+    public readonly record struct Fit(double Limit, bool Above, bool AtLimit, IReadOnlyList<Edge> Over, double Band);
 
     /// <summary>The upper limit on one radius for all these edges, from the straight ones between planes beside a rectangular
     /// face: no tangent fillet fits above it. Null if none of the edges gives a limit.</summary>
-    public static double? LargestRadius(Shape shape, IEnumerable<Edge> edges) =>
-        Quietly(() => Judge(Corners(shape, edges), 0, static corner => corner.ContactPerRadius))?.Limit;
+    public static SizeLimit? LargestRadius(Shape shape, IEnumerable<Edge> edges) =>
+        Quietly(() => Judge(Corners(shape, edges), 0, static corner => corner.ContactPerRadius)) is { } fit ? new SizeLimit(fit.Limit, fit.Band) : null;
 
     /// <summary>As <see cref="LargestRadius"/>, for one chamfer length on both faces, which has the same limit as a contact's distance.</summary>
-    public static double? LargestChamfer(Shape shape, IEnumerable<Edge> edges) =>
-        Quietly(() => Judge(Corners(shape, edges), 0, static _ => 1))?.Limit;
+    public static SizeLimit? LargestChamfer(Shape shape, IEnumerable<Edge> edges) =>
+        Quietly(() => Judge(Corners(shape, edges), 0, static _ => 1)) is { } fit ? new SizeLimit(fit.Limit, fit.Band) : null;
 
     /// <summary>How one radius on all these edges stands, or null if the specs don't give one radius or the edges give no limit.</summary>
     public static Fit? Judge(Shape shape, FilletSpec[] specs) =>
@@ -224,6 +226,7 @@ internal static partial class FilletLimits
     private static Fit? Judge(Dictionary<Shape, Corner> corners, double size, Func<Corner, double> contactPerSize)
     {
         double? largest = null;
+        double band = 0;
         bool atLimit = false;
         var over = new List<Edge>();
         foreach ((Corner corner, Side side) in Sides(corners.Values))
@@ -231,7 +234,11 @@ internal static partial class FilletLimits
             if (side.Width is { } width)
             {
                 double demand = contactPerSize(corner) + (!side.Opposite.IsNull && corners.TryGetValue(side.Opposite, out Corner opposite) ? contactPerSize(opposite) : 0);
-                largest = Math.Min(largest ?? double.MaxValue, width / demand);
+                if (width / demand < (largest ?? double.MaxValue))
+                {
+                    largest = width / demand;
+                    band = side.Tolerance / demand;
+                }
                 double past = size * demand - width;
                 if (past > side.Tolerance && !over.Any(e => e.IsSame(corner.Edge)))
                 {
@@ -247,7 +254,7 @@ internal static partial class FilletLimits
 
         // Without the last bits of the tangent's rounding: well within the tolerance, and 10 reads as 10
         double rounded = Math.Round(limit, 9);
-        return new Fit(rounded > 0 ? rounded : limit, over.Count > 0, atLimit && over.Count == 0, over);
+        return new Fit(rounded > 0 ? rounded : limit, over.Count > 0, atLimit && over.Count == 0, over, band);
     }
 
     /// <summary>The error for a size that doesn't fit, or that only just does and couldn't be built; null for one below the limit.</summary>

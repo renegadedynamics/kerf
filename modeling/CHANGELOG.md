@@ -5,6 +5,17 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`TightCorners.Collapse` builds more of what it refused:** a tight arc beside a convex arc, corners of several arcs
+  together, sides drafted by one angle, and corners that are B-splines, ellipses or Béziers where the collapse swallows
+  them whole; a tight arc beside a concave arc, a curve swallowed only in part, and sides drafted by different angles
+  are still refused, saying why (kernel decisions 2048 to 2050; the guide's section 5).
+- **`MaxChamfer` and `MaxFillet` give the proved limit, less twice the shape's tolerance, where the limit itself can't be
+  built and that can:** 1.6999998 for the guide's rounded box, whose corners close to a point at 1.7, where the search
+  gave 1.594, and 9.9999998 for a fillet using up a face beside a slanted end, where it gave 9.944. Where the limit
+  builds, or none is proved, the answers are as they were (kernel decision 2047).
+- **STEP export copies less:** the header's FILE_NAME is rewritten in place, where the whole file was turned into a
+  string and back; 13% to 18% fewer bytes on an enclosure's parts, the same files (kernel decision 2053).
+- **A mesh at relative tolerances** (`MeshTolerances` with `Relative`) keeps spheres and tori within the deflection worked out for each face, where they could be several times out; some small fillet tori stay up to 1.14 times out beside a long boundary edge (kernel decisions 2056 and 2057).
 - **A sketch object narrower than the tolerance fails, carrying its face,** where it was a valid face of no area returned
   as a success: `Ellipse(1, 1e-12)`, a `Trapezoid` or `Rectangle` 1e-8 high, `Circle(1e-12)`. A face whose mean width
   (twice its area over its perimeter) is under 1e-7 fails with `modeling.object-failed`, as a `ModelingException` from
