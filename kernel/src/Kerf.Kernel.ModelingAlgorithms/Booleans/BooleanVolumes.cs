@@ -195,15 +195,8 @@ public static class BooleanVolumes
             return null;
         }
 
-        // A point must be inside both, so it's asked first of the input with fewer faces, which costs less, and then first of
-        // whichever last ruled a point out (unit 13A): a bump on a part, its box all inside the part's, is all its own points,
-        // and the part rules them all out
         var classifyA = new SolidClassifier(a);
         var classifyB = new SolidClassifier(b);
-        if (b.AllFaces().Length < a.AllFaces().Length)
-        {
-            (classifyA, classifyB) = (classifyB, classifyA);
-        }
         SolidClassifier? classifyResult = rule == BooleanVolumeRule.Cut ? new SolidClassifier(result) : null;
         double depth = -1;
         int found = 0;
@@ -218,13 +211,8 @@ public static class BooleanVolumes
                 {
                     var point = new Point3D(fromX + (toX - fromX) * i / (OverlapGrid + 1), fromY + (toY - fromY) * j / (OverlapGrid + 1),
                                             fromZ + (toZ - fromZ) * k / (OverlapGrid + 1));
-                    if (!Inside(classifyA, point))
+                    if (!Inside(classifyA, point) || !Inside(classifyB, point))
                     {
-                        continue;
-                    }
-                    if (!Inside(classifyB, point))
-                    {
-                        (classifyA, classifyB) = (classifyB, classifyA);
                         continue;
                     }
                     // Inside both and gone from the result: the cut did remove something, however small (a small hole in a large block)
