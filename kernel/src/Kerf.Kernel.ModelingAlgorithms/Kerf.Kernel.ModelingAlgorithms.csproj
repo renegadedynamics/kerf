@@ -11,4 +11,9 @@
     <ProjectReference Include="..\Kerf.Kernel.ModelingData\Kerf.Kernel.ModelingData.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The default font, Liberation Sans 2.1.5 (SIL Open Font Licence 1.1, in THIRD-PARTY-NOTICES.md), gzipped (unit 13D) -->
+    <EmbeddedResource Include="Fonts\Resources\LiberationSans-*.ttf.gz" LogicalName="Kerf.Fonts.%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>
