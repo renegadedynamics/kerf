@@ -273,4 +273,32 @@ public class BRepFill_OffsetWireTests
         Assert.True(anOffset.IsDone);
         Assert.Equal(0, Count(anOffset.Shape(), ShapeType.Edge));
     }
+
+    [Fact]
+    public void An_arc_the_medial_axis_turns_into_a_B_spline_is_offset_on_the_finer_polyline()
+    {
+        // tests/offset/wire_unclosed_outside_0_075/A1, OCCT's known failure (TODO OCC23748): an open wire of lines and arcs,
+        // offset round both sides by 0.075 of its length. The medial axis's explorer turns two pieces of the arc of radius
+        // 0.133, whose end misses its neighbour's, into B-splines with the end pole moved, so the offset is past their
+        // sharpest bend and each is stood in for by a polyline. At OCCT's 0.01 of the distance the medial axis of that
+        // polyline fails, "Offset is not done"; at 0.001 (decision 1980) it's built: one closed wire, a valid face on it,
+        // 10.6026 long. Why it changed at 12T (decision 26601)
+        string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                                        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "offset_wire_001.brep");
+        if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
+        {
+            return;
+        }
+        MakeWireOffset anOffset = new();
+        anOffset.Init(global::Kerf.Geometry.JoinKind.Arc);
+        anOffset.AddWire(ShapeCasts.Wire(aShape));
+        anOffset.Perform(-0.075 * Length(aShape));
+        Assert.True(anOffset.IsDone);
+        Shape aResult = anOffset.Shape();
+        Assert.Equal(1, Count(aResult, ShapeType.Wire));
+        Wire aWire = ShapeCasts.Wire(new Explorer(aResult, ShapeType.Wire).Current());
+        Assert.True(global::Kerf.Engine.Topology.Brep.Tool.IsClosed(aWire));
+        Assert.Equal(10.6026, Length(aResult), 1.0e-4);
+        Assert.True(new global::Kerf.Engine.Healing.Checks.Analyzer(new MakeFace(aWire, true).Face()).IsValid());
+    }
 }
