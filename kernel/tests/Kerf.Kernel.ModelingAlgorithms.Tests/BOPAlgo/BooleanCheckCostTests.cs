@@ -2,6 +2,8 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Engine.Classification;
+using Kerf.Engine.Intersection.CurveSurface;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
@@ -11,7 +13,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 /// <summary>
 /// What the checks of a Boolean cost, counted rather than timed (unit 13A): a small part fused onto a large one took 4 to 5
 /// times 0.3.0's time in 0.4.0, nearly all of it decision 1937's points classified on the small part's faces. The counts are
-/// of points classified or measured so a machine's load can't move them.
+/// of points classified or measured, and of lines a classifier intersects with a face, so a machine's load can't move them.
 /// </summary>
 public class BooleanCheckCostTests(ITestOutputHelper output)
 {
@@ -66,5 +68,35 @@ public class BooleanCheckCostTests(ITestOutputHelper output)
         Asked(block, outside, block, out Diagnostic? said);
         Assert.NotNull(said);
         Assert.Contains("lost part of an input", said.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_classifier_intersects_its_ray_with_the_faces_near_it()
+    {
+        // A plate of 36 holes: a ray from a point meets few of its 42 faces, and is intersected with those near it alone
+        Shape plate = Solid.Box(70, 70, 6).Value.Shape;
+        for (int i = 0; i < 6; i++)
+        {
+            for (int j = 0; j < 6; j++)
+            {
+                plate = plate.Cut(Moved(Solid.Cylinder(2, 10).Value.Shape, 10 + 10 * i, 10 + 10 * j, -2)).Value.Shape;
+            }
+        }
+        var classifier = new SolidClassifier(plate);
+        int points = 0, inside = 0;
+        CurveSurfaceIntersector.s_linesIntersected = 0;
+        for (int i = 0; i <= 10; i++)
+        {
+            for (int j = 0; j <= 10; j++)
+            {
+                classifier.Perform(new Point3D(-1 + 7.2 * i, -1 + 7.2 * j, 3), 1e-7);
+                points++;
+                inside += classifier.State() == Containment.In ? 1 : 0;
+            }
+        }
+        int intersected = CurveSurfaceIntersector.s_linesIntersected;
+        output.WriteLine($"{intersected} lines intersected with a face for {points} points, {inside} inside, of {plate.AllFaces().Length} faces");
+        Assert.True(inside > 50);
+        Assert.True(intersected <= 10 * points);
     }
 }

@@ -47,6 +47,10 @@ internal class CurveSurfaceIntersector : Transient
     private bool _isParallel; // Curve is "parallel" face surface
                                // This case is recognized only for some pairs
                                // of analytical curves and surfaces (plane - line, ...)
+    private Box? _faceBox; // Kerf: the face's box, widened (MissesFace)
+    // Kerf: the lines this thread has intersected with a face, for the tests that hold a classification's cost down
+    [ThreadStatic]
+    internal static int s_linesIntersected;
 
     private static void ComputeSamplePars(SurfaceAdaptorBase hsurface,
                                           int nbsu,
@@ -388,6 +392,14 @@ internal class CurveSurfaceIntersector : Transient
         _seqState.Clear();
         _nbpnt = 0;
 
+        // Kerf: a segment of the line that passes well clear of the face can meet it nowhere (unit 13A)
+        if (_polyhedron is null && MissesFace(l, parMin, parMax))
+        {
+            _isParallel = false;
+            return;
+        }
+        s_linesIntersected++;
+
         var hics = new HInter();
         var geomline = new LineCurve3D(l);
         // C++ builds an adaptor and copies it into a handle: one adaptor here
@@ -585,6 +597,79 @@ internal class CurveSurfaceIntersector : Transient
     {
         Containment state = _topolTool.Classify(puv, 1e-7);
         return state;
+    }
+
+    // Kerf (unit 13A): whether the part [parMin, parMax] of the line passes clear of the face's box, widened past anything the
+    // intersection could keep. On an elementary surface the line meets the whole surface, and InternalCall keeps a point only
+    // if it's in the face or on its boundary, within the edges' tolerances in 3D or the 2D tolerance in the parameters, and its
+    // parameter is in [parMin, parMax]; such a point is in the face's box (its edges or surface, each widened by its tolerance)
+    // widened by those tolerances. So the line meets no such point, and what Perform gives is the same, nothing. A solid's
+    // classifier intersects its ray with every face, and on a part most are far from the ray: a point classified in a door of
+    // 52 faces was about 60 KB of curves, adaptors and lists, most of them for faces the ray never came near.
+    // IsParallel is left false: a parallel line found nothing either, and the classifier asks it only to see whether its
+    // point is within the tolerance of the surface inside the face, which a point outside the widened box isn't
+    private bool MissesFace(in Line3D l, double parMin, double parMax)
+    {
+        if (_faceBox is not { } box)
+        {
+            box = new Box();
+            // Not a torus: its box can be short of the face where the tube is wider than the ring (OCC620a.brep's)
+            if (HSurfaceTool.GetType(_hsurface) is Plane or SurfaceKind.Cylinder or SurfaceKind.Cone or SurfaceKind.Sphere)
+            {
+                Measurement.Bounds.Add(_face, ref box, false);
+            }
+            if (!box.IsVoid && !box.IsOpen)
+            {
+                double tol3d = Tool.Tolerance(_face);
+                for (var exp = new Explorer(_face, ShapeType.Edge); exp.More(); exp.Next())
+                {
+                    tol3d = Max(tol3d, Tool.Tolerance(ShapeCasts.Edge(exp.Current())));
+                }
+                // The 2D tolerance InternalCall may use, in 3D: a parameter's length on the surface is at most 1 / resolution
+                double tol2d = Max(Max(_hsurface.UResolution(tol3d), _hsurface.VResolution(tol3d)), _tol);
+                double perParameter = Max(1 / _hsurface.UResolution(1.0), 1 / _hsurface.VResolution(1.0));
+                box.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
+                double size = Math.Sqrt(((xmax - xmin) * (xmax - xmin)) + ((ymax - ymin) * (ymax - ymin)) + ((zmax - zmin) * (zmax - zmin)));
+                double widen = (10 * tol3d) + (10 * tol2d * perParameter) + (1e-3 * size) + global::Kerf.Engine.Foundation.Precision.Confusion();
+                if (double.IsFinite(widen))
+                {
+                    box.Enlarge(widen);
+                }
+                else
+                {
+                    box = new Box();
+                }
+            }
+            _faceBox = box;
+        }
+
+        if (box.IsVoid || box.IsOpen)
+        {
+            return false;
+        }
+
+        box.Get(out double x0, out double y0, out double z0, out double x1, out double y1, out double z1);
+        Point3D o = l.Location;
+        Direction3D d = l.Direction;
+        double from = parMin, to = parMax;
+        return !Slab(o.X, d.X, x0, x1, ref from, ref to) || !Slab(o.Y, d.Y, y0, y1, ref from, ref to) || !Slab(o.Z, d.Z, z0, z1, ref from, ref to);
+    }
+
+    // Narrows [from, to] to the parameters where the line is between low and high on one axis; false if none are
+    private static bool Slab(double origin, double direction, double low, double high, ref double from, ref double to)
+    {
+        if (Math.Abs(direction) < 1e-300)
+        {
+            return origin >= low && origin <= high;
+        }
+        double t0 = (low - origin) / direction, t1 = (high - origin) / direction;
+        if (t0 > t1)
+        {
+            (t0, t1) = (t1, t0);
+        }
+        from = Max(from, t0);
+        to = Min(to, t1);
+        return from <= to;
     }
 
     /// <summary>The box of the polyhedron of the surface; a void box for the elementary surfaces.</summary>
