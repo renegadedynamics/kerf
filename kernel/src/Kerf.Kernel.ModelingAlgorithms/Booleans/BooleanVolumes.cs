@@ -80,6 +80,15 @@ public static class BooleanVolumes
     // How far inside both inputs a point must be, for their size, to prove they overlap
     private const double OverlapDepth = 1e-3;
 
+    // Above this tolerance in a result, surfaces nearly touched: a hundred times the usual (decision 1924)
+    private const double NearlyTouching = 1e-5;
+
+    // More faces than this in a result or an input and decision 1924's points aren't asked: a corpus case took 8 s
+    private const int MostFacesAsked = 64;
+
+    // The points tried in each direction, in the inputs' whole box, where a result's tolerance is that large
+    private const int PointsGrid = 4;
+
     /// <summary>
     /// The error if <paramref name="result"/> can't be what <paramref name="rule"/> makes of <paramref name="arguments"/> and
     /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures. Null if it may be right, or if no rule
@@ -137,14 +146,15 @@ public static class BooleanVolumes
         bool negative = outcome.Count > 0 && outcome.Smallest < -margin;
         if (r >= least - margin && r <= most + margin && !negative)
         {
-            // Within the rules, but a cut that removed nothing, or a fuse that lost nothing, can still be proved wrong
-            return rule switch
+            // Within the rules, but a cut that removed nothing, or a fuse that lost nothing, can still be proved wrong; and a
+            // result whose tolerances say surfaces nearly touched is asked at points (decision 1924)
+            return (rule switch
             {
                 BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, shared, fuzzyValue, 0, Math.Min(a.Sum, b.Sum)),
                 BooleanVolumeRule.Fuse when r <= least + margin && ProvedLost(shared, fuzzyValue, Math.Min(a.Sum, b.Sum)) is { } lost => lost,
                 BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, shared, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
                 _ => null,
-            };
+            }) ?? ProvedByPoints(rule, shared, fuzzyValue, Math.Min(a.Sum, b.Sum));
         }
 
         // Past a rule, which is rare, so this is when the dearer questions are worth asking: is it proved?
@@ -480,6 +490,98 @@ public static class BooleanVolumes
         return null;
     }
 
+    // Within the rules of volume, a result can still have lost a part, as a fuse of crossing cylinders lost their common part, 16.5%
+    // of it, valid. So where the result's tolerances say surfaces nearly touched, which is where this happens, points through the
+    // inputs' box are asked what the operation says of them, and two that disagree, deep in or out of all three, prove it wrong
+    // (decision 1924). A point outside a shape's box is outside it, and further from it than its distance to the box, so neither
+    // needs a classifier; and of the inputs only what decides the operation's answer is asked (unit 13K)
+    private static Diagnostic? ProvedByPoints(BooleanVolumeRule rule, Shared shared, double fuzzyValue, double smallerVolume)
+    {
+        if (!shared.OneEach || shared.ResultTolerance <= NearlyTouching || shared.Result.Shape.AllFaces().Length > MostFacesAsked
+            || shared.Argument.Shape.AllFaces().Length > MostFacesAsked || shared.Tool.Shape.AllFaces().Length > MostFacesAsked)
+        {
+            return null;
+        }
+
+        s_pointChecks++;
+        BoundingBox inA = shared.Argument.Box, inB = shared.Tool.Box;
+        if (inA.IsEmpty || inB.IsEmpty)
+        {
+            return null;
+        }
+        BoundingBox all = inA.Union(inB);
+        Point3D from = all.Min, to = all.Max;
+        if (!double.IsFinite(from.X + from.Y + from.Z + to.X + to.Y + to.Z))
+        {
+            return null;
+        }
+
+        double depth = -1;
+        int found = 0;
+        Point3D first = default;
+        bool should = false;
+        for (int i = 1; i <= PointsGrid; i++)
+        {
+            for (int j = 1; j <= PointsGrid; j++)
+            {
+                for (int k = 1; k <= PointsGrid; k++)
+                {
+                    var point = new Point3D(from.X + (to.X - from.X) * i / (PointsGrid + 1), from.Y + (to.Y - from.Y) * j / (PointsGrid + 1),
+                                            from.Z + (to.Z - from.Z) * k / (PointsGrid + 1));
+                    // Only what the answer needs: a common's point outside the object is outside it whatever the tool says
+                    Containment inArgument = shared.Argument.Quick(point), inTool = Containment.Unknown;
+                    should = rule switch
+                    {
+                        BooleanVolumeRule.Common => inArgument == Containment.In && (inTool = shared.Tool.Quick(point)) == Containment.In,
+                        BooleanVolumeRule.Cut => inArgument == Containment.In && (inTool = shared.Tool.Quick(point)) != Containment.In,
+                        _ => inArgument == Containment.In || (inTool = shared.Tool.Quick(point)) == Containment.In,
+                    };
+                    Containment inResult = shared.Result.Quick(point);
+                    if (should == (inResult == Containment.In))
+                    {
+                        continue;
+                    }
+
+                    // A point on the boundary of any of the three is within its tolerance of it, so can't be deep
+                    if (inTool == Containment.Unknown)
+                    {
+                        inTool = shared.Tool.Quick(point);
+                    }
+                    if (inArgument == Containment.On || inTool == Containment.On || inResult == Containment.On)
+                    {
+                        continue;
+                    }
+                    if (depth < 0)
+                    {
+                        if (!shared.Trustworthy)
+                        {
+                            return null;
+                        }
+                        depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
+                    }
+                    if (shared.Argument.Deep(point, depth) && shared.Tool.Deep(point, depth) && shared.Result.Deep(point, depth) && found++ == 0)
+                    {
+                        first = point;
+                    }
+                    if (found >= 2)
+                    {
+                        string name = rule switch
+                        {
+                            BooleanVolumeRule.Common => "common",
+                            BooleanVolumeRule.Cut => "cut",
+                            _ => "fuse",
+                        };
+                        string at = $"({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)})";
+                        return Diagnostic.Error(DiagnosticCode.InvalidResult, should
+                            ? $"The {name}'s result is wrong: the point {at} and others should be in it and aren't."
+                            : $"The {name}'s result is wrong: the point {at} and others shouldn't be in it and are.");
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     // A planar face of a result: a point within its tolerance of the plane, and inside the face, is on the result's boundary
     private sealed record ResultPlane(Plane3D World, Plane3D Own, Placement Placement, InFace Classifier, double Tolerance)
     {
@@ -509,7 +611,7 @@ public static class BooleanVolumes
     private sealed class Shared(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result)
     {
         private Classified? _argument, _tool, _result;
-        private double _largestTolerance = -1;
+        private double _resultTolerance = -1, _largestTolerance = -1;
         private bool? _trustworthy;
 
         // What the point questions are asked of: one object and one tool, as what several mean together isn't plain
@@ -521,7 +623,9 @@ public static class BooleanVolumes
 
         public Classified Result => _result ??= new Classified(result);
 
-        public double LargestTolerance => _largestTolerance >= 0 ? _largestTolerance : _largestTolerance = BooleanVolumes.LargestTolerance(arguments, tools, result);
+        public double ResultTolerance => _resultTolerance >= 0 ? _resultTolerance : _resultTolerance = new ShapeToleranceAnalysis().Tolerance(result, 1);
+
+        public double LargestTolerance =>_largestTolerance >= 0 ? _largestTolerance : _largestTolerance = BooleanVolumes.LargestTolerance(arguments, tools, result);
 
         public bool Trustworthy => _trustworthy ??= BooleanVolumes.Trustworthy(arguments) && BooleanVolumes.Trustworthy(tools);
     }
@@ -530,7 +634,7 @@ public static class BooleanVolumes
     private sealed class Classified(Shape shape)
     {
         private SolidClassifier? _classifier;
-        private BoundingBox? _box;
+        private BoundingBox? _box, _widened;
 
         public Shape Shape => shape;
 
@@ -539,11 +643,45 @@ public static class BooleanVolumes
         public Containment StateOf(in Point3D point) => BooleanVolumes.StateOf(_classifier ??= new SolidClassifier(shape), point);
 
         public bool Inside(in Point3D point) => StateOf(point) == Containment.In;
+
+        // Out without a classifier for a point outside the box, which holds the shape and its tolerances, widened by a
+        // thousandth of its diagonal (decision 1924's points, unit 13K)
+        public Containment Quick(in Point3D point)
+        {
+            if (_widened is not { } widened)
+            {
+                BoundingBox box = Box;
+                _widened = widened = box.IsEmpty ? box : box.Enlarged(OverlapDepth * box.Min.DistanceTo(box.Max));
+            }
+            return widened.IsEmpty || widened.Contains(point) ? StateOf(point) : Containment.Out;
+        }
+
+        // Further than the depth from each of the shape's shells: a point at least that far from the box is, without a distance
+        public bool Deep(in Point3D point, double depth)
+        {
+            BoundingBox box = Box;
+            if (!box.IsEmpty)
+            {
+                Point3D low = box.Min, high = box.Max;
+                double x = Math.Max(0, Math.Max(low.X - point.X, point.X - high.X));
+                double y = Math.Max(0, Math.Max(low.Y - point.Y, point.Y - high.Y));
+                double z = Math.Max(0, Math.Max(low.Z - point.Z, point.Z - high.Z));
+                if (Math.Sqrt(x * x + y * y + z * z) >= depth)
+                {
+                    return true;
+                }
+            }
+            return BooleanVolumes.Deep(point, shape, depth);
+        }
     }
 
     // The points this thread's checks have classified or measured the distance of, for the tests that hold the checks' cost down
     [ThreadStatic]
     internal static int s_pointsAsked;
+
+    // The checks of decision 1924's points this thread has made, past the tolerance and the faces that let them be asked
+    [ThreadStatic]
+    internal static int s_pointChecks;
 
     private static bool Inside(SolidClassifier classifier, in Point3D point) => StateOf(classifier, point) == Containment.In;
 
