@@ -662,14 +662,18 @@ internal static partial class FilletLimits
                 continue;
             }
 
-            // The section's arc at depth b + below, by λ = 1 - k
+            // The section's arc at depth b + below, by λ = 1 - k; the wall over it a cylinder, and a right cone as OCCT's
             (Flat centre, double radius) = SectionArc(piece, a, 1 - k);
-            (BSplineSurface chamfer, double last) = piece.Tight
-                ? Ruled(frame, piece.Apex, 0, 0, centre, radius, deep, piece.From, piece.Sweep)
-                : Ruled(frame, piece.Centre, piece.Radius - piece.Turn * a, 0, centre, radius, deep, piece.From, piece.Sweep);
-            (BSplineSurface wall, _) = Ruled(frame, centre, radius, 0, centre, radius, deep, piece.From, piece.Sweep);
-            sewing.Add(new MakeFace(chamfer, 0, last, 0, 1, Tolerance).Face());
-            sewing.Add(new MakeFace(wall, 0, last, 0, 1, Tolerance).Face());
+            if (piece.Tight)
+            {
+                (BSplineSurface chamfer, double last) = Ruled(frame, piece.Apex, 0, 0, centre, radius, deep, piece.From, piece.Sweep);
+                sewing.Add(new MakeFace(chamfer, 0, last, 0, 1, Tolerance).Face());
+            }
+            else
+            {
+                sewing.Add(RightCone(frame, piece, a, b, deep));
+            }
+            sewing.Add(Wall(frame, centre, radius, deep, piece.From, piece.Sweep));
 
             // The top: from the contact on F (an arc, or P) out to the wall's top
             Flat ws = centre + Flat.At(piece.From) * radius, we = centre + Flat.At(piece.From + piece.Sweep) * radius;
@@ -692,6 +696,21 @@ internal static partial class FilletLimits
         }
         Solid solid = BrepLibrary.ClosedSolidOriented(new MakeSolid(shells[0]).Solid(), out bool oriented);
         return oriented ? solid : null;
+    }
+
+    // An arc's chamfer short of its corner's radius, carried down to depth deep: a right cone about the arc's axis, its angle F's
+    private static Face RightCone(in FacePlane frame, Piece piece, double a, double b, double deep)
+    {
+        double angle = Math.Atan(-piece.Turn * a / b);
+        var cone = new Cone3D(new CoordinateSystem(frame.Lift(piece.Centre, 0), frame.Up, frame.X), angle, piece.Radius - piece.Turn * a);
+        return new MakeFace(cone, Math.Min(piece.From, piece.From + piece.Sweep), Math.Max(piece.From, piece.From + piece.Sweep), -deep / Math.Cos(angle), 0).Face();
+    }
+
+    // The wall over an arc of the chamfer's lower edge, straight up to F's plane: a cylinder
+    private static Face Wall(in FacePlane frame, Flat centre, double radius, double deep, double from, double sweep)
+    {
+        var cylinder = new Cylinder3D(new CoordinateSystem(frame.Lift(centre, deep), frame.Up, frame.X), radius);
+        return new MakeFace(cylinder, Math.Min(from, from + sweep), Math.Max(from, from + sweep), 0, deep).Face();
     }
 
     private static Face Polygon(params Point3D[] corners)
