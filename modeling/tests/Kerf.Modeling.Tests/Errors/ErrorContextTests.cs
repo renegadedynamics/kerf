@@ -8,7 +8,7 @@ using Kerf.Modeling;
 /// A kernel failure says what was being done, for someone reading it in a cell: the native backend's "box 0.0 × 1.0 ×
 /// 1.0 failed: …", lost in unit 10B (decision 1342), restored in 10F through the kernel's diagnostics. Since unit 10M3 a
 /// failure is a failed result's diagnostics (Failures.Try, as the public operations return them); the shorthands that
-/// can't return one throw InvalidOperationException with the same message, the kernel's failure inside. The tests keep
+/// can't return one throw ModelingException (decision 25601) with the same message, the kernel's failure inside. The tests keep
 /// their names, under which native OCCT's differential log is recorded.
 /// </summary>
 public class ErrorContextTests
@@ -21,7 +21,7 @@ public class ErrorContextTests
         Assert.Equal("kernel.invalid-argument", failed.Error!.Code.Value);
         Assert.StartsWith("box 0 × 1 × 1 failed: The value must be a positive number", failed.Error.Message);
         // A constructor can't return a result: it throws, with the kernel's failure inside
-        var e = Assert.Throws<InvalidOperationException>(() => new Box(0, 1, 1));
+        var e = Assert.Throws<ModelingException>(() => new Box(0, 1, 1));
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
         Assert.StartsWith("box 0 × 1 × 1 failed: The value must be a positive number", e.Message);
     }
@@ -108,7 +108,7 @@ public class ErrorContextTests
         Assert.Contains(fillet.Diagnostics.Skip(1), d => d.IsError && !d.Code.Value.StartsWith("modeling.", StringComparison.Ordinal));
         // The shorthand throws with the same message, the kernel's failure inside
         var box = new Box(1, 1, 1);
-        var e = Assert.Throws<InvalidOperationException>(() => box.Fillet(5, box.Edges()));
+        var e = Assert.Throws<ModelingException>(() => box.Fillet(5, box.Edges()));
         Assert.Contains("It failed on 12 of 12 edges", e.Message);
         Assert.True(Failures.IsKernelFailure(e.InnerException!));
     }

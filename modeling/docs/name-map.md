@@ -129,6 +129,8 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `CenterArc(c, r, start, arc_size)` with a float or a limit (`Shape`, `Axis`, …) | Two overloads: `double arcSize`, or a `CurveLimit` (from a shape, axis, location, plane or point); the same for `JernArc`, the conic arcs and `PolarLine`'s length |
 | `ConstrainedArcs(…, selector=lambda arcs: …)` | `new ConstrainedArcs(…, selector: arcs => …)`, the selector returning edges; `center_on` with two targets is `ConstrainedArcs.CenteredOn(…)` |
 | `GridLocations(…) * Circle(1)` | The same operator over the `LocationList` |
+| An object that can't be made from its values (`ValueError`, `RuntimeError`, an OCCT error: `Triangle(a=1, b=1, c=3)`, `RadiusArc` too small, a `Spline` through points too close) | `ModelingException` (an `InvalidOperationException`), carrying the error a `Result` would: `Error`, with its `Code`, and `Diagnostics`. An argument wrong on its own (a null, too few points, a missing angle) stays an `ArgumentException` (kernel decision 25601) |
+| (none: a Kerf addition) | Each object's constructor as an operation returning a `Result`: `Operations.MakeBox(…)`, `MakeSpline(…)`, `MakeTriangle(…)`, …, `Make` and the class's name, with the constructor's parameters; `ConstrainedArcs.CenteredOn` is `MakeConstrainedArcsCenteredOn`. A `Result<Part>`, `Result<Sketch>` or `Result<Curve>`, holding the object |
 
 ## Operations
 
@@ -184,15 +186,16 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
   counterpart, because the compiler rules those calls out.
 - Exceptions: a failure a caller should expect (a fillet, chamfer, offset, loft, draft or spline that can't be
   built, a Boolean that fails, a file that can't be read) is a failed `Result<T>` with diagnostic codes; the operators
-  and constructors, which can't return one, throw `InvalidOperationException` (unit 10M3). Misuse
+  and constructors, which can't return one, throw `ModelingException`, an `InvalidOperationException` carrying the same
+  error (unit 10M3; kernel decision 25601), and each object has a `Make…` operation returning the `Result`. Misuse
   stays .NET's: `ValueError` becomes `ArgumentException` (`ArgumentNullException` for a missing input), except where
   the shape being operated on is empty, which throws `InvalidOperationException` (the object's state, not an argument,
   is at fault). `RuntimeError` becomes `InvalidOperationException`. The messages are .NET sentences (unit 10M2).
 - `ConvexPolyhedron` merges points closer than 1e-6, leaves out a corner within 1e-6 of the hull of the others where
   it would make a face thinner than that, and builds each flat side (corners within 5e-8 of one plane) as one face;
-  build123d makes a face of each of Qhull's triangles and cleans. A set with no volume throws `ArgumentException`, where
-  SciPy raises `QhullError`. `Operations.MakeConvexPolyhedron` gives the same as a `Result<Part>` (kernel decisions
-  1993 and 1996).
+  build123d makes a face of each of Qhull's triangles and cleans. A set with no volume throws `ModelingException`
+  (`modeling.hull-failed`), where SciPy raises `QhullError`. `Operations.MakeConvexPolyhedron` gives the same as a
+  `Result<Part>` (kernel decisions 1993, 1996 and 25601).
 - `Wire.MakePolygon(…, close: true)` closes a polygon whose ends are 1e-7 to 1e-6 apart, which build123d leaves open
   (kernel decision 1994).
 - `Wire.MakeConvexHull` samples curves to a deflection, not 2 / tolerance points an edge, and makes each joining line

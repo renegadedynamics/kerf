@@ -43,13 +43,29 @@ public static class ModelingDiagnostics
     /// </summary>
     public static DiagnosticCode HullFailed { get; } = new("modeling.hull-failed");
 
+    /// <summary>
+    /// No shape fits the values an object was given, each valid on its own: no arc of that radius touches both targets, no
+    /// triangle has those sides, a rounded rectangle's radius is too large for it: <c>modeling.no-solution</c>.
+    /// </summary>
+    public static DiagnosticCode NoSolution { get; } = new("modeling.no-solution");
+
+    /// <summary>An arc or line meant to end at a limit, or at another curve, never meets it: <c>modeling.limit-not-reached</c>.</summary>
+    public static DiagnosticCode LimitNotReached { get; } = new("modeling.limit-not-reached");
+
+    /// <summary>
+    /// An object couldn't be built from the values it was given, for a reason found while building it (two points of a
+    /// polyline the same, a slot too short to have a side): <c>modeling.object-failed</c>. A failure of the kernel's keeps
+    /// the kernel's code.
+    /// </summary>
+    public static DiagnosticCode ObjectFailed { get; } = new("modeling.object-failed");
+
     /// <summary>An argument the kernel refused, said in context: <c>kernel.invalid-argument</c>.</summary>
     public static DiagnosticCode KernelInvalidArgument { get; } = new("kernel.invalid-argument");
 
     /// <summary>
     /// What an operation made that isn't valid, from the exception a shorthand threw for it (<c>result.invalid</c>): the
     /// operators and constructors can't return a <see cref="Result{T}"/>, whose <c>TryGetInvalid</c> gives the same. To look at
-    /// or to draw, not to build on (decision 1742).
+    /// or to draw, not to build on (decision 1742). <see cref="ModelingException.TryGetInvalid"/> is the same.
     /// </summary>
     public static bool TryGetInvalid(Exception failure, out Shape invalid)
     {

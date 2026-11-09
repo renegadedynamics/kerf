@@ -60,10 +60,10 @@ public class SweepFramesTests
     {
         var straight = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(0, 0, 10));
         var direction = new Vector3D(x, y, z);
-        var e = Assert.Throws<InvalidOperationException>(() => Solid.Sweep(Disc(), straight, mode: direction));
+        var e = Assert.Throws<ModelingException>(() => Solid.Sweep(Disc(), straight, mode: direction));
         Assert.Contains("encloses no volume", e.Message);
         Assert.Contains("square to the path", e.Message);
-        Assert.Throws<InvalidOperationException>(() => Solid.SweepMulti([Disc(), new Pos(0, 0, 10) * Disc()], straight, binormal: direction));
+        Assert.Throws<ModelingException>(() => Solid.SweepMulti([Disc(), new Pos(0, 0, 10) * Disc()], straight, binormal: direction));
         // And as an operation's result, with the same words
         var result = Sweep((Shape)Disc(), (Shape)straight, new SweepOptions { Normal = direction });
         Assert.True(result.IsFailure);
@@ -74,7 +74,7 @@ public class SweepFramesTests
     public void A_path_in_the_section_s_plane_fails_too()
     {
         var along = Edge.MakeLine(new Point3D(0, 0, 0), new Point3D(10, 0, 0));
-        var e = Assert.Throws<InvalidOperationException>(() => Solid.Sweep(Disc(), along));
+        var e = Assert.Throws<ModelingException>(() => Solid.Sweep(Disc(), along));
         Assert.Contains("in the section's plane", e.Message);
     }
 

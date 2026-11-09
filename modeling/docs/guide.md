@@ -45,9 +45,10 @@ runs are quick.
    are copies; there's no `shape.location = …`.
 3. **Operations that can fail return `Result<T>`.** Fillet, chamfer, offset, loft, sweep, extrude, revolve, draft,
    thicken, imports and exports return a `Result`, never throw for a geometric failure. Check it (section 6).
-4. **Operators can't return a `Result`,** so `a - b` throws `InvalidOperationException` if the Boolean fails. Use
-   the methods `a.Subtract(b)`, `a.Add(b)` and `a.Common(b)`, which return a `Result<Part>` (or `Sketch`, `Curve`),
-   where a failure is possible and you want to handle it.
+4. **Operators and constructors can't return a `Result`,** so `a - b` throws `ModelingException` if the Boolean
+   fails, and `new Triangle(…)` if no triangle has those sides. Use the methods `a.Subtract(b)`, `a.Add(b)` and
+   `a.Common(b)`, which return a `Result<Part>` (or `Sketch`, `Curve`), and each object's `Make…` twin
+   (`MakeTriangle(…)`, `MakeSpline(…)`), where a failure is possible and you want to handle it.
 5. **Python names become .NET names:** `fillet` → `Fillet`, `Align.MIN` → `Align.Min`, `edges()` → `Edges()`,
    `sort_by(Axis.Z)` → `OrderBy(Axis.Z)`, `group_by(Axis.Z)[-1]` → `GroupBy(Axis.Z).Last()`. See
    [name-map.md](name-map.md).
@@ -86,6 +87,22 @@ Part plate = new Box(100, 60, 5) - new GridLocations(40, 40, 3, 2) * new Cylinde
 Sketch objects: `Rectangle`, `RectangleRounded`, `Circle`, `Ellipse`, `Polygon`, `RegularPolygon`, `Trapezoid`,
 `Triangle`, the `Slot…` family, `Superellipse`. Curves: `Line`, `Polyline`, `CenterArc`, `ThreePointArc`,
 `TangentArc`, `RadiusArc`, `Spline`, `Bezier`, `Helix`, `FilletPolyline` and others, as in build123d.
+
+**An object that can't be made from its values throws `ModelingException`,** carrying the error a `Result` would
+(`Error`, with its `Code`, and `Diagnostics`): no triangle has sides 1, 1 and 3, no arc of radius 1 joins points 4
+apart, no spline passes through points closer than 1e-6. It's an `InvalidOperationException`. **Each object has a twin
+in `Operations` returning a `Result`,** `Make` and its name, with the same parameters, for values that may not make a
+shape:
+
+```csharp
+Result<Sketch> tri = MakeTriangle(sideA: 1, sideB: 1, sideC: 3);   // modeling.no-solution: No such triangle
+Result<Curve> arc = MakeRadiusArc(new Point3D(0, 0, 0), new Point3D(4, 0, 0), 1);   // modeling.no-solution
+try { var s = new Spline(points); }
+catch (ModelingException e) { Console.WriteLine(e.Error.Code); }   // modeling.spline-failed
+```
+
+An argument that is wrong on its own (a null, too few points, a missing angle, a negative radius the object checks)
+is still an `ArgumentException`, from the constructor and its `Make…` alike.
 
 Objects are centred by default, as in build123d. `align: new Alignment(Align.Min, Align.Min, Align.Min)` puts the
 minimum corner at the origin; `GridLocations(xSpacing, ySpacing, xCount, yCount)` takes the spacing between
