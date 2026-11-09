@@ -9,7 +9,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
   SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a
   laser cutter engraving outlines, say). R12 has no `HATCH` and is unchanged (kernel decision 2042).
-- **Breaking: no mutable collections handed out** (unit 13P, kernel decision 26402): `edge.ConnectedFaces(parent)` and
+- **Breaking: no mutable collections handed out** (unit 13P, kernel decision 2044): `edge.ConnectedFaces(parent)` and
   `ElementsOfType<T>()` return a `ShapeList` (they returned a `List`), `ModelHistory.Modified` and `Generated` an
   `ImmutableArray<Shape>` (an array), and `MatrixOfInertia` an `ImmutableArray<ImmutableArray<double>>` (a
   `double[][]`). Indexing, `Count` or `Length`, `foreach` and LINQ work as before, with the same values in the same

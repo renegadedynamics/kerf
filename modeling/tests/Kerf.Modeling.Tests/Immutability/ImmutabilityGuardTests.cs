@@ -2,7 +2,7 @@ namespace Kerf.Modeling.Tests.Immutability;
 
 /// <summary>
 /// The modelling layer's public types can't be changed once made (design-rules.md, section 3; the owner, decision 2039;
-/// unit 13P, decision 26401): no public settable property, mutable field, mutable collection held or returned, event,
+/// unit 13P, decision 2043): no public settable property, mutable field, mutable collection held or returned, event,
 /// mutable static state or in-place mutator, except what <see cref="Accepted"/> lists, each with its reason. KERF0003
 /// catches the first few as the code is compiled; this reads what was built, and the rest.
 /// </summary>
