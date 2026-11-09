@@ -1717,6 +1717,12 @@ In IL builds (project references) after 60 fuses, an earlier set of six: the bos
 
 **The boss is 1.3 to 1.4 times 0.3.0's time, over the bar, and named for the owner** (decision 2038). Its check is 4.6 MB and about 5 to 7 ms: the result's classifier, whose first point fills its trees (about 3 ms), and the 150 points inside the door, each classified once (about 4 ms). That is the proof decision 1937 asks for, as the volume can't tell a small part inside the door from one lost. Keeping a frozen solid's tree of edges and vertices with its TShape, as decision 2001 keeps its map, would let a result's tree serve the next Boolean's classifiers; a quicker classifier would do the rest; keeping `PointInTheFace`'s grid for the next point was tried, and saved 5% of a classification's bytes and no time. An order of asking decision 1881's grid was tried and left out (decision 2038): asking whichever input last ruled a point out took `buc60462_2`'s check from 132 to 226 MB, found by comparing the corpus's check times case by case. **The pattern** (decision 2038), each check counted on a small part against the door: decision 1924's check doesn't run (it was reverted); decision 1932's, a 4 × 4 face against the door, 81 points for a common and 162 for a cut, 4.6 and 5.5 MB beside a Boolean of 2.7 (0.4.0's 8.6 and 13.3); decision 1985's bends, 0.7 MB and 0.6 ms of a 5 MB chamfer, under the bar; decision 1866 on a cut of the bump that removes nothing, 392 points and 7.2 MB beside 6.5 (0.4.0's 26). Decision 1932's and 1866's checks cost more than their Booleans on this shape, as they did in 0.3.0, and aren't 0.4.0's rise; they go with 13K.
 
+### One more hour (unit 13R)
+
+*9 November 2026, loaded machine; bytes over all threads, the whole fuse with its check, interleaved in one process, medians of 10. Decision 2070.*
+
+A classification of a point inside the boss's result allocated about 18.5 KB, a third of it a new `HInter` for each face its line neared, whose sequences grew afresh. A face's intersector now keeps one. 150 classifications 2.76 to 2.01 MB; the boss's check 4.31 to 3.60 MB; the boss fuse 15.73 to 14.97 MB (0.3.0 14.5), the bump 20.70 to 18.64. Times about 3% quicker, loaded. What's left is the 150 points themselves: each projects itself onto a face to aim its line, and meets each face it nears, OCCT's way. Passing over a face of the boss that no face of the door can cross saves nothing here: the boss's side meets the boxes of a cylinder and three planes of the door.
+
 ## The blade bumper enclosure, phase 14
 
 *9 November 2026, units 14A to 14D, decisions 2051 to 2055. Seven helpers shared the machine with the owner, every core at
@@ -1873,6 +1879,60 @@ On ordinary parts the checks are the result's validity and its volume, about hal
 **The corpus's filtered groups** (`boolean/`, `blend/`, `bugs/modalg_*`, `bugs/moddata_*`; the check run on every Common, Cut and Fuse through the hook, two cases at a time): statuses as `corpus-13.txt`; checks 32.1 s and 4,251 MB before, 36.0 s and 7,117 MB after, the point check's 296 Booleans the rise (about 50 ms and 10 MB each on average, a median of 6 ms, the dearest about 3 s), the other 3,730 8.8 to 7.0 s.
 
 **The boss** (fresh processes in turn, IL, 9 fuses after 3, heavily loaded): 59.5 ms against 0.3.0's 46.6 and 0.4.0's 79.2, 15.4 MB against 14.3 and 84.4; the bump 48.0 against 88.7 and 184.7. Within 10% of 0.3.0's bytes, not of its time here; what's left is decision 1937's 150 points inside the door (decision 2068).
+
+## Vector instructions (unit 14E)
+
+*9 November 2026, on a machine shared with the owner and other helpers, at up to 100% load: the micro-benchmarks ran
+alone on one processor under BenchmarkDotNet, and the figures in place are processor time, interleaved, two processors a
+process. Decisions 2072 to 2075. A script for a quiet window is in the scratchpad's `p14e/tools/quiet.ps1`.*
+
+**The machine:** an AMD Ryzen 9 9900X (Zen 5): .NET 10 accelerates `Vector128`, `Vector256` and `Vector512`, with AVX2,
+FMA and AVX-512 F and DQ. The loops kept use `Vector256<double>` (four lanes) where `Vector256.IsHardwareAccelerated`,
+and their scalar loops otherwise (decision 2075).
+
+### Where the time goes, by loop
+
+Self time from EventPipe traces of main (965e05b55), each workload in a process of its own on two processors, threads
+stopped for a collection and idle threads left out; a sample is charged to the first Kerf method from the leaf up, so a
+call into the base library counts to its Kerf caller. `p14e/tools/leaf-report.cs` reads the traces.
+
+| Workload | Samples | The largest loops over many values of one kind, by their share |
+|---|---:|---|
+| The blade bumper, 3 builds at 35 mm | 4,164 | flat: the largest method 1.9% (`MakeConnexityBlocks`, a graph walk); Gauss integration 2.6% (`ComputeWith` 1.3%, and 1.4% clearing 500 kB of work arrays a face in `GaussWork.Rent`); the Boolean's box tree pairs (`PairTraverse.Select`) 1.2%; `Class2d`'s point in polygon 1.3%; box tests (`Bounds.Add`, `Box.IsOut`, `SpatialTree.Select`) 1.3% |
+| The same, published, 2 builds | 5,921 | the renderer's triangles 4.2%, its downsampling 1.2%, its edges 0.8% (publishing was about half the run: about 13% of it); PNG writing 2.9% (14B's, already by vectors) |
+| The Booleans suite | 10,801 | `EdgeEdge.FindSolutions` 10.0% (a march along a curve, step by step), curve evaluation 5.4%, the approximation's normal matrix (`LeastSquare.MakeTAA`) 4.7%, box tree pairs 1.6%, polynomials (`PLib.EvalPoly0Runtime` and `EvalPoly0`) 1.6%, B-spline knots inserted (`Bohm`) 0.7% |
+| Meshing `data/occ` (`quick`) | 2,575 | the Delaunay's bookkeeping (adding and deleting triangles and links, its maps) about a quarter, and the node insertion's loop 9.8%, with the circles containing a node in it; `Class2d` 2.4% |
+| Bento's examples, 10 passes | 1,367 | flat: the largest 2.5% |
+
+### Prototypes
+
+| Loop | Values a call | Alone (one processor) | In place | Results | Kept |
+|---|---|---|---|---|---|
+| The renderer: a row of an opaque triangle's pixels (edge functions, depth, smooth or flat shading), of an edge's segment over the faces, and the 2 × 2 downsampling | a row of a triangle or a segment's box, four pixels a vector; a row of the picture | CrankArm 1800 × 1100 flat 63.8 to 34.8 ms (−45%), as the viewer 43.9 to 26.5 (−40%); Motor-c 121.0 to 78.9 (−35%), 90.9 to 53.6 (−41%) (an earlier run, before the masks were compared as integers: −34% to −40%) | the rig's `images`, 11 examples, 9 passes: the process's processor time 15.7 to 12.9 s (−18%; render ms −36% by wall time); the blade bumper's publishing, warm: 8,828 to 8,047 ms of processor time (−9%; the drawings and the section renders' Booleans are the rest); both at d8ac08cfc, before the masks' fix | each lane the scalar loop's operations in its order, without fused multiply-adds; 72 renders in `RendererVectorTests` byte for byte; 14 publishing runs, main's and the branch's, 36 PNGs each, all the same by SHA-256 | **yes** (decision 2072) |
+| `Class2d`'s point in polygon (`InternalSiDans`, `InternalSiDansOuOn`): four edges a vector, the crossings counted, ON found in any lane | the polygon's points, a face's wire discretised (tens to hundreds) | 1.65 times quicker at 16 to 64 points, 2.4 at 256 (a point's ON test and four corners) | by share, at most 1% of the meshing suite and 0.6% of the enclosure: its whole share is 1% to 2.5% | the same answers on over 50,000 points of random polygons, at and beside vertices and edges, with tolerances from none to large | no: can't reach decision 1829's bar (decision 2074); in the history at 7662090d3 |
+
+### Written down as not worth it (decision 2073)
+
+- **The Boolean's box tree pairs** (`PairTraverse.Select`, 1.2% to 1.6%) and **the box tests** (`Box.IsOut`, `Bounds.Add`,
+  `SpatialTree.Select`, about 1.3% together): a walk of a tree, a few boxes at a step, each box three pairs of numbers
+  held as a struct; vectors want the boxes as arrays of coordinates and the walk reshaped, for a share that can't give 5%.
+- **Gauss integration** (2.6% of the enclosure): its time is in the surfaces' evaluation, one point at a time through
+  their adaptors, and in clearing its work arrays (`GaussWork.Rent`, 1.4%, a memory clear the base library already does
+  by vectors; clearing only what's used would save that, and isn't a vector question). Summing by vectors reorders the
+  sums.
+- **`EdgeEdge.FindSolutions`** (10% of the Booleans suite): a march along an edge, each step depending on the last.
+- **The approximation's normal matrix** (`LeastSquare.MakeTAA`, 4.7% of the Booleans suite, 0.5% of the enclosure): its
+  inner loops run over a span's poles, the degree plus one (4 to 9), through 1-based matrix indexers; too short for
+  vectors to pay. Lanes over the independent outputs would keep the sums' order.
+- **Polynomials and B-spline bases** (`PLib.EvalPoly0Runtime`, `EvalPoly0`, `Bohm`: 1.6% and 0.7% of the Booleans suite):
+  Horner's rule over the dimensions, which could be lanes with the sums in order, but 3 or 4 of them at a time a point,
+  and under 2% at most.
+- **The mesher's circles and triangles** (`CircleInspector.Inspect` inside the 9.8%): the circles a node is in come
+  through the cell filter's lists, a few at a time and in no order in memory, with deleted ones purged as they're met;
+  the rest of the mesher's time is its maps and lists.
+- **Mesh export** (STL, 3.7% of the enclosure with its meshing): writing and file I/O; **STEP export**: text (14B's).
+- **`Vector512`**: this machine has it, but the kept loops meet the bar with four lanes on any AVX2 processor; eight
+  lanes is a second path to keep identical, for later if renders matter more.
 
 ## Parallelism (unit 14F)
 

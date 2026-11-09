@@ -5,6 +5,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A mesh further from its surfaces than the deflection says so,** with the kernel's warning
+  `meshing.deflection-exceeded`, naming the faces and the furthest one's distance: `ExportStl`, `ExportGltf` and
+  `Export3mf` give it in their results, and `Triangulate`, `Tessellate` and `TriangulateTree` raise it to `Warnings`,
+  where `Triangulate` and `Tessellate` dropped the mesh's warnings (`meshing.faces-not-meshed` too). It's met at relative
+  deflections (the exports' default) on small fillet tori, up to 1.14 times out; the meshes are unchanged (kernel
+  decision 2071; the guide's section 7).
 - **The guide's section 9 on building parts in parallel and the runtime's settings** (unit 14F): parts built with
   `Parallel.For` came out the same in 1.5 to 1.7 times less wall time on 4 processors; `TieredPGO` off and
   `CallCountingDelayMs` 0 cut a parallel run's processor time by 35% to 45%; the server collector suits an application
