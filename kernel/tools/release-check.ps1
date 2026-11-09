@@ -164,7 +164,14 @@ function New-Side([string] $name, [string] $version, [string] $localPackages) {
   $dir = Join-Path $Work $name
   if (Test-Path $dir) { Remove-Folder $dir }
   New-Item -ItemType Directory -Force $dir | Out-Null
-  Get-ChildItem $cases -Exclude 'bin', 'obj' | Copy-Item -Destination $dir -Recurse
+  # Every file but the builds' own, the v0.16 enclosure's project's included (unit 14D)
+  foreach ($file in Get-ChildItem $cases -Recurse -File) {
+    $relative = $file.FullName.Substring($cases.Length).TrimStart('\', '/')
+    if ($relative -match '(^|[\\/])(bin|obj)[\\/]') { continue }
+    $target = Join-Path $dir $relative
+    New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+    Copy-Item $file.FullName $target
+  }
   $packages = Join-Path $dir 'packages'
   $local = if ($localPackages) { "    <add key=`"candidate`" value=`"$localPackages`" />`n" } else { '' }
   # Kerf's packages from one source only: a local folder may hold a version nuget.org has too

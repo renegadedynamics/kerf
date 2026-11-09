@@ -145,7 +145,7 @@ public static class Exporters3D
             var written = Step.Write(StepTree(toExport), text, writeOptions, cancellationToken: cancellationToken);
             if (written.IsFailure)
                 return written;
-            stream.Write(StepHeader.WithFileName(text.ToArray(), toExport is ModelShape { Label.Length: > 0 } labelled ? labelled.Label : null, options.Timestamp, "Kerf.Modeling"));
+            StepHeader.Write(stream, text.GetBuffer().AsSpan(0, (int)text.Length), toExport is ModelShape { Label.Length: > 0 } labelled ? labelled.Label : null, options.Timestamp, "Kerf.Modeling");
             return written;
         });
     }
@@ -315,35 +315,49 @@ internal static class StepHeader
     /// </summary>
     internal static byte[] WithFileName(byte[] step, string? name, string? timestamp, string? originatingSystem)
     {
-        // Part 21 text is 8-bit; Latin-1 maps each byte to one char and back, so nothing else changes
-        var text = Encoding.Latin1.GetString(step);
-        int start = text.IndexOf("FILE_NAME(", StringComparison.Ordinal);
-        int data = text.IndexOf("DATA;", StringComparison.Ordinal);
-        if (start < 0 || (data >= 0 && start > data))
-            return step;
-        var spans = Arguments(text, start + "FILE_NAME(".Length);
+        using var output = new MemoryStream(step.Length + 256);
+        Write(output, step, name, timestamp, originatingSystem);
+        return output.ToArray();
+    }
+
+    /// <summary>
+    /// Writes the STEP text to the stream with FILE_NAME's name, time stamp and originating system replaced, as
+    /// <see cref="WithFileName"/>. Only the record is rewritten: the text before and after it is written as it is, so a
+    /// large file isn't copied (unit 14A: as a string and back it was three to five copies of each file).
+    /// </summary>
+    internal static void Write(Stream output, ReadOnlySpan<byte> step, string? name, string? timestamp, string? originatingSystem)
+    {
+        // Part 21 text is 8-bit, a byte to a character (Latin-1)
+        int start = step.IndexOf("FILE_NAME("u8);
+        int data = step.IndexOf("DATA;"u8);
+        List<(int From, int To)> spans = start < 0 || (data >= 0 && start > data) ? [] : Arguments(step, start + "FILE_NAME(".Length);
         if (spans.Count != 7)
-            return step;
-        var replacements = new (int Index, string? Value)[] { (5, originatingSystem), (1, timestamp), (0, name) };
-        foreach (var (index, value) in replacements)
+        {
+            output.Write(step);
+            return;
+        }
+        int written = 0;
+        foreach (var (index, value) in new (int Index, string? Value)[] { (0, name), (1, timestamp), (5, originatingSystem) })
         {
             if (value is null)
                 continue;
             var (from, to) = spans[index];
-            text = string.Concat(text.AsSpan(0, from), Encode(value), text.AsSpan(to));
+            output.Write(step[written..from]);
+            output.Write(Encoding.Latin1.GetBytes(Encode(value)));
+            written = to;
         }
-        return Encoding.Latin1.GetBytes(text);
+        output.Write(step[written..]);
     }
 
     // The spans of the record's top-level arguments, trimmed of the white space around them
-    private static List<(int From, int To)> Arguments(string text, int i)
+    private static List<(int From, int To)> Arguments(ReadOnlySpan<byte> text, int i)
     {
         var spans = new List<(int, int)>();
         int depth = 0, argument = i;
         bool quoted = false;
         for (; i < text.Length; i++)
         {
-            char c = text[i];
+            char c = (char)text[i];
             if (quoted)
             {
                 if (c == '\'')
@@ -372,11 +386,11 @@ internal static class StepHeader
         return [];
     }
 
-    private static (int, int) Trimmed(string text, int from, int to)
+    private static (int, int) Trimmed(ReadOnlySpan<byte> text, int from, int to)
     {
-        while (from < to && char.IsWhiteSpace(text[from]))
+        while (from < to && char.IsWhiteSpace((char)text[from]))
             from++;
-        while (to > from && char.IsWhiteSpace(text[to - 1]))
+        while (to > from && char.IsWhiteSpace((char)text[to - 1]))
             to--;
         return (from, to);
     }
