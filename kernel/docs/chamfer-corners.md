@@ -117,8 +117,33 @@ can't be carried past it. m is half the smaller of b and what the side faces hav
 vertices), so the tool stays above their feet; anything it cuts that it shouldn't, such as a hole in the face too near the
 loop, misses the check and the chamfer isn't built.
 
-Every corner of the loop is built so, also those that don't collapse (as right cones, exact, as B-splines of the same kind),
-since the one tool has to run all round: so a loop with any tight corner is built here, all of it.
+Every corner of the loop is built so, also those that don't collapse (as right cones, OCCT's, about the arc's axis), since
+the one tool has to run all round: so a loop with any tight corner is built here, all of it. The walls over arcs are
+cylinders (unit 13B).
+
+**Built from its faces, where nothing else is near (unit 13B).** The Boolean was 30 to 80 times a plain chamfer: on the user's
+box, 89% of the time was the Boolean, most of it intersecting the oblique cones, which are B-splines, with the side cylinders
+they cross and with F and the side planes they only touch, at P and at the arc's ends. Where it's known in advance what the
+Boolean would find, it isn't asked: F loses the band outside the contact, each side face loses its top down to depth b,
+and the chamfer's faces fill the gap, so those faces are made, F and the sides rebuilt with the new edges in place of the
+old, and the solid put together from them and the shape's other faces, unchanged. That's known when:
+
+- F has no loops but those chamfered, and no face of the shape but F and the loops' sides comes within depth b of F (by its
+  box, which is larger than it);
+- at each corner of a loop one straight edge runs square to F, down between the two sides, past depth b, and each side's
+  other edges lie deeper than b;
+- seen from above, the band each piece's chamfer lies over (its edge, its stretch of the contact, the rulings between) meets
+  no other piece's band, its neighbours' only along the ruling they share, and the two beside a collapsed corner only at P.
+  Each band is taken as the convex hull of its corners and its arcs' control points, which holds it, so this can turn down
+  what's sound but never pass what isn't.
+
+Then nothing of the shape lies in what's removed but material, and no face of the chamfer crosses another or the shape's,
+which the volume, area and validity checks couldn't see on their own: a chamfer running through a hollow below F would
+measure the same, as the hollow's own faces count against it either way. Anything else goes to the Boolean, as before. The
+edges are exact: the side's arc at depth b is the side's own circle moved down, its curve on the side moved with it, and on
+the oblique cone fitted by SameParameter (to 1e-7 on the user's box); a right cone is OCCT's, in the arc's own frame, so its
+curves are lines; the rulings are lines. The Boolean's were B-splines, to 5e-6. The faces, edges, vertices and history are
+the Boolean's, for the shape's own parts, and the volumes agree to 1e-9 (`ChamferTightCornersTests`).
 
 ## 3. The option
 
@@ -154,6 +179,11 @@ A(0) - A(1), each side a band b deep along the edge, and the chamfer adds its fa
 as θ s (r_0 + r_1) / 2 with s the slant, and an oblique cone as ½ r ∫ √(b² + ((c - P)·e(u) + r)²) du over the arc's angle,
 e(u) the arc's radial direction there, by Gauss-Legendre: a smooth integrand, to well past the check's one part in a
 million. Then validity. Anything that misses refuses: "couldn't be built".
+
+**Measured once (unit 13B).** Built from its faces, the shape's volume and area are those of the faces it kept plus those it
+lost, and the answer's the faces kept plus the new, each face as it adds to the whole about one point: the faces kept are
+integrated once, not twice. Planar faces bounded by lines and circles are taken in closed form (`PlanarFaceMass`), which
+fixed Gauss points are exact on too, only slower. The operation doesn't check validity again after this check has.
 
 **In the tests,** the volumes are worked out again a third way, by the closed form for a rounded rectangle:
 A(1/2) is the area of the rectangle (W - r - a) by (H - r - a) grown by r / 2, as the mean of the region and E.
