@@ -194,8 +194,8 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
   SciPy raises `QhullError`. `Operations.MakeConvexPolyhedron` gives the same as a `Result<Part>` (kernel decisions
   24001 and 24004).
 - `Wire.MakePolygon(…, close: true)` closes a polygon whose ends are 1e-7 to 1e-6 apart, which build123d leaves open
-  (kernel decision 24002).
+  (kernel decision 1994).
 - `Wire.MakeConvexHull` samples curves to a deflection, not 2 / tolerance points an edge, and makes each joining line
-  touch its curves, so its hull is exact where build123d's is within half a sample's spacing (kernel decision 24005).
+  touch its curves, so its hull is exact where build123d's is within half a sample's spacing (kernel decision 1997).
 - A `Vertex` given as a constrained-arc target or centre is its point. build123d adds the vertex's
   position to its point, which counts the position twice for a moved vertex.

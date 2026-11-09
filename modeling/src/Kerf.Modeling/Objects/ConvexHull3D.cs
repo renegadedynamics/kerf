@@ -3,7 +3,7 @@ using System.Numerics;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// The convex hull of a set of points, as a solid with one planar face for each flat side (decision 24001).
+/// The convex hull of a set of points, as a solid with one planar face for each flat side (decision 1993).
 /// </summary>
 /// <remarks>
 /// <para>The steps, and what each guarantees:</para>

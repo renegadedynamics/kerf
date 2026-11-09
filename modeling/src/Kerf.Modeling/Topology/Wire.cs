@@ -401,7 +401,7 @@ public static partial class WireExtensions
             if (gap > Constants.Tolerance && close)
                 vectors.Add(vectors[0]);
             else if (gap > 0 && close && vectors.Count > 2)
-                vectors[^1] = vectors[0];   // ends within tolerance close at the first point, not left open (decision 24002)
+                vectors[^1] = vectors[0];   // ends within tolerance close at the first point, not left open (decision 1994)
             var points = vectors.Select(v => v).ToArray();
             return Failures.Get(Wire.Polygon(points), () => "polygon");
         }
@@ -423,7 +423,7 @@ public static partial class WireExtensions
         /// <paramref name="tolerance"/> times its length of it, so the hull of the samples is within that of the edges'
         /// hull. Each joining line is then moved to touch the curves it joins (Newton's method on the tangency, to
         /// 1e-12 of the parameter), and bumps the samples missed are added, so the hull is exact where it converges;
-        /// where it doesn't, the samples' hull, within the bound, is kept (decision 24005).
+        /// where it doesn't, the samples' hull, within the bound, is kept (decision 1997).
         /// </remarks>
         /// <param name="edges">The edges to enclose.</param>
         /// <param name="tolerance">The allowable error, as a fraction of each edge's length.</param>

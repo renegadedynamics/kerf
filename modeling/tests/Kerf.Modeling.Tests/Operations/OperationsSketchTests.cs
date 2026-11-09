@@ -78,7 +78,7 @@ public class OperationsSketchTests
         Check.AlmostEqual(7.2582, MakeHull(edges).Area, 4);
 
         var circles = new Pos(-10, 0) * new Circle(10) + new Pos(10, 0) * new Circle(7);
-        // Kerf's hull touches the circles exactly (decision 24005): the closed form is 577.88087346990; build123d's
+        // Kerf's hull touches the circles exactly (decision 1997): the closed form is 577.88087346990; build123d's
         // samples gave 577.8808343
         Check.AlmostEqual(577.880873469899, MakeHull(circles.Edges()).Area, 9);
 

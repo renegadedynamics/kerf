@@ -1,4 +1,4 @@
-// ConvexPolyhedron (decision 24001): a valid solid for any point set whose hull has volume, one face for each flat side,
+// ConvexPolyhedron (decision 1993): a valid solid for any point set whose hull has volume, one face for each flat side,
 // and one exception type, saying why, for a set whose hull has none. Each hull is checked independently of how it was
 // built: every corner is an input point, every input point is inside every face's plane (to the merge distance), each
 // face is flat to 5e-8, and the solid is valid. Together those make it the hull, to that distance.

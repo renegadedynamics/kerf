@@ -1,4 +1,4 @@
-// Wire.MakeConvexHull (decision 24005): lines add their ends, curves are sampled to tolerance times their length, and each
+// Wire.MakeConvexHull (decision 1997): lines add their ends, curves are sampled to tolerance times their length, and each
 // joining line is made to touch its curves. Checked against closed forms, and on random edges against a bracket that
 // doesn't depend on how the hull was built: it holds the hull of 4,000 points along each edge, and lies within that
 // hull grown by its sampling's sagitta.
@@ -68,7 +68,7 @@ public class ConvexHullOfEdgesTests
     private static (double Area, double Perimeter) DenseHull(List<Edge> edges, double deflection)
     {
         // The kernel's deflection sampling and 4,000 even steps of the curve's parameter: the first alone can miss a
-        // tight lobe (decision 24005)
+        // tight lobe (decision 1997)
         var dense = edges.SelectMany(e =>
         {
             var curve = e.AsCurve();

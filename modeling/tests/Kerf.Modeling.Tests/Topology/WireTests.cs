@@ -92,7 +92,7 @@ public class WireTests
     [InlineData(1e-6)]
     public void MakePolygon_EndsWithinToleranceClose(double gap)
     {
-        // Decision 24002: ends 1e-7 to 1e-6 apart were taken as closed but not closed, so the wire was open
+        // Decision 1994: ends 1e-7 to 1e-6 apart were taken as closed but not closed, so the wire was open
         var wire = Wire.MakePolygon([new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(0, 1, 0), new Point3D(gap, 0, 0)]);
         Assert.True(wire.IsClosed);
         Assert.Equal(3, wire.Edges().Count);

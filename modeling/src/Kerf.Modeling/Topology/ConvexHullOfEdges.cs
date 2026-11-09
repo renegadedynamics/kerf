@@ -3,7 +3,7 @@ using Kerf.Construction;
 namespace Kerf.Modeling;
 
 /// <summary>
-/// The convex hull of edges in the XY plane, as a wire of pieces of the edges and lines touching them (decision 24005).
+/// The convex hull of edges in the XY plane, as a wire of pieces of the edges and lines touching them (decision 1997).
 /// </summary>
 /// <remarks>
 /// <para>build123d samples 2 / tolerance points along every edge, by arc length, and keeps the hull of the samples;

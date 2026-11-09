@@ -6,7 +6,7 @@ public static partial class Operations
 {
     /// <summary>
     /// The convex hull of the points as a solid, one planar face for each flat side: <see cref="ConvexPolyhedron"/>, as
-    /// a result rather than an exception (decision 24004).
+    /// a result rather than an exception (decision 1996).
     /// </summary>
     /// <param name="points">The points; those closer than <see cref="Constants.Tolerance"/> count as one.</param>
     /// <param name="rotation">Angles to rotate it about X, Y and Z.</param>
