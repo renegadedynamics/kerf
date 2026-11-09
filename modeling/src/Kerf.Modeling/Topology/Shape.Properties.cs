@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Kerf.Construction;
 using Kerf.Healing;
 using Kerf.Measurement;
@@ -93,7 +94,7 @@ public static partial class ShapeExtensions
         }
 
         /// <summary>The inertia tensor of the shape about its centre of mass, as rows.</summary>
-        public double[][] MatrixOfInertia
+        public ImmutableArray<ImmutableArray<double>> MatrixOfInertia
         {
             get
             {
