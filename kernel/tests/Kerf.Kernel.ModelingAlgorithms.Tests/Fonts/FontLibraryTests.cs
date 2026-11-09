@@ -36,7 +36,7 @@ public sealed class FontLibraryTests : IDisposable
         Assert.Equal("Wide", library.Fonts[^1].StyleName);
         Assert.True(library.HasFamily("kerf test wide"));
         Assert.False(library.HasFamily("Kerf Test"));
-        Assert.Throws<ArgumentNullException>(() => FontLibrary.Scan(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => FontLibrary.Scan(null!));
     }
 
     [Fact]
@@ -80,8 +80,8 @@ public sealed class FontLibraryTests : IDisposable
         Result<Font> liberation = library.Find(FontLibrary.DefaultFamily, FontStyle.Italic);
         Assert.Same(FontLibrary.Default(FontStyle.Italic), liberation.Value);
         Assert.Empty(liberation.Diagnostics);
-        Assert.Throws<ArgumentNullException>(() => library.Find(null!));
-        Assert.Throws<ArgumentNullException>(() => library.HasFamily(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => library.Find(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => library.HasFamily(null!));
     }
 
     [Fact]
@@ -122,8 +122,8 @@ public sealed class FontLibraryTests : IDisposable
         Assert.All(library.Fonts, f => Assert.Null(f.Path));
         Assert.Same(fonts[1], library.Find("Kerf Test CFF").Value);
         Assert.Same(fonts[0], library.Find("Kerf Test Wide").Value);
-        Assert.Throws<ArgumentNullException>(() => FontLibrary.FromFonts(null!));
-        Assert.Throws<ArgumentNullException>(() => FontLibrary.FromFonts([null!]));
+        KernelAssert.Throws<ArgumentNullException>(() => FontLibrary.FromFonts(null!));
+        KernelAssert.Throws<ArgumentNullException>(() => FontLibrary.FromFonts([null!]));
     }
 
     [Fact]
