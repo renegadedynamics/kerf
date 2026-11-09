@@ -21,6 +21,7 @@ implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [des
 | [drawing.md](drawing.md) | `Kerf.Drawing`: hidden-line drawings and SVG, the mesh renderer and PNG (unit 10L4) |
 | [fonts.md](fonts.md) | `Kerf.Fonts`: fonts read by Kerf's own reader, and text as faces (unit 13D) |
 | [diagnostics.md](diagnostics.md) | The diagnostic codes, and the bridges from OCCT's exceptions, alerts and statuses (unit 10F) |
+| [public-api.txt](public-api.txt) | The kernel's public API today, by reflection: the baseline `PublicApiBaselineTests` holds it to (unit 13P; design-rules.md, section 3). The modelling layer's is modeling/docs/public-api.txt |
 | [classification.tsv](classification.tsv) | The record of unit 10D's split: every public type then, as public API, engine or removed, with its new name. Historical: `PublicSurfaceTests` now checks the surface |
 | [classification-rules.txt](classification-rules.txt) | The rules that table comes from: by package, with exceptions by type |
 | [kerf.map](kerf.map) | The name map unit 10E applied, in kerf-rename's format (decision 1349 settled the draft) |

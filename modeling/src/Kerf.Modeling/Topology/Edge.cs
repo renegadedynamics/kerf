@@ -27,7 +27,7 @@ public static partial class EdgeExtensions
         /// </summary>
         /// <exception cref="ArgumentException">The edge is empty.</exception>
         /// <exception cref="InvalidOperationException">The parent is empty.</exception>
-        public List<Face> ConnectedFaces(Shape parent) => OneD.ConnectedFaces(self, parent);
+        public ShapeList<Face> ConnectedFaces(Shape parent) => new(OneD.ConnectedFaces(self, parent));
 
         /// <summary>The centre of the circle or ellipse the edge lies on.</summary>
         /// <exception cref="InvalidOperationException">The edge is neither.</exception>

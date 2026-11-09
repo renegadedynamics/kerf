@@ -25,6 +25,10 @@ internal sealed record DxfSpline(string Layer, int Degree, ImmutableArray<double
 // Closed: the last point joins the first, which isn't repeated
 internal sealed record DxfPolyline(string Layer, ImmutableArray<Point2D> Points, bool Closed = false) : DxfEntity(Layer);
 
+// A solid fill (DXF 2013's HATCH, R12 has none): an outer boundary first, counter-clockwise, then the holes in it,
+// clockwise; each a closed polyline, its first point not repeated
+internal sealed record DxfHatch(string Layer, ImmutableArray<ImmutableArray<Point2D>> Boundaries) : DxfEntity(Layer);
+
 // A line of text: its insertion point on the baseline (where the alignment, 0 left, 1 centre, 2 right, puts it), its
 // height (the capitals'), its rotation in degrees and its style; and the extent of its note's outlines
 internal sealed record DxfText(string Layer, string Text, Point2D Anchor, double Height, double Rotation, int Alignment, DxfTextStyle Style,
@@ -602,6 +606,38 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
                 }
 
                 break;
+            case DxfHatch hatch:
+                // As ezdxf writes a solid fill: in the XY plane, not associative (its boundaries are its own, not
+                // pointers to the polylines beside it), the outer path external (1) and the holes plain, each a
+                // polyline path (2) without bulges, closed; odd-parity (normal) style
+                Start("HATCH", entity, handle, owner, "AcDbHatch");
+                Point(10, Point2D.Origin);
+                Pair(210, 0.0);
+                Pair(220, 0.0);
+                Pair(230, 1.0);
+                Pair(2, "SOLID");
+                Pair(70, 1);
+                Pair(71, 0);
+                Pair(91, hatch.Boundaries.Length);
+                for (int i = 0; i < hatch.Boundaries.Length; i++)
+                {
+                    Pair(92, i == 0 ? 3 : 2);
+                    Pair(72, 0);
+                    Pair(73, 1);
+                    Pair(93, hatch.Boundaries[i].Length);
+                    foreach (Point2D p in hatch.Boundaries[i])
+                    {
+                        Pair(10, p.X);
+                        Pair(20, p.Y);
+                    }
+
+                    Pair(97, 0);
+                }
+
+                Pair(75, 0);
+                Pair(76, 1);
+                Pair(98, 0);
+                break;
             case DxfText text:
                 Start("TEXT", entity, handle, owner, "AcDbText");
                 Point(10, text.Anchor);
@@ -1016,6 +1052,14 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
                     break;
                 case DxfPolyline polyline:
                     foreach (Point2D p in polyline.Points)
+                    {
+                        Add(p);
+                    }
+
+                    break;
+                case DxfHatch hatch:
+                    // The outer boundary holds the holes
+                    foreach (Point2D p in hatch.Boundaries[0])
                     {
                         Add(p);
                     }

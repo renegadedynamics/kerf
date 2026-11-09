@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Collections.Immutable;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
@@ -49,7 +50,7 @@ public static class Surfaces
                 inputs.Add(support);
             }
         }
-        Point3D[] points = [.. options.Points];
+        Point3D[] points = options.Points.IsDefault ? [] : [.. options.Points];
         return EngineOperation.Run<Face>(range =>
         {
             var filling = new MakeFilling(options.Degree, options.PointsOnCurve, options.Iterations, options.Anisotropy,
@@ -103,8 +104,8 @@ public sealed record FillOptions
     /// <summary>The defaults.</summary>
     public static FillOptions Default { get; } = new();
 
-    /// <summary>Points the face passes through.</summary>
-    public IReadOnlyList<Point3D> Points { get; init; } = [];
+    /// <summary>Points the face passes through (an immutable array: the options don't keep a list the caller can change).</summary>
+    public ImmutableArray<Point3D> Points { get; init; } = [];
 
     /// <summary>A face whose surface the plate starts from (OCCT's <c>LoadInitSurface</c>), or null to compute one.</summary>
     public Face? InitialSurface { get; init; }

@@ -33,7 +33,8 @@ public sealed record DxfLayer(string Name, ColorIndex? Color, double? LineWeight
 /// <para>
 /// <c>Text</c>'s faces are shapes like any other, written as their edges. A drawing's notes (<see cref="DrawingNote"/>,
 /// <see cref="AddNotes"/>) are written as their outlines by default, each contour a closed polyline within
-/// <see cref="Tolerance"/>, or as TEXT with a text style for each font (<see cref="TextOutput"/>).
+/// <see cref="Tolerance"/>, filled in DXF 2013 by a solid HATCH under each glyph's contours (<see cref="FillOutlines"/>),
+/// or as TEXT with a text style for each font (<see cref="TextOutput"/>).
 /// </para>
 /// </remarks>
 public sealed class ExportDxf : Export2D
@@ -55,11 +56,14 @@ public sealed class ExportDxf : Export2D
     /// <param name="tolerance">How far a polyline written for a curve the version can't hold may be from the curve, in
     /// model units.</param>
     /// <param name="textOutput">How notes are written: as their outlines (the default), or as text.</param>
+    /// <param name="fillOutlines">Whether notes written as outlines are filled, in DXF 2013, as the SVG fills them (the
+    /// default); false for their contours alone, for a laser cutter to engrave the outlines, say. R12 has no fill, so
+    /// its notes are their contours either way.</param>
     /// <exception cref="ArgumentException">The unit isn't a length, the version or text output isn't one of the enum's,
     /// the line weight isn't a standard one, or the tolerance isn't more than zero.</exception>
     public ExportDxf(DxfVersion version = DxfVersion.R2013, Unit unit = Unit.Millimeter, ColorIndex? color = null,
                      double? lineWeight = null, LineType? lineType = null, double tolerance = 1e-3,
-                     TextOutput textOutput = TextOutput.Outlines)
+                     TextOutput textOutput = TextOutput.Outlines, bool fillOutlines = true)
     {
         if (version is not (DxfVersion.R12 or DxfVersion.R2013))
             throw new ArgumentException($"{version} isn't a DXF version Kerf writes.", nameof(version));
@@ -72,6 +76,7 @@ public sealed class ExportDxf : Export2D
         Unit = unit;
         Tolerance = tolerance;
         TextOutput = textOutput;
+        FillOutlines = fillOutlines;
         _layers = [Layer("0", color, lineWeight, lineType, nameof(lineWeight))];
         _entities = [];
     }
@@ -82,6 +87,7 @@ public sealed class ExportDxf : Export2D
         Unit = from.Unit;
         Tolerance = from.Tolerance;
         TextOutput = from.TextOutput;
+        FillOutlines = from.FillOutlines;
         _layers = layers;
         _entities = entities;
         _notPlanar = notPlanar;
@@ -99,6 +105,10 @@ public sealed class ExportDxf : Export2D
 
     /// <summary>How notes are written: as their outlines, or as text.</summary>
     public TextOutput TextOutput { get; }
+
+    /// <summary>Whether notes written as outlines are filled with solid hatches (DXF 2013 only), or are their contours
+    /// alone.</summary>
+    public bool FillOutlines { get; }
 
     /// <summary>The layers, the default layer <c>"0"</c> first.</summary>
     public IReadOnlyList<DxfLayer> Layers => _layers;
@@ -216,8 +226,8 @@ public sealed class ExportDxf : Export2D
         return new ExportDxf(this, _layers, entities.ToImmutable(), _notPlanar, asOutlines);
     }
 
-    // A note as TEXT, a line each, or as closed polylines, a contour each; an R12 file's text is ASCII, so a note that
-    // isn't is written as its outlines there
+    // A note as TEXT, a line each, or as closed polylines, a contour each, over solid hatches in 2013; an R12 file's
+    // text is ASCII, so a note that isn't is written as its outlines there
     private void AddNote(DrawingNote note, string layer, ImmutableList<DxfEntity>.Builder entities, ref int asOutlines)
     {
         if (TextOutput == TextOutput.Text)
@@ -239,6 +249,7 @@ public sealed class ExportDxf : Export2D
             asOutlines++;
         }
 
+        var contours = new List<ImmutableArray<Point2D>>(note.Contours.Length);
         foreach (ImmutableArray<Curve2D> contour in note.Contours)
         {
             var points = new List<Point2D>();
@@ -252,8 +263,74 @@ public sealed class ExportDxf : Export2D
             if (points.Count > 1 && points[^1].DistanceTo(points[0]) <= 1e-12 * Math.Max(1, points[0].DistanceTo(Point2D.Origin)))
                 points.RemoveAt(points.Count - 1);
             if (points.Count >= 2)
-                entities.Add(new DxfPolyline(layer, [.. points], Closed: true));
+                contours.Add([.. points]);
         }
+
+        // Filled in 2013, as the SVG fills them: a hatch an outer contour, with the holes in it, and the contours over
+        // the fills, so a reader that draws no hatches (or a laser cutter) still has the outlines
+        if (FillOutlines && Version != DxfVersion.R12)
+        {
+            foreach (ImmutableArray<ImmutableArray<Point2D>> region in Regions(contours))
+                entities.Add(new DxfHatch(layer, region));
+        }
+        foreach (ImmutableArray<Point2D> contour in contours)
+            entities.Add(new DxfPolyline(layer, contour, Closed: true));
+    }
+
+    /// <summary>
+    /// A note's contours as the regions they fill: each outer contour (counter-clockwise, decision 2030) with the holes
+    /// (clockwise) whose smallest enclosing outer contour it is, as ezdxf groups paths for its hatches. A glyph's region
+    /// is filled on its own, so glyphs that overlap (kerned, or a font's overlapping contours) stay filled where the
+    /// non-zero rule fills them, where one odd-parity hatch of the whole note would leave the overlap empty. A contour of
+    /// no area, or a hole in no outer contour, fills nothing.
+    /// </summary>
+    internal static List<ImmutableArray<ImmutableArray<Point2D>>> Regions(IReadOnlyList<ImmutableArray<Point2D>> contours)
+    {
+        var areas = contours.Select(SignedArea).ToList();
+        var outers = Enumerable.Range(0, contours.Count).Where(i => areas[i] > 0).ToList();
+        var boxes = contours.Select(Box).ToList();
+        var holes = outers.ToDictionary(i => i, _ => new List<ImmutableArray<Point2D>>());
+        for (int h = 0; h < contours.Count; h++)
+        {
+            if (!(areas[h] < 0))
+                continue;
+            Point2D p = contours[h][0];
+            int best = -1;
+            foreach (int o in outers)
+            {
+                if (boxes[h].Min.X >= boxes[o].Min.X && boxes[h].Max.X <= boxes[o].Max.X && boxes[h].Min.Y >= boxes[o].Min.Y
+                    && boxes[h].Max.Y <= boxes[o].Max.Y && (best < 0 || areas[o] < areas[best]) && Inside(p, contours[o]))
+                    best = o;
+            }
+            if (best >= 0)
+                holes[best].Add(contours[h]);
+        }
+        return [.. outers.Select(o => (ImmutableArray<ImmutableArray<Point2D>>)[contours[o], .. holes[o]])];
+    }
+
+    // A closed polygon's area by the shoelace formula, positive counter-clockwise
+    internal static double SignedArea(ImmutableArray<Point2D> polygon)
+    {
+        double sum = 0;
+        for (int i = 0, j = polygon.Length - 1; i < polygon.Length; j = i++)
+            sum += (polygon[j].X - polygon[i].X) * (polygon[j].Y + polygon[i].Y);
+        return 0.5 * sum;
+    }
+
+    private static (Point2D Min, Point2D Max) Box(ImmutableArray<Point2D> polygon)
+        => (new Point2D(polygon.Min(p => p.X), polygon.Min(p => p.Y)), new Point2D(polygon.Max(p => p.X), polygon.Max(p => p.Y)));
+
+    // Whether a point is inside a polygon, by the crossings of a ray to +X
+    private static bool Inside(Point2D p, ImmutableArray<Point2D> polygon)
+    {
+        bool inside = false;
+        for (int i = 0, j = polygon.Length - 1; i < polygon.Length; j = i++)
+        {
+            Point2D a = polygon[i], b = polygon[j];
+            if ((a.Y > p.Y) != (b.Y > p.Y) && p.X < a.X + (p.Y - a.Y) * (b.X - a.X) / (b.Y - a.Y))
+                inside = !inside;
+        }
+        return inside;
     }
 
     // A text style for a font: named by its PostScript name, with its file (Kerf's own Liberation Sans by the file it

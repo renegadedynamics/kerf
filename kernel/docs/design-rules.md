@@ -110,6 +110,35 @@ mechanically to ported code (`theX` → `x`, `myX` → `_x`, `aX` → `x`): tool
   returning forms are the only way to a changed value. Engine structs that are scratch storage (`Xyz`, `Xy`, `Matrix2x2`,
   `Quaternion3`, inline buffers) stay mutable, and KERF0001 guards them.
 
+### Kept so: the baselines and the guard (unit 13P)
+
+The owner, decision 2039: "We should make sure we continue to apply the principles of immutability and functional
+programming in Kerf". A value of a public type doesn't change once made, and an operation returns a new value. So,
+for every public type of the shipped assemblies (the four `Kerf.Kernel.*` and `Kerf.Modeling`):
+
+- **No public setter** (`init` is fine), **no public field that isn't `readonly`**, **no event**, and **no void
+  method that changes its object** (`Set…`, `Transform`, `Add`, `Clear`…): a `With…` copy, a returning form, or a
+  builder whose calls each return a new value.
+- **No mutable collection held, taken or handed out:** not a `List<T>`, array, `Dictionary`, `Span<T>` or `Memory<T>` in
+  a property or field, nor returned by a method; an `ImmutableArray<T>`, a `ShapeList<T>`, a read-only interface over
+  storage nobody writes to again, or `ReadOnlyMemory<T>` for bulk numbers. An `init` property of a collection is an
+  `ImmutableArray<T>`, not an interface, which would keep the caller's own list.
+- **No mutable static state,** whatever its access, but what the guard accepts with its reason.
+- **A struct's members can't change it:** the struct is `readonly`, or each public member is.
+
+**The baselines:** [api/public-api.txt](api/public-api.txt) (the kernel) and
+[../../modeling/docs/public-api.txt](../../modeling/docs/public-api.txt) (the modelling layer) list each public type
+and its public and protected members, by reflection, one line each. `PublicApiBaselineTests`, in
+Kerf.Kernel.PublicApi.Tests and Kerf.Modeling.Tests, fail when the surface differs from its file, so a change to the API
+is seen at review in the file's diff. Regenerate after a deliberate change: `KERF_API_UPDATE=1`, then run the test
+(`dotnet test --filter PublicApiBaselineTests`), and commit the file with the change.
+
+**The guard:** `ImmutabilityGuardTests`, beside each, fail on anything above that isn't in their list of what's
+accepted, each entry with its reason (a fresh array for a renderer, a thread's scratch buffer, an enumerator), and on
+an entry no longer found. Both read the built assemblies (tests/Shared/ApiSurface.cs, metadata only), so they see what
+KERF0003 can't: a member made public by a `#pragma`, a returned collection, a static. KERF0003 still stops the
+plainest cases as the code compiles.
+
 ## 4. Operations
 
 - **An operation is a static method, or an immutable operation object, that takes inputs and an options record and
