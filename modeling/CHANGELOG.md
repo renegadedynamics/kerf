@@ -5,6 +5,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **DXF export:** `ExportDxf`, build123d's `ExportDXF`, writes sketches, faces, wires, edges and line drawings to DXF
+  for other CAD programs and laser cutters: layers with colours, line types and weights, units in the header, lines,
+  arcs, circles, ellipses and splines exactly (rational ones with their weights, where build123d approximates), and the
+  hidden lines of a drawing on their own layer. DXF 2013 by default, R12 for older programs (kernel decisions 25501
+  to 25503).
+
 ## 0.4.0
 
 - **Silent wrong answers found and fixed,** and failures that say why: a chamfer or fillet too large says what fits,
