@@ -370,7 +370,7 @@ public static class BooleanVolumes
         // them, or lies on the large one's, and they were most of what this classified: a bump of 1.5 by 0.5 on a door 1,688
         // classifications and distances, 311 MB, after a Boolean of 8 MB
         var resultFaces = new HashSet<Shape>(ShapeHasher.Instance);
-        var onSurface = new Dictionary<Surface, List<(Placement Placement, FaceClassifier2D Classifier)>>(ReferenceEqualityComparer.Instance);
+        var onSurface = new Dictionary<Surface, List<(Placement Placement, InFace Classifier)>>(ReferenceEqualityComparer.Instance);
         var planes = new List<ResultPlane>();
         foreach (Face face in result.AllFaces())
         {
@@ -381,7 +381,7 @@ public static class BooleanVolumes
                 {
                     onSurface[surface] = faces = [];
                 }
-                var classifier = new FaceClassifier2D(face, Tolerances.Confusion);
+                var classifier = new InFace(face);
                 faces.Add((placement, classifier));
                 if (surface is PlaneSurface plane)
                 {
@@ -391,7 +391,9 @@ public static class BooleanVolumes
         }
 
         var inResult = new SolidClassifier(result);
-        var inLarger = new SolidClassifier(larger);
+        // Made when a point needs it: a classifier's first point fills its trees, about 3 ms on the door, and a boss inside the
+        // door never asks it
+        SolidClassifier? inLarger = null;
         double depth = -1;
         int found = 0;
         Point3D first = default;
@@ -412,7 +414,7 @@ public static class BooleanVolumes
             }
 
             var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
-            List<(Placement Placement, FaceClassifier2D Classifier)> resultFacesHere = [];
+            List<(Placement Placement, InFace Classifier)> resultFacesHere = [];
             List<ResultPlane> planesHere = [];
             if (Tool.Surface(face, out Placement here) is { } own)
             {
@@ -433,7 +435,7 @@ public static class BooleanVolumes
                 {
                     double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
                     var uv = new Point2D(u, v);
-                    if (inFace.Perform(uv) != Containment.In || resultFacesHere.Any(s => s.Classifier.Perform(uv) == Containment.In))
+                    if (inFace.Perform(uv) != Containment.In || resultFacesHere.Any(s => s.Classifier.Holds(uv)))
                     {
                         continue;
                     }
@@ -445,7 +447,7 @@ public static class BooleanVolumes
                     }
                     // What's inside the larger input is in a fuse whatever its classifier says of the result; and a point on the
                     // boundary of either is within its tolerance of it, so can't be deep outside it
-                    if (StateOf(inResult, point) is Containment.In or Containment.On || StateOf(inLarger, point) is Containment.In or Containment.On)
+                    if (StateOf(inResult, point) is Containment.In or Containment.On || StateOf(inLarger ??= new SolidClassifier(larger), point) is Containment.In or Containment.On)
                     {
                         continue;
                     }
@@ -478,7 +480,7 @@ public static class BooleanVolumes
     }
 
     // A planar face of a result: a point within its tolerance of the plane, and inside the face, is on the result's boundary
-    private sealed record ResultPlane(Plane3D World, Plane3D Own, Placement Placement, FaceClassifier2D Classifier, double Tolerance)
+    private sealed record ResultPlane(Plane3D World, Plane3D Own, Placement Placement, InFace Classifier, double Tolerance)
     {
         public bool Holds(in Point3D point)
         {
@@ -487,8 +489,17 @@ public static class BooleanVolumes
                 return false;
             }
             Engine.Geometry.ElSLib.Parameters(Own, point.Transformed(Placement.Transformation.Inverted()), out double u, out double v);
-            return Classifier.Perform(new Point2D(u, v)) == Containment.In;
+            return Classifier.Holds(new Point2D(u, v));
         }
+    }
+
+    // A face's 2D classifier, made when a point first asks it: most of a result's faces are never asked, and making one for
+    // each of the door's 52 was about 2.5 ms
+    private sealed class InFace(Face face)
+    {
+        private FaceClassifier2D? _classifier;
+
+        public bool Holds(in Point2D uv) => (_classifier ??= new FaceClassifier2D(face, Tolerances.Confusion)).Perform(uv) == Containment.In;
     }
 
     // The points this thread's checks have classified or measured the distance of, for the tests that hold the checks' cost down
