@@ -217,6 +217,24 @@ The 26 cases away from a near-tangent edge go through these in order at all five
 
 **Its cost.** About 4% of a working fillet's bytes, and under 3% of its time on a shape of 262 faces. It would have been 8% and 11% without making the rest of `Neighbours` wait until a limit asks.
 
+### Chamfers past a bend (unit 12V)
+
+Decision 1985. A chamfer's contact on a plane is its edge stepped in by the length on that face, so along a convex circle of radius r it's the circle of r − d: it closes to the centre at d = r, and past that every ruling crosses the axis at one point and the face crosses itself. Past an ellipse's tightest curvature, b²/a, the stepped curve doubles back. That's proved, so it's refused before ChFi3d, as a fillet past a width is; it applies to any chamfer whose contour, as ChFi3d carries it round a tangent chain, has such an edge.
+
+| Case | Limit |
+|---|---|
+| One length, a convex circle in a plane beside the edge, in a chain or alone | r |
+| Two lengths | The length on the plane (`Distance` on the reference face) against r |
+| A length and an angle | The length, if the plane is the reference; the length times the angle's tangent if the other face is a cylinder square to the plane; otherwise none claimed |
+| A convex ellipse | b²/a if the edge passes the end of the major axis, otherwise the curvature at its nearer end |
+| A concave circle (a hole's rim), the other face's circle on a cylinder | None: the stepped curve grows, or runs along the axis |
+| A B-spline | None claimed: the check is the backstop |
+| A throat | None: it isn't measured along the face |
+
+**Does ChFi3d return something above it?** On ChFi3d alone, above each limit on 22 cases and six lengths from 1 + 1e-6 to 2 times it (132 runs): 17 failed, 82 invalid, and 33 valid to the check but wrong, all of a length and an angle, one of 1.01 times the radius leaving more material than one of 0.999 times it. None was right. **At the limit** ChFi3d is still asked: a rim's cone to a point is built; the reported prism's corners fail, and say the edge closes to a point.
+
+**Its cost.** 132 refusals took 37 ms where ChFi3d alone took 1,850 ms (a loaded machine). On every chamfer, an adaptor per contour edge; the map of faces only for a contour with a circle or an ellipse.
+
 ## 9. Rims and corners as built (units 12K, 12L, 12M)
 
 Decisions 1904 to 1911. Stages 1, 3 and 2, in that order, and then, as the plan says, stop. Nothing here is timed: the machine was shared, and the counts are what's reported.

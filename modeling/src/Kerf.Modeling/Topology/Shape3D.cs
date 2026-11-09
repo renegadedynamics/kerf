@@ -33,14 +33,15 @@ public static partial class Shape3DExtensions
 
         /// <summary>
         /// The edges of this shape chamfered by <paramref name="length"/> (and <paramref name="length2"/> on the other side, for an
-        /// asymmetric chamfer), measured on <paramref name="face"/> if given (which the edges must belong to).
+        /// asymmetric chamfer), measured on <paramref name="face"/> if given (which the edges must belong to), and past tight
+        /// corners as <paramref name="options"/> say.
         /// </summary>
         /// <exception cref="ArgumentException">An edge isn't on the face.</exception>
         /// <exception cref="InvalidOperationException">
         /// The chamfer can't be made: the shorthand's failure; <see cref="Operations.Chamfer(IEnumerable{Edge},
-        /// double, double?, double?, Face?)"/> returns it as a result, with the code <see cref="ModelingDiagnostics.ChamferFailed"/>.
+        /// double, double?, double?, Face?, Operations.ChamferOptions?)"/> returns it as a result, with the code <see cref="ModelingDiagnostics.ChamferFailed"/>.
         /// </exception>
-        public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null)
+        public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null, Operations.ChamferOptions? options = null)
         {
             var edges = edgeList.ToList();
             if (face is { } onFace)
@@ -62,10 +63,14 @@ public static partial class Shape3DExtensions
                 // BRepFilletAPI_MakeChamfer's Add of two distances on the face
                 specs.Add(new ChamferSpec(edge, length, distance2, ReferenceFace: topoFace));
             }
-            var chamfered = self.AsShape().Chamfer(specs);
+            var kernelOptions = options?.TightCorners == TightCorners.Collapse ? new ChamferOptions { TightCorners = Kerf.Fillets.TightCorners.Collapse } : null;
+            var chamfered = self.AsShape().Chamfer(specs, kernelOptions);
+            // A broken result's error already says the chamfer couldn't be built at its length (decision 1985)
             if (!chamfered.TryGetValue(out var built))
                 throw Failures.Expected(ModelingDiagnostics.ChamferFailed,
-                                        Shape3DExtensions.TooLargeMessage(chamfered.Diagnostics) ?? "The chamfer failed; try a smaller length.", chamfered);
+                                        Shape3DExtensions.TooLargeMessage(chamfered.Diagnostics)
+                                        ?? (chamfered.TryGetInvalid(out _) ? "" : $"The chamfer with a length of {Formatting.Number(length)} failed; try a smaller length."),
+                                        chamfered);
             var result = Shape3DExtensions.Make3DResult(built.Shape);
             return result.MadeBy(ModelHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [self.AsShape()], result));
         }
@@ -150,25 +155,25 @@ public static partial class Shape3DExtensions
             if (!self.IsValid)
                 throw new ArgumentException("Invalid Shape");
             var edges = edgeList.Select(e => e).ToList();
-            double? limit = self.AsShape().FilletLimit(edges);
-            double Search(double windowMin, double windowMax, int iteration)
-            {
-                var windowMid = (windowMin + windowMax) / 2;
-                // The last try failed, but the window has closed on one that worked
-                if (iteration == maxIterations && windowMin > 0 && windowMid - windowMin <= tolerance)
-                    return windowMin;
-                if (iteration == maxIterations)
-                    throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
-                // Do these numbers work? If not, try the smaller window. Past the limit they don't, so it isn't asked (decision 1900):
-                // the same halving, so the same answer, without the tries that can't fit
-                if (windowMid >= limit || self.AsShape().Fillet(edges, windowMid).IsFailure)
-                    return Search(windowMin, windowMid, iteration + 1);
-                // They work: close enough, or try the larger window
-                return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
-            }
-            if (limit is { } most && self.AsShape().Fillet(edges, most).IsSuccess)
-                return most;
-            return Search(0.0, 2 * self.Bounds().Diagonal, 0);
+            return Shape3DExtensions.Largest(self.AsShape().FilletLimit(edges), r => self.AsShape().Fillet(edges, r).IsSuccess,
+                                             2 * self.Bounds().Diagonal, tolerance, maxIterations);
+        }
+
+        /// <summary>
+        /// The largest chamfer length the edges take, as one length on both faces: what the geometry gives (the tightest convex arc
+        /// in a face beside them, or the width of a face beside straight edges and rims), if that can be built; otherwise found by
+        /// the same binary search as <c>MaxFillet</c>, to within <paramref name="tolerance"/>, which doesn't try what the geometry
+        /// says can't fit. build123d has no <c>max_chamfer</c>.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">No value was found within <paramref name="maxIterations"/>.</exception>
+        /// <exception cref="ArgumentException">The shape isn't valid.</exception>
+        public double MaxChamfer(IEnumerable<Edge> edgeList, double tolerance = 0.1, int maxIterations = 10)
+        {
+            if (!self.IsValid)
+                throw new ArgumentException("Invalid Shape");
+            var edges = edgeList.Select(e => e).ToList();
+            return Shape3DExtensions.Largest(self.AsShape().ChamferLimit(edges), d => self.AsShape().Chamfer(edges, d).IsSuccess,
+                                             2 * self.Bounds().Diagonal, tolerance, maxIterations);
         }
 
         /// <summary>
@@ -306,6 +311,32 @@ public static partial class Shape3DExtensions
         if (result.IsCompound())
             return ShapeExtensions.MakeComposite(TopoUtil.TopLevelShapes(result));
         return (Solid)result;
+    }
+
+    /// <summary>
+    /// The largest size that works, to within <paramref name="tolerance"/>: the geometry's <paramref name="limit"/> if it works, and
+    /// otherwise halving (0, <paramref name="windowMax"/>), without trying at or past the limit, which can't fit (decision 1900).
+    /// </summary>
+    internal static double Largest(double? limit, Func<double, bool> works, double windowMax, double tolerance, int maxIterations)
+    {
+        double Search(double windowMin, double windowMax, int iteration)
+        {
+            var windowMid = (windowMin + windowMax) / 2;
+            // The last try failed, but the window has closed on one that worked
+            if (iteration == maxIterations && windowMin > 0 && windowMid - windowMin <= tolerance)
+                return windowMin;
+            if (iteration == maxIterations)
+                throw new InvalidOperationException($"Failed to find the max value within {Formatting.Number(tolerance)} in {maxIterations}");
+            // Do these numbers work? If not, try the smaller window. Past the limit they don't, so it isn't asked (decision 1900):
+            // the same halving, so the same answer, without the tries that can't fit
+            if (windowMid >= limit || !works(windowMid))
+                return Search(windowMin, windowMid, iteration + 1);
+            // They work: close enough, or try the larger window
+            return windowMid - windowMin <= tolerance ? windowMid : Search(windowMid, windowMax, iteration + 1);
+        }
+        if (limit is { } most && works(most))
+            return most;
+        return Search(0.0, windowMax, 0);
     }
 
     /// <summary>The kernel's own account of a fillet or chamfer that doesn't fit, which says more than a general failure can.</summary>

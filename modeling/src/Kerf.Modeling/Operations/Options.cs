@@ -8,6 +8,18 @@ namespace Kerf.Modeling;
 // `using static Kerf.Modeling.Operations;` they are in scope by their short names.
 public static partial class Operations
 {
+    /// <summary>How <see cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?, ChamferOptions?)"/> chamfers.</summary>
+    public sealed record ChamferOptions
+    {
+        /// <summary>The defaults: a chamfer longer than a convex arc's radius on its face is refused.</summary>
+        public static ChamferOptions Default { get; } = new();
+
+        /// <summary>
+        /// What to do at a convex arc whose radius is no more than the length on its face: refuse, or let the corner
+        /// collapse to a point (a Kerf addition). Only a chamfer with such an arc is affected.
+        /// </summary>
+        public TightCorners TightCorners { get; init; } = TightCorners.Refuse;
+    }
 
     /// <summary>How <see cref="Extrude(Shape, double, ExtrudeOptions?)"/> extrudes.</summary>
     public sealed record ExtrudeOptions
