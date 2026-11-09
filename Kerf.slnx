@@ -4,6 +4,7 @@
   <Folder Name="/kernel/benchmarks/">
     <Project Path="kernel/benchmarks/Kerf.Kernel.Benchmarks/Kerf.Kernel.Benchmarks.csproj" />
     <Project Path="kernel/benchmarks/Kerf.Kernel.Bento.Benchmarks/Kerf.Kernel.Bento.Benchmarks.csproj" />
+    <Project Path="kernel/benchmarks/Kerf.UserCases/Kerf.UserCases.csproj" />
   </Folder>
   <Folder Name="/kernel/samples/">
     <Project Path="kernel/samples/Kerf.Kernel.WasmDemo/Kerf.Kernel.WasmDemo.csproj" />

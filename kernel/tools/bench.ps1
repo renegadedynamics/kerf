@@ -277,7 +277,9 @@ $overallClock = [Diagnostics.Stopwatch]::StartNew()
 # Build. Publishing an executable with ReadyToRun compiles everything it references, as the packages' assemblies are
 $publishes = @(
   @{ Name = 'kernel'; Project = 'Kerf.Kernel.Benchmarks' },
-  @{ Name = 'bento'; Project = 'Kerf.Kernel.Bento.Benchmarks' }
+  @{ Name = 'bento'; Project = 'Kerf.Kernel.Bento.Benchmarks' },
+  # Users' cases (unit 13C): the release check's, on every run of the rig too
+  @{ Name = 'users'; Project = 'Kerf.UserCases' }
 )
 $readyToRun = if ($NoReadyToRun) { 'false' } else { 'true' }
 $exes = @{}
@@ -290,7 +292,7 @@ foreach ($p in $publishes) {
   $exes[$p.Name] = Join-Path $to "$($p.Project).exe"
   if (-not $NoReadyToRun) {
     $assemblies = @('Kerf.Kernel.Foundation', 'Kerf.Kernel.ModelingData', 'Kerf.Kernel.ModelingAlgorithms')
-    $assemblies += if ($p.Name -eq 'bento') { 'Kerf.Kernel.DataExchange', 'Kerf.Modeling' } else { 'Kerf.Kernel.DataExchange' }
+    $assemblies += if ($p.Name -in 'bento', 'users') { 'Kerf.Kernel.DataExchange', 'Kerf.Modeling' } else { 'Kerf.Kernel.DataExchange' }
     foreach ($a in $assemblies) {
       if (-not (Test-ReadyToRun (Join-Path $to "$a.dll"))) { throw "$a in $to isn't ReadyToRun" }
     }
@@ -316,7 +318,10 @@ $suites = @(
   @{ Name = 'booleans-complex'; Exe = 'kernel'; Args = @('booleans', 'complex'); Full = 2; Quick = 0 },
   @{ Name = 'booleans-profile'; Exe = 'kernel'; Args = @('booleans-profile'); Full = 1; Quick = 0 },
   @{ Name = 'step-parser'; Exe = 'kernel'; Args = @('stepfile'); Full = 3; Quick = 1 },
-  @{ Name = 'step-and-healing'; Exe = 'kernel'; Args = @('healing'); Full = 2; Quick = 0 }
+  @{ Name = 'step-and-healing'; Exe = 'kernel'; Args = @('healing'); Full = 2; Quick = 0 },
+  # Users' parts (unit 13C, benchmarks/Kerf.UserCases): two fuses, two collapsing chamfers and the plain ones beside them,
+  # and an enclosure built whole; each case warmed twice, then the median of 9 runs in the process
+  @{ Name = 'user-cases'; Exe = 'users'; Args = @('rig', '9'); Full = 2; Quick = 1 }
 )
 
 $rows = New-Object Collections.ArrayList
