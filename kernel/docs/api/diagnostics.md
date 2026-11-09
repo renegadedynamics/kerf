@@ -280,6 +280,8 @@ own. Those a program is likely to test for are static properties of the operatio
 | `offset.join-changed` | `Offset`, `Hollow` (warning) | Round joins failed at an apex, so the result was made with mitred joins, and passed its checks |
 | `draft.face-failed` | `FeatureOperations.Draft` | A face can't be drafted, with the face |
 | `feature.failed` | `FeatureOperations` | A feature failed with no status |
+| `meshing.faces-not-meshed` | `Mesher` (warning) | Some faces couldn't be meshed: they have no triangles |
+| `meshing.deflection-exceeded` | `Mesher`, the glTF, 3MF and OBJ writers, `Render`, `ToScene` (warning) | Some sphere or torus faces are further from their surfaces than the deflection and couldn't be refined further, with the faces (decision 26901) |
 
 ## The modelling layer
 
