@@ -31,10 +31,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   many threads at once giving what they give on one (a new test builds, meshes, draws and exports parts on several
   threads against one), and how `Cancellation.Use`, `Warnings.Capture` and `SkipClean` follow threads and `await`s,
   with a `Parallel.ForEach` and a `Task.WhenAll` example. Its later sections are now 10 and 11 (kernel decision 2062).
-- **A Boolean whose result nearly touched is checked at points** (the kernel's decision 26104): a result with a tolerance
+- **A Boolean whose result nearly touched is checked at points** (the kernel's decision 2066): a result with a tolerance
   over 1e-5 and at most 64 faces that points prove wrong now throws, as a wrong volume does; a fuse of cylinders of radius
   5000 nearly crossing, 16.5% short, was a success. Checking results also costs less: ordinary parts' Booleans allocate
-  about 10% less (decisions 26101 to 26106).
+  about 10% less (decisions 2063 to 2068).
 - **Notes as outlines are filled in DXF 2013:** each letter's contours (outer and holes) are a solid `HATCH` in the
   notes' layer and colour, under the contours, which stay, so a viewer such as LibreCAD draws the text filled as the
   SVG does, where it drew it hollow. `new ExportDxf(fillOutlines: false)` writes the contours alone, as before (for a

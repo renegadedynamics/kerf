@@ -37,12 +37,12 @@ version may break the API.
   of volume, a result with a tolerance over 1e-5 and at most 64 faces is classified at 64 points against its inputs, and
   two that disagree, well inside or outside all three, make it a failure with `result.invalid`, carrying the shape. A fuse
   of cylinders of radius 5000 nearly crossing, 16.5% short and valid, was a success and now fails. It isn't asked on
-  ordinary parts (decision 26104).
+  ordinary parts (decision 2066).
 - **Checking Boolean results costs less, with the same verdicts:** a check skips the frozen faces a whole check found
   clean at the same placement (most of a chain's results' faces), one check's questions share their classifiers, and
   a solid's classifier skips the extrema of spline edges whose poles keep away from its ray. Ordinary parts' Booleans
-  allocate 10% less, a user's enclosure 12%, and the corpus's dearest check went from 10.9 to 0.8 s (decisions 26101 to
-  26106).
+  allocate 10% less, a user's enclosure 12%, and the corpus's dearest check went from 10.9 to 0.8 s (decisions 2063 to
+  2068).
 - **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
   the caller's own list, so changing the list after making the options changed them. A collection expression
   (`Points = [p1, p2]`) works as before; a list is passed as `[.. list]` (unit 13P, decision 2044).
