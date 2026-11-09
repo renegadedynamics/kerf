@@ -109,10 +109,11 @@ public static class BooleanVolumes
         }
         var outcome = new Measure();
         outcome.Add(result);
+        var shared = new Shared(arguments, tools, result);
         // A common that made nothing breaks no rule of volume, so nothing need be measured: only a point in both can prove it wrong
         if (rule == BooleanVolumeRule.Common && outcome.Count == 0)
         {
-            return ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0, -1);
+            return ProvedToOverlap(rule, shared, fuzzyValue, 0, -1);
         }
         var a = new Measure();
         foreach (Shape shape in arguments)
@@ -139,17 +140,17 @@ public static class BooleanVolumes
             // Within the rules, but a cut that removed nothing, or a fuse that lost nothing, can still be proved wrong
             return rule switch
             {
-                BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, 0, Math.Min(a.Sum, b.Sum)),
-                BooleanVolumeRule.Fuse when r <= least + margin && ProvedLost(arguments, tools, result, fuzzyValue, Math.Min(a.Sum, b.Sum)) is { } lost => lost,
-                BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, arguments, tools, result, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
+                BooleanVolumeRule.Cut when r >= a.Sum * (1 - MarginOfSize) => ProvedToOverlap(rule, shared, fuzzyValue, 0, Math.Min(a.Sum, b.Sum)),
+                BooleanVolumeRule.Fuse when r <= least + margin && ProvedLost(shared, fuzzyValue, Math.Min(a.Sum, b.Sum)) is { } lost => lost,
+                BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, shared, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
                 _ => null,
             };
         }
 
         // Past a rule, which is rare, so this is when the dearer questions are worth asking: is it proved?
-        margin += size * MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue) / Math.Cbrt(size);
+        margin += size * MarginOfTolerance * (shared.LargestTolerance + fuzzyValue) / Math.Cbrt(size);
         negative = outcome.Count > 0 && outcome.Smallest < -margin;
-        if ((r >= least - margin && r <= most + margin && !negative) || !Trustworthy(arguments) || !Trustworthy(tools))
+        if ((r >= least - margin && r <= most + margin && !negative) || !shared.Trustworthy)
         {
             return null;
         }
@@ -162,14 +163,14 @@ public static class BooleanVolumes
     // a small overlap, and then nothing is said. Two points are asked for, as a classifier can be wrong about one.
     // A fuse is as large as its inputs together only if they barely overlap: the points found stand for a volume each, and to prove
     // it wrong must stand for over twice what it lost, as a pin in a large block can be within the margin and right (decision 1881).
-    private static Diagnostic? ProvedToOverlap(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double lost, double smallerVolume)
+    private static Diagnostic? ProvedToOverlap(BooleanVolumeRule rule, Shared shared, double fuzzyValue, double lost, double smallerVolume)
     {
-        if (arguments.Count != 1 || tools.Count != 1)
+        if (!shared.OneEach)
         {
             return null;
         }
-        Shape a = arguments[0], b = tools[0];
-        BoundingBox inA = a.BoundingBox(), inB = b.BoundingBox();
+        Shape a = shared.Argument.Shape, b = shared.Tool.Shape;
+        BoundingBox inA = shared.Argument.Box, inB = shared.Tool.Box;
         if (!inA.Intersects(inB))
         {
             return null;
@@ -195,9 +196,8 @@ public static class BooleanVolumes
             return null;
         }
 
-        var classifyA = new SolidClassifier(a);
-        var classifyB = new SolidClassifier(b);
-        SolidClassifier? classifyResult = rule == BooleanVolumeRule.Cut ? new SolidClassifier(result) : null;
+        Classified classifyA = shared.Argument, classifyB = shared.Tool;
+        Classified? classifyResult = rule == BooleanVolumeRule.Cut ? shared.Result : null;
         double depth = -1;
         int found = 0;
         Point3D first = default;
@@ -211,22 +211,22 @@ public static class BooleanVolumes
                 {
                     var point = new Point3D(fromX + (toX - fromX) * i / (OverlapGrid + 1), fromY + (toY - fromY) * j / (OverlapGrid + 1),
                                             fromZ + (toZ - fromZ) * k / (OverlapGrid + 1));
-                    if (!Inside(classifyA, point) || !Inside(classifyB, point))
+                    if (!classifyA.Inside(point) || !classifyB.Inside(point))
                     {
                         continue;
                     }
                     // Inside both and gone from the result: the cut did remove something, however small (a small hole in a large block)
-                    if (classifyResult is not null && !Inside(classifyResult, point))
+                    if (classifyResult is not null && !classifyResult.Inside(point))
                     {
                         return null;
                     }
                     if (depth < 0)
                     {
-                        if (!Trustworthy(arguments) || !Trustworthy(tools))
+                        if (!shared.Trustworthy)
                         {
                             return null;
                         }
-                        depth = OverlapDepth * size + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
+                        depth = OverlapDepth * size + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
                     }
                     // Deep inside both, so it can't be tolerance or a touch
                     if (Deep(point, a, depth) && Deep(point, b, depth))
@@ -349,15 +349,17 @@ public static class BooleanVolumes
     // A fuse no larger than its larger input holds the smaller one inside it, or has lost part of it: OCCT #1643 gives the body alone,
     // with the lip's part outside it gone, which no rule of volume can see (decision 1937). Two points on the smaller input's faces,
     // well outside the result, prove the second; the volume lost can be too small for a grid inside it to reach.
-    private static Diagnostic? ProvedLost(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue, double smallerVolume)
+    private static Diagnostic? ProvedLost(Shared shared, double fuzzyValue, double smallerVolume)
     {
-        if (arguments.Count != 1 || tools.Count != 1 || smallerVolume <= 0)
+        if (!shared.OneEach || smallerVolume <= 0)
         {
             return null;
         }
 
-        bool argumentIsSmaller = VolumeOf(arguments[0]) <= VolumeOf(tools[0]);
-        Shape smaller = argumentIsSmaller ? arguments[0] : tools[0], larger = argumentIsSmaller ? tools[0] : arguments[0];
+        Shape result = shared.Result.Shape;
+        bool argumentIsSmaller = VolumeOf(shared.Argument.Shape) <= VolumeOf(shared.Tool.Shape);
+        Classified larger = argumentIsSmaller ? shared.Tool : shared.Argument;
+        Shape smaller = argumentIsSmaller ? shared.Argument.Shape : shared.Tool.Shape;
         if (smaller.AllFaces().Length > FacesLooked)
         {
             return null;
@@ -390,10 +392,9 @@ public static class BooleanVolumes
             }
         }
 
-        var inResult = new SolidClassifier(result);
-        // Made when a point needs it: a classifier's first point fills its trees, about 3 ms on the door, and a boss inside the
-        // door never asks it
-        SolidClassifier? inLarger = null;
+        // The classifiers are made when a point needs them: a classifier's first point fills its trees, about 3 ms on the door,
+        // and a boss inside the door never asks the door's
+        Classified inResult = shared.Result;
         double depth = -1;
         int found = 0;
         Point3D first = default;
@@ -447,21 +448,21 @@ public static class BooleanVolumes
                     }
                     // What's inside the larger input is in a fuse whatever its classifier says of the result; and a point on the
                     // boundary of either is within its tolerance of it, so can't be deep outside it
-                    if (StateOf(inResult, point) is Containment.In or Containment.On || StateOf(inLarger ??= new SolidClassifier(larger), point) is Containment.In or Containment.On)
+                    if (inResult.StateOf(point) is Containment.In or Containment.On || larger.StateOf(point) is Containment.In or Containment.On)
                     {
                         continue;
                     }
 
                     if (depth < 0)
                     {
-                        if (!Trustworthy(arguments) || !Trustworthy(tools))
+                        if (!shared.Trustworthy)
                         {
                             return null;
                         }
-                        depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (LargestTolerance(arguments, tools, result) + fuzzyValue);
+                        depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
                     }
 
-                    if (Deep(point, result, depth) && Deep(point, larger, depth))
+                    if (Deep(point, result, depth) && Deep(point, larger.Shape, depth))
                     {
                         if (found++ == 0)
                         {
@@ -500,6 +501,44 @@ public static class BooleanVolumes
         private FaceClassifier2D? _classifier;
 
         public bool Holds(in Point2D uv) => (_classifier ??= new FaceClassifier2D(face, Tolerances.Confusion)).Perform(uv) == Containment.In;
+    }
+
+    // What one check has learnt of its shapes, each part made when a question first needs it and kept for the questions after
+    // (unit 13K): a classifier fills its trees on its first point, about 3 ms on the door, and validating an input is a check of
+    // the whole shape, so a check asking several questions of one input and one tool makes each once. One check's, on its thread
+    private sealed class Shared(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result)
+    {
+        private Classified? _argument, _tool, _result;
+        private double _largestTolerance = -1;
+        private bool? _trustworthy;
+
+        // What the point questions are asked of: one object and one tool, as what several mean together isn't plain
+        public bool OneEach => arguments.Count == 1 && tools.Count == 1;
+
+        public Classified Argument => _argument ??= new Classified(arguments[0]);
+
+        public Classified Tool => _tool ??= new Classified(tools[0]);
+
+        public Classified Result => _result ??= new Classified(result);
+
+        public double LargestTolerance => _largestTolerance >= 0 ? _largestTolerance : _largestTolerance = BooleanVolumes.LargestTolerance(arguments, tools, result);
+
+        public bool Trustworthy => _trustworthy ??= BooleanVolumes.Trustworthy(arguments) && BooleanVolumes.Trustworthy(tools);
+    }
+
+    // A shape a check asks points of: its classifier and its box, each made when first asked
+    private sealed class Classified(Shape shape)
+    {
+        private SolidClassifier? _classifier;
+        private BoundingBox? _box;
+
+        public Shape Shape => shape;
+
+        public BoundingBox Box => _box ??= shape.BoundingBox();
+
+        public Containment StateOf(in Point3D point) => BooleanVolumes.StateOf(_classifier ??= new SolidClassifier(shape), point);
+
+        public bool Inside(in Point3D point) => StateOf(point) == Containment.In;
     }
 
     // The points this thread's checks have classified or measured the distance of, for the tests that hold the checks' cost down
