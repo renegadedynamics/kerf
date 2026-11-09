@@ -1873,3 +1873,103 @@ On ordinary parts the checks are the result's validity and its volume, about hal
 **The corpus's filtered groups** (`boolean/`, `blend/`, `bugs/modalg_*`, `bugs/moddata_*`; the check run on every Common, Cut and Fuse through the hook, two cases at a time): statuses as `corpus-13.txt`; checks 32.1 s and 4,251 MB before, 36.0 s and 7,117 MB after, the point check's 296 Booleans the rise (about 50 ms and 10 MB each on average, a median of 6 ms, the dearest about 3 s), the other 3,730 8.8 to 7.0 s.
 
 **The boss** (fresh processes in turn, IL, 9 fuses after 3, heavily loaded): 59.5 ms against 0.3.0's 46.6 and 0.4.0's 79.2, 15.4 MB against 14.3 and 84.4; the bump 48.0 against 88.7 and 184.7. Within 10% of 0.3.0's bytes, not of its time here; what's left is decision 1937's 150 points inside the door (decision 2068).
+
+## Parallelism (unit 14F)
+
+*9 November 2026, decisions 27601 to 27606. Other helpers had the machine at 100% throughout: **every time here is from a
+loaded machine**, and pauses and wall times moved by up to ten times between identical runs. The verdicts rest on
+processor time, collections, bytes and samples; each measuring process had 4 logical processors (one of each of 4 cores,
+by affinity), the rig's round 24 copies of every example. Wall-clock figures on 24 processors are for a quiet window:
+`quiet-14f.ps1` in the scratchpad's `p14f` folder, with the harness and scripts below.*
+
+### The collector's settings
+
+The rig's parallel round under each setting a client can choose, a process each, two passes (a round's processor time,
+the process's collections, a round's pause; bytes 2.84 to 2.94 GB a round in every one):
+
+| Settings | Processor s a round | Generation 0 / 2 | Pause in a round, s |
+|---|---:|---:|---:|
+| Workstation, concurrent (the runtime's default) | 13.7, 10.2 | 667 / 86, 662 / 76 | 0.8, 1.5 |
+| Workstation, not concurrent | 11.9, 10.9 | 464 / 78, 448 / 71 | 0.8, 0.3 |
+| Workstation, with the host's tiering (`TieredPGO` 0, `CallCountingDelayMs` 0) | 8.2, 6.9 | 668 / 89, 645 / 71 | 0.5, 0.3 |
+| Server, concurrent, DATAS | 12.7, 14.4 | 378 / 65, 352 / 63 | 0.2, **14.1** |
+| Server, not concurrent, DATAS | 13.8, 15.2 | 321 / 86, 306 / 79 | 0.9, **9.0** |
+| Server, fixed heaps | 12.9, 10.6 | 150 / 32, 139 / 20 | 1.1, 2.6 |
+| **The host's settings** (server, DATAS, `TieredPGO` 0, `CallCountingDelayMs` 0; unit 11D) | 6.8, 8.5 | 355 / 70, 326 / 45 | 0.1, **10.3** |
+| ... not concurrent | 7.7, 6.9 | 306 / 91, 334 / 68 | **118.2**, 5.4 |
+| ... `GCConserveMemory` 5 | 9.1, 9.2 | 349 / 52, 358 / 55 | 1.5, 4.9 |
+| ... `GCNoAffinitize` 1 | 9.4, 6.7 | 357 / 54, 315 / 45 | 1.7, 0.3 |
+| ... `GCHeapAffinitizeMask` on 2 of the 4 | 8.8, 9.2 | 346 / 80, 353 / 55 | 3.5, 5.3 |
+
+**What a round's processor time says:** the tiering settings are what cut it, by 35% to 45% under either collector (PGO's
+instrumented code, as unit 11D inferred); the collector's choice moves it little. **What the collections say:** the
+server collector does about half the workstation's generation 0 collections, fixed heaps a quarter. **What the pauses
+say, and the finding:** the workstation collector's pauses stayed within 0.3 to 1.5 s a round however loaded the machine
+was, but **the server collector's ran to 5 to 14 s a round, and once 118 s,** when the machine was saturated by other
+processes. Its collection needs every heap's thread, each tied to a processor (affinitised), to run; on a machine other
+processes keep busy, one of them waits its turn, and every thread of the process waits with it. Without affinitising,
+the same settings paused 0.3 and 1.7 s. In the quiet run (decision 2069), where the process had the machine, the host's
+settings took the round from 1,862 to 546 ms and its pause from 983 to 117 ms. So the server collector is right for a
+process that has the processors to itself, and a hazard where it shares them: the guide's section 9 now says so, and
+the quiet window measures `GCNoAffinitize` and the heap mask on 24 processors.
+
+**No help:** `GCConserveMemory` (as 11D found), the heap mask on part of the processors, and turning concurrency off (the
+worst single pause measured).
+
+### What allocates in the parallel rounds, and the large objects
+
+A trace of the round (`tools/alloc-report.cs`, three rounds and a pass, 8.9 GB of allocation ticks) spreads the bytes
+as 11D found: no site over 3.7%, the mesher's `NodeInsertionMeshAlgo.AddNodeToStructure`, `MeasurementGauss`'s work
+vectors, the Delaunay triangulation's arrays, `FunctionSetRoot`'s vectors and the intersections' polyhedra the largest.
+What changed is the **large objects**: 634 MB of the 8.9 GB, and 35 of the 76 generation 2 collections were started by
+a large allocation. A third of them was `MeasurementGauss`'s spare work set (two `Inertia[1953]`), allocated again each
+time a generation 2 collection or a new pool thread lost the thread's weakly held spare, for faces that read 33 entries
+of it. Decision 27602 sizes it by the face: the round 2,920 to 2,955 MB to 2,836 to 2,854 (-3.4%), its generation 2
+collections 69 to 85 to 69 to 73, the enclosure's parts -1.5% and 15 to 22 generation 2 collections a build to 9 to 16,
+the same bits on 8,718 measured properties. The rest of the large objects are the Delaunay triangulation's growing
+arrays (`LinkNode[]`, `MeshCircle[]`, `Triangle[]`, 300 MB), left as 11D left them.
+
+### The locks
+
+`tools/contention-report.cs` on the round's trace: 7 contentions, 0.39 ms of waiting, all in `ManualResetEventSlim.Wait`
+under `Task.SpinThenBlockingWait`: a thread waiting for a `Parallel.For` to finish, the runtime's own. On the enclosure
+built by one caller: 178 contentions, 4.7 ms, the same two frames. **None is a lock of Kerf's** (decision 27604): 13K's
+validity memory and 2000's volumes publish with `Volatile` and take no lock, and 13A's classifiers are per call. The rig's
+"contended locks 1 to 5 a round" are `Parallel`'s waits, and there's nothing of Kerf's to make uncontended.
+
+### The enclosure built in parallel, as a client would
+
+The harness (`p14f/harness`, 14A's with a `par` mode) builds the 13 parts one after another, or with `Parallel.For` over
+them, each part's own `Lazy` building the shared sections once while the others wait; every build's parts are
+fingerprinted by their BREP text's hash, volume and faces, and **every process, on every setting, serial or
+parallel, gave the same fingerprints** (46 processes). Repeats 1 and 2 of each process (warm), 4 processors:
+
+| Settings | Serially: wall s, processor s | 4 threads: wall s, processor s | Pause a build, s |
+|---|---|---|---|
+| Workstation (the default) | 3.7 to 25.5, 4.2 to 9.5 | 2.4 to 11.2, 5.8 to 10.9 | 0.2 to 1.6 serially, 0.4 to 3.0 on 4 |
+| Workstation, the host's tiering | 3.4 to 14.2, 4.3 to 5.3 | 2.3 to 3.1, 4.5 to 6.3 | 0.3 to 1.0, 0.4 to 0.6 |
+| The host's settings | 3.1 to 10.7, 4.2 to 5.5 | 1.8 to 8.3, 4.3 to 7.5 | 0.1 to 0.2, 0.1 to 1.4 |
+
+The same bytes either way (2.55 to 2.61 GB). On 4 processors the parallel build's best walls are 1.5 to 1.7 times faster than
+the serial ones at about the same processor time. The housing alone is about 30% of the parts' processor time (14A), so on
+more processors the build is bound by it, at about 3 times: for the quiet window. **It pays, with the host's tiering
+and a collector suited to the machine** (decision 27605); [enclosure-feedback.md](enclosure-feedback.md), section 6.
+
+### Inside long operations
+
+**Where a serial caller's time goes:** in a trace of the enclosure built by one caller, 78% of Kerf's samples (not
+stopped for the collector) were on the calling thread and 22% on the pool's, the parallel loops Booleans and meshing
+already run (`BooleanOptions.Parallel`, OCCT's `RunParallel`, is on by default). Of the calling thread's: the Boolean's
+builder and pave filler 47%, **decision 1860's volume check 19%, all of it serial**, the validity check 7%, the clean
+7%, construction, hulls and offsets the rest.
+
+| Candidate | What was done | Measured |
+|---|---|---|
+| The volume check's faces | **Done** (decision 27606): from 16 faces to integrate, each face on the pool with its own integrand, summed in the faces' order | The same bits on 8,724 properties and the suites; the enclosure built by one caller 5.0 to 11.0 s to 3.9 to 8.8 s wall (medians 8.3 and 6.0, loaded), the same processor time, 0.6% more bytes; the rig's round 0.4% more bytes, its processor time within the noise |
+| Kerf's own loops, all of them | Measured with them off (the kernel's serial scope, by reflection): | The enclosure by one caller, the same processor time and 1% fewer bytes; on a loaded machine its wall time didn't show what they give. For the quiet window |
+| The Boolean's builder and pave filler | Already parallel where OCCT is; its serial share is the per-face work 14A named (decision 2055) | Not changed |
+| The validity check | 114 samples on the calling thread, 4 on the pool: serial in practice | Named for later |
+| Fillets of many edges | ChFi3d builds a contour's fillets in order, each depending on the last | Not parallel by nature |
+| Exports | STEP's writer and the STL mesh's extraction are serial within a file | A client writes files in parallel (the guide's section 9) |
+
+Nothing was held back for the owner: no change slows anything else past the bar.

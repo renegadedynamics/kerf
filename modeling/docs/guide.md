@@ -460,6 +460,25 @@ Result[] written = await Task.WhenAll(sizes.Select(async size =>
 }));
 ```
 
+**Parts built in parallel pay** (decision 27605): the blade bumper enclosure's 13 parts built with `Parallel.For`, the
+shared sections in `Lazy<T>` built once by whichever part needs them first, came out the same to the bit, for the same
+bytes, in 1.5 to 1.7 times less wall time on 4 processors (a loaded machine; the largest part bounds it on more).
+Keep what the parts share in `Lazy<T>` (thread-safe by default) or build it first; don't keep the part being built in a
+static the parts read, such as a size chosen by a setter: give each part what it needs.
+
+**The runtime's settings belong to your application** (`.csproj` or `runtimeconfig.json`), and matter once many
+operations run at once:
+
+- **`TieredPGO` off and `CallCountingDelayMs` 0** cut the processor time of a parallel run of Kerf by 35% to 45%,
+  whichever collector, and suit any application that runs Kerf for more than a moment (kernel README, "Runtime
+  settings for a host").
+- **The server collector** (`ServerGarbageCollection`, with DATAS left on) does half the collections and, on a machine
+  the application has to itself, took a parallel round from 1,862 to 546 ms with the settings above. **On a machine
+  other busy processes share** (a build agent, a desktop running other heavy work), its pauses ran to 5 to 14 s a
+  round, once 118 s, as each heap's thread waits for its own processor; the workstation collector's stayed under 1.5 s.
+  There, keep the workstation collector (the default), or try `GCNoAffinitize`.
+- `GCConserveMemory` and a heap mask over part of the processors didn't help.
+
 **Cancellation, warnings and `SkipClean` follow the flow of control,** on a thread and through `await` alike (each
 keeps its state in an `AsyncLocal`):
 
