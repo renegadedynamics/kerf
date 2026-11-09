@@ -405,6 +405,13 @@ public class RWStlNativeTests(ITestOutputHelper output)
                && aPRest.Zip(aNRest).All(p => p.First == p.Second || (p.Second == "THROW class Standard_OutOfMemory" && p.First == "BINS NULL"));
     }
 
+    private static bool HasSphereOrTorus(string theFile)
+    {
+        BrepTools.Read(out Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", theFile));
+        return MeshExtraction.Faces(aShape).Any(f => new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(Kerf.Engine.Topology.ShapeCasts.Face(f)).GetType()
+                                                         is SurfaceKind.Sphere or SurfaceKind.Torus);
+    }
+
     [Fact]
     public void The_port_writes_and_reads_STL_as_native_OCCT()
     {
@@ -412,7 +419,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
         string aScratch = Directory.CreateTempSubdirectory("p8h1-stl").FullName;
         try
         {
-            int aDerived = 0, aCompared = 0, anAbsent = 0, anAttributed = 0, anIntendedStream = 0, anIntendedDomains = 0;
+            int aDerived = 0, aCompared = 0, anAbsent = 0, anAttributed = 0, anIntendedStream = 0, anIntendedDomains = 0, anIntendedMeshes = 0;
             var aDifferent = new List<string>();
             foreach ((string aHead, List<string> aNative) in aBlocks)
             {
@@ -423,6 +430,13 @@ public class RWStlNativeTests(ITestOutputHelper output)
                     continue;
                 }
                 aCompared++;
+                // Decision 2056: a sphere's and a torus's meshes at a relative deflection aren't native's, so neither is
+                // their STL where they differ. The port's is written and read back, and not compared
+                if (aHead.StartsWith("W ", StringComparison.Ordinal) && !aPort.SequenceEqual(aNative) && HasSphereOrTorus(aHead.Split(' ')[1]))
+                {
+                    anIntendedMeshes++;
+                    continue;
+                }
                 if (MoreDomains(aPort, aNative))
                 {
                     anIntendedDomains++;
@@ -460,7 +474,8 @@ public class RWStlNativeTests(ITestOutputHelper output)
                 }
             }
             output.WriteLine($"{aCompared} blocks compared, {anAbsent} absent (no dataset), {anAttributed} attributed lines; "
-                             + $"intended differences: {anIntendedStream} lines read from streams, {anIntendedDomains} blocks with more domains");
+                             + $"intended differences: {anIntendedStream} lines read from streams, {anIntendedDomains} blocks with more domains, "
+                             + $"{anIntendedMeshes} meshes with spheres or tori");
             foreach (string aLine in aDifferent)
             {
                 output.WriteLine(aLine);
@@ -474,6 +489,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
                 Assert.Equal(2, anAttributed);
                 Assert.Equal(8, anIntendedStream);
                 Assert.Equal(5, anIntendedDomains);
+                Assert.Equal(6, anIntendedMeshes);
             }
         }
         finally

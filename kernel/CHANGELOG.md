@@ -20,6 +20,7 @@ version may break the API.
   time (an 1800 × 1100 picture supersampled twice allocated 63 MB, now about 8), and `Png.Encode` filters and
   compresses sixteen bytes at a time, in about 40% of the time. The same pixels and the same PNG bytes (decisions 2051
   and 2052).
+- **A sphere's and a torus's meshes keep to the deflection at a relative deflection too** (`MeshOptions.Relative`): they kept OCCT's meshes, up to 5.5 times out on small fillet tori and twice on whole spheres, silently. Now within the deflection relative mode works out for each face, with 3.5% more triangles over the survey, all on spheres and tori, but for some small fillet tori, up to 1.14 times out beside a long boundary edge (decision 26302); meshes at an absolute deflection, and other kinds of surface, are the same to the byte (decision 26301).
 - **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
   the caller's own list, so changing the list after making the options changed them. A collection expression
   (`Points = [p1, p2]`) works as before; a list is passed as `[.. list]` (unit 13P, decision 2044).

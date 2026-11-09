@@ -36,7 +36,7 @@ internal class DefaultMeshAlgoFactory : MeshAlgoFactory
             case SurfaceKind.Sphere:
                 return parameters.EnableControlSurfaceDeflectionAllSurfaces
                          ? new DelaunayDeflectionControlMeshAlgo<SphereRangeSplitter>()
-                         : parameters.Relative ? new DelaunayNodeInsertionMeshAlgo<SphereRangeSplitter>() : new SphereDeflectionMeshAlgo();
+                         : new SphereDeflectionMeshAlgo();
 
             case SurfaceKind.Cylinder:
                 return parameters.EnableControlSurfaceDeflectionAllSurfaces
@@ -53,7 +53,7 @@ internal class DefaultMeshAlgoFactory : MeshAlgoFactory
             case SurfaceKind.Torus:
                 return parameters.EnableControlSurfaceDeflectionAllSurfaces
                          ? new DelaunayDeflectionControlMeshAlgo<TorusRangeSplitter>()
-                         : parameters.Relative ? new DelaunayNodeInsertionMeshAlgo<TorusRangeSplitter>() : new DelaunayDeflectionGuardMeshAlgo<TorusRangeSplitter>();
+                         : new DelaunayDeflectionGuardMeshAlgo<TorusRangeSplitter>();
 
             case SurfaceOfRevolution:
                 return new DelaunayDeflectionControlMeshAlgo<BoundaryParamsRangeSplitter>();

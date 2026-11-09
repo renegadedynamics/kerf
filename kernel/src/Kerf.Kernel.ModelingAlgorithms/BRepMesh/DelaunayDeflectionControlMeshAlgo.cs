@@ -49,6 +49,12 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
     /// <summary>The deviation above which a node is inserted: the face's deflection, from its edges.</summary>
     protected virtual double ControlledDeflection() => GetDFace().GetDeflection();
 
+    /// <summary>
+    /// Kerf: whether a node for a triangle on a frontier link goes where Delaunay will insert it (decision 2057); not in
+    /// OCCT's control, which puts it at the triangle's centre.
+    /// </summary>
+    protected virtual bool ClearsFrontier => false;
+
     /// <summary>Processes the generated mesh: inserts the surface nodes, then controls the deflection.</summary>
     protected override void PostProcessMesh(Delaun mesher, ProgressRange range)
     {
@@ -203,6 +209,22 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
         }
     }
 
+    // Kerf: the triangle's centre, or where it is moved to off a frontier link (decision 2057)
+    private Xy Cleared(in Xy center2d, ReadOnlySpan<TriangleNodeInfo> nodesInfo)
+    {
+        Span<Point2D> corners = stackalloc Point2D[3];
+        Span<bool> frontier = stackalloc bool[3];
+        for (int i = 0; i < 3; i++)
+        {
+            corners[i] = GetRangeSplitter().Scale(new Point2D(nodesInfo[i].Point2d), true);
+            frontier[i] = nodesInfo[i].isFrontierLink;
+        }
+
+        Point2D node = GetRangeSplitter().Scale(new Point2D(center2d), true);
+        Point2D cleared = FrontierClearance.Clear(node, corners, frontier);
+        return cleared.X == node.X && cleared.Y == node.Y ? center2d : GetRangeSplitter().Scale(cleared, false).XY();
+    }
+
     // Check geometry of the given triangle. If triangle does not suit specified deflection, inserts new point.
     private void SplitTriangleGeometry(in Triangle triangle)
     {
@@ -223,7 +245,15 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 Xy center2d =
                     (nodesInfo[0].Point2d + nodesInfo[1].Point2d + nodesInfo[2].Point2d) / 3.0;
 
-                UsePoint(center2d, new NormalDeviation(new Point3D(nodesInfo[0].Point), normal));
+                if (ClearsFrontier && (nodesInfo[0].isFrontierLink || nodesInfo[1].isFrontierLink || nodesInfo[2].isFrontierLink))
+                {
+                    UsePoint(center2d, new NormalDeviation(new Point3D(nodesInfo[0].Point), normal), Cleared(center2d, nodesInfo));
+                }
+                else
+                {
+                    UsePoint(center2d, new NormalDeviation(new Point3D(nodesInfo[0].Point), normal));
+                }
+
                 SplitLinks(nodesInfo, nodexIndices, triangle._edges);
             }
         }
@@ -431,6 +461,27 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
         }
 
         return false;
+    }
+
+    // Kerf: as above, but the node inserted, if the point is too far, is the one given (decision 2057)
+    private bool UsePoint<DeflectionFunctor>(in Xy pnt2d, in DeflectionFunctor deflectionFunctor, in Xy insertAt)
+        where DeflectionFunctor : struct, IDeviation
+    {
+        Point3D pnt = GetPoint3d(pnt2d);
+        double sqDeflection = deflectionFunctor.SquareDeviation(pnt);
+        if (sqDeflection > _maxSqDeflection)
+        {
+            _maxSqDeflection = sqDeflection;
+        }
+
+        double deflection = ControlledDeflection();
+        if (sqDeflection < deflection * deflection || RejectByMinSize(insertAt, GetPoint3d(insertAt)))
+        {
+            return false;
+        }
+
+        _controlNodes!.Append(new Point2D(insertAt));
+        return true;
     }
 
     // Checks the given point for specified linear deflection. Updates value of total mesh deflection.

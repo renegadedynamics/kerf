@@ -5,7 +5,6 @@
 
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
-using Kerf.Engine.Meshing.Model;
 using Kerf.Engine.Meshing.Tools;
 using Kerf.Geometry;
 
@@ -61,30 +60,16 @@ internal class SphereRangeSplitter : DefaultRangeSplitter
         return nodes;
     }
 
-    private bool _isotropic;
-
-    /// <inheritdoc/>
-    public override void Reset(FaceModel dFace, in ToolParameters parameters)
-    {
-        base.Reset(dFace, parameters);
-        _isotropic = !parameters.Relative;
-    }
-
     /// <summary>
-    /// Kerf: at an absolute deflection, the parameters are scaled as the sphere is at its latitude nearest the equator, not
-    /// by its average lengths (decision 1953). On a whole sphere the average takes a length along u as 0.64 of what it is
-    /// at the equator, so Delaunay joins nodes two of the grid's steps apart there and loses grid nodes beside the seam, and
-    /// the mesh is up to twice the deflection from the sphere. Scaled so, a length along u is never taken as shorter than
-    /// it is. Not at a relative deflection, which keeps OCCT's mesh.
+    /// Kerf: the parameters are scaled as the sphere is at its latitude nearest the equator, not by its average lengths
+    /// (decision 1953). On a whole sphere the average takes a length along u as 0.64 of what it is at the equator, so
+    /// Delaunay joins nodes two of the grid's steps apart there and loses grid nodes beside the seam, and the mesh is up to
+    /// twice the deflection from the sphere. Scaled so, a length along u is never taken as shorter than it is. At a relative
+    /// deflection too (decision 2056).
     /// </summary>
     protected override void ComputeDelta(double lengthU, double lengthV)
     {
         base.ComputeDelta(lengthU, lengthV);
-        if (!_isotropic)
-        {
-            return;
-        }
-
         (double first, double second) rangeV = GetRangeV();
         double nearest = rangeV.first > 0 ? rangeV.first : rangeV.second < 0 ? rangeV.second : 0;
         double cos = Math.Cos(nearest);
