@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The blade bumper's enclosure at v0.16 (README.md): a library of its own, as its types have the same names as the v0.11
+    model's in Kerf.UserCases (../enclosure), which refers to this one by the alias v016. It builds against the same Kerf
+    as Kerf.UserCases, which passes it KerfPackageVersion or KerfModelingRoot, and only from 0.4.0 on.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>Renegade.BladeBumper</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(KerfPackageVersion)' == ''">
+    <ProjectReference Include="$(KerfModelingRoot)src/Kerf.Modeling/Kerf.Modeling.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(KerfPackageVersion)' != ''">
+    <PackageReference Include="Kerf.Modeling" Version="$(KerfPackageVersion)" />
+  </ItemGroup>
+
+</Project>

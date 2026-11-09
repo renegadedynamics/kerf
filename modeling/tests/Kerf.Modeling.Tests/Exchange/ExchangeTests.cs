@@ -124,6 +124,74 @@ public partial class ExchangeTests
         Assert.DoesNotContain("'Open CASCADE'", text);
     }
 
+    // FILE_NAME rewritten as a string, as before unit 14A: the reference for the rewrite that writes the rest as it is
+    private static byte[] RewrittenAsText(byte[] step, string? name, string? timestamp, string? system)
+    {
+        var text = Encoding.Latin1.GetString(step);
+        int start = text.IndexOf("FILE_NAME(", StringComparison.Ordinal), data = text.IndexOf("DATA;", StringComparison.Ordinal);
+        if (start < 0 || (data >= 0 && start > data))
+            return step;
+        var spans = new List<(int From, int To)>();
+        int depth = 0, argument = start + "FILE_NAME(".Length;
+        bool quoted = false, closed = false;
+        for (int i = argument; i < text.Length && !closed; i++)
+        {
+            char c = text[i];
+            if (quoted)
+            {
+                if (c == '\'')
+                {
+                    if (i + 1 < text.Length && text[i + 1] == '\'')
+                        i++;
+                    else
+                        quoted = false;
+                }
+                continue;
+            }
+            if (c == '\'')
+                quoted = true;
+            else if (c == '(')
+                depth++;
+            else if (c == ')' && depth > 0)
+                depth--;
+            else if (c is ',' or ')' && depth == 0)
+            {
+                int from = argument, to = i;
+                while (from < to && char.IsWhiteSpace(text[from]))
+                    from++;
+                while (to > from && char.IsWhiteSpace(text[to - 1]))
+                    to--;
+                spans.Add((from, to));
+                closed = c == ')';
+                argument = i + 1;
+            }
+        }
+        if (!closed || spans.Count != 7)
+            return step;
+        foreach (var (index, value) in new (int, string?)[] { (5, system), (1, timestamp), (0, name) })
+        {
+            if (value is not null)
+                text = string.Concat(text.AsSpan(0, spans[index].From), StepHeader.Encode(value), text.AsSpan(spans[index].To));
+        }
+        return Encoding.Latin1.GetBytes(text);
+    }
+
+    [Theory]
+    [InlineData("ISO-10303-21;\nHEADER;\nFILE_NAME('a','b',('c'),('d'),'e','f','g');\nENDSEC;\nDATA;\n#1=X('é');\nENDSEC;\n", "part 'one'", "2026", "Kerf")]
+    [InlineData("ISO-10303-21;\nHEADER;\nFILE_NAME( 'a' ,\n 'b''s' , ( 'c' , 'd' ),('d'),'e(' , 'f'  ,'g' ) ;\nDATA;\n", "x", null, "y ")]
+    [InlineData("ISO-10303-21;\nHEADER;\nFILE_NAME('a','b');\nDATA;\n", "x", "t", "s")]
+    [InlineData("ISO-10303-21;\nDATA;\nFILE_NAME('a','b',('c'),('d'),'e','f','g');\n", "x", "t", "s")]
+    [InlineData("ISO-10303-21;\nHEADER;\nENDSEC;\n", "x", "t", "s")]
+    [InlineData("ISO-10303-21;\nHEADER;\nFILE_NAME(\u0085'a' ,'b',('c'),('d'),'e','f','g'\u0085);\nDATA;\n", null, "t", null)]
+    public void StepHeaderRewritesOnlyItsRecord(string step, string? name, string? timestamp, string? system)
+    {
+        var bytes = Encoding.Latin1.GetBytes(step);
+        Assert.Equal(RewrittenAsText(bytes, name, timestamp, system), StepHeader.WithFileName(bytes, name, timestamp, system));
+        var stream = new MemoryStream();
+        StepHeader.Write(stream, bytes, name, timestamp, system);
+        Assert.Equal(RewrittenAsText(bytes, name, timestamp, system), stream.ToArray());
+    }
+
     [Fact]
     public void StepHeaderEncodesAsPart21()
     {

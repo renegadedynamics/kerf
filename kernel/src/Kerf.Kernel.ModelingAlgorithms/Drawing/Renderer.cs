@@ -107,10 +107,13 @@ public static class Renderer
     }
 
     /// <summary>The rendering of one picture: the scene's nodes in view and screen coordinates, its triangles and
-    /// edges' segments, rasterised by bands of rows into supersampled colour and depth buffers.</summary>
+    /// edges' segments, rasterised by bands of rows into supersampled colour and depth buffers, each band's own and
+    /// averaged into the picture's pixels when the band is done.</summary>
     private sealed class Rasteriser
     {
-        private const int BandHeight = 16;
+        // Rows of samples to a band, at least 16, a whole number of the picture's rows. A sample's colour doesn't depend on
+        // the bands: each band draws its triangles in the scene's order, then its edges, as one buffer did
+        private readonly int _bandHeight;
 
         private readonly ViewTransform _view;
         private readonly RenderOptions _options;
@@ -145,6 +148,7 @@ public static class Renderer
             _samples = options.Supersampling;
             _width = options.Width * _samples;
             _height = options.Height * _samples;
+            _bandHeight = (16 + _samples - 1) / _samples * _samples;
             _lights = [.. options.Lights.Where(l => l is not null && l.Direction.Magnitude > 0)
                                         .Select(l =>
                                         {
@@ -455,17 +459,15 @@ public static class Renderer
 
         public RgbaImage Draw()
         {
-            int pixels = _width * _height;
-            var color = new uint[pixels];
-            var depth = new float[pixels];
-            Array.Fill(depth, float.NegativeInfinity);
+            // The picture's pixels; the samples are only ever a band's (unit 14A: a picture of 1800 by 1100 supersampled
+            // twice had 63 MB of them, nearly nine tenths of what the blade bumper's renders allocated)
+            var pixels = new byte[4 * _options.Width * _options.Height];
             Color background = _options.Background;
             uint backgroundPacked = Pack(Byte(background.R), Byte(background.G), Byte(background.B), Byte(background.A));
-            Array.Fill(color, backgroundPacked);
             Color edge = _options.EdgeColor;
             uint edgePacked = Pack(Byte(edge.R), Byte(edge.G), Byte(edge.B), 255);
 
-            int bands = (_height + BandHeight - 1) / BandHeight;
+            int bands = (_height + _bandHeight - 1) / _bandHeight;
             var triangleBins = new List<int>[bands];
             var glassBins = new List<int>[bands];
             var segmentBins = new List<int>[bands];
@@ -495,7 +497,28 @@ public static class Renderer
             void Band(int band)
             {
                 _cancellationToken.ThrowIfCancellationRequested();
-                int y0 = band * BandHeight, y1 = Math.Min(_height, y0 + BandHeight);
+                int y0 = band * _bandHeight, y1 = Math.Min(_height, y0 + _bandHeight);
+                int samples = (y1 - y0) * _width;
+                // From the shared pool, given back when the band is done: a band's buffers are its own while it has them
+                uint[] color = ArrayPool<uint>.Shared.Rent(samples);
+                float[] depth = ArrayPool<float>.Shared.Rent(samples);
+                try
+                {
+                    Array.Fill(color, backgroundPacked, 0, samples);
+                    Array.Fill(depth, float.NegativeInfinity, 0, samples);
+                    DrawBand(band, y0, y1, color, depth);
+                    Downsample(color, y0, y1, pixels);
+                }
+                finally
+                {
+                    ArrayPool<uint>.Shared.Return(color);
+                    ArrayPool<float>.Shared.Return(depth);
+                }
+            }
+
+            // A band's samples, the first of them its first row's
+            void DrawBand(int band, int y0, int y1, uint[] color, float[] depth)
+            {
                 foreach (int t in triangleBins[band])
                 {
                     Triangle(t, y0, y1, color, depth, null);
@@ -512,7 +535,7 @@ public static class Renderer
                 }
 
                 // In front of the opaque faces, every see-through face and every edge, sorted at each sample
-                using var fragments = new Fragments(y0 * _width, (y1 - y0) * _width);
+                using var fragments = new Fragments((y1 - y0) * _width);
                 foreach (int s in segmentBins[band])
                 {
                     Segment(s, y0, y1, radius, edgePacked, color, depth, fragments);
@@ -539,7 +562,7 @@ public static class Renderer
             }
 
             _cancellationToken.ThrowIfCancellationRequested();
-            return new RgbaImage(_options.Width, _options.Height, Downsample(color));
+            return new RgbaImage(_options.Width, _options.Height, pixels);
         }
 
         private void Bin(List<int>[] bins, double yMin, double yMax, int index)
@@ -549,7 +572,7 @@ public static class Renderer
                 return;
             }
 
-            int first = Math.Max(0, (int)Math.Floor(yMin) / BandHeight), last = Math.Min(bins.Length - 1, (int)Math.Floor(Math.Min(yMax, _height - 1)) / BandHeight);
+            int first = Math.Max(0, (int)Math.Floor(yMin) / _bandHeight), last = Math.Min(bins.Length - 1, (int)Math.Floor(Math.Min(yMax, _height - 1)) / _bandHeight);
             for (int b = first; b <= last; b++)
             {
                 bins[b].Add(index);
@@ -594,7 +617,7 @@ public static class Renderer
             for (int y = yMin; y <= yMax; y++)
             {
                 double py = y + 0.5;
-                int row = y * _width;
+                int row = (y - y0) * _width;
                 int xFrom = xMin, xTo = xMax;
                 if (useSpans)
                 {
@@ -712,7 +735,7 @@ public static class Renderer
             for (int y = yMin; y <= yMax; y++)
             {
                 double py = y + 0.5;
-                int row = y * _width;
+                int row = (y - y0) * _width;
                 for (int x = xMin; x <= xMax; x++)
                 {
                     double px = x + 0.5;
@@ -765,7 +788,7 @@ public static class Renderer
         /// over the opaque picture from the back. An item's edges give a sample one fragment, the nearest, so the joins
         /// of its segments aren't laid twice. A band's lists are its own, so bands in parallel share nothing.
         /// </summary>
-        private sealed class Fragments(int first, int count) : IDisposable
+        private sealed class Fragments(int count) : IDisposable
         {
             private struct Fragment
             {
@@ -790,7 +813,7 @@ public static class Renderer
 
             public void Add(int sample, float depth, uint color, double alpha, int item)
             {
-                int slot = sample - first;
+                int slot = sample;
                 if (item >= 0)
                 {
                     for (int k = _head[slot]; k >= 0; k = _all[k].Next)
@@ -838,7 +861,7 @@ public static class Renderer
                     }
 
                     here.Sort((p, q) => _all[p].Depth != _all[q].Depth ? _all[p].Depth.CompareTo(_all[q].Depth) : p.CompareTo(q));
-                    int i = first + slot;
+                    int i = slot;
                     uint c = color[i];
                     double a = (c >> 24) / 255.0;
                     double r = (c & 0xFF) / 255.0 * a, g = ((c >> 8) & 0xFF) / 255.0 * a, b = ((c >> 16) & 0xFF) / 255.0 * a;
@@ -863,19 +886,18 @@ public static class Renderer
             }
         }
 
-        // The supersampled buffer averaged to the picture's pixels, colours weighted by their opacity
-        private byte[] Downsample(uint[] color)
+        // A band's samples, rows y0 to y1 of them, averaged to the picture's pixels, colours weighted by their opacity
+        private void Downsample(uint[] color, int y0, int y1, byte[] pixels)
         {
-            int width = _options.Width, height = _options.Height, n = _samples * _samples;
-            var pixels = new byte[4 * width * height];
-            for (int y = 0; y < height; y++)
+            int width = _options.Width, n = _samples * _samples;
+            for (int y = y0 / _samples; y < y1 / _samples; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     long r = 0, g = 0, b = 0, a = 0;
                     for (int j = 0; j < _samples; j++)
                     {
-                        int row = (y * _samples + j) * _width + x * _samples;
+                        int row = (y * _samples + j - y0) * _width + x * _samples;
                         for (int i = 0; i < _samples; i++)
                         {
                             uint c = color[row + i];
@@ -898,8 +920,6 @@ public static class Renderer
                     pixels[p + 3] = (byte)((a + n / 2) / n);
                 }
             }
-
-            return pixels;
         }
     }
 }

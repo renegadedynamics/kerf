@@ -5,6 +5,21 @@ version may break the API.
 
 ## Unreleased
 
+- **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
+  too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
+  refused them; beside a concave arc it still refuses, saying why (decision 2048).
+- **`TightCorners.Collapse` builds on drafted sides** (planes and cones, as a draft or a tapered extrusion makes them), all
+  drafted by one angle, the length down a side measured along its slope as ChFi3d measures it, where it refused any side
+  not square to the face (decision 2049).
+- **`TightCorners.Collapse` builds corners that are B-splines, ellipses or Béziers** where the corner collapsing swallows
+  them whole, exactly, as a cone from its point; one it would only swallow in part, or that bends less tightly than the
+  chamfer is long, is refused, saying why, as its inset isn't a B-spline (decision 2050).
+- **`FilletSizeLimit` and `ChamferSizeLimit`** give a fillet's or chamfer's proved limit with the shape's tolerance about
+  it, as a `SizeLimit`; `FilletLimit` and `ChamferLimit` are its value, as before (decision 2047).
+- **Rendering and PNG writing are lighter** (unit 14A): a render keeps only a band of its supersampled samples at a
+  time (an 1800 × 1100 picture supersampled twice allocated 63 MB, now about 8), and `Png.Encode` filters and
+  compresses sixteen bytes at a time, in about 40% of the time. The same pixels and the same PNG bytes (decisions 2051
+  and 2052).
 - **A sphere's and a torus's meshes keep to the deflection at a relative deflection too** (`MeshOptions.Relative`): they kept OCCT's meshes, up to 5.5 times out on small fillet tori and twice on whole spheres, silently. Now within the deflection relative mode works out for each face, with 3.5% more triangles over the survey, all on spheres and tori, but for some small fillet tori, up to 1.14 times out beside a long boundary edge (decision 26302); meshes at an absolute deflection, and other kinds of surface, are the same to the byte (decision 26301).
 - **Breaking: `FillOptions.Points` is an `ImmutableArray<Point3D>`,** where it was an `IReadOnlyList<Point3D>` that kept
   the caller's own list, so changing the list after making the options changed them. A collection expression

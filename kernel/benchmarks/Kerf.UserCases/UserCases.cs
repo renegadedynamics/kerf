@@ -79,6 +79,7 @@ public static class UserCases
         Chamfer("collapse-housing", "the same 20 edges chamfered 3, past the 1.5 corners: TightCorners.Collapse",
             HousingPrism, part => part.Edges().GroupBy(Axis.X).Last(), 3, collapse: true),
         Enclosure(),
+        EnclosureV016(),
     ];
 
     /// <summary>The case of this name.</summary>
@@ -172,4 +173,18 @@ public static class UserCases
         },
         outcome => new CaseResult([.. ((List<(string Label, Part Part)>)outcome).Select(s => Measure.Of(s.Label, s.Part))], null),
         Expected.Of("enclosure"));
+
+    // The same enclosure at v0.16 (unit 14D; renegadedynamics/hardware 9ab5fb0, enclosure-v0.16/README.md): laid out for three
+    // shaft sizes, built here at 35 mm, the size the script builds by default. It needs Kerf 0.4.0's API, as v0.11 does
+    private static UserCase EnclosureV016() => new("enclosure-v0.16", "the blade bumper's enclosure at v0.16, built whole for a 35 mm shaft: 13 printed parts, a print aid and 34 components placed in it",
+        data =>
+        {
+#if KERF_0_4_OR_LATER
+            return EnclosureV016Model.Build;
+#else
+            return null;
+#endif
+        },
+        outcome => new CaseResult([.. ((List<(string Label, Part Part)>)outcome).Select(s => Measure.Of(s.Label, s.Part))], null),
+        Expected.Of("enclosure-v0.16"));
 }

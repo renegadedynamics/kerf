@@ -49,6 +49,58 @@ public class PngTests
         Assert.Equal(Png.WriteFailed, Png.Write(image, new MemoryStream([], writable: false)).Error!.Code);
     }
 
+    // Pictures that use each filter: noise, flat colour, gradients across and down, stripes, and a render
+    public static TheoryData<string, int, int> Pictures() => new()
+    {
+        { "noise", 1, 1 }, { "noise", 3, 2 }, { "noise", 4, 4 }, { "noise", 5, 7 }, { "noise", 37, 23 }, { "noise", 300, 200 },
+        { "flat", 1, 3 }, { "flat", 64, 64 }, { "across", 61, 17 }, { "down", 33, 70 }, { "diagonal", 129, 65 },
+        { "stripes", 100, 50 }, { "render", 0, 0 },
+    };
+
+    private static RgbaImage Picture(string kind, int width, int height)
+    {
+        if (kind == "noise")
+        {
+            return Noise(width, height, width * 31 + height);
+        }
+
+        if (kind == "render")
+        {
+            return Fixtures.Cylinder().Render(Drawing.Camera.Isometric).Value;
+        }
+
+        byte[] pixels = new byte[4 * width * height];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int p = 4 * (y * width + x);
+                for (int k = 0; k < 4; k++)
+                {
+                    pixels[p + k] = kind switch
+                    {
+                        "flat" => (byte)(40 + 50 * k),
+                        "across" => (byte)(x * (k + 3) + k),
+                        "down" => (byte)(y * (5 - k)),
+                        "diagonal" => (byte)((x + 2 * y) * (k + 1)),
+                        _ => (byte)((x / 3 + y / 5) % 2 == 0 ? 255 - 60 * k : 7 * k),
+                    };
+                }
+            }
+        }
+
+        return new RgbaImage(width, height, pixels);
+    }
+
+    [Theory]
+    [MemberData(nameof(Pictures))]
+    public void Deterministic_compression_gives_the_bytes_it_did_byte_by_byte(string kind, int width, int height)
+    {
+        // Unit 14A: the filters and the matcher work sixteen bytes at a time, and must choose and write exactly as before
+        RgbaImage image = Picture(kind, width, height);
+        Assert.Equal(ReferencePng.Encode(image), Png.Encode(image));
+    }
+
     [Fact]
     public void Deterministic_compression_gives_known_bytes()
     {
