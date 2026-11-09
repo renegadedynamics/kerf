@@ -17,7 +17,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// fails unattributed; <c>KERF_CORPUS_FULL=1</c> runs them all.
 /// <c>KERF_CORPUS_LOGS=dir</c> writes the log of every case that doesn't pass into that directory.
 /// </remarks>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawBooleanCorpusTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");

@@ -13,7 +13,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// <remarks>
 /// About 900 cases are runnable (700 of them the sewing grids'); they run in under half a minute, so all of them run.
 /// </remarks>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawHealCorpusTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");

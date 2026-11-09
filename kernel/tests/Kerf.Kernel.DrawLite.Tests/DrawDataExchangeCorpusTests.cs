@@ -11,7 +11,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// format and encodings) on hand-made shapes and on OCCT's corpus, and phase 8's third milestone: the data-exchange
 /// cases, run as OCCT's harness runs them and judged by OCCT's log check.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
 public partial class DrawDataExchangeCorpusTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");

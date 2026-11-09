@@ -10,7 +10,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// ShapeProcess's <c>DT_ApplySeq</c> and <c>SPApply</c>) on OCCT's corpus: the cases that use them, runnable after the
 /// unit and not before, run as OCCT's harness runs them and judged by OCCT's log check.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawHealDivideCorpusTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");

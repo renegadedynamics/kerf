@@ -6,7 +6,6 @@ using Xunit.Abstractions;
 namespace Kerf.Kernel.DrawLite.Tests;
 
 /// <summary>Scans OCCT's own test corpus to show how much of it the port could run, and what to implement next.</summary>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawCorpusTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");

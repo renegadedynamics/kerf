@@ -10,7 +10,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// (Draw's core commands, the geometry and topology commands over ported packages), run as OCCT's harness runs them and
 /// judged by OCCT's log check.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawCheapGapsCorpusTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");

@@ -10,7 +10,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// commands) on OCCT's corpus: the cases that use them, runnable after the commands and not before, run as OCCT's
 /// harness runs them and judged by OCCT's log check.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawXdeCorpusTests(ITestOutputHelper output)
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
