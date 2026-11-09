@@ -45,7 +45,7 @@ The gaps for drawing sheets: title blocks and notes in the model, and a file a l
 
 | Unit | What | Done when |
 |---|---|---|
-| **13G** Throwing constructors | Decision 1999 lists about 20 public constructors in `Kerf.Modeling` that throw on input a caller would think valid, with two exception types. As the owner decided (question 4): one exception type with the error's code, and a `Make…` operation returning a `Result` beside each, as `MakeConvexPolyhedron` is. | Every one on the list is done, and a test walks the public constructors to find any that throw something else. |
+| **13G** Throwing constructors | Decision 1999 lists about 20 public constructors in `Kerf.Modeling` that throw on input a caller would think valid, with two exception types. As the owner decided (question 4): one exception type with the error's code, and a `Make…` operation returning a `Result` beside each, as `MakeConvexPolyhedron` is. | Every one on the list is done, and a test walks the public constructors to find any that throw something else. **Done** (decision 2013): all 66 constructors of the 48 objects were found to fail on values that look valid; they throw `ModelingException` (the layer's failures all are) and each has a `Make…`; `ConstructorFailureTests` walks them. The kernel's argument checks now throw from a frame of their own, as the JIT's inlining hid them from the layer (25602). |
 
 ## 4. Carried over
 

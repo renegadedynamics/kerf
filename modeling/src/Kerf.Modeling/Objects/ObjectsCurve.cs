@@ -139,6 +139,36 @@ internal static class CurveObjects
     }
 
     internal static AngularDirection DirectionOf(double arcSize) => arcSize >= 0 ? AngularDirection.CounterClockwise : AngularDirection.Clockwise;
+
+    /// <summary>The failure of an arc or line that never meets its limit (decision 2008).</summary>
+    internal static ModelingException NotReached(string message) => Failures.Expected(ModelingDiagnostics.LimitNotReached, message);
+
+    /// <summary>
+    /// The solutions of a constraint solver, for a constrained object's constructor: none, or the solver finding none, is
+    /// <see cref="ModelingDiagnostics.NoSolution"/>; a failure of the kernel's is said in context; the solver's checks of its
+    /// arguments (a radius that isn't positive, a target of the wrong kind) stay <see cref="ArgumentException"/>s.
+    /// </summary>
+    internal static ShapeList<Edge> Solved(string what, Func<ShapeList<Edge>> solve)
+    {
+        ShapeList<Edge> edges;
+        try
+        {
+            edges = solve();
+        }
+        catch (ModelingException)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException && Failures.IsKernelFailure(e))
+        {
+            throw Failures.In(what, e);
+        }
+        catch (InvalidOperationException e)
+        {
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, e.Message, inner: e);
+        }
+        return edges.Count > 0 ? edges : throw Failures.Expected(ModelingDiagnostics.NoSolution, $"No {what} fit these constraints.");
+    }
 }
 
 /// <summary>
@@ -150,7 +180,11 @@ public class Airfoil : BaseLineObject
 {
     /// <summary>An airfoil of <paramref name="pointCount"/> points per surface, with a finite trailing edge if <paramref name="finiteTE"/>.</summary>
     public Airfoil(string airfoilCode, int pointCount = 50, bool finiteTE = false)
-        : this(airfoilCode, Make(airfoilCode, pointCount, finiteTE, out var camberPoints), camberPoints, finiteTE)
+        : this(airfoilCode, Make(airfoilCode, pointCount, finiteTE), finiteTE)
+    {
+    }
+
+    private Airfoil(string code, (Wire Profile, List<Point3D> CamberPoints) made, bool finiteTE) : this(code, made.Profile, made.CamberPoints, finiteTE)
     {
     }
 
@@ -199,12 +233,17 @@ public class Airfoil : BaseLineObject
         return (int.Parse(s[..1]) / 100.0, int.Parse(s[1..2]) / 10.0, int.Parse(s[2..]) / 100.0);
     }
 
-    private static Wire Make(string code, int n, bool finiteTE, out List<Point3D> camberPoints)
+    private static (Wire, List<Point3D>) Make(string code, int n, bool finiteTE)
+    {
+        var (m, p, t) = ParseNaca4(code);
+        return Failures.Building(() => "airfoil", () => Build(m, p, t, n, finiteTE));
+    }
+
+    private static (Wire, List<Point3D>) Build(double m, double p, double t, int n, bool finiteTE)
     {
         // The thickness distribution: yₜ = 5t[0.2969√x - 0.1260x - 0.3516x² + 0.2843x³ - 0.1015x⁴] where x is the
         // distance along the chord (0 at the leading edge, 1 at the trailing edge), t the maximum thickness as a fraction
         // of the chord, and yₜ the half-thickness there
-        var (m, p, t) = ParseNaca4(code);
 
         // Cosine-spaced x values (as numpy's linspace) for better nose resolution
         var step = Math.PI / (n - 1);
@@ -233,14 +272,14 @@ public class Airfoil : BaseLineObject
                 }
             }
         var theta = dycDx.Select(Math.Atan).ToArray();
-        camberPoints = [.. x.Select((xi, i) => new Point3D(xi, yc[i], 0))];
+        List<Point3D> camberPoints = [.. x.Select((xi, i) => new Point3D(xi, yc[i], 0))];
 
         // The upper and lower surfaces
         var upper = Enumerable.Range(0, n).Select(i => new Point3D(x[i] - yt[i] * Math.Sin(theta[i]), yc[i] + yt[i] * Math.Cos(theta[i]), 0));
         var lower = Enumerable.Range(0, n).Select(i => new Point3D(x[i] + yt[i] * Math.Sin(theta[i]), yc[i] - yt[i] * Math.Cos(theta[i]), 0));
         List<Point3D> unique = [.. upper.Reverse().Concat(lower).Distinct(PointComparer.Near)];
         var surface = Edge.MakeSpline(unique, periodic: !finiteTE);
-        return finiteTE ? Wire.Make([surface, Edge.MakeLine(surface.PositionAt(0), surface.PositionAt(1))]) : Wire.Make([surface]);
+        return (finiteTE ? Wire.Make([surface, Edge.MakeLine(surface.PositionAt(0), surface.PositionAt(1))]) : Wire.Make([surface]), camberPoints);
     }
 }
 
@@ -250,9 +289,22 @@ public class Airfoil : BaseLineObject
 public class Bezier : BaseEdgeObject
 {
     /// <summary>A Bézier curve of the control points with optional weights.</summary>
+    /// <exception cref="ArgumentException">Fewer than two or more than 25 control points, or not one weight for each.</exception>
     public Bezier(IEnumerable<Point3D> controlPoints, IReadOnlyList<double>? weights = null)
-        : base(Edge.MakeBezier([.. controlPoints], weights))
+        : base(Make([.. controlPoints], weights))
     {
+    }
+
+    private static Edge Make(List<Point3D> controlPoints, IReadOnlyList<double>? weights)
+    {
+        // The kernel's checks, made before building, so they stay argument errors (decision 2008)
+        if (controlPoints.Count < 2)
+            throw new ArgumentException("Give at least two control points, the start and the end.");
+        if (controlPoints.Count > 25)
+            throw new ArgumentException("The maximum number of control points is 25");
+        if (weights is { Count: > 0 } && weights.Count != controlPoints.Count)
+            throw new ArgumentException("Give a weight for each control point.");
+        return Failures.Building(() => "Bézier curve", () => Edge.MakeBezier(controlPoints, weights));
     }
 
     /// <summary>A non-rational Bézier curve of the control points.</summary>
@@ -270,10 +322,13 @@ public class BlendCurve : BaseEdgeObject
     /// start or end of its curve; by default the closest pair of ends) with the first derivatives scaled by
     /// <paramref name="tangentScalars"/> (by default 1) to adjust the blend's tension.
     /// </summary>
-    /// <exception cref="ArgumentException">An end point isn't at the start or end of its curve.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: an end point isn't at the start or end of its curve; or the blend
+    /// couldn't be made (<see cref="Operations.MakeBlendCurve"/> gives the same as a result).
+    /// </exception>
     public BlendCurve(Edge curve0, Edge curve1, ContinuityLevel continuity = ContinuityLevel.C2, (Point3D, Point3D)? endPoints = null,
                       (double Start, double End)? tangentScalars = null)
-        : base(Make(curve0, curve1, continuity, endPoints, tangentScalars ?? (1.0, 1.0)))
+        : base(Failures.Building(() => "blend curve", () => Make(curve0, curve1, continuity, endPoints, tangentScalars ?? (1.0, 1.0))))
     {
     }
 
@@ -299,7 +354,7 @@ public class BlendCurve : BaseEdgeObject
             else if ((given[i] - curves[i].PositionAt(1)).Magnitude < Constants.Tolerance)
                 endParams[i] = 1;
             else
-                throw new ArgumentException("Each end point must be at the start or end of a curve.");
+                throw Failures.Expected(ModelingDiagnostics.NoSolution, "Each end point must be at the start or end of a curve.");
         }
 
         // For a degree-n Bézier B'(0) = n(P₁ - P₀), B'(1) = n(Pₙ - Pₙ₋₁), B''(0) = n(n-1)(P₂ - 2P₁ + P₀) and
@@ -334,10 +389,20 @@ public class BlendCurve : BaseEdgeObject
 public class BSpline : BaseEdgeObject
 {
     /// <summary>A B-spline of the given degree.</summary>
+    /// <exception cref="ArgumentException">No knots.</exception>
     public BSpline(IEnumerable<Point3D> controlPoints, IEnumerable<double> knots, int degree, IEnumerable<double>? weights = null,
                    bool periodic = false)
-        : base(Edge.MakeBSpline(controlPoints, knots, degree, weights, periodic))
+        : base(Make(controlPoints, [.. knots], degree, weights, periodic))
     {
+    }
+
+    private static Edge Make(IEnumerable<Point3D> controlPoints, List<double> knots, int degree, IEnumerable<double>? weights, bool periodic)
+    {
+        // A count, checked before building so it stays an argument error; whether the knots, degree and poles agree is
+        // found while building (knots within the tolerance are one), so that is a ModelingException (decision 2008)
+        if (knots.Count == 0)
+            throw new ArgumentException("B-spline requires at least one knot");
+        return Failures.Building(() => "B-spline", () => Edge.MakeBSpline(controlPoints, knots, degree, weights, periodic));
     }
 }
 
@@ -346,7 +411,7 @@ public class CenterArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="startAngle"/> degrees (from the X axis) over <paramref name="arcSize"/> degrees (negative for clockwise).</summary>
     public CenterArc(Point3D center, double radius, double startAngle, double arcSize)
-        : base(Make(center, radius, startAngle, arcSize))
+        : base(Failures.Building(() => "arc", () => Make(center, radius, startAngle, arcSize)))
     {
     }
 
@@ -354,9 +419,12 @@ public class CenterArc : BaseEdgeObject
     /// An arc from <paramref name="startAngle"/> degrees to its first intersection with <paramref name="arcLimit"/>,
     /// whichever way round is shorter: so less than 180°.
     /// </summary>
-    /// <exception cref="ArgumentException">Neither way round meets the limit.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.LimitNotReached"/>: neither way round meets the limit; or the arc couldn't be made
+    /// (<see cref="Operations.MakeCenterArc(Point3D, double, double, CurveLimit)"/> gives the same as a result).
+    /// </exception>
     public CenterArc(Point3D center, double radius, double startAngle, CurveLimit arcLimit)
-        : base(Make(center, radius, startAngle, arcLimit))
+        : base(Failures.Building(() => "arc", () => Make(center, radius, startAngle, arcLimit)))
     {
     }
 
@@ -375,7 +443,7 @@ public class CenterArc : BaseEdgeObject
         var startRadius = new Vector3D(1, 0, 0).Rotate(Axis.Z, startAngle) * radius;
         var arc = Edge.MakeCircle(radius, new Plane(center, startRadius, new Vector3D(0, 0, 1)));
         return CurveObjects.ShortestTrimmed(limit, arc, arc.Reversed(reconstruct: true))
-               ?? throw new ArgumentException($"CenterArc doesn't intersect arc limit {limit}");
+               ?? throw CurveObjects.NotReached($"CenterArc doesn't intersect arc limit {limit}");
     }
 }
 
@@ -388,26 +456,26 @@ public class ConstrainedArcs : BaseCurveObject
     /// <summary>The arcs of a radius tangent to (or through) two objects.</summary>
     public ConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, double radius, Sagitta sagitta = Sagitta.Short,
                            Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null)
-        : base(Select(Edge.MakeConstrainedArcs(tangencyOne, tangencyTwo, radius, sagitta), selector))
+        : base(Select(CurveObjects.Solved("arcs", () => Edge.MakeConstrainedArcs(tangencyOne, tangencyTwo, radius, sagitta)), selector))
     {
     }
 
     /// <summary>The arcs tangent to three objects.</summary>
     public ConstrainedArcs(Tangent tangencyOne, Tangent tangencyTwo, Tangent tangencyThree, Sagitta sagitta = Sagitta.Short,
                            Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null)
-        : base(Select(Edge.MakeConstrainedArcs(tangencyOne, tangencyTwo, tangencyThree, sagitta), selector))
+        : base(Select(CurveObjects.Solved("arcs", () => Edge.MakeConstrainedArcs(tangencyOne, tangencyTwo, tangencyThree, sagitta)), selector))
     {
     }
 
     /// <summary>The circles about a centre tangent to (or through) an object.</summary>
     public ConstrainedArcs(Tangent tangencyOne, Point3D center, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null)
-        : base(Select(Edge.MakeConstrainedArcs(tangencyOne, center), selector))
+        : base(Select(CurveObjects.Solved("circles", () => Edge.MakeConstrainedArcs(tangencyOne, center)), selector))
     {
     }
 
     /// <summary>The circles of a radius tangent to (or through) an object, their centres on <paramref name="centerOn"/>.</summary>
     public ConstrainedArcs(Tangent tangencyOne, double radius, Tangent centerOn, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null)
-        : base(Select(Edge.MakeConstrainedArcs(tangencyOne, radius, centerOn), selector))
+        : base(Select(CurveObjects.Solved("circles", () => Edge.MakeConstrainedArcs(tangencyOne, radius, centerOn)), selector))
     {
     }
 
@@ -416,7 +484,7 @@ public class ConstrainedArcs : BaseCurveObject
     /// <summary>The arcs tangent to (or through) two objects, their centres on <paramref name="centerOn"/>.</summary>
     public static ConstrainedArcs CenteredOn(Tangent tangencyOne, Tangent tangencyTwo, Tangent centerOn, Sagitta sagitta = Sagitta.Short,
                                              Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null) =>
-        new(Select(Edge.MakeConstrainedArcsCenteredOn(tangencyOne, tangencyTwo, centerOn, sagitta), selector));
+        new(Select(CurveObjects.Solved("arcs", () => Edge.MakeConstrainedArcsCenteredOn(tangencyOne, tangencyTwo, centerOn, sagitta)), selector));
 
     internal static Curve Select(ShapeList<Edge> edges, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector)
     {
@@ -435,19 +503,19 @@ public class ConstrainedLines : BaseCurveObject
 {
     /// <summary>The lines tangent to two curves, or to a curve and through a point.</summary>
     public ConstrainedLines(Tangent tangencyOne, Tangent tangencyTwo, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null)
-        : base(ConstrainedArcs.Select(Edge.MakeConstrainedLines(tangencyOne, tangencyTwo), selector))
+        : base(ConstrainedArcs.Select(CurveObjects.Solved("lines", () => Edge.MakeConstrainedLines(tangencyOne, tangencyTwo)), selector))
     {
     }
 
     /// <summary>The lines tangent to a curve at <paramref name="angle"/> degrees from a reference axis.</summary>
     public ConstrainedLines(Tangent tangencyOne, Axis reference, double angle, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null)
-        : base(ConstrainedArcs.Select(Edge.MakeConstrainedLines(tangencyOne, reference, angle), selector))
+        : base(ConstrainedArcs.Select(CurveObjects.Solved("lines", () => Edge.MakeConstrainedLines(tangencyOne, reference, angle)), selector))
     {
     }
 
     /// <summary>The lines tangent to a curve in a direction (its X and Y) measured from a reference axis.</summary>
     public ConstrainedLines(Tangent tangencyOne, Axis reference, Vector3D direction, Func<ShapeList<Edge>, IEnumerable<Edge>>? selector = null)
-        : base(ConstrainedArcs.Select(Edge.MakeConstrainedLines(tangencyOne, reference, direction), selector))
+        : base(ConstrainedArcs.Select(CurveObjects.Solved("lines", () => Edge.MakeConstrainedLines(tangencyOne, reference, direction)), selector))
     {
     }
 }
@@ -459,8 +527,12 @@ public class ConstrainedLines : BaseCurveObject
 public class DoubleTangentArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="point"/> along <paramref name="tangent"/>, tangent to <paramref name="other"/>.</summary>
-    /// <exception cref="ArgumentException">The keep isn't Top or Bottom, or the objects aren't in one plane.</exception>
-    /// <exception cref="InvalidOperationException">No arc was found.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="other"/> is null.</exception>
+    /// <exception cref="ArgumentException">The keep isn't Top or Bottom.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: the objects aren't in one plane, or no arc was found; or the arc
+    /// couldn't be made (<see cref="Operations.MakeDoubleTangentArc"/> gives the same as a result).
+    /// </exception>
     public DoubleTangentArc(Point3D point, Vector3D tangent, IShape1D other, Keep keep = Keep.Top)
         : base(Make(point, tangent, other, keep))
     {
@@ -468,11 +540,17 @@ public class DoubleTangentArc : BaseEdgeObject
 
     private static Edge Make(Point3D arcPoint, Vector3D tangent, IShape1D other, Keep keep)
     {
+        ArgumentNullException.ThrowIfNull(other);
         if (keep is not (Keep.Top or Keep.Bottom))
             throw new ArgumentException($"Only the TOP or BOTTOM options are supported not {keep}");
+        return Failures.Building(() => "double tangent arc", () => Build(arcPoint, tangent, other, keep));
+    }
+
+    private static Edge Build(Point3D arcPoint, Vector3D tangent, IShape1D other, Keep keep)
+    {
         var arcTangent = tangent.Normalized();
         var coplane = Edge.MakeLine(arcPoint, arcPoint + arcTangent).CommonPlane(other.Edges().Select(e => (IShape1D?)e))
-                      ?? throw new ArgumentException("DoubleTangentArc only works on a single plane");
+                      ?? throw Failures.Expected(ModelingDiagnostics.NoSolution, "DoubleTangentArc only works on a single plane");
         var workplane = -coplane;   // flipped to help with TOP/BOTTOM
         var rotationAxis = new Axis(new Point3D(0, 0, 0), workplane.ZDir);
         // Protect against massive circles that are effectively straight lines
@@ -497,7 +575,7 @@ public class DoubleTangentArc : BaseEdgeObject
                 centers.Add(center);
         }
         if (centers.Count == 0)
-            throw new InvalidOperationException("No double tangent arcs found");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, "No double tangent arcs found");
 
         // If there are several solutions, the one wanted
         var chosen = keep == Keep.Top ? centers[0] : centers[^1];
@@ -512,15 +590,20 @@ public class EllipticalCenterArc : BaseEdgeObject
     /// <summary>An arc from <paramref name="startAngle"/> over <paramref name="arcSize"/> degrees (negative for clockwise), rotated by <paramref name="rotation"/>.</summary>
     public EllipticalCenterArc(Point3D center, double xRadius, double yRadius, double startAngle = 0.0, double arcSize = 90.0,
                                double rotation = 0.0)
-        : base(Edge.MakeEllipse(xRadius, yRadius, startAngle: startAngle, endAngle: startAngle + arcSize,
-                                angularDirection: CurveObjects.DirectionOf(arcSize)).Rotate(Axis.Z, rotation).Translate(center.ToVector()))
+        : base(Failures.Building(() => "elliptical arc", () => Edge.MakeEllipse(xRadius, yRadius, startAngle: startAngle, endAngle: startAngle + arcSize,
+                                                                              angularDirection: CurveObjects.DirectionOf(arcSize))
+                                                                 .Rotate(Axis.Z, rotation).Translate(center.ToVector())))
     {
     }
 
     /// <summary>An arc from <paramref name="startAngle"/> to its first intersection with <paramref name="arcLimit"/>, whichever way round is shorter.</summary>
-    /// <exception cref="ArgumentException">Neither way round meets the limit.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.LimitNotReached"/>: neither way round meets the limit; or the arc couldn't be made
+    /// (<see cref="Operations.MakeEllipticalCenterArc(Point3D, double, double, double, CurveLimit, double)"/> gives the same
+    /// as a result).
+    /// </exception>
     public EllipticalCenterArc(Point3D center, double xRadius, double yRadius, double startAngle, CurveLimit arcLimit, double rotation = 0.0)
-        : base(Make(center, xRadius, yRadius, startAngle, arcLimit, rotation))
+        : base(Failures.Building(() => "elliptical arc", () => Make(center, xRadius, yRadius, startAngle, arcLimit, rotation)))
     {
     }
 
@@ -530,7 +613,7 @@ public class EllipticalCenterArc : BaseEdgeObject
         var curve = Edge.MakeEllipse(xRadius, yRadius, startAngle: startAngle, endAngle: startAngle + 360.0)
             .Rotate(Axis.Z, rotation).Translate(center.ToVector());
         return CurveObjects.ShortestTrimmed(limit, curve, curve.Reversed(reconstruct: true))
-               ?? throw new ArgumentException($"EllipticalCenterArc doesn't intersect arc limit {limit}");
+               ?? throw CurveObjects.NotReached($"EllipticalCenterArc doesn't intersect arc limit {limit}");
     }
 }
 
@@ -554,6 +637,14 @@ public class EllipticalStartArc : BaseEdgeObject
 
     private static Edge Make(Point3D startPoint, Vector3D startTangent, double xRadius, double yRadius, double arcSize, double? startAngle,
                              Vector3D? majorAxisDir)
+    {
+        if (startAngle is null && majorAxisDir is null)
+            throw new ArgumentException("Give a start angle or a major axis direction.");
+        return Failures.Building(() => "elliptical arc", () => Build(startPoint, startTangent, xRadius, yRadius, arcSize, startAngle, majorAxisDir));
+    }
+
+    private static Edge Build(Point3D startPoint, Vector3D startTangent, double xRadius, double yRadius, double arcSize, double? startAngle,
+                              Vector3D? majorAxisDir)
     {
         static Vector3D ProjectToPlane(Vector3D v, Vector3D n)
         {
@@ -600,24 +691,32 @@ public class ParabolicCenterArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="startAngle"/> over <paramref name="arcSize"/> degrees (negative for clockwise), rotated by <paramref name="rotation"/>.</summary>
     public ParabolicCenterArc(Point3D vertex, double focalLength, double startAngle = 0.0, double arcSize = 90.0, double rotation = 0.0)
-        : base(Edge.MakeParabola(focalLength, startAngle: startAngle, endAngle: startAngle + arcSize,
-                                 angularDirection: CurveObjects.DirectionOf(arcSize)).Rotate(Axis.Z, rotation).Translate(vertex.ToVector()))
+        : base(Failures.Building(() => "arc of parabola", () => Edge.MakeParabola(focalLength, startAngle: startAngle, endAngle: startAngle + arcSize,
+                                                                                angularDirection: CurveObjects.DirectionOf(arcSize))
+                                                                   .Rotate(Axis.Z, rotation).Translate(vertex.ToVector())))
     {
     }
 
     /// <summary>An arc from <paramref name="startAngle"/> to where it first meets <paramref name="arcLimit"/>, whichever way is shorter.</summary>
-    /// <exception cref="ArgumentException">Neither way meets the limit.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.LimitNotReached"/>: neither way meets the limit; or the arc couldn't be made
+    /// (<see cref="Operations.MakeParabolicCenterArc(Point3D, double, double, CurveLimit, double)"/> gives the same as a
+    /// result).
+    /// </exception>
     public ParabolicCenterArc(Point3D vertex, double focalLength, double startAngle, CurveLimit arcLimit, double rotation = 0.0)
-        : base(CurveObjects.OpenConicToLimit(
-                   (from, to) => Edge.MakeParabola(focalLength, startAngle: from, endAngle: to,
-                                                   angularDirection: to >= from ? AngularDirection.CounterClockwise : AngularDirection.Clockwise)
-                       .Rotate(Axis.Z, rotation).Translate(vertex.ToVector()),
-                   // The angle is the distance along the directrix, so a point of the parabola is at least that far from the vertex
-                   reach => (-reach * Constants.RadToDeg, reach * Constants.RadToDeg),
-                   vertex, focalLength, startAngle, arcLimit)
-               ?? throw new ArgumentException($"ParabolicCenterArc doesn't intersect arc limit {arcLimit}"))
+        : base(Failures.Building(() => "arc of parabola", () => Make(vertex, focalLength, startAngle, arcLimit, rotation)))
     {
     }
+
+    private static Edge Make(Point3D vertex, double focalLength, double startAngle, CurveLimit arcLimit, double rotation) =>
+        CurveObjects.OpenConicToLimit(
+            (from, to) => Edge.MakeParabola(focalLength, startAngle: from, endAngle: to,
+                                            angularDirection: to >= from ? AngularDirection.CounterClockwise : AngularDirection.Clockwise)
+                .Rotate(Axis.Z, rotation).Translate(vertex.ToVector()),
+            // The angle is the distance along the directrix, so a point of the parabola is at least that far from the vertex
+            reach => (-reach * Constants.RadToDeg, reach * Constants.RadToDeg),
+            vertex, focalLength, startAngle, arcLimit)
+        ?? throw CurveObjects.NotReached($"ParabolicCenterArc doesn't intersect arc limit {arcLimit}");
 }
 
 /// <summary>A hyperbolic arc of a centre and x and y radii, over an angular size or to a limit, optionally rotated.</summary>
@@ -626,15 +725,20 @@ public class HyperbolicCenterArc : BaseEdgeObject
     /// <summary>An arc from <paramref name="startAngle"/> over <paramref name="arcSize"/> degrees (negative for clockwise), rotated by <paramref name="rotation"/>.</summary>
     public HyperbolicCenterArc(Point3D center, double xRadius, double yRadius, double startAngle = 0.0, double arcSize = 90.0,
                                double rotation = 0.0)
-        : base(Edge.MakeHyperbola(xRadius, yRadius, startAngle: startAngle, endAngle: startAngle + arcSize,
-                                  angularDirection: CurveObjects.DirectionOf(arcSize)).Rotate(Axis.Z, rotation).Translate(center.ToVector()))
+        : base(Failures.Building(() => "arc of hyperbola", () => Edge.MakeHyperbola(xRadius, yRadius, startAngle: startAngle, endAngle: startAngle + arcSize,
+                                                                                  angularDirection: CurveObjects.DirectionOf(arcSize))
+                                                                    .Rotate(Axis.Z, rotation).Translate(center.ToVector())))
     {
     }
 
     /// <summary>An arc from <paramref name="startAngle"/> to where it first meets <paramref name="arcLimit"/>, whichever way is shorter.</summary>
-    /// <exception cref="ArgumentException">Neither way meets the limit.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.LimitNotReached"/>: neither way meets the limit; or the arc couldn't be made
+    /// (<see cref="Operations.MakeHyperbolicCenterArc(Point3D, double, double, double, CurveLimit, double)"/> gives the same
+    /// as a result).
+    /// </exception>
     public HyperbolicCenterArc(Point3D center, double xRadius, double yRadius, double startAngle, CurveLimit arcLimit, double rotation = 0.0)
-        : base(Make(center, xRadius, yRadius, startAngle, arcLimit, rotation))
+        : base(Failures.Building(() => "arc of hyperbola", () => Make(center, xRadius, yRadius, startAngle, arcLimit, rotation)))
     {
     }
 
@@ -655,7 +759,7 @@ public class HyperbolicCenterArc : BaseEdgeObject
         }
 
         return CurveObjects.OpenConicToLimit(Hyperbola, Within, center, xRadius + yRadius, startAngle, limit)
-               ?? throw new ArgumentException($"HyperbolicCenterArc doesn't intersect arc limit {limit}");
+               ?? throw CurveObjects.NotReached($"HyperbolicCenterArc doesn't intersect arc limit {limit}");
     }
 }
 
@@ -668,7 +772,8 @@ public class Helix : BaseEdgeObject
     /// <summary>A helix about <paramref name="direction"/> through <paramref name="center"/>.</summary>
     public Helix(double pitch, double height, double radius, Point3D? center = null, Vector3D? direction = null, double coneAngle = 0,
                  bool leftHanded = false)
-        : base(Edge.MakeHelix(pitch, height, radius, center ?? new Point3D(0, 0, 0), direction ?? new Vector3D(0, 0, 1), coneAngle, leftHanded))
+        : base(Failures.Building(() => "helix", () => Edge.MakeHelix(pitch, height, radius, center ?? new Point3D(0, 0, 0), direction ?? new Vector3D(0, 0, 1),
+                                                                       coneAngle, leftHanded)))
     {
     }
 }
@@ -696,7 +801,7 @@ public class FilletPolyline : BaseLineObject
     private static Wire Make(List<Point3D> points, List<double>? radii, double radius, bool close)
     {
         // Polylines closed by the user
-        if ((points[0] - points[^1]).Magnitude < Constants.Tolerance)
+        if (points.Count > 0 && (points[0] - points[^1]).Magnitude < Constants.Tolerance)
         {
             close = true;
             points.RemoveAt(points.Count - 1);
@@ -712,6 +817,14 @@ public class FilletPolyline : BaseLineObject
         foreach (var r in radii)
             if (r < 0)
                 throw new ArgumentException($"radius {r} must be non-negative");
+        return Failures.Building(() => "fillet polyline", () => Build(points, radii, close, openEnds));
+    }
+
+    private static Wire Build(List<Point3D> points, List<double> radii, bool close, int openEnds)
+    {
+        // A closed polyline of two points goes there and back: it has no corner to fillet
+        if (close && points.Count < 3)
+            throw Failures.Expected(ModelingDiagnostics.ObjectFailed, "A closed FilletPolyline needs three or more distinct points.");
 
         // The polyline
         var edges = Enumerable.Range(0, points.Count - 1).Select(i => Edge.MakeLine(points[i], points[i + 1])).ToList();
@@ -789,14 +902,17 @@ public class JernArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="start"/> along <paramref name="tangent"/> over <paramref name="arcSize"/> degrees (negative to turn the other way).</summary>
     public JernArc(Point3D start, Vector3D tangent, double radius, double arcSize)
-        : this(start, Make(start, tangent, radius, arcSize, null))
+        : this(start, Failures.Building(() => "arc", () => Make(start, tangent, radius, arcSize, null)))
     {
     }
 
     /// <summary>An arc from <paramref name="start"/> along <paramref name="tangent"/> to its first intersection with <paramref name="arcLimit"/>, whichever way is shorter.</summary>
-    /// <exception cref="ArgumentException">Neither way meets the limit.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.LimitNotReached"/>: neither way meets the limit; or the arc couldn't be made
+    /// (<see cref="Operations.MakeJernArc(Point3D, Vector3D, double, CurveLimit)"/> gives the same as a result).
+    /// </exception>
     public JernArc(Point3D start, Vector3D tangent, double radius, CurveLimit arcLimit)
-        : this(start, Make(start, tangent, radius, 360, arcLimit))
+        : this(start, Failures.Building(() => "arc", () => Make(start, tangent, radius, 360, arcLimit)))
     {
     }
 
@@ -842,7 +958,7 @@ public class JernArc : BaseEdgeObject
         var arc2 = Edge.MakeCircle(radius, new Plane(centerPoint2, start - centerPoint2, arcNormal));
         if (arc2.TangentAt(0).Dot(startTangent) < 0)
             arc2 = arc2.Reversed(reconstruct: true);
-        return CurveObjects.ShortestTrimmed(l, arc, arc2) ?? throw new ArgumentException($"JernArc doesn't intersect arc limit {l}");
+        return CurveObjects.ShortestTrimmed(l, arc, arc2) ?? throw CurveObjects.NotReached($"JernArc doesn't intersect arc limit {l}");
     }
 }
 
@@ -850,7 +966,7 @@ public class JernArc : BaseEdgeObject
 public class Line : BaseEdgeObject
 {
     /// <summary>A line from <paramref name="start"/> to <paramref name="end"/>.</summary>
-    public Line(Point3D start, Point3D end) : base(Edge.MakeLine(start, end)) { }
+    public Line(Point3D start, Point3D end) : base(Failures.Building(() => "line", () => Edge.MakeLine(start, end))) { }
 
     /// <summary>A line between two points.</summary>
     /// <exception cref="ArgumentException">Not exactly two points.</exception>
@@ -869,9 +985,12 @@ public class Line : BaseEdgeObject
 public class IntersectingLine : BaseEdgeObject
 {
     /// <summary>A line from <paramref name="start"/> along <paramref name="direction"/> to the nearest intersection with <paramref name="other"/>.</summary>
-    /// <exception cref="ArgumentException">The line doesn't meet the other curve.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.LimitNotReached"/>: the line doesn't meet the other curve; or the line couldn't be
+    /// made (<see cref="Operations.MakeIntersectingLine"/> gives the same as a result).
+    /// </exception>
     public IntersectingLine(Point3D start, Vector3D direction, Shape other)
-        : base(Make(start, direction, other))
+        : base(Failures.Building(() => "line", () => Make(start, direction, other)))
     {
     }
 
@@ -881,7 +1000,7 @@ public class IntersectingLine : BaseEdgeObject
         var axis = new Axis(start, direction);
         var points = other.Edges().SelectMany(e => e.FindIntersectionPoints(axis)).ToList();
         if (points.Count == 0)
-            throw new ArgumentException("No intersections found");
+            throw CurveObjects.NotReached("No intersections found");
         var length = points.Min(p => (start - p.Point).Magnitude);
         return Edge.MakeLine(start, start + direction * length);
     }
@@ -901,7 +1020,11 @@ public class PolarLine : BaseEdgeObject
     }
 
     /// <summary>A line at <paramref name="angle"/> degrees from the X axis or along <paramref name="direction"/> to where it meets <paramref name="lengthLimit"/>.</summary>
-    /// <exception cref="ArgumentException">Neither the angle nor the direction is given, or the line doesn't meet the limit.</exception>
+    /// <exception cref="ArgumentException">Neither the angle nor the direction is given.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.LimitNotReached"/>: the line doesn't meet the limit; or the line couldn't be made
+    /// (<see cref="Operations.MakePolarLine(Point3D, CurveLimit, double?, Vector3D?)"/> gives the same as a result).
+    /// </exception>
     public PolarLine(Point3D start, CurveLimit lengthLimit, double? angle = null, Vector3D? direction = null)
         : base(Make(start, lengthLimit, angle, direction))
     {
@@ -921,6 +1044,13 @@ public class PolarLine : BaseEdgeObject
 
     private static Edge Make(Point3D start, double length, double? angle, Vector3D? direction, LengthMode lengthMode)
     {
+        if (angle is null && direction is null)
+            throw new ArgumentException("Give an angle or a direction.");
+        return Failures.Building(() => "line", () => Build(start, length, angle, direction, lengthMode));
+    }
+
+    private static Edge Build(Point3D start, double length, double? angle, Vector3D? direction, LengthMode lengthMode)
+    {
         var (dir, a) = Direction(angle, direction);
         var lengthVector = lengthMode switch
         {
@@ -933,12 +1063,19 @@ public class PolarLine : BaseEdgeObject
 
     private static Edge Make(Point3D start, CurveLimit limit, double? angle, Vector3D? direction)
     {
+        if (angle is null && direction is null)
+            throw new ArgumentException("Give an angle or a direction.");
+        return Failures.Building(() => "line", () => Build(start, limit, angle, direction));
+    }
+
+    private static Edge Build(Point3D start, CurveLimit limit, double? angle, Vector3D? direction)
+    {
         var (dir, _) = Direction(angle, direction);
         if (limit.Target is Shape shape)
         {
             var maxLength = shape.Bounds().Including(start).Diagonal;
             var trimmed = Edge.MakeLine(start, start + dir * maxLength).TrimToOther(shape);
-            return trimmed.IsEmpty ? throw new ArgumentException($"Polar line doesn't intersect length limit {limit}") : trimmed;
+            return trimmed.IsEmpty ? throw CurveObjects.NotReached($"Polar line doesn't intersect length limit {limit}") : trimmed;
         }
         var polarAxis = new Axis(start, dir);
         IGeometry? contact = limit.Target switch
@@ -951,7 +1088,7 @@ public class PolarLine : BaseEdgeObject
         // A contact point that isn't behind the start
         if (contact is Point3D point && (point - start).Dot(dir) > Constants.Tolerance)
             return Edge.MakeLine(start, point);
-        throw new ArgumentException($"Polar line doesn't intersect length limit {limit}");
+        throw CurveObjects.NotReached($"Polar line doesn't intersect length limit {limit}");
     }
 }
 
@@ -969,6 +1106,11 @@ public class Polyline : BaseLineObject
     {
         if (points.Count < 2)
             throw new ArgumentException("Polyline requires two or more pts");
+        return Failures.Building(() => "polyline", () => Build(points, close));
+    }
+
+    private static Wire Build(List<Point3D> points, bool close)
+    {
         var edges = Enumerable.Range(0, points.Count - 1).Select(i => Edge.MakeLine(points[i], points[i + 1])).ToList();
         if (close && (edges[0].PositionAt(0) - edges[^1].PositionAt(1)).Magnitude > 1e-5)
             edges.Add(Edge.MakeLine(edges[^1].PositionAt(1), edges[0].PositionAt(0)));
@@ -983,9 +1125,12 @@ public class Polyline : BaseLineObject
 public class RadiusArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="startPoint"/> to <paramref name="endPoint"/> of <paramref name="radius"/>.</summary>
-    /// <exception cref="ArgumentException">The radius is too small to reach the end point.</exception>
+    /// <exception cref="ModelingException">
+    /// <see cref="ModelingDiagnostics.NoSolution"/>: the radius is too small to reach the end point; or the arc couldn't
+    /// be made (<see cref="Operations.MakeRadiusArc"/> gives the same as a result).
+    /// </exception>
     public RadiusArc(Point3D startPoint, Point3D endPoint, double radius, bool shortSagitta = true)
-        : base(Make(startPoint, endPoint, radius, shortSagitta))
+        : base(Failures.Building(() => "arc", () => Make(startPoint, endPoint, radius, shortSagitta)))
     {
     }
 
@@ -994,7 +1139,7 @@ public class RadiusArc : BaseEdgeObject
         var length = (end - start).Magnitude / 2.0;
         var root = radius * radius - length * length;
         if (root < 0)
-            throw new ArgumentException("Arc radius is not large enough to reach the end point.");
+            throw Failures.Expected(ModelingDiagnostics.NoSolution, "Arc radius is not large enough to reach the end point.");
         var sagitta = shortSagitta ? Math.Abs(radius) - Math.Sqrt(root) : -Math.Abs(radius) - Math.Sqrt(root);
         return new SagittaArc(start, end, radius > 0 ? sagitta : -sagitta);
     }
@@ -1005,7 +1150,7 @@ public class SagittaArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="startPoint"/> to <paramref name="endPoint"/> of <paramref name="sagitta"/>.</summary>
     public SagittaArc(Point3D startPoint, Point3D endPoint, double sagitta)
-        : base(Make(startPoint, endPoint, sagitta))
+        : base(Failures.Building(() => "arc", () => Make(startPoint, endPoint, sagitta)))
     {
     }
 
@@ -1035,6 +1180,17 @@ public class Spline : BaseEdgeObject
 
     private static Edge Make(List<Point3D> points, List<Vector3D>? tangents, List<double>? scalars, bool periodic)
     {
+        // The kernel's checks of the counts, made before building, so they stay argument errors (decision 2008)
+        if (points.Count < 2)
+            throw new ArgumentException("Interpolation needs at least two points.", nameof(points));
+        if (tangents is { Count: > 0 } && !(tangents.Count == 2 && points.Count != 2) && tangents.Count != points.Count)
+            throw new ArgumentException("There must be one tangent for each interpolation point, or just two end point tangents. "
+                                        + $"Tangent count: {tangents.Count}, point count: {points.Count}");
+        return Failures.Building(() => "spline", () => Build(points, tangents, scalars, periodic));
+    }
+
+    private static Edge Build(List<Point3D> points, List<Vector3D>? tangents, List<double>? scalars, bool periodic)
+    {
         var unitTangents = tangents is { Count: > 0 } ? tangents.Select(t => t.Normalized()).ToList() : null;
         var tangentScalars = tangents is not null && scalars is null ? [.. Enumerable.Repeat(1.0, tangents.Count)] : scalars ?? [];
         List<Vector3D?>? scaled = unitTangents is null ? null : [.. unitTangents.Zip(tangentScalars, (t, s) => (Vector3D?)(t * s))];
@@ -1047,7 +1203,8 @@ public class TangentArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="start"/> to <paramref name="end"/> along <paramref name="tangent"/> at the first point, or at the last.</summary>
     public TangentArc(Point3D start, Point3D end, Vector3D tangent, bool tangentFromFirst = true)
-        : base(tangentFromFirst ? Edge.MakeTangentArc(start, tangent.Normalized(), end) : Edge.MakeTangentArc(end, tangent.Normalized(), start))
+        : base(Failures.Building(() => "tangent arc",
+                                 () => tangentFromFirst ? Edge.MakeTangentArc(start, tangent.Normalized(), end) : Edge.MakeTangentArc(end, tangent.Normalized(), start)))
     {
     }
 
@@ -1075,7 +1232,7 @@ public class ThreePointArc : BaseEdgeObject
 {
     /// <summary>An arc from <paramref name="point1"/> through <paramref name="point2"/> to <paramref name="point3"/>.</summary>
     public ThreePointArc(Point3D point1, Point3D point2, Point3D point3)
-        : base(Edge.MakeThreePointArc(point1, point2, point3))
+        : base(Failures.Building(() => "three-point arc", () => Edge.MakeThreePointArc(point1, point2, point3)))
     {
     }
 

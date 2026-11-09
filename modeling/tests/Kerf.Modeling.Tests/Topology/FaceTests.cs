@@ -824,7 +824,7 @@ public class FaceTests
         ]);
         var l1 = Edge.MakeLine(s1.PositionAt(1), s1.PositionAt(0));
         // The spline overshoots the line, so the face isn't valid: Face.Make refuses it, and this path takes one anyway
-        Assert.Throws<InvalidOperationException>(() => Face.Make(Wire.Make([s1, l1])));
+        Assert.Throws<ModelingException>(() => Face.Make(Wire.Make([s1, l1])));
         Assert.Empty(TopoUtil.MakeFaceFromWires(Wire.Make([s1, l1]), checkResult: false).AxesOfSymmetry);
 
         // BuildLine + make_face
