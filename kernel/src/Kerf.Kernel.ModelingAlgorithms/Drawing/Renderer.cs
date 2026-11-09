@@ -838,7 +838,13 @@ public static class Renderer
             {
                 double py = y + 0.5;
                 int row = (y - y0) * _width;
-                for (int x = xMin; x <= xMax; x++)
+                int xFrom = xMin;
+                if (_vectors && fragments is null)
+                {
+                    xFrom = SegmentRow(xMin, xMax, py, row, ax, ay, dx, dy, l2, r2, da, db, packed, color, depth);
+                }
+
+                for (int x = xFrom; x <= xMax; x++)
                 {
                     double px = x + 0.5;
                     double t = l2 > 0 ? Math.Clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1) : 0;
@@ -863,6 +869,51 @@ public static class Renderer
                     }
                 }
             }
+        }
+
+        // The first pixels of a row of an edge's segment drawn over the faces, four at a time, as Segment does them one at
+        // a time (each lane its operations in order, Math.Clamp's comparisons kept); returns the first pixel left.
+        private int SegmentRow(int xFrom, int xTo, double py, int row, double ax, double ay, double dx, double dy, double l2, double r2,
+                               double da, double db, uint packed, uint[] color, float[] depth)
+        {
+            Vector256<double> vax = Vector256.Create(ax), vay = Vector256.Create(ay), vdx = Vector256.Create(dx), vdy = Vector256.Create(dy);
+            Vector256<double> vpy = Vector256.Create(py), vl2 = Vector256.Create(l2), vr2 = Vector256.Create(r2), half = Vector256.Create(0.5);
+            Vector256<double> vda = Vector256.Create(da), depthStep = Vector256.Create(db - da), bias = Vector256.Create(_depthBias);
+            Vector256<double> zero = Vector256<double>.Zero, one = Vector256<double>.One, lanes = Vector256.Create(0.0, 1.0, 2.0, 3.0);
+            Vector128<uint> edge = Vector128.Create(packed);
+            int x = xFrom;
+            for (; x + 3 <= xTo; x += 4)
+            {
+                Vector256<double> px = Vector256.Create((double)x) + lanes + half;
+                Vector256<double> t = zero;
+                if (l2 > 0)
+                {
+                    t = ((px - vax) * vdx + (vpy - vay) * vdy) / vl2;
+                    t = Vector256.ConditionalSelect(Vector256.LessThan(t, zero), zero, t);
+                    t = Vector256.ConditionalSelect(Vector256.GreaterThan(t, one), one, t);
+                }
+
+                Vector256<double> ex = vax + t * vdx - px, ey = vay + t * vdy - vpy;
+                Vector256<double> far = Vector256.GreaterThan(ex * ex + ey * ey, vr2);
+                if (far == Vector256<double>.AllBitsSet)
+                {
+                    continue;
+                }
+
+                Vector256<double> wide = vda + t * depthStep + bias;
+                Vector128<float> d = Vector256.Narrow(wide, wide).GetLower();
+                Vector128<int> farLanes = Vector256.Narrow(far.AsInt64(), far.AsInt64()).GetLower();
+                Vector128<float> over = Vector128.AndNot(Vector128.GreaterThanOrEqual(d, Vector128.Create((ReadOnlySpan<float>)depth.AsSpan(row + x, 4))), farLanes.AsSingle());
+                if (over == Vector128<float>.Zero)
+                {
+                    continue;
+                }
+
+                Span<uint> colors = color.AsSpan(row + x, 4);
+                Vector128.ConditionalSelect(over.AsUInt32(), edge, Vector128.Create((ReadOnlySpan<uint>)colors)).CopyTo(colors);
+            }
+
+            return x;
         }
 
         // Ambient light plus each light's diffuse light on the unit normal (towards the eye), times the colour
