@@ -31,7 +31,7 @@
 
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->
   <PropertyGroup>
-    <VersionPrefix>0.3.0</VersionPrefix>
+    <VersionPrefix>0.4.0</VersionPrefix>
     <Authors>Kerf contributors</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- LGPL 2.1 with the Open CASCADE exception, as OCCT itself; the SPDX expression isn't known to NuGet -->

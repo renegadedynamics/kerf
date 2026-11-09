@@ -5,6 +5,14 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+## 0.4.0
+
+- **Silent wrong answers found and fixed,** and failures that say why: a chamfer or fillet too large says what fits,
+  2D offsets are within 0.1% of the distance, and `ConvexPolyhedron` builds from any points whose hull has volume. New:
+  chamfers past tight corners, see-through parts in pictures, and `Operations.MakeConvexPolyhedron` giving a `Result`.
+- **A part built by many cuts and fuses is about a sixth quicker,** at 0.94 times build123d's time on native OCCT for
+  ordinary extrude-and-cut parts (the kernel's decisions 2000 and 2001).
+- **Breaking:** `Kind.Tangent` and `MeshTolerances.ControlAllSurfaces` have gone.
 - **`Chamfer` refuses a length past the tightest convex arc in a face beside its edges, saying what fits,** as `Fillet` does for a radius: "the most that fits is 1.7, the radius of the tightest convex arc in a face beside them", `modeling.chamfer-failed`, where it built a broken shape and failed with `result.invalid`. A chamfer by a length and an angle past it came back valid but wrong, and now fails (kernel decision 1985). **A chamfer that's built broken says it couldn't be built at that length**, after the faults (1986). **`MaxChamfer`**, beside `MaxFillet`, finds the largest length that builds, not trying past what the geometry allows (1987).
 - **Chamfer past tight corners:** `Chamfer(…, options: new ChamferOptions { TightCorners = TightCorners.Collapse })` chamfers a rounded prism's end, or a housing's, by more than its corners' radius, letting each corner collapse to a point, where it was refused and needed a hull or loft by hand (kernel decision 1988). Off by default; below the corners' radius it changes nothing. A Kerf addition: build123d has nothing like it.
 - **Pictures can show see-through parts:** give a `SceneItem` a colour with an opacity under 1 (kernel decision 1998).

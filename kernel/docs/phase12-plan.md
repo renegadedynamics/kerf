@@ -3,6 +3,9 @@
 > **Agreed, 7 November 2026** (decision 1893), from the outline the owner asked for. Section 1 is started. The next
 > release is 0.4.0, with no fixed date: when sections 1 to 3 are done and the corpus shows no new failures. Sections 4
 > and 5 ship with whatever is ready by then.
+>
+> **0.4.0 prepared, 9 November 2026** (decision 2002), for the owner to test and publish: units 12A to 12Y as their
+> rows say. 12F, 12G, 12J, 12Q and 12R carry on. Phase 12 stays open until the owner closes it.
 
 ## The goal
 
@@ -87,6 +90,7 @@ Fitted around the rest.
 - General-surface fillets and replacing ChFi3d, as above.
 - Coverage of generated STEP entities.
 - Bento's caching (11F), which is the owner's with another agent.
+- DXF export and text (fonts, `Text`, notes and title blocks in drawings): 0.5.0 (decision 2004).
 
 ## How the work runs
 
