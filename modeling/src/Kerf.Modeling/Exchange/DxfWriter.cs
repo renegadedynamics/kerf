@@ -22,7 +22,16 @@ internal sealed record DxfEllipse(string Layer, Point2D Center, Vector2D MajorAx
 internal sealed record DxfSpline(string Layer, int Degree, ImmutableArray<double> Knots, ImmutableArray<Point2D> ControlPoints,
                                  ImmutableArray<double> Weights) : DxfEntity(Layer);
 
-internal sealed record DxfPolyline(string Layer, ImmutableArray<Point2D> Points) : DxfEntity(Layer);
+// Closed: the last point joins the first, which isn't repeated
+internal sealed record DxfPolyline(string Layer, ImmutableArray<Point2D> Points, bool Closed = false) : DxfEntity(Layer);
+
+// A line of text: its insertion point on the baseline (where the alignment, 0 left, 1 centre, 2 right, puts it), its
+// height (the capitals'), its rotation in degrees and its style; and the extent of its note's outlines
+internal sealed record DxfText(string Layer, string Text, Point2D Anchor, double Height, double Rotation, int Alignment, DxfTextStyle Style,
+                               Point2D Min, Point2D Max) : DxfEntity(Layer);
+
+// A text style: its table name, the font's file and family, and whether it is bold or italic
+internal sealed record DxfTextStyle(string Name, string FontFile, string Family, bool Bold, bool Italic);
 
 /// <summary>2D curves as DXF entities, as build123d's ExportDXF converts edges, exactly where the version can.</summary>
 internal sealed class CurveConverter(DxfVersion version, double tolerance)
@@ -221,6 +230,8 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
     internal static byte[] Encode(string text, DxfVersion version)
         => version == DxfVersion.R12 ? Encoding.ASCII.GetBytes(text) : new UTF8Encoding(false).GetBytes(text);
 
+    private readonly List<DxfTextStyle> _styles = [.. entities.OfType<DxfText>().Select(t => t.Style).Distinct()];
+
     public string Write()
     {
         var lineTypes = layers.Where(l => l.LineType is { } t && t != LineType.Continuous)
@@ -278,17 +289,17 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
 
         EndTable();
 
-        Table("STYLE", 1);
+        Table("STYLE", 1 + _styles.Count);
         Pair(0, "STYLE");
         Pair(2, "STANDARD");
-        Pair(70, 0);
-        Pair(40, 0.0);
-        Pair(41, 1.0);
-        Pair(50, 0.0);
-        Pair(71, 0);
-        Pair(42, 2.5);
-        Pair(3, "txt");
-        Pair(4, "");
+        TextStyle("txt", 2.5);
+        foreach (DxfTextStyle style in _styles)
+        {
+            Pair(0, "STYLE");
+            Pair(2, style.Name);
+            TextStyle(style.FontFile, 2.5);
+        }
+
         EndTable();
         EndSection();
 
@@ -317,6 +328,7 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
         var lineTypeHandles = lineTypes.Select(_ => Handle()).ToList();
         var layerHandles = layers.Select(_ => Handle()).ToList();
         int standardStyle = Handle(), acadApp = Handle(), standardDimstyle = Handle();
+        var styleHandles = _styles.Select(_ => Handle()).ToList();
         var entityHandles = entities.Select(_ => Handle()).ToList();
         int seed = _nextHandle;
 
@@ -384,17 +396,23 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
 
         EndTable();
 
-        Table2013("STYLE", styleTable, 1);
+        Table2013("STYLE", styleTable, 1 + _styles.Count);
         Record("STYLE", standardStyle, styleTable, "AcDbTextStyleTableRecord");
         Pair(2, "Standard");
-        Pair(70, 0);
-        Pair(40, 0.0);
-        Pair(41, 1.0);
-        Pair(50, 0.0);
-        Pair(71, 0);
-        Pair(42, 2.5);
-        Pair(3, "txt");
-        Pair(4, "");
+        TextStyle("txt", 2.5);
+        for (int i = 0; i < _styles.Count; i++)
+        {
+            // A TrueType font as AutoCAD writes one: its file, and its family in ACAD's extended data, with the flags
+            // AutoCAD sets (ezdxf's 34, bold and italic)
+            DxfTextStyle style = _styles[i];
+            Record("STYLE", styleHandles[i], styleTable, "AcDbTextStyleTableRecord");
+            Pair(2, style.Name);
+            TextStyle(style.FontFile, 2.5);
+            Pair(1001, "ACAD");
+            Pair(1000, style.Family);
+            Pair(1071, 34 + (style.Italic ? 1 << 24 : 0) + (style.Bold ? 1 << 25 : 0));
+        }
+
         EndTable();
 
         Table2013("VIEW", viewTable, 0);
@@ -488,6 +506,18 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
         EndSection();
     }
 
+    private void TextStyle(string fontFile, double lastHeight)
+    {
+        Pair(70, 0);
+        Pair(40, 0.0);
+        Pair(41, 1.0);
+        Pair(50, 0.0);
+        Pair(71, 0);
+        Pair(42, lastHeight);
+        Pair(3, fontFile);
+        Pair(4, "");
+    }
+
     private void Entity(DxfEntity entity, int handle, int owner = 0)
     {
         switch (entity)
@@ -550,7 +580,7 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
                 Pair(8, entity.Layer);
                 Pair(66, 1);
                 Point(10, Point2D.Origin);
-                Pair(70, 0);
+                Pair(70, polyline.Closed ? 1 : 0);
                 foreach (Point2D p in polyline.Points)
                 {
                     Pair(0, "VERTEX");
@@ -564,11 +594,35 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
             case DxfPolyline polyline:
                 Start("LWPOLYLINE", entity, handle, owner, "AcDbPolyline");
                 Pair(90, polyline.Points.Length);
-                Pair(70, 0);
+                Pair(70, polyline.Closed ? 1 : 0);
                 foreach (Point2D p in polyline.Points)
                 {
                     Pair(10, p.X);
                     Pair(20, p.Y);
+                }
+
+                break;
+            case DxfText text:
+                Start("TEXT", entity, handle, owner, "AcDbText");
+                Point(10, text.Anchor);
+                Pair(40, text.Height);
+                Pair(1, text.Text);
+                if (text.Rotation != 0)
+                {
+                    Pair(50, text.Rotation);
+                }
+
+                Pair(7, text.Style.Name);
+                if (text.Alignment != 0)
+                {
+                    // The alignment point is the anchor; a reader works the insertion point out from it
+                    Pair(72, text.Alignment);
+                    Point(11, text.Anchor);
+                }
+
+                if (!_r12)
+                {
+                    Pair(100, "AcDbText");
                 }
 
                 break;
@@ -966,6 +1020,10 @@ internal sealed class DxfWriter(DxfVersion version, Unit unit, IReadOnlyList<Dxf
                         Add(p);
                     }
 
+                    break;
+                case DxfText text:
+                    Add(text.Min);
+                    Add(text.Max);
                     break;
             }
         }

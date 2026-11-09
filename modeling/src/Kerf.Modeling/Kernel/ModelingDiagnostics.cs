@@ -72,6 +72,10 @@ public static class ModelingDiagnostics
     /// <c>modeling.dxf-not-planar</c>.</summary>
     public static DiagnosticCode DxfNotPlanar { get; } = new("modeling.dxf-not-planar");
 
+    /// <summary>A warning from <see cref="ExportDxf"/>: notes to be written as text were written as outlines, as an R12
+    /// file's text is ASCII and theirs isn't: <c>modeling.dxf-text-as-outlines</c>.</summary>
+    public static DiagnosticCode DxfTextAsOutlines { get; } = new("modeling.dxf-text-as-outlines");
+
     /// <summary>
     /// What an operation made that isn't valid, from the exception a shorthand threw for it (<c>result.invalid</c>): the
     /// operators and constructors can't return a <see cref="Result{T}"/>, whose <c>TryGetInvalid</c> gives the same. To look at

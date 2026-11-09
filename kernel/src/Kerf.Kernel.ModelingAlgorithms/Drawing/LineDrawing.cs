@@ -96,7 +96,7 @@ public sealed record DrawnEdge(Curve2D Curve, LineKind Kind, bool IsVisible, Sha
 
 /// <summary>
 /// A line drawing: shapes projected by a <see cref="Camera"/>, as visible and hidden 2D edges (OCCT's hidden-line
-/// removal; docs/api/drawing.md). <see cref="Svg"/> writes one.
+/// removal; docs/api/drawing.md), and notes on it. <see cref="Svg"/> writes one.
 /// </summary>
 /// <remarks>The edges are in the engine's order: by kind (sharp, smooth, sewn, outline, isoline), visible before hidden,
 /// then by the shapes' faces and edges. The same shapes and options always give the same drawing.</remarks>
@@ -105,9 +105,17 @@ public sealed class LineDrawing
     /// <summary>A drawing of the given edges, as seen by the camera (for drawings made or completed by hand).</summary>
     /// <exception cref="ArgumentNullException">The camera or the edges are null, or an edge is.</exception>
     public LineDrawing(Camera camera, IEnumerable<DrawnEdge> edges)
+        : this(camera, edges, [])
+    {
+    }
+
+    /// <summary>A drawing of the given edges and notes, as seen by the camera.</summary>
+    /// <exception cref="ArgumentNullException">The camera, the edges or the notes are null, or an edge or a note is.</exception>
+    public LineDrawing(Camera camera, IEnumerable<DrawnEdge> edges, IEnumerable<DrawingNote> notes)
     {
         KernelArgumentNullException.ThrowIfNull(camera);
         KernelArgumentNullException.ThrowIfNull(edges);
+        KernelArgumentNullException.ThrowIfNull(notes);
         Camera = camera;
         Edges = [.. edges];
         foreach (DrawnEdge edge in Edges)
@@ -115,6 +123,15 @@ public sealed class LineDrawing
             if (edge is null)
             {
                 throw new KernelArgumentNullException(nameof(edges), "An edge is null.");
+            }
+        }
+
+        Notes = [.. notes];
+        foreach (DrawingNote note in Notes)
+        {
+            if (note is null)
+            {
+                throw new KernelArgumentNullException(nameof(notes), "A note is null.");
             }
         }
     }
@@ -125,6 +142,17 @@ public sealed class LineDrawing
     /// <summary>The edges, visible and hidden.</summary>
     public ImmutableArray<DrawnEdge> Edges { get; }
 
+    /// <summary>The notes: text on the drawing, in the view plane (<see cref="DrawingNote"/>).</summary>
+    public ImmutableArray<DrawingNote> Notes { get; }
+
+    /// <summary>This drawing with notes added after its own.</summary>
+    /// <exception cref="ArgumentNullException">The notes are null, or a note is.</exception>
+    public LineDrawing WithNotes(params IEnumerable<DrawingNote> notes)
+    {
+        KernelArgumentNullException.ThrowIfNull(notes);
+        return new LineDrawing(Camera, Edges, Notes.Concat(notes));
+    }
+
     /// <summary>The visible edges.</summary>
     public IEnumerable<DrawnEdge> Visible => Edges.Where(e => e.IsVisible);
 
@@ -134,11 +162,20 @@ public sealed class LineDrawing
     /// <summary>The edges of a kind, visible or hidden.</summary>
     public IEnumerable<DrawnEdge> Of(LineKind kind, bool visible) => Edges.Where(e => e.Kind == kind && e.IsVisible == visible);
 
-    /// <summary>The drawing's extent in the view plane, from points sampled on its edges; null for an empty drawing.</summary>
+    /// <summary>The drawing's extent in the view plane, from points sampled on its edges and its notes' outlines; null for
+    /// an empty drawing.</summary>
     /// <param name="includeHidden">Whether the hidden edges count.</param>
     public (Point2D Min, Point2D Max)? GetBounds(bool includeHidden = true)
     {
         double xMin = double.PositiveInfinity, yMin = double.PositiveInfinity, xMax = double.NegativeInfinity, yMax = double.NegativeInfinity;
+        foreach (DrawingNote note in Notes)
+        {
+            xMin = Math.Min(xMin, note.Bounds.Min.X);
+            yMin = Math.Min(yMin, note.Bounds.Min.Y);
+            xMax = Math.Max(xMax, note.Bounds.Max.X);
+            yMax = Math.Max(yMax, note.Bounds.Max.Y);
+        }
+
         foreach (DrawnEdge edge in Edges)
         {
             if (!edge.IsVisible && !includeHidden)
