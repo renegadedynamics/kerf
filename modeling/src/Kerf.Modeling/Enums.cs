@@ -223,14 +223,6 @@ public enum NumberDisplay
 #pragma warning restore CS1591
 }
 
-/// <summary>Standard paper sizes: ISO A and US.</summary>
-public enum PageSize
-{
-#pragma warning disable CS1591
-    A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, Letter, Legal, Ledger,
-#pragma warning restore CS1591
-}
-
 /// <summary>Position along a curve mode.</summary>
 public enum PositionMode
 {

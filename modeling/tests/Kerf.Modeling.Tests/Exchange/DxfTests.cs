@@ -559,6 +559,14 @@ public class DxfTests
             Assert.True(others.Write(Path.Combine(folder, "other_curves" + suffix + ".dxf")).IsSuccess);
             if (version == DxfVersion.R2013)
                 Assert.True(GuidePlate().Write(Path.Combine(folder, "guide_plate.dxf")).IsSuccess);
+            // Notes and a sheet (unit 13F2), as outlines and as text
+            LineDrawing sheet = DxfNotesTests.ExampleSheet().Draw().Value;
+            foreach (TextOutput text in new[] { TextOutput.Outlines, TextOutput.Text })
+            {
+                string mode = text == TextOutput.Text ? "_text" : "_outlines";
+                Assert.True(new ExportDxf(version, textOutput: text).AddDrawing(DxfNotesTests.Annotated()).Write(Path.Combine(folder, "notes" + mode + suffix + ".dxf")).IsSuccess);
+                Assert.True(new ExportDxf(version, textOutput: text).AddDrawing(sheet).Write(Path.Combine(folder, "sheet" + mode + suffix + ".dxf")).IsSuccess);
+            }
             Assert.True(new ExportDxf(version).WriteToString().Length > 0);
             Assert.True(new ExportDxf(version).Write(Path.Combine(folder, "empty" + suffix + ".dxf")).IsSuccess);
         }

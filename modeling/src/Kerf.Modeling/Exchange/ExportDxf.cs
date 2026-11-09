@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
+using System.Text;
 using Kerf.Drawing;
+using Kerf.Fonts;
 
 namespace Kerf.Modeling;
 
@@ -29,7 +31,9 @@ public sealed record DxfLayer(string Name, ColorIndex? Color, double? LineWeight
 /// model's units as they are, and <see cref="Unit"/> names them in the header.
 /// </para>
 /// <para>
-/// Text is written as its outlines: <c>Text</c>'s faces are shapes like any other.
+/// <c>Text</c>'s faces are shapes like any other, written as their edges. A drawing's notes (<see cref="DrawingNote"/>,
+/// <see cref="AddNotes"/>) are written as their outlines by default, each contour a closed polyline within
+/// <see cref="Tolerance"/>, or as TEXT with a text style for each font (<see cref="TextOutput"/>).
 /// </para>
 /// </remarks>
 public sealed class ExportDxf : Export2D
@@ -37,6 +41,7 @@ public sealed class ExportDxf : Export2D
     private readonly ImmutableList<DxfLayer> _layers;
     private readonly ImmutableList<DxfEntity> _entities;
     private readonly int _notPlanar;
+    private readonly int _asOutlines;
 
     /// <summary>An exporter with nothing in it but the default layer, <c>"0"</c>.</summary>
     /// <param name="version">The file's version: 2013 by default, as build123d; <see cref="DxfVersion.R12"/> for older
@@ -49,31 +54,38 @@ public sealed class ExportDxf : Export2D
     /// <param name="lineType">The default layer's line type; null for a solid line.</param>
     /// <param name="tolerance">How far a polyline written for a curve the version can't hold may be from the curve, in
     /// model units.</param>
-    /// <exception cref="ArgumentException">The unit isn't a length, the version isn't one of the enum's, the line weight
-    /// isn't a standard one, or the tolerance isn't more than zero.</exception>
+    /// <param name="textOutput">How notes are written: as their outlines (the default), or as text.</param>
+    /// <exception cref="ArgumentException">The unit isn't a length, the version or text output isn't one of the enum's,
+    /// the line weight isn't a standard one, or the tolerance isn't more than zero.</exception>
     public ExportDxf(DxfVersion version = DxfVersion.R2013, Unit unit = Unit.Millimeter, ColorIndex? color = null,
-                     double? lineWeight = null, LineType? lineType = null, double tolerance = 1e-3)
+                     double? lineWeight = null, LineType? lineType = null, double tolerance = 1e-3,
+                     TextOutput textOutput = TextOutput.Outlines)
     {
         if (version is not (DxfVersion.R12 or DxfVersion.R2013))
             throw new ArgumentException($"{version} isn't a DXF version Kerf writes.", nameof(version));
+        if (!Enum.IsDefined(textOutput))
+            throw new ArgumentException($"{textOutput} isn't a way of writing text.", nameof(textOutput));
         _ = LineTypeScale(unit);
         if (!(tolerance > 0) || double.IsInfinity(tolerance))
             throw new ArgumentException("The tolerance must be more than zero.", nameof(tolerance));
         Version = version;
         Unit = unit;
         Tolerance = tolerance;
+        TextOutput = textOutput;
         _layers = [Layer("0", color, lineWeight, lineType, nameof(lineWeight))];
         _entities = [];
     }
 
-    private ExportDxf(ExportDxf from, ImmutableList<DxfLayer> layers, ImmutableList<DxfEntity> entities, int notPlanar)
+    private ExportDxf(ExportDxf from, ImmutableList<DxfLayer> layers, ImmutableList<DxfEntity> entities, int notPlanar, int asOutlines = -1)
     {
         Version = from.Version;
         Unit = from.Unit;
         Tolerance = from.Tolerance;
+        TextOutput = from.TextOutput;
         _layers = layers;
         _entities = entities;
         _notPlanar = notPlanar;
+        _asOutlines = asOutlines < 0 ? from._asOutlines : asOutlines;
     }
 
     /// <summary>The file's version.</summary>
@@ -84,6 +96,9 @@ public sealed class ExportDxf : Export2D
 
     /// <summary>How far a polyline written for a curve may be from it, in model units.</summary>
     public double Tolerance { get; }
+
+    /// <summary>How notes are written: as their outlines, or as text.</summary>
+    public TextOutput TextOutput { get; }
 
     /// <summary>The layers, the default layer <c>"0"</c> first.</summary>
     public IReadOnlyList<DxfLayer> Layers => _layers;
@@ -151,8 +166,11 @@ public sealed class ExportDxf : Export2D
     /// <param name="visibleLayer">The visible lines' layer; added, solid and 0.35 mm wide, if there's none of that name.</param>
     /// <param name="hiddenLayer">The hidden lines' layer; added, grey, 0.18 mm wide and <see cref="LineType.Hidden2"/>, if
     /// there's none of that name; null to leave the hidden lines out.</param>
+    /// <param name="notesLayer">The notes' layer, added if there's none of that name and the drawing has notes; null to
+    /// leave the notes out.</param>
     /// <exception cref="ArgumentException">A layer name is invalid.</exception>
-    public ExportDxf AddDrawing(LineDrawing drawing, string visibleLayer = "visible", string? hiddenLayer = "hidden")
+    public ExportDxf AddDrawing(LineDrawing drawing, string visibleLayer = "visible", string? hiddenLayer = "hidden",
+                                string? notesLayer = "notes")
     {
         ArgumentNullException.ThrowIfNull(drawing);
         ArgumentNullException.ThrowIfNull(visibleLayer);
@@ -168,8 +186,94 @@ public sealed class ExportDxf : Export2D
             else if (hidden is not null)
                 converter.Add(edge.Curve, edge.Curve.FirstParameter, edge.Curve.LastParameter, false, hidden, entities);
         }
-        return new ExportDxf(this, layers, entities.ToImmutable(), _notPlanar);
+        int asOutlines = _asOutlines;
+        if (notesLayer is not null && !drawing.Notes.IsEmpty)
+        {
+            string notes = EnsureLayer(ref layers, notesLayer, null, null, null);
+            foreach (DrawingNote note in drawing.Notes)
+                AddNote(note, notes, entities, ref asOutlines);
+        }
+        return new ExportDxf(this, layers, entities.ToImmutable(), _notPlanar, asOutlines);
     }
+
+    /// <summary>This exporter with notes added on a layer, as outlines or text (<see cref="TextOutput"/>), in the view
+    /// plane's coordinates as they are.</summary>
+    /// <param name="notes">The notes, from <see cref="DrawingNote.Make"/>.</param>
+    /// <param name="layer">The layer's name; empty for the default layer, <c>"0"</c>.</param>
+    /// <exception cref="ArgumentException">There is no layer of that name: add it first with <see cref="AddLayer"/>.</exception>
+    public ExportDxf AddNotes(IEnumerable<DrawingNote> notes, string layer = "")
+    {
+        ArgumentNullException.ThrowIfNull(notes);
+        string name = LayerName(layer);
+        var entities = _entities.ToBuilder();
+        int asOutlines = _asOutlines;
+        foreach (DrawingNote note in notes)
+        {
+            if (note is null)
+                throw new ArgumentNullException(nameof(notes), "A note is null.");
+            AddNote(note, name, entities, ref asOutlines);
+        }
+        return new ExportDxf(this, _layers, entities.ToImmutable(), _notPlanar, asOutlines);
+    }
+
+    // A note as TEXT, a line each, or as closed polylines, a contour each; an R12 file's text is ASCII, so a note that
+    // isn't is written as its outlines there
+    private void AddNote(DrawingNote note, string layer, ImmutableList<DxfEntity>.Builder entities, ref int asOutlines)
+    {
+        if (TextOutput == TextOutput.Text)
+        {
+            if (Version != DxfVersion.R12 || note.Lines.All(l => l.Text.All(c => c is >= ' ' and <= '~')))
+            {
+                DxfTextStyle style = StyleOf(note.Style.Font);
+                double rotation = note.Style.Rotation % 360;
+                if (rotation < 0)
+                    rotation += 360;
+                int alignment = note.Style.Horizontal switch { TextAlign.Center => 1, TextAlign.Right => 2, _ => 0 };
+                foreach (NoteLine line in note.Lines)
+                {
+                    entities.Add(new DxfText(layer, Escaped(line.Text), line.Anchor, note.CapHeight, rotation >= 360 ? 0 : rotation,
+                                             alignment, style, note.Bounds.Min, note.Bounds.Max));
+                }
+                return;
+            }
+            asOutlines++;
+        }
+
+        foreach (ImmutableArray<Curve2D> contour in note.Contours)
+        {
+            var points = new List<Point2D>();
+            foreach (Curve2D curve in contour)
+            {
+                List<Point2D> piece = curve is TrimmedCurve2D { BasisCurve: LineCurve2D }
+                    ? [curve.Evaluate(curve.FirstParameter), curve.Evaluate(curve.LastParameter)]
+                    : CurveConverter.Flatten(curve.Evaluate, curve.FirstParameter, curve.LastParameter, Tolerance);
+                points.AddRange(points.Count == 0 ? piece : piece.Skip(1));
+            }
+            if (points.Count > 1 && points[^1].DistanceTo(points[0]) <= 1e-12 * Math.Max(1, points[0].DistanceTo(Point2D.Origin)))
+                points.RemoveAt(points.Count - 1);
+            if (points.Count >= 2)
+                entities.Add(new DxfPolyline(layer, [.. points], Closed: true));
+        }
+    }
+
+    // A text style for a font: named by its PostScript name, with its file (Kerf's own Liberation Sans by the file it
+    // ships as) and its family for AutoCAD
+    private static DxfTextStyle StyleOf(Font font)
+    {
+        bool bold = font.Style is FontStyle.Bold or FontStyle.BoldItalic, italic = font.Style is FontStyle.Italic or FontStyle.BoldItalic;
+        var name = new StringBuilder();
+        foreach (char c in font.PostScriptName.Length > 0 ? font.PostScriptName : font.FamilyName)
+            name.Append(c is (>= 'A' and <= 'Z') or (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-' or '_' ? c : '_');
+        if (name.Length == 0)
+            name.Append("Font");
+        string file = ReferenceEquals(FontLibrary.Default(font.Style), font)
+            ? $"LiberationSans-{font.Style}.ttf"
+            : name + (font.HasCubicOutlines ? ".otf" : ".ttf");
+        return new DxfTextStyle(name.ToString(), file, font.FamilyName, bold, italic);
+    }
+
+    // AutoCAD reads %% as the start of a control code (%%d, %%c, %%p); %%% is a percent sign
+    private static string Escaped(string text) => text.Contains("%%", StringComparison.Ordinal) ? text.Replace("%", "%%%", StringComparison.Ordinal) : text;
 
     /// <summary>Writes the DXF to a stream (UTF-8 for 2013, ASCII for R12; <c>\r\n</c> line ends). The same exporter
     /// gives the same bytes on every machine.</summary>
@@ -205,10 +309,16 @@ public sealed class ExportDxf : Export2D
         => new DxfWriter(Version, Unit, _layers, _entities, cancellationToken).Write();
 
     private ImmutableArray<Diagnostic> Warnings()
-        => _notPlanar == 0
-            ? []
-            : [Diagnostic.Warning(ModelingDiagnostics.DxfNotPlanar,
-                                  $"{_notPlanar} edge{(_notPlanar == 1 ? " wasn't" : "s weren't")} in the XY plane, and {(_notPlanar == 1 ? "was" : "were")} projected onto it")];
+    {
+        var warnings = ImmutableArray.CreateBuilder<Diagnostic>();
+        if (_notPlanar > 0)
+            warnings.Add(Diagnostic.Warning(ModelingDiagnostics.DxfNotPlanar,
+                $"{_notPlanar} edge{(_notPlanar == 1 ? " wasn't" : "s weren't")} in the XY plane, and {(_notPlanar == 1 ? "was" : "were")} projected onto it"));
+        if (_asOutlines > 0)
+            warnings.Add(Diagnostic.Warning(ModelingDiagnostics.DxfTextAsOutlines,
+                $"{_asOutlines} note{(_asOutlines == 1 ? " isn't" : "s aren't")} ASCII, which an R12 file's text must be, and {(_asOutlines == 1 ? "was" : "were")} written as outlines"));
+        return warnings.ToImmutable();
+    }
 
     private void AddEdges(IShape shape, string layer, ImmutableList<DxfEntity>.Builder entities, ref int notPlanar)
     {
