@@ -245,6 +245,25 @@ public class DxfTests
         }
     }
 
+    // The guide's example (section 8, "DXF")
+    private static ExportDxf GuidePlate() => new ExportDxf(unit: Unit.Millimeter)
+        .AddLayer("cut", ColorIndex.Red)
+        .AddLayer("engrave", ColorIndex.Blue, lineWeight: 0.25)
+        .AddShape(new Rectangle(50, 20) - new Circle(4), "cut")
+        .AddShape(new Pos(18, 0) * new Circle(2), "engrave");
+
+    [Fact]
+    public void TheGuidesPlateIsCutAndEngraved()
+    {
+        var read = Read(GuidePlate());
+        Assert.Equal(["CIRCLE", "CIRCLE", "LINE", "LINE", "LINE", "LINE"], read.Entities.Select(e => e.Type).Order());
+        Assert.Equal(5, read.Entities.Count(e => e.Layer == "cut"));
+        Item engraved = Assert.Single(read.Entities, e => e.Layer == "engrave");
+        Near(new Point2D(18, 0), engraved.Point(10));
+        Assert.Equal(25, (int)read.LayerNamed("engrave")!.Number(370));
+        Assert.True(GuidePlate().Write(new MemoryStream()).IsSuccess);
+    }
+
     [Fact]
     public void DrawingsWithoutHiddenLinesAndOnTheirOwnLayers()
     {
@@ -531,6 +550,15 @@ public class DxfTests
             var all = Enum.GetValues<LineType>().Aggregate(new ExportDxf(version, Unit.Inch),
                 (e, t) => e.AddLayer(t.ToString(), ColorIndex.Green, 0.5, t).AddShape(new Pos((int)t * 3, 0) * new Circle(1), t.ToString()));
             Assert.True(all.Write(Path.Combine(folder, "line_types" + suffix + ".dxf")).IsSuccess);
+            var others = new ExportDxf(version)
+                .AddShape(Edge.MakeParabola(2, startAngle: -40, endAngle: 60))
+                .AddShape(Edge.MakeHyperbola(3, 2, startAngle: -30, endAngle: 40))
+                .AddShape(new OffsetCurve3DEdge().Make())
+                .AddShape(new Rotation(60, 0, 0) * Edge.MakeCircle(4))
+                .AddShape(new Box(10, 10, 10));
+            Assert.True(others.Write(Path.Combine(folder, "other_curves" + suffix + ".dxf")).IsSuccess);
+            if (version == DxfVersion.R2013)
+                Assert.True(GuidePlate().Write(Path.Combine(folder, "guide_plate.dxf")).IsSuccess);
             Assert.True(new ExportDxf(version).WriteToString().Length > 0);
             Assert.True(new ExportDxf(version).Write(Path.Combine(folder, "empty" + suffix + ".dxf")).IsSuccess);
         }
