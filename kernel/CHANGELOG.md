@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **A solid's classifier allocates about a quarter less a point**, which every Boolean's check and builder use: a small
+  part fused onto a large one 5% to 10% fewer bytes (decision 2070).
 - **A mesh further from its surfaces than the deflection says so,** with the warning `meshing.deflection-exceeded`
   (`Mesher.DeflectionExceeded`): where a sphere's or a torus's face can't be refined to the deflection, the mesh
   succeeds as before, the same to the byte, and the warning names the faces (`Shapes`, and their indices in the message)
