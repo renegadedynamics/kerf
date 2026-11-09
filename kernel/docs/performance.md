@@ -1840,4 +1840,6 @@ the section renders' commons skipped where they miss. On 0.4.0 they take the bui
 
 ### The user case (14D)
 
-`enclosure-v0.16` in `Kerf.UserCases`, beside v0.11's `enclosure`: decision 27104.
+`enclosure-v0.16` in `Kerf.UserCases`, beside v0.11's `enclosure`: decision 27104. `release-check.ps1 -Last 0.4.0 -Only
+enclosure,enclosure-v0.16 -Runs 3` builds and runs it on both sides, with the same results: 4,551 MB a run on 0.4.0's
+packages, 3,238 on this branch (−29%; v0.11's 4,507 and 3,269). Its times came from a machine at 100% and say nothing.
