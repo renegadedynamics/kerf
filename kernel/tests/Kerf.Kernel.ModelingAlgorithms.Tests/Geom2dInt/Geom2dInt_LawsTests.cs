@@ -142,4 +142,29 @@ public class Geom2dInt_LawsTests
         Assert.Throws<global::Kerf.Engine.Foundation.OutOfRangeException>(() =>
             TheCurveLocatorOfTheProjPCurOfGInter.Locate(new Point2D(0, 0), aBowl, 1, out _));
     }
+
+    [Fact]
+    public void A_curve_of_many_intervals_is_met_without_running_out_of_stack()
+    {
+        // OCCT recursed once for each interval of the second curve: OCCT #245's section met a pcurve of 9,364 intervals
+        // and ended the process (decision 2116). A zigzag of 50,000 straight spans, crossed once by a vertical line
+        const int Spans = 50000;
+        var aPoles = new NCollection_Array1<Point2D>(1, Spans + 1);
+        var aKnots = new NCollection_Array1<double>(1, Spans + 1);
+        var aMults = new NCollection_Array1<int>(1, Spans + 1);
+        for (int i = 1; i <= Spans + 1; i++)
+        {
+            aPoles[i] = new Point2D(i - 1, (i % 2) * 0.1);
+            aKnots[i] = i - 1;
+            aMults[i] = i == 1 || i == Spans + 1 ? 2 : 1;
+        }
+        var aZigzag = new CurveAdaptor2D(new BSplineCurve2D(aPoles, aKnots, aMults, 1));
+        Assert.Equal(Spans, aZigzag.NbIntervals(Kerf.Geometry.Continuity.C2));
+        var aLine = new CurveAdaptor2D(new LineCurve2D(new Point2D(12345.5, -1), new Direction2D(0, 1)));
+        var anInter = new GInter(aLine, aZigzag, Tol, Tol);
+        Assert.True(anInter.IsDone);
+        IntersectionPoint2D aP = Assert.Single(Enumerable.Range(1, anInter.PointCount).Select(anInter.Point));
+        Assert.Equal(12345.5, aP.Value().X, 9);
+        Assert.Equal(0.05, aP.Value().Y, 9);
+    }
 }

@@ -7,6 +7,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 - **`IsInside` classifies a point once, not twice, and asked point by point of one part reuses its classifier** (kernel
   decisions 2110 and 2111): the same answers, a fraction of the time and memory when many points are asked.
+- **A Boolean proved wrong is made again before it fails,** as the kernel's are: with its inputs the other way round, then
+  with a small fuzzy value (warnings `boolean.other-way-round` and `boolean.fuzzy-value`). OCCT #1629's thread cut, which
+  failed, and its common, which failed too, are now right, through `Cut`, `Intersect`, `-`, `&`, `Subtract` and `Common`;
+  `Add`, `Subtract` and `Common` give the kernel's warnings in their results' `Diagnostics` (kernel decisions 2103, 2104
+  and 28611). OCCT #245's cut and common, of a sphere whose seam lies in a flat face, are right too, at a fuzzy value of
+  a thousand tolerances (kernel decision 28613).
 - **Parallel volumes, as a caller chooses** (kernel decision 2092): `using (ParallelVolumes.Use()) { … }` integrates the
   volumes that Booleans check, `Volume` and the mass properties measure on several threads, where a shape has 16 faces
   or more that aren't flat, with the same results to the bit; `Cut`, `Fuse`, `Intersect` and `ComputeVolume` take

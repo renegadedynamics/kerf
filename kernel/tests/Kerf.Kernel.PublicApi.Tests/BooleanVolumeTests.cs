@@ -399,18 +399,17 @@ public class BooleanVolumeTests
     // inside the rules of volume, with or without decision 1923's fix; 0.4.0 called it a success. Its tolerance, 1.7e-3, says
     // surfaces nearly touched, so points through the inputs' box are asked, and two deep in both and outside the result prove it
     // wrong (decision 1924, on by default since unit 13K). The fuse as made is saved too, so the check is held to it if the
-    // Boolean is mended (Fixtures/cylinders-lost-common-*.brep)
+    // Boolean is mended (Fixtures/cylinders-lost-common-*.brep). Since decision 2117 the fuse proved wrong is made again with a
+    // fuzzy value of a thousand tolerances, 1e-4, and that one is right
     [Fact]
-    public void A_fuse_that_lost_the_inputs_common_part_inside_the_rules_fails_carrying_it()
+    public void A_fuse_that_lost_the_inputs_common_part_inside_the_rules_is_proved_wrong_and_made_again()
     {
         Shape cylinder = Fixtures.Named("cylinders-lost-common-a"), tool = Fixtures.Named("cylinders-lost-common-b");
         Fires(Check(BooleanVolumeRule.Fuse, cylinder, tool, Fixtures.Named("cylinders-lost-common-fuse")), "The fuse's result is wrong", "should be in it and aren't");
         Result<Built<Shape>> fused = cylinder.Fuse(tool);
-        Assert.False(fused.IsSuccess);
-        Fires(fused.Error, "The fuse's result is wrong", "should be in it and aren't");
-        Assert.True(fused.TryGetInvalid(out Built<Shape>? wrong));
-        // 16.5% short of the cylinders less their common part, 2.0228612e12
-        Assert.InRange(wrong.Shape.IntegrateVolume() / 2.022861157e12, 0.83, 0.84);
+        Assert.Contains(fused.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        // The cylinders less their common part, 2.0228612e12, where the exact fuse was 16.5% short
+        Assert.Equal(1, fused.Value.Shape.IntegrateVolume() / 2.022861157e12, 1e-6);
     }
 
     // A cylinder of the radius, standing on the origin's plane by half its height, and one twice as long across it with its axis at

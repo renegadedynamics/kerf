@@ -2,6 +2,7 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Healing;
 using Kerf.Measurement;
@@ -64,6 +65,67 @@ public class BooleanVolumeIssueTests
         Assert.True(common.IsSuccess);
         Assert.Empty(common.Value.Shape.AllSolids());
         Assert.Null(BooleanVolumes.Check(BooleanVolumeRule.Common, [ring], [block], common.Value.Shape));
+    }
+
+    [Fact]
+    public void Retry_makes_again_a_Boolean_its_caller_proved_wrong()
+    {
+        // As a caller that checks after a step of its own does (Kerf.Modeling, after its clean)
+        (Shape part, Shape tool) = BooleanIssueShapes.Thread(8.0, 0.7, 1.65, 2.0, 20.0, 15.0);
+        Shape exact = part.Cut(tool, Unchecked).Value.Shape;
+        Assert.NotNull(BooleanVolumes.Check(BooleanVolumeRule.Cut, [part], [tool], exact));
+        Result<Built<Shape>> again = BooleanOperations.Retry(BooleanVolumeRule.Cut, [part], [tool], Unchecked);
+        Assert.Contains(again.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        Assert.Equal(7859.1186, Assert.Single(again.Value.Shape.AllSolids()).IntegrateVolume(new MassOptions { Tolerance = 1e-6 }), 3);
+
+        // Two arguments can't be turned round, and a fuzzy value already over ten tolerances isn't tried again: a failure
+        Shape block = Solid.Box(10, 10, 10).Value.Shape;
+        Result<Built<Shape>> none = BooleanOperations.Retry(BooleanVolumeRule.Cut, [part, block], [tool], Unchecked with { FuzzyValue = 1 });
+        Assert.True(none.IsFailure);
+        Assert.Equal(BooleanOperations.Failed, none.Error!.Code);
+    }
+
+    // OCCT #245's shapes, from its attachments: a solid of revolution and a sphere whose seam lies in one of its flat faces
+    private static (Shape Argument, Shape Tool) Issue245()
+    {
+        static Shape Read(string name)
+        {
+            using Stream stream = typeof(BooleanVolumeIssueTests).Assembly.GetManifestResourceStream($"BOPAlgo.Issues.245-{name}.brep")
+                                  ?? throw new InvalidOperationException(name);
+            BrepTools.Read(out Shape shape, new StreamReader(stream));
+            return shape;
+        }
+        return (Read("argument"), Read("tool"));
+    }
+
+    [Fact]
+    public void Issue_245_a_cut_that_removed_nothing_is_made_again_with_a_larger_fuzzy_value()
+    {
+        // The intersection along the sphere's seam isn't joined to it: exactly, and at ten tolerances (1e-6), the cut removes
+        // nothing and the common is empty. At a thousand (1e-4) both are right (decision 2117)
+        (Shape part, Shape sphere) = Issue245();
+        var precise = new MassOptions { Tolerance = 1e-6 };
+        Assert.NotNull(BooleanVolumes.Check(BooleanVolumeRule.Cut, [part], [sphere], part.Cut(sphere, Unchecked with { FuzzyValue = 1e-6 }).Value.Shape));
+
+        Result<Built<Shape>> cut = part.Cut(sphere), common = part.Common(sphere);
+        Diagnostic fuzzy = Assert.Single(cut.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        Assert.Contains("0.0001", fuzzy.Message, StringComparison.Ordinal);
+        Assert.Contains(common.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        double inBoth = common.Value.Shape.IntegrateVolume(precise);
+        // A grid of 27,000 points finds 2.18229e8 in both; the integrations agree to about one part in ten million
+        double whole = part.IntegrateVolume(precise);
+        Assert.Equal(218166156.5, inBoth, 1e-6 * whole);
+        Assert.Equal(whole, cut.Value.Shape.IntegrateVolume(precise) + inBoth, 1e-6 * whole);
+    }
+
+    [Fact]
+    public void Issue_245s_section_not_approximated_runs_to_its_end()
+    {
+        // A pcurve of 9,364 intervals overflowed the stack, which ended the process (decision 2116)
+        (Shape part, Shape sphere) = Issue245();
+        Result<Built<Shape>> section = part.Section(sphere, new BooleanOptions { ApproximateSection = false });
+        Assert.Equal(4, section.Value.Shape.AllEdges().Length);
+        Assert.Equal(4201.2476, section.Value.Shape.IntegrateLength(), 3);
     }
 
     [Fact]

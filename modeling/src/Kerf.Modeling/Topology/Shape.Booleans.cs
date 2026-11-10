@@ -97,6 +97,43 @@ public static partial class ShapeExtensions
 
         // A shortcut above made nothing, so has nothing new to check
         bool made = topoResult is null;
+        (result, history, Diagnostic? wrong) = Finish(operation, arg, tool, options, result, history, made, proved: false);
+        if (wrong is not null)
+        {
+            // Made again as the kernel's checked Booleans are, the other way round and then with a fuzzy value (decisions
+            // 1937 and 2103), its warning passed on; what that makes is cleaned and checked as the first was
+            var retried = BooleanOperations.Retry(RuleOf(operation)!.Value, arg, tool, (options ?? BooleanOptions.Default) with { Simplify = false, CheckResult = true });
+            if (!retried.TryGetValue(out var again))
+                throw Failures.Wrong(result, wrong);
+            foreach (var diagnostic in retried.Diagnostics)
+                if (!diagnostic.IsError)
+                    Warnings.Warn(diagnostic);
+            (result, history, _) = Finish(operation, arg, tool, options, TopoUtil.Downcast(again.Shape),
+                                          ModelHistory.FromHistory(again.History, arg, tool), made, proved: true);
+        }
+
+        // Remove an unnecessary compound around a single shape
+        if (result.IsCompound())
+            result = TopoUtil.UnwrapCompound((Compound)result);
+
+        if (result.IsCompound() && highest != 4)
+        {
+            var pieces = TopoUtil.TopLevelShapes(result);
+            foreach (var piece in pieces)
+                piece.MadeBy(history);
+            return ((Shape)TopoUtil.MakeCompound(pieces)).MadeBy(history);
+        }
+        return result.MadeBy(history);
+    }
+
+    /// <summary>
+    /// A Boolean's result cleaned and checked: the clean left out where it would spoil a good result, and the error if its volume
+    /// proves it wrong. <paramref name="proved"/> says the kernel has already proved it right before the clean, so a clean that
+    /// changes its volume is left out without checking it again.
+    /// </summary>
+    private static (Shape Result, ModelHistory History, Diagnostic? Wrong) Finish(BooleanKind operation, List<Shape> arg, List<Shape> tool,
+        BooleanOptions? options, Shape result, ModelHistory history, bool made, bool proved)
+    {
         string what = $"The {TopoUtil.BooleanName(operation)}'s result";
         var (uncleaned, uncleanedHistory) = (result, history);
         if (SkipClean.Clean)
@@ -128,29 +165,16 @@ public static partial class ShapeExtensions
             result = Failures.Valid(result, what);
 
         // A valid shape can still be the wrong one, and its volume can prove it (decision 1860). As above, a clean that spoils
-        // a good result is left out
-        if (made && RuleOf(operation) is { } rule
+        // a good result is left out. One the kernel proved right isn't checked again unless the clean changed it
+        if (made && !(proved && result.IsSame(uncleaned)) && RuleOf(operation) is { } rule
             && BooleanVolumes.Check(rule, arg, tool, result, options?.FuzzyValue ?? 0) is { } wrong)
         {
-            if (result.IsSame(uncleaned) || BooleanVolumes.Check(rule, arg, tool, uncleaned, options?.FuzzyValue ?? 0) is not null)
-                throw Failures.Wrong(result, wrong);
+            if (result.IsSame(uncleaned) || !proved && BooleanVolumes.Check(rule, arg, tool, uncleaned, options?.FuzzyValue ?? 0) is not null)
+                return (result, history, wrong);
             Warnings.Warn("Boolean operation unable to clean: that would change its result's volume");
-            result = uncleaned;
-            history = uncleanedHistory;
+            return (uncleaned, uncleanedHistory, null);
         }
-
-        // Remove an unnecessary compound around a single shape
-        if (result.IsCompound())
-            result = TopoUtil.UnwrapCompound((Compound)result);
-
-        if (result.IsCompound() && highest != 4)
-        {
-            var pieces = TopoUtil.TopLevelShapes(result);
-            foreach (var piece in pieces)
-                piece.MadeBy(history);
-            return ((Shape)TopoUtil.MakeCompound(pieces)).MadeBy(history);
-        }
-        return result.MadeBy(history);
+        return (result, history, null);
     }
 
     private static BooleanVolumeRule? RuleOf(BooleanKind operation) => operation switch
