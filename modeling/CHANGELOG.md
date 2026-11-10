@@ -11,7 +11,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   with a small fuzzy value (warnings `boolean.other-way-round` and `boolean.fuzzy-value`). OCCT #1629's thread cut, which
   failed, and its common, which failed too, are now right, through `Cut`, `Intersect`, `-`, `&`, `Subtract` and `Common`;
   `Add`, `Subtract` and `Common` give the kernel's warnings in their results' `Diagnostics` (kernel decisions 2103, 2104
-  and 28611). OCCT #245's cut and common, of a sphere whose seam lies in a flat face, are right too, at a fuzzy value of
+  and 2115). OCCT #245's cut and common, of a sphere whose seam lies in a flat face, are right too, at a fuzzy value of
   a thousand tolerances (kernel decision 2117).
 - **Parallel volumes, as a caller chooses** (kernel decision 2092): `using (ParallelVolumes.Use()) { … }` integrates the
   volumes that Booleans check, `Volume` and the mass properties measure on several threads, where a shape has 16 faces
