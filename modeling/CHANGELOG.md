@@ -5,7 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
-- **`Offset` of a loft from a square to a circle, outwards, now works** (kernel decision 29201): it failed at every
+- **`Offset` of a loft from a square to a circle, outwards, now works** (kernel decision 2129): it failed at every
   distance, "Bad orientation of subshape", as round joins made a face of no area at each corner where the side faces are
   tangent, through `Offset` and `Offset3D` alike.
 - **A fillet or chamfer whose edges meet, or run along each other, fails** (kernel decision 2125): `Fillet` and `Chamfer`
