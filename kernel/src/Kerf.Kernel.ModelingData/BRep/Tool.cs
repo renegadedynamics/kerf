@@ -263,6 +263,25 @@ internal static class Tool
     }
 
     /// <summary>
+    /// <see cref="CurveOnSurface(in Edge, in Face, out double, out double)"/> for a caller that only reads the curve and
+    /// keeps it no longer than the call: on a plane without a stored pcurve, the projection kept for the thread is given
+    /// itself, not a copy of it (frozen, so the caller can't change it). Kerf (unit 15D): a face's wires checked against
+    /// each other ask for every edge's curve once for each edge of the other wire, and a face's UV bounds for each edge's,
+    /// and on a plane with engraved text each was a copy of a Bézier, a tenth of the bytes of its Booleans.
+    /// </summary>
+    internal static Curve2D? CurveOnSurfaceToRead(in Edge e, in Face f, out double first, out double last)
+    {
+        Surface? s = Tool.Surface(f, out Placement l);
+        Edge localEdge = e;
+        if (f.Orientation == Reversed)
+        {
+            localEdge.Reverse();
+        }
+
+        return CurveOnSurface(localEdge, s, l, out first, out last, out _, toRead: true);
+    }
+
+    /// <summary>
     /// The curve of the edge in the parametric space of the surface, or null; its range in <paramref name="first"/>
     /// and <paramref name="last"/>. For a plane without a stored pcurve, the projection of the 3D curve.
     /// </summary>
@@ -283,6 +302,10 @@ internal static class Tool
                                                out double first,
                                                out double last,
                                                out bool isStored)
+        => CurveOnSurface(e, s, l, out first, out last, out isStored, toRead: false);
+
+    private static Curve2D? CurveOnSurface(in Edge e, Surface? s, in Placement l, out double first, out double last,
+                                           out bool isStored, bool toRead)
     {
         bool eisreversed = (e.Orientation == Reversed);
         isStored = true;
@@ -316,7 +339,7 @@ internal static class Tool
 
         // Curve is not found. Try projection on plane
         isStored = false;
-        return CurveOnPlane(e, s, l, out first, out last);
+        return CurveOnPlane(e, s, l, out first, out last, toRead);
     }
 
     /// <summary>
@@ -328,6 +351,9 @@ internal static class Tool
                                              in Placement L,
                                              out double first,
                                              out double last)
+        => CurveOnPlane(e, s, L, out first, out last, toRead: false);
+
+    private static Curve2D? CurveOnPlane(in Edge e, Surface? s, in Placement L, out double first, out double last, bool toRead)
     {
         first = last = 0.0;
 
@@ -366,6 +392,11 @@ internal static class Tool
         bool canKeep = c3D.IsFrozen && gp.IsFrozen;
         if (canKeep && PlaneCurves.TryGet(c3D, gp, curveLocation, f, l, out Curve2D? kept))
         {
+            if (toRead)
+            {
+                return kept;
+            }
+
             // A new object each time, as a caller may store it on an edge, and a shape's writers count curves by identity
             var copy = (Curve2D)kept.Copy();
             copy.Freeze();
