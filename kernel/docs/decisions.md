@@ -17089,4 +17089,6 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        processor time, gave Bento's small examples about one 47 ms step more processor time a recalculation and nothing back, and
        doubled the rig's parallel round's waits (5 to 11). `MassPropertiesBuilder.ParallelVolumesScope` turns it on for a flow;
        `BRepGPropKnownAnswerTests` uses it, so the parallel sums are still checked bit for bit against the serial ones. A per-call
-       option, off by default, for a caller building one large part, is for 0.5.1.
+       option, off by default, for a caller building one large part, is for 0.5.1. Repacked with it off: the smoke test passes, and the release check against
+       0.4.0 too, the enclosures 3.19 to 2.27 s and 3.26 to 2.26 s (29% and 31% quicker, where decision 2086's had 32% to 34%), the
+       other users' cases as before (boss fuse 11.1 ms, detent 14.5, the collapsing chamfers 3.2 and 7.5).
