@@ -1549,6 +1549,7 @@ public readonly struct Kerf.Topology.Placement : IEquatable<Placement>
 assembly Kerf.Kernel.ModelingAlgorithms
 public static class Kerf.Booleans.BooleanOperations
   public static DiagnosticCode BuiltOtherWayRound { get; }
+  public static DiagnosticCode BuiltWithFuzzyValue { get; }
   public static DiagnosticCode EmptyResult { get; }
   public static DiagnosticCode Failed { get; }
   public static Result<Built<Shape>> Common(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
