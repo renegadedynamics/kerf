@@ -53,7 +53,7 @@ run_suites() {
     echo "Suites run: all (Kerf.slnx)"; return
   fi
   # the chosen projects, whole, in one solution so they run side by side as Kerf.slnx's do (in kernel/obj, so ignored)
-  projects=$(echo "$choice" | awk -F'\t' '($1 == "TEST" && $3 == "-") || $1 == "BUILD" { print $2 }')
+  projects=$(echo "$choice" | awk -F'\t' '($1 == "TEST" && $3 == "-") || $1 == "BUILD" || $1 == "DEP" { print $2 }')
   if [ -n "$projects" ]; then
     mkdir -p kernel/obj
     { echo '<Solution>'; for p in $projects; do echo "  <Project Path=\"../../$p\" />"; done; echo '</Solution>'; } > $sln

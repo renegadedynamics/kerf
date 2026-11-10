@@ -11,6 +11,7 @@
 #   ALL     <why>                         run every suite (dotnet test Kerf.slnx)
 #   TEST    <project> <filter or -> <why>  run this test project (with this --filter, or all of it)
 #   BUILD   <project> <why>               build this project (in the solution, but not a test project or under one)
+#   DEP     <project> <why>               build this project, which those above build on (in Release, as they are)
 #   NONE    <why>                         nothing to build or run
 # Exits 5 if a kernel project (kernel/src, kernel/tests) reaches Kerf.Modeling: the kernel's suites must never depend
 # on the modelling layer (ProjectGraphTests), or a change to the modelling layer alone could break them unseen.
@@ -242,6 +243,11 @@ for my $p (sort keys %filtered) {
     print "TEST\t$p\t$filtered{$p}\t", ($filtered{$p} =~ /Graph/ ? 'a project file changed: the rule on the graph' : 'its public API record changed'), "\n";
 }
 print "BUILD\t$_\t", because($_), "\n" for @builds;
+# what those build on, listed so that a solution of the chosen projects builds it in its configuration too: MSBuild
+# builds a reference outside the solution in its default configuration (Debug), not the solution's
+my $needed = closure(\%refs, @tests, @builds);
+my %listed = map { $_ => 1 } @tests, @builds;
+print "DEP\t$_\tbuilt for the projects above\n" for sort grep { $solution{$_} && !$listed{$_} } keys %$needed;
 print "NONE\tdocuments only\n" unless @tests || @builds || %filtered;
 
 if ($explain) {
