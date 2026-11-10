@@ -129,6 +129,13 @@ public static class FilletOperations
     /// <summary>The size doesn't fit: more than the width of a face beside a straight or circular edge, or just that, where this case can't yet be built: <c>fillet.too-large</c>.</summary>
     public static DiagnosticCode TooLarge { get; } = new("fillet.too-large");
 
+    /// <summary>
+    /// The result passes the validity check with two of its edges crossing, so the fillet or chamfer's surfaces run through
+    /// each other (OCCT #1570; decision 2123): <c>fillet.self-intersecting</c>. The failure carries the result and names the
+    /// edges; the message says where they cross.
+    /// </summary>
+    public static DiagnosticCode SelfIntersecting { get; } = new("fillet.self-intersecting");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
@@ -221,7 +228,8 @@ public static class FilletOperations
                 }
                 return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
             }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null,
-               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Radius, s.EndRadius ?? 0.0))), "The fillet's result"));
+               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Radius, s.EndRadius ?? 0.0))), "The fillet's result")
+                       ?? EdgeCrossings.Problem(solid, made, "The fillet's result", SelfIntersecting));
 
             // What ChFi3d made isn't valid: as much a failure of it as any (decision 1910). It costs nothing unless that happens
             if (done.TryGetInvalid(out _))
@@ -370,7 +378,8 @@ public static class FilletOperations
                                                               ?? ChamferFailure(chamfer, specs));
                 return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
-               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result"));
+               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result")
+                       ?? EdgeCrossings.Problem(solid, made, "The chamfer's result", SelfIntersecting));
 
             // What ChFi3d made is broken: say it's the chamfer at this length that couldn't be built, not only what's wrong with it
             if (done.TryGetInvalid(out Built<Shape>? invalid) && done.Error is { } error)
