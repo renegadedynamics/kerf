@@ -6,7 +6,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 ## Unreleased
 
 - **`IsInside` classifies a point once, not twice, and asked point by point of one part reuses its classifier** (kernel
-  decisions 28501 and 28502): the same answers, a fraction of the time and memory when many points are asked.
+  decisions 2110 and 2111): the same answers, a fraction of the time and memory when many points are asked.
 - **Parallel volumes, as a caller chooses** (kernel decision 2092): `using (ParallelVolumes.Use()) { … }` integrates the
   volumes that Booleans check, `Volume` and the mass properties measure on several threads, where a shape has 16 faces
   or more that aren't flat, with the same results to the bit; `Cut`, `Fuse`, `Intersect` and `ComputeVolume` take
