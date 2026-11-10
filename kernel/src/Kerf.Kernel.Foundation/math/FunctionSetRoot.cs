@@ -60,10 +60,6 @@ internal class FunctionSetRoot
     private math_Vector _ff;
     private math_Vector _previousSolution = null!;
     private math_Vector _save = null!;
-    private math_Vector _temp1 = null!;
-    private math_Vector _temp2 = null!;
-    private math_Vector _temp3 = null!;
-    private math_Vector _temp4 = null!;
     private bool _isDivergent;
 
     /// <summary>The function along a direction: x -> 0.5 * |F(P0 + x * Dir)|^2.</summary>
@@ -74,6 +70,9 @@ internal class FunctionSetRoot
         private math_Vector _p;
         private math_Vector _fv;
         private FunctionSetWithDerivatives _f;
+
+        // Kerf (unit 15D): the function a rented work's direction function follows, set for each search (Work)
+        public void Use(FunctionSetWithDerivatives f) => _f = f;
 
         public MyDirFunction(math_Vector v1, math_Vector v2, math_Vector v3, math_Vector v4,
                              FunctionSetWithDerivatives f)
@@ -408,16 +407,29 @@ internal class FunctionSetRoot
     // and a sub-problem at a bound has a different size, so each is checked for size
     private sealed class SearchWork
     {
-        private Gauss? _gauss;
-        private Svd? _svd;
-        private GaussLeastSquare? _leastSquare;
+        // Kerf (unit 15D): the last two sizes of each, as a search along a bound turns from the whole problem to a
+        // sub-problem and back, and keeping one made a new solver at each turn: on a part with engraved text, whose walks
+        // run along the bounds of the letters' sides, most of the root finder's bytes
+        private Gauss? _gauss, _otherGauss;
+        private Svd? _svd, _otherSvd;
+        private GaussLeastSquare? _leastSquare, _otherLeastSquare;
         private math_Vector? _minusF;
+        private Matrix? _subDf;
+        private math_Vector? _subGh, _subDirection, _subInvLengthMax;
 
         public Gauss GaussFor(Matrix a, double minPivot)
         {
             if (_gauss is null || _gauss.Size != a.RowNumber())
             {
-                _gauss = new Gauss(a.RowNumber());
+                if (_otherGauss is not null && _otherGauss.Size == a.RowNumber())
+                {
+                    (_gauss, _otherGauss) = (_otherGauss, _gauss);
+                }
+                else
+                {
+                    _otherGauss = _gauss;
+                    _gauss = new Gauss(a.RowNumber());
+                }
             }
 
             _gauss.Perform(a, minPivot);
@@ -428,7 +440,15 @@ internal class FunctionSetRoot
         {
             if (_svd is null || !_svd.Fits(a))
             {
-                _svd = new Svd(a.RowNumber(), a.ColNumber());
+                if (_otherSvd is not null && _otherSvd.Fits(a))
+                {
+                    (_svd, _otherSvd) = (_otherSvd, _svd);
+                }
+                else
+                {
+                    _otherSvd = _svd;
+                    _svd = new Svd(a.RowNumber(), a.ColNumber());
+                }
             }
 
             _svd.Perform(a);
@@ -439,7 +459,15 @@ internal class FunctionSetRoot
         {
             if (_leastSquare is null || !_leastSquare.Fits(a))
             {
-                _leastSquare = new GaussLeastSquare(a.RowNumber(), a.ColNumber());
+                if (_otherLeastSquare is not null && _otherLeastSquare.Fits(a))
+                {
+                    (_leastSquare, _otherLeastSquare) = (_otherLeastSquare, _leastSquare);
+                }
+                else
+                {
+                    _otherLeastSquare = _leastSquare;
+                    _leastSquare = new GaussLeastSquare(a.RowNumber(), a.ColNumber());
+                }
             }
 
             _leastSquare.Perform(a);
@@ -460,6 +488,25 @@ internal class FunctionSetRoot
             }
 
             return _minusF;
+        }
+
+        // The sub-problem's matrix and vectors (equations by free unknowns), kept while the sizes hold: each entry the
+        // sub-problem reads is written first (the inverse lengths past the free unknowns aren't read)
+        public void SubProblem(int neq, int free, int ninc, out Matrix df2, out math_Vector gh, out math_Vector direction,
+                               out math_Vector invLengthMax)
+        {
+            if (_subDf is null || _subDf.RowNumber() != neq || _subDf.ColNumber() != free || _subInvLengthMax!.Length() != ninc)
+            {
+                _subDf = new Matrix(1, neq, 1, free);
+                _subGh = new math_Vector(1, free);
+                _subDirection = new math_Vector(1, free);
+                _subInvLengthMax = new math_Vector(1, ninc);
+            }
+
+            df2 = _subDf;
+            gh = _subGh!;
+            direction = _subDirection!;
+            invLengthMax = _subInvLengthMax;
         }
     }
 
@@ -594,10 +641,8 @@ internal class FunctionSetRoot
         }
         else
         { //(1) Cas general : On definit un sous probleme
-            Matrix df2 = new(1, neq, 1, ninc - cons);
-            math_Vector myGH = new(1, ninc - cons);
-            math_Vector myDirection = new(1, ninc - cons);
-            math_Vector myInvLengthMax = new(1, ninc);
+            work.SubProblem(neq, ninc - cons, ninc, out Matrix df2, out math_Vector myGH, out math_Vector myDirection,
+                            out math_Vector myInvLengthMax);
 
             for (k = 1, i = 1; i <= ninc; i++)
             {
@@ -814,11 +859,7 @@ internal class FunctionSetRoot
         _dhSave = work.DhSave;
         _previousSolution = work.PreviousSolution;
         _save = work.Save;
-        _temp1 = work.Temp1;
-        _temp2 = work.Temp2;
-        _temp3 = work.Temp3;
-        _temp4 = work.Temp4;
-        Search(f, startingPoint, infBound, supBound, stopOnDivergent, ninc);
+        Search(f, startingPoint, infBound, supBound, stopOnDivergent, ninc, work);
         Work.Return(work);
     }
 
@@ -833,6 +874,10 @@ internal class FunctionSetRoot
         private readonly int _neq;
         private readonly int _nbIterations;
         public readonly math_Vector SolSave, Gh, Dh, DhSave, PreviousSolution, Save, Temp1, Temp2, Temp3, Temp4;
+        // Kerf (unit 15D): the search's inverse lengths, its constraints and its direction function, which it made anew
+        public readonly math_Vector InvLengthMax;
+        public readonly math_IntegerVector Constraints;
+        public readonly MyDirFunction Direction;
 
         private Work(int ninc, int neq, int nbIterations)
         {
@@ -849,6 +894,9 @@ internal class FunctionSetRoot
             Temp2 = new(1, ninc);
             Temp3 = new(1, ninc);
             Temp4 = new(1, neq);
+            InvLengthMax = new(1, ninc);
+            Constraints = new(1, ninc);
+            Direction = new(Temp1, Temp2, Temp3, Temp4, null!);
         }
 
         public static Work Rent(int ninc, int neq, int nbIterations)
@@ -862,6 +910,7 @@ internal class FunctionSetRoot
 
         public static void Return(Work work)
         {
+            work.Direction.Use(null!); // not keeping the function alive
             if (work._ninc <= 16 && work._neq <= 16 && work._nbIterations <= 1024)
             {
                 t_spare = work;
@@ -870,7 +919,7 @@ internal class FunctionSetRoot
     }
 
     private void Search(FunctionSetWithDerivatives f, math_Vector startingPoint, math_Vector infBound, math_Vector supBound,
-                        bool stopOnDivergent, int ninc)
+                        bool stopOnDivergent, int ninc, Work work)
     {
 
         int i;
@@ -880,8 +929,9 @@ internal class FunctionSetRoot
         const double epsSqrt = 1.0e-16, eps = 1.0e-32, eps2 = 1.0e-64, progres = 0.005;
         double f2 = 0.0, previousMinimum, dy, oldF;
         double ambda, ambda2, gnr1 = 0.0, oldgr;
-        math_Vector invLengthMax = new(1, ninc); // Pour bloquer les pas a 1/4 du domaine
-        math_IntegerVector constraints = new(1, ninc); // Pour savoir sur quels bord on se trouve
+        math_Vector invLengthMax = work.InvLengthMax; // Pour bloquer les pas a 1/4 du domaine
+        math_IntegerVector constraints = work.Constraints; // Pour savoir sur quels bord on se trouve
+        constraints.Init(0);
         for (i = 1; i <= ninc; i++)
         {
             double aSupBound = Min(supBound[i], global::Kerf.Engine.Foundation.Precision.Infinite());
@@ -889,7 +939,8 @@ internal class FunctionSetRoot
             invLengthMax[i] = 1.0 / Max((aSupBound - anInfBound) / 4, 1.0e-9);
         }
 
-        MyDirFunction F_Dir = new(_temp1, _temp2, _temp3, _temp4, f);
+        MyDirFunction F_Dir = work.Direction;
+        F_Dir.Use(f);
         int descenteIter;
 
         _done = false;
