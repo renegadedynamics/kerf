@@ -395,19 +395,40 @@ public class BooleanVolumeTests
         Assert.Equal(both - common, result.IntegrateVolume(), 2e-4 * both);
     }
 
+    // Radius 500 at the end plane, 2e-10 to 5e-10 off: the end circle crosses the tool sqrt(2 R d) either side of where it would
+    // touch, about 5e-4, and the quartic that finds the crossings lost both to cancellation, so the seam vertex wasn't grown over
+    // them and a sliver of the end face 3e-10 wide was left: the cut and the fuse invalid, the common empty, each a failure
+    // (decision 28631)
+    [Theory]
+    [InlineData(-2e-10)]
+    [InlineData(-3e-10)]
+    [InlineData(-5e-10)]
+    public void Large_equal_cylinders_crossing_just_inside_a_touch_cut_common_and_fuse(double offset)
+    {
+        (Shape cylinder, Shape tool, double common) = Crossing(500, offset, 1.0);
+        double one = Math.PI * 500 * 500 * 1000;
+        Shape cut = cylinder.Cut(tool).Value.Shape;
+        Assert.Equal(one - common, cut.IntegrateVolume(), 1e-6 * one);
+        Shape both = cylinder.Common(tool).Value.Shape;
+        Assert.Equal(common, both.IntegrateVolume(), 1e-6 * one);
+        Shape fused = cylinder.Fuse(tool).Value.Shape;
+        Assert.Equal(3 * one - common, fused.IntegrateVolume(), 1e-6 * one);
+    }
+
     // Radius 5000 at the end plane, 3e-10 off: the Boolean fuses the cylinders without their common part, valid, 16.5% out and
     // inside the rules of volume, with or without decision 1923's fix; 0.4.0 called it a success. Its tolerance, 1.7e-3, says
     // surfaces nearly touched, so points through the inputs' box are asked, and two deep in both and outside the result prove it
     // wrong (decision 1924, on by default since unit 13K). The fuse as made is saved too, so the check is held to it if the
-    // Boolean is mended (Fixtures/cylinders-lost-common-*.brep). Since decision 2117 the fuse proved wrong is made again with a
-    // fuzzy value of a thousand tolerances, 1e-4, and that one is right
+    // Boolean is mended (Fixtures/cylinders-lost-common-*.brep). Since decision 2117 the fuse proved wrong was made again with a
+    // fuzzy value of a thousand tolerances, 1e-4, and that one was right; since decision 28631 the end circle's crossings of the
+    // tool are found, and the fuse is right the first time
     [Fact]
-    public void A_fuse_that_lost_the_inputs_common_part_inside_the_rules_is_proved_wrong_and_made_again()
+    public void A_fuse_that_lost_the_inputs_common_part_inside_the_rules_is_proved_wrong_and_now_made_right()
     {
         Shape cylinder = Fixtures.Named("cylinders-lost-common-a"), tool = Fixtures.Named("cylinders-lost-common-b");
         Fires(Check(BooleanVolumeRule.Fuse, cylinder, tool, Fixtures.Named("cylinders-lost-common-fuse")), "The fuse's result is wrong", "should be in it and aren't");
         Result<Built<Shape>> fused = cylinder.Fuse(tool);
-        Assert.Contains(fused.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        Assert.DoesNotContain(fused.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
         // The cylinders less their common part, 2.0228612e12, where the exact fuse was 16.5% short
         Assert.Equal(1, fused.Value.Shape.IntegrateVolume() / 2.022861157e12, 1e-6);
     }

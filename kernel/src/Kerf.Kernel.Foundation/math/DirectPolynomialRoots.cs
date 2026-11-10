@@ -38,6 +38,10 @@ internal class DirectPolynomialRoots
     /// Maximum number of Newton-Raphson refinement iterations
     private const int MAX_NEWTON_ITERATIONS = 10;
 
+    // Below this share of the other, a quadratic factor's constant computed as a difference is within the other's rounding:
+    // it has no digit left.
+    private const double CancelledShare = 1.0e-15;
+
     /// Upper limit to prevent numerical overflow in computations
     private const double OVERFLOW_LIMIT = 1.0e+80;
 
@@ -746,6 +750,23 @@ internal class DirectPolynomialRoots
         factors.Q1 = ydemi + sdiscrQ0;
         factors.P2 = ademi - p0;
         factors.Q2 = ydemi - sdiscrQ0;
+
+        // The constants' product is d exactly, (y0/2 + q0)(y0/2 - q0) = y0^2/4 - q0^2. Where the two terms nearly cancel
+        // in one of them, it keeps none of its digits, and a pair of roots near zero becomes a double root at zero: a circle
+        // that crosses a cylinder 1e-6 radians either side of a touch saw no crossing (decision 28631). The small one is
+        // taken from the product there, as the stable quadratic formula does. (p0 can be noise there too, which leaves one
+        // of such a pair wrong; taking it from the cubic's term moved a Boolean against native, so it's left: decision 28631.)
+        if (q0 > 0.0)
+        {
+            if (Math.Abs(factors.Q2) < CancelledShare * Math.Abs(factors.Q1))
+            {
+                factors.Q2 = d / factors.Q1;
+            }
+            else if (Math.Abs(factors.Q1) < CancelledShare * Math.Abs(factors.Q2))
+            {
+                factors.Q1 = d / factors.Q2;
+            }
+        }
 
         // Clean up near-zero coefficients
         double eps = 100.0 * MACHINE_EPSILON;
