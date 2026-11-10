@@ -350,6 +350,7 @@ public static class FilletOperations
                 _ => throw new KernelArgumentOutOfRangeException(nameof(options), options.Mode, "An unknown chamfer mode."),
             };
             ChamferSpec[] specs = given;
+            MakeChamfer? built = null;
             Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
             {
                 // Past a tight corner, where asked: collapsed, beside ChFi3d, which isn't asked (decision 1988)
@@ -387,10 +388,33 @@ public static class FilletOperations
                                                         () => (FilletLimits.Judge(solid, specs, options) is { } fit ? FilletLimits.TooLarge(fit, specs) : FilletLimits.TooLarge(solid, specs, faces, options))
                                                               ?? FilletLimits.AtBend(bends, specs)
                                                               ?? ChamferFailure(chamfer, specs));
-                return !outcome.IsDone && FilletLimits.Chamfer(solid, specs, faces, options) is { } limit ? limit : outcome;
-            }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null,
-               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result")
-                       ?? EdgeCrossings.Problem(solid, made, "The chamfer's result", SelfIntersecting));
+                built = chamfer;
+                if (outcome.IsDone)
+                {
+                    return outcome;
+                }
+                if (FilletLimits.Chamfer(solid, specs, faces, options) is { } limit)
+                {
+                    return limit;
+                }
+
+                // Or its faces carried on until they meet, where it failed at a corner (unit 15U)
+                return options.CheckResult && ChamferMeet.Build(solid, chamfer, specs, faces, options) is { } met ? met : outcome;
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null, Check);
+
+            Diagnostic? Check(Shape made) =>
+                Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result")
+                ?? EdgeCrossings.Problem(solid, made, "The chamfer's result", SelfIntersecting);
+
+            // What ChFi3d made is broken at a corner: its faces carried on until they meet instead, if that's proved (unit 15U)
+            if (done.TryGetInvalid(out _) && built is not null && ChamferMeet.Build(solid, built, specs, faces, options) is { } instead)
+            {
+                Result<Built<Shape>> met = EngineOperation.Run<Shape>(_ => instead, Failure, progress, cancellationToken, "The chamfer's result", Check);
+                if (met.IsSuccess)
+                {
+                    return met;
+                }
+            }
 
             // What ChFi3d made is broken: say it's the chamfer at this length that couldn't be built, not only what's wrong with it
             if (done.TryGetInvalid(out Built<Shape>? invalid) && done.Error is { } error)
