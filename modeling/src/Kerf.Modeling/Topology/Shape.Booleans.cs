@@ -9,25 +9,43 @@ namespace Kerf.Modeling;
 /// Skips the clean that booleans normally do, for operator-driven code where passing <c>clean: false</c> isn't
 /// possible: <c>using (new SkipClean()) { … }</c>. Scopes nest, and apply to the current async flow only.
 /// </summary>
+/// <remarks>
+/// A scope is in force from its construction until it is disposed, on the flow that opened it and in the tasks and
+/// parallel loops started from it, and nowhere after: disposing it ends it everywhere, on whichever thread or task the
+/// <c>Dispose</c> runs, and a task that outlives it cleans again (unless an enclosing scope is still open). Other
+/// callers, on other threads, never see it.
+/// </remarks>
 public sealed class SkipClean : IDisposable
 {
-    private static readonly AsyncLocal<int> Depth = new();
-    private bool _disposed;
+    // The innermost scope opened on this flow; an ended one is passed over to its parent
+    private static readonly AsyncLocal<SkipClean?> Innermost = new();
+    private readonly SkipClean? _parent;
+    private volatile bool _ended;
 
     /// <summary>Starts skipping the clean until disposed.</summary>
-    public SkipClean() => Depth.Value++;
+    public SkipClean()
+    {
+        _parent = Live(Innermost.Value);
+        Innermost.Value = this;
+    }
 
-    /// <summary>Whether booleans clean their results: true outside every <see cref="SkipClean"/> scope.</summary>
-    public static bool Clean => Depth.Value == 0;
+    /// <summary>Whether booleans clean their results: true outside every <see cref="SkipClean"/> scope still open.</summary>
+    public static bool Clean => Live(Innermost.Value) is null;
 
-    /// <summary>Ends the scope.</summary>
+    /// <summary>Ends the scope, wherever it is disposed: on the flow that opened it, and in the tasks started from it.</summary>
     public void Dispose()
     {
-        if (!_disposed)
-        {
-            _disposed = true;
-            Depth.Value--;
-        }
+        _ended = true;
+        if (ReferenceEquals(Innermost.Value, this))
+            Innermost.Value = Live(_parent);
+    }
+
+    // The innermost scope from this one out that hasn't ended
+    private static SkipClean? Live(SkipClean? scope)
+    {
+        while (scope is { _ended: true })
+            scope = scope._parent;
+        return scope;
     }
 }
 

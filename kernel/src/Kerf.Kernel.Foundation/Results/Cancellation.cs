@@ -10,54 +10,88 @@ namespace Kerf;
 /// operation given a token of its own obeys that one; one given none obeys this. It flows into parallel loops and tasks.
 /// </summary>
 /// <remarks>
+/// <para>
 /// An operation stopped this way throws <see cref="OperationCanceledException"/>, as if it had been given the token, and
 /// leaves nothing changed: shapes are immutable, and a result that wasn't finished is dropped (decision 1855).
+/// </para>
+/// <para>
+/// A scope is in force from <see cref="Use"/> until it is disposed, on the flow that opened it and in the tasks and
+/// parallel loops started from it, and nowhere after: disposing it ends it everywhere, on whichever thread or task the
+/// <c>Dispose</c> runs, and a task that outlives it goes back to the token that was in force outside it. Other callers,
+/// on other threads, never see it.
+/// </para>
 /// </remarks>
 public static class Cancellation
 {
-    private static readonly AsyncLocal<CancellationToken> CurrentToken = new();
+    // The innermost scope opened on this flow; an ended one is passed over to its parent
+    private static readonly AsyncLocal<Node?> Innermost = new();
 
     /// <summary>The token in force here, or <see cref="CancellationToken.None"/>.</summary>
-    public static CancellationToken Current => CurrentToken.Value;
+    public static CancellationToken Current => Node.Live(Innermost.Value)?.Token ?? default;
 
     /// <summary>Makes <paramref name="token"/> the one in force until the result is disposed.</summary>
     public static Scope Use(CancellationToken token)
     {
-        CancellationToken outer = CurrentToken.Value;
-        CurrentToken.Value = token;
-        return new Scope(outer, true);
+        var node = new Node(token, Node.Live(Innermost.Value));
+        Innermost.Value = node;
+        return new Scope(node);
     }
 
-    /// <summary>What <see cref="Use"/> returns: disposing it puts back the token that was in force.</summary>
+    /// <summary>What <see cref="Use"/> returns: disposing it ends the scope, and the token that was in force outside it is again.</summary>
     public readonly struct Scope : IDisposable
     {
-        private readonly CancellationToken _outer;
-        private readonly bool _isActive;
+        private readonly Node? _node;
 
-        internal Scope(CancellationToken outer, bool isActive)
-        {
-            _outer = outer;
-            _isActive = isActive;
-        }
+        internal Scope(Node node) => _node = node;
 
-        /// <inheritdoc/>
+        /// <summary>Ends the scope, wherever it is disposed: on the flow that opened it, and in the tasks started from it.</summary>
         public void Dispose()
         {
-            if (_isActive)
+            if (_node is not { } node)
             {
-                CurrentToken.Value = _outer;
+                return;
+            }
+
+            node.End();
+            if (ReferenceEquals(Innermost.Value, node))
+            {
+                Innermost.Value = Node.Live(node.Parent);
             }
         }
     }
 
+    /// <summary>A scope's token, and the scope it was opened in.</summary>
+    internal sealed class Node(CancellationToken token, Node? parent)
+    {
+        private volatile bool _ended;
+
+        public CancellationToken Token { get; } = token;
+
+        public Node? Parent { get; } = parent;
+
+        public void End() => _ended = true;
+
+        /// <summary>The innermost scope from <paramref name="node"/> out that hasn't ended.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Node? Live(Node? node)
+        {
+            while (node is { _ended: true })
+            {
+                node = node.Parent;
+            }
+
+            return node;
+        }
+    }
+
     /// <summary>The token an operation obeys: its own if it was given one, else the one in force.</summary>
-    internal static CancellationToken Effective(CancellationToken own) => own.CanBeCanceled ? own : CurrentToken.Value;
+    internal static CancellationToken Effective(CancellationToken own) => own.CanBeCanceled ? own : Current;
 
     /// <summary>
     /// The scope of an operation given a token of its own, so that the checks deep in the engine read it. It costs nothing
     /// when the token is the one in force, as with none.
     /// </summary>
-    internal static Scope Enter(CancellationToken effective) => effective == CurrentToken.Value ? default : Use(effective);
+    internal static Scope Enter(CancellationToken effective) => effective == Current ? default : Use(effective);
 
     /// <summary>
     /// For a long loop deep in the engine, which has no progress range to ask (a particle swarm, the fillets of a contour).
@@ -65,5 +99,5 @@ public static class Cancellation
     /// </summary>
     /// <exception cref="OperationCanceledException">The token in force was cancelled.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void ThrowIfRequested() => CurrentToken.Value.ThrowIfCancellationRequested();
+    internal static void ThrowIfRequested() => Current.ThrowIfCancellationRequested();
 }

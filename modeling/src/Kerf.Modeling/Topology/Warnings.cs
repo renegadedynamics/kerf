@@ -8,6 +8,12 @@ namespace Kerf.Modeling;
 /// its thread and async flow, so operations running at once on other threads (other cells, say) don't see each
 /// other's warnings.
 /// </summary>
+/// <remarks>
+/// A scope collects from <see cref="Capture"/> until it is disposed, on the flow that opened it and in the tasks and
+/// parallel loops started from it, and nothing after: disposing it ends it everywhere, on whichever thread or task the
+/// <c>Dispose</c> runs, and a warning raised once <c>Dispose</c> has returned (by a task that outlived the scope, say)
+/// goes to the enclosing scopes still open, not to it.
+/// </remarks>
 public static class Warnings
 {
     private static readonly AsyncLocal<WarningScope?> Current = new();
@@ -23,7 +29,7 @@ public static class Warnings
     ///     ShowWarnings(warnings.Messages);
     /// }
     /// </code></example>
-    public static WarningScope Capture() => Current.Value = new WarningScope(Current.Value, scope => Current.Value = scope);
+    public static WarningScope Capture() => Current.Value = new WarningScope(WarningScope.Live(Current.Value));
 
     internal static void Warn(string message) => Warn(message, null);
 
@@ -36,18 +42,33 @@ public static class Warnings
         for (var scope = Current.Value; scope is not null; scope = scope.Parent)
             scope.Add(message, code);
     }
+
+    /// <summary>Ends <paramref name="scope"/> here too, if it is this flow's innermost.</summary>
+    internal static void Ended(WarningScope scope)
+    {
+        if (ReferenceEquals(Current.Value, scope))
+            Current.Value = WarningScope.Live(scope.Parent);
+    }
 }
 
 /// <summary>The warnings raised within a <see cref="Warnings.Capture"/> scope.</summary>
 public sealed class WarningScope : IDisposable
 {
-    private readonly Action<WarningScope?> _restore;
     private readonly List<(string Message, DiagnosticCode? Code)> _raised = [];
-    private bool _disposed;
+    // Set under the lock, so no warning is added once Dispose has returned
+    private volatile bool _ended;
 
-    internal WarningScope(WarningScope? parent, Action<WarningScope?> restore) => (Parent, _restore) = (parent, restore);
+    internal WarningScope(WarningScope? parent) => Parent = parent;
 
     internal WarningScope? Parent { get; }
+
+    /// <summary>The innermost scope from <paramref name="scope"/> out that hasn't ended.</summary>
+    internal static WarningScope? Live(WarningScope? scope)
+    {
+        while (scope is { _ended: true })
+            scope = scope.Parent;
+        return scope;
+    }
 
     /// <summary>The warnings so far, in the order they were raised.</summary>
     public IReadOnlyList<string> Messages
@@ -69,19 +90,26 @@ public sealed class WarningScope : IDisposable
         }
     }
 
-    // Tasks started in the scope may warn from several threads at once
+    // Tasks started in the scope may warn from several threads at once; an ended scope takes nothing
     internal void Add(string message, DiagnosticCode? code)
     {
+        if (_ended)
+            return;
         lock (_raised)
-            _raised.Add((message, code));
+        {
+            if (!_ended)
+                _raised.Add((message, code));
+        }
     }
 
-    /// <summary>Ends the scope: later warnings go to the enclosing one, if any.</summary>
+    /// <summary>
+    /// Ends the scope, wherever it is disposed: on the flow that opened it, and in the tasks started from it. Later
+    /// warnings go to the enclosing scopes still open, if any.
+    /// </summary>
     public void Dispose()
     {
-        if (_disposed)
-            return;
-        _disposed = true;
-        _restore(Parent);
+        lock (_raised)
+            _ended = true;
+        Warnings.Ended(this);
     }
 }

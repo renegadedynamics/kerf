@@ -17,6 +17,16 @@ version may break the API.
 - **Rendering is quicker** (unit 14E): the renderer draws opaque triangles, edges over them and its 2 × 2 supersampling
   four pixels at a time where the processor has AVX2, in 35% to 45% less time on one thread, with the same pixels;
   elsewhere it draws as before (decisions 2072 and 2075).
+- **Parallel runs allocate fewer large objects, and a volume of many faces integrates them on several threads**
+  (unit 14F): the adaptive integration's work vectors are sized by the face (a third of a parallel run's large objects,
+  3.4% of its bytes), and a solid with 16 faces or more to integrate integrates them on the thread pool and sums them in
+  order. The same values to the bit (decisions 27602 and 27606). The README's runtime settings now say to keep the
+  workstation collector on a machine shared with other busy processes, where the server collector's pauses ran to
+  seconds (decision 27603).
+- **`Cancellation.Use`'s scope lasts until it is disposed, wherever that happens** (unit 14F): disposed in another task,
+  it ends on the flow that opened it too, where it stayed in force; and a task that outlives the scope goes back to
+  the token outside it, where it kept the scope's. Within one flow, nested and disposed with `using`, nothing changes
+  (decision 27601).
 - **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
   too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
   refused them; beside a concave arc it still refuses, saying why (decision 2048).

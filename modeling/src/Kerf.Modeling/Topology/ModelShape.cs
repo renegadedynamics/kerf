@@ -6,9 +6,17 @@ namespace Kerf.Modeling;
 /// flag, and the record of the operation that made it.
 /// </summary>
 /// <remarks>
+/// <para>
 /// An object is immutable, and goes wherever a shape goes: it converts implicitly to <see cref="Kerf.Topology.Shape"/>, and
 /// the extension members on shapes are on it too. Its operations keep its class, so <c>box.Moved(loc)</c> is a <c>Box</c>
 /// (see <see cref="ModelShapeOperations"/>).
+/// </para>
+/// <para>
+/// <b>Threads:</b> an object may be shared between threads without a lock, and any number of operations may read it at
+/// once (measure, select, fillet, cut, mesh, draw, export): each gives what it gives alone, and the object is unchanged
+/// after. The ambient scopes (<see cref="Warnings.Capture"/>, <see cref="SkipClean"/>, <c>Cancellation.Use</c>) apply to
+/// the flow that opened them and the tasks started from it, until disposed (the guide, section 9).
+/// </para>
 /// </remarks>
 public abstract partial class ModelShape : IShape3D, IEquatable<ModelShape>
 {

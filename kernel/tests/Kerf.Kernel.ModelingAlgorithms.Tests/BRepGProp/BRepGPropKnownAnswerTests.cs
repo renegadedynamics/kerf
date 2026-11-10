@@ -659,4 +659,98 @@ public class BRepGPropKnownAnswerTests
         Matrix3x3 anI = new();
         EngineAssert.Throws<ProgramErrorException>(() => aGauss.Compute(aBF, new Point3D(), ref aMass, ref aG, ref anI));
     }
+
+    // Unit 14F: the adaptive integration's work vectors start at one knot interval's length and grow with the face
+
+    private static Face KnottedSquare(int intervals)
+    {
+        // a unit square on z = 0, bilinear, with this many knot intervals each way: the integration subdivides each
+        var aPoles = new NCollection_Array2<Point3D>(1, intervals + 1, 1, intervals + 1);
+        for (int i = 1; i <= intervals + 1; i++)
+        {
+            for (int j = 1; j <= intervals + 1; j++)
+            {
+                aPoles[i, j] = new Point3D((i - 1) / (double)intervals, (j - 1) / (double)intervals, 0);
+            }
+        }
+
+        var aKnots = new NCollection_Array1<double>(1, intervals + 1);
+        var aMults = new NCollection_Array1<int>(1, intervals + 1);
+        for (int i = 1; i <= intervals + 1; i++)
+        {
+            aKnots[i] = (i - 1) / (double)intervals;
+            aMults[i] = i == 1 || i == intervals + 1 ? 2 : 1;
+        }
+
+        return TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 1, 1)));
+    }
+
+    private static (double Mass, Point3D Centre) AdaptiveArea(Face theFace)
+    {
+        var aProps = new Properties();
+        MassPropertiesBuilder.SurfaceProperties(theFace, aProps, 1.0e-6);
+        return (aProps.Mass(), aProps.CentreOfMass());
+    }
+
+    [Fact]
+    public void Adaptive_integration_over_many_knot_intervals_grows_its_vectors()
+    {
+        // 1 interval fits the first vectors, 10 grow them, 70 pass OCCT's 61 (Sm), which OCCT's grow past too; each on a
+        // thread of its own first, then one after another on one thread, in an order that grows and shrinks: the same bits
+        int[] aCounts = [1, 10, 70, 3, 64];
+        var aAlone = new (double Mass, Point3D Centre)[aCounts.Length];
+        for (int k = 0; k < aCounts.Length; k++)
+        {
+            int n = aCounts[k];
+            var aThread = new Thread(() => aAlone[Array.IndexOf(aCounts, n)] = AdaptiveArea(KnottedSquare(n)));
+            aThread.Start();
+            aThread.Join();
+            Assert.Equal(1.0, aAlone[k].Mass, 1e-12);
+            AssertPnt(new Point3D(0.5, 0.5, 0), aAlone[k].Centre, 1e-12);
+        }
+
+        for (int k = 0; k < aCounts.Length; k++)
+        {
+            Assert.Equal(aAlone[k], AdaptiveArea(KnottedSquare(aCounts[k])));
+        }
+    }
+
+    [Fact]
+    public void A_volume_of_many_faces_integrated_on_several_threads_is_the_serial_sum()
+    {
+        // Unit 14F: from MassPropertiesBuilder.ParallelFacesFrom faces to integrate, the faces are integrated on several
+        // threads and added in their order: the same bits as one after another. 24 spheres of radii 1 to 3.3, apart.
+        var aB = new BrepBuilder();
+        Shell aShell = new();
+        aB.MakeShell(ref aShell);
+        double aVolume = 0;
+        for (int i = 0; i < 24; i++)
+        {
+            double r = 1 + 0.1 * i;
+            Face aF = BRepGPropTestShapes.NaturalFace(new SphericalSurface(
+                new CoordinateSystem(new Point3D(10 * i, (i % 3) * 7.0, (i % 5) * 3.0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r));
+            aB.Add(aShell, aF);
+            aVolume += 4.0 / 3.0 * Math.PI * r * r * r;
+        }
+
+        Assert.True(24 >= MassPropertiesBuilder.ParallelFacesFrom);
+        Shape aSolid = TestShapes.Frozen(BRepGPropTestShapes.SolidOf(aShell));
+        foreach (double anEps in new[] { 1e-6, 1e-9, 2.0 })
+        {
+            var aParallel = new Properties();
+            double anError = MassPropertiesBuilder.VolumeProperties(aSolid, aParallel, anEps);
+            var aSerial = new Properties();
+            double aSerialError;
+            using (OsdParallel.ForceSerialScope())
+            {
+                aSerialError = MassPropertiesBuilder.VolumeProperties(aSolid, aSerial, anEps);
+            }
+
+            Assert.Equal(aSerial.Mass(), aParallel.Mass());
+            Assert.Equal(aSerial.CentreOfMass(), aParallel.CentreOfMass());
+            Assert.Equal(aSerial.MatrixOfInertia(), aParallel.MatrixOfInertia());
+            Assert.Equal(aSerialError, anError);
+            Assert.Equal(aVolume, aParallel.Mass(), 1e-6 * aVolume);
+        }
+    }
 }

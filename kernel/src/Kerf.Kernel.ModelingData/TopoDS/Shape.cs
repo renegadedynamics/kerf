@@ -26,6 +26,13 @@ namespace Kerf.Topology;
 /// IsEqual and <see cref="IsSame"/>; <see cref="ShapeHasher"/> compares with IsSame.
 /// </para>
 /// <para>
+/// <b>Threads:</b> a shape the public API gives is immutable, so it may be shared between threads without a lock, and any
+/// number of operations may read it at once, each giving what it gives on one thread. What the kernel keeps about a
+/// shape for later (a solid's measured volume, the faces a check found clean, decisions 2000 and 2067) is keyed by the
+/// shape's immutable data, safe between threads, and changes no result: a lookup that misses or races only measures or
+/// checks again.
+/// </para>
+/// <para>
 /// <c>new TopoDS_Shape()</c> is OCCT's null shape, with orientation EXTERNAL; <c>default(TopoDS_Shape)</c> differs
 /// from it only in the orientation (FORWARD). Ported code writes <c>new TopoDS_Shape()</c>.
 /// </para>

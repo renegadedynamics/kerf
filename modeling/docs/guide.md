@@ -445,6 +445,10 @@ writing files have async forms (section 8).
   the same meshes and the same files. Kerf's tests build parts with fillets, chamfers, shells, extrusions,
   revolutions, lofts, sweeps, hulls and text on several threads, and mesh, draw, render and export them, against the
   same run on one thread.
+- **What Kerf keeps between operations is safe too.** A solid's measured volume and the faces a check found valid are
+  kept with the shape's immutable data, for the next Boolean on it: two threads reading or keeping them at once
+  get the same answers, and the worst a race does is measure or check something again. Nothing kept changes a
+  result, and nothing keeps a shape alive.
 - Independent parts are the natural unit of work: one part a thread. Meshing, and a few of the kernel's algorithms,
   use .NET's thread pool themselves; many parts at once share the pool rather than multiply its threads.
 
@@ -467,6 +471,25 @@ Result[] written = await Task.WhenAll(sizes.Select(async size =>
 }));
 ```
 
+**Parts built in parallel pay** (decision 27605): the blade bumper enclosure's 13 parts built with `Parallel.For`, the
+shared sections in `Lazy<T>` built once by whichever part needs them first, came out the same to the bit, for the same
+bytes, in 1.5 to 1.7 times less wall time on 4 processors (a loaded machine; the largest part bounds it on more).
+Keep what the parts share in `Lazy<T>` (thread-safe by default) or build it first; don't keep the part being built in a
+static the parts read, such as a size chosen by a setter: give each part what it needs.
+
+**The runtime's settings belong to your application** (`.csproj` or `runtimeconfig.json`), and matter once many
+operations run at once:
+
+- **`TieredPGO` off and `CallCountingDelayMs` 0** cut the processor time of a parallel run of Kerf by 35% to 45%,
+  whichever collector, and suit any application that runs Kerf for more than a moment (kernel README, "Runtime
+  settings for a host").
+- **The server collector** (`ServerGarbageCollection`, with DATAS left on) does half the collections and, on a machine
+  the application has to itself, took a parallel round from 1,862 to 546 ms with the settings above. **On a machine
+  other busy processes share** (a build agent, a desktop running other heavy work), its pauses ran to 5 to 14 s a
+  round, once 118 s, as each heap's thread waits for its own processor; the workstation collector's stayed under 1.5 s.
+  There, keep the workstation collector (the default), or try `GCNoAffinitize`.
+- `GCConserveMemory` and a heap mask over part of the processors didn't help.
+
 **Cancellation, warnings and `SkipClean` follow the flow of control,** on a thread and through `await` alike (each
 keeps its state in an `AsyncLocal`):
 
@@ -478,9 +501,11 @@ keeps its state in an `AsyncLocal`):
 - A scope collects the warnings of a `Parallel` loop started inside it, from every thread. A cancelled operation in
   a loop's body throws `OperationCanceledException`, which `Parallel` gathers into an `AggregateException`.
 - An `async` method's scopes end with it, even one it never disposed: its caller doesn't see them.
-- **Open and end a scope on the same flow, with `using`.** Disposed on another thread or task, a scope ends nothing
-  where it was opened: that flow goes on skipping the clean, or collecting warnings, until it finishes. And a task
-  started inside a scope that outlives it keeps the scope: its later warnings still go to it.
+- **A scope lasts from its opening until it is disposed, wherever the `Dispose` runs.** Disposed in another task, it
+  ends on the flow that opened it too. A task started inside a scope that outlives it doesn't keep it: once the
+  scope is disposed the task cleans again, obeys the token outside, and its warnings go to the enclosing scope still
+  open, if any. So await what you start inside a scope before it ends, if it's to apply to them; `using` does the
+  rest.
 
 ## 10. Common mistakes
 
