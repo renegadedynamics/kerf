@@ -17083,3 +17083,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        and the processor time of a recalculation, 641 to 750 ms with the same wall time: 14F's, as the runs at 43b4e687e and
        e4d550ed6 (656 ms each) show; one step of the 47 ms the counter moves in is decision 2081's volumes on several threads,
        for the owner (decision 2041).
+2088. **Volumes integrate their faces on one thread in 0.5.0; decision 2081's parallel integration stays, off, behind an internal scope**
+       (the owner, 10 November 2026: "B) for 0.5.0 - I'm happy to switch it off for now"; decision 2041). On the quiet machine it
+       saved a caller building one large part about 20% of its wall time (the enclosure 2.6 to 2.1 to 2.5 s) for 40% to 65% more
+       processor time, gave Bento's small examples about one 47 ms step more processor time a recalculation and nothing back, and
+       doubled the rig's parallel round's waits (5 to 11). `MassPropertiesBuilder.ParallelVolumesScope` turns it on for a flow;
+       `BRepGPropKnownAnswerTests` uses it, so the parallel sums are still checked bit for bit against the serial ones. A per-call
+       option, off by default, for a caller building one large part, is for 0.5.1.

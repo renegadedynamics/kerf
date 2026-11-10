@@ -2025,7 +2025,7 @@ builder and pave filler 47%, **decision 1860's volume check 19%, all of it seria
 
 | Candidate | What was done | Measured |
 |---|---|---|
-| The volume check's faces | **Done** (decision 2081): from 16 faces to integrate, each face on the pool with its own integrand, summed in the faces' order | The same bits on 8,724 properties and the suites; the enclosure built by one caller 5.0 to 11.0 s to 3.9 to 8.8 s wall (medians 8.3 and 6.0, loaded), the same processor time, 0.6% more bytes; the rig's round 0.4% more bytes, its processor time within the noise |
+| The volume check's faces | **Written, off in 0.5.0** (decisions 2081 and 2088: it cost a caller running builds side by side more processor time and waits than it saved one building alone): from 16 faces to integrate, each face on the pool with its own integrand, summed in the faces' order | The same bits on 8,724 properties and the suites; the enclosure built by one caller 5.0 to 11.0 s to 3.9 to 8.8 s wall (medians 8.3 and 6.0, loaded), the same processor time, 0.6% more bytes; the rig's round 0.4% more bytes, its processor time within the noise |
 | Kerf's own loops, all of them | Measured with them off (the kernel's serial scope, by reflection): | The enclosure by one caller, the same processor time and 1% fewer bytes; on a loaded machine its wall time didn't show what they give. For the quiet window |
 | The Boolean's builder and pave filler | Already parallel where OCCT is; its serial share is the per-face work 14A named (decision 2055) | Not changed |
 | The validity check | 114 samples on the calling thread, 4 on the pool: serial in practice | Named for later |

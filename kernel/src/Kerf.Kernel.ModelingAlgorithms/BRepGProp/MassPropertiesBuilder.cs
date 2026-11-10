@@ -360,7 +360,7 @@ internal static class MassPropertiesBuilder
                                                 bool massOnly = false,
                                                 bool exactPlanes = false)
     {
-        if (!useTriangulation && !OsdParallel.IsSerial
+        if (!useTriangulation && ParallelVolumes.Value && !OsdParallel.IsSerial
             && TryVolumeFacesInParallel(s, props, refPnt, eps, skipShared, massOnly, exactPlanes, out double inParallel))
         {
             return inParallel;
@@ -474,6 +474,26 @@ internal static class MassPropertiesBuilder
     /// threads (unit 14F): below it, the loop's cost is a larger share than the faces', and short operations stay serial.
     /// </summary>
     internal const int ParallelFacesFrom = 16;
+
+    /// <summary>
+    /// Whether volumes integrate their faces on several threads at all: off (decision 2088, the owner's for 0.5.0), as it
+    /// cost a caller already running operations side by side more processor time and waits than it saved, until callers
+    /// can ask for it. <see cref="ParallelVolumesScope"/> turns it on for the flow that opens it, for the tests.
+    /// </summary>
+    private static readonly AsyncLocal<bool> ParallelVolumes = new();
+
+    /// <summary>Volumes integrated on several threads in this flow until the scope is disposed (decision 2088).</summary>
+    internal static IDisposable ParallelVolumesScope()
+    {
+        bool previous = ParallelVolumes.Value;
+        ParallelVolumes.Value = true;
+        return new ParallelVolumesRestore(previous);
+    }
+
+    private sealed class ParallelVolumesRestore(bool previous) : IDisposable
+    {
+        public void Dispose() => ParallelVolumes.Value = previous;
+    }
 
     /// <summary>
     /// <see cref="VolumePropertiesFaces"/> with the faces integrated on several threads, each with its own integrand,
