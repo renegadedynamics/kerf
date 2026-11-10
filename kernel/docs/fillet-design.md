@@ -346,7 +346,7 @@ Decisions 2141 and 2142. **Native OCCT 8.0.1 does the same,** to the digits: it'
 | Cylinder through a sphere's centre; cone on a cylinder's axis (walked) | 9e-6; 2.2e-5, at every radius |
 | Upright cylinder on a plane (`ChFiKPart`'s torus) | 1e-15 |
 
-The miss grows about as the cube of the radius: on the tee 2.1e-6 at 0.1, 3.9e-5 at 0.3, 2.9e-4 at 0.6. **A fix** gives the functions the curve of the ball's centres as their guide, from a first walk, and walks again; it reaches the ends' sections and the corners, and moves every walked fillet's surface. Not done here: for the owner, beside decision 2134's cheaper choices (29502).
+The miss grows about as the cube of the radius: on the tee 2.1e-6 at 0.1, 3.9e-5 at 0.3, 2.9e-4 at 0.6. **A fix** gives the functions the curve of the ball's centres as their guide, from a first walk, and walks again; it reaches the ends' sections and the corners, and moves every walked fillet's surface. Not done here: for the owner, beside decision 2134's cheaper choices (2142).
 
 ## Sources
 
