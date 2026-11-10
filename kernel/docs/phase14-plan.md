@@ -2,6 +2,8 @@
 
 > **Agreed, 9 November 2026** (the owner; decision 2041). Runs beside phase 13: what's merged by 0.5.0 ships in it. Its
 > first script is Renegade Dynamics' blade bumper enclosure; others follow as the owner names them.
+>
+> **0.5.0 prepared, 10 November 2026** (decision 2086), for the owner to test and publish. Phase 14 carries on: 14B's larger items and more scripts.
 
 ## The goal
 

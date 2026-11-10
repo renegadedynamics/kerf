@@ -5,6 +5,19 @@ version may break the API.
 
 ## Unreleased
 
+## 0.5.0
+
+- **Text and drawing sheets:** a managed font reader (TrueType, OpenType, collections) with Liberation Sans shipped, text
+  as faces, notes on drawings and sheets with a border and title block, written to SVG and DXF as outlines or text.
+- **0.4.0's slowdowns gone, and quicker throughout:** a small part fused onto a large one 3 to 9 times quicker than 0.4.0,
+  a collapsing chamfer about 40 times; Boolean checks cheaper with the same verdicts; rendering 18% less processor time.
+  A user's enclosure builds in 2.2 s where 0.4.0 took 3.2. Bento's examples recalculate in 264 ms (native OCCT 8.0.1: 685
+  ms), at [the release's run](docs/benchmarks/2026-11-10-33b1e7dc7.md).
+- **Fewer silent wrong answers:** a Boolean whose result nearly touched is checked at points; spheres and tori keep to a
+  relative deflection, and a mesh still over its deflection says so; primitives too small to be valid fail.
+- **Async reading and writing, a thread-safety guarantee, and the public API on record** with an immutability guard.
+- **Breaking:** the kernel's argument exceptions are types of its own (derived from .NET's); `FillOptions.Points` is an
+  `ImmutableArray`; history and inertia results are immutable arrays.
 - **A solid's classifier allocates about a quarter less a point**, which every Boolean's check and builder use: a small
   part fused onto a large one 5% to 10% fewer bytes (decision 2070).
 - **A mesh further from its surfaces than the deflection says so,** with the warning `meshing.deflection-exceeded`
