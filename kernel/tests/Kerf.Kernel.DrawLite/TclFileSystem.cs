@@ -202,12 +202,14 @@ internal sealed class TclFileSystem
         var aSeen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (Directory.Exists(aFull) && !myDeleted.Contains(aFull))
         {
-            foreach (string anEntry in Directory.EnumerateFileSystemEntries(aFull))
+            // the entries' kinds as the enumeration read them, not a query of each (OCCT's locate_data_file globs the data
+            // directories, thousands of files, for each file it looks for: decision 27803)
+            foreach (FileSystemInfo anEntry in new DirectoryInfo(aFull).EnumerateFileSystemInfos())
             {
-                string aPath = Slashes(anEntry);
+                string aPath = Slashes(Path.Join(aFull, anEntry.Name));
                 if (!myDeleted.Contains(aPath) && aSeen.Add(aPath))
                 {
-                    yield return (Path.GetFileName(aPath), Directory.Exists(aPath));
+                    yield return (Path.GetFileName(aPath), anEntry is DirectoryInfo);
                 }
             }
         }
