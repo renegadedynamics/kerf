@@ -103,19 +103,25 @@ internal class Analyzer
 
         _shape = shape;
         _map.Clear();
-        // About ten sub-shapes, each way round, for each face: fewer times to grow the map
-        int nbFaces = 0;
+        SkippedFaces = 0;
+        bool remembering = _isRemembering && b && !_isExact;
+        // About ten sub-shapes, each way round, for each face: fewer times to grow the map. A face the memory knows is one
+        // entry, with nothing under it (unit 15B: most of a chain's results' faces)
+        int nbFaces = 0, known = 0;
         for (var exp = new Explorer(shape, ShapeType.Face); exp.More(); exp.Next())
         {
             ++nbFaces;
+            if (remembering && ValidMemory.Knows(exp.Current()))
+            {
+                ++known;
+            }
         }
 
-        _map.EnsureCapacity(10 * nbFaces);
-        SkippedFaces = 0;
-        bool remembering = _isRemembering && b && !_isExact;
+        _map.EnsureCapacity(10 * (nbFaces - known) + known);
         Put(shape, b, remembering);
         Perform();
-        if (remembering && IsClean)
+        _isClean = FindClean();
+        if (remembering && _isClean)
         {
             Remember();
         }
@@ -129,22 +135,23 @@ internal class Analyzer
 
     /// <summary>
     /// Kerf (unit 13K): true if every status of every sub-shape checked, in every context, is no fault. Stronger than
-    /// <see cref="IsValid()"/>, which reads some of them.
+    /// <see cref="IsValid()"/>, which reads some of them. Found once, when the check is done (unit 15B).
     /// </summary>
-    internal bool IsClean
-    {
-        get
-        {
-            for (int i = 0; i < _map.Count; i++)
-            {
-                if (_map.ValueAt(i) is { IsClean: false })
-                {
-                    return false;
-                }
-            }
+    internal bool IsClean => _isClean;
 
-            return true;
+    private bool _isClean;
+
+    private bool FindClean()
+    {
+        for (int i = 0; i < _map.Count; i++)
+        {
+            if (_map.ValueAt(i) is { IsClean: false })
+            {
+                return false;
+            }
         }
+
+        return true;
     }
 
     // After a clean check: what's under each frozen face reads only that face's graph, placement and orientation, and none of
