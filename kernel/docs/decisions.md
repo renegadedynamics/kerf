@@ -17108,3 +17108,28 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        10 November 2026: "15A - parallel volumes on with a setting, plus the block of code"). The setting where a caller passes options;
        the scope, as `Cancellation.Use`'s, for code that passes none. Off by default. The owner also chose Fable 5.2 for helpers on
        15B, 15G, 15H and 15I, to try it out.
+
+## Phase 15: unit 15G, the rig's first-load bytes crash
+
+28201. **The rig's `first-load bytes` crash was the rig letting go of its collectible context; fixed by holding it until the work is done** (15G; decision 1896). `FirstLoad.Run` made its `ExtensionContext`, loaded the probe assembly from it and never
+       touched the local again, and the runtime keeps a collectible `AssemblyLoadContext` alive only through references to the context
+       itself: its assemblies' types and the frames running their code hold the loader allocator, not the context. So a collection after
+       that last use finalised the context, whose finalizer initiates its unload, and the next of Kerf's assemblies to resolve from bytes
+       was refused (`LoadFromStream`: "AssemblyLoadContext is unloading or was already unloaded"), which took the process down with exit
+       code 0xE0434352 (-532462766), an unhandled `TargetInvocationException` round a `FileLoadException`. **Why intermittent, measured:**
+       a plain run's only collections are the three that loading the assemblies' bytes triggers (large-object allocations, each a full
+       collection), while the context is on the stack; the fillet and the cut allocate about 60 MB between `Kerf.Kernel.ModelingAlgorithms`'
+       load at 39 MB and `Kerf.Kernel.DataExchange`'s at 98 MB, and on this machine no collection fell between them. A collection there is
+       what fails it: 10 of 10 processes with a 1 MB gen0 budget (`DOTNET_GCgen0size=0x100000`), every one at DataExchange's load; 3 of 3
+       with full collections forced inside the work, at the first load after the fillet; 0 of 40 plain with the other helpers building,
+       and 0 of 20 beside one spinning thread of its own, where 14A's helper saw 6 of 12 on a machine under its build (performance.md,
+       14A). That load makes it likelier is inferred from the helper's figure, not measured here. The fix is `GC.KeepAlive(extension)`
+       after the work: with it, 0 of 10 with the 1 MB budget, 0 of 20 plain, and the row's figures unchanged (2.2 s, 3,649 methods, on
+       a loaded machine). Not Kerf's: Bento's `LoadedExtension` holds its context in a field for the extension's life, and `first-load
+       files` resolves Kerf through the shared context, which isn't collectible, so neither sees it.
+28202. **The rig goes on past a process that fails, and says so** (15G). bench.ps1 threw on the first non-zero exit, and the run was
+       lost. Now it notes the suite and process, the exit code (decimal and hex), the first line of stderr and the innermost cause,
+       prints that as it happens and carries on; the rows the process wrote stand (a row is whole once written) and its logs are kept;
+       the note goes in the header of the .md and the .tsv (`failed`) and at the end of the output, the comparison is printed if one
+       was asked for, and only then does it exit with 1. Rehearsed with the fix taken out and the 1 MB budget, `-Only first-bento-today,
+       first-bento-files -Quick`: 3 of 3 failed and were noted, the files suite ran, both files were written, exit code 1.
