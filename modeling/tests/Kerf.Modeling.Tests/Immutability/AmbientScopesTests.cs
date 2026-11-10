@@ -6,8 +6,8 @@ using Kerf.Modeling;
 /// How the ambient scopes, <see cref="Cancellation.Use"/>, <see cref="Warnings.Capture"/> and <see cref="SkipClean"/>,
 /// behave on many threads and in async code (unit 14G, for the guide's "Running operations in parallel"). Each keeps its
 /// state in an <see cref="AsyncLocal{T}"/>: it follows its own thread and async flow, flows into the tasks and parallel
-/// loops started inside it, and isn't seen by other callers. A scope must end on the flow that opened it, as a
-/// <c>using</c> ends it: one ended on another flow stays open where it was opened (the last test).
+/// loops started inside it, and isn't seen by other callers. A scope's lifetime is its own (unit 14F): disposed on any
+/// flow, it ends on the flow that opened it and in every task started from it, and nothing reaches it after.
 /// </summary>
 public class AmbientScopesTests
 {
@@ -138,48 +138,166 @@ public class AmbientScopesTests
     }
 
     [Fact]
-    public async Task AScopeEndedOnAnotherFlowStaysOpenOnItsOwn()
+    public async Task AScopeEndedOnAnotherFlowEndsWhereItWasOpened()
     {
-        // Found by unit 14G, for 14F: Dispose ends a scope on the flow it runs on. Run on another flow (a task's), it
-        // ends nothing where the scope was opened, and marks it ended, so the using there can't end it either: the
-        // opening flow skips the clean, and collects warnings, until it finishes.
+        // Found by unit 14G, fixed by 14F: Dispose ended a scope only on the flow it ran on. A scope's lifetime is its
+        // own: disposed in a task, it ends on the flow that opened it too, and a second Dispose there does nothing
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
         var task = Task.Run(async () =>
         {
             var skip = new SkipClean();
             var scope = Warnings.Capture();
+            var cancel = Cancellation.Use(cancelled.Token);
             await Task.Run(() =>
             {
                 skip.Dispose();
                 scope.Dispose();
+                cancel.Dispose();
             });
-            skip.Dispose();   // already disposed: does nothing
+            bool clean = SkipClean.Clean;
+            bool cancelling = Cancellation.Current.CanBeCanceled;
+            Warn("after all three ended");
+            skip.Dispose();   // already ended: does nothing
             scope.Dispose();
-            Warn("after both ended");
-            return (SkipClean.Clean, scope.Messages);
+            cancel.Dispose();
+            return (clean, cancelling, scope.Messages, FusedFaces());
         });
-        var (clean, messages) = await task;
-        Assert.False(clean);
-        Assert.Equal(["after both ended"], messages);
+        var (clean, cancelling, messages, faces) = await task;
+        Assert.True(clean);
+        Assert.False(cancelling);
+        Assert.Empty(messages);
+        Assert.Equal(6, faces);
     }
 
     [Fact]
-    public async Task ATaskThatOutlivesItsScopeStillWarnsIntoIt()
+    public async Task AScopeEndedOnAnotherFlowLeavesTheScopesOutsideItOpen()
     {
-        // A task started inside a scope keeps the scope after it ends: its later warnings still go to it
-        using var release = new SemaphoreSlim(0);
-        Task late;
-        WarningScope scope;
-        using (scope = Warnings.Capture())
+        var task = Task.Run(async () =>
         {
+            using var outerSkip = new SkipClean();
+            using var outer = Warnings.Capture();
+            var innerSkip = new SkipClean();
+            var inner = Warnings.Capture();
+            await Task.Run(() =>
+            {
+                innerSkip.Dispose();
+                inner.Dispose();
+            });
+            Warn("after the inner ended");
+            // The outer scopes are open: the clean skipped, the warning theirs
+            return (SkipClean.Clean, outer.Messages, inner.Messages, FusedFaces());
+        });
+        var (clean, outerMessages, innerMessages, faces) = await task;
+        Assert.False(clean);
+        Assert.Equal(["after the inner ended"], outerMessages);
+        Assert.Empty(innerMessages);
+        Assert.Equal(10, faces);
+    }
+
+    [Fact]
+    public void ScopesEndedOutOfOrderLeaveTheInnerOneOpen()
+    {
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        var outerSkip = new SkipClean();
+        var outer = Warnings.Capture();
+        var outerCancel = Cancellation.Use(cancelled.Token);
+        var innerSkip = new SkipClean();
+        var inner = Warnings.Capture();
+        var innerCancel = Cancellation.Use(CancellationToken.None);
+        try
+        {
+            outerSkip.Dispose();
+            outer.Dispose();
+            outerCancel.Dispose();
+            Warn("inner only");
+            Assert.False(SkipClean.Clean);
+            Assert.False(Cancellation.Current.CanBeCanceled);
+            Assert.Equal(["inner only"], inner.Messages);
+            Assert.Empty(outer.Messages);
+        }
+        finally
+        {
+            innerCancel.Dispose();
+            inner.Dispose();
+            innerSkip.Dispose();
+        }
+
+        Assert.True(SkipClean.Clean);
+        Assert.False(Cancellation.Current.CanBeCanceled);
+    }
+
+    [Fact]
+    public async Task ATaskThatOutlivesItsScopesNoLongerUsesThem()
+    {
+        // Fixed by 14F: a task started inside a scope that outlives it doesn't keep it; its later warnings go to the
+        // enclosing scope still open, it cleans again, and the token in force is the one outside
+        using var release = new SemaphoreSlim(0);
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        Task<(bool Clean, bool Cancelling, int Faces)> late;
+        WarningScope scope;
+        using var outer = Warnings.Capture();
+        using (scope = Warnings.Capture())
+        using (new SkipClean())
+        using (Cancellation.Use(cancelled.Token))
+        {
+            Warn("inside");
             late = Task.Run(async () =>
             {
                 await release.WaitAsync();
                 Warn("after the scope ended");
+                return (SkipClean.Clean, Cancellation.Current.CanBeCanceled, FusedFaces());
             });
         }
 
         release.Release();
-        await late;
-        Assert.Equal(["after the scope ended"], scope.Messages);
+        var (clean, cancelling, faces) = await late;
+        Assert.Equal(["inside"], scope.Messages);
+        Assert.Equal(["inside", "after the scope ended"], outer.Messages);
+        Assert.True(clean);
+        Assert.False(cancelling);
+        Assert.Equal(6, faces);
+    }
+
+    [Fact]
+    public async Task NothingReachesAScopeAfterItsDisposeReturns()
+    {
+        // A scope ended while other threads are warning into it: whatever it holds was raised before Dispose returned,
+        // and nothing reaches it after
+        for (int trial = 0; trial < 20; trial++)
+        {
+            var scope = Warnings.Capture();
+            using var go = new ManualResetEventSlim();
+            int raisedAfter = 0;
+            bool ended = false;
+            var warners = Enumerable.Range(0, 2).Select(_ => Task.Run(() =>
+            {
+                go.Wait();
+                for (int i = 0; i < 500; i++)
+                {
+                    if (Volatile.Read(ref ended))
+                    {
+                        Warn("late");
+                        Interlocked.Increment(ref raisedAfter);
+                        if (raisedAfter > 50)
+                            return;
+                    }
+                    else
+                    {
+                        Warn("early");
+                    }
+                }
+            })).ToArray();
+            go.Set();
+            Thread.Sleep(1);
+            scope.Dispose();
+            Volatile.Write(ref ended, true);
+            await Task.WhenAll(warners);
+            Assert.DoesNotContain("late", scope.Messages);
+        }
+
+        Assert.True(SkipClean.Clean);
     }
 }

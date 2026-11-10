@@ -1717,6 +1717,12 @@ In IL builds (project references) after 60 fuses, an earlier set of six: the bos
 
 **The boss is 1.3 to 1.4 times 0.3.0's time, over the bar, and named for the owner** (decision 2038). Its check is 4.6 MB and about 5 to 7 ms: the result's classifier, whose first point fills its trees (about 3 ms), and the 150 points inside the door, each classified once (about 4 ms). That is the proof decision 1937 asks for, as the volume can't tell a small part inside the door from one lost. Keeping a frozen solid's tree of edges and vertices with its TShape, as decision 2001 keeps its map, would let a result's tree serve the next Boolean's classifiers; a quicker classifier would do the rest; keeping `PointInTheFace`'s grid for the next point was tried, and saved 5% of a classification's bytes and no time. An order of asking decision 1881's grid was tried and left out (decision 2038): asking whichever input last ruled a point out took `buc60462_2`'s check from 132 to 226 MB, found by comparing the corpus's check times case by case. **The pattern** (decision 2038), each check counted on a small part against the door: decision 1924's check doesn't run (it was reverted); decision 1932's, a 4 × 4 face against the door, 81 points for a common and 162 for a cut, 4.6 and 5.5 MB beside a Boolean of 2.7 (0.4.0's 8.6 and 13.3); decision 1985's bends, 0.7 MB and 0.6 ms of a 5 MB chamfer, under the bar; decision 1866 on a cut of the bump that removes nothing, 392 points and 7.2 MB beside 6.5 (0.4.0's 26). Decision 1932's and 1866's checks cost more than their Booleans on this shape, as they did in 0.3.0, and aren't 0.4.0's rise; they go with 13K.
 
+### One more hour (unit 13R)
+
+*9 November 2026, loaded machine; bytes over all threads, the whole fuse with its check, interleaved in one process, medians of 10. Decision 2070.*
+
+A classification of a point inside the boss's result allocated about 18.5 KB, a third of it a new `HInter` for each face its line neared, whose sequences grew afresh. A face's intersector now keeps one. 150 classifications 2.76 to 2.01 MB; the boss's check 4.31 to 3.60 MB; the boss fuse 15.73 to 14.97 MB (0.3.0 14.5), the bump 20.70 to 18.64. Times about 3% quicker, loaded. What's left is the 150 points themselves: each projects itself onto a face to aim its line, and meets each face it nears, OCCT's way. Passing over a face of the boss that no face of the door can cross saves nothing here: the boss's side meets the boxes of a cylinder and three planes of the door.
+
 ## The blade bumper enclosure, phase 14
 
 *9 November 2026, units 14A to 14D, decisions 2051 to 2055. Seven helpers shared the machine with the owner, every core at
@@ -1873,3 +1879,157 @@ On ordinary parts the checks are the result's validity and its volume, about hal
 **The corpus's filtered groups** (`boolean/`, `blend/`, `bugs/modalg_*`, `bugs/moddata_*`; the check run on every Common, Cut and Fuse through the hook, two cases at a time): statuses as `corpus-13.txt`; checks 32.1 s and 4,251 MB before, 36.0 s and 7,117 MB after, the point check's 296 Booleans the rise (about 50 ms and 10 MB each on average, a median of 6 ms, the dearest about 3 s), the other 3,730 8.8 to 7.0 s.
 
 **The boss** (fresh processes in turn, IL, 9 fuses after 3, heavily loaded): 59.5 ms against 0.3.0's 46.6 and 0.4.0's 79.2, 15.4 MB against 14.3 and 84.4; the bump 48.0 against 88.7 and 184.7. Within 10% of 0.3.0's bytes, not of its time here; what's left is decision 1937's 150 points inside the door (decision 2068).
+
+## Vector instructions (unit 14E)
+
+*9 November 2026, on a machine shared with the owner and other helpers, at up to 100% load: the micro-benchmarks ran
+alone on one processor under BenchmarkDotNet, and the figures in place are processor time, interleaved, two processors a
+process. Decisions 2072 to 2075. A script for a quiet window is in the scratchpad's `p14e/tools/quiet.ps1`.*
+
+**The machine:** an AMD Ryzen 9 9900X (Zen 5): .NET 10 accelerates `Vector128`, `Vector256` and `Vector512`, with AVX2,
+FMA and AVX-512 F and DQ. The loops kept use `Vector256<double>` (four lanes) where `Vector256.IsHardwareAccelerated`,
+and their scalar loops otherwise (decision 2075).
+
+### Where the time goes, by loop
+
+Self time from EventPipe traces of main (965e05b55), each workload in a process of its own on two processors, threads
+stopped for a collection and idle threads left out; a sample is charged to the first Kerf method from the leaf up, so a
+call into the base library counts to its Kerf caller. `p14e/tools/leaf-report.cs` reads the traces.
+
+| Workload | Samples | The largest loops over many values of one kind, by their share |
+|---|---:|---|
+| The blade bumper, 3 builds at 35 mm | 4,164 | flat: the largest method 1.9% (`MakeConnexityBlocks`, a graph walk); Gauss integration 2.6% (`ComputeWith` 1.3%, and 1.4% clearing 500 kB of work arrays a face in `GaussWork.Rent`); the Boolean's box tree pairs (`PairTraverse.Select`) 1.2%; `Class2d`'s point in polygon 1.3%; box tests (`Bounds.Add`, `Box.IsOut`, `SpatialTree.Select`) 1.3% |
+| The same, published, 2 builds | 5,921 | the renderer's triangles 4.2%, its downsampling 1.2%, its edges 0.8% (publishing was about half the run: about 13% of it); PNG writing 2.9% (14B's, already by vectors) |
+| The Booleans suite | 10,801 | `EdgeEdge.FindSolutions` 10.0% (a march along a curve, step by step), curve evaluation 5.4%, the approximation's normal matrix (`LeastSquare.MakeTAA`) 4.7%, box tree pairs 1.6%, polynomials (`PLib.EvalPoly0Runtime` and `EvalPoly0`) 1.6%, B-spline knots inserted (`Bohm`) 0.7% |
+| Meshing `data/occ` (`quick`) | 2,575 | the Delaunay's bookkeeping (adding and deleting triangles and links, its maps) about a quarter, and the node insertion's loop 9.8%, with the circles containing a node in it; `Class2d` 2.4% |
+| Bento's examples, 10 passes | 1,367 | flat: the largest 2.5% |
+
+### Prototypes
+
+| Loop | Values a call | Alone (one processor) | In place | Results | Kept |
+|---|---|---|---|---|---|
+| The renderer: a row of an opaque triangle's pixels (edge functions, depth, smooth or flat shading), of an edge's segment over the faces, and the 2 × 2 downsampling | a row of a triangle or a segment's box, four pixels a vector; a row of the picture | CrankArm 1800 × 1100 flat 63.8 to 34.8 ms (−45%), as the viewer 43.9 to 26.5 (−40%); Motor-c 121.0 to 78.9 (−35%), 90.9 to 53.6 (−41%) (an earlier run, before the masks were compared as integers: −34% to −40%) | the rig's `images`, 11 examples, 9 passes: the process's processor time 15.7 to 12.9 s (−18%; render ms −36% by wall time); the blade bumper's publishing, warm: 8,828 to 8,047 ms of processor time (−9%; the drawings and the section renders' Booleans are the rest); both at d8ac08cfc, before the masks' fix | each lane the scalar loop's operations in its order, without fused multiply-adds; 72 renders in `RendererVectorTests` byte for byte; 14 publishing runs, main's and the branch's, 36 PNGs each, all the same by SHA-256 | **yes** (decision 2072) |
+| `Class2d`'s point in polygon (`InternalSiDans`, `InternalSiDansOuOn`): four edges a vector, the crossings counted, ON found in any lane | the polygon's points, a face's wire discretised (tens to hundreds) | 1.65 times quicker at 16 to 64 points, 2.4 at 256 (a point's ON test and four corners) | by share, at most 1% of the meshing suite and 0.6% of the enclosure: its whole share is 1% to 2.5% | the same answers on over 50,000 points of random polygons, at and beside vertices and edges, with tolerances from none to large | no: can't reach decision 1829's bar (decision 2074); in the history at 7662090d3 |
+
+### Written down as not worth it (decision 2073)
+
+- **The Boolean's box tree pairs** (`PairTraverse.Select`, 1.2% to 1.6%) and **the box tests** (`Box.IsOut`, `Bounds.Add`,
+  `SpatialTree.Select`, about 1.3% together): a walk of a tree, a few boxes at a step, each box three pairs of numbers
+  held as a struct; vectors want the boxes as arrays of coordinates and the walk reshaped, for a share that can't give 5%.
+- **Gauss integration** (2.6% of the enclosure): its time is in the surfaces' evaluation, one point at a time through
+  their adaptors, and in clearing its work arrays (`GaussWork.Rent`, 1.4%, a memory clear the base library already does
+  by vectors; clearing only what's used would save that, and isn't a vector question). Summing by vectors reorders the
+  sums.
+- **`EdgeEdge.FindSolutions`** (10% of the Booleans suite): a march along an edge, each step depending on the last.
+- **The approximation's normal matrix** (`LeastSquare.MakeTAA`, 4.7% of the Booleans suite, 0.5% of the enclosure): its
+  inner loops run over a span's poles, the degree plus one (4 to 9), through 1-based matrix indexers; too short for
+  vectors to pay. Lanes over the independent outputs would keep the sums' order.
+- **Polynomials and B-spline bases** (`PLib.EvalPoly0Runtime`, `EvalPoly0`, `Bohm`: 1.6% and 0.7% of the Booleans suite):
+  Horner's rule over the dimensions, which could be lanes with the sums in order, but 3 or 4 of them at a time a point,
+  and under 2% at most.
+- **The mesher's circles and triangles** (`CircleInspector.Inspect` inside the 9.8%): the circles a node is in come
+  through the cell filter's lists, a few at a time and in no order in memory, with deleted ones purged as they're met;
+  the rest of the mesher's time is its maps and lists.
+- **Mesh export** (STL, 3.7% of the enclosure with its meshing): writing and file I/O; **STEP export**: text (14B's).
+- **`Vector512`**: this machine has it, but the kept loops meet the bar with four lanes on any AVX2 processor; eight
+  lanes is a second path to keep identical, for later if renders matter more.
+
+## Parallelism (unit 14F)
+
+*9 November 2026, decisions 2076 to 2081. Other helpers had the machine at 100% throughout: **every time here is from a
+loaded machine**, and pauses and wall times moved by up to ten times between identical runs. The verdicts rest on
+processor time, collections, bytes and samples; each measuring process had 4 logical processors (one of each of 4 cores,
+by affinity), the rig's round 24 copies of every example. Wall-clock figures on 24 processors are for a quiet window:
+`quiet-14f.ps1` in the scratchpad's `p14f` folder, with the harness and scripts below.*
+
+### The collector's settings
+
+The rig's parallel round under each setting a client can choose, a process each, two passes (a round's processor time,
+the process's collections, a round's pause; bytes 2.84 to 2.94 GB a round in every one):
+
+| Settings | Processor s a round | Generation 0 / 2 | Pause in a round, s |
+|---|---:|---:|---:|
+| Workstation, concurrent (the runtime's default) | 13.7, 10.2 | 667 / 86, 662 / 76 | 0.8, 1.5 |
+| Workstation, not concurrent | 11.9, 10.9 | 464 / 78, 448 / 71 | 0.8, 0.3 |
+| Workstation, with the host's tiering (`TieredPGO` 0, `CallCountingDelayMs` 0) | 8.2, 6.9 | 668 / 89, 645 / 71 | 0.5, 0.3 |
+| Server, concurrent, DATAS | 12.7, 14.4 | 378 / 65, 352 / 63 | 0.2, **14.1** |
+| Server, not concurrent, DATAS | 13.8, 15.2 | 321 / 86, 306 / 79 | 0.9, **9.0** |
+| Server, fixed heaps | 12.9, 10.6 | 150 / 32, 139 / 20 | 1.1, 2.6 |
+| **The host's settings** (server, DATAS, `TieredPGO` 0, `CallCountingDelayMs` 0; unit 11D) | 6.8, 8.5 | 355 / 70, 326 / 45 | 0.1, **10.3** |
+| ... not concurrent | 7.7, 6.9 | 306 / 91, 334 / 68 | **118.2**, 5.4 |
+| ... `GCConserveMemory` 5 | 9.1, 9.2 | 349 / 52, 358 / 55 | 1.5, 4.9 |
+| ... `GCNoAffinitize` 1 | 9.4, 6.7 | 357 / 54, 315 / 45 | 1.7, 0.3 |
+| ... `GCHeapAffinitizeMask` on 2 of the 4 | 8.8, 9.2 | 346 / 80, 353 / 55 | 3.5, 5.3 |
+
+**What a round's processor time says:** the tiering settings are what cut it, by 35% to 45% under either collector (PGO's
+instrumented code, as unit 11D inferred); the collector's choice moves it little. **What the collections say:** the
+server collector does about half the workstation's generation 0 collections, fixed heaps a quarter. **What the pauses
+say, and the finding:** the workstation collector's pauses stayed within 0.3 to 1.5 s a round however loaded the machine
+was, but **the server collector's ran to 5 to 14 s a round, and once 118 s,** when the machine was saturated by other
+processes. Its collection needs every heap's thread, each tied to a processor (affinitised), to run; on a machine other
+processes keep busy, one of them waits its turn, and every thread of the process waits with it. Without affinitising,
+the same settings paused 0.3 and 1.7 s. In the quiet run (decision 2069), where the process had the machine, the host's
+settings took the round from 1,862 to 546 ms and its pause from 983 to 117 ms. So the server collector is right for a
+process that has the processors to itself, and a hazard where it shares them: the guide's section 9 now says so, and
+the quiet window measures `GCNoAffinitize` and the heap mask on 24 processors.
+
+**No help:** `GCConserveMemory` (as 11D found), the heap mask on part of the processors, and turning concurrency off (the
+worst single pause measured).
+
+### What allocates in the parallel rounds, and the large objects
+
+A trace of the round (`tools/alloc-report.cs`, three rounds and a pass, 8.9 GB of allocation ticks) spreads the bytes
+as 11D found: no site over 3.7%, the mesher's `NodeInsertionMeshAlgo.AddNodeToStructure`, `MeasurementGauss`'s work
+vectors, the Delaunay triangulation's arrays, `FunctionSetRoot`'s vectors and the intersections' polyhedra the largest.
+What changed is the **large objects**: 634 MB of the 8.9 GB, and 35 of the 76 generation 2 collections were started by
+a large allocation. A third of them was `MeasurementGauss`'s spare work set (two `Inertia[1953]`), allocated again each
+time a generation 2 collection or a new pool thread lost the thread's weakly held spare, for faces that read 33 entries
+of it. Decision 2077 sizes it by the face: the round 2,920 to 2,955 MB to 2,836 to 2,854 (-3.4%), its generation 2
+collections 69 to 85 to 69 to 73, the enclosure's parts -1.5% and 15 to 22 generation 2 collections a build to 9 to 16,
+the same bits on 8,718 measured properties. The rest of the large objects are the Delaunay triangulation's growing
+arrays (`LinkNode[]`, `MeshCircle[]`, `Triangle[]`, 300 MB), left as 11D left them.
+
+### The locks
+
+`tools/contention-report.cs` on the round's trace: 7 contentions, 0.39 ms of waiting, all in `ManualResetEventSlim.Wait`
+under `Task.SpinThenBlockingWait`: a thread waiting for a `Parallel.For` to finish, the runtime's own. On the enclosure
+built by one caller: 178 contentions, 4.7 ms, the same two frames. **None is a lock of Kerf's** (decision 2079): 13K's
+validity memory and 2000's volumes publish with `Volatile` and take no lock, and 13A's classifiers are per call. The rig's
+"contended locks 1 to 5 a round" are `Parallel`'s waits, and there's nothing of Kerf's to make uncontended.
+
+### The enclosure built in parallel, as a client would
+
+The harness (`p14f/harness`, 14A's with a `par` mode) builds the 13 parts one after another, or with `Parallel.For` over
+them, each part's own `Lazy` building the shared sections once while the others wait; every build's parts are
+fingerprinted by their BREP text's hash, volume and faces, and **every process, on every setting, serial or
+parallel, gave the same fingerprints** (46 processes). Repeats 1 and 2 of each process (warm), 4 processors:
+
+| Settings | Serially: wall s, processor s | 4 threads: wall s, processor s | Pause a build, s |
+|---|---|---|---|
+| Workstation (the default) | 3.7 to 25.5, 4.2 to 9.5 | 2.4 to 11.2, 5.8 to 10.9 | 0.2 to 1.6 serially, 0.4 to 3.0 on 4 |
+| Workstation, the host's tiering | 3.4 to 14.2, 4.3 to 5.3 | 2.3 to 3.1, 4.5 to 6.3 | 0.3 to 1.0, 0.4 to 0.6 |
+| The host's settings | 3.1 to 10.7, 4.2 to 5.5 | 1.8 to 8.3, 4.3 to 7.5 | 0.1 to 0.2, 0.1 to 1.4 |
+
+The same bytes either way (2.55 to 2.61 GB). On 4 processors the parallel build's best walls are 1.5 to 1.7 times faster than
+the serial ones at about the same processor time. The housing alone is about 30% of the parts' processor time (14A), so on
+more processors the build is bound by it, at about 3 times: for the quiet window. **It pays, with the host's tiering
+and a collector suited to the machine** (decision 2080); [enclosure-feedback.md](enclosure-feedback.md), section 6.
+
+### Inside long operations
+
+**Where a serial caller's time goes:** in a trace of the enclosure built by one caller, 78% of Kerf's samples (not
+stopped for the collector) were on the calling thread and 22% on the pool's, the parallel loops Booleans and meshing
+already run (`BooleanOptions.Parallel`, OCCT's `RunParallel`, is on by default). Of the calling thread's: the Boolean's
+builder and pave filler 47%, **decision 1860's volume check 19%, all of it serial**, the validity check 7%, the clean
+7%, construction, hulls and offsets the rest.
+
+| Candidate | What was done | Measured |
+|---|---|---|
+| The volume check's faces | **Done** (decision 2081): from 16 faces to integrate, each face on the pool with its own integrand, summed in the faces' order | The same bits on 8,724 properties and the suites; the enclosure built by one caller 5.0 to 11.0 s to 3.9 to 8.8 s wall (medians 8.3 and 6.0, loaded), the same processor time, 0.6% more bytes; the rig's round 0.4% more bytes, its processor time within the noise |
+| Kerf's own loops, all of them | Measured with them off (the kernel's serial scope, by reflection): | The enclosure by one caller, the same processor time and 1% fewer bytes; on a loaded machine its wall time didn't show what they give. For the quiet window |
+| The Boolean's builder and pave filler | Already parallel where OCCT is; its serial share is the per-face work 14A named (decision 2055) | Not changed |
+| The validity check | 114 samples on the calling thread, 4 on the pool: serial in practice | Named for later |
+| Fillets of many edges | ChFi3d builds a contour's fillets in order, each depending on the last | Not parallel by nature |
+| Exports | STEP's writer and the STL mesh's extraction are serial within a file | A client writes files in parallel (the guide's section 9) |
+
+Nothing was held back for the owner: no change slows anything else past the bar.

@@ -56,6 +56,42 @@ against the housing for each size, about 10 MB and several milliseconds each, as
 `IsInside`. Fewer points (the shaft every 4 mm rather than every 1) would do the same check for a quarter of that; Kerf
 may make repeated points cheap later (decision 2055).
 
+## 6. Build the parts in parallel
+
+`parts` builds its 13 parts one after another in a dictionary initialiser. They don't depend on each other, and what
+they share (the sections, the housing's prism and envelope, the boot tower) is already in `Lazy<T>` per size, built
+once by whichever part asks first while the others wait. Built with `Parallel.For` over the 13 makers (unit 14F's
+harness, the model unchanged), every part came out the same to the bit (its BREP text, volume and faces) in every one of
+46 processes, for the same bytes (2.55 to 2.61 GB), and on 4 processors in 1.5 to 1.7 times less wall time than one
+after another at about the same processor time (a loaded machine; the quiet window measures 8 and 13 threads on 24).
+The housing is about 30% of the parts' processor time, so on more processors it bounds the build at about 3 times.
+
+```csharp
+static readonly PerSize<IReadOnlyDictionary<string, Part>> parts = new(() =>
+{
+    (string Name, Func<Part> Make)[] makers =
+    [
+        ("body", BodyPart), ("clamp", ClampPart), ("door", DoorPart),
+        ("sled_xiao", () => SledPart("sled_xiao")), ("sled_bmm", () => SledPart("sled_bmm")),
+        ("body_bumper", BodyBumperPart), ("door_bumper", DoorBumperPart), ("boot", BootPart),
+        ("housing", HousingPart), ("housing_clamp", HousingClampPart), ("housing_plug", () => HousingPlug()),
+        ("saddle", SaddlePart), ("adapter", AdapterPart),
+    ];
+    var built = new Part[makers.Length];
+    Parallel.For(0, makers.Length, i => built[i] = makers[i].Make());
+    return makers.Select((m, i) => (m.Name, built[i])).ToDictionary(p => p.Name, p => p.Item2);
+});
+```
+
+The same goes for the exports in `Program.cs`: each part's STL and STEP can be written in a `Parallel.ForEach` over the
+parts, as they read nothing the others write (the quiet window measures it with the parts). Two cautions. **`P`, the size being built, is a static `Use` sets:** the
+parts of one size can be built in parallel, but not two sizes at once in one process, which would read each other's
+`P`; build sizes in separate processes, or pass the size down. **The runtime's settings:** in `BladeBumper.csproj`,
+`<TieredPGO>false</TieredPGO>` and the `CallCountingDelayMs` option of 0 (the kernel README's "Runtime settings for a
+host") took 10% to 30% off the build's processor time here (loaded); the server collector halved the collections, but on a
+machine shared with other busy processes its pauses can run to seconds, so leave the workstation collector, the
+default, for a script run on a developer's machine.
+
 ## What's not worth changing
 
 Building per size, the cached sections and `PerSize` are right: nothing is built twice. The STL deflection of 0.01 is

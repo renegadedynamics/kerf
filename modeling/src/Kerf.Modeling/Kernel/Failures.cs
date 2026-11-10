@@ -122,6 +122,19 @@ internal static class Failures
         return value;
     }
 
+    /// <summary>
+    /// As <see cref="Get{T}"/>, raising the operation's warnings (<see cref="Warnings"/>) with their codes, for an
+    /// operation that returns no result of its own to carry them (a mesh's <c>meshing.deflection-exceeded</c>).
+    /// </summary>
+    internal static T GetWarnedWithCodes<T>(Result<T> result, Func<string> what)
+    {
+        var value = Get(result, what);
+        foreach (var diagnostic in result.Diagnostics)
+            if (!diagnostic.IsError)
+                Warnings.Warn(diagnostic);
+        return value;
+    }
+
     /// <summary>A kernel operation that returns no value: done, or a failure as <see cref="Get{T}"/>.</summary>
     internal static void Check(Result result, Func<string> what)
     {

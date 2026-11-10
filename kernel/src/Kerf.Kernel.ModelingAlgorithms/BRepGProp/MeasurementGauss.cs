@@ -243,9 +243,10 @@ internal sealed class MeasurementGauss
         }
     }
 
-    // The index of the first largest value, as math_Vector.Max gives it (1,953 values for each subdivision), from the part written
-    // so far. What's after it is all zeros, so can't change the answer unless everything here is negative
-    private static int MaxOfWritten(math_Vector values, int written)
+    // The index of the first largest value, as math_Vector.Max gives it over OCCT's vector of `upper` values (1,953 for each
+    // subdivision, or more where OCCT's grew), from the part written so far. What's after it is all zeros, so can't change
+    // the answer unless everything here is negative: then the first of them, as Max would find it (decision 2077)
+    private static int MaxOfWritten(math_Vector values, int written, int upper)
     {
         int largest = 0;
         double x = double.MinValue;
@@ -259,23 +260,29 @@ internal sealed class MeasurementGauss
             }
         }
 
-        return x >= 0.0 ? largest : values.Max();
+        return x >= 0.0 || written >= upper ? largest : written + 1;
     }
 
-    // Compute's work vectors, of about 500 kB and two of them large objects: one set a thread is reused for every face. Each
-    // computation starts from zeros, as with new ones
+    // Compute's work vectors: one set a thread is reused for every face. Each computation starts from zeros, as with new
+    // ones. OCCT's are of Sm (1,953) subdivisions, about 500 kB, two of them large objects, which only a face of 61 knot
+    // intervals uses; these start at one interval's and grow, keeping what they hold, to what the face's knots can reach
+    // (decision 2077). Two more than that: Max's answer past the written part (MaxOfWritten) is read as an index too.
     private sealed class GaussWork
     {
+        public const int Spare = 2;
+
+        public static readonly int Initial = MaxSubs(1) + Spare;
+
         private static readonly int NbGaussPoint = RealToInt(Math.Ceiling(ERROR_ALGEBR_RATIO * Gpm));
 
         // Only held weakly, as it's used rarely and is large: a thread never pins it for its life
         [ThreadStatic]
         private static WeakReference<GaussWork>? t_spare;
 
-        public readonly NCollection_Array1<Inertia> InertiaL = new(1, Sm), InertiaU = new(1, Sm);
+        public NCollection_Array1<Inertia> InertiaL = new(1, Initial), InertiaU = new(1, Initial);
         public readonly math_Vector[] LGaussP = Pair(), LGaussW = Pair(), UGaussP = Pair(), UGaussW = Pair();
-        public readonly math_Vector L1 = new(1, Sm), L2 = new(1, Sm), U1 = new(1, Sm), U2 = new(1, Sm);
-        public readonly math_Vector ErrL = new(1, Sm, 0.0), ErrU = new(1, Sm, 0.0), ErrUL = new(1, Sm, 0.0);
+        public math_Vector L1 = new(1, Initial), L2 = new(1, Initial), U1 = new(1, Initial), U2 = new(1, Initial);
+        public math_Vector ErrL = new(1, Initial, 0.0), ErrU = new(1, Initial, 0.0), ErrUL = new(1, Initial, 0.0);
 
         private static math_Vector[] Pair() => [new math_Vector(1, Gpm), new math_Vector(1, NbGaussPoint)];
 
@@ -311,10 +318,12 @@ internal sealed class MeasurementGauss
         }
     }
 
+    // upper: the length OCCT's vectors have now (Sm, or what they grew to), which the vectors here stand for
     private static int FillIntervalBounds(double a,
                                           double b,
                                           NCollection_Array1<double> knots,
                                           int numSubs,
+                                          ref int upper,
                                           ref NCollection_Array1<Inertia> inerts,
                                           ref math_Vector param1,
                                           ref math_Vector param2,
@@ -323,16 +332,36 @@ internal sealed class MeasurementGauss
     {
         int size = Max(knots.Upper(), MaxSubs(knots.Upper() - 1, numSubs));
 
-        if (size - 1 > param1.Upper())
+        if (size - 1 > upper)
         {
-            inerts = new NCollection_Array1<Inertia>(1, size);
-            param1 = new math_Vector(1, size);
-            param2 = new math_Vector(1, size);
-            error = new math_Vector(1, size, 0.0);
+            // OCCT's vectors grow, as new ones
+            upper = size;
+            int fresh = size + GaussWork.Spare;
+            inerts = new NCollection_Array1<Inertia>(1, fresh);
+            param1 = new math_Vector(1, fresh);
+            param2 = new math_Vector(1, fresh);
+            error = new math_Vector(1, fresh, 0.0);
 
             if (commonError is not null)
             {
-                commonError = new math_Vector(1, size, 0.0);
+                commonError = new math_Vector(1, fresh, 0.0);
+            }
+        }
+        else if (Min(MaxSubs(knots.Upper() + 1, numSubs), upper) + GaussWork.Spare > param1.Upper())
+        {
+            // OCCT's don't, and these are too short for what the face's knots reach (the subdivisions of one interval more
+            // than there are knots, the most the bounds make, or OCCT's length if less): longer, keeping what they hold
+            int longer = Min(MaxSubs(knots.Upper() + 1, numSubs), upper) + GaussWork.Spare;
+            var grown = new NCollection_Array1<Inertia>(1, longer);
+            inerts.AsSpan().CopyTo(grown.AsSpan());
+            inerts = grown;
+            param1 = Longer(param1, longer);
+            param2 = Longer(param2, longer);
+            error = Longer(error, longer);
+
+            if (commonError is not null)
+            {
+                commonError = Longer(commonError, longer);
             }
         }
 
@@ -359,6 +388,17 @@ internal sealed class MeasurementGauss
 
         param2.Value(k) = b;
         return k;
+    }
+
+    private static math_Vector Longer(math_Vector vector, int upper)
+    {
+        var longer = new math_Vector(1, upper, 0.0);
+        for (int i = vector.Lower(); i <= vector.Upper(); i++)
+        {
+            longer.Value(i) = vector.Value(i);
+        }
+
+        return longer;
     }
 
     private static void ComputeVInertiaOfElementaryPart(in Point3D point,
@@ -636,6 +676,9 @@ internal sealed class MeasurementGauss
         // How far each error vector has been written: past that it holds its initial zeros
         int writtenL = 0, writtenU = 0;
 
+        // The length OCCT's L and U vectors have (they only grow, as new ones, past Sm)
+        int upperL = Sm, upperU = Sm;
+
         // Face parametrization in U and V direction
         double bv1, bv2, bu1, bu2;
         surface.Bounds(out bu1, out bu2, out bv1, out bv2);
@@ -730,7 +773,8 @@ internal sealed class MeasurementGauss
 
             if (Math.Abs(l2 - l1) > EPS_PARAM)
             {
-                iLSubEnd = FillIntervalBounds(l1, l2, lKnots, numSubs, ref inertiaL, ref L1, ref L2, ref errL, ref errUL);
+                iLSubEnd = FillIntervalBounds(l1, l2, lKnots, numSubs, ref upperL, ref inertiaL, ref L1, ref L2, ref errL, ref errUL);
+                (work.InertiaL, work.L1, work.L2, work.ErrL, work.ErrUL) = (inertiaL, L1, L2, errL, errUL!);
                 lMaxSubs = MeasurementGauss.MaxSubs(iLSubEnd);
 
                 if (lMaxSubs > Sm)
@@ -747,7 +791,7 @@ internal sealed class MeasurementGauss
                     writtenL = Max(writtenL, jl + 1);
                     if (++jl > iLSubEnd)
                     {
-                        lRange[0] = il = MaxOfWritten(errL, writtenL);
+                        lRange[0] = il = MaxOfWritten(errL, writtenL, upperL);
                         lRange[1] = jl;
                         L1.Value(jl) = (L1.Value(il) + L2.Value(il)) * 0.5;
                         L2.Value(jl) = L2.Value(il);
@@ -839,7 +883,8 @@ internal sealed class MeasurementGauss
                                     }
 
                                     math_Vector? dummy = null;
-                                    iUSubEnd = FillIntervalBounds(u1, u2, uKnots, numSubs, ref inertiaU, ref U1, ref U2, ref errU, ref dummy);
+                                    iUSubEnd = FillIntervalBounds(u1, u2, uKnots, numSubs, ref upperU, ref inertiaU, ref U1, ref U2, ref errU, ref dummy);
+                                    (work.InertiaU, work.U1, work.U2, work.ErrU) = (inertiaU, U1, U2, errU);
 
                                     uMaxSubs = MeasurementGauss.MaxSubs(iUSubEnd);
 
@@ -857,7 +902,7 @@ internal sealed class MeasurementGauss
                                         writtenU = Max(writtenU, ju + 1);
                                         if (++ju > iUSubEnd)
                                         {
-                                            uRange[0] = IU = MaxOfWritten(errU, writtenU);
+                                            uRange[0] = IU = MaxOfWritten(errU, writtenU, upperU);
                                             uRange[1] = ju;
 
                                             U1.Value(ju) = (U1.Value(IU) + U2.Value(IU)) * 0.5;
@@ -997,7 +1042,7 @@ internal sealed class MeasurementGauss
                                         if (ju >= iUSubEnd)
                                         {
                                             kUEnd = 2;
-                                            errorU = errU.Value(MaxOfWritten(errU, writtenU));
+                                            errorU = errU.Value(MaxOfWritten(errU, writtenU, upperU));
                                             if (iGLEnd == 2)
                                             {
                                                 // U's tolerance from the requested one and the strip's value, as L's
@@ -1104,7 +1149,7 @@ internal sealed class MeasurementGauss
 
                     if (kLEnd == 2)
                     {
-                        errorL = errL.Value(MaxOfWritten(errL, writtenL));
+                        errorL = errL.Value(MaxOfWritten(errL, writtenL, upperL));
                     }
                 } while ((errorL - epsL > 0.0 && isVerifyComputation) || kLEnd == 1);
 

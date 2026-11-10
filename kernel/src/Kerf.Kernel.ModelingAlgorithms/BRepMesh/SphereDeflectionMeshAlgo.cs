@@ -155,6 +155,12 @@ internal sealed class SphereDeflectionMeshAlgo : DelaunayNodeInsertionMeshAlgo<S
 
         if (worst >= 0)
         {
+            if (worst > deflection)
+            {
+                // Kerf: the last pass's measure still over the limit (decision 2071)
+                GetDFace().MarkDeflectionExceeded(deflection);
+            }
+
             GetDFace().SetDeflection(worst);
         }
     }

@@ -5,6 +5,28 @@ version may break the API.
 
 ## Unreleased
 
+- **A solid's classifier allocates about a quarter less a point**, which every Boolean's check and builder use: a small
+  part fused onto a large one 5% to 10% fewer bytes (decision 2070).
+- **A mesh further from its surfaces than the deflection says so,** with the warning `meshing.deflection-exceeded`
+  (`Mesher.DeflectionExceeded`): where a sphere's or a torus's face can't be refined to the deflection, the mesh
+  succeeds as before, the same to the byte, and the warning names the faces (`Shapes`, and their indices in the message)
+  and gives the furthest one's distance from its surface in model units and as a share of its deflection. It is met at
+  relative deflections, on small fillet tori beside a long boundary edge, up to 1.14 times out, where the mesh said
+  nothing; it finds every face over by more than 3.5% and some nearer it. `Gltf.Write`, `ThreeMf.Write` and `Obj.Write`
+  give it for each part, naming the part, and `Render` and `ModelNode.ToScene` pass it on (decision 2071).
+- **Rendering is quicker** (unit 14E): the renderer draws opaque triangles, edges over them and its 2 × 2 supersampling
+  four pixels at a time where the processor has AVX2, in 35% to 45% less time on one thread, with the same pixels;
+  elsewhere it draws as before (decisions 2072 and 2075).
+- **Parallel runs allocate fewer large objects, and a volume of many faces integrates them on several threads**
+  (unit 14F): the adaptive integration's work vectors are sized by the face (a third of a parallel run's large objects,
+  3.4% of its bytes), and a solid with 16 faces or more to integrate integrates them on the thread pool and sums them in
+  order. The same values to the bit (decisions 2077 and 2081). The README's runtime settings now say to keep the
+  workstation collector on a machine shared with other busy processes, where the server collector's pauses ran to
+  seconds (decision 2078).
+- **`Cancellation.Use`'s scope lasts until it is disposed, wherever that happens** (unit 14F): disposed in another task,
+  it ends on the flow that opened it too, where it stayed in force; and a task that outlives the scope goes back to
+  the token outside it, where it kept the scope's. Within one flow, nested and disposed with `using`, nothing changes
+  (decision 2076).
 - **`TightCorners.Collapse` builds a tight arc beside a convex arc** (the arc's end beside it runs to the corner's point
   too, a cone of its own) **and corners of several arcs together**, such as an arc an import split in two, where it
   refused them; beside a concave arc it still refuses, saying why (decision 2048).
