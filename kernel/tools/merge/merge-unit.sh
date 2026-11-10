@@ -11,6 +11,8 @@ cd "$(git -C "$S" rev-parse --show-toplevel)" || exit 1
 gate=1; all=0
 case "${1:-}" in --no-gate) gate=0; shift ;; --all) all=1; shift ;; esac
 branch="$1"; title="$2"
+# a release is never tested in parts (README.md)
+case "$branch" in release/*) all=1 ;; esac
 if [ -e .git/MERGE_HEAD ] || [ -n "$(git status --porcelain)" ]; then echo "Stopping: a merge is in progress or the tree is dirty or has untracked files."; exit 4; fi
 git merge --no-ff --no-commit "$branch" >/dev/null 2>&1
 conflicts=$(git diff --name-only --diff-filter=U)
@@ -45,8 +47,15 @@ note="Decisions renumbered into sequence."
 run_suites() {
   local logger=(-c Release -nologo --logger "console;verbosity=normal")
   local choice ran sln=kernel/obj/merge-unit-gate.slnx projects
+  # the change since the last merge this gate tested: a merge committed with --no-gate, or a commit made on the branch
+  # directly, hasn't been, so it counts too
+  local tested
+  tested=$(git log --first-parent -n 200 --format='%H %s' HEAD | while read -r h s; do
+    case "$s" in Merge\ *) git log -1 --format=%B "$h" | grep -q 'Decisions renumbered into sequence\.' &&
+      ! git log -1 --format=%B "$h" | grep -q 'Built, not tested' && { echo "$h"; break; } ;; esac; done)
   if [ $all = 1 ]; then choice="ALL	--all"
-  elif ! choice=$(perl "$S/choose-suites.pl" 2>&1); then echo "$choice"; echo "RULE	choose-suites.pl failed"; return; fi
+  elif [ -z "$tested" ]; then choice="ALL	no merge this gate tested in the last 200 commits"
+  elif ! choice=$(perl "$S/choose-suites.pl" --base "$tested" 2>&1); then echo "$choice"; echo "RULE	choose-suites.pl failed"; return; fi
   echo "$choice"
   if echo "$choice" | grep -q '^ALL'; then
     dotnet test Kerf.slnx "${logger[@]}" 2>&1
