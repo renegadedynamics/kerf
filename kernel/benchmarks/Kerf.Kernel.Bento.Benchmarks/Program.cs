@@ -127,10 +127,16 @@ switch (args.Length > 0 ? args[0] : "")
 }
 
 // Images (unit 10L4): `-- images [passes]` draws each example's lines (exact hidden lines, isometric) as SVG and renders
-// it at 800 x 600 (meshed for rendering, supersampled 2 x 2) as PNG, and times both
+// it at 800 x 600 (meshed for rendering, supersampled 2 x 2) as PNG, and times both. Each pass starts after a full
+// collection, and a row is the median of the passes after the first, times and bytes alike (unit 15H): the mesher's lists
+// over 8,192 values are only held weakly (decision 1762), so whether a pass grew them again depended on when a generation 2
+// collection fell, and the extrude-until example's last pass was 7.2 or 8.5 MB by that; a render's bytes also move by
+// which pool threads take its bands (a thread new to them rents buffers the pool hasn't got). KERF_BENTO_PASSES=1 prints
+// each pass: its bytes, the pool's threads, and the mesh, render and encoding done again apart
 if (args.Length > 0 && args[0] == "images")
 {
     int imagePasses = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : 5;
+    bool printPasses = Environment.GetEnvironmentVariable("KERF_BENTO_PASSES") == "1";
     Console.WriteLine("example                   svg ms  svg MB  edges   svg KB  png ms  png MB  render ms  png KB");
     foreach ((string name, Func<ModelShape> build) in examples)
     {
@@ -138,16 +144,18 @@ if (args.Length > 0 && args[0] == "images")
         var svgTimes = new double[imagePasses];
         var pngTimes = new double[imagePasses];
         var renderTimes = new double[imagePasses];
-        long svgBytes = 0, pngBytes = 0;
+        var svgBytes = new double[imagePasses];
+        var pngBytes = new double[imagePasses];
         int edges = 0, svgLength = 0, pngLength = 0;
         for (int pass = 0; pass < imagePasses; pass++)
         {
+            GC.Collect();
             long before = GC.GetAllocatedBytesForCurrentThread();
             var clock = Stopwatch.StartNew();
             var drawing = global::Kerf.Drawing.DrawingOperations.ProjectLines([part], global::Kerf.Drawing.Camera.Isometric).Value;
             string svg = global::Kerf.Drawing.Svg.WriteToString(drawing);
             svgTimes[pass] = clock.Elapsed.TotalMilliseconds;
-            svgBytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            svgBytes[pass] = GC.GetAllocatedBytesForCurrentThread() - before;
             (edges, svgLength) = (drawing.Edges.Length, svg.Length);
 
             before = GC.GetTotalAllocatedBytes(true);
@@ -156,17 +164,31 @@ if (args.Length > 0 && args[0] == "images")
             renderTimes[pass] = clock.Elapsed.TotalMilliseconds;
             byte[] png = global::Kerf.Drawing.Png.Encode(image);
             pngTimes[pass] = clock.Elapsed.TotalMilliseconds;
-            pngBytes = GC.GetTotalAllocatedBytes(true) - before;
+            pngBytes[pass] = GC.GetTotalAllocatedBytes(true) - before;
             pngLength = png.Length;
+            if (printPasses)
+            {
+                long t0 = GC.GetTotalAllocatedBytes(true), s0 = GC.GetAllocatedBytesForCurrentThread();
+                var mesh = global::Kerf.Meshing.Mesher.Mesh(part, global::Kerf.Drawing.Renderer.DefaultMeshOptions(part)).Value;
+                long t1 = GC.GetTotalAllocatedBytes(true), s1 = GC.GetAllocatedBytesForCurrentThread();
+                var again = global::Kerf.Drawing.Renderer.Render(mesh, global::Kerf.Drawing.Camera.Isometric).Value;
+                long t2 = GC.GetTotalAllocatedBytes(true), s2 = GC.GetAllocatedBytesForCurrentThread();
+                GC.KeepAlive(global::Kerf.Drawing.Png.Encode(again));
+                long t3 = GC.GetTotalAllocatedBytes(true), s3 = GC.GetAllocatedBytesForCurrentThread();
+                Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                    $"  pass {pass}: svg {svgBytes[pass] / 1024:F0} kB, png {pngBytes[pass] / 1024:F0} kB; pool threads {ThreadPool.ThreadCount}; "
+                    + $"again, apart: mesh {(t1 - t0) / 1024} kB (this thread {(s1 - s0) / 1024}), render {(t2 - t1) / 1024} kB "
+                    + $"(this thread {(s2 - s1) / 1024}), encode {(t3 - t2) / 1024} kB (this thread {(s3 - s2) / 1024})"));
+            }
         }
 
         static double Median(double[] t) => t.Length > 1 ? t[1..].Order().ElementAt((t.Length - 1) / 2) : t[0];
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-            $"{name,-24} {Median(svgTimes),7:F1} {svgBytes / 1048576.0,7:F1} {edges,6} {svgLength / 1024.0,8:F1} {Median(pngTimes),7:F1} {pngBytes / 1048576.0,7:F1} {Median(renderTimes),10:F1} {pngLength / 1024.0,7:F1}"));
+            $"{name,-24} {Median(svgTimes),7:F1} {Median(svgBytes) / 1048576.0,7:F1} {edges,6} {svgLength / 1024.0,8:F1} {Median(pngTimes),7:F1} {Median(pngBytes) / 1048576.0,7:F1} {Median(renderTimes),10:F1} {pngLength / 1024.0,7:F1}"));
         BenchRows.Add("images", name, "svg ms", Median(svgTimes));
-        BenchRows.Add("images", name, "svg MB", svgBytes / 1048576.0);
+        BenchRows.Add("images", name, "svg MB", Median(svgBytes) / 1048576.0);
         BenchRows.Add("images", name, "png ms", Median(pngTimes));
-        BenchRows.Add("images", name, "png MB", pngBytes / 1048576.0);
+        BenchRows.Add("images", name, "png MB", Median(pngBytes) / 1048576.0);
         BenchRows.Add("images", name, "result", $"{edges} edges, {svgLength} characters of SVG, {pngLength} bytes of PNG");
     }
 
