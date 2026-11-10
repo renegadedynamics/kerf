@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 49 already fixed, 88 not relevant, 40 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, and 15E three more; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 50 already fixed, 88 not relevant, 39 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, 15E three more, and 15L #1570; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -25,7 +25,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1570 | A fillet at 5.5 that passes the check with two pairs of its edges crossing (#1569, #737 and #694 fail by decision 1833; #1430's case no longer intersects itself) | Reproduced | **For the owner** (decision 2120): the edge-level self-interference check finds it, at 25% to 45% of the fillet's time; recommended as an option |
+| Silent wrong answer | #1570 | A fillet at 5.5 that passes the check with two pairs of its edges running along each other (#1569, #737 and #694 fail by decision 1833; #1430's case no longer intersects itself) | Reproduced | **Fixed** (decision 28901): fails with `fillet.self-intersecting`, carrying the result, at about 2% of the fillet |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
@@ -204,7 +204,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1576 | Crash on chamfer on complex shape | already fixed | Tried on its file: the chamfer fails with no crash |
 | 1573 | UnifySameDomain breaks spherical faces with pole edges when the spheres have rotated frames | applies | Reproduced from its numbers: invalid at 37, 90 and 180 degrees, with no crash. Its partial fix isn't enough, by its own account |
 | 1571 | Faulty shape with fillet on a rounded cube | applies | Reproduced on its file: invalid, volume 4e29. The public fillet fails |
-| 1570 | Faulty shape with fillet beyond a radius | applies | Reproduced on its file: at 5.5 valid, with two pairs of edges crossing (`bopcheck` E/E), vertices of 0.82, and a success through the public fillet; clean at 5.0. Silent; a check by default costs more than decision 1742's tenth: for the owner (decision 2120) |
+| 1570 | Faulty shape with fillet beyond a radius | already fixed | Reproduced on its file: at 5.5 valid, with two pairs of edges running along each other (`bopcheck` E/E), vertices of 0.82; clean at 5.0. The public fillet now fails it with `fillet.self-intersecting`, carrying the result, by a check of the edges the fillet could have made meet (decision 28901) |
 | 1569 | Faulty shape with fillet on simple shape | applies | Reproduced on its file: valid and self-interfering (V/V), with a vertex of tolerance 93.1 on a radius of 1, so the public fillet fails (decisions 1833, 2120) |
 | 1568 | Crash on fillet meeting opposite edge | already fixed | Tried on its file: 1.5 fails with no crash, and 1.49 is valid. The fillet to the opposite edge itself is question 2 |
 | 1567 | `BRepAlgoAPI_Fuse` of a partial torus and a tangent sphere gives an invalid, empty or wrong-volume result | already fixed | Decision 1818; reproduced (empty) and fixed: 26.7684 |

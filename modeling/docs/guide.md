@@ -211,6 +211,11 @@ Below every corner's radius the option changes nothing. `MaxChamfer` and the ker
 and give the default's limit, the arcs' radius; with `Collapse` the arcs set no limit, and what fits is set by the
 face's width, which they don't work out.
 
+**A fillet or chamfer whose edges meet** where no vertex is, or run along each other (the surfaces run through each
+other where two fillets' ends meet, or a rail just reaches an edge: OCCT #1570's part at 5.5), is a failure with the
+kernel's code `fillet.self-intersecting`, carrying the shape in `TryGetInvalid` and naming the edges, though the shape
+passes `IsValid`; a smaller size is clean, and `MaxFillet` stops below it.
+
 ## 6. Results, failures and warnings
 
 An operation that can fail gives a `Result<T>`:
