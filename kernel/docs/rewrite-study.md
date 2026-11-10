@@ -239,7 +239,7 @@ Boolean doesn't apply as it does to a solid; the path would need the splitter, o
 chamfer is on B-spline faces, where no closed form checks the result.
 
 **Recommendation: second, after the first fillet unit or beside it:** a corner path for chamfers of planes and cylinders, as
-12W's. Before the loft's 946, a half unit to find why small chamfers fail there, as it may be one fault, not a design.
+12W's. Before the loft's 946, a half unit to find why small chamfers fail there, as it may be one fault, not a design. **Since** (unit 15P, decisions 2136 and 2137): the loft's are its top corners, where its side faces turn tangent, at every length; the corpus's corners are ordinary ones on free-form faces, none of planes and cylinders, so 12W's way doesn't reach them, and each group would take its own path of two or three units.
 
 ## 4. Booleans
 
