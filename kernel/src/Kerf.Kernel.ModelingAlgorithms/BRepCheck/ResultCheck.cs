@@ -108,9 +108,10 @@ internal abstract class ResultCheck : Transient
         {
             for (int i = 0; i < _map.Count; i++)
             {
-                for (var itl = new NCollection_List<StatusCheck>.Iterator(_map.ValueAt(i)); itl.More(); itl.Next())
+                NCollection_List<StatusCheck> statuses = _map.ValueAt(i);
+                for (int j = 0, count = statuses.Extent(); j < count; j++)
                 {
-                    if (itl.Value() != NoError)
+                    if (statuses.ItemAt(j) != NoError)
                     {
                         return false;
                     }

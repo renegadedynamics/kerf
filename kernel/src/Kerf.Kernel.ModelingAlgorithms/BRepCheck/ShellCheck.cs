@@ -27,6 +27,11 @@ internal class ShellCheck : ResultCheck
     private readonly IndexedMap<Shape, NCollection_List<Shape>> _mapEF =
         new(ShapeHasher.Instance);
 
+    // Kerf (unit 15B): Minimum's map of every edge to its faces is the one Closed builds when every face and every edge is
+    // oriented (nothing left out, the same keys and faces in the same order), so Minimum keeps it and Closed reads it, as
+    // WireCheck does with its vertices. A shell is new in nearly every check, so its map is built at least once a check
+    private bool _mapEFIsWhole;
+
     /// <summary>Checks the shell on its own (<see cref="Minimum"/>).</summary>
     public ShellCheck(in Shell s)
     {
@@ -46,10 +51,11 @@ internal class ShellCheck : ResultCheck
         mapF.Add(face);
 
         // Perform well-known width-first traverse.
+        var ex = new Explorer();
         for (int idx = 0; idx < mapF.Count; ++idx)
         {
             Shape aFace = mapF[idx];
-            for (var ex = new Explorer(aFace, ShapeType.Edge); ex.More(); ex.Next())
+            for (ex.Init(aFace, ShapeType.Edge); ex.More(); ex.Next())
             {
                 Edge edg = ShapeCasts.Edge(ex.Current());
                 // Test if the edge is in the map (only oriented edges are present).
@@ -108,14 +114,17 @@ internal class ShellCheck : ResultCheck
             // it is checked if the shell is "connected"
             var exp = new Explorer(_shape, ShapeType.Face);
             int nbface = 0;
+            bool allOriented = true;
+            var expe = new Explorer();
             _mapEF.Clear();
             for (; exp.More(); exp.Next())
             {
                 nbface++;
-                var expe = new Explorer();
+                allOriented = allOriented && IsOriented(exp.Current());
                 for (expe.Init(exp.Current(), ShapeType.Edge); expe.More(); expe.Next())
                 {
                     Shape edg = expe.Current();
+                    allOriented = allOriented && IsOriented(edg);
                     int index = _mapEF.IndexOf(edg) + 1;
                     if (index == 0)
                     {
@@ -147,7 +156,12 @@ internal class ShellCheck : ResultCheck
                 lst.Append(StatusCheck.NoError);
             }
 
-            _mapEF.Clear();
+            _mapEFIsWhole = allOriented && lst.First() == StatusCheck.NoError;
+            if (!_mapEFIsWhole)
+            {
+                _mapEF.Clear();
+            }
+
             _min = true;
         }
     }
@@ -276,13 +290,16 @@ internal class ShellCheck : ResultCheck
         Explorer exp = new(), ede = new();
         var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
         var meToAvoid = new HashSet<Shape>(ShapeHasher.Instance);
-        _mapEF.Clear();
+        if (!_mapEFIsWhole)
+        {
+            _mapEF.Clear();
+        }
 
         // Checks if the oriented faces of the shell give a "closed" shell,
         // i-e if each oriented edge on oriented faces is found 2 times.
         //
         exp.Init(_shape, ShapeType.Face);
-        for (; exp.More(); exp.Next())
+        for (; !_mapEFIsWhole && exp.More(); exp.Next())
         {
             Shape f = exp.Current();
             if (IsOriented(f))
@@ -300,12 +317,20 @@ internal class ShellCheck : ResultCheck
         }
 
         //
+        int oriented = 0;
         exp.Init(_shape, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
             Shape f = exp.Current();
             if (IsOriented(f))
             {
+                if (_mapEFIsWhole)
+                {
+                    // Minimum's map, with this face's edges in it already
+                    ++oriented;
+                    continue;
+                }
+
                 // OCCT: NCollection_IndexedMap::Add returns the index (never 0), so !mapS.Add(aF) is always false
                 // and a face present twice is never reported here (Orientation reports it)
                 if (mapS.Add(f) + 1 == 0)
@@ -339,8 +364,9 @@ internal class ShellCheck : ResultCheck
         }
 
         //
-        _nbori = mapS.Count;
-        if (_nbori >= 2)
+        // With everything oriented, Minimum has reached every face from the first through the same map, or its status says not
+        _nbori = _mapEFIsWhole ? oriented : mapS.Count;
+        if (_nbori >= 2 && !_mapEFIsWhole)
         {
             mapS.Clear();
             // Search for the first oriented face
@@ -360,7 +386,7 @@ internal class ShellCheck : ResultCheck
 
         //
         //
-        nbF = mapS.Count;
+        nbF = _mapEFIsWhole ? _nbori : mapS.Count;
         if (_nbori != nbF)
         {
             _cstat = StatusCheck.NotConnected;

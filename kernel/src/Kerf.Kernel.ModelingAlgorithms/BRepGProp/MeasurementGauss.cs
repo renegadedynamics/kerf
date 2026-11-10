@@ -263,10 +263,13 @@ internal sealed class MeasurementGauss
         return x >= 0.0 || written >= upper ? largest : written + 1;
     }
 
-    // Compute's work vectors: one set a thread is reused for every face. Each computation starts from zeros, as with new
-    // ones. OCCT's are of Sm (1,953) subdivisions, about 500 kB, two of them large objects, which only a face of 61 knot
-    // intervals uses; these start at one interval's and grow, keeping what they hold, to what the face's knots can reach
-    // (decision 2077). Two more than that: Max's answer past the written part (MaxOfWritten) is read as an index too.
+    // Compute's work vectors: one set a thread is reused for every face. A computation writes every entry it reads before
+    // reading it (the Gauss points and weights of each order it uses, InitMass and Init over the subdivisions it can reach,
+    // the bounds FillIntervalBounds makes), so a set is rented as the last computation left it, and never cleared (unit 15B;
+    // it was cleared whole on every rent, 37 kB on average, a fifth of the integration's time on the enclosure). OCCT's are
+    // of Sm (1,953) subdivisions, about 500 kB, two of them large objects, which only a face of 61 knot intervals uses; these
+    // start at one interval's and grow, keeping what they hold, to what the face's knots can reach (decision 2077). Two more
+    // than that: Max's answer past the written part (MaxOfWritten) is read as an index too.
     private sealed class GaussWork
     {
         public const int Spare = 2;
@@ -294,14 +297,6 @@ internal sealed class MeasurementGauss
                 return new GaussWork();
             }
             t_spare.SetTarget(null!); // A computation inside a computation takes its own
-
-            work.InertiaL.AsSpan().Clear();
-            work.InertiaU.AsSpan().Clear();
-            foreach (math_Vector vector in (ReadOnlySpan<math_Vector>)[work.LGaussP[0], work.LGaussP[1], work.LGaussW[0], work.LGaussW[1], work.UGaussP[0], work.UGaussP[1], work.UGaussW[0], work.UGaussW[1], work.L1, work.L2, work.U1, work.U2, work.ErrL, work.ErrU, work.ErrUL])
-            {
-                vector.Init(0.0);
-            }
-
             return work;
         }
 
