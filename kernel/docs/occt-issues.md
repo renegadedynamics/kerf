@@ -2300,3 +2300,9 @@ Found by unit 12J:
 | `Font_FTFont::Init`, `ToSynthesizeItalic` | The shear matrix's diagonal is cos 10°, so a synthesised italic is also 1.5% smaller | Reading the port's source | settled (decision 2022) |
 | `Font_FTFont::getKerning` | Asks FreeType's `FT_Get_Kerning`, which reads only the `kern` table: a font with GPOS kerning and no kern table isn't kerned | Reading the port's source; Liberation Sans has both | settled (decision 2020) |
 | `Font_FTFont::loadGlyph`, `StdPrs_BRepFont::renderGlyph` | A character with no glyph is drawn as the font's missing glyph (or a fallback font's), with no warning | Reading the port's source | settled (decision 2022) |
+
+## Found by unit 15C
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `IntCurvesFace_Intersector::Perform` (IntCurvesFace_Intersector.cxx) | `myIsParallel` is set only when the curve and surface are intersected and no point is found: a `Perform` that finds points, or that a polyhedron's box rules out first, leaves the last line's flag, which `BRepClass3d_SClassifier::Perform` reads after a `Perform` finding nothing, to call a point within the tolerance of the surface and inside the face ON | One classifier asked the dataset's points in turn: 40 of 162,458 came out ON where a new classifier says IN or OUT | touch (decision 28502: a kept classifier sets the flag back between points; one shared within a check still carries it) |

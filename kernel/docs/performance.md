@@ -2092,3 +2092,42 @@ it was: 4,091 cases run of 4,093 (OK 3,301, SKIPPED 786, BAD 2, FAILED 1, IMPROV
 **Not changed, and why:** what the checks keep for each new face is the report, read after the check (above). The wires'
 and faces' geometric checks are OCCT's, on faces that are new, and 11Q found them spread out with little to cut. The
 volume check's classifications are 15C's.
+
+## Points classified one by one (unit 15C)
+
+*10 November 2026, decisions 28501 to 28505. Other helpers shared the machine with the owner: **the times here are from a
+loaded machine**, and the verdicts rest on bytes and counts. The enclosure is 14A's harness (v0.16, 35 mm shaft, its 13
+parts warm, three interleaved processes each side on 2 logical processors); the users' cases and Bento's examples are the
+rig's programs, interleaved the same way; the counts are from a throwaway probe, the sites from an allocation trace.*
+
+**Where the classifications went** (a build of the enclosure, before):
+
+| | Classifiers | Points | MB | What it is |
+|---|---:|---:|---:|---|
+| Decision 1881's grid (19 of 35 fuses; 16 ruled out by their slab of overlap) | 38 | 7,679 | 147 | a part against a six-faced rib or boss whose box lies in the part's; no point in both |
+| of which the trees | | | 3.3 | |
+| of which the edge tree's extrema | | | ~79 | `ExtCC` and `CurvePointExtrema` of every edge whose box the line or point meets (decision 28503) |
+| Decision 1937's points | 6 | 762 | 14.5 | |
+| The Booleans' builders of solids (`IsHole`) | ~630 | 0 | 115 | a tree filled for the point at infinity, never read (decision 28504) |
+| The boss (one fuse) | 1 | 150 | 2.3 | the result's classifier, 0.31 MB of it the tree |
+| `IsInside` on the housing (the spec tests' 224 points) | 448 | 448 | 2,291 | two classifiers a point, each with its intersectors and tree (decision 28501) |
+
+**What changed:**
+
+| Change | Before | After |
+|---|---|---|
+| A frozen shape's classifier kept for the next point; `IsInside` one classification (28501, 28502) | the housing's 224 points 2,291 MB, about 2 s | 4.7 MB, about 50 ms |
+| Line and circle edges measured before their extrema (28503) | the enclosure 2,786 to 2,821 MB | 2,695 to 2,733 (−3.2%) |
+| The builder's and healing's trees filled when asked (28504) | | with 28503: the 13 parts 2,725 to 2,749 MB a build to 2,547 to 2,574 (−6.6%) |
+
+With all of them, the users' cases: the enclosure 2,823 to 2,829 MB to 2,599 to 2,639 (−7%), v0.16's 2,784 to 2,789 to
+2,558 to 2,598 (−7.5%), the boss 14.9 to 14.1 and 14.2 (−5%), the detent 19.2 and 19.3 to 18.6 and 18.7 (−3%), the
+chamfers the same; Bento's examples 115.4 and 118.2 MB a pass against 113.7 and 116.5; every result the same.
+**Shown the same:** 162,458 points of the dataset, each state the same on main's tree, on this tree, and from a kept
+classifier against a new one.
+
+**Tried and left out:** taking a point as outside when a ray along an axis passes clear of every face's box: no point of
+the enclosure's grids escapes (they lie in the parts' cavities), and an open solid's classifier calls 11 escaping points
+IN. **Left:** the checks' grid points in large parts are still classified one by one, each projecting itself onto a face
+and intersecting its line with the faces it nears, OCCT's way; a classifier shared within a check still carries OCCT's
+parallel flag from point to point (decision 28502), which can only pass a point over.

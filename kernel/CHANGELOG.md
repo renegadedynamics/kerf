@@ -5,6 +5,11 @@ version may break the API.
 
 ## Unreleased
 
+- **Points asked one at a time of a shape share its classifier:** `ClassifyPoint`, `Solid.Classify` and `IsOnFace` keep
+  a frozen shape's classifier with the shape for the next point, each point getting what a new classifier gives it;
+  a solid's classifier no longer measures its point or line against line and circle edges its geometry keeps clear of;
+  and shape healing no longer fills a classifier's tree to ask only the point at infinity. The same answers, less
+  memory and time where points are classified (decisions 28501 to 28504).
 - **A volume's integration no longer zeroes its whole work set for every face,** and a shape's validity check builds its shell's edge map once: the same results to the bit, a little less time and memory on long chains of Booleans (decisions 2095 to 2097).
 - **Parallel volumes, as a caller chooses** (decision 2092): `BooleanOptions.ParallelVolumes` and
   `MassOptions.ParallelVolumes` integrate a volume of 16 faces or more on several threads, the figures and the check's
