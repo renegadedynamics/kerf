@@ -415,10 +415,12 @@ internal static class Tool
     }
 
     // The latest curves on planes, for each thread. The answer is a pure function of the key, as the curve and the plane are
-    // frozen. A fixed table, so a thread keeps at most this many curves.
+    // frozen. A fixed table, so a thread keeps at most 1,024 curves: 256 sets of four, the latest used first, as a direct
+    // table of 64 lost most of the curves of a part of a few hundred edges to collisions (unit 15F)
     private static class PlaneCurves
     {
-        private const int Size = 64;
+        private const int Sets = 256;
+        private const int Ways = 4;
 
         private struct Entry
         {
@@ -433,8 +435,8 @@ internal static class Tool
         [ThreadStatic]
         private static Entry[]? t_entries;
 
-        private static int Slot(Curve3D curve, PlaneSurface plane, double first)
-            => (RuntimeHelpers.GetHashCode(curve) ^ (31 * RuntimeHelpers.GetHashCode(plane)) ^ first.GetHashCode()) & (Size - 1);
+        private static int Set(Curve3D curve, PlaneSurface plane, double first)
+            => ((RuntimeHelpers.GetHashCode(curve) ^ (31 * RuntimeHelpers.GetHashCode(plane)) ^ first.GetHashCode()) & (Sets - 1)) * Ways;
 
         public static bool TryGet(Curve3D curve, PlaneSurface plane, in Placement location, double first, double last,
                                   [NotNullWhen(true)] out Curve2D? result)
@@ -442,12 +444,22 @@ internal static class Tool
             Entry[]? entries = t_entries;
             if (entries is not null)
             {
-                ref Entry entry = ref entries[Slot(curve, plane, first)];
-                if (ReferenceEquals(entry.Curve, curve) && ReferenceEquals(entry.Plane, plane) && entry.First == first
-                    && entry.Last == last && entry.Location.IsEqual(location))
+                int set = Set(curve, plane, first);
+                for (int way = 0; way < Ways; way++)
                 {
-                    result = entry.Result!;
-                    return true;
+                    ref Entry entry = ref entries[set + way];
+                    if (ReferenceEquals(entry.Curve, curve) && ReferenceEquals(entry.Plane, plane) && entry.First == first
+                        && entry.Last == last && entry.Location.IsEqual(location))
+                    {
+                        result = entry.Result!;
+                        if (way > 0)
+                        {
+                            Entry hit = entry;
+                            Array.Copy(entries, set, entries, set + 1, way);
+                            entries[set] = hit;
+                        }
+                        return true;
+                    }
                 }
             }
 
@@ -457,8 +469,10 @@ internal static class Tool
 
         public static void Add(Curve3D curve, PlaneSurface plane, in Placement location, double first, double last, Curve2D result)
         {
-            Entry[] entries = t_entries ??= new Entry[Size];
-            entries[Slot(curve, plane, first)] = new Entry
+            Entry[] entries = t_entries ??= new Entry[Sets * Ways];
+            int set = Set(curve, plane, first);
+            Array.Copy(entries, set, entries, set + 1, Ways - 1);
+            entries[set] = new Entry
             {
                 Curve = curve, Plane = plane, Location = location, First = first, Last = last, Result = result,
             };
