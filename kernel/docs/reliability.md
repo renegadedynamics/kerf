@@ -148,7 +148,7 @@ Wrong or failed through `Kerf.Modeling`, in steps of an offset (from 1e-13 to 5e
 | Moved and turned off the origin, Cut and Common, of 113 | 25 and 25 | 0 | 0 | 0 |
 | Tool at 60 degrees, Cut and Common, of 113 | 20 and 20 | 0 | 0 | 0 |
 | Radius 0.5, Cut and Common, of 113 | 17 and 17 | 0 | 0 | **1** (Cut, 0.8% out at -5e-11) and 0 |
-| **Radius 500,** Cut and Common, of 113 | 17 and 18 | 2 invalid | **21 and 22** | 0 |
+| **Radius 500,** Cut and Common, of 113 | 17 and 18 | 2 invalid | **21 and 22** (0 and 0 since decision 28631) | 0 |
 | One seam turned, Fuse, of 89 | 0 | 16 | 1 | 0 |
 | Radius 5 + d, with the axes crossing exactly, Cut and Common, of 89 | 2 and 2 | 2 invalid | 2 and 2 | 0 |
 
@@ -234,7 +234,7 @@ Measured through `Kerf.Modeling`, on a loaded machine: 18 radii from 0.01 to 10,
 
 **The 0.8% wasn't the only one.** At base, 17 answers over 0.3% at radii over 0.01, up to 16.5%, all valid. One is left, 0.33% at 0.05.
 
-**Radius 500, in the sweep of section 4a:** Cut 21 to 13, Common 22 to 13. Left: -5e-10 to -2e-10, and under about 2e-12. Tried and left out: decision 1923.
+**Radius 500, in the sweep of section 4a:** Cut 21 to 13, Common 22 to 13. Left: -5e-10 to -2e-10, and under about 2e-12. Tried and left out: decision 1923. **Since:** the retries of decisions 2103 and 2117 took them to 3 and 3, all at -5e-10 to -2e-10, and unit 15E (decision 28631) to **0 and 0**: a quartic in `math_DirectPolynomialRoots` lost the end circle's two crossings of the tool, 5e-4 either side of the touch, to cancellation, which left a sliver of the end face. The Fuse there is 4 to 1 (2e-12, `Unorientable`), and R = 5000 at the end plane 8, 4 and 8 to 7, 3 and 7, all loud.
 
 **The equal tee:** 514 of 2,508, unchanged, the same at each step. It's ChFi3d's walk near the tangency (decision 1925). It stays a failure, loud.
 
