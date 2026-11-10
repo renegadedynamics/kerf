@@ -55,7 +55,7 @@ public class FilletCrossingTests
     [Fact]
     public void A_fillet_whose_face_narrows_to_a_point_is_built()
     {
-        // The corpus's blend/simple/X4 (kernel decision 29301): a block with a half round notch of 30 in its front, the front's
+        // The corpus's blend/simple/X4 (kernel decision 2131): a block with a half round notch of 30 in its front, the front's
         // top edge beside the notch filleted at 30, where the fillet's line on the top just reaches the notch's deepest point. The
         // cylinder's seam is turned away from the notch's edges, as the corpus's file has it
         Part block = new Box(120, 100, 50) - new Pos(0, -50, 0) * new Rotation(z: -90) * new Cylinder(30, 50);
