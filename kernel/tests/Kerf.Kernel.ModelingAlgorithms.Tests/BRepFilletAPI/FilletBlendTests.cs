@@ -130,6 +130,44 @@ public class FilletBlendTests
         Assert.Null(FilletLimits.AfterAlgorithm(tee, [.. edges.Select((e, i) => new FilletSpec(e, i == 0 ? 0.03 : 0.02))], FilletOptions.Default));
     }
 
+    // ChFi3d's own fillets on the tee are off the ball (decision 2141; occt-issues.md). BlendFunc_ConstRad puts each section's
+    // circle in the plane square to the edge where it crosses the guide, tangent there to that plane's sections of the two
+    // cylinders, with their normals projected into it: the rolling ball's circle lies in the plane square to the curve of its
+    // centres, and the two planes differ wherever the cylinders' normals at the contacts leave the first. The walk's own points
+    // miss by this, and the approximation adds 3e-5. ConstRad's equations solved apart from ChFi3d give 4.8e-5, 1.5e-3 and 1.7e-2,
+    // and none with the curve of centres as the guide. A cylinder through a sphere's centre keeps the normals in the plane, and
+    // the same walk is on the ball to the approximation's tolerance. A fix moves these numbers.
+    [Theory]
+    [InlineData(0.3, 3.9e-5)]
+    [InlineData(1, 1.30e-3)]
+    [InlineData(2.5, 1.71e-2)]
+    public void ChFi3ds_section_is_square_to_the_edge_so_its_tee_fillet_is_off_the_ball_ReproducesOcctError(double radius, double miss)
+    {
+        Shape tee = Tee();
+        var chfi3d = new MakeFillet(tee);
+        foreach (Edge edge in Meeting(tee))
+        {
+            chfi3d.Add(radius, edge);
+        }
+        chfi3d.Build();
+        Assert.True(chfi3d.IsDone);
+        Assert.Equal(miss, BallMiss(chfi3d, radius, static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 5),
+                                    static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Z * p.Z) - 5)), 0.05 * miss);
+
+        Shape coaxial = Solid.Sphere(6).Value.Shape
+                             .Fuse(Solid.Cylinder(2, 10, new Frame3D(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X)).Value.Shape).Value.Shape;
+        var walked = new MakeFillet(coaxial);
+        walked.Add(radius, coaxial.AllEdges().Single(static e =>
+        {
+            Point3D p = new EdgeCurveAdaptor(e).Value(0.3);
+            return Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 2) < 1e-6 && Math.Abs(p.DistanceTo(new Point3D(0, 0, 0)) - 6) < 1e-6;
+        }));
+        walked.Build();
+        Assert.True(walked.IsDone);
+        Assert.True(BallMiss(walked, radius, static p => Math.Abs(p.DistanceTo(new Point3D(0, 0, 0)) - 6),
+                             static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 2)) < 2e-5);
+    }
+
     // The volume added is the slices' region, to what the path's tolerance (decision 1898's confusion) moves its faces by over
     // their area, and the slices' own error
     private static void AddsTheRegion(Shape tee, Shape shape, double radius)
@@ -139,6 +177,34 @@ public class FilletBlendTests
                            .Sum(f => ((Shape)f).IntegrateArea(Precise));
         double expected = TeeRegion(radius);
         Assert.Equal(expected, added, 2e-7 * area + 1e-5 * expected);
+    }
+
+    // The most a ball of the radius on either side of a fillet's faces misses either surface by, at 39 by 7 points of each
+    private static double BallMiss(MakeFillet fillet, double radius, Func<Point3D, double> first, Func<Point3D, double> second)
+    {
+        double worst = 0;
+        for (int i = 1; i <= fillet.SurfaceCount; i++)
+        {
+            foreach (Shape face in fillet.NewFaces(i))
+            {
+                var surface = new FaceSurfaceAdaptor((Face)face);
+                for (int a = 1; a < 40; a++)
+                {
+                    for (int b = 1; b < 8; b++)
+                    {
+                        double u = surface.FirstUParameter() + (surface.LastUParameter() - surface.FirstUParameter()) * a / 40;
+                        double v = surface.FirstVParameter() + (surface.LastVParameter() - surface.FirstVParameter()) * b / 8;
+                        surface.D1(u, v, out Point3D p, out Vector3D du, out Vector3D dv);
+                        Vector3D n = du.Crossed(dv);
+                        n = n.Divided(n.Magnitude).Multiplied(radius);
+                        Point3D outside = new(p.X + n.X, p.Y + n.Y, p.Z + n.Z), inside = new(p.X - n.X, p.Y - n.Y, p.Z - n.Z);
+                        worst = Math.Max(worst, Math.Min(Math.Max(Math.Abs(first(outside) - radius), Math.Abs(second(outside) - radius)),
+                                                         Math.Max(Math.Abs(first(inside) - radius), Math.Abs(second(inside) - radius))));
+                    }
+                }
+            }
+        }
+        return worst;
     }
 
     // On every face that isn't a plane or a cylinder: a ball of the radius on the face's outward side where the edge is concave, or
