@@ -82,6 +82,10 @@ if (gap.TryGetValue(out var d) && d.Value < 0.1) Warn(d.Solutions[0].OnA);
 bool inside = MeasureOperations.Classify(solid, probe) == Containment.In;
 ```
 
+Points asked one at a time of a frozen shape (anything an operation returned) share one classifier, kept with the
+shape for the next point: asking many points in a loop costs about one classifier and the points, not a classifier
+each. Each point gets what a new classifier would give it (decision 2110).
+
 ```csharp
 var hits = part.Intersect(new Line3D(eye, viewDirection));      // the faces a ray meets, nearest first
 ```

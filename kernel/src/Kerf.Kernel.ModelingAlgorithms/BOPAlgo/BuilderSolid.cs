@@ -782,7 +782,9 @@ internal class BuilderSolid : BuilderArea
     private static bool IsHole(in Shape s2, IntersectionContext context)
     {
         Solid pS2 = new(s2.TShape(), s2.Placement, s2.Orientation);
-        SolidClassifier clsf = context.SolidClassifier(pS2);
+        // Kerf (unit 15C): the point at infinity reads only the faces' intersectors; the tree of edges and vertices is filled if
+        // a point is asked of this shell later, from the same finished shell: 115 MB a build of the enclosure filled and unread
+        SolidClassifier clsf = context.SolidClassifier(pS2, treeWhenAsked: true);
         //
         clsf.PerformInfinitePoint(RealSmall());
         //

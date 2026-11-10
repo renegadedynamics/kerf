@@ -168,11 +168,17 @@ internal class IntersectionContext : Transient
     }
 
     /// <summary>The 3D point classifier of the solid, built on the first call.</summary>
-    public SolidClassifier SolidClassifier(in Solid aSolid)
+    public SolidClassifier SolidClassifier(in Solid aSolid) => SolidClassifier(aSolid, treeWhenAsked: false);
+
+    /// <summary>
+    /// The 3D point classifier of the solid, built on the first call; Kerf (unit 15C): if <paramref name="treeWhenAsked"/>,
+    /// one whose tree of edges and vertices is filled when a point first asks for it (<c>SolidClassifier.WithTreeWhenAsked</c>).
+    /// </summary>
+    public SolidClassifier SolidClassifier(in Solid aSolid, bool treeWhenAsked)
     {
         if (!_sClassMap.TryGetValue(aSolid, out SolidClassifier? pSC))
         {
-            pSC = new SolidClassifier(aSolid);
+            pSC = treeWhenAsked ? Classification.SolidClassifier.WithTreeWhenAsked(aSolid) : new SolidClassifier(aSolid);
             //
             _sClassMap[aSolid] = pSC;
         }

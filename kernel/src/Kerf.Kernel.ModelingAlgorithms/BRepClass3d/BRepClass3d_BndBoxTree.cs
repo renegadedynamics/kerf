@@ -275,7 +275,7 @@ internal static class SplineHull
     /// the edge's curve isn't a spline.</summary>
     public static bool KeepsAway(in Edge e, double distance, in Point3D origin, Direction3D? along)
     {
-        Curve3D? curve = Tool.Curve(e, out Placement placement, out _, out _);
+        Curve3D? curve = Tool.Curve(e, out Placement placement, out double from, out double to);
         if (curve is TrimmedCurve3D trimmed)
         {
             curve = trimmed.BasisCurve;
@@ -292,6 +292,10 @@ internal static class SplineHull
                 poles = bezier.InternalPoles();
                 span = poles.Length();
                 break;
+            case LineCurve3D line:
+                return Counted(LineKeepsAway(line.Position, from, to, placement, distance + global::Kerf.Engine.Foundation.Precision.Confusion(), origin, along));
+            case CircleCurve3D circle:
+                return Counted(CircleKeepsAway(circle.Circle, placement, distance + global::Kerf.Engine.Foundation.Precision.Confusion(), origin, along));
             default:
                 return false;
         }
@@ -345,5 +349,89 @@ internal static class SplineHull
         }
         s_keptAway++;
         return true;
+    }
+
+    // The line and circle edges this thread's selectors kept away by their geometry (unit 15C), for the tests
+    [ThreadStatic]
+    internal static int s_analyticKeptAway;
+
+    private static bool Counted(bool keptAway)
+    {
+        if (keptAway)
+        {
+            s_analyticKeptAway++;
+        }
+        return keptAway;
+    }
+
+    // Kerf (unit 15C): a line edge is the segment between its ends, so its nearest point to a point is on that segment, and its
+    // nearest to a line too, which is the segment's nearest to the line's point seen along the line: both measured exactly
+    private static bool LineKeepsAway(in Axis3D axis, double from, double to, in Placement placement, double reach, in Point3D origin, Direction3D? along)
+    {
+        if (!double.IsFinite(from) || !double.IsFinite(to))
+        {
+            return false;
+        }
+        Point3D start = axis.Location.Translated(new Vector3D(axis.Direction) * from);
+        Point3D end = axis.Location.Translated(new Vector3D(axis.Direction) * to);
+        if (!placement.IsIdentity)
+        {
+            Transform3D move = placement.Transformation;
+            start = start.Transformed(move);
+            end = end.Transformed(move);
+        }
+        Vector3D a = new(origin, start), b = new(origin, end);
+        if (along is { } direction)
+        {
+            // Seen along the line, which is then the origin
+            var d = new Vector3D(direction);
+            a -= d * a.Dot(d);
+            b -= d * b.Dot(d);
+        }
+        Vector3D ab = b - a;
+        double length = ab.SquareMagnitude;
+        double t = length > 0 ? Math.Clamp(-a.Dot(ab) / length, 0, 1) : 0;
+        Vector3D nearest = a + (ab * t);
+        return nearest.Magnitude > reach;
+    }
+
+    // Kerf (unit 15C): an arc lies on its circle. From a point, the circle's nearest is at the height over its plane and the
+    // difference of the radius and the distance from its axis. Seen along a line, the circle is inside its centre's box of
+    // half-widths r √(1 - (n · a)²) on each axis a across the line, and the line is nowhere nearer than its distance to the centre
+    // less the radius
+    private static bool CircleKeepsAway(in Circle3D circle, in Placement placement, double reach, in Point3D origin, Direction3D? along)
+    {
+        Circle3D placed = placement.IsIdentity ? circle : circle.Transformed(placement.Transformation);
+        double radius = placed.Radius;
+        Vector3D normal = new(placed.Axis.Direction);
+        Vector3D toCentre = new(origin, placed.Location);
+        if (!double.IsFinite(radius) || !double.IsFinite(toCentre.X + toCentre.Y + toCentre.Z))
+        {
+            return false;
+        }
+        if (along is not { } direction)
+        {
+            double height = toCentre.Dot(normal);
+            double fromAxis = (toCentre - (normal * height)).Magnitude;
+            return Math.Sqrt((height * height) + ((fromAxis - radius) * (fromAxis - radius))) > reach;
+        }
+
+        var d = new Vector3D(direction);
+        Vector3D across = toCentre - (d * toCentre.Dot(d));
+        if (across.Magnitude - radius > reach)
+        {
+            return true;
+        }
+        Vector3D first = d.Crossed(Math.Abs(direction.X) < 0.6 ? new Vector3D(1, 0, 0) : new Vector3D(0, 1, 0)).Normalized();
+        Vector3D second = d.Crossed(first);
+        foreach (Vector3D axis in (ReadOnlySpan<Vector3D>)[first, second])
+        {
+            double tilt = normal.Dot(axis);
+            if (Math.Abs(toCentre.Dot(axis)) > (radius * Math.Sqrt(Math.Max(0, 1 - (tilt * tilt)))) + reach)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

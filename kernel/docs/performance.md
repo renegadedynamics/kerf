@@ -2092,3 +2092,75 @@ it was: 4,091 cases run of 4,093 (OK 3,301, SKIPPED 786, BAD 2, FAILED 1, IMPROV
 **Not changed, and why:** what the checks keep for each new face is the report, read after the check (above). The wires'
 and faces' geometric checks are OCCT's, on faces that are new, and 11Q found them spread out with little to cut. The
 volume check's classifications are 15C's.
+
+## Wasteful cases, first slice (unit 15F)
+
+*10 November 2026, decisions 2105 to 2109. Other helpers shared the machine with the owner: **times here are from a loaded
+machine** and decide nothing; the verdicts rest on bytes (every thread, median of 9 warm runs, alternate processes of main
+and the branch on 2 processors) and on counts. The harness and traces are in the scratchpad's `p15f` folder.*
+
+**Chosen** (decision 2105), by bytes against native's time and against neighbours: the users' `chamfer-housing` (40% more
+bytes than `collapse-housing`, which does more), Bento's `9 chamfer, fillet` (the most bytes per millisecond of native's
+time), and Bento's `6 point lists` (the only example slower than native).
+
+| Where the bytes went | Share | Change |
+|---|---:|---|
+| The housing's chamfer: edges projected onto their planes again, a direct table of 64 losing them to collisions | 29% | a table of 256 sets of four (decision 2106) |
+| The box's chamfer and fillet: `IsTangentFaces` between planes, adaptors and samples for an answer the normals give | 22% | the planes' angle first (decision 2107) |
+| The point lists: the face checker's trees and the frontier's map in the mesher, the extrema's unused solver | about 8% | decision 2108 |
+
+| Bytes, MB | main | branch | |
+|---|---:|---:|---:|
+| `chamfer-housing` | 5.4 to 6.5 | 4.67 to 4.79 | −17% to −28% |
+| `9 chamfer, fillet` | 7.62 | 6.09 | −20% |
+| `6 point lists` | 3.33 | 3.18 | −4.5% |
+| `fuse-boss` | 14.2 | 11.4 | −19.5% |
+| `fuse-detent` | 19.1 | 16.5 | −13.5% |
+| `29 bottle` | 36.9 | 33.3 | −9.8% |
+| Bento's eleven examples | 125.9 | 119.3 | −5.2% |
+| `enclosure`, a build | 2,807 | 2,694 | −4.0% |
+| `enclosure-v0.16`, a build | 2,789 | 2,668 | −4.3% |
+
+Every result the same; no case more bytes outside the processes' noise (±2%). The suites: Foundation 2,563 passed,
+ModelingData 3,376, ModelingAlgorithms 6,084 (9 skipped), DataExchange 454 (2 skipped), Modeling 2,650, in Release on 2
+threads; the filtered corpus as `corpus-13.txt`. **Left:** the point lists' meshing, spread over the face checker's tree
+nodes (5%), the cell filter's and the node map's growth (5%) and the Delaunay structure; time for a quiet window
+(`quiet-15f.sh`).
+## Points classified one by one (unit 15C)
+
+*10 November 2026, decisions 2110 to 2114. Other helpers shared the machine with the owner: **the times here are from a
+loaded machine**, and the verdicts rest on bytes and counts. The enclosure is 14A's harness (v0.16, 35 mm shaft, its 13
+parts warm, three interleaved processes each side on 2 logical processors); the users' cases and Bento's examples are the
+rig's programs, interleaved the same way; the counts are from a throwaway probe, the sites from an allocation trace.*
+
+**Where the classifications went** (a build of the enclosure, before):
+
+| | Classifiers | Points | MB | What it is |
+|---|---:|---:|---:|---|
+| Decision 1881's grid (19 of 35 fuses; 16 ruled out by their slab of overlap) | 38 | 7,679 | 147 | a part against a six-faced rib or boss whose box lies in the part's; no point in both |
+| of which the trees | | | 3.3 | |
+| of which the edge tree's extrema | | | ~79 | `ExtCC` and `CurvePointExtrema` of every edge whose box the line or point meets (decision 2112) |
+| Decision 1937's points | 6 | 762 | 14.5 | |
+| The Booleans' builders of solids (`IsHole`) | ~630 | 0 | 115 | a tree filled for the point at infinity, never read (decision 2113) |
+| The boss (one fuse) | 1 | 150 | 2.3 | the result's classifier, 0.31 MB of it the tree |
+| `IsInside` on the housing (the spec tests' 224 points) | 448 | 448 | 2,291 | two classifiers a point, each with its intersectors and tree (decision 2110) |
+
+**What changed:**
+
+| Change | Before | After |
+|---|---|---|
+| A frozen shape's classifier kept for the next point; `IsInside` one classification (2110, 2111) | the housing's 224 points 2,291 MB, about 2 s | 4.7 MB, about 50 ms |
+| Line and circle edges measured before their extrema (2112) | the enclosure 2,786 to 2,821 MB | 2,695 to 2,733 (−3.2%) |
+| The builder's and healing's trees filled when asked (2113) | | with 2112: the 13 parts 2,725 to 2,749 MB a build to 2,547 to 2,574 (−6.6%) |
+
+With all of them, the users' cases: the enclosure 2,823 to 2,829 MB to 2,599 to 2,639 (−7%), v0.16's 2,784 to 2,789 to
+2,558 to 2,598 (−7.5%), the boss 14.9 to 14.1 and 14.2 (−5%), the detent 19.2 and 19.3 to 18.6 and 18.7 (−3%), the
+chamfers the same; Bento's examples 115.4 and 118.2 MB a pass against 113.7 and 116.5; every result the same.
+**Shown the same:** 162,458 points of the dataset, each state the same on main's tree, on this tree, and from a kept
+classifier against a new one.
+
+**Tried and left out:** taking a point as outside when a ray along an axis passes clear of every face's box: no point of
+the enclosure's grids escapes (they lie in the parts' cavities), and an open solid's classifier calls 11 escaping points
+IN. **Left:** the checks' grid points in large parts are still classified one by one, each projecting itself onto a face
+and intersecting its line with the faces it nears, OCCT's way; a classifier shared within a check still carries OCCT's
+parallel flag from point to point (decision 2111), which can only pass a point over.

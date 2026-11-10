@@ -156,6 +156,23 @@ internal static class ChFi3d
             return true;
         }
 
+        // Obtaining of two surfaces from adjacent faces (OCCT does it after the pcurves; either missing is a false).
+        Surface? surf1 = Tool.Surface(face1);
+        Surface? surf2 = Tool.Surface(face2);
+
+        if (surf1 is null || surf2 is null)
+        {
+            return false;
+        }
+
+        // Two planes further apart in angle than the samples' tolerance: their normals are the same at every sample, so no
+        // sample can be tangent, and OCCT's answer is false whatever the pcurves, the samples and the distances; given
+        // without the adaptors and samples (unit 15F)
+        if (order is G1 or G2 && PlanesApart(surf1, surf2))
+        {
+            return false;
+        }
+
         double tolC0 = Max(0.001, 1.5 * Tool.Tolerance(edge));
 
         double first;
@@ -209,15 +226,6 @@ internal static class ChFi3d
             return false;
         }
 
-        // Obtaining of two surfaces from adjacent faces.
-        Surface? surf1 = Tool.Surface(face1);
-        Surface? surf2 = Tool.Surface(face2);
-
-        if (surf1 is null || surf2 is null)
-        {
-            return false;
-        }
-
         // Computation of the number of samples on the edge.
         // (OCCT copies the adaptors into handles; the port makes them on the faces directly.)
         FaceSurfaceAdaptor bahs1 = new(face1);
@@ -241,7 +249,7 @@ internal static class ChFi3d
             }
 
             SurfaceContinuity cont =
-                new(c2d1, c2d2, par, surf1, surf2, order, 0.001, tolC0, 0.1, 0.1, 0.1);
+                new(c2d1, c2d2, par, surf1, surf2, order, TangencyResolution, tolC0, 0.1, 0.1, TangencyAngle);
             if (!cont.IsDone)
             {
                 if (order == C2 && cont.StatusError() == StatusErrorType.NullSecondDerivative)
@@ -280,6 +288,36 @@ internal static class ChFi3d
         LegacyTool.Nt(uv2, face2, ref normal2);
         double dot = normal1.Dot(normal2);
         return dot >= 0.0;
+    }
+
+    // The resolution and the angular tolerance of IsTangentFaces' samples
+    private const double TangencyResolution = 0.001;
+    private const double TangencyAngle = 0.1;
+
+    // True if both surfaces are planes whose normals, as a sample of SurfaceContinuity computes them, are further apart
+    // than TangencyAngle: a plane's derivatives, and so its normal, don't depend on the parameters
+    private static bool PlanesApart(Surface surf1, Surface surf2)
+    {
+        if (surf1 is not PlaneSurface || surf2 is not PlaneSurface)
+        {
+            return false;
+        }
+
+        var props1 = new global::Kerf.Engine.Geometry.Properties.SLProps(surf1, 0.0, 0.0, 1, TangencyResolution);
+        var props2 = new global::Kerf.Engine.Geometry.Properties.SLProps(surf2, 0.0, 0.0, 1, TangencyResolution);
+        if (!props1.IsNormalDefined || !props2.IsNormalDefined)
+        {
+            return false;
+        }
+
+        // SurfaceContinuity's G1 angle: the angle between the normals, folded into [0, pi/2]
+        double angle = props1.Normal().AngleTo(props2.Normal());
+        if (angle > Math.PI / 2)
+        {
+            angle = Math.PI - angle;
+        }
+
+        return angle > TangencyAngle;
     }
 
     //=======================================================================

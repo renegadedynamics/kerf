@@ -5,6 +5,8 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`IsInside` classifies a point once, not twice, and asked point by point of one part reuses its classifier** (kernel
+  decisions 2110 and 2111): the same answers, a fraction of the time and memory when many points are asked.
 - **A Boolean proved wrong is made again before it fails,** as the kernel's are: with its inputs the other way round, then
   with a small fuzzy value (warnings `boolean.other-way-round` and `boolean.fuzzy-value`). OCCT #1629's thread cut, which
   failed, and its common, which failed too, are now right, through `Cut`, `Intersect`, `-`, `&`, `Subtract` and `Common`;

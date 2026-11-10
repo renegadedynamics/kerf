@@ -125,9 +125,8 @@ internal class ShellSewing
         for (var exd = new Explorer(shape, ShapeType.Solid); exd.More(); exd.Next())
         {
             Solid sd = ShapeCasts.Solid(exd.Current());
-            var bsc3d = new SolidClassifier(sd);
-            bsc3d.PerformInfinitePoint(tol);
-            if (bsc3d.State() == In)
+            // Kerf (unit 15C): the point at infinity reads only the faces' intersectors, so no tree of edges and vertices
+            if (SolidClassifier.InfinitePointState(sd, tol) == In)
             {
                 _reShape.Replace(sd, sd.Reversed());
                 ns++;
