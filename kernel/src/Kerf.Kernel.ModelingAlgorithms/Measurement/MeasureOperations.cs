@@ -147,12 +147,9 @@ public static class MeasureOperations
         /// as well as solids.
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public bool IsOnFace(Point3D point, double tolerance = Tolerances.Confusion)
-        {
-            var classifier = new SolidClassifier(NotNull(shape.AsShape()));
-            classifier.Perform(point, tolerance);
-            return classifier.IsOnAFace;
-        }
+        /// <remarks>A frozen shape's classifier is kept for the next point asked of it (unit 15C).</remarks>
+        public bool IsOnFace(Point3D point, double tolerance = Tolerances.Confusion) =>
+            KeptClassifiers.State(NotNull(shape.AsShape()), point, tolerance) == Containment.On;
     }
 
     extension(Face face)
@@ -204,12 +201,9 @@ public static class MeasureOperations
         /// <c>Classify</c> for any shape.
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
-        public Containment ClassifyPoint(Point3D point, double tolerance = Tolerances.Confusion)
-        {
-            var classifier = new SolidClassifier(NotNull(shape.AsShape()));
-            classifier.Perform(point, tolerance);
-            return classifier.State();
-        }
+        /// <remarks>A frozen shape's classifier is kept for the next point asked of it (unit 15C).</remarks>
+        public Containment ClassifyPoint(Point3D point, double tolerance = Tolerances.Confusion) =>
+            KeptClassifiers.State(NotNull(shape.AsShape()), point, tolerance);
     }
 
     // A centre and moments follow a face's mass less closely than the mass does: 4e-6 out on a cylinder at 1e-6, exact from 1e-8 (decision 1808)

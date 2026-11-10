@@ -1026,6 +1026,21 @@ internal class SolidExplorer
         return bRetFlag;
     }
 
+    /// <summary>
+    /// Kerf (unit 15C): the choice of face and of where on an edge to aim set back to what <see cref="InitShape(in Shape)"/>
+    /// leaves, and each face's intersector's flag of a line found parallel set back to a new one's: all a classification
+    /// leaves in the explorer that the next one can read before setting it itself.
+    /// </summary>
+    internal void ForANewPoint()
+    {
+        _firstFace = 0;
+        _paramOnEdge = 0.512345;
+        foreach (CurveSurfaceIntersector? intersector in _mapOfInter.Values)
+        {
+            intersector?.ForgetParallel();
+        }
+    }
+
     /// <summary>The intersector of the face <paramref name="f"/>.</summary>
     /// <exception cref="NoSuchObjectException">The face is not in the shape.</exception>
     public CurveSurfaceIntersector Intersector(in Face f)
