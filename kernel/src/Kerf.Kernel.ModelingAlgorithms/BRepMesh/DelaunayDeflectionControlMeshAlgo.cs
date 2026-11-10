@@ -123,6 +123,12 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
                 SplitTriangleGeometry(triangle);
             }
 
+            if (MeasuresInside && _controlNodes.IsEmpty())
+            {
+                // Kerf: the control has nothing left to add; measure inside the triangles (decision 2102)
+                MeasureInside();
+            }
+
             if (_couplesMap is null && !_controlNodes.IsEmpty())
             {
                 KeepPassLinks();
@@ -170,11 +176,85 @@ internal class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeIn
         }
     }
 
-    // Contains geometrical data related to node of triangle.
-    private struct TriangleNodeInfo
+    /// <summary>
+    /// Kerf: whether the triangles are measured inside once the control has nothing left to add (decision 2102); not
+    /// in OCCT's control.
+    /// </summary>
+    protected virtual bool MeasuresInside => false;
+
+    /// <summary>
+    /// Kerf: measures a triangle inside, where the centre's and the links' measures have found it within the deflection,
+    /// and queues a node where it is further from the surface (decision 2102); nothing in OCCT's control. Called for each
+    /// non-degenerate triangle of a pass the control would end, with its nodes' parameters, points and whether the link
+    /// from each to the next is a frontier.
+    /// </summary>
+    protected virtual void CheckInside(ReadOnlySpan<TriangleNodeInfo> nodesInfo)
     {
+    }
+
+    // Kerf: the pass's triangles again, each measured inside (decision 2102)
+    private void MeasureInside()
+    {
+        Span<int> nodesIndices = stackalloc int[3];
+        Span<TriangleNodeInfo> nodesInfo = stackalloc TriangleNodeInfo[3];
+        Span<Vector3D> links = stackalloc Vector3D[3];
+        for (NCollection_PackedMapOfInteger.Iterator it = new(GetStructure().ElementsOfDomain()); it.More(); it.Next())
+        {
+            Triangle triangle = GetStructure().GetElement(it.Key());
+            if (triangle.Movability() == DegreeOfFreedom.Deleted)
+            {
+                continue;
+            }
+
+            GetStructure().ElementNodes(triangle, nodesIndices);
+            GetTriangleInfo(triangle, nodesIndices, nodesInfo);
+            if (CheckTriangleForDegenerativityAndGetLinks(nodesInfo, links) && CheckTriangleArea2d(nodesInfo))
+            {
+                CheckInside(nodesInfo);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Kerf: takes a measure of the mesh's distance from the surface, squared, into the largest found this pass, which
+    /// becomes the face's deflection, and the exceeded mark if it's over the limit (decisions 2071, 2102).
+    /// </summary>
+    protected void NoteSquareDeviation(double sqDeflection)
+    {
+        if (sqDeflection > _maxSqDeflection)
+        {
+            _maxSqDeflection = sqDeflection;
+        }
+    }
+
+    /// <summary>
+    /// Kerf: queues a node at the given parameters, inside the triangle, moved off a frontier link of it where Delaunay
+    /// would skip it (decision 2057), unless it would come nearer a node than the smallest size; true if queued.
+    /// </summary>
+    protected bool QueueInside(in Xy pnt2d, ReadOnlySpan<TriangleNodeInfo> nodesInfo)
+    {
+        Xy insertAt = ClearsFrontier && (nodesInfo[0].isFrontierLink || nodesInfo[1].isFrontierLink || nodesInfo[2].isFrontierLink)
+            ? Cleared(pnt2d, nodesInfo)
+            : pnt2d;
+        if (RejectByMinSize(insertAt, GetPoint3d(insertAt)))
+        {
+            return false;
+        }
+
+        _controlNodes!.Append(new Point2D(insertAt));
+        return true;
+    }
+
+    /// <summary>Geometrical data related to a node of a triangle.</summary>
+    protected struct TriangleNodeInfo
+    {
+        /// <summary>The node's parameters, unscaled.</summary>
         public Xy Point2d;
+
+        /// <summary>The node's point.</summary>
         public Xyz Point;
+
+        /// <summary>Whether the link from this node to the triangle's next is a frontier.</summary>
         public bool isFrontierLink;
     }
 

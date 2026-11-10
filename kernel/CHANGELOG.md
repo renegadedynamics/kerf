@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **A Boolean still proved wrong is made once more with a small fuzzy value, and that result returned, with the warning `boolean.fuzzy-value`, if it's right:** OCCT #1629's thread cut, which made a solid inside out, its empty common and its fuse with an extra groove are now right (decision 2103). `BooleanOperations.BuiltWithFuzzyValue` is the new code. **An empty common, or a cut that removed nothing, is also looked for just inside the inputs' faces,** as a grid of points can miss a thin overlap: #1629's empty common was a success (decision 2104).
+- **Fewer bytes for chamfers, fillets and parts read from STEP files,** the same results to the bit: a chamfer or fillet between planar faces about 20% fewer, a small part fused onto a large one read from STEP about 13% to 20%, and Bento's examples about 5% (decisions 2106 to 2108).
 - **Points asked one at a time of a shape share its classifier:** `ClassifyPoint`, `Solid.Classify` and `IsOnFace` keep
   a frozen shape's classifier with the shape for the next point, each point getting what a new classifier gives it;
   a solid's classifier no longer measures its point or line against line and circle edges its geometry keeps clear of;
@@ -16,6 +18,12 @@ version may break the API.
   verdict the same to the bit; `using (ParallelVolumes.Use()) { … }` (namespace `Kerf`) does it for the code inside, as
   `Cancellation.Use` does, and an option overrides it either way. Off by default: for one large part on an idle
   processor (about 20% less wall time for 40% to 65% more processor time), not for parts built side by side.
+- **A torus's mesh is measured inside its triangles too,** at their medians' midpoints, where a skewed triangle is
+  furthest from the surface: 25 small fillet-torus faces of OCCT's dataset at relative deflections were 1.002 to 1.035
+  times their deflection there, with no warning, as the mesher measured only each triangle's centre and links. Now a
+  face over there is refined within it, or named by `meshing.deflection-exceeded` where it can't be, so no face is over
+  its deflection without the warning. Only meshes that were over change; a mesh within its deflection is the same
+  (decision 2102).
 
 ## 0.5.0
 

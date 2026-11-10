@@ -4,6 +4,8 @@ using Kerf.Drawing;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Meshing;
+using Kerf.Engine.Meshing.Model;
+using Kerf.Engine.Meshing.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -80,6 +82,51 @@ public class MeshDeflectionWarningTests
         Assert.Empty(Mesher.Mesh(new MakeSphere(10).Shape(), Relative(0.001, 0.5)).Diagnostics);
         Assert.Empty(Mesher.Mesh(FilletedCylinder(), new MeshOptions { LinearDeflection = 0.05, AngularDeflection = 0.5 }).Diagnostics);
         Assert.Empty(Mesher.Mesh(FilletedCylinder(), Relative(0.01, 0.5)).Diagnostics);
+    }
+
+    [Fact]
+    public void A_face_a_little_over_inside_its_triangles_is_refined_within_and_gives_no_warning()
+    {
+        // data/occ's MODERN_Cooker_1 at a relative deflection of 0.002: four fillet tori were 1.035 times their deflection
+        // at the midpoints of their triangles' medians, where the guard measured nothing, with no warning (decision 2071's
+        // 25 faces); the guard now measures there and refines them within (decision 2102)
+        Shape shape = BrepTools.Cleaned(BRepMeshModelKit.ReadDataOcc("MODERN_Cooker_1.brep"));
+        Result<ShapeMesh> meshed = Mesher.Mesh(shape, Relative(0.002, 0.5));
+
+        Assert.True(meshed.IsSuccess);
+        Assert.Empty(meshed.Diagnostics);
+        ToolParameters parameters = BRepMeshModelKit.Params(0.002, 0.5, isRelative: true);
+        ModelModel model = BRepMeshModelKit.Model(shape, parameters, BRepMeshModelKit.Stage.Healed);
+        List<Shape> faces = MeshExtraction.Faces(shape);
+        int tori = 0;
+        for (int i = 0; i < model.FacesNb(); i++)
+        {
+            Face face = model.GetFace(i).GetFace();
+            var surface = new FaceSurfaceAdaptor(face);
+            if (surface.GetType() != SurfaceKind.Torus)
+            {
+                continue;
+            }
+
+            int index = faces.FindIndex(f => f.IsSame(face));
+            double furthest = Furthest(surface.Torus(), meshed.Value.Faces[index]);
+            Assert.True(furthest <= model.GetFace(i).GetDeflection() * 1.001, $"face {index}: {furthest:G4} for {model.GetFace(i).GetDeflection():G4}");
+            tori++;
+        }
+
+        Assert.Equal(12, tori);
+    }
+
+    [Fact]
+    public void Meshes_at_an_absolute_deflection_are_unchanged_by_the_measure_inside()
+    {
+        // The measure inside a triangle, taken once the control has nothing left to add, finds nothing on a mesh within
+        // its deflection (decision 2102): the same triangles and nodes as before it, at an absolute deflection. Taken
+        // beside the centre's measure instead, the pin's fillet, 0.84 of its deflection, got 1,300 triangles
+        ShapeMesh torus = Mesher.Mesh(new MakeTorus(10, 2).Shape(), new MeshOptions { LinearDeflection = 0.05, AngularDeflection = 0.5 }).Value;
+        Assert.Equal((2548, 1350), (torus.TriangleCount, torus.NodeCount));
+        ShapeMesh pin = Mesher.Mesh(FilletedCylinder(), new MeshOptions { LinearDeflection = 0.05, AngularDeflection = 0.5 }).Value;
+        Assert.Equal((1206, 749), (pin.TriangleCount, pin.NodeCount));
     }
 
     [Fact]

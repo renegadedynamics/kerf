@@ -16,7 +16,8 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 /// <summary>
 /// At a relative deflection a sphere's and a torus's meshes keep to the deflection relative mode works out for each face
 /// (decision 2056), measured from the surface: each triangle at 13 points, exactly. Before it, they were OCCT's, which
-/// missed it by the factors noted. A node for a triangle on a frontier link goes where Delaunay takes it (decision 2057).
+/// missed it by the factors noted. A node for a triangle on a frontier link goes where Delaunay takes it (decision 2057),
+/// and a torus triangle is measured inside too, at its medians' midpoints (decision 2102).
 /// </summary>
 public class MeshRelativeDeflectionTests
 {
@@ -28,6 +29,7 @@ public class MeshRelativeDeflectionTests
         { "Pump_Nut.brep", 0.005, 0.5 }, // its tori 2.59
         { "Ball.brep", 0.002, 0.5 },     // its spheres 3.91, its tori 2.94
         { "Axis_of_bearing.brep", 0.001, 0.5 }, // its spheres 2.05, and 1.10 without decision 2057
+        { "MODERN_Cooker_1.brep", 0.002, 0.5 }, // four fillet tori 1.035 out inside their triangles, with no warning, before decision 2102
     };
 
     [Theory]

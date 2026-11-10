@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Healing.Analysis;
 using Kerf.Topology;
 using Kerf.Engine;
 using EngineCommon = Kerf.Engine.Booleans.Api.Common;
@@ -73,6 +74,10 @@ public static class BooleanOperations
 
     /// <summary>A warning: the first attempt was proved wrong, and this result was made with its inputs the other way round: <c>boolean.other-way-round</c>.</summary>
     public static DiagnosticCode BuiltOtherWayRound { get; } = new("boolean.other-way-round");
+
+    /// <summary>A warning: the first attempt was proved wrong, and this result was made with a fuzzy value, which the message
+    /// names: <c>boolean.fuzzy-value</c>.</summary>
+    public static DiagnosticCode BuiltWithFuzzyValue { get; } = new("boolean.fuzzy-value");
 
     private static readonly Diagnostic Failure = Diagnostic.Error(OperationDiagnostics.BooleanFailed, "The Boolean operation failed.");
 
@@ -179,7 +184,9 @@ public static class BooleanOperations
         if (options is not { CheckResult: false } && result.TryGetValue(out built) && RuleOf(operation) is { } rule
             && BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is { } wrong)
         {
-            return OtherWayRound(rule, arguments, tools, options, cancellationToken) ?? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
+            return OtherWayRound(rule, arguments, tools, options, cancellationToken)
+                   ?? WithFuzzyValue(rule, operation, arguments, tools, options, cancellationToken)
+                   ?? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
         }
         return result;
     }
@@ -214,6 +221,45 @@ public static class BooleanOperations
 
         return Result<Built<Shape>>.Success(built, [.. again.Diagnostics,
             Diagnostic.Warning(BuiltOtherWayRound, "The first attempt at this Boolean was wrong, and this one was made with its inputs the other way round.")]);
+    }
+
+    // Ten of the inputs' largest tolerance, as in the margin of decision 1861
+    private const double FuzzyOfTolerance = 10;
+
+    // A Boolean still proved wrong is tried with a fuzzy value of ten times the inputs' largest tolerance, and kept if that passes the
+    // same check. OCCT #1629's thread ends tangent to its core's end, which leaves a face of the tool joined across the bore's wall
+    // by a neck about 1e-5 wide; the exact intersections don't split it there, so the faces' classification carries the state of
+    // the thread's wall over the neck to the core's end, in the air of the bore, and the cut keeps it as a cap, with a solid inside
+    // out. A fuzzy value of 1e-6 or more makes it right (decision 2103). It costs one more Boolean, only on a result that would have
+    // failed.
+    private static Result<Built<Shape>>? WithFuzzyValue(BooleanVolumeRule rule, BooleanOperation operation, IReadOnlyList<Shape> arguments,
+                                                        IReadOnlyList<Shape> tools, BooleanOptions? options, CancellationToken cancellationToken)
+    {
+        options ??= BooleanOptions.Default;
+        var analysis = new ShapeToleranceAnalysis();
+        double fuzzy = FuzzyOfTolerance * arguments.Concat(tools).Max(s => analysis.Tolerance(s, 1));
+        if (!(fuzzy > options.FuzzyValue))
+        {
+            return null;
+        }
+
+        BooleanOperation again = rule switch
+        {
+            BooleanVolumeRule.Common => new EngineCommon(),
+            BooleanVolumeRule.Fuse => new EngineFuse(),
+            _ => new EngineCut(),
+        };
+        again.SetOperation(operation.Operation());
+        again.SetTools(List(tools, nameof(tools)));
+        Result<Built<Shape>> result = Run((BuilderAlgo)again, arguments, options with { FuzzyValue = fuzzy }, null, cancellationToken);
+        if (!result.TryGetValue(out Built<Shape>? built) || BooleanVolumes.Check(rule, arguments, tools, built.Shape, fuzzy) is not null)
+        {
+            return null;
+        }
+
+        string value = fuzzy.ToString("G3", System.Globalization.CultureInfo.InvariantCulture);
+        return Result<Built<Shape>>.Success(built, [.. result.Diagnostics,
+            Diagnostic.Warning(BuiltWithFuzzyValue, $"The first attempt at this Boolean was wrong, and this one was made with a fuzzy value of {value}.")]);
     }
 
     private static BooleanVolumeRule? RuleOf(BooleanOperation operation) => operation switch
