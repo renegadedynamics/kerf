@@ -55,7 +55,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1639 | A fillet of volume 10596 for 29800, valid, depending only on the order of the shell's faces: now right in both orders. The corner's walking line started on a trimmed cylinder's seam with the far side's parameter, which threw its approximation 270 off | 28621 |
+| #1639 | A fillet of volume 10596 for 29800, valid, depending only on the order of the shell's faces: now right in both orders. The corner's walking line started on a trimmed cylinder's seam with the far side's parameter, which threw its approximation 270 off | 2119 |
 | #245 | A Cut that removed nothing and an empty Common, for a sphere whose seam lies in a flat face of the other solid: now right, made again with a fuzzy value of a thousand tolerances (1e-4). Its section, not approximated, ended the process with a stack overflow: now it runs | 2116, 2117 |
 | #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. Right through `Kerf.Modeling` too | 2103, 2104, 2115 |
 | #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 1937 |
@@ -79,7 +79,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 | #1692 | A reused solid classifier's answer depending on the points before it | 1835 |
 | #1124 | The public section losing most of a curve (approximation now on) | 1836 |
 | #1310 | Unify leaving a closed pipe a face with no edges, and no mesh | 1837 |
-| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure; #1639's cause since fixed (28621), the others open | 1833 |
+| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure; #1639's cause since fixed (2119), the others open | 1833 |
 | #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
 | #1604, #1679 | An optimal box smaller than the shape | 1777 |
 | Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 1802 |
