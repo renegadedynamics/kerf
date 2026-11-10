@@ -69,6 +69,16 @@ time in a quiet window; anything that slows another case past the bar waits for 
 | **15P** A chamfer corner path | 15M: corners built with a Boolean where ChFi3d's chamfer fails (a chamfer on a loft fails 946 of 2,194), as 12W did. After 15N shows whether a path behind ChFi3d pays. | Starts when 15N has reported. **Stopped at its stop sign** (decisions 2136 and 2137): the loft's 1,006 of 2,194 failures (946 before 15L's check) are 969 at its top corners, where its side faces turn tangent at the vertex, and 37 walks; the corpus's 22 are 11 ordinary corners on free-form faces, B4's end over three faces, 6 lost faces, 2 open sequences, a walk and one BAD by OCCT's mark alone. None is a corner of planes and cylinders; no cause a path can take in one unit. Nothing built; what each would take, for the owner. |
 | **15Q** Fillets at their limit | The owner, on 15L's three fillets that now fail where edges touch at the fillet's limit: "This sounds like a similar case to the 'fillet a cube side length 1 with radius 1 fails' bug." For each, the right answer: the collapsed shape built and proved, as 12M's limits are, or the failure kept with the most that builds. | Each of the four (with chamfer B4) built right or failing saying why; the cube cases and 12M's limits unchanged. **Done** (decisions 2131 and 2132): X4 and B7 built, each a fillet face narrowing to a point, with a vertex there (X4 at the radius where its line just reaches the notch, right to 2.4e-9 by the section; B7's faces tangent at a point, so at every radius, where 30 to 70 failed); C2 fails, rightly, its faces turning concave to convex, for the owner; B4 fails at the validity check, ChFi3d's corner invalid, for 15P. The cube cases and 12M's limits unchanged. |
 
+## 7. After 15N and 15P (decision 2138)
+
+| Unit | What | Done when |
+|---|---|---|
+| **15R** Why ChFi3d's tee fillets are off | 15N found ChFi3d's successful fillets on the equal tee up to 1.6e-2 off the ball at r 2.5 and 1.3% over in volume (decision 2134). The owner: "The error in OCCT's fillets implies that there is a mistake in how they're calculated. Leave them for now, and schedule a unit to investigate." | The mistake found, down to the function, how widely it reaches (which fillets, how far off), and what a fix would take; fixed if it's plainly within reach and proved. |
+| **15S** Chamfers that lose faces | 15P: six corpus chamfers lose faces in ChFi3d's final reconstruction (decision 2137). Half a unit to find the cause. | The cause recorded; fixed if within reach. |
+| **15T** Fillet stage 4b | 15N: the crossing cylinders' 401 of 401 failures have corners, which stage 4a doesn't build. Corners where 4a's blends meet, proved by the ball test. | The crossing cylinders' failures fall, none returned failing the ball test; corpus unchanged but failures that now build. |
+| **15U** Chamfer corners carried on to meet | 15P: the corpus's eleven corner failures on Bézier and B-spline faces and B4: chamfer faces carried on until they meet, by a general fuse. About 2 units. | After 15S. |
+| **15V** Chamfer corners on B-spline faces | 15P: the loft's 969 corner failures: Kerf's own chamfer faces on B-spline faces. About 2 to 3 units. | After 15U. |
+
 ## Not in this phase
 
 - SVG and DXF import.
