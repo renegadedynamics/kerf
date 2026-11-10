@@ -1,6 +1,6 @@
 # Fillets: where they stop, and what could replace them
 
-*7 November 2026; section 9 is what units 12K to 12M built, section 10 what unit 15Q found of faces that narrow to a point, section 11 stage 4a, built by unit 15N, and section 12 what unit 15T found of stage 4b's corners. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
+*7 November 2026; section 9 is what units 12K to 12M built, section 10 what unit 15Q found of faces that narrow to a point, section 11 stage 4a, built by unit 15N, section 12 what unit 15T found of stage 4b's corners, and section 13 what unit 15R found of why ChFi3d's own fillets are off the ball. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
 
 **In short.** The 10 mm case is fixed, without a rewrite (decision 1847). That class of failure is not one failure of ChFi3d's mathematics: ChFi3d computes the right surface and then can't remove a face. **A rewrite of ChFi3d isn't justified yet, but a rolling-ball path that runs only where ChFi3d has failed is,** one analytic stage at a time. Its next stage is circular edges, the largest group among the corpus's fillet failures (8 of 23, 3 of them exactly this limit). Don't port `f713b1305f`.
 
@@ -326,6 +326,27 @@ Decisions 2139 and 2140. Nothing is built: the unit stopped at its stop sign.
 **ChFi3d in two steps** (each cylinder rimmed, fused, then the concave loop, which then has no corner) builds all 21 radii tried valid, but its blend over the torus is off the ball by up to 6.8e-3 at radius 1 and 1.6e-2 at 0.5 (5% of the radius), not tangent to the torus along its contact by up to 0.1 radians; the tori and the plane-to-cylinder stretch are exact. It would fail the ball test, and the kernel has no cylinder and branch apart to ask it of.
 
 **What it would take** (decision 2140), about two units: 4a's sections along a chain whose support changes (plane, torus, cylinder, tangent where they meet), with ends where the blend has width, which also builds the junction's concave edges alone; then the rim's torus trimmed by that blend, the assembly with new vertices where its contact changes face, and the proof with a torus as a support and the volume against slices of the shape opened and then closed by the ball.
+
+## 13. Why ChFi3d's own fillets are off the ball (unit 15R)
+
+Decisions 2141 and 2142. **Native OCCT 8.0.1 does the same,** to the digits: it's OCCT's. **It isn't the walk or the approximation:** at r = 2.5 on the equal tee the walk's own points miss the ball by 1.64e-2, the approximation adds 3e-5 of its own, and the surface is off by the same at the walk's sections and between them. **It's the formulation, `BlendFunc_ConstRad`:** each section's circle lies in the plane square to the edge where the section crosses it, tangent to that plane's sections of the two faces, the faces' normals projected into it. The rolling ball's circle lies in the plane square to the curve of the ball's centres. Where the faces' normals at the contacts are square to the edge (planes and extrusions along it, circles of coaxial revolutions) the two agree; elsewhere the section is a 2D fillet in a tilted plane, and its centre isn't the ball's. A script solving ConstRad's equations for the tee, apart from ChFi3d, gives its miss (4.8e-5, 1.5e-3, 1.7e-2 at 0.3, 1, 2.5), and nothing with the curve of centres as the guide.
+
+**How far it reaches,** the ball test on ChFi3d's results, worst miss at r = 1:
+
+| Faces | Miss at r = 1 |
+|---|---:|
+| Equal tee (cylinders of 5) | 1.3e-3 |
+| Tee, 5 and 4, 3, 2 | 7.6e-4 to 1.9e-3 |
+| Branch of 3 at 60 degrees, at 45 | 2.4e-2, 2.0e-3 |
+| Branch of 2 offset by 2 | 9.8e-3 |
+| Cone into a cylinder | 1.2e-3 |
+| Cylinder through a sphere, off its centre | 3.7e-3 |
+| Cylinder through a torus's tube | 1.3e-2 |
+| Cylinder tilted 30 degrees through a plane | 1.8e-2 |
+| Cylinder through a sphere's centre; cone on a cylinder's axis (walked) | 9e-6; 2.2e-5, at every radius |
+| Upright cylinder on a plane (`ChFiKPart`'s torus) | 1e-15 |
+
+The miss grows about as the cube of the radius: on the tee 2.1e-6 at 0.1, 3.9e-5 at 0.3, 2.9e-4 at 0.6. **A fix** gives the functions the curve of the ball's centres as their guide, from a first walk, and walks again; it reaches the ends' sections and the corners, and moves every walked fillet's surface. Not done here: for the owner, beside decision 2134's cheaper choices (29502).
 
 ## Sources
 
