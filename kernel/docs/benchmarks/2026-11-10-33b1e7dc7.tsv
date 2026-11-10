@@ -1,0 +1,360 @@
+# date	2026-11-10
+# commit	33b1e7dc7
+# machine	AMD Ryzen 9 9900X 12-Core Processor, 24 logical processors, 126 GB, Microsoft Windows 11 Pro
+# runtime	dotnet 10.0.400
+# quiet	yes: 2.6% total CPU at the start, none over 10% before any suite
+# readytorun	yes
+# set	full
+group	name	metric	value	runs	spread%
+opening	from the process's start to the end of the first pass	ms	579.612	8	11.7
+opening	the JIT's time in that	ms	221.724	8	5.4
+opening	methods the JIT compiled in that	count	3094.000	8	0.2
+bento	2 plate with hole	first ms	120.391	8	11.1
+bento	2 plate with hole	recalc ms	5.312	8	21.3
+bento	2 plate with hole	alloc MB	2.338	8	2.2
+bento	2 plate with hole	result	volume 44198.673, 7 faces, 268 triangles	8	
+bento	2 plate with hole	settled ms	5.931	5	11.0
+bento	3 prismatic solid	first ms	27.378	8	8.4
+bento	3 prismatic solid	recalc ms	3.354	8	14.3
+bento	3 prismatic solid	alloc MB	1.547	8	3.6
+bento	3 prismatic solid	result	volume 202194.671, 7 faces, 268 triangles	8	
+bento	3 prismatic solid	settled ms	3.443	5	23.9
+bento	5 working point	first ms	6.320	8	19.5
+bento	5 working point	recalc ms	5.368	8	25.9
+bento	5 working point	alloc MB	2.525	8	3.9
+bento	5 working point	result	volume 375677.789, 8 faces, 524 triangles	8	
+bento	5 working point	settled ms	5.536	5	11.1
+bento	6 point lists	first ms	9.606	8	26.7
+bento	6 point lists	recalc ms	7.878	8	21.2
+bento	6 point lists	alloc MB	3.395	8	20.0
+bento	6 point lists	result	volume 188495.559, 7 faces, 1272 triangles	8	
+bento	6 point lists	settled ms	8.103	5	11.4
+bento	9 chamfer, fillet	first ms	65.946	8	6.4
+bento	9 chamfer, fillet	recalc ms	11.557	8	12.1
+bento	9 chamfer, fillet	alloc MB	6.795	8	4.3
+bento	9 chamfer, fillet	result	volume 45706.902, 14 faces, 348 triangles	8	
+bento	9 chamfer, fillet	settled ms	11.959	5	18.0
+bento	10 select last, hole	first ms	25.205	8	17.7
+bento	10 select last, hole	recalc ms	17.289	8	18.0
+bento	10 select last, hole	alloc MB	4.382	8	24.6
+bento	10 select last, hole	result	volume 40848.104, 8 faces, 2284 triangles	8	
+bento	10 select last, hole	settled ms	19.814	5	21.0
+bento	29 bottle	first ms	96.439	8	5.0
+bento	29 bottle	recalc ms	65.401	8	5.7
+bento	29 bottle	alloc MB	37.332	8	4.4
+bento	29 bottle	result	volume 15893.315, 56 faces, 9556 triangles	8	
+bento	29 bottle	settled ms	67.726	5	14.2
+bento	31 nesting locations	first ms	22.480	8	18.1
+bento	31 nesting locations	recalc ms	15.050	8	10.2
+bento	31 nesting locations	alloc MB	12.668	8	3.1
+bento	31 nesting locations	result	volume 4991.970, 164 faces, 284 triangles	8	
+bento	31 nesting locations	settled ms	16.233	5	15.0
+bento	32 for-loop	first ms	10.462	8	11.2
+bento	32 for-loop	recalc ms	12.480	8	8.8
+bento	32 for-loop	alloc MB	8.169	8	3.2
+bento	32 for-loop	result	volume 14839.230, 44 faces, 92 triangles	8	
+bento	32 for-loop	settled ms	13.035	5	22.6
+bento	33 function, for-loop	first ms	8.483	8	8.1
+bento	33 function, for-loop	recalc ms	9.651	8	18.4
+bento	33 function, for-loop	alloc MB	6.255	8	3.5
+bento	33 function, for-loop	result	volume 10840.000, 36 faces, 72 triangles	8	
+bento	33 function, for-loop	settled ms	10.428	5	16.2
+bento	36 extrude until	first ms	140.819	8	12.0
+bento	36 extrude until	recalc ms	108.496	8	15.5
+bento	36 extrude until	alloc MB	32.754	8	9.8
+bento	36 extrude until	result	volume 30298.935, 8 faces, 4156 triangles	8	
+bento	36 extrude until	settled ms	121.537	5	22.9
+bento	total	first ms	538.097	8	4.5
+bento	total	recalc ms	263.662	8	8.3
+bento	total	alloc MB	119.221	8	4.7
+bento	total	processor time in a recalculation ms	750.000	8	50.0
+bento	total	settled ms	281.034	5	16.4
+process	the serial passes	longest collector's pause ms	2.916	5	16.9
+process	the serial passes	collector's pause ms	161.106	5	8.3
+process	the serial passes	generation 0 count	159.000	5	1.3
+process	the serial passes	generation 2 count	9.000	5	11.1
+parallel	24 copies of every example on 24 processors	round ms	1870.594	3	2.4
+parallel	24 copies of every example on 24 processors	serial work ms	6272.378	3	3.5
+parallel	24 copies of every example on 24 processors	speed-up x	3.353	3	6.1
+parallel	24 copies of every example on 24 processors	alloc MB	2896.405	3	0.9
+parallel	24 copies of every example on 24 processors	collector's pause in a round ms	939.859	3	5.8
+parallel	24 copies of every example on 24 processors	slowest one model in any round ms	1458.813	3	13.5
+parallel	24 copies of every example on 24 processors	processor time in a round ms	20187.500	3	11.5
+parallel	24 copies of every example on 24 processors	contended locks in a round count	6.000	3	66.7
+parallel	24 copies of every example on 24 processors	peak working set in MB, count	264.137	3	9.5
+parallel	24 copies of every example on 24 processors	result	0 differing from the serial run	3	
+process	with the parallel rounds	longest collector's pause ms	20.909	3	26.9
+process	with the parallel rounds	collector's pause ms	2924.130	3	6.2
+process	with the parallel rounds	generation 0 count	670.000	3	1.3
+process	with the parallel rounds	generation 2 count	60.000	3	16.7
+host opening	from the process's start to the end of the first pass	ms	565.588	3	4.3
+host opening	the JIT's time in that	ms	748.195	3	2.7
+host opening	methods the JIT compiled in that	count	5249.000	3	1.3
+host bento	2 plate with hole	first ms	128.561	3	2.5
+host bento	2 plate with hole	recalc ms	3.528	3	19.3
+host bento	2 plate with hole	alloc MB	2.323	3	1.2
+host bento	2 plate with hole	result	volume 44198.673, 7 faces, 268 triangles	3	
+host bento	3 prismatic solid	first ms	29.725	3	8.7
+host bento	3 prismatic solid	recalc ms	1.968	3	2.2
+host bento	3 prismatic solid	alloc MB	1.534	3	4.6
+host bento	3 prismatic solid	result	volume 202194.671, 7 faces, 268 triangles	3	
+host bento	5 working point	first ms	6.659	3	21.1
+host bento	5 working point	recalc ms	3.329	3	4.9
+host bento	5 working point	alloc MB	2.469	3	1.5
+host bento	5 working point	result	volume 375677.789, 8 faces, 524 triangles	3	
+host bento	6 point lists	first ms	8.099	3	13.4
+host bento	6 point lists	recalc ms	4.213	3	1.8
+host bento	6 point lists	alloc MB	3.632	3	1.3
+host bento	6 point lists	result	volume 188495.559, 7 faces, 1272 triangles	3	
+host bento	9 chamfer, fillet	first ms	66.478	3	1.8
+host bento	9 chamfer, fillet	recalc ms	7.188	3	12.8
+host bento	9 chamfer, fillet	alloc MB	6.762	3	1.0
+host bento	9 chamfer, fillet	result	volume 45706.902, 14 faces, 348 triangles	3	
+host bento	10 select last, hole	first ms	24.380	3	5.9
+host bento	10 select last, hole	recalc ms	11.109	3	5.6
+host bento	10 select last, hole	alloc MB	4.345	3	1.3
+host bento	10 select last, hole	result	volume 40848.104, 8 faces, 2284 triangles	3	
+host bento	29 bottle	first ms	93.277	3	24.6
+host bento	29 bottle	recalc ms	43.237	3	3.6
+host bento	29 bottle	alloc MB	36.140	3	1.9
+host bento	29 bottle	result	volume 15893.315, 56 faces, 9556 triangles	3	
+host bento	31 nesting locations	first ms	17.387	3	8.9
+host bento	31 nesting locations	recalc ms	8.097	3	13.9
+host bento	31 nesting locations	alloc MB	12.546	3	0.2
+host bento	31 nesting locations	result	volume 4991.970, 164 faces, 284 triangles	3	
+host bento	32 for-loop	first ms	10.123	3	32.2
+host bento	32 for-loop	recalc ms	6.412	3	8.6
+host bento	32 for-loop	alloc MB	8.130	3	0.3
+host bento	32 for-loop	result	volume 14839.230, 44 faces, 92 triangles	3	
+host bento	33 function, for-loop	first ms	8.274	3	16.2
+host bento	33 function, for-loop	recalc ms	5.211	3	8.6
+host bento	33 function, for-loop	alloc MB	6.188	3	0.2
+host bento	33 function, for-loop	result	volume 10840.000, 36 faces, 72 triangles	3	
+host bento	36 extrude until	first ms	124.793	3	4.7
+host bento	36 extrude until	recalc ms	66.809	3	3.0
+host bento	36 extrude until	alloc MB	32.067	3	9.9
+host bento	36 extrude until	result	volume 30298.935, 8 faces, 4156 triangles	3	
+host bento	total	first ms	515.494	3	4.5
+host bento	total	recalc ms	160.842	3	0.2
+host bento	total	alloc MB	116.805	3	2.7
+host bento	total	processor time in a recalculation ms	468.750	3	13.3
+host parallel	24 copies of every example on 24 processors	round ms	494.001	3	2.8
+host parallel	24 copies of every example on 24 processors	serial work ms	3860.206	3	0.2
+host parallel	24 copies of every example on 24 processors	speed-up x	7.804	3	2.7
+host parallel	24 copies of every example on 24 processors	alloc MB	2828.516	3	0.3
+host parallel	24 copies of every example on 24 processors	collector's pause in a round ms	84.528	3	16.5
+host parallel	24 copies of every example on 24 processors	slowest one model in any round ms	450.810	3	16.3
+host parallel	24 copies of every example on 24 processors	processor time in a round ms	10562.500	3	2.2
+host parallel	24 copies of every example on 24 processors	contended locks in a round count	11.000	3	90.9
+host parallel	24 copies of every example on 24 processors	peak working set in MB, count	444.457	3	18.5
+host parallel	24 copies of every example on 24 processors	result	0 differing from the serial run	3	
+host process	with the parallel rounds	longest collector's pause ms	12.513	3	111.4
+host process	with the parallel rounds	collector's pause ms	338.730	3	12.8
+host process	with the parallel rounds	generation 0 count	200.000	3	8.0
+host process	with the parallel rounds	generation 2 count	23.000	3	30.4
+images	2 plate with hole	svg ms	0.623	3	1.8
+images	2 plate with hole	svg MB	0.212	3	0.5
+images	2 plate with hole	png ms	10.645	3	2.5
+images	2 plate with hole	png MB	5.418	3	4.6
+images	2 plate with hole	result	23 edges, 1945 characters of SVG, 23186 bytes of PNG	3	
+images	3 prismatic solid	svg ms	0.663	3	5.0
+images	3 prismatic solid	svg MB	0.264	3	0.4
+images	3 prismatic solid	png ms	12.585	3	6.8
+images	3 prismatic solid	png MB	5.305	3	0.2
+images	3 prismatic solid	result	23 edges, 1910 characters of SVG, 29137 bytes of PNG	3	
+images	5 working point	svg ms	0.972	3	18.8
+images	5 working point	svg MB	0.399	3	14.0
+images	5 working point	png ms	12.285	3	13.0
+images	5 working point	png MB	5.735	3	1.9
+images	5 working point	result	30 edges, 2451 characters of SVG, 24915 bytes of PNG	3	
+images	6 point lists	svg ms	2.072	3	23.3
+images	6 point lists	svg MB	0.754	3	0.5
+images	6 point lists	png ms	14.336	3	5.9
+images	6 point lists	png MB	6.589	3	4.2
+images	6 point lists	result	53 edges, 4317 characters of SVG, 27527 bytes of PNG	3	
+images	9 chamfer, fillet	svg ms	2.068	3	36.8
+images	9 chamfer, fillet	svg MB	0.635	3	0.6
+images	9 chamfer, fillet	png ms	10.987	3	13.6
+images	9 chamfer, fillet	png MB	5.810	3	0.1
+images	9 chamfer, fillet	result	39 edges, 3732 characters of SVG, 22492 bytes of PNG	3	
+images	10 select last, hole	svg ms	5.503	3	9.9
+images	10 select last, hole	svg MB	1.235	3	0.2
+images	10 select last, hole	png ms	13.695	3	4.3
+images	10 select last, hole	png MB	6.046	3	0.1
+images	10 select last, hole	result	26 edges, 2894 characters of SVG, 28284 bytes of PNG	3	
+images	29 bottle	svg ms	29.707	3	8.5
+images	29 bottle	svg MB	7.589	3	0.9
+images	29 bottle	png ms	21.264	3	17.4
+images	29 bottle	png MB	13.187	3	1.4
+images	29 bottle	result	176 edges, 16030 characters of SVG, 28038 bytes of PNG	3	
+images	31 nesting locations	svg ms	4.370	3	19.0
+images	31 nesting locations	svg MB	2.373	3	1.5
+images	31 nesting locations	png ms	12.185	3	2.2
+images	31 nesting locations	png MB	11.208	3	1.9
+images	31 nesting locations	result	328 edges, 20611 characters of SVG, 34265 bytes of PNG	3	
+images	32 for-loop	svg ms	1.439	3	2.4
+images	32 for-loop	svg MB	0.724	3	2.2
+images	32 for-loop	png ms	9.472	3	6.1
+images	32 for-loop	png MB	6.701	3	0.4
+images	32 for-loop	result	94 edges, 6206 characters of SVG, 20029 bytes of PNG	3	
+images	33 function, for-loop	svg ms	1.152	3	5.1
+images	33 function, for-loop	svg MB	0.554	3	2.7
+images	33 function, for-loop	png ms	8.139	3	6.9
+images	33 function, for-loop	png MB	6.273	3	0.2
+images	33 function, for-loop	result	72 edges, 4836 characters of SVG, 18122 bytes of PNG	3	
+images	36 extrude until	svg ms	9.932	3	6.9
+images	36 extrude until	svg MB	2.153	3	0.0
+images	36 extrude until	png ms	26.376	3	7.5
+images	36 extrude until	png MB	8.391	3	0.0
+images	36 extrude until	result	27 edges, 5475 characters of SVG, 50397 bytes of PNG	3	
+first use	loaded as Bento does: collectible, from bytes	fillet, cut and STEP ms	2167.843	5	7.8
+first use	loaded as Bento does: collectible, from bytes	methods compiled by the JIT count	3646.000	5	0.0
+first use	loaded as Bento does: collectible, from bytes	result	849.923308	5	
+first use	Kerf from its files, not collectible	fillet, cut and STEP ms	207.064	5	4.9
+first use	Kerf from its files, not collectible	methods compiled by the JIT count	1548.000	5	0.0
+first use	Kerf from its files, not collectible	result	849.923308	5	
+meshing	Pump_Nut.brep, serial	mesh ms	28.661	3	8.9
+meshing	Pump_Nut.brep, serial	extract ms	0.431	3	1.9
+meshing	Pump_Nut.brep, serial	alloc MB	5.614	3	0.0
+meshing	Pump_Nut.brep, parallel	mesh ms	16.688	3	15.7
+meshing	Pump_Nut.brep, parallel	extract ms	0.446	3	5.2
+meshing	Pump_Nut.brep, parallel	alloc MB	7.717	3	8.4
+meshing	bottle.brep, serial	mesh ms	58.953	3	18.5
+meshing	bottle.brep, serial	extract ms	1.649	3	3.2
+meshing	bottle.brep, serial	alloc MB	13.592	3	0.0
+meshing	bottle.brep, parallel	mesh ms	13.881	3	16.3
+meshing	bottle.brep, parallel	extract ms	1.522	3	3.9
+meshing	bottle.brep, parallel	alloc MB	15.162	3	4.2
+meshing	CrankArm.brep, serial	mesh ms	34.023	3	20.0
+meshing	CrankArm.brep, serial	extract ms	1.941	3	19.4
+meshing	CrankArm.brep, serial	alloc MB	11.954	3	0.1
+meshing	CrankArm.brep, parallel	mesh ms	8.060	3	7.1
+meshing	CrankArm.brep, parallel	extract ms	1.806	3	2.3
+meshing	CrankArm.brep, parallel	alloc MB	12.072	3	0.2
+meshing	hammer.brep, serial	mesh ms	45.862	3	2.1
+meshing	hammer.brep, serial	extract ms	2.748	3	15.2
+meshing	hammer.brep, serial	alloc MB	12.404	3	0.1
+meshing	hammer.brep, parallel	mesh ms	9.177	3	11.9
+meshing	hammer.brep, parallel	extract ms	2.104	3	12.2
+meshing	hammer.brep, parallel	alloc MB	12.470	3	0.3
+meshing	MODERN_Chair_1.brep, serial	mesh ms	25.364	3	3.7
+meshing	MODERN_Chair_1.brep, serial	extract ms	0.711	3	16.9
+meshing	MODERN_Chair_1.brep, serial	alloc MB	15.731	3	0.5
+meshing	MODERN_Chair_1.brep, parallel	mesh ms	7.594	3	7.5
+meshing	MODERN_Chair_1.brep, parallel	extract ms	0.757	3	23.0
+meshing	MODERN_Chair_1.brep, parallel	alloc MB	15.777	3	0.5
+meshing	Motor-c.brep, serial	mesh ms	136.715	3	5.1
+meshing	Motor-c.brep, serial	extract ms	3.457	3	14.6
+meshing	Motor-c.brep, serial	alloc MB	46.835	3	0.3
+meshing	Motor-c.brep, parallel	mesh ms	55.550	3	2.3
+meshing	Motor-c.brep, parallel	extract ms	3.430	3	3.7
+meshing	Motor-c.brep, parallel	alloc MB	49.240	3	3.9
+meshing	Axis_of_bearing.brep, serial	mesh ms	143.867	3	3.5
+meshing	Axis_of_bearing.brep, serial	extract ms	2.376	3	6.0
+meshing	Axis_of_bearing.brep, serial	alloc MB	33.599	3	0.1
+meshing	Axis_of_bearing.brep, parallel	mesh ms	27.257	3	6.5
+meshing	Axis_of_bearing.brep, parallel	extract ms	2.560	3	4.3
+meshing	Axis_of_bearing.brep, parallel	alloc MB	38.502	3	2.9
+construction	prism of a square face	us	32.665	3	2.3
+construction	prism of a square face	alloc KB	32.539	3	0.0
+construction	prism of a circle face	us	17.289	3	2.8
+construction	prism of a circle face	alloc KB	18.379	3	0.8
+construction	prism, history of every edge	us	26.842	3	5.2
+construction	prism, history of every edge	alloc KB	32.453	3	0.0
+construction	revolution of a face	us	93.225	3	4.6
+construction	revolution of a face	alloc KB	75.273	3	0.2
+construction	pipe of a circle face	us	401.663	3	7.8
+construction	pipe of a circle face	alloc KB	382.446	3	0.0
+construction	loft of three circles	us	1246.597	3	2.4
+construction	loft of three circles	alloc KB	669.687	3	0.0
+construction	ruled face of two edges	us	37.700	3	38.5
+construction	ruled face of two edges	alloc KB	35.758	3	0.3
+construction	ruled shell of two wires	us	68.667	3	7.6
+construction	ruled shell of two wires	alloc KB	67.745	3	0.1
+construction	evolved	us	116.210	3	3.1
+construction	evolved	alloc KB	183.680	3	0.0
+construction	projection on a cylinder	us	2400.495	3	9.6
+construction	projection on a cylinder	alloc KB	1653.048	3	0.0
+construction	face of a frozen wire	us	19.221	3	1.0
+construction	face of a frozen wire	alloc KB	36.828	3	0.0
+construction	face of a frozen circle	us	21.597	3	2.9
+construction	face of a frozen circle	alloc KB	30.641	3	0.0
+construction	wire of four frozen edges	us	2.610	3	9.0
+construction	wire of four frozen edges	alloc KB	4.188	3	0.0
+construction	pipe along a polyline	us	312.429	3	0.4
+construction	pipe along a polyline	alloc KB	409.141	3	0.0
+construction	tolerances updated (twin)	us	19.141	3	4.1
+construction	tolerances updated (twin)	alloc KB	45.148	3	0.0
+features	offset, arc join	ms	98.212	3	5.7
+features	offset, arc join	alloc MB	50.313	3	0.2
+features	offset, arc join	result	0 runs failed	3	
+features	offset, intersection	ms	57.424	3	8.9
+features	offset, intersection	alloc MB	42.059	3	3.2
+features	offset, intersection	result	0 runs failed	3	
+features	thick solid	ms	90.629	3	9.8
+features	thick solid	alloc MB	73.576	3	2.9
+features	thick solid	result	0 runs failed	3	
+features	fillet every edge	ms	75.734	3	5.1
+features	fillet every edge	alloc MB	61.600	3	0.1
+features	fillet every edge	result	0 runs failed	3	
+features	chamfer every edge	ms	67.708	3	10.7
+features	chamfer every edge	alloc MB	63.245	3	0.4
+features	chamfer every edge	result	0 runs failed	3	
+features	draft the sides	ms	4.686	3	10.2
+features	draft the sides	alloc MB	5.487	3	0.4
+features	draft the sides	result	0 runs failed	3	
+features	boss (BRepFeat)	ms	35.220	3	12.1
+features	boss (BRepFeat)	alloc MB	24.259	3	0.1
+features	boss (BRepFeat)	result	0 runs failed	3	
+booleans	simple, 407 cases	serial ms	1734.630	2	3.6
+booleans	simple, 407 cases	parallel ms	1335.286	2	3.8
+booleans	simple, 407 cases	speed-up x	1.296	2	0.2
+booleans	simple, 407 cases	clean ms	113.244	2	2.5
+booleans	simple, 407 cases	alloc MB	1744.035	2	0.1
+booleans	simple, 407 cases	clean alloc MB	123.709	2	0.2
+booleans	simple, 407 cases	result	5450 faces	2	
+booleans	complex, 193 cases	serial ms	2227.686	2	2.3
+booleans	complex, 193 cases	parallel ms	1387.061	2	0.2
+booleans	complex, 193 cases	speed-up x	1.602	2	2.5
+booleans	complex, 193 cases	clean ms	47.437	2	0.8
+booleans	complex, 193 cases	alloc MB	1191.130	2	0.2
+booleans	complex, 193 cases	clean alloc MB	41.781	2	1.0
+booleans	complex, 193 cases	result	1658 faces	2	
+booleans	complex, 193 cases	pave filler ms	1258.525	1	0.0
+booleans	complex, 193 cases	builder ms	312.869	1	0.0
+booleans	simple, 407 cases	pave filler ms	1324.030	1	0.0
+booleans	simple, 407 cases	builder ms	629.941	1	0.0
+step	parser, 340 files, 125.3 MB	ms	809.144	3	3.4
+step, 289 files	import with healing	ms	4709.076	2	2.3
+step, 289 files	import with healing	alloc MB	2797.001	2	0.3
+step, 289 files	ShapeFixer	ms	1944.015	2	0.3
+step, 289 files	ShapeFixer	alloc MB	1346.047	2	0.3
+step, 289 files	UnifySameDomain	ms	487.118	2	8.7
+step, 289 files	UnifySameDomain	alloc MB	420.084	2	0.2
+step, 289 files	export	ms	1487.053	2	1.7
+step, 289 files	export	alloc MB	1124.348	2	0.1
+step, 289 files	all four	result	0 runs failed	2	
+user cases	fuse-boss	ms	18.112	2	1.0
+user cases	fuse-boss	alloc MB	15.584	2	0.2
+user cases	fuse-boss	result	1 shapes, volume 37461.279, 0 invalid, 52 faces	2	
+user cases	fuse-detent	ms	27.035	2	4.3
+user cases	fuse-detent	alloc MB	20.579	2	1.0
+user cases	fuse-detent	result	1 shapes, volume 37619.791, 0 invalid, 78 faces	2	
+user cases	chamfer-guide-box	ms	2.623	2	3.9
+user cases	chamfer-guide-box	alloc MB	1.891	2	0.2
+user cases	chamfer-guide-box	result	1 shapes, volume 35794.110, 0 invalid, 18 faces	2	
+user cases	collapse-guide-box	ms	4.859	2	3.2
+user cases	collapse-guide-box	alloc MB	2.064	2	0.1
+user cases	collapse-guide-box	result	1 shapes, volume 35336.538, 0 invalid, 18 faces	2	
+user cases	chamfer-housing	ms	7.172	2	2.3
+user cases	chamfer-housing	alloc MB	6.313	2	1.6
+user cases	chamfer-housing	result	1 shapes, volume 80717.166, 0 invalid, 42 faces	2	
+user cases	collapse-housing	ms	11.193	2	8.9
+user cases	collapse-housing	alloc MB	4.622	2	0.7
+user cases	collapse-housing	result	1 shapes, volume 80080.527, 0 invalid, 42 faces	2	
+user cases	enclosure	ms	2461.181	2	1.5
+user cases	enclosure	alloc MB	2963.646	2	0.2
+user cases	enclosure	result	48 shapes, volume 569174.175, 0 invalid, 1190 faces	2	
+user cases	enclosure-v0.16	ms	2174.193	2	0.4
+user cases	enclosure-v0.16	alloc MB	2928.687	2	0.2
+user cases	enclosure-v0.16	result	48 shapes, volume 579785.723, 0 invalid, 1215 faces	2	

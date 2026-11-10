@@ -5,6 +5,19 @@ version may break the API.
 
 ## Unreleased
 
+## 0.5.0
+
+- **Text and drawing sheets:** a managed font reader (TrueType, OpenType, collections) with Liberation Sans shipped, text
+  as faces, notes on drawings and sheets with a border and title block, written to SVG and DXF as outlines or text.
+- **0.4.0's slowdowns gone, and quicker throughout:** a small part fused onto a large one 3 to 9 times quicker than 0.4.0,
+  a collapsing chamfer about 40 times; Boolean checks cheaper with the same verdicts; rendering 18% less processor time.
+  A user's enclosure builds in 2.2 s where 0.4.0 took 3.2. Bento's examples recalculate in 264 ms (native OCCT 8.0.1: 685
+  ms), at [the release's run](docs/benchmarks/2026-11-10-33b1e7dc7.md).
+- **Fewer silent wrong answers:** a Boolean whose result nearly touched is checked at points; spheres and tori keep to a
+  relative deflection, and a mesh still over its deflection says so; primitives too small to be valid fail.
+- **Async reading and writing, a thread-safety guarantee, and the public API on record** with an immutability guard.
+- **Breaking:** the kernel's argument exceptions are types of its own (derived from .NET's); `FillOptions.Points` is an
+  `ImmutableArray`; history and inertia results are immutable arrays.
 - **A solid's classifier allocates about a quarter less a point**, which every Boolean's check and builder use: a small
   part fused onto a large one 5% to 10% fewer bytes (decision 2070).
 - **A mesh further from its surfaces than the deflection says so,** with the warning `meshing.deflection-exceeded`
@@ -17,10 +30,10 @@ version may break the API.
 - **Rendering is quicker** (unit 14E): the renderer draws opaque triangles, edges over them and its 2 × 2 supersampling
   four pixels at a time where the processor has AVX2, in 35% to 45% less time on one thread, with the same pixels;
   elsewhere it draws as before (decisions 2072 and 2075).
-- **Parallel runs allocate fewer large objects, and a volume of many faces integrates them on several threads**
-  (unit 14F): the adaptive integration's work vectors are sized by the face (a third of a parallel run's large objects,
-  3.4% of its bytes), and a solid with 16 faces or more to integrate integrates them on the thread pool and sums them in
-  order. The same values to the bit (decisions 2077 and 2081). The README's runtime settings now say to keep the
+- **Parallel runs allocate fewer large objects** (unit 14F): the adaptive integration's work vectors are sized by the
+  face (a third of a parallel run's large objects, 3.4% of its bytes), with the same values to the bit (decision 2077).
+  Integrating a volume's faces on several threads is written and tested but off: it cost callers that already run
+  operations side by side more than it saved (decisions 2081 and 2088). The README's runtime settings now say to keep the
   workstation collector on a machine shared with other busy processes, where the server collector's pauses ran to
   seconds (decision 2078).
 - **`Cancellation.Use`'s scope lasts until it is disposed, wherever that happens** (unit 14F): disposed in another task,

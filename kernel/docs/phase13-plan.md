@@ -3,6 +3,8 @@
 > **Agreed, 9 November 2026** (decisions 2007 and 2008), with the owner's answers to the questions below. The release is 0.5.0,
 > with no fixed date: when sections 1 to 3 are done, the corpus shows no new failures, and the user cases of 13C build no
 > slower than in 0.4.0. Sections 4 and 5 ship with whatever is ready by then.
+>
+> **0.5.0 prepared, 10 November 2026** (decision 2086), for the owner to test and publish. Phase 13 stays open until the owner closes it.
 
 ## The goal
 

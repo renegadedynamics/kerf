@@ -720,6 +720,7 @@ public class BRepGPropKnownAnswerTests
     {
         // Unit 14F: from MassPropertiesBuilder.ParallelFacesFrom faces to integrate, the faces are integrated on several
         // threads and added in their order: the same bits as one after another. 24 spheres of radii 1 to 3.3, apart.
+        // Off unless asked for (decision 2088): the scope asks for it.
         var aB = new BrepBuilder();
         Shell aShell = new();
         aB.MakeShell(ref aShell);
@@ -738,7 +739,12 @@ public class BRepGPropKnownAnswerTests
         foreach (double anEps in new[] { 1e-6, 1e-9, 2.0 })
         {
             var aParallel = new Properties();
-            double anError = MassPropertiesBuilder.VolumeProperties(aSolid, aParallel, anEps);
+            double anError;
+            using (MassPropertiesBuilder.ParallelVolumesScope())
+            {
+                anError = MassPropertiesBuilder.VolumeProperties(aSolid, aParallel, anEps);
+            }
+
             var aSerial = new Properties();
             double aSerialError;
             using (OsdParallel.ForceSerialScope())

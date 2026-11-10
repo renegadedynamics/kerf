@@ -16,7 +16,7 @@
   folder (and nuget.org), into a package folder of its own so no cached copy stands in, and runs a smoke test: a
   filleted, drilled box written to STEP and glTF and read back, with no native library in its output.
 .PARAMETER Suffix
-  A prerelease label after the projects' VersionPrefix (0.4.0): preview.1 gives 0.4.0-preview.1. Without it, the release.
+  A prerelease label after the projects' VersionPrefix (0.5.0): preview.1 gives 0.5.0-preview.1. Without it, the release.
 .PARAMETER Out
   The folder for the packages.
 .PARAMETER Work
@@ -28,7 +28,7 @@
 #>
 param(
   [string] $Suffix = '',
-  [string] $Out = (Join-Path $PSScriptRoot "..\..\..\nuget-release\0.4.0$(if ($Suffix) { "-$Suffix" })"),
+  [string] $Out = (Join-Path $PSScriptRoot "..\..\..\nuget-release\0.5.0$(if ($Suffix) { "-$Suffix" })"),
   [string] $Work = (Join-Path ([IO.Path]::GetTempPath()) ('occtnet-pack-' + [guid]::NewGuid().ToString('N'))),
   [switch] $SkipVerify,
   [switch] $NoReadyToRun
@@ -74,7 +74,7 @@ function Test-ReadyToRun([string] $assembly) {
   $false
 }
 
-$version = "0.4.0$(if ($Suffix) { "-$Suffix" })"
+$version = "0.5.0$(if ($Suffix) { "-$Suffix" })"
 $commit = (git -C $PSScriptRoot rev-parse HEAD).Trim()
 $properties = @('-c', 'Release', '-nologo', "-p:VersionSuffix=$Suffix", '-p:ContinuousIntegrationBuild=true', "-p:RepositoryCommit=$commit")
 $b3dProperties = @("-p:KerfKernelRoot=$occt/")

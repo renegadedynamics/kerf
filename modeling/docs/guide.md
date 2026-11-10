@@ -4,7 +4,7 @@ Kerf.Modeling is a .NET 10 CAD modelling library: build123d's API, in C#, over K
 Open CASCADE). This guide gets you from nothing to a part, a mesh and a STEP file, and covers what most often
 trips people up. If you know build123d, [name-map.md](name-map.md) lists every name that changed.
 
-Every example here was compiled and run against Kerf 0.4.0, and its volumes checked by hand.
+Every example here was compiled and run against Kerf 0.5.0, and its volumes checked by hand.
 
 ## 1. Setting up
 
@@ -12,7 +12,7 @@ You need the .NET 10 SDK (`dotnet --version` shows 10.0 or later). The quickest 
 `dotnet run`: no project file needed.
 
 ```csharp
-#:package Kerf.Modeling@0.4.0
+#:package Kerf.Modeling@0.5.0
 #:property PublishAot=false
 using Kerf;
 using Kerf.Geometry;
@@ -31,7 +31,7 @@ runs are quick.
 
 - `#:property PublishAot=false` stops a file-based app from pulling in the native-compilation package, which isn't
   needed and gives a NuGet warning.
-- In a project instead: `dotnet add package Kerf.Modeling --version 0.4.0`. It brings the four kernel packages with it.
+- In a project instead: `dotnet add package Kerf.Modeling --version 0.5.0`. It brings the four kernel packages with it.
 - The namespaces: `Kerf` (`Result<T>`, `Diagnostic`), `Kerf.Geometry` (`Point3D`, `Vector3D`, `Direction3D`),
   `Kerf.Topology` (the kernel's `Shape`, `Face`, `Edge`…), `Kerf.Modeling` (everything in this guide), and
   `using static Kerf.Modeling.Operations;` so that `Extrude(…)`, `Fillet(…)` and the rest read as in build123d.
@@ -101,7 +101,7 @@ try { var s = new Spline(points); }
 catch (ModelingException e) { Console.WriteLine(e.Error.Code); }   // modeling.spline-failed
 ```
 
-An argument that is wrong on its own (a null, too few points, a missing angle, a negative radius the object checks)
+An argument that is wrong on its own (a null, too few points, a missing angle, a negative size the object checks before building)
 is still an `ArgumentException`, from the constructor and its `Make…` alike.
 
 Objects are centred by default, as in build123d. `align: new Alignment(Align.Min, Align.Min, Align.Min)` puts the
@@ -273,8 +273,11 @@ var m = result.Value;                                            // Positions, N
   with the faces in `Shapes`. Other kinds of surface aren't measured, so nothing is said of them.
 
 ```csharp
-var written = Exporters3D.ExportStl(part, "part.stl");                    // relative 0.001 by default
-foreach (var d in written.Diagnostics) Console.WriteLine(d);              // warning meshing.deflection-exceeded: Face 2 is …
+Part rod = new Cylinder(10, 40);
+Part pin = Fillet(rod, rod.Edges().GroupBy(Axis.Z).Last(), 0.3).Value;
+var written = Exporters3D.ExportStl(pin, "pin.stl",
+    new StlExportOptions { LinearDeflection = 0.005, AngularDeflection = 0.5 });   // relative, as by default
+foreach (var d in written.Diagnostics) Console.WriteLine(d);              // warning meshing.deflection-exceeded: Face 2 is … 1.005 times the deflection
 ```
 
 ## 8. Import and export
@@ -407,8 +410,8 @@ new ExportDxf(textOutput: TextOutput.Text).AddDrawing(annotated).Write("plate-to
 - A note's size is the font's em, as `Text`'s is; `NoteStyle` sets the font, the alignment on the note's position
   (`TextAlign.Left`, `Center`, `Right`; `Bottom`, `Center`, `Top`, `TopFirstLine`) and a rotation in degrees.
   `DrawingNote.Make` fails as `MakeText` does (`text.missing-glyph`, `text.empty`).
-- The title block's fields are plain text the caller fills: title, part number, scale (the views' own, `2:1`, unless
-  given), units (`mm`), date, author and sheet (`1 of 1`). Nothing reads the clock, so the same sheet is the same file.
+- The title block's fields are plain text the caller fills: title, part number, scale (the views' own, `2:1`, or `As shown`
+  when they differ, unless given), units (`mm`), date, author and sheet (`1 of 1`). Nothing reads the clock, so the same sheet is the same file.
 - A view is placed by the centre of its drawing's extent, at a scale of paper millimetres to the model's unit; a view
   outside the border or over the title block, or an entry too long for its cell, is a warning (`drawing.sheet-overflow`).
 - `ExportDxf.AddDrawing` puts notes on a layer `"notes"` (`notesLayer:` to change it, null to leave them out);
@@ -519,7 +522,7 @@ keeps its state in an `AsyncLocal`):
   part first.
 - **Angles are degrees** in objects and operations (`Rotation`, `Revolve`, `Taper`), as in build123d; mesh angular
   deflections are radians.
-- **Not ported yet:** text, builder mode, `import_svg`. SVG drawings come from `Kerf.Drawing`, DXF from `ExportDxf`
+- **Not ported yet:** builder mode, `import_svg`. SVG drawings come from `Kerf.Drawing`, DXF from `ExportDxf`
   (section 8). [name-map.md](name-map.md) lists the rest.
 
 ## 11. Coming from build123d

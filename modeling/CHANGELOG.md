@@ -5,6 +5,16 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+## 0.5.0
+
+- **`Text`, DXF export and drawing sheets:** build123d's `Text` and `ExportDXF`, and notes and sheets with a title block
+  in SVG and DXF.
+- **Quicker:** fusing small parts and collapsing chamfers are fast again (0.4.0's two slowdowns), and a user's enclosure
+  builds about a third quicker than on 0.4.0. Guidance for building parts in parallel, and async import and export.
+- **Failures you can catch:** every object that can't be made from its values throws `ModelingException`, and each has a
+  `Make…` operation returning a `Result`.
+- **Breaking:** `ModelingException` in place of the several types objects threw; no mutable collections handed out;
+  `PageSize` moved to `Kerf.Drawing`.
 - **A mesh further from its surfaces than the deflection says so,** with the kernel's warning
   `meshing.deflection-exceeded`, naming the faces and the furthest one's distance: `ExportStl`, `ExportGltf` and
   `Export3mf` give it in their results, and `Triangulate`, `Tessellate` and `TriangulateTree` raise it to `Warnings`,
