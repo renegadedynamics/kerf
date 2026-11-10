@@ -127,7 +127,9 @@ kernel/tools/bench.ps1 -Quick -Compare kernel/docs/benchmarks/2026-11-07-f5a7bd7
 ```
 
 It exits with 1 on a regression and 2 on a busy machine; `-Result <tsv>` compares without running. Each row is the median
-of its suite's fresh processes (Bento 5, most others 3, the long ones 2, the lower of two).
+of its suite's fresh processes (Bento 5, most others 3, the long ones 2, the lower of two). A process that fails doesn't
+stop the run (unit 15G): the output and the header name it, with its exit code and what it said, the rows it wrote stand
+and its logs are kept, and the exit code at the end is 1.
 
 Four full runs and a quick one, as two pairs, the second after the noisiest suites were given more runs. The busy threshold is 10% total CPU. This machine idled at 2%, and at 6 to 7% through all of these, because of a stray
 script spinning on one thread; one busy thread is about 4%, a build far more. The rig refused twice while an earlier run of
