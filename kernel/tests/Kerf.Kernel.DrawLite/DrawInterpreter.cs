@@ -70,7 +70,49 @@ public delegate string DrawCommand(DrawInterpreter theInterpreter, IReadOnlyList
 /// <summary>A variable: a scalar value, an array, or neither (declared by global or upvar but not yet set).</summary>
 internal sealed class TclVar
 {
-    public string? Value;
+    private string? myValue;
+
+    // Elements lappend added in place, each with its separating space, not yet joined to myValue (decision 27803)
+    private StringBuilder? myAppended;
+
+    /// <summary>The scalar value: null for none. Setting it ends <see cref="IsMadeList"/>.</summary>
+    public string? Value
+    {
+        get
+        {
+            if (myAppended is not null)
+            {
+                myValue = string.Concat(myValue, myAppended.ToString());
+                myAppended = null;
+            }
+
+            return myValue;
+        }
+        set
+        {
+            myValue = value;
+            myAppended = null;
+            IsMadeList = false;
+        }
+    }
+
+    /// <summary>
+    /// Whether the value is a non-empty list in canonical form that lappend made: more elements can be added to it in place
+    /// (<see cref="AppendListElements"/>), giving the string lappend would.
+    /// </summary>
+    public bool IsMadeList { get; set; }
+
+    /// <summary>Adds elements to a value that <see cref="IsMadeList"/>, without copying it: joined when next read.</summary>
+    public void AppendListElements(IEnumerable<string> theElements)
+    {
+        myAppended ??= new StringBuilder();
+        foreach (string anElement in theElements)
+        {
+            myAppended.Append(' ');
+            TclList.AppendCanonical(myAppended, anElement);
+        }
+    }
+
     public Dictionary<string, string>? Array;
 
     /// <summary>The Draw variable held by this Tcl variable (Draw::Set), cleared when the variable is written or unset.</summary>
@@ -79,7 +121,7 @@ internal sealed class TclVar
     /// <summary>The Draw variables held by elements of this array.</summary>
     public Dictionary<string, DrawDrawable>? ElementDrawables;
 
-    public bool Exists => Value is not null || Array is not null;
+    public bool Exists => myValue is not null || Array is not null;
 }
 
 /// <summary>A procedure call's variables. Level 0 is the global frame.</summary>
@@ -310,7 +352,13 @@ public sealed partial class DrawInterpreter
     public string Source(string thePath) => Eval($"source {TclList.Quote(thePath)}");
 
     /// <summary>Runs a script in the current frame; break, continue and return propagate as exceptions.</summary>
-    internal string EvalScript(string theScript)
+    internal string EvalScript(string theScript) => EvalScript(theScript, false);
+
+    /// <summary>
+    /// Evaluates a script; with <paramref name="theResultUnused"/>, its result isn't used either (a loop's body), so no
+    /// command of it has its result used (<see cref="ResultUnused"/>).
+    /// </summary>
+    internal string EvalScript(string theScript, bool theResultUnused)
     {
         IReadOnlyList<Command>? aCommands;
         if (!DrawCaseProcess.KeepsParsedText)
@@ -342,9 +390,9 @@ public sealed partial class DrawInterpreter
         try
         {
             string aResult = "";
-            foreach (Command aCommand in aCommands)
+            for (int i = 0; i < aCommands.Count; i++)
             {
-                aResult = EvalCommand(aCommand);
+                aResult = EvalCommand(aCommands[i], theResultUnused || i < aCommands.Count - 1);
             }
 
             return aResult;
@@ -355,7 +403,7 @@ public sealed partial class DrawInterpreter
         }
     }
 
-    private string EvalCommand(Command theCommand)
+    private string EvalCommand(Command theCommand, bool theResultUnused)
     {
         var anArgs = new List<string>(theCommand.Words.Count);
         try
@@ -377,18 +425,26 @@ public sealed partial class DrawInterpreter
             throw;
         }
 
-        return anArgs.Count == 0 ? "" : Invoke(anArgs, theCommand.Line);
+        return anArgs.Count == 0 ? "" : Invoke(anArgs, theCommand.Line, theResultUnused);
     }
 
+    /// <summary>
+    /// Whether the result of the command being called is thrown away: a command of a script but its last, or any of a
+    /// loop's body. A command reads it before it evaluates anything (decision 27803).
+    /// </summary>
+    internal bool ResultUnused { get; private set; }
+
     /// <summary>Calls a command with its words already substituted.</summary>
-    public string Invoke(IReadOnlyList<string> theArgs, int theLine = 0)
+    public string Invoke(IReadOnlyList<string> theArgs, int theLine = 0) => Invoke(theArgs, theLine, false);
+
+    private string Invoke(IReadOnlyList<string> theArgs, int theLine, bool theResultUnused)
     {
         if (!myCommands.TryGetValue(theArgs[0], out DrawCommand? aHandler) && !myCommands.TryGetValue(CommandKey(theArgs[0]), out aHandler))
         {
             // As in Tcl, a procedure named unknown gets the calls of commands that don't exist
             if (theArgs[0] != "unknown" && myCommands.ContainsKey("unknown"))
             {
-                return Invoke(["unknown", .. theArgs], theLine);
+                return Invoke(["unknown", .. theArgs], theLine, theResultUnused);
             }
 
             throw new DrawCommandNotFoundException(theArgs[0], theLine);
@@ -396,6 +452,7 @@ public sealed partial class DrawInterpreter
 
         try
         {
+            ResultUnused = theResultUnused;
             return aHandler(this, theArgs);
         }
         catch (DrawException anError) when (TagLine(anError, theLine))

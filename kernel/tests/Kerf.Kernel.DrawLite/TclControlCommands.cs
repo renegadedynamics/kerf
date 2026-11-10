@@ -181,6 +181,8 @@ internal static class TclControlCommands
 
     private static string If(DrawInterpreter theInterpreter, IReadOnlyList<string> theArgs)
     {
+        // the chosen body's result is the if's: unused when the if's is
+        bool anUnused = theInterpreter.ResultUnused;
         int i = 1;
         while (true)
         {
@@ -203,7 +205,7 @@ internal static class TclControlCommands
             string aBody = theArgs[i++];
             if (TclExpr.EvalBoolean(theInterpreter, aCondition))
             {
-                return theInterpreter.EvalScript(aBody);
+                return theInterpreter.EvalScript(aBody, anUnused);
             }
 
             if (i >= theArgs.Count)
@@ -231,7 +233,7 @@ internal static class TclControlCommands
                 throw new DrawException("wrong # args: extra words after \"else\" clause in \"if\" command");
             }
 
-            return theInterpreter.EvalScript(theArgs[i]);
+            return theInterpreter.EvalScript(theArgs[i], anUnused);
         }
     }
 
@@ -240,7 +242,8 @@ internal static class TclControlCommands
     {
         try
         {
-            string aResult = theInterpreter.EvalScript(theBody);
+            // the body's result is used only by lmap
+            string aResult = theInterpreter.EvalScript(theBody, theResults is null);
             theResults?.Add(aResult);
             return true;
         }
