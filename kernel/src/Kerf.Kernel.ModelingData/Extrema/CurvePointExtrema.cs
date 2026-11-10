@@ -27,12 +27,13 @@ internal class CurvePointExtrema
     private CurveAdaptorBase? _c;
     private Point3D _pf = new();
     private Point3D _pl = new();
-    private readonly ExtPElC _extPElC = new();
+    // Made when first needed: an elementary curve uses only the first, any other only the second (unit 15F)
+    private ExtPElC? _extPElC;
     private readonly NCollection_Sequence<POnCurv> _mypoint = new();
     private bool _mydone;
     private double _mydist1;
     private double _mydist2;
-    private readonly EpcOfExtPC _extPC = new();
+    private EpcOfExtPC? _extPC;
     private double _mytolu;
     private double _mytolf;
     private int _mysample;
@@ -43,6 +44,10 @@ internal class CurvePointExtrema
     private CurveKind _type;
     private readonly NCollection_Sequence<bool> _myismin = new();
     private readonly NCollection_Sequence<double> _sqDist = new();
+
+    private ExtPElC Elementary => _extPElC ??= new();
+
+    private EpcOfExtPC General => _extPC ??= new();
 
     public CurvePointExtrema()
     {
@@ -128,27 +133,27 @@ internal class CurvePointExtrema
         {
             case Circle:
             {
-                _extPElC.Perform(p, CurveTool.Circle(curve), t3d, _myuinf, _myusup);
+                Elementary.Perform(p, CurveTool.Circle(curve), t3d, _myuinf, _myusup);
                 break;
             }
             case Ellipse:
             {
-                _extPElC.Perform(p, CurveTool.Ellipse(curve), t3d, _myuinf, _myusup);
+                Elementary.Perform(p, CurveTool.Ellipse(curve), t3d, _myuinf, _myusup);
                 break;
             }
             case Parabola:
             {
-                _extPElC.Perform(p, CurveTool.Parabola(curve), t3d, _myuinf, _myusup);
+                Elementary.Perform(p, CurveTool.Parabola(curve), t3d, _myuinf, _myusup);
                 break;
             }
             case Hyperbola:
             {
-                _extPElC.Perform(p, CurveTool.Hyperbola(curve), t3d, _myuinf, _myusup);
+                Elementary.Perform(p, CurveTool.Hyperbola(curve), t3d, _myuinf, _myusup);
                 break;
             }
             case Line:
             {
-                _extPElC.Perform(p, CurveTool.Line(curve), t3d, _myuinf, _myusup);
+                Elementary.Perform(p, CurveTool.Line(curve), t3d, _myuinf, _myusup);
                 break;
             }
             case BezierCurve:
@@ -156,7 +161,7 @@ internal class CurvePointExtrema
                 _myintuinf = _myuinf;
                 _myintusup = _myusup;
                 _mysample = (CurveTool.Bezier(curve)).PoleCount * 2;
-                _extPC.Initialize(curve);
+                General.Initialize(curve);
                 IntervalPerform(p);
                 return;
             }
@@ -219,7 +224,7 @@ internal class CurvePointExtrema
                     Point3D pmin = new();
                     double tmin = 0.0, distmin = RealLast();
                     double min1 = 0.0, min2 = 0.0;
-                    _extPC.Initialize(curve);
+                    General.Initialize(curve);
                     for (idx = firstUsedKnot; idx < lastUsedKnot; idx++)
                     {
                         double f = knots[idx] + periodJump, l = knots[idx + 1] + periodJump;
@@ -315,7 +320,7 @@ internal class CurvePointExtrema
                     val[valIdx] = CurveTool.Value(curve, _myusup).SquareDistanceTo(p);
                     param[valIdx] = _myusup;
 
-                    _extPC.Initialize(curve);
+                    General.Initialize(curve);
 
                     for (idx = val.Lower() + 1; idx < val.Upper(); idx++)
                     {
@@ -408,7 +413,7 @@ internal class CurvePointExtrema
                 Point3D pp;
                 double s1 = 0.0;
                 double s2 = 0.0;
-                _extPC.Initialize(curve);
+                General.Initialize(curve);
                 for (i = 1; i <= n; i++)
                 {
                     _myintuinf = theHInter.Value(i);
@@ -507,13 +512,13 @@ internal class CurvePointExtrema
         }
         else
         {
-            _mydone = _extPElC.IsDone;
+            _mydone = Elementary.IsDone;
             if (_mydone)
             {
-                nbExt = _extPElC.ExtCount;
+                nbExt = Elementary.ExtCount;
                 for (i = 1; i <= nbExt; i++)
                 {
-                    POnCurv pc = _extPElC.Point(i);
+                    POnCurv pc = Elementary.Point(i);
                     u = pc.Parameter();
                     if (CurveTool.IsPeriodic(curve))
                     {
@@ -521,9 +526,9 @@ internal class CurvePointExtrema
                     }
                     if ((u >= _myuinf - _mytolu) && (u <= _myusup + _mytolu))
                     {
-                        pc.SetValues(u, _extPElC.Point(i).Value());
-                        _sqDist.Append(_extPElC.SquareDistance(i));
-                        _myismin.Append(_extPElC.IsMin(i));
+                        pc.SetValues(u, Elementary.Point(i).Value());
+                        _sqDist.Append(Elementary.SquareDistance(i));
+                        _myismin.Append(Elementary.IsMin(i));
                         _mypoint.Append(pc);
                     }
                 }
@@ -597,15 +602,15 @@ internal class CurvePointExtrema
         int i;
         double u;
         Cancellation.ThrowIfRequested(); // Kerf: a damaged range calls this over and over, and each costs more than the last
-        _extPC.Initialize(_mysample, _myintuinf, _myintusup, _mytolu, _mytolf);
-        _extPC.Perform(p);
-        _mydone = _extPC.IsDone;
+        General.Initialize(_mysample, _myintuinf, _myintusup, _mytolu, _mytolf);
+        General.Perform(p);
+        _mydone = General.IsDone;
         if (_mydone)
         {
-            int nbExt = _extPC.ExtCount;
+            int nbExt = General.ExtCount;
             for (i = 1; i <= nbExt; i++)
             {
-                POnCurv pc = _extPC.Point(i);
+                POnCurv pc = General.Point(i);
                 u = pc.Parameter();
                 if (CurveTool.IsPeriodic(_c!))
                 {
@@ -613,7 +618,7 @@ internal class CurvePointExtrema
                 }
                 if ((u >= _myuinf - _mytolu) && (u <= _myusup + _mytolu))
                 {
-                    AddSol(u, pc.Value(), _extPC.SquareDistance(i), _extPC.IsMin(i));
+                    AddSol(u, pc.Value(), General.SquareDistance(i), General.IsMin(i));
                 }
             }
         }
