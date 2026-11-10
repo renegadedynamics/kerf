@@ -218,7 +218,8 @@ public static class FilletOperations
                     return mixed;
                 }
 
-                // Or a rim, or corners and slanted ends, at a limit or not (units 12L and 12M)
+                // Or a rim, or corners and slanted ends, at a limit or not (units 12L and 12M), or a ball between cylinders that
+                // vanishes where they turn tangent (unit 15N)
                 if (FilletLimits.AfterAlgorithm(solid, specs, options) is { } after)
                 {
                     return after;
@@ -247,7 +248,7 @@ public static class FilletOperations
                 }
                 if (FilletLimits.AfterAlgorithm(solid, specs, options) is { } instead)
                 {
-                    return EngineOperation.Run<Shape>(_ => instead, Failure, progress, cancellationToken, "The fillet's result");
+                    return EngineOperation.Run<Shape>(_ => instead, Failure, progress, cancellationToken, "The fillet's result", Check);
                 }
                 return invalid;
             }
