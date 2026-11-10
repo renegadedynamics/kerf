@@ -18,25 +18,52 @@ public class BooleanVolumeIssueTests
 {
     private static readonly BooleanOptions Unchecked = new() { CheckResult = false, Simplify = false };
 
-    private static void FailsCarrying(Result<Built<Shape>> result, string says)
-    {
-        Assert.True(result.IsFailure);
-        Assert.Equal(DiagnosticCode.InvalidResult, result.Error!.Code);
-        Assert.Contains(says, result.Error.Message, StringComparison.Ordinal);
-        Assert.True(result.TryGetInvalid(out Built<Shape>? carried));
-        Assert.NotNull(carried.History);
-    }
-
-    // The two depths and threads where Kerf's cut gives a solid inside out
+    // The two depths and threads where the exact cut gives a solid inside out, which a fuzzy value puts right (decision 28601)
     [Theory]
-    [InlineData(8.0, 0.7, 1.65, 2.0, 20.0, 15.0)]
-    [InlineData(3.0, 1.25, 3.4, 4.0, 30.0, 19.0)]
-    public void Issue_1629_a_solid_inside_out_fails(double depth, double pitch, double inner, double outer, double side, double deep)
+    [InlineData(8.0, 0.7, 1.65, 2.0, 20.0, 15.0, 7859.1186)]
+    [InlineData(3.0, 1.25, 3.4, 4.0, 30.0, 19.0, 26295.8035)]
+    public void Issue_1629_a_solid_inside_out_is_made_again_with_a_fuzzy_value(double depth, double pitch, double inner, double outer,
+                                                                               double side, double deep, double expected)
     {
         (Shape part, Shape tool) = BooleanIssueShapes.Thread(depth, pitch, inner, outer, side, deep);
-        // Without the check it's a success, and valid
-        Assert.True(part.Cut(tool, Unchecked).Value.Shape.Validate().IsValid);
-        FailsCarrying(part.Cut(tool), "inside out");
+        var precise = new MassOptions { Tolerance = 1e-6 };
+        // Without the check it's a success, valid, and wrong
+        Shape exact = part.Cut(tool, Unchecked).Value.Shape;
+        Assert.True(exact.Validate().IsValid);
+        Assert.Contains(exact.AllSolids(), s => s.IntegrateVolume(precise) < 0);
+
+        Result<Built<Shape>> cut = part.Cut(tool);
+        Assert.Contains(cut.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        Shape solid = Assert.Single(cut.Value.Shape.AllSolids());
+        Assert.Equal(expected, solid.IntegrateVolume(precise), 3);
+
+        // What the cut took away is what the part and the tool have in common
+        double common = part.Common(tool).Value.Shape.IntegrateVolume(precise);
+        Assert.Equal(part.IntegrateVolume(precise), expected + common, 3);
+    }
+
+    [Fact]
+    public void Issue_1629_an_empty_common_is_proved_wrong_by_points_inside_the_tools_faces()
+    {
+        // The groove turns round the bore between the points of a grid in the boxes' overlap, which finds only one in both
+        (Shape part, Shape tool) = BooleanIssueShapes.Thread(8.0, 0.7, 1.65, 2.0, 20.0, 15.0);
+        Shape empty = part.Common(tool, Unchecked).Value.Shape;
+        Assert.Empty(empty.AllSolids());
+        Diagnostic? wrong = BooleanVolumes.Check(BooleanVolumeRule.Common, [part], [tool], empty);
+        Assert.NotNull(wrong);
+        Assert.Contains("it's empty", wrong.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_empty_common_of_shapes_whose_boxes_overlap_passes()
+    {
+        // A block inside a ring's hole: nothing in common, and the tool's faces all outside the object
+        Shape ring = Solid.Cylinder(5, 4).Value.Shape.Cut(Solid.Cylinder(3, 4).Value.Shape).Value.Shape;
+        Shape block = Solid.Box(2, 2, 2).Value.Shape.Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(-1, -1, 1))));
+        Result<Built<Shape>> common = block.Common(ring);
+        Assert.True(common.IsSuccess);
+        Assert.Empty(common.Value.Shape.AllSolids());
+        Assert.Null(BooleanVolumes.Check(BooleanVolumeRule.Common, [ring], [block], common.Value.Shape));
     }
 
     [Fact]

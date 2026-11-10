@@ -213,6 +213,49 @@ public static class BooleanVolumes
         Point3D first = default;
         double cell = (toX - fromX) * (toY - fromY) * (toZ - fromZ) / Math.Pow(OverlapGrid + 1, 3);
         double needed = Math.Max(2, 2 * lost / cell + 1);
+
+        // Null to go on looking, the error once enough points are found, and Passed once a point proves the result may be right
+        Diagnostic? Ask(in Point3D point)
+        {
+            if (!classifyA.Inside(point) || !classifyB.Inside(point))
+            {
+                return null;
+            }
+            // Inside both and gone from the result: the cut did remove something, however small (a small hole in a large block)
+            if (classifyResult is not null && !classifyResult.Inside(point))
+            {
+                return Passed;
+            }
+            if (depth < 0)
+            {
+                if (!shared.Trustworthy)
+                {
+                    return Passed;
+                }
+                depth = OverlapDepth * size + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
+            }
+            // Deep inside both, so it can't be tolerance or a touch
+            if (!Deep(point, a, depth) || !Deep(point, b, depth))
+            {
+                return null;
+            }
+            if (found++ == 0)
+            {
+                first = point;
+            }
+            if (found < needed)
+            {
+                return null;
+            }
+            string at = $"({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)})";
+            return Diagnostic.Error(DiagnosticCode.InvalidResult, rule switch
+            {
+                BooleanVolumeRule.Common => $"The common's result is wrong: it's empty, but the point {at} and others are inside both inputs.",
+                BooleanVolumeRule.Cut => $"The cut's result is wrong: it removed nothing, but the point {at} and others are inside the tool and still in the result.",
+                _ => $"The fuse's result is wrong: it's as large as its inputs together, but the point {at} and others are inside both of them.",
+            });
+        }
+
         for (int i = 1; i <= OverlapGrid; i++)
         {
             for (int j = 1; j <= OverlapGrid; j++)
@@ -221,39 +264,63 @@ public static class BooleanVolumes
                 {
                     var point = new Point3D(fromX + (toX - fromX) * i / (OverlapGrid + 1), fromY + (toY - fromY) * j / (OverlapGrid + 1),
                                             fromZ + (toZ - fromZ) * k / (OverlapGrid + 1));
-                    if (!classifyA.Inside(point) || !classifyB.Inside(point))
+                    if (Ask(point) is { } said)
                     {
-                        continue;
+                        return ReferenceEquals(said, Passed) ? null : said;
                     }
-                    // Inside both and gone from the result: the cut did remove something, however small (a small hole in a large block)
-                    if (classifyResult is not null && !classifyResult.Inside(point))
+                }
+            }
+        }
+
+        // A grid can miss an overlap that's thin, or that turns about an axis between its points: #1629's thread, a groove 0.35 deep
+        // round a bore, has one point of 343 in both, and its empty common passed. So for a common or a cut, points just inside the
+        // inputs' faces too, twice the depth in from each, the tool's first (decision 28602)
+        if (rule == BooleanVolumeRule.Fuse)
+        {
+            return null;
+        }
+        foreach ((Shape own, BoundingBox otherBox) in new[] { (b, inA), (a, inB) })
+        {
+            if (own.AllFaces().Length > FacesLooked)
+            {
+                continue;
+            }
+            foreach (Face face in own.AllFaces())
+            {
+                if (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !faceBox.Intersects(otherBox)
+                                                          || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace)))
+                {
+                    continue;
+                }
+                var surface = new FaceSurfaceAdaptor(face);
+                BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+                if (!double.IsFinite(fromU + toU + fromV + toV))
+                {
+                    continue;
+                }
+                var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
+                double inwards = face.Orientation == Orientation.Reversed ? 1 : -1;
+                for (int i = 1; i <= FaceGrid; i++)
+                {
+                    for (int j = 1; j <= FaceGrid; j++)
                     {
-                        return null;
-                    }
-                    if (depth < 0)
-                    {
-                        if (!shared.Trustworthy)
+                        double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
+                        if (inFace.Perform(new Point2D(u, v)) != Containment.In)
                         {
-                            return null;
+                            continue;
                         }
-                        depth = OverlapDepth * size + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
-                    }
-                    // Deep inside both, so it can't be tolerance or a touch
-                    if (Deep(point, a, depth) && Deep(point, b, depth))
-                    {
-                        if (found++ == 0)
+                        surface.D1(u, v, out Point3D onFace, out Vector3D du, out Vector3D dv);
+                        Vector3D normal = du.Crossed(dv);
+                        double length = normal.Magnitude;
+                        if (!(length > Tolerances.Confusion) || !otherBox.Contains(onFace))
                         {
-                            first = point;
+                            continue;
                         }
-                        if (found >= needed)
+                        // The depth is known only once a point has been found inside both: until then, a step of the least it can be
+                        double step = 2 * (depth > 0 ? depth : OverlapDepth * size);
+                        if (Ask(onFace.Translated(normal * (inwards * step / length))) is { } said)
                         {
-                            string at = $"({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)})";
-                            return Diagnostic.Error(DiagnosticCode.InvalidResult, rule switch
-                            {
-                                BooleanVolumeRule.Common => $"The common's result is wrong: it's empty, but the point {at} and others are inside both inputs.",
-                                BooleanVolumeRule.Cut => $"The cut's result is wrong: it removed nothing, but the point {at} and others are inside the tool and still in the result.",
-                                _ => $"The fuse's result is wrong: it's as large as its inputs together, but the point {at} and others are inside both of them.",
-                            });
+                            return ReferenceEquals(said, Passed) ? null : said;
                         }
                     }
                 }
@@ -261,6 +328,9 @@ public static class BooleanVolumes
         }
         return null;
     }
+
+    // What ProvedToOverlap's question returns for a point that proves the result may be right
+    private static readonly Diagnostic Passed = Diagnostic.Warning(new DiagnosticCode("boolean.passed"), "");
 
     // Faces or shells against solids have no volume to go by, so their result's faces are looked at (decision 1932): what a common
     // keeps must not be outside the solids, and what a cut keeps must not be inside them. OCCT #1039 keeps 86898 of a slice through a
