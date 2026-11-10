@@ -109,7 +109,8 @@ internal class SolidFixer : RootFixer
             try
             {
                 Containment infinstatus = Unknown;
-                var          bsc3d       = new SolidClassifier(solid);
+                // Kerf (unit 15C): its tree when a point asks for it; most shells are only asked the point at infinity
+                var          bsc3d       = SolidClassifier.WithTreeWhenAsked(solid);
                 int          st          = 0;
                 if (!mapStatus.ContainsKey(shell1))
                 {

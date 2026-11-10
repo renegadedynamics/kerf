@@ -211,8 +211,8 @@ public static partial class Shape3DExtensions
         /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
         public bool IsInside(Point3D point, double tolerance = 1.0e-6)
         {
-            var p = point;
-            return self.AsShape().ClassifyPoint(p, tolerance) == Containment.In || self.AsShape().IsOnFace(p, tolerance);
+            // One classification: its state is ON exactly when the point is on a face (unit 15C)
+            return self.AsShape().ClassifyPoint(point, tolerance) is Containment.In or Containment.On;
         }
 
         /// <summary>

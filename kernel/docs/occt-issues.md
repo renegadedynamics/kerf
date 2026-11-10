@@ -2308,3 +2308,8 @@ Found by unit 12J:
 | Where | What | Seen | State |
 |---|---|---|---|
 | `BRepMesh_DelaunayDeflectionControlMeshAlgo` (a property, not a bug) | Measures a triangle at its parametric centre, against its plane, and its inner links at their middles, and nowhere else inside it | A skewed triangle on a torus is furthest from the surface at the midpoint of a median, up to 3.5% over the deflection where the centre and the links are within it: 25 fillet-torus faces of `data/occ` at relative deflections, 1.002 to 1.035 times out, with decision 2071's warning silent. The torus's guard now measures the medians' midpoints too, once the control has nothing left to add (decision 2102) | fixed in the port |
+## Found by unit 15C
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `IntCurvesFace_Intersector::Perform` (IntCurvesFace_Intersector.cxx) | `myIsParallel` is set only when the curve and surface are intersected and no point is found: a `Perform` that finds points, or that a polyhedron's box rules out first, leaves the last line's flag, which `BRepClass3d_SClassifier::Perform` reads after a `Perform` finding nothing, to call a point within the tolerance of the surface and inside the face ON | One classifier asked the dataset's points in turn: 40 of 162,458 came out ON where a new classifier says IN or OUT | touch (decision 2111: a kept classifier sets the flag back between points; one shared within a check still carries it) |
