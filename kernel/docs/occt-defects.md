@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 47 already fixed, 88 not relevant, 42 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, and 15E one more; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 48 already fixed, 88 not relevant, 41 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, and 15E two more; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -26,7 +26,6 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
 | Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
-| Silent wrong answer | #245 | A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
@@ -57,7 +56,8 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. `Kerf.Modeling`'s cut still fails, carrying the shape | 2103, 2104 |
+| #245 | A Cut that removed nothing and an empty Common, for a sphere whose seam lies in a flat face of the other solid: now right, made again with a fuzzy value of a thousand tolerances (1e-4). Its section, not approximated, ended the process with a stack overflow: now it runs | 28612, 28613 |
+| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. Right through `Kerf.Modeling` too | 2103, 2104, 28611 |
 | #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 1937 |
 | `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 1936 |
 | #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 1935 |
@@ -360,7 +360,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 302 | Modeling Algorithms - TCollection_IndexedDataMap::FindFromKey error when sweeping circle along BezierCurve [25110] | applies | Reproduced on its files, the same as #304 |
 | 275 | Intersection produces strange result for given surfaces | can't tell | Tried on its file: one edge in a small box, and no way to judge it without its picture |
 | 249 | Multiplatform compilation testing on GH | not relevant | Build, packaging or repository matter: Kerf has its own build |
-| 245 | Boolean cut has issues when it involves a common Edge between argument and the tool. | applies | Reproduced on its files: the cut removes about 14,000 of 756 million, with a sphere of 524 million, and warnings. A comment puts the cause in the revolution/sphere intersection at the pole |
+| 245 | Boolean cut has issues when it involves a common Edge between argument and the tool. | already fixed | Reproduced on its files: the cut removes nothing of 756 million, with a sphere of 524 million, and warnings, as the intersection along the sphere's seam, which lies in a flat face of the argument, isn't joined to the seam. The public Boolean now retries with a fuzzy value of a thousand tolerances and is right, 537,981,882 (decision 28613); the engine's exact cut is unchanged. Its section, not approximated, overflowed the stack: fixed (decision 28612) |
 | 191 | BRepOffsetAPI_MakeOffset fail | can't tell | Needs the issue's attached model; not reproduced in this pass (offset) |
 | 176 | MoveTo() from AIS_InteractiveContext sometimes doesn't redraw the viewer, even if the flag is set to true | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 145 | Standard_Macro.hxx conflicts on Windows defines | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |

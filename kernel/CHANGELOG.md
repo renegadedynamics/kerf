@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **`BooleanOperations.Retry`** makes again a common, cut or fuse that a caller running with `CheckResult = false` proved wrong, in the ways the checked Booleans do (the other way round, then with fuzzy values), so `Kerf.Modeling`'s Booleans now have them (decision 28611).
+- **A Boolean still wrong at a fuzzy value of ten tolerances is tried at a thousand:** OCCT #245's cut, which removed nothing, and its empty common, of a sphere whose seam lies in a flat face, are now right, with `boolean.fuzzy-value` (decision 28613). **A section that isn't approximated no longer ends the process** with a stack overflow on a curve of many intervals, as #245's did (decision 28612).
 - **A Boolean still proved wrong is made once more with a small fuzzy value, and that result returned, with the warning `boolean.fuzzy-value`, if it's right:** OCCT #1629's thread cut, which made a solid inside out, its empty common and its fuse with an extra groove are now right (decision 2103). `BooleanOperations.BuiltWithFuzzyValue` is the new code. **An empty common, or a cut that removed nothing, is also looked for just inside the inputs' faces,** as a grid of points can miss a thin overlap: #1629's empty common was a success (decision 2104).
 - **A volume's integration no longer zeroes its whole work set for every face,** and a shape's validity check builds its shell's edge map once: the same results to the bit, a little less time and memory on long chains of Booleans (decisions 2095 to 2097).
 - **Parallel volumes, as a caller chooses** (decision 2092): `BooleanOptions.ParallelVolumes` and
