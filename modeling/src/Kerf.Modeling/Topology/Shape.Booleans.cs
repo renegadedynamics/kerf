@@ -184,19 +184,27 @@ public static partial class ShapeExtensions
         /// <summary>This shape with <paramref name="toCut"/> removed. The result may be of another type.</summary>
         public Shape Cut(params IEnumerable<Shape> toCut) => BoolOp([self.AsShape()], toCut, BooleanKind.Cut);
 
-        /// <summary>As the other forms of <c>Cut</c>.</summary>
-        public Shape Cut<T>(IEnumerable<T> toCut) where T : IShape => BoolOp([self.AsShape()], toCut.Select(s => s.AsShape()), BooleanKind.Cut);
+        /// <summary>As the other forms of <c>Cut</c>. <paramref name="parallelVolumes"/> integrates the volumes its check measures on several threads (true) or one (false), the
+        /// result the same either way; null follows <see cref="ParallelVolumes"/>, off unless a scope turns it on (decision 2092).</summary>
+        public Shape Cut<T>(IEnumerable<T> toCut, bool? parallelVolumes = null) where T : IShape
+        {
+            using ParallelVolumes.Scope parallel = TopoUtil.ParallelVolumesFor(parallelVolumes);
+            return BoolOp([self.AsShape()], toCut.Select(s => s.AsShape()), BooleanKind.Cut);
+        }
 
         /// <summary>As the other forms of <c>Fuse</c>.</summary>
-        public Shape Fuse<T>(IEnumerable<T> toFuse, bool glue = false, double? tolerance = null) where T : IShape =>
-            self.Fuse(toFuse.Select(s => s.AsShape()), glue, tolerance);
+        public Shape Fuse<T>(IEnumerable<T> toFuse, bool glue = false, double? tolerance = null, bool? parallelVolumes = null) where T : IShape =>
+            self.Fuse(toFuse.Select(s => s.AsShape()), glue, tolerance, parallelVolumes);
 
         /// <summary>
         /// This shape fused with <paramref name="toFuse"/>. <paramref name="glue"/> speeds up shapes that only touch;
         /// <paramref name="tolerance"/> sets a fuzzy value. The result may be of another type.
+        /// <paramref name="parallelVolumes"/> integrates the volumes its check measures on several threads (true) or one (false), the
+        /// result the same either way; null follows <see cref="ParallelVolumes"/>, off unless a scope turns it on (decision 2092).
         /// </summary>
-        public Shape Fuse(IEnumerable<Shape> toFuse, bool glue = false, double? tolerance = null)
+        public Shape Fuse(IEnumerable<Shape> toFuse, bool glue = false, double? tolerance = null, bool? parallelVolumes = null)
         {
+            using ParallelVolumes.Scope parallel = TopoUtil.ParallelVolumesFor(parallelVolumes);
             var options = new BooleanOptions
             {
                 Glue = glue ? GlueMode.Shift : GlueMode.Off,
@@ -215,10 +223,13 @@ public static partial class ShapeExtensions
         /// <remarks>
         /// Several arguments are chained: <c>c.Intersect(s1, s2)</c> is c ∩ s1 ∩ s2. A compound argument distributes:
         /// <c>c.Intersect(Compound([s1, s2]))</c> is (c ∩ s1) ∪ (c ∩ s2). <paramref name="includeTouched"/> adds contacts at the
-        /// boundary without interior overlap (only where solids are involved).
+        /// boundary without interior overlap (only where solids are involved). <paramref name="parallelVolumes"/> integrates the volumes its check measures on several threads (true) or one (false), the
+        /// result the same either way; null follows <see cref="ParallelVolumes"/>, off unless a scope turns it on (decision 2092).
         /// </remarks>
-        public ShapeList<Shape> Intersect(IEnumerable<CurveLimit> toIntersect, double tolerance = 1e-6, bool includeTouched = false)
+        public ShapeList<Shape> Intersect(IEnumerable<CurveLimit> toIntersect, double tolerance = 1e-6, bool includeTouched = false,
+                                          bool? parallelVolumes = null)
         {
+            using ParallelVolumes.Scope parallel = TopoUtil.ParallelVolumesFor(parallelVolumes);
             var list = toIntersect.Select(o => o.Target).ToList();
             if (list.Count == 0 || self.IsEmpty)
                 return [];
@@ -243,8 +254,9 @@ public static partial class ShapeExtensions
         public ShapeList<Shape> Intersect(params CurveLimit[] toIntersect) => self.Intersect((IEnumerable<CurveLimit>)toIntersect);
 
         /// <summary>As the other forms of <c>Intersect</c>, with shapes alone.</summary>
-        public ShapeList<Shape> Intersect(IEnumerable<Shape> toIntersect, double tolerance = 1e-6, bool includeTouched = false) =>
-            self.Intersect(toIntersect.Select(s => (CurveLimit)s), tolerance, includeTouched);
+        public ShapeList<Shape> Intersect(IEnumerable<Shape> toIntersect, double tolerance = 1e-6, bool includeTouched = false,
+                                          bool? parallelVolumes = null) =>
+            self.Intersect(toIntersect.Select(s => (CurveLimit)s), tolerance, includeTouched, parallelVolumes);
 
         /// <summary>
         /// The vertices and edges where this shape and <paramref name="other"/> cross (<c>BRepAlgoAPI_Section</c>).

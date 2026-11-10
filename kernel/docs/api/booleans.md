@@ -32,8 +32,16 @@ public sealed record BooleanOptions
     public bool Simplify { get; init; } = true;              // unify same-domain faces and edges after (SimplifyResult);
                                                              // its history is composed into the result's
     public bool ApproximateSection { get; init; } = true;    // Section only (decision 1836)
+    public bool? ParallelVolumes { get; init; }              // the volume check's integration on several threads; null: the scope's
 }
 ```
+
+- **Parallel volumes** (decision 2092): `ParallelVolumes = true` integrates the volumes the check measures, where one has
+  16 faces or more to integrate, on the thread pool, summed in the faces' order, so the verdict and every figure are the
+  same to the bit as off; `false` keeps them on the calling thread; null, the default, follows the scope
+  `ParallelVolumes.Use()` (namespace `Kerf`), which is off unless opened. For one large part on a processor that's otherwise
+  idle; parts already built side by side pay processor time and waits for it. `MassOptions.ParallelVolumes` is the same
+  for the mass properties.
 
 - **Non-destructive always:** OCCT's `SetNonDestructive(false)` let the algorithm change its inputs' tolerances; the
   public API never does (plan 2.4). Until 10H2 the engine keeps its copy at entry for this.

@@ -481,6 +481,33 @@ bytes, in 1.5 to 1.7 times less wall time on 4 processors (a loaded machine; the
 Keep what the parts share in `Lazy<T>` (thread-safe by default) or build it first; don't keep the part being built in a
 static the parts read, such as a size chosen by a setter: give each part what it needs.
 
+**One large part on an idle processor: parallel volumes** (decision 2092). Measuring a volume, which every Boolean does to
+check its result (section 6) as well as `Volume` and the mass properties, can integrate the faces on several threads,
+where a shape has 16 faces or more that aren't flat. The figures are the same to the bit either way. It's off by default:
+
+```csharp
+// Everything inside: operators, Volume, and the tasks and loops started in it
+using (ParallelVolumes.Use())
+{
+    Part enclosure = BuildEnclosure();
+}
+
+// Or one call
+Shape plate = block.Cut(holes, parallelVolumes: true);
+double volume = plate.ComputeVolume(parallelVolumes: true);
+```
+
+- **Turn it on** for one large part built by one caller, on a machine whose other processors are otherwise idle: the
+  blade bumper enclosure built alone on a quiet machine took about 20% less wall time, for 40% to 65% more processor
+  time (decision 2088).
+- **Leave it off** where parts are already built side by side (`Parallel.For` over parts, a server computing many
+  workbooks at once): they keep the processors busy themselves, and the extra threads only cost processor time and
+  waits (the Bento examples' parallel round waited twice as often). Off is also right for small parts, which gain
+  nothing.
+- `Cut`, `Fuse`, `Intersect` and `ComputeVolume` take `parallelVolumes`, which overrides the scope either way
+  (`false` keeps one call on one thread inside a scope); operators, `Volume` and the other mass properties follow the
+  scope. In the kernel, `BooleanOptions.ParallelVolumes` and `MassOptions.ParallelVolumes` do the same.
+
 **The runtime's settings belong to your application** (`.csproj` or `runtimeconfig.json`), and matter once many
 operations run at once:
 
@@ -494,12 +521,13 @@ operations run at once:
   There, keep the workstation collector (the default), or try `GCNoAffinitize`.
 - `GCConserveMemory` and a heap mask over part of the processors didn't help.
 
-**Cancellation, warnings and `SkipClean` follow the flow of control,** on a thread and through `await` alike (each
+**Cancellation, warnings, `SkipClean` and `ParallelVolumes` follow the flow of control,** on a thread and through `await` alike (each
 keeps its state in an `AsyncLocal`):
 
-- `using (Cancellation.Use(token)) { … }`, `using (var warnings = Warnings.Capture()) { … }` and
-  `using (new SkipClean()) { … }` apply to the code inside: on its thread, after its `await`s, and in the tasks and
-  `Parallel` loops it starts. A token passed to an operation overrides the one in force.
+- `using (Cancellation.Use(token)) { … }`, `using (var warnings = Warnings.Capture()) { … }`,
+  `using (new SkipClean()) { … }` and `using (ParallelVolumes.Use()) { … }` apply to the code inside: on its thread,
+  after its `await`s, and in the tasks and `Parallel` loops it starts. A token passed to an operation overrides the one
+  in force, as `parallelVolumes` does the scope's.
 - Other callers don't see them: two cells computed at once on two threads each collect their own warnings, and one
   that skips the clean, or is cancelled, doesn't change the other.
 - A scope collects the warnings of a `Parallel` loop started inside it, from every thread. A cancelled operation in

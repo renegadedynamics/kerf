@@ -42,7 +42,8 @@ public sealed record MassProperties
 }
 
 public enum Dimension { Length = 1, Area = 2, Volume = 3 }
-public sealed record MassOptions { public double Tolerance { get; init; } = 1e-6; public bool SkipShared { get; init; } public bool UseTriangulation { get; init; } }
+public sealed record MassOptions { public double Tolerance { get; init; } = 1e-6; public bool SkipShared { get; init; } public bool UseTriangulation { get; init; }
+                                   public bool OnlyClosed { get; init; } public bool? ParallelVolumes { get; init; } }
 
 public sealed record DistanceResult
 {

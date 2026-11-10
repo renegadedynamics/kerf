@@ -5,6 +5,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **Parallel volumes, as a caller chooses** (kernel decision 2092): `using (ParallelVolumes.Use()) { … }` integrates the
+  volumes that Booleans check, `Volume` and the mass properties measure on several threads, where a shape has 16 faces
+  or more that aren't flat, with the same results to the bit; `Cut`, `Fuse`, `Intersect` and `ComputeVolume` take
+  `parallelVolumes` for one call. Off by default: for one large part on an idle processor, not for parts built side by
+  side (guide, section 9).
+
 ## 0.5.0
 
 - **`Text`, DXF export and drawing sheets:** build123d's `Text` and `ExportDXF`, and notes and sheets with a title block
