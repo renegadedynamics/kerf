@@ -9,7 +9,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// Unit 6G's check commands (BOPTest_CheckCommands.cxx: <c>bopcheck</c>, <c>bopargcheck</c>, <c>bopapicheck</c>,
 /// <c>xdistef</c>, <c>checkcurveonsurf</c>), and the corpus cases they make runnable.
 /// </summary>
-public class DrawBopCheckCommandsTests(ITestOutputHelper output)
+public class DrawBopCheckCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     internal static readonly string[] Commands = ["bopcheck", "bopargcheck", "bopapicheck", "xdistef", "checkcurveonsurf"];
 
@@ -76,6 +76,15 @@ public class DrawBopCheckCommandsTests(ITestOutputHelper output)
         }
     }
 
+    private static IEnumerable<DrawCaseScan> UsingCheck => SharedCorpus.Scans.Where(s => Commands.Any(s.Commands.Contains));
+
+    // the runnable cases; those that measure memory are DrawCheapGapsCorpusTests'
+    private static List<DrawTestCase> ToRun(IEnumerable<DrawCaseScan> theScans)
+        => theScans.Where(s => s.IsRunnable && !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case).ToList();
+
+    /// <summary>The cases the corpus test runs, a row each in DrawBopCheckCommandsShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(13, () => ToRun(UsingCheck));
+
     /// <summary>
     /// The corpus cases that use the check commands: how many are runnable before and after them, and how the newly
     /// runnable ones end under OCCT's _check_log.
@@ -85,16 +94,12 @@ public class DrawBopCheckCommandsTests(ITestOutputHelper output)
     {
         string aTests = Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
         Assert.True(Directory.Exists(aTests), $"No OCCT source at {aTests}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(aTests);
-        DrawInterpreter anAfter = Load();
         DrawInterpreter aBefore = Load();
         Before6G(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anAfter))
-                                           .Where(s => Commands.Any(s.Commands.Contains)).ToList();
-        // The cases that measure memory are DrawCheapGapsCorpusTests'
-        List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable && !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case).ToList();
-        int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
+        List<DrawCaseScan> aScans = [.. UsingCheck];
+        List<DrawTestCase> aRunnable = ToRun(aScans);
+        int aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore).Count;
         output.WriteLine($"{aScans.Count} cases use the check commands: {aRunnableBefore} runnable before, {aRunnable.Count} after");
         foreach (var aGroup in aScans.Where(s => !s.IsRunnable).SelectMany(s => s.Missing).GroupBy(c => c)
                                      .OrderByDescending(g => g.Count()).Take(15))
@@ -102,9 +107,8 @@ public class DrawBopCheckCommandsTests(ITestOutputHelper output)
             output.WriteLine($"  still missing {aGroup.Key,-20} {aGroup.Count()} cases");
         }
 
-        List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        List<DrawCaseRun> aRuns = SharedCorpus.RunAll(aRunnable)
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));

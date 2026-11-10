@@ -12,7 +12,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// It does nothing without them, as it takes minutes. <c>KERF_CHECK_COMPARE_WORKERS</c> sets how many cases run at once (4).
 /// Cases are only there to make shapes, so what they conclude isn't asserted: their limit can pass with each check made twice.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
+[Collection(CheckComparisonCollection.Name)]
 public class DrawCheckComparisonCorpusTests(ITestOutputHelper output)
 {
     [Fact]
@@ -41,4 +41,14 @@ public class DrawCheckComparisonCorpusTests(ITestOutputHelper output)
         File.AppendAllText(Environment.GetEnvironmentVariable("KERF_CHECK_COMPARE")!, aLine + Environment.NewLine);
         Assert.Equal(0, CheckComparison.Differences);
     }
+}
+
+/// <summary>
+/// The check comparison's collection, run on its own after every other test: CheckComparison counts the process's
+/// checks, which should be the group's alone (decision 2083).
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class CheckComparisonCollection
+{
+    public const string Name = "Check comparison";
 }

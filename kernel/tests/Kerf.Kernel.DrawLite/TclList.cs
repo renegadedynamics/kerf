@@ -260,6 +260,9 @@ public static class TclList
         return Make(aNew);
     }
 
+    /// <summary>Appends an element that isn't a list's first, as <see cref="Append"/> formats it.</summary>
+    internal static void AppendCanonical(StringBuilder theBuilder, string theElement) => AppendElement(theBuilder, theElement, false);
+
     /// <summary>One element quoted so that it reads back as itself.</summary>
     public static string Quote(string theElement, bool theIsFirst = true)
     {

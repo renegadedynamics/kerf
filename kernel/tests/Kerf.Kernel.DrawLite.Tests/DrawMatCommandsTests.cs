@@ -10,7 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// <c>mat</c>, <c>result</c>, <c>zone</c>) on a hand-made face and on OCCT's corpus: the cases that use them, runnable
 /// before and after the unit (none: they need the offset commands too).
 /// </summary>
-public class DrawMatCommandsTests(ITestOutputHelper output)
+public class DrawMatCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -56,30 +56,27 @@ public class DrawMatCommandsTests(ITestOutputHelper output)
         Assert.Equal("", aDI.Eval("topoload f -approx"));
     }
 
+    /// <summary>The cases the corpus test runs, a row each in DrawMatCommandsShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("topoload")).Where(s => s.IsRunnable).Select(s => s.Case));
+
     [Fact]
     public void Corpus_cases_using_mat_run_before_and_after_5M()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before5M(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => s.Commands.Contains("topoload"))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => s.Commands.Contains("topoload"))];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use topoload; runnable before 5M: {aRunnableBefore.Count}, after: {aRunnable.Count}");
         foreach (DrawCaseScan aScan in aScans.Where(s => !s.IsRunnable))
         {
             output.WriteLine($"  {aScan.Case.Id} misses {string.Join(", ", aScan.Missing)}");
         }
 
-        var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                             .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 5M: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

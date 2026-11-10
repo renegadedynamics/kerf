@@ -11,8 +11,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// format and encodings) on hand-made shapes and on OCCT's corpus, and phase 8's third milestone: the data-exchange
 /// cases, run as OCCT's harness runs them and judged by OCCT's log check.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
-public partial class DrawDataExchangeCorpusTests(ITestOutputHelper output)
+public partial class DrawDataExchangeCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -122,26 +121,26 @@ public partial class DrawDataExchangeCorpusTests(ITestOutputHelper output)
         Assert.Contains("No norm named : IGES", aDI.Eval("catch {xnorm IGES} e; set e"), StringComparison.Ordinal);
     }
 
+    private static IEnumerable<DrawCaseScan> Using8W => SharedCorpus.Scans.Where(s => Unit8WCommands.Any(s.Commands.Contains));
+
+    /// <summary>The cases the corpus test runs, those 8W made runnable, a row each in DrawDataExchangeCorpusShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.NewlyRunnable(Using8W, Before8W));
+
     [Fact]
     public void Corpus_cases_using_unit_8Ws_commands_run_after_8W()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before8W(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit8WCommands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. Using8W];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aGained = aRunnable.Where(c => !aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        HashSet<DrawTestCase> aRunnableBefore = [.. SharedCorpus.RunnableWith(aRunnable, aBefore)];
+        List<DrawTestCase> aGained = aRunnable.Where(c => !aRunnableBefore.Contains(c)).ToList();
         output.WriteLine($"{aScans.Count} cases name unit 8W's commands; runnable {aRunnable.Count}, made runnable by 8W: {aGained.Count}");
 
-        List<DrawCaseRun> aRuns = aGained.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                         .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                                          TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aGained, Corpus.Cases);
+        List<DrawCaseRun> aRuns = SharedCorpus.RunAll(aGained)
                                          .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                                          .ToList();
         output.WriteLine("after 8W: " + Counts(aRuns));

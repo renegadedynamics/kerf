@@ -17,8 +17,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// fails unattributed; <c>KERF_CORPUS_FULL=1</c> runs them all.
 /// <c>KERF_CORPUS_LOGS=dir</c> writes the log of every case that doesn't pass into that directory.
 /// </remarks>
-[Collection(MeshDefaultsCollection.Name)]
-public class DrawBooleanCorpusTests(ITestOutputHelper output)
+public class DrawBooleanCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -54,35 +53,42 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output)
         return anInterpreter;
     }
 
+    private static IEnumerable<DrawCaseScan> UsingBop => SharedCorpus.Scans.Where(s => Unit6LBopCommands.Any(s.Commands.Contains));
+
+    private static bool IsFull => Environment.GetEnvironmentVariable("KERF_CORPUS_FULL") == "1";
+
+    // the runnable cases, or every SampleStep-th by id; the cases that measure memory are DrawCheapGapsCorpusTests' (left
+    // out after sampling, so the sample stays the same)
+    private static List<DrawTestCase> ToRun(IReadOnlyList<DrawCaseScan> theScans)
+    {
+        List<DrawTestCase> aRunnable = theScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
+        List<DrawTestCase> aToRun = IsFull
+            ? aRunnable
+            : aRunnable.OrderBy(c => c.Id, StringComparer.Ordinal).Where((_, i) => i % SampleStep == 0).ToList();
+        return aToRun.Where(c => !DrawCheapGapsCorpusTests.MeasuresMemory(theScans.First(s => s.Case == c))).ToList();
+    }
+
+    /// <summary>The cases the corpus test runs, a row each in DrawBooleanCorpusShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(24, () => ToRun([.. UsingBop]));
+
     [Fact]
     public void Corpus_cases_using_the_Boolean_commands_run_before_and_after_6L()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before6LBop(aBefore);
         DrawHealCorpusTests.Before6LHeal(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit6LBopCommands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. UsingBop];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use the Boolean commands; runnable before 6L: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        bool isFull = Environment.GetEnvironmentVariable("KERF_CORPUS_FULL") == "1";
-        List<DrawTestCase> aToRun = isFull
-            ? aRunnable
-            : aRunnable.OrderBy(c => c.Id, StringComparer.Ordinal).Where((_, i) => i % SampleStep == 0).ToList();
-        // The cases that measure memory are DrawCheapGapsCorpusTests' (left out after sampling, so the sample stays the same)
-        aToRun = aToRun.Where(c => !DrawCheapGapsCorpusTests.MeasuresMemory(aScans.First(s => s.Case == c))).ToList();
-        output.WriteLine(isFull ? "running all of them" : $"running every {SampleStep}th: {aToRun.Count} (KERF_CORPUS_FULL=1 runs all)");
+        List<DrawTestCase> aToRun = ToRun(aScans);
+        output.WriteLine(IsFull ? "running all of them" : $"running every {SampleStep}th: {aToRun.Count} (KERF_CORPUS_FULL=1 runs all)");
 
-        var aRuns = aToRun.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                          .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                           TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aToRun, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aToRun)
                           .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                           .ToList();
         output.WriteLine("after 6L: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

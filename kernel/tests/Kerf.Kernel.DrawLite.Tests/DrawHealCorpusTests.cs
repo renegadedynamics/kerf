@@ -13,8 +13,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// <remarks>
 /// About 900 cases are runnable (700 of them the sewing grids'); they run in under half a minute, so all of them run.
 /// </remarks>
-[Collection(MeshDefaultsCollection.Name)]
-public class DrawHealCorpusTests(ITestOutputHelper output)
+public class DrawHealCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -46,28 +45,28 @@ public class DrawHealCorpusTests(ITestOutputHelper output)
         return anInterpreter;
     }
 
+    private static IEnumerable<DrawCaseScan> Using6L
+        => SharedCorpus.Scans.Where(s => Unit6LHealCommands.Any(s.Commands.Contains))
+                       // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
+                       .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case));
+
+    /// <summary>The cases the corpus test runs, a row each in DrawHealCorpusShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(11, () => Using6L.Where(s => s.IsRunnable).Select(s => s.Case));
+
     [Fact]
     public void Corpus_cases_using_the_healing_commands_run_before_and_after_6L()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before6LHeal(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit6LHealCommands.Any(s.Commands.Contains))
-                                           // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
-                                           .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. Using6L];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore);
         output.WriteLine($"{aScans.Count} cases use the healing commands; runnable before 6L: {aRunnableBefore.Count}, after: {aRunnable.Count}");
 
-        var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                          .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                           TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
                           .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                           .ToList();
         output.WriteLine("after 6L: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

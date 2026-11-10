@@ -10,7 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// hand-made wires and faces, and on OCCT's corpus: the cases that use them (the offset group's wire grids through its
 /// end script's <c>command</c> branch, and bug cases), runnable before and after the unit, and how they end.
 /// </summary>
-public class DrawOffsetCommandsTests(ITestOutputHelper output)
+public class DrawOffsetCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -81,22 +81,27 @@ public class DrawOffsetCommandsTests(ITestOutputHelper output)
         Assert.ThrowsAny<Exception>(() => aDI.Eval("openoffset r nothing 1 1"));
     }
 
+    private static IEnumerable<DrawCaseScan> UsingOffset
+        => SharedCorpus.Scans.Where(s => s.Commands.Overlaps(Unit5O2Commands) && (s.Case.Group != "offset" || IsMkoffsetCase(s.Case)));
+
+    // none fails: OK or BAD, or skipped for missing data files
+    private static void Check(DrawCaseRun theRun)
+        => Assert.True(theRun.Passed || theRun.Status.StartsWith("SKIPPED", StringComparison.Ordinal), $"{theRun.Case.Id}: {theRun.Status}");
+
+    /// <summary>The cases the corpus test runs: those using the commands, runnable after 5O2; a row each in DrawOffsetCommandsShard*Tests.</summary>
+    public static CorpusPlan Corpus { get; } = new(14, () => UsingOffset.Where(s => s.IsRunnable).Select(s => s.Case), Check);
+
     [Fact]
     public void Corpus_cases_using_mkoffset_or_openoffset_before_and_after_5O2()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
         var aCorpusBefore = new DrawCorpus(TestsDirectory) { KnowsValueBranches = false };
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before5O2Offset(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => s.Commands.Overlaps(Unit5O2Commands) && (s.Case.Group != "offset" || IsMkoffsetCase(s.Case)))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. UsingOffset];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        List<DrawTestCase> aRunnableBefore = aScans.Select(s => s.Case).Where(c => aCorpusBefore.Scan(c, aBefore).IsRunnable).ToList();
+        List<DrawTestCase> aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore, aCorpusBefore);
         int anOffsetGroup = aScans.Count(s => s.Case.Group == "offset");
         int anOffsetRunnable = aRunnable.Count(c => c.Group == "offset");
         output.WriteLine($"{aScans.Count} cases use mkoffset or openoffset ({anOffsetGroup} of the offset group); "
@@ -107,11 +112,10 @@ public class DrawOffsetCommandsTests(ITestOutputHelper output)
             output.WriteLine($"  missing {aMissing.Key}: {aMissing.Count()} cases");
         }
 
-        var aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                             .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
-                             .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
-                             .ToList();
+        Assert.Equal(aRunnable, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aRunnable)
+                                .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
+                                .ToList();
         output.WriteLine("after 5O2: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                                  .OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                  .Select(g => $"{g.Key} {g.Count()}")));
@@ -132,6 +136,6 @@ public class DrawOffsetCommandsTests(ITestOutputHelper output)
         // rest skipped for missing data files)
         Assert.Empty(aRunnableBefore);
         Assert.True(anOffsetRunnable >= 600, $"{anOffsetRunnable}");
-        Assert.All(aRuns, r => Assert.True(r.Passed || r.Status.StartsWith("SKIPPED", StringComparison.Ordinal), $"{r.Case.Id}: {r.Status}"));
+        Assert.All(aRuns, Check);
     }
 }

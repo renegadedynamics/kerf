@@ -18,7 +18,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// The texts are Draw's, derived from those sources; the meshes are compared with BRepMesh_IncrementalMesh's with the
 /// parameters the options stand for, which the oracle (DrawLiteIncMeshOracleTests) compares with native OCCT's.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawMeshingCommandsTests
 {
     private static string DataOcc => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "data", "occ").Replace('\\', '/');
@@ -310,14 +309,4 @@ public class DrawMeshingCommandsTests
         i.Eval($"restore {DataOcc}/solid.brep s; tclean s; vdisplay s");
         Assert.Equal(aMeshed, Text(i.GetShape("s")));
     }
-}
-
-/// <summary>
-/// The tests that change or read the mesher's process-wide defaults (mpparallel, mpsetdefaultname). The collection
-/// runs on its own, after every parallel test, because corpus cases and other tests may call mpparallel too.
-/// </summary>
-[CollectionDefinition(Name, DisableParallelization = true)]
-public sealed class MeshDefaultsCollection
-{
-    public const string Name = "Mesh defaults";
 }

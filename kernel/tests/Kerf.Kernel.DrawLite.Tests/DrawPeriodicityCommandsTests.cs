@@ -9,7 +9,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// Unit 6G's periodicity and connection commands (BOPTest_PeriodicityCommands.cxx, BOPTest_MkConnectedCommands.cxx),
 /// and the corpus cases they make runnable; the capture of those cases for tools/borec.
 /// </summary>
-public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
+public class DrawPeriodicityCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     /// <summary>The commands of the two files.</summary>
     internal static readonly string[] Commands =
@@ -87,6 +87,9 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
         Assert.False(i.GetShape("m").IsNull);
     }
 
+    /// <summary>The cases the corpus test runs, a row each in DrawPeriodicityCommandsShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(2, () => SharedCorpus.Scans.Where(s => s.Commands.Overlaps(Commands)).Where(s => s.IsRunnable).Select(s => s.Case));
+
     /// <summary>
     /// The corpus cases using these commands: how many are runnable before and after them, and how the runnable ones
     /// end under OCCT's _check_log.
@@ -95,15 +98,12 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
     public void Periodicity_and_connection_cases_of_the_corpus_run()
     {
         string aTests = Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
-        var aCorpus = new DrawCorpus(aTests);
-        DrawInterpreter anAfter = Load();
         DrawInterpreter aBefore = Load();
         Before(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anAfter))
-                                           .Where(s => s.Commands.Overlaps(Commands)).ToList();
+        List<DrawCaseScan> aScans = [.. SharedCorpus.Scans.Where(s => s.Commands.Overlaps(Commands))];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
+        int aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore).Count;
         output.WriteLine($"{aScans.Count} cases use the commands: {aRunnableBefore} runnable before, {aRunnable.Count} after");
         foreach (var aGroup in aScans.Where(s => !s.IsRunnable).SelectMany(s => s.Missing).GroupBy(c => c)
                                      .OrderByDescending(g => g.Count()))
@@ -111,9 +111,8 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output)
             output.WriteLine($"  still missing {aGroup.Key,-20} {aGroup.Count()} cases");
         }
 
-        List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        List<DrawCaseRun> aRuns = SharedCorpus.RunAll(aRunnable)
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));

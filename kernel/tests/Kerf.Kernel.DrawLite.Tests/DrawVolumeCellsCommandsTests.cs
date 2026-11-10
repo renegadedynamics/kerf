@@ -15,7 +15,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// variable KERF_BOREC_CAPTURE naming a directory, the corpus calls are captured there for tools/borec
 /// (volume.capture.txt).
 /// </summary>
-public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
+public class DrawVolumeCellsCommandsTests(ITestOutputHelper output) : ICorpusTest
 {
     private static readonly string[] theCommands =
         ["mkvolume", "bcbuild", "bcaddall", "bcremoveall", "bcadd", "bcremove", "bcremoveint", "bcmakecontainers"];
@@ -80,6 +80,19 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
         }
     }
 
+    private static IEnumerable<DrawCaseScan> UsingVolume => SharedCorpus.Scans.Where(s => theCommands.Any(s.Commands.Contains));
+
+    /// <summary>
+    /// The cases the corpus test runs, a row each in DrawVolumeCellsCommandsShard*Tests (decision 2082): the runnable ones
+    /// but those that measure memory (DrawCheapGapsCorpusTests') and those that also need unit 6L's Boolean commands.
+    /// </summary>
+    public static CorpusPlan Corpus { get; } = new(8, () =>
+    {
+        DrawInterpreter aWithout6L = Load();
+        DrawBooleanCorpusTests.Before6LBop(aWithout6L);
+        return SharedCorpus.RunnableWith(UsingVolume.Where(s => s.IsRunnable && !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case), aWithout6L);
+    });
+
     /// <summary>
     /// The corpus cases that use mkvolume or the bc* commands: how many are runnable before and after, and how the
     /// newly runnable ones end under OCCT's _check_log.
@@ -88,23 +101,20 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
     public void Volume_and_cells_cases_of_the_corpus_run()
     {
         string aTests = Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
-        var aCorpus = new DrawCorpus(aTests);
-        DrawInterpreter anAfter = Load();
         DrawInterpreter aBefore = Load();
         Before(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered().Select(c => aCorpus.Scan(c, anAfter))
-                                           .Where(s => theCommands.Any(s.Commands.Contains)).ToList();
+        List<DrawCaseScan> aScans = [.. UsingVolume];
         // The cases that measure memory are DrawCheapGapsCorpusTests'
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable && !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case).ToList();
-        int aRunnableBefore = aScans.Count(s => aCorpus.Scan(s.Case, aBefore).IsRunnable);
+        int aRunnableBefore = SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore).Count;
         output.WriteLine($"{aScans.Count} cases use mkvolume or bc*: {aRunnableBefore} runnable before, {aRunnable.Count} after");
         // the cases that also need unit 6L's Boolean commands (the boolean grids' mkvolume cases) are run by
         // DrawBooleanCorpusTests and DrawCorpusTests; this test keeps to those 6G's commands made runnable
         DrawInterpreter aWithout6L = Load();
         DrawBooleanCorpusTests.Before6LBop(aWithout6L);
         int aWith6L = aRunnable.Count;
-        aRunnable = aRunnable.Where(c => aCorpus.Scan(c, aWithout6L).IsRunnable).ToList();
+        aRunnable = SharedCorpus.RunnableWith(aRunnable, aWithout6L);
         output.WriteLine($"  of which {aWith6L - aRunnable.Count} need 6L's Boolean commands too; running the other {aRunnable.Count}");
         foreach (var aGroup in aScans.Where(s => !s.IsRunnable).SelectMany(s => s.Missing).GroupBy(c => c)
                                      .OrderByDescending(g => g.Count()).Take(12))
@@ -112,9 +122,8 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
             output.WriteLine($"  still missing {aGroup.Key,-20} {aGroup.Count()} cases");
         }
 
-        List<DrawCaseRun> aRuns = aRunnable.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                                           .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory,
-                                                                            DrawCorpusTests.DataPath, TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        Assert.Equal(aRunnable, Corpus.Cases);
+        List<DrawCaseRun> aRuns = SharedCorpus.RunAll(aRunnable)
                                            .OrderBy(r => r.Case.Id, StringComparer.Ordinal).ToList();
         output.WriteLine("statuses: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0]).OrderBy(g => g.Key, StringComparer.Ordinal)
                                                                   .Select(g => $"{g.Key} {g.Count()}")));

@@ -153,4 +153,25 @@ public class TclListTests
             concat [llength [linsert $l 0 x]] $l
             """));
     }
+
+    /// <summary>
+    /// A list lappend extends in place where its result isn't used (decision 2084) reads as lappend's own: in a loop's
+    /// body, after a command, in an if's branch, through upvar, read part way, set again, an element of an array.
+    /// </summary>
+    [Fact]
+    public void A_list_extended_in_place_reads_as_lappend_made_it()
+    {
+        const string Elements = """[list {a b} "c\{" {} {$x} #h "{d}e"]""";
+        string aMade = Tcl.Eval($"set r {{}}; foreach e {Elements} {{ set r [lappend r $e] }}; set r");
+        Assert.Equal("""{a b} c\{ {} {$x} #h {{d}e}""", aMade);
+        Assert.Equal(aMade, Tcl.Eval($"set l {{}}; foreach e {Elements} {{ lappend l $e }}; set l"));
+        Assert.Equal(aMade, Tcl.Eval($"set l {{}}; foreach e {Elements} {{ lappend l $e; set y 1 }}; set l"));
+        Assert.Equal(aMade, Tcl.Eval($"set l {{}}; foreach e {Elements} {{ if {{1}} {{ lappend l $e }} }}; set l"));
+        Assert.Equal(aMade, Tcl.Eval($"proc p {{v}} {{ upvar $v w; foreach e {Elements} {{ lappend w $e }} }}; set l {{}}; p l; set l"));
+        Assert.Equal("1 2 3 4 {1 2 3 4}", Tcl.Eval("set l {}; set n {}; foreach e {1 2 3 4} { lappend l $e; lappend n [llength $l] }; concat $n [list $l]"));
+        Assert.Equal("x y", Tcl.Eval("set l {}; foreach e {1 2} { lappend l $e }; set l x; foreach e {y} { lappend l $e }; set l"));
+        Assert.Equal("1 2", Tcl.Eval("foreach e {1 2} { lappend a(k) $e }; set a(k)"));
+        Assert.Equal("{1 2} 3", Tcl.Eval("set l {}; foreach e {{1 2} 3} { lappend l $e }; set l"));
+        Assert.Equal(2, int.Parse(Tcl.Eval("set l {}; foreach e {1 2} { lappend l $e }; llength $l"), System.Globalization.CultureInfo.InvariantCulture));
+    }
 }

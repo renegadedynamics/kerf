@@ -118,6 +118,14 @@ internal static class TclListCommands
             throw Usage("lappend varName ?value ...?");
         }
 
+        // a list lappend made, extended where nothing reads the result: in place, so that a list built element by element
+        // (OCCT's _check_log builds its HTML log of every line so) costs its length, not its length squared (decision 2084)
+        if (theInterpreter.ResultUnused && a.Count > 2 && theInterpreter.FindVar(a[1], false) is { IsMadeList: true, Array: null, Drawable: null } aVar)
+        {
+            aVar.AppendListElements(a.Skip(2));
+            return "";
+        }
+
         theInterpreter.TryGetVariable(a[1], out string anOld);
         string aNew = a.Count == 2 ? TclList.Make([.. TclList.Parse(anOld)]) : TclList.Append(anOld, a.Skip(2).ToList());
         if (a.Count == 2 && theInterpreter.TryGetVariable(a[1], out _))
@@ -127,6 +135,11 @@ internal static class TclListCommands
         }
 
         theInterpreter.SetVariable(a[1], aNew);
+        if (a.Count > 2 && theInterpreter.FindVar(a[1], false) is { Array: null } aSet)
+        {
+            aSet.IsMadeList = true;
+        }
+
         return aNew;
     }
 

@@ -10,8 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// commands) on hand-made shapes and on OCCT's corpus: the cases that use them, runnable after the commands and not
 /// before, run as OCCT's harness runs them and judged by OCCT's log check.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
-public class DrawStepCorpusTests(ITestOutputHelper output)
+public class DrawStepCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -88,37 +87,37 @@ public class DrawStepCorpusTests(ITestOutputHelper output)
         Assert.Contains("LENGTH Unit\nmillimetre\n", aDI.Eval("stepfileunits /tmp/p8f/t.stp"), StringComparison.Ordinal);
     }
 
+    private static IEnumerable<DrawCaseScan> Using8F
+        => SharedCorpus.Scans.Where(s => Unit8FCommands.Any(s.Commands.Contains))
+                       // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
+                       .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
+                       // the cases that measure memory are DrawCheapGapsCorpusTests'
+                       .Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s));
+
+    /// <summary>The cases the corpus test runs, those 8F made runnable, a row each in DrawStepCorpusShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(6, () => SharedCorpus.NewlyRunnable(Using8F, Before8F, "OCCTNET_8F_FILTER"));
+
     [Fact]
     public void Corpus_cases_using_the_STEP_commands_run_after_8F()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before8F(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit8FCommands.Any(s.Commands.Contains))
-                                           // the de group's STEP cases read with ReadStep: unit 8G2's class runs them
-                                           .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case))
-                                           // the cases that measure memory are DrawCheapGapsCorpusTests'
-                                           .Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. Using8F];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
         string? aFilter = Environment.GetEnvironmentVariable("OCCTNET_8F_FILTER");
         // the commands' names are common words ("data", "param", "entity"): cases that name them in places the scan
         // counts as commands but don't run them were runnable before; the cases 8F makes runnable are the others
-        var aRunnableBefore = new HashSet<string>(aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable).Select(c => c.Id),
+        var aRunnableBefore = new HashSet<string>(SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore).Select(c => c.Id),
                                                   StringComparer.Ordinal);
         List<DrawTestCase> aGained = aRunnable.Where(c => !aRunnableBefore.Contains(c.Id)).ToList();
         output.WriteLine($"{aScans.Count} cases name the STEP commands; runnable before 8F: {aRunnableBefore.Count}, "
                          + $"after: {aRunnable.Count}, made runnable by 8F: {aGained.Count}");
 
-        var aRuns = aGained.Where(c => aFilter is null || c.Id.Contains(aFilter, StringComparison.Ordinal))
-                             .AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2))
-                             .Select(c => aCorpus.RunAndCheck(c, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                                              TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null))
+        List<DrawTestCase> aToRun = [.. aGained.Where(c => aFilter is null || c.Id.Contains(aFilter, StringComparison.Ordinal))];
+        Assert.Equal(aToRun, Corpus.Cases);
+        var aRuns = SharedCorpus.RunAll(aToRun)
                              .OrderBy(r => r.Case.Id, StringComparer.Ordinal)
                              .ToList();
         output.WriteLine("after 8F: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])

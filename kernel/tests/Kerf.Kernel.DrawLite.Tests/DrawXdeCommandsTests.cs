@@ -5,7 +5,6 @@ using Kerf.Kernel.DrawLite;
 namespace Kerf.Kernel.DrawLite.Tests;
 
 /// <summary>Unit 8G1's XDE commands over Draw-lite's documents, on hand-made shapes, with OCCT's output text.</summary>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawXdeCommandsTests
 {
     private static (DrawInterpreter, StringWriter) NewInterpreter()

@@ -10,8 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// the rolling ball and <c>nproject</c>) on OCCT's corpus: the cases that use them, runnable after the unit and not
 /// before, run as OCCT's harness runs them and judged by OCCT's log check.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
-public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
+public class DrawOffsetDraftCorpusTests(ITestOutputHelper output) : ICorpusTest
 {
     private static string TestsDirectory => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "tests");
 
@@ -42,21 +41,27 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
         return anInterpreter;
     }
 
+    private static IEnumerable<DrawCaseScan> Using7G => SharedCorpus.Scans.Where(s => Unit7GCommands.Any(s.Commands.Contains));
+
+    // a case fails only for an attributed reason
+    private static void Check(DrawCaseRun theRun)
+        => Assert.True(!theRun.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(theRun.Case.Id)
+                       || DrawBooleanCorpusTests.KnownFailures.Contains(theRun.Case.Id)
+                       || DrawFilletCorpusTests.KnownFailures.ContainsKey(theRun.Case.Id), $"{theRun.Case.Id}: {theRun.Status}");
+
+    /// <summary>The cases the corpus test runs, those only 7G made runnable, a row each in DrawOffsetDraftCorpusShard*Tests (decision 2082).</summary>
+    public static CorpusPlan Corpus { get; } = new(24, () => SharedCorpus.NewlyRunnable(Using7G, Before7G, "OCCTNET_7G_FILTER"), Check);
+
     [Fact]
     public void Corpus_cases_using_the_offset_and_draft_commands_of_7G_run()
     {
         Assert.True(Directory.Exists(TestsDirectory), $"No OCCT source at {TestsDirectory}: run tools/get-occt.ps1");
-        var aCorpus = new DrawCorpus(TestsDirectory);
-        DrawInterpreter anInterpreter = NewInterpreter();
         DrawInterpreter aBefore = NewInterpreter();
         Before7G(aBefore);
 
-        List<DrawCaseScan> aScans = aCorpus.Cases().AsParallel().AsOrdered()
-                                           .Select(c => aCorpus.Scan(c, anInterpreter))
-                                           .Where(s => Unit7GCommands.Any(s.Commands.Contains))
-                                           .ToList();
+        List<DrawCaseScan> aScans = [.. Using7G];
         List<DrawTestCase> aRunnable = aScans.Where(s => s.IsRunnable).Select(s => s.Case).ToList();
-        var aRunnableBefore = new HashSet<string>(aScans.Select(s => s.Case).Where(c => aCorpus.Scan(c, aBefore).IsRunnable)
+        var aRunnableBefore = new HashSet<string>(SharedCorpus.RunnableWith(aScans.Select(s => s.Case), aBefore)
                                                         .Select(c => c.Id), StringComparer.Ordinal);
         List<DrawTestCase> aNew = aRunnable.Where(c => !aRunnableBefore.Contains(c.Id)).ToList();
         output.WriteLine($"{aScans.Count} cases use the commands of 7G; runnable before 7G: {aRunnableBefore.Count}, after: {aRunnable.Count}, newly: {aNew.Count}");
@@ -69,10 +74,8 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
             aNew = aNew.Where(c => c.Id.Contains(aFilter!, StringComparison.Ordinal)).ToList();
         }
 
-        DrawCaseRun RunOne(DrawTestCase theCase)
-            => aCorpus.RunAndCheck(theCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath,
-                                   TimeSpan.FromSeconds(DrawCorpusTests.CorpusTimeLimitSeconds), null);
-        List<DrawCaseRun> aRuns = [.. aNew.AsParallel().WithDegreeOfParallelism(Math.Max(1, Environment.ProcessorCount / 2)).Select(RunOne)];
+        Assert.Equal(aNew, Corpus.Cases);
+        List<DrawCaseRun> aRuns = [.. SharedCorpus.RunAll(aNew)];
         aRuns.Sort((x, y) => StringComparer.Ordinal.Compare(x.Case.Id, y.Case.Id));
         output.WriteLine("after 7G: " + string.Join(", ", aRuns.GroupBy(r => r.Status.Split(' ')[0])
                                                               .OrderBy(g => g.Key, StringComparer.Ordinal)
@@ -120,9 +123,7 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output)
         // 1,714 (bugs/modalg_2/bug22864_1, SKIPPED: data not public)
         Assert.Equal(1714, aNew.Count);
         Assert.Equal(431, aRuns.Count(r => r.Status.StartsWith("OK", StringComparison.Ordinal)));
-        Assert.All(aRuns, r => Assert.True(!r.Status.StartsWith("FAILED", StringComparison.Ordinal) || KnownFailures.ContainsKey(r.Case.Id)
-                                           || DrawBooleanCorpusTests.KnownFailures.Contains(r.Case.Id)
-                                           || DrawFilletCorpusTests.KnownFailures.ContainsKey(r.Case.Id), $"{r.Case.Id}: {r.Status}"));
+        Assert.All(aRuns, Check);
     }
 
     /// <summary>The corpus cases that fail for an attributed reason (see docs/occt-issues.md, unit 7G).</summary>

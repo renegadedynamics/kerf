@@ -14,7 +14,6 @@ namespace Kerf.Kernel.DrawLite.Tests;
 /// DrawResources' checktrinfo over trinfo. The texts are Draw's, derived from those sources; the values are those the
 /// oracle tests (DrawLiteMeshOracleTests) find equal to native OCCT's.
 /// </summary>
-[Collection(MeshDefaultsCollection.Name)]
 public class DrawMeshCommandsTests
 {
     private static string DataOcc => Path.Combine(DrawResourcesTests.OcctSourceDirectory, "data", "occ").Replace('\\', '/');
