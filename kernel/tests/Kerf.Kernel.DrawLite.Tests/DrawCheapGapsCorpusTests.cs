@@ -69,7 +69,7 @@ public class DrawCheapGapsCorpusTests(ITestOutputHelper output) : ICorpusTest
     private static IEnumerable<DrawCaseScan> Using7W => SharedCorpus.Scans.Where(s => Unit7WCommands.Any(s.Commands.Contains));
 
     /// <summary>The cases the corpus test runs, those only 7W made runnable, a row each in DrawCheapGapsCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(18, () => SharedCorpus.NewlyRunnable(Using7W, Before7W), Check);
+    public static CorpusPlan Corpus { get; } = new(9, () => SharedCorpus.NewlyRunnable(Using7W, Before7W), Check);
 
     // a case passes, or has no data, or fails for an attributed reason
     private static void Check(DrawCaseRun theRun)

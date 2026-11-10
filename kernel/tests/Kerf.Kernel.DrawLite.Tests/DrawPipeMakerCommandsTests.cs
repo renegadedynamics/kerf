@@ -50,7 +50,7 @@ public class DrawPipeMakerCommandsTests(ITestOutputHelper output) : ICorpusTest
                        || theRun.Status.StartsWith("BAD", StringComparison.Ordinal), $"{theRun.Case.Id}: {theRun.Status}");
 
     /// <summary>The cases the corpus test runs, a row each in DrawPipeMakerCommandsShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(3, () => UsingPipe.Where(s => s.IsRunnable).Select(s => s.Case), Check);
+    public static CorpusPlan Corpus { get; } = new(4, () => UsingPipe.Where(s => s.IsRunnable).Select(s => s.Case), Check);
 
     [Fact]
     public void Corpus_cases_using_pipe_run_before_and_after_5S1()

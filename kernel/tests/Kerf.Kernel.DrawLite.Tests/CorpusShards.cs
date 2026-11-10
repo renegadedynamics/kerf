@@ -31,8 +31,6 @@ public sealed class DrawBooleanCorpusShard20Tests(ITestOutputHelper theOutput) :
 public sealed class DrawBooleanCorpusShard21Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBooleanCorpusTests, Shard21>(theOutput) { }
 public sealed class DrawBooleanCorpusShard22Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBooleanCorpusTests, Shard22>(theOutput) { }
 public sealed class DrawBooleanCorpusShard23Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBooleanCorpusTests, Shard23>(theOutput) { }
-public sealed class DrawBooleanCorpusShard24Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBooleanCorpusTests, Shard24>(theOutput) { }
-public sealed class DrawBooleanCorpusShard25Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBooleanCorpusTests, Shard25>(theOutput) { }
 
 public sealed class DrawBopCheckCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard0>(theOutput) { }
 public sealed class DrawBopCheckCommandsShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard1>(theOutput) { }
@@ -42,6 +40,11 @@ public sealed class DrawBopCheckCommandsShard4Tests(ITestOutputHelper theOutput)
 public sealed class DrawBopCheckCommandsShard5Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard5>(theOutput) { }
 public sealed class DrawBopCheckCommandsShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard6>(theOutput) { }
 public sealed class DrawBopCheckCommandsShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard7>(theOutput) { }
+public sealed class DrawBopCheckCommandsShard8Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard8>(theOutput) { }
+public sealed class DrawBopCheckCommandsShard9Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard9>(theOutput) { }
+public sealed class DrawBopCheckCommandsShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard10>(theOutput) { }
+public sealed class DrawBopCheckCommandsShard11Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard11>(theOutput) { }
+public sealed class DrawBopCheckCommandsShard12Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBopCheckCommandsTests, Shard12>(theOutput) { }
 
 public sealed class DrawCheapGapsCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawCheapGapsCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard1>(theOutput) { }
@@ -52,15 +55,6 @@ public sealed class DrawCheapGapsCorpusShard5Tests(ITestOutputHelper theOutput) 
 public sealed class DrawCheapGapsCorpusShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard6>(theOutput) { }
 public sealed class DrawCheapGapsCorpusShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard7>(theOutput) { }
 public sealed class DrawCheapGapsCorpusShard8Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard8>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard9Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard9>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard10>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard11Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard11>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard12Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard12>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard13Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard13>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard14Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard14>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard15Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard15>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard16Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard16>(theOutput) { }
-public sealed class DrawCheapGapsCorpusShard17Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawCheapGapsCorpusTests, Shard17>(theOutput) { }
 
 public sealed class DrawConstraintCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawConstraintCorpusTests, Shard0>(theOutput) { }
 
@@ -81,9 +75,9 @@ public sealed class DrawConstructionCorpusShard13Tests(ITestOutputHelper theOutp
 public sealed class DrawConstructionCorpusShard14Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawConstructionCorpusTests, Shard14>(theOutput) { }
 
 public sealed class DrawDataExchangeCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawDataExchangeCorpusTests, Shard0>(theOutput) { }
-public sealed class DrawDataExchangeCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawDataExchangeCorpusTests, Shard1>(theOutput) { }
 
 public sealed class DrawEvolvedCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawEvolvedCommandsTests, Shard0>(theOutput) { }
+public sealed class DrawEvolvedCommandsShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawEvolvedCommandsTests, Shard1>(theOutput) { }
 
 public sealed class DrawFeatureCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFeatureCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawFeatureCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFeatureCorpusTests, Shard1>(theOutput) { }
@@ -100,6 +94,8 @@ public sealed class DrawFilletCorpusShard5Tests(ITestOutputHelper theOutput) : C
 public sealed class DrawFilletCorpusShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFilletCorpusTests, Shard6>(theOutput) { }
 public sealed class DrawFilletCorpusShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFilletCorpusTests, Shard7>(theOutput) { }
 public sealed class DrawFilletCorpusShard8Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFilletCorpusTests, Shard8>(theOutput) { }
+public sealed class DrawFilletCorpusShard9Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFilletCorpusTests, Shard9>(theOutput) { }
+public sealed class DrawFilletCorpusShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFilletCorpusTests, Shard10>(theOutput) { }
 
 public sealed class DrawFillingCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawFillingCorpusTests, Shard0>(theOutput) { }
 
@@ -114,24 +110,6 @@ public sealed class DrawHealCorpusShard7Tests(ITestOutputHelper theOutput) : Cor
 public sealed class DrawHealCorpusShard8Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard8>(theOutput) { }
 public sealed class DrawHealCorpusShard9Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard9>(theOutput) { }
 public sealed class DrawHealCorpusShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard10>(theOutput) { }
-public sealed class DrawHealCorpusShard11Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard11>(theOutput) { }
-public sealed class DrawHealCorpusShard12Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard12>(theOutput) { }
-public sealed class DrawHealCorpusShard13Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard13>(theOutput) { }
-public sealed class DrawHealCorpusShard14Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard14>(theOutput) { }
-public sealed class DrawHealCorpusShard15Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard15>(theOutput) { }
-public sealed class DrawHealCorpusShard16Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard16>(theOutput) { }
-public sealed class DrawHealCorpusShard17Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard17>(theOutput) { }
-public sealed class DrawHealCorpusShard18Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard18>(theOutput) { }
-public sealed class DrawHealCorpusShard19Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard19>(theOutput) { }
-public sealed class DrawHealCorpusShard20Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard20>(theOutput) { }
-public sealed class DrawHealCorpusShard21Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard21>(theOutput) { }
-public sealed class DrawHealCorpusShard22Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard22>(theOutput) { }
-public sealed class DrawHealCorpusShard23Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard23>(theOutput) { }
-public sealed class DrawHealCorpusShard24Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard24>(theOutput) { }
-public sealed class DrawHealCorpusShard25Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard25>(theOutput) { }
-public sealed class DrawHealCorpusShard26Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard26>(theOutput) { }
-public sealed class DrawHealCorpusShard27Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard27>(theOutput) { }
-public sealed class DrawHealCorpusShard28Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealCorpusTests, Shard28>(theOutput) { }
 
 public sealed class DrawHealDivideCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawHealDivideCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard1>(theOutput) { }
@@ -146,47 +124,19 @@ public sealed class DrawHealDivideCorpusShard9Tests(ITestOutputHelper theOutput)
 public sealed class DrawHealDivideCorpusShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard10>(theOutput) { }
 public sealed class DrawHealDivideCorpusShard11Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard11>(theOutput) { }
 public sealed class DrawHealDivideCorpusShard12Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard12>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard13Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard13>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard14Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard14>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard15Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard15>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard16Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard16>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard17Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard17>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard18Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard18>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard19Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard19>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard20Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard20>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard21Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard21>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard22Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard22>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard23Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard23>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard24Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard24>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard25Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard25>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard26Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard26>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard27Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard27>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard28Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard28>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard29Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard29>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard30Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard30>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard31Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard31>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard32Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard32>(theOutput) { }
-public sealed class DrawHealDivideCorpusShard33Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHealDivideCorpusTests, Shard33>(theOutput) { }
 
 public sealed class DrawHelixCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHelixCorpusTests, Shard0>(theOutput) { }
+public sealed class DrawHelixCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHelixCorpusTests, Shard1>(theOutput) { }
+public sealed class DrawHelixCorpusShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHelixCorpusTests, Shard2>(theOutput) { }
 
 public sealed class DrawHlrCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawHlrCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard1>(theOutput) { }
 public sealed class DrawHlrCorpusShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard2>(theOutput) { }
 public sealed class DrawHlrCorpusShard3Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard3>(theOutput) { }
-public sealed class DrawHlrCorpusShard4Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard4>(theOutput) { }
-public sealed class DrawHlrCorpusShard5Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard5>(theOutput) { }
-public sealed class DrawHlrCorpusShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard6>(theOutput) { }
-public sealed class DrawHlrCorpusShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawHlrCorpusTests, Shard7>(theOutput) { }
 
 public sealed class DrawIntersectCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawIntersectCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard1>(theOutput) { }
 public sealed class DrawIntersectCorpusShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard2>(theOutput) { }
-public sealed class DrawIntersectCorpusShard3Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard3>(theOutput) { }
-public sealed class DrawIntersectCorpusShard4Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard4>(theOutput) { }
-public sealed class DrawIntersectCorpusShard5Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard5>(theOutput) { }
-public sealed class DrawIntersectCorpusShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard6>(theOutput) { }
-public sealed class DrawIntersectCorpusShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawIntersectCorpusTests, Shard7>(theOutput) { }
 
 public sealed class DrawMatCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawMatCommandsTests, Shard0>(theOutput) { }
 
@@ -199,6 +149,11 @@ public sealed class DrawOffsetCommandsShard5Tests(ITestOutputHelper theOutput) :
 public sealed class DrawOffsetCommandsShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard6>(theOutput) { }
 public sealed class DrawOffsetCommandsShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard7>(theOutput) { }
 public sealed class DrawOffsetCommandsShard8Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard8>(theOutput) { }
+public sealed class DrawOffsetCommandsShard9Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard9>(theOutput) { }
+public sealed class DrawOffsetCommandsShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard10>(theOutput) { }
+public sealed class DrawOffsetCommandsShard11Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard11>(theOutput) { }
+public sealed class DrawOffsetCommandsShard12Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard12>(theOutput) { }
+public sealed class DrawOffsetCommandsShard13Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetCommandsTests, Shard13>(theOutput) { }
 
 public sealed class DrawOffsetDraftCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawOffsetDraftCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard1>(theOutput) { }
@@ -224,31 +179,18 @@ public sealed class DrawOffsetDraftCorpusShard20Tests(ITestOutputHelper theOutpu
 public sealed class DrawOffsetDraftCorpusShard21Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard21>(theOutput) { }
 public sealed class DrawOffsetDraftCorpusShard22Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard22>(theOutput) { }
 public sealed class DrawOffsetDraftCorpusShard23Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard23>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard24Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard24>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard25Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard25>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard26Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard26>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard27Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard27>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard28Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard28>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard29Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard29>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard30Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard30>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard31Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard31>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard32Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard32>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard33Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard33>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard34Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard34>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard35Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard35>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard36Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard36>(theOutput) { }
-public sealed class DrawOffsetDraftCorpusShard37Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawOffsetDraftCorpusTests, Shard37>(theOutput) { }
 
 public sealed class DrawPeriodicityCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawPeriodicityCommandsTests, Shard0>(theOutput) { }
+public sealed class DrawPeriodicityCommandsShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawPeriodicityCommandsTests, Shard1>(theOutput) { }
 
 public sealed class DrawPipeCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawPipeCommandsTests, Shard0>(theOutput) { }
 
 public sealed class DrawPipeMakerCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawPipeMakerCommandsTests, Shard0>(theOutput) { }
 public sealed class DrawPipeMakerCommandsShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawPipeMakerCommandsTests, Shard1>(theOutput) { }
 public sealed class DrawPipeMakerCommandsShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawPipeMakerCommandsTests, Shard2>(theOutput) { }
+public sealed class DrawPipeMakerCommandsShard3Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawPipeMakerCommandsTests, Shard3>(theOutput) { }
 
 public sealed class DrawRemoveFeaturesCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawRemoveFeaturesCommandsTests, Shard0>(theOutput) { }
-public sealed class DrawRemoveFeaturesCommandsShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawRemoveFeaturesCommandsTests, Shard1>(theOutput) { }
 
 public sealed class DrawShapeUpgradeCommandsShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard0>(theOutput) { }
 public sealed class DrawShapeUpgradeCommandsShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard1>(theOutput) { }
@@ -257,16 +199,6 @@ public sealed class DrawShapeUpgradeCommandsShard3Tests(ITestOutputHelper theOut
 public sealed class DrawShapeUpgradeCommandsShard4Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard4>(theOutput) { }
 public sealed class DrawShapeUpgradeCommandsShard5Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard5>(theOutput) { }
 public sealed class DrawShapeUpgradeCommandsShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard6>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard7>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard8Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard8>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard9Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard9>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard10>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard11Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard11>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard12Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard12>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard13Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard13>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard14Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard14>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard15Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard15>(theOutput) { }
-public sealed class DrawShapeUpgradeCommandsShard16Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawShapeUpgradeCommandsTests, Shard16>(theOutput) { }
 
 public sealed class DrawStepCafCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawStepCafCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard1>(theOutput) { }
@@ -277,14 +209,22 @@ public sealed class DrawStepCafCorpusShard5Tests(ITestOutputHelper theOutput) : 
 public sealed class DrawStepCafCorpusShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard6>(theOutput) { }
 public sealed class DrawStepCafCorpusShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard7>(theOutput) { }
 public sealed class DrawStepCafCorpusShard8Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard8>(theOutput) { }
+public sealed class DrawStepCafCorpusShard9Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard9>(theOutput) { }
+public sealed class DrawStepCafCorpusShard10Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard10>(theOutput) { }
+public sealed class DrawStepCafCorpusShard11Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard11>(theOutput) { }
+public sealed class DrawStepCafCorpusShard12Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard12>(theOutput) { }
+public sealed class DrawStepCafCorpusShard13Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard13>(theOutput) { }
+public sealed class DrawStepCafCorpusShard14Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard14>(theOutput) { }
+public sealed class DrawStepCafCorpusShard15Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCafCorpusTests, Shard15>(theOutput) { }
 
 public sealed class DrawStepCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawStepCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCorpusTests, Shard1>(theOutput) { }
 public sealed class DrawStepCorpusShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCorpusTests, Shard2>(theOutput) { }
+public sealed class DrawStepCorpusShard3Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCorpusTests, Shard3>(theOutput) { }
+public sealed class DrawStepCorpusShard4Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCorpusTests, Shard4>(theOutput) { }
+public sealed class DrawStepCorpusShard5Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStepCorpusTests, Shard5>(theOutput) { }
 
 public sealed class DrawStlCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStlCorpusTests, Shard0>(theOutput) { }
-public sealed class DrawStlCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStlCorpusTests, Shard1>(theOutput) { }
-public sealed class DrawStlCorpusShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawStlCorpusTests, Shard2>(theOutput) { }
 
 public sealed class DrawSurfaceFromCurvesCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawSurfaceFromCurvesCorpusTests, Shard0>(theOutput) { }
 
@@ -292,12 +232,14 @@ public sealed class DrawVolumeCellsCommandsShard0Tests(ITestOutputHelper theOutp
 public sealed class DrawVolumeCellsCommandsShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawVolumeCellsCommandsTests, Shard1>(theOutput) { }
 public sealed class DrawVolumeCellsCommandsShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawVolumeCellsCommandsTests, Shard2>(theOutput) { }
 public sealed class DrawVolumeCellsCommandsShard3Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawVolumeCellsCommandsTests, Shard3>(theOutput) { }
+public sealed class DrawVolumeCellsCommandsShard4Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawVolumeCellsCommandsTests, Shard4>(theOutput) { }
+public sealed class DrawVolumeCellsCommandsShard5Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawVolumeCellsCommandsTests, Shard5>(theOutput) { }
+public sealed class DrawVolumeCellsCommandsShard6Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawVolumeCellsCommandsTests, Shard6>(theOutput) { }
+public sealed class DrawVolumeCellsCommandsShard7Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawVolumeCellsCommandsTests, Shard7>(theOutput) { }
 
 public sealed class DrawXdeCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawXdeCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawXdeCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawXdeCorpusTests, Shard1>(theOutput) { }
 public sealed class DrawXdeCorpusShard2Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawXdeCorpusTests, Shard2>(theOutput) { }
-public sealed class DrawXdeCorpusShard3Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawXdeCorpusTests, Shard3>(theOutput) { }
-public sealed class DrawXdeCorpusShard4Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawXdeCorpusTests, Shard4>(theOutput) { }
 
 // The shards' indices
 public sealed class Shard0 : IShardIndex { public static int Index => 0; }
@@ -324,17 +266,3 @@ public sealed class Shard20 : IShardIndex { public static int Index => 20; }
 public sealed class Shard21 : IShardIndex { public static int Index => 21; }
 public sealed class Shard22 : IShardIndex { public static int Index => 22; }
 public sealed class Shard23 : IShardIndex { public static int Index => 23; }
-public sealed class Shard24 : IShardIndex { public static int Index => 24; }
-public sealed class Shard25 : IShardIndex { public static int Index => 25; }
-public sealed class Shard26 : IShardIndex { public static int Index => 26; }
-public sealed class Shard27 : IShardIndex { public static int Index => 27; }
-public sealed class Shard28 : IShardIndex { public static int Index => 28; }
-public sealed class Shard29 : IShardIndex { public static int Index => 29; }
-public sealed class Shard30 : IShardIndex { public static int Index => 30; }
-public sealed class Shard31 : IShardIndex { public static int Index => 31; }
-public sealed class Shard32 : IShardIndex { public static int Index => 32; }
-public sealed class Shard33 : IShardIndex { public static int Index => 33; }
-public sealed class Shard34 : IShardIndex { public static int Index => 34; }
-public sealed class Shard35 : IShardIndex { public static int Index => 35; }
-public sealed class Shard36 : IShardIndex { public static int Index => 36; }
-public sealed class Shard37 : IShardIndex { public static int Index => 37; }

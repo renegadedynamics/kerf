@@ -86,7 +86,7 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output) : ICorpusTes
     /// The cases the corpus test runs, a row each in DrawVolumeCellsCommandsShard*Tests (decision 27801): the runnable ones
     /// but those that measure memory (DrawCheapGapsCorpusTests') and those that also need unit 6L's Boolean commands.
     /// </summary>
-    public static CorpusPlan Corpus { get; } = new(4, () =>
+    public static CorpusPlan Corpus { get; } = new(8, () =>
     {
         DrawInterpreter aWithout6L = Load();
         DrawBooleanCorpusTests.Before6LBop(aWithout6L);

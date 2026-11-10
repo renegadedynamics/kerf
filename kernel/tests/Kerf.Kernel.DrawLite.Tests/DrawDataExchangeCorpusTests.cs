@@ -124,7 +124,7 @@ public partial class DrawDataExchangeCorpusTests(ITestOutputHelper output) : ICo
     private static IEnumerable<DrawCaseScan> Using8W => SharedCorpus.Scans.Where(s => Unit8WCommands.Any(s.Commands.Contains));
 
     /// <summary>The cases the corpus test runs, those 8W made runnable, a row each in DrawDataExchangeCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(2, () => SharedCorpus.NewlyRunnable(Using8W, Before8W));
+    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.NewlyRunnable(Using8W, Before8W));
 
     [Fact]
     public void Corpus_cases_using_unit_8Ws_commands_run_after_8W()

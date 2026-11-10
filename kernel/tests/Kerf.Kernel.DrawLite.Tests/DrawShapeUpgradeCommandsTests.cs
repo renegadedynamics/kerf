@@ -84,7 +84,7 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output) : ICorpusTe
     }
 
     /// <summary>The cases the corpus test runs, a row each in DrawShapeUpgradeCommandsShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(17, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("unifysamedom")).Where(s => s.IsRunnable).Select(s => s.Case));
+    public static CorpusPlan Corpus { get; } = new(7, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("unifysamedom")).Where(s => s.IsRunnable).Select(s => s.Case));
 
     /// <summary>
     /// The corpus cases that use unifysamedom: how many are runnable before and after unit 6U, and how the newly

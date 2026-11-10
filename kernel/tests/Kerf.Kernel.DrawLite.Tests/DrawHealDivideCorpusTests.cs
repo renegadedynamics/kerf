@@ -51,7 +51,7 @@ public class DrawHealDivideCorpusTests(ITestOutputHelper output) : ICorpusTest
                        || DrawBooleanCorpusTests.KnownFailures.Contains(theRun.Case.Id), $"{theRun.Case.Id}: {theRun.Status}");
 
     /// <summary>The cases the corpus test runs, those only 7C made runnable, a row each in DrawHealDivideCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(34, () => SharedCorpus.NewlyRunnable(Using7C, Before7C, "OCCTNET_7C_FILTER"), Check);
+    public static CorpusPlan Corpus { get; } = new(13, () => SharedCorpus.NewlyRunnable(Using7C, Before7C, "OCCTNET_7C_FILTER"), Check);
 
     [Fact]
     public void Corpus_cases_using_the_healing_commands_of_7C_run()

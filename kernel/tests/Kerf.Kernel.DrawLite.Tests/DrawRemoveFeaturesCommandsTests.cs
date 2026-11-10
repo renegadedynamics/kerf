@@ -59,7 +59,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output) : ICorpus
     }
 
     /// <summary>The cases the corpus test runs, a row each in DrawRemoveFeaturesCommandsShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(2, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("removefeatures")).Where(s => s.IsRunnable).Select(s => s.Case));
+    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("removefeatures")).Where(s => s.IsRunnable).Select(s => s.Case));
 
     /// <summary>The corpus cases that use removefeatures: runnable before and after, and how they end.</summary>
     [Fact]

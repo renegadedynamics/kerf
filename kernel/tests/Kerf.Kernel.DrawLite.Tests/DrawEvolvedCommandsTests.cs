@@ -59,7 +59,7 @@ public class DrawEvolvedCommandsTests(ITestOutputHelper output) : ICorpusTest
     }
 
     /// <summary>The cases the corpus test runs, a row each in DrawEvolvedCommandsShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("evolved")).Where(s => s.IsRunnable).Select(s => s.Case));
+    public static CorpusPlan Corpus { get; } = new(2, () => SharedCorpus.Scans.Where(s => s.Commands.Contains("evolved")).Where(s => s.IsRunnable).Select(s => s.Case));
 
     [Fact]
     public void Corpus_cases_using_evolved_before_and_after_5O2()

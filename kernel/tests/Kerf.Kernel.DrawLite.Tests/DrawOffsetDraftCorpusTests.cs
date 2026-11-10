@@ -50,7 +50,7 @@ public class DrawOffsetDraftCorpusTests(ITestOutputHelper output) : ICorpusTest
                        || DrawFilletCorpusTests.KnownFailures.ContainsKey(theRun.Case.Id), $"{theRun.Case.Id}: {theRun.Status}");
 
     /// <summary>The cases the corpus test runs, those only 7G made runnable, a row each in DrawOffsetDraftCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(38, () => SharedCorpus.NewlyRunnable(Using7G, Before7G, "OCCTNET_7G_FILTER"), Check);
+    public static CorpusPlan Corpus { get; } = new(24, () => SharedCorpus.NewlyRunnable(Using7G, Before7G, "OCCTNET_7G_FILTER"), Check);
 
     [Fact]
     public void Corpus_cases_using_the_offset_and_draft_commands_of_7G_run()

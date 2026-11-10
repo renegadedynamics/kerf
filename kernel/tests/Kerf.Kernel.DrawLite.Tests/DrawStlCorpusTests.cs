@@ -83,7 +83,7 @@ public class DrawStlCorpusTests(ITestOutputHelper output) : ICorpusTest
 
     /// <summary>The cases the corpus test runs, a row each in DrawStlCorpusShard*Tests (decision 27801).</summary>
     public static CorpusPlan Corpus { get; } =
-        new(3, () => ToRun(Using8H1.Where(s => s.IsRunnable).Select(s => s.Case), Environment.GetEnvironmentVariable("OCCTNET_8H1_FILTER")));
+        new(1, () => ToRun(Using8H1.Where(s => s.IsRunnable).Select(s => s.Case), Environment.GetEnvironmentVariable("OCCTNET_8H1_FILTER")));
 
     [Fact]
     public void Corpus_cases_using_the_STL_commands_run_after_8H1()

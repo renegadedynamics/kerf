@@ -51,7 +51,7 @@ public class DrawHealCorpusTests(ITestOutputHelper output) : ICorpusTest
                        .Where(s => !DrawStepCafCorpusTests.IsDeStepCase(s.Case));
 
     /// <summary>The cases the corpus test runs, a row each in DrawHealCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(29, () => Using6L.Where(s => s.IsRunnable).Select(s => s.Case));
+    public static CorpusPlan Corpus { get; } = new(11, () => Using6L.Where(s => s.IsRunnable).Select(s => s.Case));
 
     [Fact]
     public void Corpus_cases_using_the_healing_commands_run_before_and_after_6L()

@@ -88,7 +88,7 @@ public class DrawPeriodicityCommandsTests(ITestOutputHelper output) : ICorpusTes
     }
 
     /// <summary>The cases the corpus test runs, a row each in DrawPeriodicityCommandsShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => s.Commands.Overlaps(Commands)).Where(s => s.IsRunnable).Select(s => s.Case));
+    public static CorpusPlan Corpus { get; } = new(2, () => SharedCorpus.Scans.Where(s => s.Commands.Overlaps(Commands)).Where(s => s.IsRunnable).Select(s => s.Case));
 
     /// <summary>
     /// The corpus cases using these commands: how many are runnable before and after them, and how the runnable ones

@@ -83,7 +83,7 @@ public class DrawBopCheckCommandsTests(ITestOutputHelper output) : ICorpusTest
         => theScans.Where(s => s.IsRunnable && !DrawCheapGapsCorpusTests.MeasuresMemory(s)).Select(s => s.Case).ToList();
 
     /// <summary>The cases the corpus test runs, a row each in DrawBopCheckCommandsShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(8, () => ToRun(UsingCheck));
+    public static CorpusPlan Corpus { get; } = new(13, () => ToRun(UsingCheck));
 
     /// <summary>
     /// The corpus cases that use the check commands: how many are runnable before and after them, and how the newly

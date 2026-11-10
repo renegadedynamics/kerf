@@ -61,7 +61,7 @@ public class DrawIntersectCorpusTests(ITestOutputHelper output) : ICorpusTest
     private static IEnumerable<DrawCaseScan> UsingIntersect => SharedCorpus.Scans.Where(s => s.Commands.Contains("intersect"));
 
     /// <summary>The cases the corpus test runs: those using intersect, runnable after 5G; a row each in DrawIntersectCorpusShard*Tests.</summary>
-    public static CorpusPlan Corpus { get; } = new(8, () => UsingIntersect.Where(s => s.IsRunnable).Select(s => s.Case));
+    public static CorpusPlan Corpus { get; } = new(3, () => UsingIntersect.Where(s => s.IsRunnable).Select(s => s.Case));
 
     [Fact]
     public void Corpus_cases_using_intersect_run_before_and_after_5G()

@@ -69,7 +69,7 @@ public class DrawStepCafCorpusTests(ITestOutputHelper output) : ICorpusTest
     }
 
     /// <summary>The cases the corpus test runs, those 8G2 made runnable, a row each in DrawStepCafCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(9, () => SharedCorpus.NewlyRunnable(Using8G2, Before8G2, "OCCTNET_8G2_FILTER"));
+    public static CorpusPlan Corpus { get; } = new(16, () => SharedCorpus.NewlyRunnable(Using8G2, Before8G2, "OCCTNET_8G2_FILTER"));
 
     [Fact]
     public void Corpus_cases_using_the_document_STEP_commands_run_after_8G2()

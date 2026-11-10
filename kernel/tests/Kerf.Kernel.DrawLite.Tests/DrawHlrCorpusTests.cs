@@ -121,7 +121,7 @@ public class DrawHlrCorpusTests(ITestOutputHelper output) : ICorpusTest
 
     /// <summary>The cases the corpus test runs, a row each in DrawHlrCorpusShard*Tests (decision 27801).</summary>
     public static CorpusPlan Corpus { get; } =
-        new(8, () => ToRun(UsingHlr.Where(s => s.IsRunnable).Select(s => s.Case), Environment.GetEnvironmentVariable("OCCTNET_7Q2_FILTER")));
+        new(4, () => ToRun(UsingHlr.Where(s => s.IsRunnable).Select(s => s.Case), Environment.GetEnvironmentVariable("OCCTNET_7Q2_FILTER")));
 
     [Fact]
     public void Corpus_cases_using_the_HLR_commands_run_after_7Q2()

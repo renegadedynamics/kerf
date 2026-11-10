@@ -95,7 +95,7 @@ public class DrawStepCorpusTests(ITestOutputHelper output) : ICorpusTest
                        .Where(s => !DrawCheapGapsCorpusTests.MeasuresMemory(s));
 
     /// <summary>The cases the corpus test runs, those 8F made runnable, a row each in DrawStepCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(3, () => SharedCorpus.NewlyRunnable(Using8F, Before8F, "OCCTNET_8F_FILTER"));
+    public static CorpusPlan Corpus { get; } = new(6, () => SharedCorpus.NewlyRunnable(Using8F, Before8F, "OCCTNET_8F_FILTER"));
 
     [Fact]
     public void Corpus_cases_using_the_STEP_commands_run_after_8F()

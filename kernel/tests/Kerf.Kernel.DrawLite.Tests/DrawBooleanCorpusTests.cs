@@ -69,7 +69,7 @@ public class DrawBooleanCorpusTests(ITestOutputHelper output) : ICorpusTest
     }
 
     /// <summary>The cases the corpus test runs, a row each in DrawBooleanCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(26, () => ToRun([.. UsingBop]));
+    public static CorpusPlan Corpus { get; } = new(24, () => ToRun([.. UsingBop]));
 
     [Fact]
     public void Corpus_cases_using_the_Boolean_commands_run_before_and_after_6L()

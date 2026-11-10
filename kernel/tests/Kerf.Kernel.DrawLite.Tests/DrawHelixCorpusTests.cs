@@ -74,7 +74,7 @@ public class DrawHelixCorpusTests(ITestOutputHelper output) : ICorpusTest
     }
 
     /// <summary>The cases the corpus test runs, a row each in DrawHelixCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(1, () => SharedCorpus.Scans.Where(s => Unit7DCommands.Any(s.Commands.Contains)).Where(s => s.IsRunnable).Select(s => s.Case));
+    public static CorpusPlan Corpus { get; } = new(3, () => SharedCorpus.Scans.Where(s => Unit7DCommands.Any(s.Commands.Contains)).Where(s => s.IsRunnable).Select(s => s.Case));
 
     [Fact]
     public void Corpus_cases_using_the_helix_commands_run_after_7D()

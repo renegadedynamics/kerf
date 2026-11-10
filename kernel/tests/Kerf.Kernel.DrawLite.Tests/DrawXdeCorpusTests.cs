@@ -63,7 +63,7 @@ public class DrawXdeCorpusTests(ITestOutputHelper output) : ICorpusTest
     }
 
     /// <summary>The cases the corpus test runs, a row each in DrawXdeCorpusShard*Tests (decision 27801).</summary>
-    public static CorpusPlan Corpus { get; } = new(5, () => ToRun([.. Using8G1], Environment.GetEnvironmentVariable("OCCTNET_8G1_FILTER")));
+    public static CorpusPlan Corpus { get; } = new(3, () => ToRun([.. Using8G1], Environment.GetEnvironmentVariable("OCCTNET_8G1_FILTER")));
 
     [Fact]
     public void Corpus_cases_using_the_XDE_commands_run_after_8G1()

@@ -89,7 +89,7 @@ public class DrawOffsetCommandsTests(ITestOutputHelper output) : ICorpusTest
         => Assert.True(theRun.Passed || theRun.Status.StartsWith("SKIPPED", StringComparison.Ordinal), $"{theRun.Case.Id}: {theRun.Status}");
 
     /// <summary>The cases the corpus test runs: those using the commands, runnable after 5O2; a row each in DrawOffsetCommandsShard*Tests.</summary>
-    public static CorpusPlan Corpus { get; } = new(9, () => UsingOffset.Where(s => s.IsRunnable).Select(s => s.Case), Check);
+    public static CorpusPlan Corpus { get; } = new(14, () => UsingOffset.Where(s => s.IsRunnable).Select(s => s.Case), Check);
 
     [Fact]
     public void Corpus_cases_using_mkoffset_or_openoffset_before_and_after_5O2()
