@@ -73,14 +73,16 @@ internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, IS
     {
         private TheBndType _bnd; // bounding geometry
         private TheObjType _object; // the object
-        private TreeNode[]? _children; // 2 children forming a b-tree
+        // 2 children forming a b-tree, both null for a leaf: two fields where OCCT has an array of two (unit 15F)
+        private TreeNode? _child0;
+        private TreeNode? _child1;
         private TreeNode? _parent; // the parent node
 
         internal TreeNode(in TheObjType obj, in TheBndType bnd)
         {
             _bnd = bnd;
             _object = obj;
-            _children = null;
+            _child0 = _child1 = null;
             _parent = null;
         }
 
@@ -88,11 +90,11 @@ internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, IS
         {
             _bnd = new TheBndType();
             _object = Default<TheObjType>.Value;
-            _children = null;
+            _child0 = _child1 = null;
             _parent = null;
         }
 
-        public bool IsLeaf => _children is null;
+        public bool IsLeaf => _child0 is null;
 
         public bool IsRoot => _parent is null;
 
@@ -102,9 +104,9 @@ internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, IS
 
         public TheObjType Object() => _object;
 
-        public TreeNode Child(int i) => _children![i];
+        public TreeNode Child(int i) => (i == 0 ? _child0 : _child1)!;
 
-        internal TreeNode ChangeChild(int i) => _children![i];
+        internal TreeNode ChangeChild(int i) => (i == 0 ? _child0 : _child1)!;
 
         public TreeNode Parent() => _parent!;
 
@@ -118,21 +120,23 @@ internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, IS
         /// <param name="bnd">bounding volume of theObj.</param>
         internal void Gemmate(in TheBndType newBnd, in TheObjType obj, in TheBndType bnd)
         {
-            TreeNode[] children = [new TreeNode(), new TreeNode()];
+            TreeNode child0 = new(), child1 = new();
             // children[0] = *this
-            children[0]._bnd = _bnd;
-            children[0]._object = _object;
-            children[0]._children = _children;
-            children[0]._parent = _parent;
-            children[1]._object = obj;
-            children[1]._bnd = bnd;
-            children[0]._parent = children[1]._parent = this;
+            child0._bnd = _bnd;
+            child0._object = _object;
+            child0._child0 = _child0;
+            child0._child1 = _child1;
+            child0._parent = _parent;
+            child1._object = obj;
+            child1._bnd = bnd;
+            child0._parent = child1._parent = this;
             if (!IsLeaf)
             {
-                _children![0]._parent = children[0];
-                _children[1]._parent = children[0];
+                _child0!._parent = child0;
+                _child1!._parent = child0;
             }
-            _children = children;
+            _child0 = child0;
+            _child1 = child1;
             _bnd = newBnd;
             _object = Default<TheObjType>.Value; // nullify myObject
         }
@@ -142,15 +146,15 @@ internal class SpatialTree<TheObjType, TheBndType> where TheBndType : struct, IS
         {
             if (!IsLeaf)
             {
-                TreeNode[] oldChildren = _children!;
-                int iopp = 1 - i;
-                _bnd = oldChildren[iopp]._bnd;
-                _object = oldChildren[iopp]._object;
-                _children = oldChildren[iopp]._children;
+                TreeNode other = (i == 0 ? _child1 : _child0)!;
+                _bnd = other._bnd;
+                _object = other._object;
+                _child0 = other._child0;
+                _child1 = other._child1;
                 if (!IsLeaf)
                 {
-                    _children![0]._parent = this;
-                    _children[1]._parent = this;
+                    _child0!._parent = this;
+                    _child1!._parent = this;
                 }
                 // OCCT destroys the other child and frees the killed branch: the garbage collector does
             }
