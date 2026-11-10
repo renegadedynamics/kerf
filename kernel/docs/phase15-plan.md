@@ -53,6 +53,13 @@ time in a quiet window; anything that slows another case past the bar waits for 
 | **15J** A gate that runs what a change touches | Item 2 of decision 2085's list: the gate chooses its suites from the paths a change touches. First a test that the kernel's projects can't depend on Kerf.Modeling, so a change to the modelling layer can skip the kernel's suites. | The test in the gate; the choice of suites in the merge script, with a full run before each release; the time saved measured on a few merges. **Done** (decision 2118): `choose-suites.pl` chooses from the changed paths and the `.csproj` graph, `merge-unit.sh` runs its choice by default, everything with `--all`, for a `release/` branch or what no rule places; `ProjectGraphTests` keeps the kernel off Kerf.Modeling. Replayed on the last ten merges: three run no suite (about 7 minutes of tests saved each), seven run every suite or all but Foundation's. |
 | **15K** The status page | The status page published at 0.4.0 moved to 0.5.0 and phase 15. | Republished. **Done**, 10 November 2026, at the same link. |
 
+## 5. Added on 11 November 2026 (decision 2123)
+
+| Unit | What | Done when |
+|---|---|---|
+| **15L** Fillets whose edges cross | OCCT #1570 at 5.5 is a valid-looking success with two pairs of edges crossing (decision 2120). The owner: the check on by default, and a generous window to make it cheaper. The edge-level self-interference check after every fillet (and chamfer, where it applies), failing a result whose edges cross, saying so; then made as cheap as it can be: what it checks only where the fillet could have made a crossing (the new faces and their neighbours), boxes first, kept data reused. | On by default; #1570 at 5.5 fails, saying why; no new false failures over the corpus's fillets and chamfers and the users' cases; its cost measured on the rig, the users' cases and the enclosure, and as small as the unit could make it. |
+| **15M** Rewriting OCCT's algorithms: a study | The owner: "a partial or full rewrite of fillets would be expensive but might also fix a number of problems along with a potential gain in performance... A similar thought process may apply to booleans, chamfers, and possibly others." A study, not code: for fillets (ChFi3d), chamfers, Booleans, and others the evidence points to, what a partial or full rewrite would fix (counted from the corpus, occt-issues.md, occt-defects.md, reliability.md and the decisions), what it might gain (from the profiles), what it would cost, the risks, and the ways in (a new path for common cases with OCCT's as the fallback, or a replacement), each with a recommendation. | `kernel/docs/rewrite-study.md`, for the owner to decide whether and where to pursue it. |
+
 ## Not in this phase
 
 - SVG and DXF import.
