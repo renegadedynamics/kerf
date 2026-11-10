@@ -411,7 +411,9 @@ internal class TrigonometricFunctionRoots
             do
             {
                 bko = false;
-                DirectPolynomialRoots resol4 = new(ko[1], ko[2], ko[3], ko[4], ko[5]);
+                // A factor's constant lost to cancellation is kept: a circle crossing a cylinder either side of a touch
+                // came back with both crossings at the touch (decision 2127)
+                DirectPolynomialRoots resol4 = new(ko[1], ko[2], ko[3], ko[4], ko[5], true);
                 if (!resol4.IsDone)
                 {
                     _done = false;
