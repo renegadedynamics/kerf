@@ -2357,3 +2357,8 @@ Found by unit 12J:
 | Where | What | Seen | State |
 |---|---|---|---|
 | ChFi3d, a concave fillet that runs over a convex fillet's torus | Its blend is off the rolling ball by up to 6.8e-3 at a radius of 0.3 (2.3%), 1.6e-2 where the branch is 0.5, and not tangent to the torus along their contact by up to 0.1 radians; the cylinder-to-cylinder stretch 1.2e-4 to 5.1e-4. Valid, and reported as a success | The crossing cylinders built in two steps (each rimmed at 0.3, fused, then the loop where they meet), 21 radii of the branch (decision 2139) | for unit 15R, with decision 2134's |
+## Found by unit 15S
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| ChFi3d (`ChFi3d_Builder::PerformMoreThreeCorner`), a corner with one stripe | A stripe's common point on an arc is taken as the corner's point on its sharp edge, at its parameter on its own arc, and the connection on the face marked a point with no curve, whatever arc it lies on. Where the stripe ran onto another edge of its face before the corner, the corner's point is at the wrong place and the face's side of the corner is missing: two faces with open wires | Six chamfer sequences on `8_J1.draw` and `4_L1.draw` at step 2, natively invalid (OCCT's TODOs), and `equal_dist_sequence/B4` step 3 | fixed in the port where the point is at a vertex of the sharp edge (decision 2143); the other five fail, for unit 15U (decision 2144) |

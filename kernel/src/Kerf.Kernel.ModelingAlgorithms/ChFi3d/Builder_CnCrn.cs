@@ -142,6 +142,39 @@ internal partial class FilletBuilderBase
     //           can be even twisted (grid tests cfi900 B1)
     //=======================================================================
 
+    /// <summary>
+    /// Kerf: the parameter on a sharp edge of the corner of a stripe's common point, when the point is on that edge or at
+    /// one of its vertices (decision 2143). OCCT takes the point's parameter on whatever arc it lies on as one on the
+    /// sharp edge, so a stripe that ran onto another edge of its face before the corner put the corner's point on the sharp
+    /// edge at a parameter of that other edge, and left out its curve on the face between them.
+    /// </summary>
+    private static bool OnSharpEdge(in CommonPoint cp, in Shape sharpEdge, out double parameter)
+    {
+        parameter = 0.0;
+        if (!cp.IsOnArc)
+        {
+            return false;
+        }
+        Edge e = ShapeCasts.Edge(sharpEdge);
+        if (cp.Arc().IsSame(e))
+        {
+            parameter = cp.ParameterOnArc();
+            return true;
+        }
+        if (cp.IsVertex)
+        {
+            for (Explorer ex = new(e, ShapeType.Vertex); ex.More(); ex.Next())
+            {
+                if (ex.Current().IsSame(cp.Vertex()))
+                {
+                    parameter = Tool.Parameter(ShapeCasts.Vertex(ex.Current()), e);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     //=======================================================================
     // function : PerformMoreThreeCorner
     // purpose  : Process case of a top with n edges.
@@ -1125,10 +1158,10 @@ internal partial class FilletBuilderBase
                     {
                         // step back till Common Points
                         // without leaving the Edge ??
-                        if (d2 < d1 && cp1.IsOnArc)
+                        if (d2 < d1 && OnSharpEdge(cp1, evive.Value(ic), out double w1))
                         {
                             // cp1 is chosen
-                            p.SetValue(ic, icmoins, cp1.ParameterOnArc());
+                            p.SetValue(ic, icmoins, w1);
                             p.SetValue(ic, icplus, p.Value(ic, icmoins));
                             isfirst = (sens.Value(icplus) == 1);
                             jfp = 3 - jf.Value(icplus);
@@ -1139,10 +1172,10 @@ internal partial class FilletBuilderBase
                                 tolcp = cp1.Tolerance();
                             }
                         }
-                        else if (cp2.IsOnArc)
+                        else if (OnSharpEdge(cp2, evive.Value(ic), out double w2))
                         {
                             // cp2 is chosen
-                            p.SetValue(ic, icmoins, cp2.ParameterOnArc());
+                            p.SetValue(ic, icmoins, w2);
                             p.SetValue(ic, icplus, p.Value(ic, icmoins));
                             isfirst = (sens.Value(icmoins) == 1);
                             Calcul_Param(cd.Value(icmoins), jf.Value(icmoins), i.Value(icmoins, ic), isfirst, ref para);
@@ -1159,10 +1192,10 @@ internal partial class FilletBuilderBase
                         if (!sharp.Value(icplus))
                         {
                             if ((cp1.Point().DistanceTo(pe) < cp1.Tolerance() || samecompoint || nconges == 1)
-                                    && cp1.IsOnArc)
+                                    && OnSharpEdge(cp1, evive.Value(ic), out double w1))
                             {
                                 // it is very close to cp1
-                                p.SetValue(ic, icmoins, cp1.ParameterOnArc());
+                                p.SetValue(ic, icmoins, w1);
                                 ponctuel.SetValue(ic, true);
                                 p.SetValue(ic, icplus, p.Value(ic, icmoins));
                                 isfirst = (sens.Value(icplus) == 1);
@@ -1178,11 +1211,11 @@ internal partial class FilletBuilderBase
                         if (!sharp.Value(icmoins))
                         {
                             if ((cp2.Point().DistanceTo(pe) < cp2.Tolerance() || samecompoint || nconges == 1)
-                                    && cp2.IsOnArc)
+                                    && OnSharpEdge(cp2, evive.Value(ic), out double w2))
                             {
                                 // it is very close to cp2
                                 ponctuel.SetValue(icmoins, true);
-                                p.SetValue(ic, icmoins, cp2.ParameterOnArc());
+                                p.SetValue(ic, icmoins, w2);
                                 p.SetValue(ic, icplus, p.Value(ic, icmoins));
                                 isfirst = (sens.Value(icmoins) == 1);
                                 Calcul_Param(cd.Value(icmoins), jf.Value(icmoins), i.Value(icmoins, ic), isfirst, ref para);

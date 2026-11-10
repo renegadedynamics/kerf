@@ -114,10 +114,9 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
     /// <summary>
     /// A chamfer on an open shell whose curves don't close a loop on a face (decision 1735). Native OCCT gives an invalid
     /// shape, and the port lost the face and looked valid, with nothing to say so. It now fails, where OCCT's TODO expects
-    /// the invalid shape.
+    /// the invalid shape. In each, the stripe ran onto another edge of its face before the corner (decision 2143).
     /// </summary>
     [Theory]
-    [InlineData("chamfer/dist_angle_sequence/B6")]
     [InlineData("chamfer/dist_dist_sequence/B7")]
     [InlineData("chamfer/dist_dist_sequence/B9")]
     [InlineData("chamfer/equal_dist_sequence/B5")]
@@ -130,6 +129,22 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
         Assert.StartsWith("FAILED", aRun.Status, StringComparison.Ordinal);
         Assert.Contains("compute of chamfer failed", aRun.Log, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A chamfer whose stripe ends, on one face, at a vertex of the corner's sharp edge (decision 2143): OCCT put the
+    /// corner's point on that edge at the vertex's parameter on another edge, and left out the corner's curve on the face, so
+    /// two faces had open wires (native's result is invalid, as OCCT's TODO says) and the port refused. Now the point is the
+    /// vertex, and step 2 is valid: the case reads IMPROVEMENT.
+    /// </summary>
+    [Fact]
+    public void A_chamfer_corner_whose_stripe_ends_at_a_vertex_of_its_sharp_edge_is_built()
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        DrawTestCase aCase = aCorpus.Cases().Single(c => c.Id == "chamfer/dist_angle_sequence/B6");
+        DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
+        Assert.StartsWith("IMPROVEMENT", aRun.Status, StringComparison.Ordinal);
+        Assert.Contains("This shape seems to be valid", aRun.Log, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -277,10 +292,10 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
     internal static readonly Dictionary<string, string> KnownFailures = new(StringComparer.Ordinal)
     {
         ["chamfer/dist_angle_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port's is invalid with far fewer faces",
-        ["chamfer/dist_angle_sequence/B6"] = "native invalid at step 2 too; the port refuses (decision 1735)",
         ["chamfer/dist_dist_sequence/B7"] = "native invalid at step 2 too; the port refuses (decision 1735)",
         ["chamfer/dist_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port refuses (decision 1735)",
         ["chamfer/equal_dist_sequence/A5"] = "native invalid at step 15 too (decision 1722); the port's is invalid with far fewer faces, not OCCT's TODO's 10 faulty shapes",
+        ["chamfer/equal_dist_sequence/B4"] = "native invalid at step 3 (OCCT's TODO; on MacOS it fails); the port refuses: its stripe runs onto another edge before the corner (decision 2143)",
         ["chamfer/equal_dist_sequence/B5"] = "native invalid at step 2 too; the port refuses (decision 1735)",
         ["chamfer/equal_dist_sequence/B7"] = "native invalid at step 2 too; the port refuses (decision 1735)",
         ["chamfer/equal_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port refuses (decision 1735)",
