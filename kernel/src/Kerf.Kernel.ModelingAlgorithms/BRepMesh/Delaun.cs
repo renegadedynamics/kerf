@@ -1128,6 +1128,9 @@ internal sealed class Delaun
 
         List<int> failedFrontiers = new();
         NCollection_IntDataMap<bool> loopEdges = new(10);
+        // Each deleted triangle binds its edges and unbinds those bound twice: the nodes are used again (unit 15F); no
+        // iterator stands on the map while it loses keys
+        loopEdges.KeepNodes();
         NCollection_PackedMapOfInteger intFrontierEdges = new();
 
         for (int pass = 1; pass <= 2; ++pass)
