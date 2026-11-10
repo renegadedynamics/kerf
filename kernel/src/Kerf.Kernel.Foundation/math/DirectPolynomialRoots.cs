@@ -49,12 +49,22 @@ internal class DirectPolynomialRoots
     private bool _infiniteStatus; //!< Infinite solutions flag (0*x + 0 = 0)
     private int _nbSol;           //!< Number of real roots found (0 to 4)
     private readonly double[] _roots = new double[4]; //!< Array storing computed real roots
+    private readonly bool _keepsSmallFactor;
 
     /// <summary>The real roots of Ax^4 + Bx^3 + Cx^2 + Dx + E = 0 (Ferrari's method).</summary>
-    public DirectPolynomialRoots(double a, double b, double c, double d, double e)
+    public DirectPolynomialRoots(double a, double b, double c, double d, double e) : this(a, b, c, d, e, false)
+    {
+    }
+
+    /// <summary>
+    /// The real roots of Ax^4 + Bx^3 + Cx^2 + Dx + E = 0 (Ferrari's method); with <paramref name="keepsSmallFactor"/>,
+    /// a factor's constant that cancellation left without a digit is taken from the factors' product (decision 28631).
+    /// </summary>
+    public DirectPolynomialRoots(double a, double b, double c, double d, double e, bool keepsSmallFactor)
     {
         _infiniteStatus = false;
         _done = true;
+        _keepsSmallFactor = keepsSmallFactor;
         Solve(a, b, c, d, e);
     }
 
@@ -167,7 +177,7 @@ internal class DirectPolynomialRoots
         }
 
         // Factor into two quadratics
-        QuarticFactorization factors = FactorQuarticViaFerrari(scaled.A, scaled.B, scaled.C, scaled.D, y0);
+        QuarticFactorization factors = FactorQuarticViaFerrari(scaled.A, scaled.B, scaled.C, scaled.D, y0, _keepsSmallFactor);
 
         // Solve first quadratic
         DirectPolynomialRoots quadratic1 = new(1.0, factors.P1, factors.Q1);
@@ -716,7 +726,7 @@ internal class DirectPolynomialRoots
     }
 
     // Factors quartic into two quadratics using Ferrari's method
-    private static QuarticFactorization FactorQuarticViaFerrari(double a, double b, double c, double d, double y0)
+    private static QuarticFactorization FactorQuarticViaFerrari(double a, double b, double c, double d, double y0, bool keepsSmallFactor)
     {
         QuarticFactorization factors;
 
@@ -756,7 +766,9 @@ internal class DirectPolynomialRoots
         // that crosses a cylinder 1e-6 radians either side of a touch saw no crossing (decision 28631). The small one is
         // taken from the product there, as the stable quadratic formula does. (p0 can be noise there too, which leaves one
         // of such a pair wrong; taking it from the cubic's term moved a Boolean against native, so it's left: decision 28631.)
-        if (q0 > 0.0)
+        // Only for the trigonometric equations, whose Newton step then finds the crossing: everywhere, it moved a 2D offset
+        // and a bisector against native.
+        if (keepsSmallFactor && q0 > 0.0)
         {
             if (Math.Abs(factors.Q2) < CancelledShare * Math.Abs(factors.Q1))
             {

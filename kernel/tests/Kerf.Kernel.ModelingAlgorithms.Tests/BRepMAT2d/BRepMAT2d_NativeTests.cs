@@ -31,18 +31,13 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
     [Fact]
     public void EveryCase_BitIdentical()
     {
-        int aNbDiff = 0, aNbIntended = 0, aNbNear = 0;
+        int aNbDiff = 0, aNbIntended = 0;
         foreach (MatRecordings.Case aCase in MatRecordings.Cases)
         {
             List<string> aPort = MatRecordings.Run(aCase.Input);
             if (IsOneClosedEdge(aCase, aPort))
             {
                 aNbIntended++;
-                continue;
-            }
-            if (IsNear(aCase.Native, aPort))
-            {
-                aNbNear++;
                 continue;
             }
             if (!aPort.SequenceEqual(aCase.Native))
@@ -61,51 +56,8 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
                 }
             }
         }
-        theOutput.WriteLine($"{MatRecordings.Cases.Count} cases, {aNbIntended} intended differences, {aNbNear} near, {aNbDiff} different");
+        theOutput.WriteLine($"{MatRecordings.Cases.Count} cases, {aNbIntended} intended differences, {aNbDiff} different");
         Assert.Equal(0, aNbDiff);
-        Assert.True(aNbNear <= 1, $"{aNbNear} near");
-    }
-
-    // Decision 28631: a quartic's factor constant that cancellation had made 0 is taken from the factors' product, so a
-    // bisector found through it can differ from native's in its last digits (one case, 1e-11 of its size): the same
-    // tokens, each double within 1e-9 of native's, relative to the larger of it and 1.
-    private static bool IsNear(string[] theNative, List<string> thePort)
-    {
-        if (thePort.Count != theNative.Length || thePort.SequenceEqual(theNative))
-        {
-            return false;
-        }
-        for (int i = 0; i < theNative.Length; i++)
-        {
-            if (theNative[i] == thePort[i])
-            {
-                continue;
-            }
-            string[] aN = theNative[i].Split(':', ','), aP = thePort[i].Split(':', ',');
-            if (aN.Length != aP.Length)
-            {
-                return false;
-            }
-            for (int j = 0; j < aN.Length; j++)
-            {
-                if (aN[j] == aP[j])
-                {
-                    continue;
-                }
-                if (aN[j].Length != 16 || aP[j].Length != 16
-                    || !ulong.TryParse(aN[j], System.Globalization.NumberStyles.HexNumber, null, out ulong aNb)
-                    || !ulong.TryParse(aP[j], System.Globalization.NumberStyles.HexNumber, null, out ulong aPb))
-                {
-                    return false;
-                }
-                double aNv = BitConverter.UInt64BitsToDouble(aNb), aPv = BitConverter.UInt64BitsToDouble(aPb);
-                if (!(Math.Abs(aNv - aPv) <= 1e-9 * Math.Max(1.0, Math.Abs(aNv))))
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     // Plan 3.2's third level (occt-issues.md, unit 5M's MAT2d_Mat2d::CreateMat row; Kerf unit 10K1, decision 1438): a
