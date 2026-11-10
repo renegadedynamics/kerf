@@ -79,6 +79,14 @@ time in a quiet window; anything that slows another case past the bar waits for 
 | **15U** Chamfer corners carried on to meet | 15P: the corpus's eleven corner failures on Bézier and B-spline faces and B4: chamfer faces carried on until they meet, by a general fuse. About 2 units. | After 15S. |
 | **15V** Chamfer corners on B-spline faces | 15P: the loft's 969 corner failures: Kerf's own chamfer faces on B-spline faces. About 2 to 3 units. | After 15U. |
 
+## 8. OCCT's fillet sections, and the next script (decision 2145)
+
+| Unit | What | Done when |
+|---|---|---|
+| **15W** ChFi3d's sections square to the ball's path | 15R (decisions 2141, 2142): `BlendFunc_ConstRad` puts each section in the plane square to the edge, where the ball's circle lies square to the path of its centre, so walked fillets are off the ball, up to 2.4e-2 at r 1 on common pairs of faces, growing as the radius cubed; native OCCT the same. The owner: "schedule the work to fix it." About two to three units, in slices: the walk's sections first, then the fillets' ends and corners. | Every walked fillet on 15R's fourteen pairs on the ball (15N's ball test) to the approximation's tolerance; the corpus's fillets and the users' cases unchanged in status, their volumes moving towards the right value, each move recorded. |
+
+15D's first script is Renegade's shaft gauges (`hardware-coupon`, `products/rowing-strain/enclosure/kerf/ShaftGauge`, 031bd55): small, but text engraved, fillets after Booleans and a chamfer round every rim, which the enclosure doesn't exercise.
+
 ## Not in this phase
 
 - SVG and DXF import.
