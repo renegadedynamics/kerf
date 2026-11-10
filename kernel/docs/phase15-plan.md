@@ -22,7 +22,7 @@ the API documentation, and no client is changed here (2039).
 
 | Unit | What | Done when |
 |---|---|---|
-| **15A** Parallel volumes as an option | Decision 2081's integration of a volume's faces on several threads, off since decision 2088, offered to callers: a caller building one large part gains about 20% of its wall time, and a caller already running builds side by side loses processor time and waits, so it's off unless asked for. The option goes where the volumes are measured for the caller: the Boolean's options (its volume check, decision 1860), `Volume` and the mass properties, and a scope for code that doesn't pass options, following `Cancellation.Use` (it flows as decision 2076's scopes do). The shape of the API is put to the owner before it's merged. | The option on, the same values to the bit as off (the 8,724 properties of decision 2081 and its test); off, the rig's figures as 0.5.0's; on, the enclosure built by one caller measured in a quiet window; the guide's section 9 says when to use it; the public API record, both CHANGELOGs. |
+| **15A** Parallel volumes as an option | Decision 2081's integration of a volume's faces on several threads, off since decision 2088, offered to callers: a caller building one large part gains about 20% of its wall time, and a caller already running builds side by side loses processor time and waits, so it's off unless asked for. The option goes where the volumes are measured for the caller: the Boolean's options (its volume check, decision 1860), `Volume` and the mass properties, and a scope for code that doesn't pass options, following `Cancellation.Use` (it flows as decision 2076's scopes do). The owner chose both, a setting and a scope (decision 2092). | The option on, the same values to the bit as off (the 8,724 properties of decision 2081 and its test); off, the rig's figures as 0.5.0's; on, the enclosure built by one caller measured in a quiet window; the guide's section 9 says when to use it; the public API record, both CHANGELOGs. |
 
 ## 2. The hot paths left from phase 14 (14B)
 
@@ -68,5 +68,6 @@ and the release check against 0.5.0's packages. Nothing is pushed, except by the
 
 ## Questions for the owner
 
-1. **15A:** an option on the operations' options records plus a scope, as above, or the scope alone? I'd suggest both.
+1. **15A:** an option on the operations' options records plus a scope, as above, or the scope alone? **Both** (the owner,
+   decision 2092).
 2. **15D:** which script next, and when?

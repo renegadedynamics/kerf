@@ -17104,3 +17104,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        crash (15G), extrude-until's PNG at 17% more bytes (15H), the 25 faces 1.002 to 1.035 times over their deflection with no
        warning (15I), a gate choosing its suites by the paths a change touches (15J), and the status page (15K). For the owner to agree,
        with two questions: 15A's API shape and 15D's next script.
+2092. **15A's parallel volumes are turned on by a setting in an operation's options and by a scope for the code inside it** (the owner,
+       10 November 2026: "15A - parallel volumes on with a setting, plus the block of code"). The setting where a caller passes options;
+       the scope, as `Cancellation.Use`'s, for code that passes none. Off by default. The owner also chose Fable 5.2 for helpers on
+       15B, 15G, 15H and 15I, to try it out.
