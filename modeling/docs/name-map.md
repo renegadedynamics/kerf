@@ -106,6 +106,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | `Compound(children=[…])` | `new Assembly([…])`; children hold no parent link |
 | `Shape.cast(topods)` | Nothing: it is the kernel's shape; `ModelShape.For(shape)` for an object |
 | `SkipClean()` context | `using (new SkipClean()) { … }` |
+| (none: OCP integrates on one thread) | `using (ParallelVolumes.Use()) { … }`, or `parallelVolumes: true` on `cut`, `fuse`, `intersect` and `compute_volume`: volumes integrated on several threads, the same figures (guide, section 9) |
 | `warnings.warn` | `using var w = Warnings.Capture();` then `w.Messages`: per operation, not global |
 | `topo_explore_connected_edges`, `edges_to_wires`, … | `edge.ConnectedEdges`, `edge.ConnectedFaces`, `Wire.Combine`, …; `Vertex.CommonVertex` |
 | `topo_distance_to(shapes)` | Internal |
