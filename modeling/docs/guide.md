@@ -185,7 +185,8 @@ chamfered all round, so one straight edge of a rounded outline is held to the ar
 `MaxFillet`, finds the largest single length that builds: the proved limit where it builds, or else just under it, by
 twice the shape's tolerance there, where that builds (1.6999998 on the box above, whose corners close to a point at
 1.7), and otherwise a search to within 0.1. The kernel's `ChamferSizeLimit` and `FilletSizeLimit` give the limit with
-that tolerance. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
+that tolerance. Where two cylinders meet and turn tangent, as in a tee of equal cylinders, the fillet narrows to nothing at
+those points; Kerf builds it where OCCT's fails, and checks it by rolling the ball over it. A shell is `Offset` with `Openings`, negative to go inwards. 2D offsets of sketches and curves are `Offset`
 too, with `Kind` (`Arc`, `Intersection`) and `Side` in `OffsetOptions`.
 
 **Chamfers past tight corners** (a Kerf addition: build123d and OCCT have nothing like it). A chamfer longer than the
