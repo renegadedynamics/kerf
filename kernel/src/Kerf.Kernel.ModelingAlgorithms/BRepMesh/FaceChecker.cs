@@ -20,7 +20,9 @@ namespace Kerf.Engine.Meshing;
 /// </summary>
 /// <remarks>
 /// The wires are checked in parallel when the parameters ask for it and the face has several. Each loop body writes
-/// only its wire's slot; the pcurves are only read.
+/// only its wire's slot; the pcurves are only read. OCCT's trees of segments are NCollection_EBTree, which also maps
+/// each object to its leaf; the checker only selects from them, and the segments' indices are distinct, so the port
+/// builds the plain tree, the same tree without the map (unit 15F).
 /// </remarks>
 internal class FaceChecker : Transient
 {
@@ -55,7 +57,7 @@ internal class FaceChecker : Transient
     private readonly ToolParameters _parameters; // OCCT holds a reference; the caller's doesn't change meanwhile
 
     private NCollection_Array1<List<Segment>?>? _wiresSegments;
-    private NCollection_Array1<IndexedSpatialTree<int, Box2d>?>? _wiresBndBoxTree;
+    private NCollection_Array1<SpatialTree<int, Box2d>?>? _wiresBndBoxTree;
     private NCollection_Array1<HashSet<EdgeModel>?>? _wiresIntersectingEdges;
     private HashSet<EdgeModel>? _intersectingEdges;
 
@@ -106,7 +108,7 @@ internal class FaceChecker : Transient
         BndBox2dTreeSelector selector = new(2 * _dFace.GetDeflection());
         for (int wireIt = wireIndex; wireIt < _dFace.WiresNb(); ++wireIt)
         {
-            IndexedSpatialTree<int, Box2d> bndBoxTree2 = _wiresBndBoxTree!.Value(wireIt)!;
+            SpatialTree<int, Box2d> bndBoxTree2 = _wiresBndBoxTree!.Value(wireIt)!;
             List<Segment> segments2 = _wiresSegments.Value(wireIt)!;
 
             selector.SetSegments(segments2);
@@ -149,11 +151,11 @@ internal class FaceChecker : Transient
     {
         private readonly FaceModel _dFace;
         private readonly NCollection_Array1<List<Segment>?> _wiresSegments;
-        private readonly NCollection_Array1<IndexedSpatialTree<int, Box2d>?> _wiresBndBoxTree;
+        private readonly NCollection_Array1<SpatialTree<int, Box2d>?> _wiresBndBoxTree;
 
         public SegmentsFiller(FaceModel dFace,
                               out NCollection_Array1<List<Segment>?> wiresSegments,
-                              out NCollection_Array1<IndexedSpatialTree<int, Box2d>?> wiresBndBoxTree)
+                              out NCollection_Array1<SpatialTree<int, Box2d>?> wiresBndBoxTree)
         {
             _dFace = dFace;
             _wiresSegments = wiresSegments = new(0, _dFace.WiresNb() - 1);
@@ -172,7 +174,7 @@ internal class FaceChecker : Transient
             }
 
             List<Segment> segments = new(segmentCount);
-            IndexedSpatialTree<int, Box2d> bndBoxTree = new();
+            SpatialTree<int, Box2d> bndBoxTree = new();
 
             _wiresSegments[wireIndex] = segments;
             _wiresBndBoxTree[wireIndex] = bndBoxTree;
