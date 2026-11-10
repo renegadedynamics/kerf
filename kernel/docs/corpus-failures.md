@@ -52,7 +52,8 @@ fillet2d grids and the fillet cases elsewhere were rerun after the fixes. The wh
 | bugs/modalg_7/bug26034 | Native, with exceptions compiled in, gives the same warning (unit 7W) |
 | chamfer/dist_angle_sequence/A5, chamfer/equal_dist_sequence/A5 | Native's result is invalid at step 15 too. The port's is invalid with far fewer faces: see "Faces lost silently" |
 | chamfer/dist_dist_sequence/B9, chamfer/equal_dist_sequence/B9 | Native's result is invalid at step 2 too, and the same |
-| chamfer/dist_angle_sequence/B6, chamfer/dist_dist_sequence/B7, chamfer/equal_dist_sequence B5 and B7 | Native's result is invalid at step 2 too. The port refuses, where OCCT's TODO expects the invalid shape (decision 1735) |
+| chamfer/dist_dist_sequence/B7, chamfer/equal_dist_sequence B5 and B7 | Native's result is invalid at step 2 too. The port refuses, where OCCT's TODO expects the invalid shape (decision 1735); the cause is ChFi3d's one-stripe corner (decision 29601). dist_angle_sequence/B6 is built since (IMPROVEMENT) |
+| chamfer/equal_dist_sequence/B4 | Native's result is invalid at step 3 (OCCT's TODO; on MacOS it fails). The port refuses since decision 29601, for the same corner |
 
 ### Draw-lite's limits
 

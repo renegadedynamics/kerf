@@ -2351,3 +2351,9 @@ Found by unit 12J:
 | ChFi3d's walk (`BRepBlend`, `ChFi3d_Builder::ComputeData`), a fillet that vanishes where its faces turn tangent | The walk fails going towards the point where the two faces become tangent (decision 1925) | reliability.md's equal tee, 514 of 2,508 radii | worked round: built by stage 4a where ChFi3d fails (decision 2133) |
 | ChFi3d, the same fillet where it builds | Its surface is off the rolling ball by up to 1.6e-2 at a radius of 2.5 (0.65%), 1.2e-3 at 1, 3.4e-5 at 0.3, with a sliver face of 7e-8 at 2.5; the volume it adds 1.3% out at 2.5. Valid, and within no tolerance it states | The equal tee filleted at 0.3, 1 and 2.5, against the ball and the slices (decision 2134) | for the owner (decision 2134) |
 | ChFi3d, a branch flush with a cylinder's side | Throws rather than failing, so nothing after it is tried | A cylinder of 2 along y at x = 3 fused to one of 5 along z, its junction filleted at 0.05 to 1 | touch |
+
+## Found by unit 15S
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| ChFi3d (`ChFi3d_Builder::PerformMoreThreeCorner`), a corner with one stripe | A stripe's common point on an arc is taken as the corner's point on its sharp edge, at its parameter on its own arc, and the connection on the face marked a point with no curve, whatever arc it lies on. Where the stripe ran onto another edge of its face before the corner, the corner's point is at the wrong place and the face's side of the corner is missing: two faces with open wires | Six chamfer sequences on `8_J1.draw` and `4_L1.draw` at step 2, natively invalid (OCCT's TODOs), and `equal_dist_sequence/B4` step 3 | fixed in the port where the point is at a vertex of the sharp edge (decision 29601); the other five fail, for unit 15U (decision 29602) |
