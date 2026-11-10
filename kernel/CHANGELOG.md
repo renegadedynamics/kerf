@@ -5,6 +5,8 @@ version may break the API.
 
 ## Unreleased
 
+- **A volume's integration no longer zeroes its whole work set for every face,** and a shape's validity check builds its shell's edge map once: the same results to the bit, a little less time and memory on long chains of Booleans (decisions 2095 to 2097).
+
 ## 0.5.0
 
 - **Text and drawing sheets:** a managed font reader (TrueType, OpenType, collections) with Liberation Sans shipped, text
