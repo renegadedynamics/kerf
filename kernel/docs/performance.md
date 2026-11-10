@@ -2092,3 +2092,37 @@ it was: 4,091 cases run of 4,093 (OK 3,301, SKIPPED 786, BAD 2, FAILED 1, IMPROV
 **Not changed, and why:** what the checks keep for each new face is the report, read after the check (above). The wires'
 and faces' geometric checks are OCCT's, on faces that are new, and 11Q found them spread out with little to cut. The
 volume check's classifications are 15C's.
+
+## Wasteful cases, first slice (unit 15F)
+
+*10 November 2026, decisions 28701 to 28705. Other helpers shared the machine with the owner: **times here are from a loaded
+machine** and decide nothing; the verdicts rest on bytes (every thread, median of 9 warm runs, alternate processes of main
+and the branch on 2 processors) and on counts. The harness and traces are in the scratchpad's `p15f` folder.*
+
+**Chosen** (decision 28701), by bytes against native's time and against neighbours: the users' `chamfer-housing` (40% more
+bytes than `collapse-housing`, which does more), Bento's `9 chamfer, fillet` (the most bytes per millisecond of native's
+time), and Bento's `6 point lists` (the only example slower than native).
+
+| Where the bytes went | Share | Change |
+|---|---:|---|
+| The housing's chamfer: edges projected onto their planes again, a direct table of 64 losing them to collisions | 29% | a table of 256 sets of four (decision 28702) |
+| The box's chamfer and fillet: `IsTangentFaces` between planes, adaptors and samples for an answer the normals give | 22% | the planes' angle first (decision 28703) |
+| The point lists: the face checker's trees and the frontier's map in the mesher, the extrema's unused solver | about 8% | decision 28704 |
+
+| Bytes, MB | main | branch | |
+|---|---:|---:|---:|
+| `chamfer-housing` | 5.4 to 6.5 | 4.67 to 4.79 | −17% to −28% |
+| `9 chamfer, fillet` | 7.62 | 6.09 | −20% |
+| `6 point lists` | 3.33 | 3.18 | −4.5% |
+| `fuse-boss` | 14.2 | 11.4 | −19.5% |
+| `fuse-detent` | 19.1 | 16.5 | −13.5% |
+| `29 bottle` | 36.9 | 33.3 | −9.8% |
+| Bento's eleven examples | 125.9 | 119.3 | −5.2% |
+| `enclosure`, a build | 2,807 | 2,694 | −4.0% |
+| `enclosure-v0.16`, a build | 2,789 | 2,668 | −4.3% |
+
+Every result the same; no case more bytes outside the processes' noise (±2%). The suites: Foundation 2,563 passed,
+ModelingData 3,376, ModelingAlgorithms 6,084 (9 skipped), DataExchange 454 (2 skipped), Modeling 2,650, in Release on 2
+threads; the filtered corpus as `corpus-13.txt`. **Left:** the point lists' meshing, spread over the face checker's tree
+nodes (5%), the cell filter's and the node map's growth (5%) and the Delaunay structure; time for a quiet window
+(`quiet-15f.sh`).

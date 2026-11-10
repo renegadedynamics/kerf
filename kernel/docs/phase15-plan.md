@@ -40,7 +40,7 @@ time in a quiet window; anything that slows another case past the bar waits for 
 | Unit | What | Done when |
 |---|---|---|
 | **15E** Phase 12's open units (13H) | 12G (cylinders of radius 500: the steps that still fail, loudly), 12J (on down occt-defects.md from where decision 1936 left it), and slices of 12Q and 12R (coverage and tests of their own). 12F (the equal tee) only if a client hits it. | Ongoing, as each was; each slice recorded. |
-| **15F** Wasteful cases (13L) | On to decision 1829's bar, with the users' cases and the enclosure in the list. | Ongoing. |
+| **15F** Wasteful cases (13L) | On to decision 1829's bar, with the users' cases and the enclosure in the list. | Ongoing. **First slice stopped** (decisions 28701 to 28705): the housing's chamfer, Bento's chamfer and fillet, and Bento's point lists chosen; curves on planes kept in a table that no longer loses them to collisions, planes further apart than `IsTangentFaces`' angle answered without its samples, and four small wastes in the mesher and the extrema. The chamfer and fillet −20% bytes, the housing's chamfer −17% to −28%, the boss's fuse −19.5%, Bento's examples together −5.2%, the point lists −4.5% (under the bar); every result the same, the filtered corpus as `corpus-13.txt`. Time left for a quiet window (`quiet-15f.sh`). Next: the point lists' meshing (the face checker's tree nodes, the cell filter's and the node map's growth). |
 
 ## 4. Loose ends from 0.5.0
 

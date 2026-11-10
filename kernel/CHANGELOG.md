@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **Fewer bytes for chamfers, fillets and parts read from STEP files,** the same results to the bit: a chamfer or fillet between planar faces about 20% fewer, a small part fused onto a large one read from STEP about 13% to 20%, and Bento's examples about 5% (decisions 28702 to 28704).
 - **A volume's integration no longer zeroes its whole work set for every face,** and a shape's validity check builds its shell's edge map once: the same results to the bit, a little less time and memory on long chains of Booleans (decisions 2095 to 2097).
 - **Parallel volumes, as a caller chooses** (decision 2092): `BooleanOptions.ParallelVolumes` and
   `MassOptions.ParallelVolumes` integrate a volume of 16 faces or more on several threads, the figures and the check's
