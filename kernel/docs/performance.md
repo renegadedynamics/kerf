@@ -2162,5 +2162,6 @@ classifier against a new one.
 **Tried and left out:** taking a point as outside when a ray along an axis passes clear of every face's box: no point of
 the enclosure's grids escapes (they lie in the parts' cavities), and an open solid's classifier calls 11 escaping points
 IN. **Left:** the checks' grid points in large parts are still classified one by one, each projecting itself onto a face
-and intersecting its line with the faces it nears, OCCT's way; a classifier shared within a check still carries OCCT's
-parallel flag from point to point (decision 2111), which can only pass a point over.
+and intersecting its line with the faces it nears, OCCT's way. A classifier shared within a check carried OCCT's parallel
+flag from point to point (decision 2111) until unit 15C2, which sets it back before every point (decision 28521): no point
+of the suites' or the corpus's checks changed state, and the reset costs nothing measurable.
