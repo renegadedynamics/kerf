@@ -51,4 +51,30 @@ public class FilletCrossingTests
         Assert.InRange(largest, 4.6, 5.3);
         Assert.True(Fillet(part, [edges[0], edges[7]], largest).IsSuccess);
     }
+
+    [Fact]
+    public void A_fillet_whose_face_narrows_to_a_point_is_built()
+    {
+        // The corpus's blend/simple/X4 (kernel decision 29301): a block with a half round notch of 30 in its front, the front's
+        // top edge beside the notch filleted at 30, where the fillet's line on the top just reaches the notch's deepest point. The
+        // cylinder's seam is turned away from the notch's edges, as the corpus's file has it
+        Part block = new Box(120, 100, 50) - new Pos(0, -50, 0) * new Rotation(z: -90) * new Cylinder(30, 50);
+        var edge = block.Edges().Where(e => e.GeomType == GeomType.Line && Math.Abs(e.Center().Y + 50) < 1e-9
+                                            && Math.Abs(e.Center().Z - 25) < 1e-9 && e.Center().X > 30).Single();
+        Result<Part> filleted = Fillet(block, [edge], 30);
+        Assert.True(filleted.IsSuccess);
+        Part part = filleted.Value;
+        Assert.True(part.IsValid);
+        Assert.Equal(10, part.Faces().Count);
+
+        // The block less the fillet's corner all along it, less what the notch had already taken, by the section
+        double expected = 120.0 * 100 * 50 - Math.PI * 900 / 2 * 50 - 120 * (1 - Math.PI / 4) * 900;
+        const int n = 200_000;
+        for (int i = 0; i < n; i++)
+        {
+            double u = 30.0 * (i + 0.5) / n;
+            expected += 2 * Math.Sqrt(900 - u * u) * (30 - Math.Sqrt(900 - (30 - u) * (30 - u))) * (30.0 / n);
+        }
+        Assert.Equal(expected, part.Volume, 0.01);
+    }
 }
