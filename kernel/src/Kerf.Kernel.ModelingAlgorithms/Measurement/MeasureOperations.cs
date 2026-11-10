@@ -218,6 +218,7 @@ public static class MeasureOperations
     private static Properties Integrate(in Shape shape, Dimension dimension, MassOptions? options, bool massOnly = false)
     {
         options ??= MassOptions.Default;
+        using ParallelVolumes.Scope parallel = ParallelVolumes.Enter(options.ParallelVolumes);
         var props = new Properties();
         switch (dimension)
         {

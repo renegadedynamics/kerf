@@ -80,9 +80,12 @@ public static partial class ShapeExtensions
         /// <summary>The surface area of all the faces in this shape.</summary>
         public double Area => self.IsEmpty ? 0.0 : TopoUtil.Area(self.AsShape());
 
-        /// <summary>The measure OCCT computes for the shape's kind: length, area or volume (build123d's <c>compute_volume</c>).</summary>
-        public double ComputeVolume()
+        /// <summary>The measure OCCT computes for the shape's kind: length, area or volume (build123d's <c>compute_volume</c>).
+        /// <paramref name="parallelVolumes"/> integrates a volume's faces on several threads (true) or one (false), the figure the
+        /// same either way; null follows <see cref="ParallelVolumes"/>, off unless a scope turns it on (decision 2092).</summary>
+        public double ComputeVolume(bool? parallelVolumes = null)
         {
+            using ParallelVolumes.Scope parallel = TopoUtil.ParallelVolumesFor(parallelVolumes);
             if (self.IsEmpty || self.AsShape().IsVertex())
                 return 0.0;
             return TopoUtil.ShapeTypeOf(self.AsShape()) switch

@@ -360,7 +360,7 @@ internal static class MassPropertiesBuilder
                                                 bool massOnly = false,
                                                 bool exactPlanes = false)
     {
-        if (!useTriangulation && ParallelVolumes.Value && !OsdParallel.IsSerial
+        if (!useTriangulation && ParallelVolumes.Current && !OsdParallel.IsSerial
             && TryVolumeFacesInParallel(s, props, refPnt, eps, skipShared, massOnly, exactPlanes, out double inParallel))
         {
             return inParallel;
@@ -472,28 +472,16 @@ internal static class MassPropertiesBuilder
     /// <summary>
     /// How many faces a volume must integrate (not exactly planar, not meshed) before they are integrated on several
     /// threads (unit 14F): below it, the loop's cost is a larger share than the faces', and short operations stay serial.
+    /// Only where <see cref="ParallelVolumes"/> is in force, or the operation's options ask for it (decision 2092).
     /// </summary>
     internal const int ParallelFacesFrom = 16;
 
     /// <summary>
-    /// Whether volumes integrate their faces on several threads at all: off (decision 2088, the owner's for 0.5.0), as it
-    /// cost a caller already running operations side by side more processor time and waits than it saved, until callers
-    /// can ask for it. <see cref="ParallelVolumesScope"/> turns it on for the flow that opens it, for the tests.
+    /// How many times this thread has integrated a volume's faces on several threads, for the tests that a setting reached the
+    /// integration (decision 2092). Counted on the thread that asked for the volume, so a test reads only its own.
     /// </summary>
-    private static readonly AsyncLocal<bool> ParallelVolumes = new();
-
-    /// <summary>Volumes integrated on several threads in this flow until the scope is disposed (decision 2088).</summary>
-    internal static IDisposable ParallelVolumesScope()
-    {
-        bool previous = ParallelVolumes.Value;
-        ParallelVolumes.Value = true;
-        return new ParallelVolumesRestore(previous);
-    }
-
-    private sealed class ParallelVolumesRestore(bool previous) : IDisposable
-    {
-        public void Dispose() => ParallelVolumes.Value = previous;
-    }
+    [ThreadStatic]
+    internal static int ParallelIntegrationsOnThisThread;
 
     /// <summary>
     /// <see cref="VolumePropertiesFaces"/> with the faces integrated on several threads, each with its own integrand,
@@ -563,6 +551,7 @@ internal static class MassPropertiesBuilder
             return false;
         }
 
+        ParallelIntegrationsOnThisThread++;
         var systems = new global::Kerf.Engine.Measurement.Vinert?[faces.Count];
         var failures = new Exception?[faces.Count];
         Point3D location = refPnt;

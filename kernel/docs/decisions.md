@@ -17141,3 +17141,38 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        the note goes in the header of the .md and the .tsv (`failed`) and at the end of the output, the comparison is printed if one
        was asked for, and only then does it exit with 1. Rehearsed with the fix taken out and the 1 MB budget, `-Only first-bento-today,
        first-bento-files -Quick`: 3 of 3 failed and were noted, the files suite ran, both files were written, exit code 1.
+2101. **Parallel volumes are a caller's choice: `BooleanOptions.ParallelVolumes`, `MassOptions.ParallelVolumes`, and the scope `ParallelVolumes.Use()`, off by default, the same bits on and off** (unit 15A; decisions 2081, 2088 and 2092).
+       **The scope** (`Kerf.ParallelVolumes`, in Kerf.Kernel.Foundation beside `Cancellation`): `Use(bool on = true)` returns a
+       `readonly struct Scope`, `Current` reads the setting in force (false outside every scope). It is decision 2076's machinery,
+       now shared: `AmbientScope<T>` (internal) holds a value, its parent and a `volatile` ended flag, kept in an `AsyncLocal`,
+       a reader passing over ended scopes to the innermost open one, and `Cancellation` is rebuilt on it with its behaviour and
+       public API unchanged. So the scope flows into tasks and `Parallel` loops started inside it, ends on dispose wherever that
+       runs, and a task that outlives it goes back to the setting outside. `Use(false)` turns it off inside an outer scope.
+       **The setting** is a `bool?` on each options record, null following the scope, so an explicit setting overrides the scope
+       either way: `BooleanOptions.ParallelVolumes` (the check of decision 1860 and the rest of the operation) and
+       `MassOptions.ParallelVolumes` (`IntegrateVolume`, `MassProperties` and the other measures taking `MassOptions`). An
+       operation given a setting other than the one in force opens a scope of it for its own run (`ParallelVolumes.Enter`, as
+       `Cancellation.Enter`); with none, nothing is allocated and only the options' field is read. **Kerf.Modeling**, whose
+       Booleans keep build123d's signatures and take no options record, takes `bool? parallelVolumes = null` on `Cut<T>(IEnumerable<T>)`,
+       `Fuse` and `Intersect` (the forms with option arguments) and on `ComputeVolume`; operators, `Volume` and the other mass
+       properties, which can take no argument, follow the scope. Decision 2088's internal `MassPropertiesBuilder.ParallelVolumesScope`
+       is gone: `BRepGPropKnownAnswerTests` uses the public scope. A `[ThreadStatic]` count of parallel integrations, internal,
+       lets the tests see that a setting reached the integration (it changes no result). **Thread-safety:** nothing new is shared
+       between threads but the scope objects, whose only mutable state is the `volatile` flag, as decision 2076's.
+       **Shown the same:** decision 2081's test (24 spheres, three tolerances, against the serial scope, bit for bit, and now that
+       it went parallel); `ParallelVolumesTests` in the kernel (mass properties and `IntegrateVolume` on and off and in the scope,
+       bit for bit; a cut of a plate by 20 cylinders with its check on and off, the same shape and volume; the scope's nesting,
+       flow into tasks and loops, and ending from another task) and in the modelling layer (`Cut`, the operators in the scope,
+       `Fuse` and `Intersect`, the same BREP to the byte; `Volume`, `ComputeVolume`, the inertia and moments, the same bits);
+       and decision 2081's run again, every BREP of OCCT's dataset under 400 kB, volume and area properties at three tolerances on 2
+       processors, each with `MassOptions.ParallelVolumes` false and true: 8,728 properties, 0 differing, 195 of them integrated
+       in parallel; the 8,722 that 14F's run also has (each run stops a file at a time limit) are 14F's bits. **Off, nothing changes:** the code that measures is 0.5.0's but for the options' null field and the scope's
+       read, which an `AsyncLocal` read was before. Bytes against 0.5.0 (main, whose code is 0.5.0's), all threads, interleaved
+       processes on 2 processors: five Booleans (a plate less 20 holes, two boxes fused, a boss on a plate, a sphere less a torus,
+       a chamfered block) 19.5 to 19.9 MB, 3.63 to 3.70, 1.67 to 1.70, 2.71 to 2.75 and 4.88 to 5.12 on the branch, against 0.5.0's
+       19.5 to 19.9, 3.60 to 3.70, 1.66 to 1.70, 2.69 to 2.76 and 4.88 to 5.13, each side spreading over the same 2% between
+       processes; the rig's recalculation 113.4 to 120.3 MB against 113.9 to 119.4, its parallel round 116.0 to 120.1 against
+       116.7 to 120.0, every
+       result the same. **On, the enclosure built by one caller** is for a quiet window:
+       `quiet-15a.ps1` in the scratchpad's `p15a` folder (with 14F's harness and a `--parallel-volumes` flag), wall and processor
+       time, off and on interleaved, under the default collector and the host's settings.

@@ -6,6 +6,11 @@ version may break the API.
 ## Unreleased
 
 - **A volume's integration no longer zeroes its whole work set for every face,** and a shape's validity check builds its shell's edge map once: the same results to the bit, a little less time and memory on long chains of Booleans (decisions 2095 to 2097).
+- **Parallel volumes, as a caller chooses** (decision 2092): `BooleanOptions.ParallelVolumes` and
+  `MassOptions.ParallelVolumes` integrate a volume of 16 faces or more on several threads, the figures and the check's
+  verdict the same to the bit; `using (ParallelVolumes.Use()) { … }` (namespace `Kerf`) does it for the code inside, as
+  `Cancellation.Use` does, and an option overrides it either way. Off by default: for one large part on an idle
+  processor (about 20% less wall time for 40% to 65% more processor time), not for parts built side by side.
 
 ## 0.5.0
 
