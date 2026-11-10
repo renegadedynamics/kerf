@@ -352,7 +352,7 @@ internal static partial class FilletLimits
         {
             return null;
         }
-        return Safely(() => BuildRims(shape, specs) ?? BuildCorners(shape, specs) ?? BuildCornersOnUnified(shape, specs));
+        return Safely(() => BuildRims(shape, specs) ?? BuildCorners(shape, specs) ?? BuildCornersOnUnified(shape, specs) ?? BuildBlends(shape, specs));
     }
 
     /// <summary>The chamfer, under the same conditions as <see cref="Fillet"/>; a chamfer by an angle isn't handled.</summary>
