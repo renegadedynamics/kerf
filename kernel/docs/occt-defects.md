@@ -57,7 +57,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. `Kerf.Modeling`'s cut still fails, carrying the shape | 28601, 28602 |
+| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. `Kerf.Modeling`'s cut still fails, carrying the shape | 2103, 2104 |
 | #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 1937 |
 | `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 1936 |
 | #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 1935 |
