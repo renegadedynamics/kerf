@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Offset` of a loft from a square to a circle, outwards, now works** (kernel decision 29201): it failed at every
+  distance, "Bad orientation of subshape", as round joins made a face of no area at each corner where the side faces are
+  tangent, through `Offset` and `Offset3D` alike.
 - **A fillet or chamfer whose edges meet, or run along each other, fails** (kernel decision 2125): `Fillet` and `Chamfer`
   return the kernel's `fillet.self-intersecting` error, carrying the shape (`TryGetInvalid`) and naming the edges, the
   shorthand throws it with the advice to try a smaller radius, and `MaxFillet` stops below such a radius. OCCT #1570's

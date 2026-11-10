@@ -93,6 +93,8 @@ internal sealed partial class MakeOffset
     private Error _error;
     private readonly OffsetMakeLoops _makeLoops = new();
     private bool _isPerformSewing; // Handle bad walls in thicksolid mode.
+    // Kerf: a vertex's sphere was left out as it would enclose nothing, so the shells are sewn (unit 15O)
+    private bool _spheresLeftOut;
     private bool _isPlanar;
     private Shape _badShape = new();
     private readonly Dictionary<Shape, Shape> _facePlanfaceMap = new(ShapeHasher.Instance);
@@ -456,6 +458,7 @@ internal sealed partial class MakeOffset
         _isLinearizationAllowed = true;
         _done = false;
         _isPerformSewing = false;
+        _spheresLeftOut = false;
         _isPlanar = false;
         _overlay = null;
         _copies = null;
@@ -724,6 +727,7 @@ internal sealed partial class MakeOffset
     private void InternalMakeOffsetShape(ProgressRange range)
     {
         _done = false;
+        _spheresLeftOut = false;
         //
 
         // check if shape consists of only planar faces
@@ -895,6 +899,10 @@ internal sealed partial class MakeOffset
             // not done
             _done = false;
             return;
+        }
+        if (_spheresLeftOut)
+        {
+            SewWhereSpheresLeftOut();
         }
         //--------------
         // Unwinding 3D.
@@ -1846,19 +1854,30 @@ internal sealed partial class MakeOffset
                     {
                         loe.Append(mapSF.GetValue(it.Value()).InternalGenerated(v).Reversed());
                     }
-                    //----------------------
-                    // construction sphere.
-                    //-----------------------
-                    NCollection_List<Shape> lla = _analyse.Ancestors(la.First());
-                    Shape ff = lla.First();
-                    double curOffset = _offset;
-                    if (_faceOffset.ContainsKey(ff))
+                    // Kerf: where two of the faces are tangent at the vertex, though not along their edge, the tubes meet
+                    // there with no gap: the edge's tube ends in a point and the others' ends lie on each other. OCCT
+                    // still makes a sphere, a face of no area whose wire the check finds the wrong way round (a loft's
+                    // offset, unit 15O; decision 2129); it's left out, and the tubes sewn once the shells are made
+                    if (EnclosesNothing(loe, _tol))
                     {
-                        curOffset = _faceOffset.GetValue(ff);
+                        _spheresLeftOut = true;
                     }
+                    else
+                    {
+                        //----------------------
+                        // construction sphere.
+                        //-----------------------
+                        NCollection_List<Shape> lla = _analyse.Ancestors(la.First());
+                        Shape ff = lla.First();
+                        double curOffset = _offset;
+                        if (_faceOffset.ContainsKey(ff))
+                        {
+                            curOffset = _faceOffset.GetValue(ff);
+                        }
 
-                    Offset of = new(v, loe, curOffset);
-                    mapSF[v] = of;
+                        Offset of = new(v, loe, curOffset);
+                        mapSF[v] = of;
+                    }
                 }
                 //--------------------------------------------------------------
                 // Particular processing if V is at least a free border.
@@ -3444,6 +3463,115 @@ internal sealed partial class MakeOffset
                 {
                     s.Closed(true);
                 }
+            }
+        }
+    }
+
+    //=================================================================================================
+
+    // Kerf (unit 15O): whether the tubes' edges at a vertex enclose nothing, so its sphere would be a face of no area:
+    // each edge either a point, or lying on another of them, within the tolerance
+    private static bool EnclosesNothing(NCollection_List<Shape> tubeEdges, double tol)
+    {
+        const int nbSamples = 5;
+        List<Point3D[]> samples = [];
+        foreach (Shape s in tubeEdges)
+        {
+            Edge e = ShapeCasts.Edge(s);
+            if (Tool.Degenerated(e))
+            {
+                continue;
+            }
+            if (!Tool.IsGeometric(e))
+            {
+                return false;
+            }
+            EdgeCurveAdaptor curve = new(e);
+            double first = curve.FirstParameter(), last = curve.LastParameter();
+            var points = new Point3D[nbSamples];
+            for (int i = 0; i < nbSamples; i++)
+            {
+                points[i] = curve.Value(first + (last - first) * i / (nbSamples - 1));
+            }
+            if (!points.All(p => p.DistanceTo(points[0]) <= tol))
+            {
+                samples.Add(points);
+            }
+        }
+        // The edges that aren't points pair off, each lying on another, in either direction
+        var paired = new bool[samples.Count];
+        for (int i = 0; i < samples.Count; i++)
+        {
+            if (paired[i])
+            {
+                continue;
+            }
+            int j = i + 1;
+            for (; j < samples.Count; j++)
+            {
+                if (!paired[j] && (Coincide(samples[i], samples[j], reversed: true) || Coincide(samples[i], samples[j], reversed: false)))
+                {
+                    break;
+                }
+            }
+            if (j == samples.Count)
+            {
+                return false;
+            }
+            paired[i] = paired[j] = true;
+        }
+        return true;
+
+        bool Coincide(Point3D[] a, Point3D[] b, bool reversed)
+        {
+            for (int k = 0; k < nbSamples; k++)
+            {
+                if (a[k].DistanceTo(b[reversed ? nbSamples - 1 - k : k]) > tol)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    // Kerf (unit 15O): the shells sewn where a vertex's sphere was left out (BuildOffsetByArc), joining the tubes that meet
+    // there; the offset faces and edges the sewing changed get the sewn ones as their images, so the history follows
+    private void SewWhereSpheresLeftOut()
+    {
+        Sewing sew = new(_tol);
+        sew.Add(_offsetShape);
+        sew.Perform();
+        Shape sewn = sew.InternalSewedShape();
+        if (sewn.IsNull)
+        {
+            return;
+        }
+        foreach (ShapeType type in (ReadOnlySpan<ShapeType>)[ShapeType.Face, ShapeType.Edge])
+        {
+            HashSet<Shape> seen = new(ShapeHasher.Instance);
+            for (Explorer exp = new(_offsetShape, type); exp.More(); exp.Next())
+            {
+                Shape s = exp.Current();
+                if (!seen.Add(s) || _imageOffset.HasImage(s))
+                {
+                    continue;
+                }
+                Shape modified = sew.InternalModifiedSubShape(s);
+                if (!modified.IsNull && !modified.IsSame(s))
+                {
+                    _imageOffset.Bind(s, modified);
+                }
+            }
+        }
+        _offsetShape = sewn;
+        // Set correct value for closed flag, as MakeShells does
+        for (Explorer explo = new(_offsetShape, ShapeType.Shell); explo.More(); explo.Next())
+        {
+            Shape s = explo.Current();
+            if (!s.ClosedFlag && Tool.IsClosed(s))
+            {
+                s.Closed(true);
             }
         }
     }
