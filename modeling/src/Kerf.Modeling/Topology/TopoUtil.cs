@@ -269,6 +269,11 @@ internal static partial class TopoUtil
         return result.IsCompound() ? UnwrapCompound((Compound)result) : result;
     }
 
+    /// <summary>The scope of a modelling operation given a setting of <see cref="ParallelVolumes"/> of its own (decision 2092):
+    /// nothing when it has none, or the one in force.</summary>
+    internal static ParallelVolumes.Scope ParallelVolumesFor(bool? own) =>
+        own is { } on && on != ParallelVolumes.Current ? ParallelVolumes.Use(on) : default;
+
     /// <summary>
     /// The kernel's Boolean of a kind, as build123d runs OCCT's: in parallel, non-destructive (where an input needs a larger
     /// tolerance, OCCT works on a copy rather than changing it), and not simplified (the modelling layer's own clean does that).

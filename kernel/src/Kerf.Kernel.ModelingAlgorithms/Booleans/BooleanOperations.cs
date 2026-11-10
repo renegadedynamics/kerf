@@ -40,6 +40,14 @@ public sealed record BooleanOptions
     /// a later step can leave it out.</summary>
     public bool CheckResult { get; init; } = true;
 
+    /// <summary>
+    /// Integrate the volumes of <see cref="CheckResult"/>'s check, 16 faces or more, on several threads (true), or on one
+    /// (false), the result the same either way; null, the default, follows <see cref="Kerf.ParallelVolumes"/>, which is off
+    /// unless a scope turns it on. For one large part on a processor otherwise idle, not for parts built side by side
+    /// (decision 2092).
+    /// </summary>
+    public bool? ParallelVolumes { get; init; }
+
     /// <summary>For <see cref="BooleanOperations.Section"/>: approximate the section curves by B-splines: true by default,
     /// where OCCT's is false, as without it a section can lose most of a curve with no error (#1124; decision 1836).</summary>
     public bool ApproximateSection { get; init; } = true;
@@ -156,6 +164,7 @@ public static class BooleanOperations
                                             BooleanOptions? options, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         KernelArgumentNullException.ThrowIfNull(tools);
+        using ParallelVolumes.Scope parallel = ParallelVolumes.Enter(options?.ParallelVolumes);
         operation.SetTools(List(tools, nameof(tools)));
         Result<Built<Shape>> result = Run((BuilderAlgo)operation, arguments, options, progress, cancellationToken);
 

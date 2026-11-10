@@ -24,64 +24,23 @@ namespace Kerf;
 public static class Cancellation
 {
     // The innermost scope opened on this flow; an ended one is passed over to its parent
-    private static readonly AsyncLocal<Node?> Innermost = new();
+    private static readonly AsyncLocal<AmbientScope<CancellationToken>?> Innermost = new();
 
     /// <summary>The token in force here, or <see cref="CancellationToken.None"/>.</summary>
-    public static CancellationToken Current => Node.Live(Innermost.Value)?.Token ?? default;
+    public static CancellationToken Current => AmbientScope<CancellationToken>.Live(Innermost.Value)?.Value ?? default;
 
     /// <summary>Makes <paramref name="token"/> the one in force until the result is disposed.</summary>
-    public static Scope Use(CancellationToken token)
-    {
-        var node = new Node(token, Node.Live(Innermost.Value));
-        Innermost.Value = node;
-        return new Scope(node);
-    }
+    public static Scope Use(CancellationToken token) => new(AmbientScope<CancellationToken>.Open(Innermost, token));
 
     /// <summary>What <see cref="Use"/> returns: disposing it ends the scope, and the token that was in force outside it is again.</summary>
     public readonly struct Scope : IDisposable
     {
-        private readonly Node? _node;
+        private readonly AmbientScope<CancellationToken>? _scope;
 
-        internal Scope(Node node) => _node = node;
+        internal Scope(AmbientScope<CancellationToken> scope) => _scope = scope;
 
         /// <summary>Ends the scope, wherever it is disposed: on the flow that opened it, and in the tasks started from it.</summary>
-        public void Dispose()
-        {
-            if (_node is not { } node)
-            {
-                return;
-            }
-
-            node.End();
-            if (ReferenceEquals(Innermost.Value, node))
-            {
-                Innermost.Value = Node.Live(node.Parent);
-            }
-        }
-    }
-
-    /// <summary>A scope's token, and the scope it was opened in.</summary>
-    internal sealed class Node(CancellationToken token, Node? parent)
-    {
-        private volatile bool _ended;
-
-        public CancellationToken Token { get; } = token;
-
-        public Node? Parent { get; } = parent;
-
-        public void End() => _ended = true;
-
-        /// <summary>The innermost scope from <paramref name="node"/> out that hasn't ended.</summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Node? Live(Node? node)
-        {
-            while (node is { _ended: true })
-            {
-                node = node.Parent;
-            }
-
-            return node;
-        }
+        public void Dispose() => _scope?.End(Innermost);
     }
 
     /// <summary>The token an operation obeys: its own if it was given one, else the one in force.</summary>

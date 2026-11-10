@@ -1485,6 +1485,11 @@ public readonly struct Kerf.Geometry.Vector3D : IEquatable<Vector3D>
   public static bool op_Inequality(in Vector3D left, in Vector3D right)
   public static double op_Multiply(in Vector3D left, in Vector3D right)
   public void Deconstruct(out double x, out double y, out double z)
+public static class Kerf.ParallelVolumes
+  public static bool Current { get; }
+  public static ParallelVolumes.Scope Use(bool on = true)
+public readonly struct Kerf.ParallelVolumes.Scope : IDisposable
+  public void Dispose()
 public readonly struct Kerf.Result<T>
   public Diagnostic? Error { get; }
   public ImmutableArray<Diagnostic> Diagnostics { get; }
@@ -1567,6 +1572,7 @@ public sealed record Kerf.Booleans.BooleanOptions : IEquatable<BooleanOptions>
   public bool SectionCurvesOnFaces { get; init; }
   public bool Simplify { get; init; }
   public bool UseObb { get; init; }
+  public bool? ParallelVolumes { get; init; }
   public double FuzzyValue { get; init; }
   public static BooleanOptions Default { get; }
 public enum Kerf.Booleans.BooleanVolumeRule
@@ -2417,6 +2423,7 @@ public sealed record Kerf.Measurement.MassOptions : IEquatable<MassOptions>
   public bool OnlyClosed { get; init; }
   public bool SkipShared { get; init; }
   public bool UseTriangulation { get; init; }
+  public bool? ParallelVolumes { get; init; }
   public double Tolerance { get; init; }
   public static MassOptions Default { get; }
 public sealed record Kerf.Measurement.MassProperties : IEquatable<MassProperties>

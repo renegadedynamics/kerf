@@ -44,6 +44,13 @@ public sealed record MassOptions
 
     /// <summary>For volumes: count only the closed shells.</summary>
     public bool OnlyClosed { get; init; }
+
+    /// <summary>
+    /// For volumes: integrate 16 faces or more on several threads (true), or on one (false), the figures the same to the bit
+    /// either way; null, the default, follows <see cref="Kerf.ParallelVolumes"/>, which is off unless a scope turns it on. For
+    /// one large part on a processor otherwise idle, not for parts built side by side (decision 2092).
+    /// </summary>
+    public bool? ParallelVolumes { get; init; }
 }
 
 /// <summary>
