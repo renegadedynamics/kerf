@@ -2343,3 +2343,11 @@ Found by unit 12J:
 | ChFi3d (`ChFi3d_Builder`), a fillet face that narrows to a point | Where a fillet's face has no width at one point (its edge's faces tangent there, or its line just reaching a far edge), the builder sometimes splits the stripe there, with a degenerate section between two faces, and sometimes leaves one face whose two edges touch at the point with no vertex | The corpus's `tolblend_simple/B7` split at radii 10 to 25 and 80 to 150 and not at 30 to 70; `blend/simple/X4` at 30. Kerf puts the vertex in (decision 2131) | settled (decision 2131) |
 | ChFi3d, the curves of an edge where a fillet meets a cylinder | A spline's curve on the cylinder is 1.364e-4 from its 3D curve where the edge's tolerance says 1.229e-4; `BRepCheck`'s 22 points on the whole edge miss it | `blend/simple/X4`'s edge between the fillet and the notch's wall, found when it was split | settled: a split part's tolerance is the measured one (decision 2131) |
 | ChFi3d, a fillet that runs on past a notch | With the notch's cylinder's seam on the notch's edge at x = 30, the fillet of X4's edge fails ("couldn't be built on 1 edge") from 30 up; with the seam outside the block it runs on past the notch, as the corpus's file does | X4's block made with a cylinder of the default frame | touch |
+
+## Found by unit 15N
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| ChFi3d's walk (`BRepBlend`, `ChFi3d_Builder::ComputeData`), a fillet that vanishes where its faces turn tangent | The walk fails going towards the point where the two faces become tangent (decision 1925) | reliability.md's equal tee, 514 of 2,508 radii | worked round: built by stage 4a where ChFi3d fails (decision 29101) |
+| ChFi3d, the same fillet where it builds | Its surface is off the rolling ball by up to 1.6e-2 at a radius of 2.5 (0.65%), 1.2e-3 at 1, 3.4e-5 at 0.3, with a sliver face of 7e-8 at 2.5; the volume it adds 1.3% out at 2.5. Valid, and within no tolerance it states | The equal tee filleted at 0.3, 1 and 2.5, against the ball and the slices (decision 29102) | for the owner (decision 29102) |
+| ChFi3d, a branch flush with a cylinder's side | Throws rather than failing, so nothing after it is tried | A cylinder of 2 along y at x = 3 fused to one of 5 along z, its junction filleted at 0.05 to 1 | touch |

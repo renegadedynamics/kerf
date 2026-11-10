@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Fillet` where two cylinders meet and turn tangent, as in an equal tee, now builds** (kernel decision 29101):
+  a branch of the same radius through a cylinder, filleted where they meet, failed at about one radius in five,
+  mostly below 0.1; it now builds at every radius tried, each result checked by rolling the ball over it.
 - **`Offset` of a loft from a square to a circle, outwards, now works** (kernel decision 2129): it failed at every
   distance, "Bad orientation of subshape", as round joins made a face of no area at each corner where the side faces are
   tangent, through `Offset` and `Offset3D` alike.
