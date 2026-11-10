@@ -45,6 +45,12 @@ The Kerf model at `products/rowing-strain/enclosure/kerf/` in renegadedynamics/h
 14E and 14F start when 14A has reported and the machine is free of phase 13's helpers, and take their final figures in a
 quiet window. 14G can start when a helper's slot frees.
 
+## 3. The gate
+
+| Unit | What | Done when |
+|---|---|---|
+| **14H** The gate's slowest tests | DrawLite's long tests split so xUnit runs them side by side: a corpus test's cases as rows, long classes split, every case still run with the same checks; the collection that disables parallelisation looked at; tests that need to run alone put in a collection of their own. Measured before and after, the gate three times. | DrawLite no longer the longest project, and the gate near Kerf.Modeling.Tests' six minutes. **Done** (decisions 27801 to 27804): the gate's tests 1,246 s on main, 345, 368 and 350 s on the branch, every test passing, on an idle machine; Kerf.Modeling.Tests bounds it now, DrawLite next at 5.4 minutes. The corpus tests share one scan and one run of each case, their 12,329 cases rows of 204 shard classes, the same sets and counts; the mesh-defaults collection went (decision 1385 made it unneeded) and no test needed to run alone; Draw-lite's `lappend` in place and `glob`'s listing took the slowest case from 351 s to 3.4 s and the corpus cases three times quicker. |
+
 ## How the work runs
 
 As in phase 13, and alongside it: helpers on branches and worktrees of their own, the merge gate one at a time.

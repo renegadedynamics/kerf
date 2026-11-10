@@ -21,7 +21,12 @@ Merges `<branch>` into the branch checked out in the repository that holds this 
 4. **Runs `dotnet test Kerf.slnx -c Release` (the kernel and the modeling layer)** and commits only if everything passes (exit 3 and the merge left uncommitted
    otherwise). The failing tests' names are printed. The whole test output is kept in `.git/merge-unit-test.log`, with the failures' messages.
 
-A full gate takes about 25 minutes on an idle machine and up to an hour when several helpers share it. Merge units one
+Its tests take about six minutes on an idle machine, plus the build (decision 27804: 345 to 368 s, from 1,246 s before
+unit 14H), longer when helpers share the machine. The longest project bounds it: Kerf.Modeling.Tests (about 6 minutes),
+then DrawLite (5.5), DataExchange and ModelingAlgorithms (4 to 5). DrawLite's corpus cases are rows of shard classes over
+one shared scan and one run of each case (decision 27801), so a corpus test that grows wants more shards (its
+`CorpusPlan`'s count and a line each in `CorpusShards.cs`, about 30 s of case time a shard), not a class of its own.
+Merge units one
 at a time, each as its own command, and check the exit code directly: a pipe through `grep` hides it.
 
 If a gate fails for a reason outside the unit, fix it in the working tree (the merge is still staged), rerun the

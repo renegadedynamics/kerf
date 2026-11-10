@@ -5,7 +5,9 @@ using Xunit.Abstractions;
 namespace Kerf.Kernel.DrawLite.Tests;
 
 // The corpus tests' shard classes (decision 27801): one per shard of each plan, so that xUnit runs the shards side by
-// side. CorpusShardsTests checks that each plan has one class per shard, no more and no fewer.
+// side. A plan's shard count is the first argument of its CorpusPlan; changing it means adding or removing lines here,
+// and CorpusShardsTests fails until each plan has one class per shard, no more and no fewer. About 30 s of case time
+// a shard (in a run of DrawLite alone) keeps them balanced.
 
 public sealed class DrawBooleanCorpusShard0Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBooleanCorpusTests, Shard0>(theOutput) { }
 public sealed class DrawBooleanCorpusShard1Tests(ITestOutputHelper theOutput) : CorpusShardTests<DrawBooleanCorpusTests, Shard1>(theOutput) { }
