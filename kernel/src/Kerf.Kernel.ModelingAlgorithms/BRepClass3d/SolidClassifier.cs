@@ -104,12 +104,6 @@ internal class SolidClassifier : SClassifier
         }
     }
 
-    /// <summary>
-    /// Kerf (unit 15C): sets back what one point leaves for the next, the explorer's choice of face and of where on an edge to
-    /// aim, so the next point is classified as a new classifier would classify it (<see cref="KeptClassifiers"/>).
-    /// </summary>
-    internal void ForANewPoint() => _explorer.ForANewPoint();
-
     /// <summary>Unloads the shape (OCCT's Destroy, also called by its destructor).</summary>
     public void Destroy()
     {

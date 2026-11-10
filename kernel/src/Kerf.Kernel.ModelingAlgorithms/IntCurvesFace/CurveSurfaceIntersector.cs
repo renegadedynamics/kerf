@@ -594,8 +594,9 @@ internal class CurveSurfaceIntersector : Transient
 
     /// <summary>
     /// Kerf (unit 15C): the flag of a line found parallel set back to a new intersector's. A <c>Perform</c> sets it only when
-    /// it intersects and finds no point, so it carries over the others, as in OCCT; a kept solid classifier sets it back
-    /// between points (<see cref="Classification.SolidClassifier.ForANewPoint"/>), so each point sees what a new one would.
+    /// it intersects and finds no point, so it carries over the others, as in OCCT; a solid classifier sets it back
+    /// before each point (<see cref="Classification.SolidExplorer.ForANewPoint"/>, unit 15C2), so each point sees what a new
+    /// one would.
     /// </summary>
     internal void ForgetParallel() => _isParallel = false;
 

@@ -181,6 +181,11 @@ internal class SClassifier
     /// <summary>Classifies the point <paramref name="p"/> with the tolerance <paramref name="tol"/> in the solid of <paramref name="solidExplorer"/>.</summary>
     public void Perform(SolidExplorer solidExplorer, in Point3D p, double tol)
     {
+        // Kerf (unit 15C2): what the last point left in the explorer, its choice of face, where on an edge to aim, the faces'
+        // intersectors it made unrestricted and each intersector's flag of a line found parallel, set back to a new explorer's,
+        // so every point is classified as by a new classifier. OCCT carries them over, and a stale flag can call a point ON
+        // (occt-issues.md, "Found by unit 15C").
+        solidExplorer.ForANewPoint();
         if (solidExplorer.Reject(p))
         {
             // Solid without faces => the whole space. Always in.
