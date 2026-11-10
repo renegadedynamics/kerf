@@ -2351,3 +2351,9 @@ Found by unit 12J:
 | ChFi3d's walk (`BRepBlend`, `ChFi3d_Builder::ComputeData`), a fillet that vanishes where its faces turn tangent | The walk fails going towards the point where the two faces become tangent (decision 1925) | reliability.md's equal tee, 514 of 2,508 radii | worked round: built by stage 4a where ChFi3d fails (decision 2133) |
 | ChFi3d, the same fillet where it builds | Its surface is off the rolling ball by up to 1.6e-2 at a radius of 2.5 (0.65%), 1.2e-3 at 1, 3.4e-5 at 0.3, with a sliver face of 7e-8 at 2.5; the volume it adds 1.3% out at 2.5. Valid, and within no tolerance it states | The equal tee filleted at 0.3, 1 and 2.5, against the ball and the slices (decision 2134) | for the owner (decision 2134) |
 | ChFi3d, a branch flush with a cylinder's side | Throws rather than failing, so nothing after it is tried | A cylinder of 2 along y at x = 3 fused to one of 5 along z, its junction filleted at 0.05 to 1 | touch |
+
+## Found by unit 15T
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| ChFi3d, a concave fillet that runs over a convex fillet's torus | Its blend is off the rolling ball by up to 6.8e-3 at a radius of 0.3 (2.3%), 1.6e-2 where the branch is 0.5, and not tangent to the torus along their contact by up to 0.1 radians; the cylinder-to-cylinder stretch 1.2e-4 to 5.1e-4. Valid, and reported as a success | The crossing cylinders built in two steps (each rimmed at 0.3, fused, then the loop where they meet), 21 radii of the branch (decision 29701) | for unit 15R, with decision 2134's |
