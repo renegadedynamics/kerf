@@ -84,14 +84,40 @@ internal static class EdgeCrossings
         return all;
     }
 
-    /// <summary>Counted for tests (<c>EdgeCrossingsTests</c>), as the Booleans' point checks are: checks made, pairs whose boxes met, pairs settled by their tangents and boxes, and pairs asked the intersector.</summary>
-    internal static int s_checks;
+    /// <summary>What the checks made inside one <see cref="Counting"/> asked, for tests (<c>EdgeCrossingsTests</c>): checks
+    /// made, pairs whose boxes met, pairs settled by their tangents and boxes, and pairs asked the intersector.</summary>
+    internal sealed class Counts
+    {
+        public int Checks { get; set; }
 
-    internal static int s_boxPairs;
+        public int BoxPairs { get; set; }
 
-    internal static int s_settled;
+        public int Settled { get; set; }
 
-    internal static int s_intersections;
+        public int Intersections { get; set; }
+    }
+
+    // The counts of the Counting call running on this thread, if any: the check runs on its caller's thread, so a test's
+    // counts are its own whatever else runs beside it
+    [ThreadStatic]
+    private static Counts? s_counts;
+
+    /// <summary>Runs <paramref name="act"/> and returns what the checks it made on this thread asked.</summary>
+    internal static Counts Counting(Action act)
+    {
+        Counts? outer = s_counts;
+        var counts = new Counts();
+        s_counts = counts;
+        try
+        {
+            act();
+        }
+        finally
+        {
+            s_counts = outer;
+        }
+        return counts;
+    }
 
     // An edge of the result with what the check needs of it, found when first asked
     private sealed class Checked(Edge edge, bool isNew)
@@ -155,7 +181,10 @@ internal static class EdgeCrossings
     // The first crossing, or every one into all when it's given
     private static Crossing? Find(Shape input, Shape result, List<Crossing>? all)
     {
-        s_checks++;
+        if (s_counts is { } counts)
+        {
+            counts.Checks++;
+        }
 
         // The faces the operation left alone are the input's own TShapes; every other face it made or trimmed
         var inputFaces = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
@@ -236,14 +265,20 @@ internal static class EdgeCrossings
                 {
                     continue;
                 }
-                s_boxPairs++;
+                if (s_counts is { } pairCounts)
+                {
+                    pairCounts.BoxPairs++;
+                }
                 if (!Shrunk(first) || !Shrunk(second) || first.ShrunkBox.IsOut(second.ShrunkBox))
                 {
                     continue;
                 }
                 if (OnlyAtSharedVertex(first, second))
                 {
-                    s_settled++;
+                    if (s_counts is { } settledCounts)
+                    {
+                        settledCounts.Settled++;
+                    }
                     continue;
                 }
                 if (Cross(first, second) is { } crossing)
@@ -653,7 +688,10 @@ internal static class EdgeCrossings
     // Where the two edges, on their shrunk ranges, have a point in common clear of their ends, or a length in common
     private static Crossing? Cross(Checked first, Checked second)
     {
-        s_intersections++;
+        if (s_counts is { } counts)
+        {
+            counts.Intersections++;
+        }
         Edge e1 = first.Edge, e2 = second.Edge;
         bool sameVertices = (first.FirstVertex.IsSame(second.FirstVertex) && first.LastVertex.IsSame(second.LastVertex))
                             || (first.FirstVertex.IsSame(second.LastVertex) && first.LastVertex.IsSame(second.FirstVertex));
