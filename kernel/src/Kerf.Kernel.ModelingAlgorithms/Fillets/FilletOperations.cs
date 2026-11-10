@@ -170,6 +170,7 @@ public static class FilletOperations
             // What the geometry already settles (decision 1898): within tolerance of the limit is the limit, past it nothing fits
             FilletLimits.Fit? fit = null;
             FilletSpec[] specs = given;
+            EngineOutcome? built = null;
             Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
             {
                 fit = FilletLimits.Judge(solid, given);
@@ -207,6 +208,7 @@ public static class FilletOperations
                 EngineOutcome outcome = MakerOutcome.Of(fillet, range, [solid]);
                 if (outcome.IsDone)
                 {
+                    built = outcome;
                     return outcome;
                 }
 
@@ -227,14 +229,22 @@ public static class FilletOperations
                     faulty = [tooLarge, .. faulty];
                 }
                 return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
-            }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null,
-               made => Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Radius, s.EndRadius ?? 0.0))), "The fillet's result")
-                       ?? EdgeCrossings.Problem(solid, made, "The fillet's result", SelfIntersecting));
+            }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null, Check);
+
+            Diagnostic? Check(Shape made) =>
+                Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Radius, s.EndRadius ?? 0.0))), "The fillet's result")
+                ?? EdgeCrossings.Problem(solid, made, "The fillet's result", SelfIntersecting);
 
             // What ChFi3d made isn't valid: as much a failure of it as any (decision 1910). It costs nothing unless that happens
             if (done.TryGetInvalid(out _))
             {
                 Result<Built<Shape>> invalid = done;
+
+                // Or it's right, but a face of it narrows to a point that has no vertex (unit 15Q): the vertex put in
+                if (Pinched(done, built, solid, Check, progress, cancellationToken) is { } pinched)
+                {
+                    return pinched;
+                }
                 if (FilletLimits.AfterAlgorithm(solid, specs, options) is { } instead)
                 {
                     return EngineOperation.Run<Shape>(_ => instead, Failure, progress, cancellationToken, "The fillet's result");
@@ -505,6 +515,27 @@ public static class FilletOperations
             _ => $"The corner couldn't be built ({status}).",
         };
         return Diagnostic.Error(new DiagnosticCode("fillet." + FailureDiagnostics.Kebab(status.ToString())), message).WithShapes(corner);
+    }
+
+    // ChFi3d's result, which failed only for two of its edges meeting, where each meeting is a face narrowing to a point between
+    // them: the same result with a vertex there and the face in its two parts, if it then passes every check (unit 15Q). Null
+    // otherwise, and then the failure stands
+    private static Result<Built<Shape>>? Pinched(Result<Built<Shape>> done, EngineOutcome? built, Shape solid, Func<Shape, Diagnostic?> check,
+                                                 IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        if (done.Error?.Code != SelfIntersecting || built is not { IsDone: true } made || Pinches.Resolve(solid, made.Shape()) is not { } split)
+        {
+            return null;
+        }
+        var history = made.History is { } from ? new History(from) : new History();
+        history.Merge(split.History);
+        Result<Built<Shape>> repaired = EngineOperation.Run<Shape>(_ => new EngineOutcome(true, () => split.Shape, history), Failure,
+                                                                   progress, cancellationToken, "The fillet's result", check);
+        if (!repaired.IsSuccess)
+        {
+            return null;
+        }
+        return repaired;
     }
 
     // The faulty contours' errors, each with its edges; or the operation's own error

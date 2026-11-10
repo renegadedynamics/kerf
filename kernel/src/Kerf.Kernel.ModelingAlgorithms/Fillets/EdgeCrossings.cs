@@ -72,8 +72,9 @@ internal static class EdgeCrossings
         return Diagnostic.Error(code, $"{what} isn't reliable: {where}.").WithShapes(crossing.Edge1, crossing.Edge2);
     }
 
-    /// <summary>Two edges that cross, where, or run along each other (<paramref name="Along"/>).</summary>
-    internal readonly record struct Crossing(Edge Edge1, Edge Edge2, Point3D Point, bool Along);
+    /// <summary>Two edges that cross, where, and at what parameter of each (<paramref name="Parameter1"/>,
+    /// <paramref name="Parameter2"/>), or run along each other (<paramref name="Along"/>, with no parameters).</summary>
+    internal readonly record struct Crossing(Edge Edge1, Edge Edge2, Point3D Point, bool Along, double Parameter1 = double.NaN, double Parameter2 = double.NaN);
 
     /// <summary>Every crossing <see cref="Problem"/> would find, for tests and probes; the check itself stops at the first.</summary>
     internal static IReadOnlyList<Crossing> All(Shape input, Shape result)
@@ -681,7 +682,7 @@ internal static class EdgeCrossings
                     }
                     IntersectionTools.VertexParameters(part, out double t1, out double t2);
                     AlgoTools.MakeNewVertex(e1, t1, e2, t2, out Vertex made);
-                    return new Crossing(e1, e2, Tool.Pnt(made), false);
+                    return new Crossing(e1, e2, Tool.Pnt(made), false, t1, t2);
                 }
                 case ShapeType.Edge:
                 {
