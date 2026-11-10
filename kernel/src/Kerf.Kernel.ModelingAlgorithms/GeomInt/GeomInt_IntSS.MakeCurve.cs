@@ -656,8 +656,10 @@ internal partial class IntSS
                             approx2 = true;
                         }
 
+                        // Kerf: a seam's point on its far side is brought to its neighbours' (decision 2119)
+                        WLine aPart = LineTool.WithoutPeriodJumps(wl, myHS1, myHS2, ifprm, ilprm);
                         global::Kerf.Geometry.ParametrizationType parType =
-                            KnotTools.DefineParType(wl, ifprm, ilprm, anApprox, approx1, approx2);
+                            KnotTools.DefineParType(aPart, ifprm, ilprm, anApprox, approx1, approx2);
 
                         theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30, myHS1 != myHS2, parType);
 
@@ -667,11 +669,11 @@ internal partial class IntSS
                         //
                         if (typs1 == Plane)
                         {
-                            theapp3d.Perform(myHS1, myHS2, wl, false, true, myApprox2, ifprm, ilprm);
+                            theapp3d.Perform(myHS1, myHS2, aPart, false, true, myApprox2, ifprm, ilprm);
                         }
                         else if (typs2 == Plane)
                         {
-                            theapp3d.Perform(myHS1, myHS2, wl, false, myApprox1, true, ifprm, ilprm);
+                            theapp3d.Perform(myHS1, myHS2, aPart, false, myApprox1, true, ifprm, ilprm);
                         }
                         else
                         {
@@ -686,7 +688,7 @@ internal partial class IntSS
                                 }
                             }
                             //
-                            theapp3d.Perform(myHS1, myHS2, wl, true, myApprox1, myApprox2, ifprm, ilprm);
+                            theapp3d.Perform(myHS1, myHS2, aPart, true, myApprox1, myApprox2, ifprm, ilprm);
                         }
 
                         if (!theapp3d.IsDone())
@@ -694,14 +696,14 @@ internal partial class IntSS
                             //
                             BSplineCurve2D? h1 = null, h2 = null;
                             //
-                            Curve3D bSp = MakeBSpline(wl, ifprm, ilprm);
+                            Curve3D bSp = MakeBSpline(aPart, ifprm, ilprm);
                             if (myApprox1)
                             {
-                                h1 = MakeBSpline2d(wl, ifprm, ilprm, true);
+                                h1 = MakeBSpline2d(aPart, ifprm, ilprm, true);
                             }
                             if (myApprox2)
                             {
-                                h2 = MakeBSpline2d(wl, ifprm, ilprm, false);
+                                h2 = MakeBSpline2d(aPart, ifprm, ilprm, false);
                             }
                             //
                             _sline.Append(bSp);

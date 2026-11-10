@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 47 already fixed, 88 not relevant, 42 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, and 15E one more; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 49 already fixed, 88 not relevant, 40 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, and 15E three more; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -25,9 +25,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
-| Silent wrong answer | #245 | A cut that removes almost nothing, with warnings: now a failure (decision 1866) | Reproduced | L |
-| Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
+| Silent wrong answer | #1570 | A fillet at 5.5 that passes the check with two pairs of its edges crossing (#1569, #737 and #694 fail by decision 1833; #1430's case no longer intersects itself) | Reproduced | **For the owner** (decision 2120): the edge-level self-interference check finds it, at 25% to 45% of the fillet's time; recommended as an option |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
@@ -57,7 +55,9 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. `Kerf.Modeling`'s cut still fails, carrying the shape | 2103, 2104 |
+| #1639 | A fillet of volume 10596 for 29800, valid, depending only on the order of the shell's faces: now right in both orders. The corner's walking line started on a trimmed cylinder's seam with the far side's parameter, which threw its approximation 270 off | 2119 |
+| #245 | A Cut that removed nothing and an empty Common, for a sphere whose seam lies in a flat face of the other solid: now right, made again with a fuzzy value of a thousand tolerances (1e-4). Its section, not approximated, ended the process with a stack overflow: now it runs | 2116, 2117 |
+| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. Right through `Kerf.Modeling` too | 2103, 2104, 2115 |
 | #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 1937 |
 | `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 1936 |
 | #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 1935 |
@@ -79,7 +79,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 | #1692 | A reused solid classifier's answer depending on the points before it | 1835 |
 | #1124 | The public section losing most of a curve (approximation now on) | 1836 |
 | #1310 | Unify leaving a closed pipe a face with no edges, and no mesh | 1837 |
-| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure, causes open | 1833 |
+| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure; #1639's cause since fixed (2119), the others open | 1833 |
 | #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
 | #1604, #1679 | An optimal box smaller than the shape | 1777 |
 | Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 1802 |
@@ -180,7 +180,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1652 | Data Exchange, STEP Import - Spherical/toroidal CURVE_BOUNDED_SURFACE with a clockwise OUTER_BOUNDARY_CURVE is read as the complement of the patch sin | can't tell | CURVE_BOUNDED_SURFACE read: same reader; needs a file |
 | 1651 | GeomLProp_SLProps: MinCurvature/MaxCurvature/MeanCurvature/GaussianCurvature return the previous value on the first call after construction or SetPara | already fixed | Kerf computes before reading: `SLProps.RequireCurvature` (decision in phase 2); the port's comment says so |
 | 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | already fixed | Decision 1937: right the other way round, which is now tried; the cause in one order isn't found |
-| 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | applies | Reproduced on its files: 10596.3 for 29799.9, with an edge's tolerance of 190, and valid. Its other order is right. The public fillet now fails (decision 1833); the cause isn't found |
+| 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | already fixed | Reproduced on its files: 10596.3 for 29799.9, with an edge's tolerance of 190, and valid. Its other order is right. Now 29799.8675 in both orders: the corner's walking line kept a seam point's far-side parameter (decision 2119) |
 | 1638 | Segfault in STEPCAFControl_Reader::findReprItems when a representation has no items | not relevant | Null items natively a crash; the port's STEP layer reports (decision 1050s) |
 | 1637 | GCC 16 miscompiles BRepClass3d_SClassifier::Perform in 7.9.x, classifying a point on an edge segfaults | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1633 | BRepAlgoAPI_Common returns an empty result (and Cut removes nothing) for two overlapping cylinders whose axes are about 1 degree apart | already fixed | Decision 1783; reproduced (Common 0 at 1°) and fixed: the walk ran on past both bounds |
@@ -204,8 +204,8 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1576 | Crash on chamfer on complex shape | already fixed | Tried on its file: the chamfer fails with no crash |
 | 1573 | UnifySameDomain breaks spherical faces with pole edges when the spheres have rotated frames | applies | Reproduced from its numbers: invalid at 37, 90 and 180 degrees, with no crash. Its partial fix isn't enough, by its own account |
 | 1571 | Faulty shape with fillet on a rounded cube | applies | Reproduced on its file: invalid, volume 4e29. The public fillet fails |
-| 1570 | Faulty shape with fillet beyond a radius | applies | Reproduced on its file: at 5.5 valid, with edges crossing (`bopcheck`), and clean at 5.0. Silent |
-| 1569 | Faulty shape with fillet on simple shape | applies | Reproduced on its file: valid and self-interfering. Silent |
+| 1570 | Faulty shape with fillet beyond a radius | applies | Reproduced on its file: at 5.5 valid, with two pairs of edges crossing (`bopcheck` E/E), vertices of 0.82, and a success through the public fillet; clean at 5.0. Silent; a check by default costs more than decision 1742's tenth: for the owner (decision 2120) |
+| 1569 | Faulty shape with fillet on simple shape | applies | Reproduced on its file: valid and self-interfering (V/V), with a vertex of tolerance 93.1 on a radius of 1, so the public fillet fails (decisions 1833, 2120) |
 | 1568 | Crash on fillet meeting opposite edge | already fixed | Tried on its file: 1.5 fails with no crash, and 1.49 is valid. The fillet to the opposite edge itself is question 2 |
 | 1567 | `BRepAlgoAPI_Fuse` of a partial torus and a tangent sphere gives an invalid, empty or wrong-volume result | already fixed | Decision 1818; reproduced (empty) and fixed: 26.7684 |
 | 1566 | `BRepPrimAPI_MakeRevol` gives an invalid or wrong-volume solid for a circular profile edge | already fixed | Decision 1780; reproduced (0.5655 for 0.7101) and fixed |
@@ -237,7 +237,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1444 | Bad meshing of torus-like shapes with some specific curvatures | already fixed | Decision 1929: its file, 0.28 measured for 0.45 asked. The sphere decision 1929 left is fixed by decision 1953 |
 | 1434 | GeomTools_Curve2dSet::Add / GeomTools_SurfaceSet::Add accept a null handle and defer the crash to Write(), unlike the CurveSet sibling | not relevant | Natively a crash on a null handle: the port's analyzers refuse null (nullable) |
 | 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | already fixed | Decision 1933: `fillet.connexion-error`, by a test |
-| 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering |
+| 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering; now (decision 2120) the fifth has no interference and vertices of 3.7e-5 |
 | 1429 | HLRAlgo_PolyHidingData.hxx:43:5: error: 'gp_XYZ' does not name a type | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1427 | Failing fillet on tapered surface | applies | Reproduced on its files: `tapered_2_9` fails where `tapered_2_8` works |
 | 1421 | Crash on failing fillet | already fixed | Tried on its file: the fillet fails with no crash |
@@ -319,10 +319,10 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 837 | Add stream output support for STL, GLTF and other file formats | not relevant | A request for a new feature, not a defect |
 | 791 | Simplified wrapper for C++, Python and JS/TS | not relevant | A request for a new feature, not a defect |
 | 775 | VRML import issue | not relevant | VRML: not ported (unported.md) |
-| 737 | Fillet bending upward on one side, downward on the other | applies | Reproduced on its file: valid and self-interfering (F/F). Silent |
+| 737 | Fillet bending upward on one side, downward on the other | applies | Reproduced on its file: valid and self-interfering (F/F), with a vertex of tolerance 4.83 on a radius of 1, so the public fillet fails (decisions 1833, 2120) |
 | 736 | Fillet operation produces shape with artefact | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
 | 724 | More than 10GB of memory needed for boolean operation between two simple faces | applies | Reproduced on its files: past 150 s, memory not measured. For 11Q |
-| 694 | Artifact with a fillet on a straight base, sweep, and a straight edge | applies | Reproduced on its file: valid and self-interfering. Silent |
+| 694 | Artifact with a fillet on a straight base, sweep, and a straight edge | applies | Reproduced on its file: valid and self-interfering (V/V), with a vertex of tolerance 48.4 on a radius of 1, so the public fillet fails (decisions 1833, 2120) |
 | 692 | Faulty shapes with a fillet on a curved base, sweep, and a curve in the same direction. | applies | Reproduced on its file: invalid. The public fillet fails |
 | 691 | Faulty shapes with a fillet on a curved base, sweep, and a straight edge | applies | Reproduced on its file: invalid, volume 62252 from 17084. The public fillet fails |
 | 666 | The result of ShapeFix_Shape do not make ShapeUpgrade_UnifySameDomain work. | applies | Reproduced on its file: Unify gives 7 faces directly and 5 after a STEP round trip. Both valid, so only less merged |
@@ -360,7 +360,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 302 | Modeling Algorithms - TCollection_IndexedDataMap::FindFromKey error when sweeping circle along BezierCurve [25110] | applies | Reproduced on its files, the same as #304 |
 | 275 | Intersection produces strange result for given surfaces | can't tell | Tried on its file: one edge in a small box, and no way to judge it without its picture |
 | 249 | Multiplatform compilation testing on GH | not relevant | Build, packaging or repository matter: Kerf has its own build |
-| 245 | Boolean cut has issues when it involves a common Edge between argument and the tool. | applies | Reproduced on its files: the cut removes about 14,000 of 756 million, with a sphere of 524 million, and warnings. A comment puts the cause in the revolution/sphere intersection at the pole |
+| 245 | Boolean cut has issues when it involves a common Edge between argument and the tool. | already fixed | Reproduced on its files: the cut removes nothing of 756 million, with a sphere of 524 million, and warnings, as the intersection along the sphere's seam, which lies in a flat face of the argument, isn't joined to the seam. The public Boolean now retries with a fuzzy value of a thousand tolerances and is right, 537,981,882 (decision 2117); the engine's exact cut is unchanged. Its section, not approximated, overflowed the stack: fixed (decision 2116) |
 | 191 | BRepOffsetAPI_MakeOffset fail | can't tell | Needs the issue's attached model; not reproduced in this pass (offset) |
 | 176 | MoveTo() from AIS_InteractiveContext sometimes doesn't redraw the viewer, even if the flag is set to true | not relevant | Visualisation or its OpenGL: not ported (unported.md) |
 | 145 | Standard_Macro.hxx conflicts on Windows defines | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |

@@ -7,7 +7,8 @@ namespace Kerf.Modeling;
 // as build123d's do: + fuses, - cuts, & keeps what is common. Operands are flattened into their top-level shapes, and
 // an empty one adds or removes nothing.
 //
-// Add, Subtract and Common return a Result: a Boolean that fails is a failure a caller should expect. The operators are
+// Add, Subtract and Common return a Result: a Boolean that fails is a failure a caller should expect, and the kernel's
+// warnings on one that succeeds (boolean.fuzzy-value) are in its Diagnostics. The operators are
 // the shorthand for code whose inputs are known to combine (unit 10M3): an operator can't return a Result and still
 // chain, so it returns the value, and a failure throws InvalidOperationException with the Boolean's message.
 
@@ -23,7 +24,7 @@ public partial class Part
     public Result<Part> Add(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.AddToCompound(Shape, 3, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.AddToCompound(Shape, 3, operands)));
     }
 
     /// <summary>This part with <paramref name="others"/>, solids or parts, cut away.</summary>
@@ -31,14 +32,14 @@ public partial class Part
     public Result<Part> Subtract(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.SubtractFromCompound(Shape, 3, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.SubtractFromCompound(Shape, 3, operands)));
     }
 
     /// <summary>What this part has in common with <paramref name="others"/>: empty if nothing.</summary>
     public Result<Part> Common(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
     }
 
     /// <inheritdoc cref="Add(IEnumerable{Shape})"/>
@@ -87,21 +88,21 @@ public partial class Sketch
     public Result<Sketch> Add(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.AddToCompound(Shape, 2, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.AddToCompound(Shape, 2, operands)));
     }
 
     /// <summary>This sketch with <paramref name="others"/> cut away.</summary>
     public Result<Sketch> Subtract(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.SubtractFromCompound(Shape, 2, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.SubtractFromCompound(Shape, 2, operands)));
     }
 
     /// <summary>What this sketch has in common with <paramref name="others"/>: empty if nothing.</summary>
     public Result<Sketch> Common(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
     }
 
     /// <inheritdoc cref="Add(IEnumerable{Shape})"/>
@@ -151,21 +152,21 @@ public partial class Curve
     public Result<Curve> Add(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => OneD.Add1D(Shape, operands)));
+        return Failures.TryWarned(null, () => Run(() => OneD.Add1D(Shape, operands)));
     }
 
     /// <summary>This curve with <paramref name="others"/> cut away.</summary>
     public Result<Curve> Subtract(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.SubtractFromCompound(Shape, 1, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.SubtractFromCompound(Shape, 1, operands)));
     }
 
     /// <summary>What this curve has in common with <paramref name="others"/>: empty if nothing.</summary>
     public Result<Curve> Common(params IEnumerable<Shape> others)
     {
         var operands = Checked(others);
-        return Failures.Try(() => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
+        return Failures.TryWarned(null, () => Run(() => ShapeAlgebra.CommonOfCompound(Shape, operands)));
     }
 
     /// <inheritdoc cref="Add(IEnumerable{Shape})"/>

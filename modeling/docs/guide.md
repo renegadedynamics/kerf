@@ -235,6 +235,10 @@ Part p = Fillet(box, topEdges, 2).Value;    // throws InvalidOperationException,
 - **Kerf doesn't report success for a result it knows is wrong.** A Boolean, offset or fillet whose result fails its
   checks (wrong volume, not a valid solid) is a failure, not a broken shape. `TryGetInvalid` gives the broken shape,
   if one was made, to look at.
+- **A Boolean whose volume proves it wrong is made again before it fails:** with its inputs the other way round, then
+  with a fuzzy value of ten times their largest tolerance, then a thousand times. A retry that passes is the result, with the warning
+  `boolean.other-way-round` or `boolean.fuzzy-value` (which names the value): in `Diagnostics` from `Add`, `Subtract`
+  and `Common`, and raised to `Warnings` from `Cut`, `Fuse`, `Intersect` and the operators.
 - `part.IsValid` checks any shape, as build123d's `is_valid`. Check what you import.
 
 ## 7. Meshing

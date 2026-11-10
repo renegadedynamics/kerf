@@ -63,6 +63,10 @@
     <EmbeddedResource Include="BRepMAT2d\Recordings\matrec.txt.gz" LogicalName="BRepMAT2d.matrec.txt.gz" />
     <!-- Native OCCT's checks and other builders (unit 6G), recorded by tools/borec: one file per area -->
     <EmbeddedResource Include="BOPAlgo\Recordings\*.txt.gz" LogicalName="BOPAlgo.Recordings.%(Filename)%(Extension)" />
+    <!-- The shapes of OCCT issues that Booleans get wrong, from their attachments, written again without their meshes -->
+    <EmbeddedResource Include="BOPAlgo\Issues\*.brep" LogicalName="BOPAlgo.Issues.%(Filename)%(Extension)" />
+    <!-- The shapes of OCCT issues that fillets get wrong, from their attachments -->
+    <EmbeddedResource Include="BRepFilletAPI\Issues\*.brep" LogicalName="BRepFilletAPI.Issues.%(Filename)%(Extension)" />
     <!-- Native OCCT's sweep surfaces, laws and package functions, recorded by tools/sweeprec (unit 5L2) -->
     <EmbeddedResource Include="GeomFill\Recordings\sweeprec.txt.gz" LogicalName="GeomFill.sweeprec.txt.gz" />
     <!-- Native OCCT's BRepFill laws and sections and ShapeUpgrade_RemoveLocations, recorded by tools/brepfillrec (unit 5S1) -->
