@@ -11,6 +11,12 @@ version may break the API.
   verdict the same to the bit; `using (ParallelVolumes.Use()) { … }` (namespace `Kerf`) does it for the code inside, as
   `Cancellation.Use` does, and an option overrides it either way. Off by default: for one large part on an idle
   processor (about 20% less wall time for 40% to 65% more processor time), not for parts built side by side.
+- **A torus's mesh is measured inside its triangles too,** at their medians' midpoints, where a skewed triangle is
+  furthest from the surface: 25 small fillet-torus faces of OCCT's dataset at relative deflections were 1.002 to 1.035
+  times their deflection there, with no warning, as the mesher measured only each triangle's centre and links. Now a
+  face over there is refined within it, or named by `meshing.deflection-exceeded` where it can't be, so no face is over
+  its deflection without the warning. Only meshes that were over change; a mesh within its deflection is the same
+  (decision 28401).
 
 ## 0.5.0
 

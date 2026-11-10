@@ -2300,3 +2300,9 @@ Found by unit 12J:
 | `Font_FTFont::Init`, `ToSynthesizeItalic` | The shear matrix's diagonal is cos 10°, so a synthesised italic is also 1.5% smaller | Reading the port's source | settled (decision 2022) |
 | `Font_FTFont::getKerning` | Asks FreeType's `FT_Get_Kerning`, which reads only the `kern` table: a font with GPOS kerning and no kern table isn't kerned | Reading the port's source; Liberation Sans has both | settled (decision 2020) |
 | `Font_FTFont::loadGlyph`, `StdPrs_BRepFont::renderGlyph` | A character with no glyph is drawn as the font's missing glyph (or a fallback font's), with no warning | Reading the port's source | settled (decision 2022) |
+
+## Found by unit 15I
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `BRepMesh_DelaunayDeflectionControlMeshAlgo` (a property, not a bug) | Measures a triangle at its parametric centre, against its plane, and its inner links at their middles, and nowhere else inside it | A skewed triangle on a torus is furthest from the surface at the midpoint of a median, up to 3.5% over the deflection where the centre and the links are within it: 25 fillet-torus faces of `data/occ` at relative deflections, 1.002 to 1.035 times out, with decision 2071's warning silent. The torus's guard now measures the medians' midpoints too, once the control has nothing left to add (decision 2102) | fixed in the port |
