@@ -471,7 +471,7 @@ Result[] written = await Task.WhenAll(sizes.Select(async size =>
 }));
 ```
 
-**Parts built in parallel pay** (decision 27605): the blade bumper enclosure's 13 parts built with `Parallel.For`, the
+**Parts built in parallel pay** (decision 2080): the blade bumper enclosure's 13 parts built with `Parallel.For`, the
 shared sections in `Lazy<T>` built once by whichever part needs them first, came out the same to the bit, for the same
 bytes, in 1.5 to 1.7 times less wall time on 4 processors (a loaded machine; the largest part bounds it on more).
 Keep what the parts share in `Lazy<T>` (thread-safe by default) or build it first; don't keep the part being built in a
