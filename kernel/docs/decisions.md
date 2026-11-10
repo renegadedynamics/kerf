@@ -17207,3 +17207,15 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        thought process may apply to booleans, chamfers, and possibly others."). Decision 2120's edge-level check goes on by default, past
        decision 1742's tenth by the owner's word, and unit 15L makes it as cheap as it can; unit 15M studies partial or full rewrites,
        for the owner to decide on.
+2124. **Rewriting OCCT's algorithms: the study is made, and recommends no rewrite, but a new path behind OCCT's where its failures
+       share a cause** (unit 15M, decision 2123; [rewrite-study.md](rewrite-study.md), for the owner to decide on). Counted from the
+       corpus, occt-defects.md, occt-issues.md, reliability.md, the profiles and the decisions, for fillets, chamfers, Booleans,
+       offsets, sweeps and lofts, the mesher, the classifier and checks, Unify and the tolerance model. **Fillets** carry the most
+       that a rewrite could fix (14 of the 40 OCCT issues that apply, the equal tee's 514 of 2,508, crossing cylinders' 401 of 401,
+       four checks that fence wrong results), all from events ChFi3d's design lacks; so carry on decision 1892's path behind ChFi3d
+       with stage 4, cylinders first (4 to 10 units for the stage; a replacement 30 to 60, out by a factor of two). **Chamfers**
+       second, corners by a ruled tool and a Boolean as unit 12W. **Booleans:** no rewrite: 3,301 of 3,305 corpus cases OK, the
+       kernel's Boolean 0.56 times native's time on ordinary parts (12Y), its wrong answers of nine separate causes, its scale
+       failures the tolerance model's; a Boolean that leaves alone faces no tool reaches is the one design change with evidence, as
+       performance work. Offsets: one unit to find whose the loft's 550 of 555 failures are. Sweeps, lofts, the mesher, the 2D
+       offset and the tolerance model: leave. Nothing in the code changes.
