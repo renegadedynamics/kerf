@@ -2149,9 +2149,9 @@ rig's programs, interleaved the same way; the counts are from a throwaway probe,
 
 | Change | Before | After |
 |---|---|---|
-| A frozen shape's classifier kept for the next point; `IsInside` one classification (28501, 28502) | the housing's 224 points 2,291 MB, about 2 s | 4.7 MB, about 50 ms |
-| Line and circle edges measured before their extrema (28503) | the enclosure 2,786 to 2,821 MB | 2,695 to 2,733 (−3.2%) |
-| The builder's and healing's trees filled when asked (28504) | | with 28503: the 13 parts 2,725 to 2,749 MB a build to 2,547 to 2,574 (−6.6%) |
+| A frozen shape's classifier kept for the next point; `IsInside` one classification (2110, 2111) | the housing's 224 points 2,291 MB, about 2 s | 4.7 MB, about 50 ms |
+| Line and circle edges measured before their extrema (2112) | the enclosure 2,786 to 2,821 MB | 2,695 to 2,733 (−3.2%) |
+| The builder's and healing's trees filled when asked (2113) | | with 2112: the 13 parts 2,725 to 2,749 MB a build to 2,547 to 2,574 (−6.6%) |
 
 With all of them, the users' cases: the enclosure 2,823 to 2,829 MB to 2,599 to 2,639 (−7%), v0.16's 2,784 to 2,789 to
 2,558 to 2,598 (−7.5%), the boss 14.9 to 14.1 and 14.2 (−5%), the detent 19.2 and 19.3 to 18.6 and 18.7 (−3%), the
