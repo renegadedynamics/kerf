@@ -1048,4 +1048,83 @@ internal static class LineTool
         //
         return true;
     }
+    /// <summary>
+    /// The walking line with the parameters of its points <paramref name="first"/> to <paramref name="last"/> moved by
+    /// whole periods, each to within half a period of its neighbour towards the middle point, which keeps its own; or
+    /// the line itself if no two neighbours there are half a period apart in a periodic parameter.
+    /// </summary>
+    /// <remarks>
+    /// Kerf: not in OCCT (decision 28621, #1639). <see cref="DecompositionOfWLine"/> moves a point on a seam to its
+    /// neighbours' side only when the surface spans a whole period, so on a periodic surface trimmed to less, an end of
+    /// the line on the seam can keep the far side's parameter: 2 pi beside 0.0015. Approximated with the rest, that jump
+    /// threw the curve and its pcurves 270 off the surfaces, with no error. Neighbours on a walking line are a step
+    /// apart, never half a period, so where they are, the jump is only in how the parameter was written down.
+    /// </remarks>
+    public static WLine WithoutPeriodJumps(WLine wLine, SurfaceAdaptor surface1, SurfaceAdaptor surface2, int first,
+                                           int last)
+    {
+        double[] periods =
+        [
+            surface1.IsUPeriodic ? surface1.UPeriod() : 0.0, surface1.IsVPeriodic ? surface1.VPeriod() : 0.0,
+            surface2.IsUPeriodic ? surface2.UPeriod() : 0.0, surface2.IsVPeriodic ? surface2.VPeriod() : 0.0,
+        ];
+        if (first < 1 || last > wLine.NbPnts() || last - first < 1 || Array.TrueForAll(periods, static p => p <= 0.0))
+        {
+            return wLine;
+        }
+        double[][] pars = new double[last - first + 1][];
+        bool jumps = false;
+        for (int i = first; i <= last; i++)
+        {
+            wLine.Point(i).Parameters(out double u1, out double v1, out double u2, out double v2);
+            double[] p = [u1, v1, u2, v2];
+            pars[i - first] = p;
+            if (i > first)
+            {
+                double[] previous = pars[i - first - 1];
+                for (int k = 0; k < 4; k++)
+                {
+                    jumps |= periods[k] > 0.0 && Math.Abs(p[k] - previous[k]) > 0.5 * periods[k];
+                }
+            }
+        }
+        if (!jumps)
+        {
+            return wLine;
+        }
+        int middle = (last - first) / 2;
+        for (int i = middle + 1; i < pars.Length; i++)
+        {
+            Unwrap(pars[i], pars[i - 1], periods);
+        }
+        for (int i = middle - 1; i >= 0; i--)
+        {
+            Unwrap(pars[i], pars[i + 1], periods);
+        }
+        LineOn2S line = new();
+        for (int i = 1; i <= wLine.NbPnts(); i++)
+        {
+            PntOn2S point = wLine.Point(i);
+            if (i >= first && i <= last)
+            {
+                double[] p = pars[i - first];
+                point = point.WithValue(point.Value(), p[0], p[1], p[2], p[3]);
+            }
+            line.Add(point);
+        }
+        WLine unwrapped = new(line, false);
+        unwrapped.SetCreatingWayInfo(wLine.GetCreatingWay());
+        return unwrapped;
+
+        static void Unwrap(double[] p, double[] neighbour, double[] periods)
+        {
+            for (int k = 0; k < 4; k++)
+            {
+                if (periods[k] > 0.0)
+                {
+                    p[k] += periods[k] * Math.Round((neighbour[k] - p[k]) / periods[k], MidpointRounding.AwayFromZero);
+                }
+            }
+        }
+    }
 }

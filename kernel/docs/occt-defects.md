@@ -14,7 +14,7 @@ file lists what OCCT knows to be wrong and whether Kerf has it. It's a working l
   from the code.
 - **can't tell:** Not settled yet. The third pass (decisions 1830 to 1838) fetched what the issues attach and re-expressed their scripts through Draw-lite or a test, reading the files as data; the rows it reached say what was seen. What's left is mostly hidden lines, STEP writing and issues with no model, each saying why. "The public fillet fails" and the like are inferred from the check of decision 1742, not run.
 
-**Counts.** OCCT's 224 open issues: 48 already fixed, 88 not relevant, 41 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, and 15E two more; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
+**Counts.** OCCT's 224 open issues: 49 already fixed, 88 not relevant, 40 applies (one of them fixed in Kerf), 2 not reproduced, 45 can't tell (units 12I and 12J, counted from the rows at the merge; 12J moved nine from applies to already fixed, and 15E three more; [corpus-failures.md](corpus-failures.md) sorts the can't-tells by why). The 16 issues closed since 8.0.1: 1 already fixed, 9 not relevant, 4 applies, 2 can't tell. Its 76 commits since 8.0.1: 3 already fixed, 57 not relevant, 10 applies, 6 can't tell.
 The other two sources are sorted by group below: the corpus's 502 BAD cases, and the rows of [occt-issues.md](occt-issues.md)
 kept only for compatibility.
 
@@ -25,7 +25,6 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1639 | A fillet of volume 10596 for 29800, depending only on the order of the shell's faces. The public fillet now fails, by the size of its tolerance (decision 1833) | Reproduced | M to L: the corner's 3D curve, 190 from its pcurves |
 | Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
@@ -56,6 +55,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
+| #1639 | A fillet of volume 10596 for 29800, valid, depending only on the order of the shell's faces: now right in both orders. The corner's walking line started on a trimmed cylinder's seam with the far side's parameter, which threw its approximation 270 off | 28621 |
 | #245 | A Cut that removed nothing and an empty Common, for a sphere whose seam lies in a flat face of the other solid: now right, made again with a fuzzy value of a thousand tolerances (1e-4). Its section, not approximated, ended the process with a stack overflow: now it runs | 2116, 2117 |
 | #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. Right through `Kerf.Modeling` too | 2103, 2104, 2115 |
 | #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 1937 |
@@ -79,7 +79,7 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 | #1692 | A reused solid classifier's answer depending on the points before it | 1835 |
 | #1124 | The public section losing most of a curve (approximation now on) | 1836 |
 | #1310 | Unify leaving a closed pipe a face with no edges, and no mesh | 1837 |
-| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure, causes open | 1833 |
+| #1639, #1695, #1701 | A fillet with a tolerance past its radius reported as a success: now a failure; #1639's cause since fixed (28621), the others open | 1833 |
 | #1633 | Booleans of cylinders about 1° from parallel: Common empty, Cut removes nothing, no error | 1783 |
 | #1604, #1679 | An optimal box smaller than the shape | 1777 |
 | Found by #1675 | `Kerf.Modeling`'s area and volume up to 3.7% off on swept and B-spline faces | 1802 |
@@ -180,7 +180,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1652 | Data Exchange, STEP Import - Spherical/toroidal CURVE_BOUNDED_SURFACE with a clockwise OUTER_BOUNDARY_CURVE is read as the complement of the patch sin | can't tell | CURVE_BOUNDED_SURFACE read: same reader; needs a file |
 | 1651 | GeomLProp_SLProps: MinCurvature/MaxCurvature/MeanCurvature/GaussianCurvature return the previous value on the first call after construction or SetPara | already fixed | Kerf computes before reading: `SLProps.RequireCurvature` (decision in phase 2); the port's comment says so |
 | 1643 | Booleans on two valid lofts that share an end section: Fuse empty, Common zero, Cut larger than its object (7.9.3 and 8.0.1) | already fixed | Decision 1937: right the other way round, which is now tried; the cause in one order isn't found |
-| 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | applies | Reproduced on its files: 10596.3 for 29799.9, with an edge's tolerance of 190, and valid. Its other order is right. The public fillet now fails (decision 1833); the cause isn't found |
+| 1639 | Modeling Algorithms - BRepFilletAPI_MakeFillet result depends on the order of the shell's faces | already fixed | Reproduced on its files: 10596.3 for 29799.9, with an edge's tolerance of 190, and valid. Its other order is right. Now 29799.8675 in both orders: the corner's walking line kept a seam point's far-side parameter (decision 28621) |
 | 1638 | Segfault in STEPCAFControl_Reader::findReprItems when a representation has no items | not relevant | Null items natively a crash; the port's STEP layer reports (decision 1050s) |
 | 1637 | GCC 16 miscompiles BRepClass3d_SClassifier::Perform in 7.9.x, classifying a point on an edge segfaults | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1633 | BRepAlgoAPI_Common returns an empty result (and Cut removes nothing) for two overlapping cylinders whose axes are about 1 degree apart | already fixed | Decision 1783; reproduced (Common 0 at 1°) and fixed: the walk ran on past both bounds |
