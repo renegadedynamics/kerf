@@ -18,9 +18,10 @@ namespace Kerf.Engine.Classification;
 /// A classifier's explorer makes an intersector for each face, the tree of its edges' and vertices' boxes and the faces of each
 /// edge, and each intersector its face's box and 2D classifier when first asked: all functions of the shape, its placement and
 /// its orientation, which a frozen <c>TShape</c> never changes. What one point leaves for the next is the explorer's choice of
-/// face and of where on an edge to aim (OCCT's <c>myFirstFace</c> and <c>myParamOnEdge</c>), which
-/// <see cref="SolidClassifier.ForANewPoint"/> sets back to what a new classifier starts from; a classification sets the rest
-/// afresh. So a kept classifier gives each point what a new one would. Nothing is kept or read inside an open working overlay,
+/// face and of where on an edge to aim (OCCT's <c>myFirstFace</c> and <c>myParamOnEdge</c>) and each intersector's flag of a
+/// line found parallel, which every classification sets back first to what a new classifier starts from
+/// (<see cref="SolidExplorer.ForANewPoint"/>); a classification sets the rest afresh. So a kept classifier gives each point
+/// what a new one would. Nothing is kept or read inside an open working overlay,
 /// where a frozen <c>TShape</c> can read as its working copy, nor for a shape that isn't frozen.
 /// </para>
 /// <para>
@@ -64,7 +65,6 @@ internal static class KeptClassifiers
             if (slots.Take(shape) is { } kept)
             {
                 s_lent++;
-                kept.ForANewPoint();
                 return kept;
             }
         }

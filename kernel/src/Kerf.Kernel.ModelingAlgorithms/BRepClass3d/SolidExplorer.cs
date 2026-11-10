@@ -47,6 +47,8 @@ internal class SolidExplorer
     private bool _treeFilled;
     // Kerf: the faces of each edge of a frozen shape, which every point classified asks for (unit 12Y); see GetMapEF
     private IndexedMap<Shape, NCollection_List<Shape>>? _mapEF;
+    // Kerf: the faces whose intersectors OtherSegment replaced by unrestricted ones, with the one each had (unit 15C2)
+    private Dictionary<Shape, CurveSurfaceIntersector?>? _restricted;
 
     /// <summary>
     /// A point <paramref name="APoint_"/> in the face <paramref name="_face"/>: <paramref name="param_"/>, in ]0, 1[,
@@ -550,8 +552,10 @@ internal class SolidExplorer
                     if (aClass.PerformInfinitePoint() == In)
                     {
                         restr = false;
-                        if (_mapOfInter.ContainsKey(face))
+                        if (_mapOfInter.TryGetValue(face, out CurveSurfaceIntersector? restricted))
                         {
+                            // Kerf: the first kept, for the next point (ForANewPoint)
+                            (_restricted ??= new(ShapeHasher.Instance)).TryAdd(face, restricted);
                             _mapOfInter.Remove(face);
                             var ptr = new CurveSurfaceIntersector(face, global::Kerf.Engine.Foundation.Precision.Confusion(), restr, false);
                             _mapOfInter[face] = ptr;
@@ -887,6 +891,7 @@ internal class SolidExplorer
     public void Destroy()
     {
         _mapOfInter.Clear();
+        _restricted?.Clear();
     }
 
     /// <summary>
@@ -908,6 +913,7 @@ internal class SolidExplorer
         //-- Exploring of the Map and removal of allocated objects
 
         _mapOfInter.Clear();
+        _restricted?.Clear();
 
         _reject = true; //-- case of infinite solid (without any face)
 
@@ -1027,14 +1033,25 @@ internal class SolidExplorer
     }
 
     /// <summary>
-    /// Kerf (unit 15C): the choice of face and of where on an edge to aim set back to what <see cref="InitShape(in Shape)"/>
-    /// leaves, and each face's intersector's flag of a line found parallel set back to a new one's: all a classification
-    /// leaves in the explorer that the next one can read before setting it itself.
+    /// Kerf (units 15C and 15C2): the choice of face and of where on an edge to aim set back to what
+    /// <see cref="InitShape(in Shape)"/> leaves, each face's intersector that <see cref="OtherSegment"/> replaced by an
+    /// unrestricted one put back, and each intersector's flag of a line found parallel set back to a new one's: all a
+    /// classification leaves in the explorer that the next one can read before setting it itself. Every classification of a
+    /// point starts here (<see cref="SClassifier.Perform(SolidExplorer, in Point3D, double)"/>), so it gives what a new
+    /// classifier would; OCCT carries them over.
     /// </summary>
     internal void ForANewPoint()
     {
         _firstFace = 0;
         _paramOnEdge = 0.512345;
+        if (_restricted is { Count: > 0 })
+        {
+            foreach ((Shape face, CurveSurfaceIntersector? restricted) in _restricted)
+            {
+                _mapOfInter[face] = restricted;
+            }
+            _restricted.Clear();
+        }
         foreach (CurveSurfaceIntersector? intersector in _mapOfInter.Values)
         {
             intersector?.ForgetParallel();
