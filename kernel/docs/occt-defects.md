@@ -25,7 +25,7 @@ What a user would meet, worst first. Sizes: S under 20 lines and a test, M up to
 
 | Kind | Where | What | How confirmed | Size |
 |---|---|---|---|---|
-| Silent wrong answer | #1570, #1569, #737, #694, #1430 | Fillets that pass the check and intersect themselves: the check doesn't look for that | Reproduced | **For the owner**: `bopcheck` on a fillet's result is too slow to be a default, I think; not measured |
+| Silent wrong answer | #1570 | A fillet at 5.5 that passes the check with two pairs of its edges crossing (#1569, #737 and #694 fail by decision 1833; #1430's case no longer intersects itself) | Reproduced | **For the owner** (decision 28622): the edge-level self-interference check finds it, at 25% to 45% of the fillet's time; recommended as an option |
 | Invalid result | #1573, #1571, #899 and others | Unify on rotated spheres; fillets. All reported as failures by the public layer | Reproduced | M to L |
 | Silent wrong answer | Found by #1675 | Area and volume without a precision, which `Kerf.Modeling` uses, can be up to 3.7% off on swept and B-spline faces: bug5805_21 gives 253.49 where a mesh gives 244.17. The precise path now gives 244.195 | Reproduced | S to change the call; **for the owner**: precise is slower |
 | Silent wrong answer | Upstream `8f817f5da5` | Curve-on-surface deviation, narrow extrema, face self-intersection within trimmed domains | Upstream fix, not checked here | L: 346 files |
@@ -204,8 +204,8 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1576 | Crash on chamfer on complex shape | already fixed | Tried on its file: the chamfer fails with no crash |
 | 1573 | UnifySameDomain breaks spherical faces with pole edges when the spheres have rotated frames | applies | Reproduced from its numbers: invalid at 37, 90 and 180 degrees, with no crash. Its partial fix isn't enough, by its own account |
 | 1571 | Faulty shape with fillet on a rounded cube | applies | Reproduced on its file: invalid, volume 4e29. The public fillet fails |
-| 1570 | Faulty shape with fillet beyond a radius | applies | Reproduced on its file: at 5.5 valid, with edges crossing (`bopcheck`), and clean at 5.0. Silent |
-| 1569 | Faulty shape with fillet on simple shape | applies | Reproduced on its file: valid and self-interfering. Silent |
+| 1570 | Faulty shape with fillet beyond a radius | applies | Reproduced on its file: at 5.5 valid, with two pairs of edges crossing (`bopcheck` E/E), vertices of 0.82, and a success through the public fillet; clean at 5.0. Silent; a check by default costs more than decision 1742's tenth: for the owner (decision 28622) |
+| 1569 | Faulty shape with fillet on simple shape | applies | Reproduced on its file: valid and self-interfering (V/V), with a vertex of tolerance 93.1 on a radius of 1, so the public fillet fails (decisions 1833, 28622) |
 | 1568 | Crash on fillet meeting opposite edge | already fixed | Tried on its file: 1.5 fails with no crash, and 1.49 is valid. The fillet to the opposite edge itself is question 2 |
 | 1567 | `BRepAlgoAPI_Fuse` of a partial torus and a tangent sphere gives an invalid, empty or wrong-volume result | already fixed | Decision 1818; reproduced (empty) and fixed: 26.7684 |
 | 1566 | `BRepPrimAPI_MakeRevol` gives an invalid or wrong-volume solid for a circular profile edge | already fixed | Decision 1780; reproduced (0.5655 for 0.7101) and fixed |
@@ -237,7 +237,7 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 1444 | Bad meshing of torus-like shapes with some specific curvatures | already fixed | Decision 1929: its file, 0.28 measured for 0.45 asked. The sphere decision 1929 left is fixed by decision 1953 |
 | 1434 | GeomTools_Curve2dSet::Add / GeomTools_SurfaceSet::Add accept a null handle and defer the crash to Write(), unlike the CurveSet sibling | not relevant | Natively a crash on a null handle: the port's analyzers refuse null (nullable) |
 | 1431 | ChFi2d_Builder::AddChamfer(edge, edge, ...) SIGSEGVs on a repeated edge pair (unchecked FindConnectedEdges status) | already fixed | Decision 1933: `fillet.connexion-error`, by a test |
-| 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering |
+| 1430 | Fillet crashes and self-intersections | applies | Reproduced on its file: no crash, but four of its five cases are invalid, which the public fillet reports, and the fifth valid and self-interfering; now (decision 28622) the fifth has no interference and vertices of 3.7e-5 |
 | 1429 | HLRAlgo_PolyHidingData.hxx:43:5: error: 'gp_XYZ' does not name a type | not relevant | A C++ matter (compiler, headers, ODR, pointers) that managed code can't have |
 | 1427 | Failing fillet on tapered surface | applies | Reproduced on its files: `tapered_2_9` fails where `tapered_2_8` works |
 | 1421 | Crash on failing fillet | already fixed | Tried on its file: the fillet fails with no crash |
@@ -319,10 +319,10 @@ vertex's tolerance then covers it. A second look could raise more of the touch r
 | 837 | Add stream output support for STL, GLTF and other file formats | not relevant | A request for a new feature, not a defect |
 | 791 | Simplified wrapper for C++, Python and JS/TS | not relevant | A request for a new feature, not a defect |
 | 775 | VRML import issue | not relevant | VRML: not ported (unported.md) |
-| 737 | Fillet bending upward on one side, downward on the other | applies | Reproduced on its file: valid and self-interfering (F/F). Silent |
+| 737 | Fillet bending upward on one side, downward on the other | applies | Reproduced on its file: valid and self-interfering (F/F), with a vertex of tolerance 4.83 on a radius of 1, so the public fillet fails (decisions 1833, 28622) |
 | 736 | Fillet operation produces shape with artefact | can't tell | Needs the issue's attached model; not reproduced in this pass (fillet: goes with the fillet survey, corpus-failures.md) |
 | 724 | More than 10GB of memory needed for boolean operation between two simple faces | applies | Reproduced on its files: past 150 s, memory not measured. For 11Q |
-| 694 | Artifact with a fillet on a straight base, sweep, and a straight edge | applies | Reproduced on its file: valid and self-interfering. Silent |
+| 694 | Artifact with a fillet on a straight base, sweep, and a straight edge | applies | Reproduced on its file: valid and self-interfering (V/V), with a vertex of tolerance 48.4 on a radius of 1, so the public fillet fails (decisions 1833, 28622) |
 | 692 | Faulty shapes with a fillet on a curved base, sweep, and a curve in the same direction. | applies | Reproduced on its file: invalid. The public fillet fails |
 | 691 | Faulty shapes with a fillet on a curved base, sweep, and a straight edge | applies | Reproduced on its file: invalid, volume 62252 from 17084. The public fillet fails |
 | 666 | The result of ShapeFix_Shape do not make ShapeUpgrade_UnifySameDomain work. | applies | Reproduced on its file: Unify gives 7 faces directly and 5 after a STEP round trip. Both valid, so only less merged |
