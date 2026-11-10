@@ -1015,75 +1015,28 @@ internal class IntCurveCurveGen<TheCurve, TheCurveTool, TheProjPCur, TheMyImpPar
     //-- C1 ou C2 sont des courbes composites
     //--
 
+    // OCCT recursed once for each interval of C2 after the first, so a curve of many intervals overflowed the stack, which
+    // ends the process: OCCT #245's section, not approximated, meets a pcurve of 9,364 (decision 28612). The same pairs
+    // of intervals in the same order, in a loop.
     private void InternalCompositePerform(in TheCurve c1, in TwoDDomain d1, int xxxNumInterC1, int nbInterC1, NCollection_Array1<double> tab1, in TheCurve c2, in TwoDDomain d2, int xxxNumInterC2, int nbInterC2, NCollection_Array1<double> tab2, double tolConf, double tol, bool recursOnC2)
     {
-
-        int numInterC2 = xxxNumInterC2;
         int numInterC1 = xxxNumInterC1;
-
-        //  bool Arret=false;
-
-        if (numInterC2 > nbInterC2)
-            return;
 
         if (!recursOnC2)
         {
-            InternalCompositePerform_noRecurs(nbInterC1,
-                                                                                c1,
-                                                                                numInterC1,
-                                                                                tab1,
-                                                                                d1,
-                                                                                nbInterC2,
-                                                                                c2,
-                                                                                numInterC2,
-                                                                                tab2,
-                                                                                d2,
-                                                                                tolConf,
-                                                                                tol);
+            if (xxxNumInterC2 <= nbInterC2)
+            {
+                InternalCompositePerform_noRecurs(nbInterC1, c1, numInterC1, tab1, d1, nbInterC2, c2, xxxNumInterC2, tab2, d2, tolConf, tol);
+            }
             return;
         }
 
-        for (int i = numInterC1; i <= nbInterC1; i++)
+        for (int numInterC2 = xxxNumInterC2; numInterC2 <= nbInterC2; numInterC2++, numInterC1 = 1)
         {
-            numInterC1 = i;
-            /*
-                InternalCompositePerform(C2,D2,NumInterC2,NbInterC2,Tab2,
-                            C1,D1,NumInterC1,NbInterC1,Tab1,
-                            TolConf,Tol,false);
-            */
-
-            InternalCompositePerform_noRecurs(nbInterC2,
-                                                                                c2,
-                                                                                numInterC2,
-                                                                                tab2,
-                                                                                d2,
-                                                                                nbInterC1,
-                                                                                c1,
-                                                                                numInterC1,
-                                                                                tab1,
-                                                                                d1,
-                                                                                tolConf,
-                                                                                tol);
-        }
-
-        if (numInterC2 < nbInterC2)
-        {
-            numInterC2++;
-            numInterC1 = 1;
-
-            InternalCompositePerform(c1,
-                                                              d1,
-                                                              numInterC1,
-                                                              nbInterC1,
-                                                              tab1,
-                                                              c2,
-                                                              d2,
-                                                              numInterC2,
-                                                              nbInterC2,
-                                                              tab2,
-                                                              tolConf,
-                                                              tol,
-                                                              true);
+            for (int i = numInterC1; i <= nbInterC1; i++)
+            {
+                InternalCompositePerform_noRecurs(nbInterC2, c2, numInterC2, tab2, d2, nbInterC1, c1, i, tab1, d1, tolConf, tol);
+            }
         }
     }
 
