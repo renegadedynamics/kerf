@@ -1,6 +1,6 @@
 # Fillets: where they stop, and what could replace them
 
-*7 November 2026; section 9 is what units 12K to 12M built. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
+*7 November 2026; section 9 is what units 12K to 12M built, and section 10 what unit 15Q found of faces that narrow to a point. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
 
 **In short.** The 10 mm case is fixed, without a rewrite (decision 1847). That class of failure is not one failure of ChFi3d's mathematics: ChFi3d computes the right surface and then can't remove a face. **A rewrite of ChFi3d isn't justified yet, but a rolling-ball path that runs only where ChFi3d has failed is,** one analytic stage at a time. Its next stage is circular edges, the largest group among the corpus's fillet failures (8 of 23, 3 of them exactly this limit). Don't port `f713b1305f`.
 
@@ -276,6 +276,23 @@ Not the corpus's status: Draw's `blend` calls the engine, so those stay BAD or O
 **One of section 8's two bands has gone.** A next face within 0.1 radians, just below the width: ChFi3d's invalid results now go to the exact path, and it's right across the band (decision 1910). The other, a contact line reaching a tangent edge, is still ChFi3d's failure, as the path doesn't read tangent chains.
 
 **What this still doesn't do.** Different radii at a corner. Corners of more than three edges, or of concave edges; a concave edge with a slanted end. Mitres between edges of two different angles. Arcs rather than whole circles, and rims with their circle in pieces. A plane and sphere or torus. A bar's capsule stays 12 faces; only a whole ball is one. Chamfers at corners have their refusals, as they had, and no exact path. **Stage 4 and on, as the plan says, wait for failures from Bento's users.**
+
+## 10. Faces that narrow to a point (unit 15Q)
+
+Decisions 29301 and 29302. 15L's check (decision 2125) failed four of the corpus's results whose edges touch at a point; the owner asked whether they were the cube's case. One is, one is something else, and two have no shape to build here.
+
+| Case | What the geometry says | Now |
+|---|---|---|
+| X4, 30 on an edge beside a half round notch of 30 | At 30 the fillet's line on the top just reaches the notch's deepest point. Below, the fillet ends on the notch's wall; above, ChFi3d runs it on past the notch to the far end. The volume jumps there, 523,251.177 to 517,188.189, both right. At 30 the fillet is two faces meeting at that point | **Built**, with a vertex there: ChFi3d's own surfaces, right to 2.4e-9 by the section |
+| B7, 75 on a circle between a cone and a prism leaning as it does | The faces are tangent at one point of the edge, so the fillet has no width there at any radius | **Built** at every radius from 10 to 150, where 30 to 70 failed; ChFi3d itself split the face there at the others |
+| C2, the same, the prism leaning 1e-4 further | Tangent at two points 0.71 apart and convex between: the fillet turns convex, at most 1.2e-4 wide, and ChFi3d's two edges cross | **Fails** from 46 up; below that the strip is within tolerance and it builds. For the owner (29302) |
+| B4, a chamfer of 0.2 after two of 0.05 | No limit: ChFi3d's corner is invalid from 0.1 up | **Fails**, as it did, at the validity check; a corner path is 15P's |
+
+**How a touch is told from a crossing.** The two edges must bound one face the fillet made, each with one other face, not the same, be within their tolerances of each other, and, out to where they're ten times that apart either side of where they come closest, the face must lie between them in its own parameters. Crossing edges fail that on one side; edges with the face outside them on both. Only then is a vertex put where they come closest and the face cut in two there. Where the face's surface itself has no width at the point (B7's), its two edges reach it at different parameters, and a degenerate edge, all at the vertex, joins them in each part, as at a cone's apex.
+
+**What it doesn't change.** It runs only after the check has failed a result, so nothing that passed moves; it moves no point of any surface or curve; and its result goes through every check again. The cube's cases and 12M's limits are untouched (`FilletLimitsTests`, `FilletLimitSweepTests`).
+
+**Not for chamfers.** A chamfer's width is its lengths, so it doesn't narrow to nothing where faces are tangent, and the notch chamfered at 30 is invalid from ChFi3d. None has been seen to need it.
 
 ## Sources
 
