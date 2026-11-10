@@ -16,7 +16,7 @@ version may break the API.
   and shape healing no longer fills a classifier's tree to ask only the point at infinity. The same answers, less
   memory and time where points are classified (decisions 2110 to 2113). **A classifier asked several points, in a
   Boolean or its check, gives each what a new one would,** where OCCT's carries the last point's line over and can call a
-  point near a face ON (decision 28521).
+  point near a face ON (decision 2121).
 - **A volume's integration no longer zeroes its whole work set for every face,** and a shape's validity check builds its shell's edge map once: the same results to the bit, a little less time and memory on long chains of Booleans (decisions 2095 to 2097).
 - **Parallel volumes, as a caller chooses** (decision 2092): `BooleanOptions.ParallelVolumes` and
   `MassOptions.ParallelVolumes` integrate a volume of 16 faces or more on several threads, the figures and the check's
