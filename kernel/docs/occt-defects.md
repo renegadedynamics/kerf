@@ -56,8 +56,8 @@ From decision 1809, which fixed the sweep's: a `Solid.Extrude` in the profile's 
 
 | Issue or commit | What a user saw | Decision |
 |---|---|---|
-| #245 | A Cut that removed nothing and an empty Common, for a sphere whose seam lies in a flat face of the other solid: now right, made again with a fuzzy value of a thousand tolerances (1e-4). Its section, not approximated, ended the process with a stack overflow: now it runs | 28612, 28613 |
-| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. Right through `Kerf.Modeling` too | 2103, 2104, 28611 |
+| #245 | A Cut that removed nothing and an empty Common, for a sphere whose seam lies in a flat face of the other solid: now right, made again with a fuzzy value of a thousand tolerances (1e-4). Its section, not approximated, ended the process with a stack overflow: now it runs | 2116, 2117 |
+| #1629 | A Cut with a solid inside out, a Common empty with no error, and a Fuse with an extra groove: now right, made again with a fuzzy value of ten tolerances. The cause is a neck 1e-5 wide in the tool's flank, which the exact cut doesn't split. Right through `Kerf.Modeling` too | 2103, 2104, 2115 |
 | #1643 | A Common empty, a Cut that removed nothing and a Fuse missing part of the lip, by the inputs' order: now right, made the other way round | 1937 |
 | `1349657592` | A general transform's mesh inside out under a mirror, with wrong normals, and moved twice if located | 1936 |
 | #1659 | A Cut that removed nothing and an empty Common, for a section curve stopping 1e-3 short of the next | 1935 |
