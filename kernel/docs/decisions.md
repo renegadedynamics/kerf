@@ -17092,3 +17092,15 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        option, off by default, for a caller building one large part, is for 0.5.1. Repacked with it off: the smoke test passes, and the release check against
        0.4.0 too, the enclosures 3.19 to 2.27 s and 3.26 to 2.26 s (29% and 31% quicker, where decision 2086's had 32% to 34%), the
        other users' cases as before (boss fuse 11.1 ms, detent 14.5, the collapsing chamfers 3.2 and 7.5).
+2089. **Parallel volumes go into 0.6.0, as something a caller chooses** (the owner, 10 November 2026: "Let's put parallel volumes into
+       0.6.0"). Decision 2088's internal scope becomes an option of the operations that measure volumes and a scope for code that passes
+       no options, off by default; its API shape goes to the owner before it's merged. Phase 15's unit 15A.
+2090. **Phases 13 and 14 close with 0.5.0** (the owner, 10 November 2026: "sweep up the remaining phase 13 and 14 units"). Their open
+       work moves to phase 15: 13H (phase 12's open units) as 15E, 13L (wasteful cases) as 15F, 14B's larger items (decision 1801's check
+       memory, `GaussWork.Rent`'s clearing, `IsInside`'s classifier per point, the boss fuse's 150 points) as 15B and 15C, and more
+       real-world scripts as 15D. Section 2 of phase 14's plan (14E to 14G) and 14H are done.
+2091. **Phase 15's plan, towards 0.6.0, is proposed** (`docs/phase15-plan.md`): 15A parallel volumes as an option; 15B to 15D the hot
+       paths and scripts; 15E and 15F carried from phase 13; and a unit for each loose end left at 0.5.0: the rig's first-load bytes
+       crash (15G), extrude-until's PNG at 17% more bytes (15H), the 25 faces 1.002 to 1.035 times over their deflection with no
+       warning (15I), a gate choosing its suites by the paths a change touches (15J), and the status page (15K). For the owner to agree,
+       with two questions: 15A's API shape and 15D's next script.

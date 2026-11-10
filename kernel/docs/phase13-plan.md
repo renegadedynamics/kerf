@@ -5,6 +5,8 @@
 > slower than in 0.4.0. Sections 4 and 5 ship with whatever is ready by then.
 >
 > **0.5.0 prepared, 10 November 2026** (decision 2086), for the owner to test and publish. Phase 13 stays open until the owner closes it.
+>
+> **Closed, 10 November 2026** (decision 2090), with 0.5.0 published. 13H and 13L, never started, move to phase 15 as 15E and 15F ([phase15-plan.md](phase15-plan.md)).
 
 ## The goal
 
