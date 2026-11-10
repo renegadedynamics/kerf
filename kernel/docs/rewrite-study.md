@@ -334,7 +334,7 @@ intersection mode, not built, invalid or of the wrong volume; the rest in `bugs/
 **OCCT's issues:** #1106 and #1107 (invalid, the public offset fails), #1706 (a fillet then an offset).
 
 **The islands:** **the loft's offset fails 550 of 555, "Bad orientation of subshape"**: outwards invalid, inwards valid
-(reliability.md 4b). Whether that's the offset or the loft isn't known.
+(reliability.md 4b). Whether that's the offset or the loft isn't known. **Since (unit 15O, decision 29201):** the offset's, as native's: a sphere of no area where two faces are tangent at a corner, now left out; 555 of 555 made.
 
 **Fences:** decision 1918 (a solid's offset must be a solid, of a size its input allows), after cones with an apex gave
 volumes of 3.7e101 and called them valid.

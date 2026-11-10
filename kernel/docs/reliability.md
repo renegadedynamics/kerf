@@ -125,7 +125,7 @@ Time from cancelling to returning, cancelled at 2, 10, 30, 50, 70 and 90% of a r
 | 2 | **An equal tee:** a branch of the same radius through a cylinder, filleted where they meet | **514 of 2,508 fail, 285 flips**: nearly all below 0.1, then scattered up to 2.6 | Failure | Tangency at the crossing points of the saddle. A branch of another radius has none (0 of 2,508) |
 | 3 | **Chamfer on a loft** (square to circle), all edges | **946 of 2,194, 228 flips** | Failure | With fillets below: a loft's B-spline faces |
 | 4 | **Fillet on the same loft** | 39 of 2,194, 26 flips, around radii 0.063 to 0.11 | Failure: "Bad orientation of subshape" (30), walking failure (9) | |
-| 5 | **Offset of the same loft** | 550 of 555, 10 flips | Failure: "Bad orientation of subshape" | Mostly fails, so it's closer to not working than an island; worth asking if the check or the loft is at fault |
+| 5 | **Offset of the same loft** | 550 of 555, 10 flips | Failure: "Bad orientation of subshape" | Mostly fails, so it's closer to not working than an island; worth asking if the check or the loft is at fault. **Fixed (unit 15O, decision 29201):** the offset's, and native's too: a sphere of no area at each corner where the side faces are tangent. 555 of 555 made, each of Steiner's volume |
 | 6 | **Crossing cylinders of different radii, all edges filleted** | 401 of 401 | Failure | Not an island. Only the edges where they meet work, 441 of 441 (`fillet-tee-branch`) |
 | 7 | A cylinder's seam, a sphere's pole: turned in 0.5° steps, 0.01° near the seam | 0 of 3,165 | | Clean |
 | 8 | Near-tangent, near-coplanar, near-coaxial, by powers of ten to 1e-13: box on box, sphere in cylinder, torus on plane | 0 failures of 1,196; volumes follow | | Clean |
@@ -205,7 +205,7 @@ Native 8.0.1 on the notch: no failures, 88 wrong of 267, 18 of them invalid Fuse
 | After, the same files, no cancel | 1,313 | 6, each large work: all stop when cancelled | 0 (3) |
 | After, 1,000 new files, cancelled at 3 s | 1,000 | **0** | 0 (3) |
 
-**The islands that were left** (3 to 6 in section 4) are failures, not stalls: each returned a failure in the probe here, so none is a hang risk and they stay as they are. A loft (square to circle) offset outwards by 0.1, 0.5 or 1 is `result.invalid`, "Bad orientation of subshape", and inwards it's valid. All edges chamfered at 0.05 or 0.1 fail, at 0.5 it works, and it fillets at all three. **Not looked into; for the next batch:** native can't be asked, so whose that orientation is isn't known.
+**The islands that were left** (3 to 6 in section 4) are failures, not stalls: each returned a failure in the probe here, so none is a hang risk and they stay as they are. A loft (square to circle) offset outwards by 0.1, 0.5 or 1 is `result.invalid`, "Bad orientation of subshape", and inwards it's valid. All edges chamfered at 0.05 or 0.1 fail, at 0.5 it works, and it fillets at all three. **Not looked into; for the next batch:** native can't be asked, so whose that orientation is isn't known. **Since:** the offset's was found and fixed by unit 15O (decision 29201), against native OCCT 8.0.1, which fails the same way; the chamfer's and fillet's weren't looked into (decision 29202).
 
 ## 4c. Phase 12: 12E, 12F, 12G (decisions 1922 to 1925)
 
