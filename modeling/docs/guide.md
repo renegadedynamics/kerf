@@ -266,9 +266,10 @@ var m = result.Value;                                            // Positions, N
 - `MeshOptions { Relative = true }` makes the deflection a proportion of each edge's size, as OCCT's relative mode.
 - Exports mesh for you: `ExportStl`, `ExportGltf` and `Export3mf` take the deflections in their options.
 - **A mesh further from the surface than the deflection says so,** with the warning `meshing.deflection-exceeded`:
-  spheres and tori are measured as they're meshed and refined until they keep to it, and a face that can't be refined
-  further is left as it is and named. It's met at relative deflections, on small fillet tori beside a long edge, up to
-  about 1.14 times out. The exports give it in their results' `Diagnostics`; `Triangulate`, `Tessellate` and
+  spheres and tori are measured as they're meshed (a torus's triangles inside too, at their medians' midpoints) and
+  refined until they keep to it, and a face that can't be refined further is left as it is and named. It's met at
+  relative deflections, on small fillet tori beside a long edge, up to about 1.14 times out; no face is over it
+  without the warning. The exports give it in their results' `Diagnostics`; `Triangulate`, `Tessellate` and
   `TriangulateTree` raise it to `Warnings` (section 6); the kernel's `Mesh` in its `Diagnostics`,
   with the faces in `Shapes`. Other kinds of surface aren't measured, so nothing is said of them.
 

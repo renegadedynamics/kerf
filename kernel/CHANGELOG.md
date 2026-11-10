@@ -5,6 +5,13 @@ version may break the API.
 
 ## Unreleased
 
+- **A torus's mesh is measured inside its triangles too,** at their medians' midpoints, where a skewed triangle is
+  furthest from the surface: 25 small fillet-torus faces of OCCT's dataset at relative deflections were 1.002 to 1.035
+  times their deflection there, with no warning, as the mesher measured only each triangle's centre and links. Now a
+  face over there is refined within it, or named by `meshing.deflection-exceeded` where it can't be, so no face is over
+  its deflection without the warning. Only meshes that were over change; a mesh within its deflection is the same
+  (decision 28401).
+
 ## 0.5.0
 
 - **Text and drawing sheets:** a managed font reader (TrueType, OpenType, collections) with Liberation Sans shipped, text
