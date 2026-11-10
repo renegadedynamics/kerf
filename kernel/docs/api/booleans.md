@@ -58,6 +58,8 @@ public sealed record BooleanOptions
 | Fuse | max(A, B) ≤ R ≤ A + B |
 | Any | No solid of the result inside out |
 
+  A result proved wrong is first made again: with its inputs the other way round (warning `boolean.other-way-round`; decision 1937), then with a fuzzy value of ten times the inputs' largest tolerance (warning `boolean.fuzzy-value`, naming it; decision 28601). A retry is kept only if it passes every check the first had; otherwise the first failure stands. An empty common, or a cut that removed nothing, is looked for at a grid of points in the boxes' overlap and at points just inside the inputs' faces (decision 28602).
+
   Each with a margin of a ten-thousandth of the larger input, and more for large tolerances or a fuzzy value. Nothing is said where anything isn't a solid (faces, shells, half-spaces), for an input that isn't valid, or about Split, Partition and Section. `BooleanVolumes.Check(rule, arguments, tools, result, fuzzyValue)` is the check itself, for a caller that runs one with `CheckResult = false` and tidies after, as `Kerf.Modeling` does.
 
 ## Examples

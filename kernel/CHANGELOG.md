@@ -5,6 +5,7 @@ version may break the API.
 
 ## Unreleased
 
+- **A Boolean still proved wrong is made once more with a small fuzzy value, and that result returned, with the warning `boolean.fuzzy-value`, if it's right:** OCCT #1629's thread cut, which made a solid inside out, its empty common and its fuse with an extra groove are now right (decision 28601). `BooleanOperations.BuiltWithFuzzyValue` is the new code. **An empty common, or a cut that removed nothing, is also looked for just inside the inputs' faces,** as a grid of points can miss a thin overlap: #1629's empty common was a success (decision 28602).
 - **A volume's integration no longer zeroes its whole work set for every face,** and a shape's validity check builds its shell's edge map once: the same results to the bit, a little less time and memory on long chains of Booleans (decisions 2095 to 2097).
 - **Parallel volumes, as a caller chooses** (decision 2092): `BooleanOptions.ParallelVolumes` and
   `MassOptions.ParallelVolumes` integrate a volume of 16 faces or more on several threads, the figures and the check's
