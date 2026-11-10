@@ -2033,3 +2033,60 @@ builder and pave filler 47%, **decision 1860's volume check 19%, all of it seria
 | Exports | STEP's writer and the STL mesh's extraction are serial within a file | A client writes files in parallel (the guide's section 9) |
 
 Nothing was held back for the owner: no change slows anything else past the bar.
+
+## The Boolean's memory per face (unit 15B)
+
+*10 November 2026, decisions 2095 to 2098. Two other helpers shared the machine with the owner: **the times here are from a
+loaded machine**, and the verdicts rest on bytes, samples and counts. The harness is 14A's (`p14f/harness`, pointed at this
+tree), the enclosure at v0.16 for a 35 mm shaft, its parts built warm in a process on 2 logical processors; the bytes
+are from an EventPipe allocation trace of two builds (`tools/alloc-report.cs`), the counts from a throwaway probe.*
+
+**Where a build's bytes go** (2,750 MB a build in `parts` mode, 2,520 in `par` mode without the sections):
+
+| | MB a build | Of the build | What it is |
+|---|---:|---:|---|
+| The validity check (decision 1801's, with 13K's memory) | 162 | 5.9% | 467 checks; 11,410 faces met, 9,179 of them skipped as known |
+| of which what the checks keep for each face | ~50 | 1.8% | a result a sub-shape, its status lists (its own and one a context), the analyzer's map |
+| of which the geometric checks of the new faces | ~95 | 3.5% | wires' self-intersection, closure in 2D and orientation; faces' classification of their wires |
+| of which the shell's walks over every face | 27 | 1.0% | edge-to-faces maps built twice, propagated twice; an explorer a face |
+| The volume check (decision 1860's) | 204 | 7.4% | |
+| of which decisions 1866's and 1881's classifications | 137 | 5.0% | 15C's: points classified one by one |
+| of which the volumes' integration | 47 | 1.7% | 361 solids integrated, 138 volumes read back from decision 2000's memory |
+| of which the integration's own allocation | 19 | 0.7% | integrands, knots, the work set's growth (decision 2077) |
+| What a frozen solid keeps with its data | 0.25 | <0.01% | 2,231 faces remembered (`ValidMemory`), 361 volumes (`BooleanVolumes`); a node each; no site in the trace |
+
+**`GaussWork.Rent`'s clearing:** 5,530 rents a build, 96 to 100 of them new sets (the thread's spare lost to a generation 2
+collection, or a pool thread's first), and **207 MB zeroed a build**, 37 kB a rent: since decision 2077 the vectors stay
+as long as the face with the most knots left them, and every rent cleared all of it for a face that reads 33 entries. It
+allocates nothing, so it showed only in samples: 5 of Kerf's 464 in two builds (1.1%), and a fifth of the integration's
+own 26, all in `Buffer.ZeroMemory` under `Rent`.
+
+**What's kept, and why** (the brief's question):
+
+- *The checks' results for each face* are the report: the verdict reads the first status of some lists, `IsClean` every
+  status of every list, and `Validate`'s caller reads them all for the problems. They live until the analyzer is dropped,
+  at the end of the check. A face the memory knows costs one entry of the analyzer's map and nothing under it.
+- *The shell's and solid's checks walk every face,* known or not, because a shell is new in nearly every check (decision
+  1799): a Boolean's result shares its faces with its inputs, never its shell.
+- *The memory itself* (13K's faces, 2000's volumes) is a node a face or a solid, weakly held with the `TShape`: too small
+  to show, and each saves a face's check or a solid's integration.
+- *The classifications* (137 MB) are 15C's, named there as the next thing.
+
+**What changed:**
+
+| Change | Where it was | After |
+|---|---|---|
+| The work set isn't cleared when rented (decision 2095) | 207 MB zeroed a build, a fifth of the integration's samples | nothing zeroed; no sample in `Rent`; 8,730 properties of the dataset bit for bit |
+| `IsClean` found once, by index; the map sized by the faces to check (decision 2096) | 5.6 MB of iterators; a map for ten entries a face where 80% of faces are one | 0; the map for the faces checked |
+| The shell keeps its first map for its closure check (decision 2097) | the edge-to-faces map built twice a shell, propagated twice | once, when everything is oriented |
+
+**Measured:** the validity check 162 to 150 to 152 MB a build (−7%; three traces); the enclosure's 13 parts (`par 1`, four interleaved runs,
+warm) 2,508 to 2,536 MB a build to 2,511 to 2,525 (−0.2%, within the noise), generation 2 collections 10 to 12 before
+and after, the same fingerprints (BREP hash, volume, faces) in every run; the users' cases (three runs each side, 2 processors) the boss's fuse 14.9 to 15.0 MB either side, the detent's 18.5 to 19.7 against 19.3 to 19.6, the chamfers the same to 0.1 MB, the enclosure 2,832 to 2,837 to 2,822 to 2,827 (−0.4%) and v0.16's 2,794 to 2,807 to 2,782 to 2,786 (−0.5%), every result its fixed one; Bento's examples 113.9 to 118.2 MB a pass of the eleven in three runs against 112.6 to 117.4 (the bottle and extrude-until move by 2 MB between runs either side), the same results.
+Below decision 1829's bar in bytes; kept, as decision 2077 was, because nothing is slower, the results are the same to
+the bit, and the zeroing is gone. The suites: ModelingAlgorithms 6,077 passed, 9 skipped; Modeling 2,647 passed; in Release on 2 threads. The corpus's Boolean cases, each check made again by the check as
+it was: 4,091 cases run of 4,093 (OK 3,301, SKIPPED 786, BAD 2, FAILED 1, IMPROVEMENT 1, as `corpus-13.txt`'s group), 3,499 checks compared, 0 differences.
+
+**Not changed, and why:** what the checks keep for each new face is the report, read after the check (above). The wires'
+and faces' geometric checks are OCCT's, on faces that are new, and 11Q found them spread out with little to cut. The
+volume check's classifications are 15C's.
