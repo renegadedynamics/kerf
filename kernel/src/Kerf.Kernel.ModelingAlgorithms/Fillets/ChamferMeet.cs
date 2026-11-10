@@ -181,7 +181,7 @@ internal static class ChamferMeet
         foreach (Stripe stripe in builder._listStripe)
         {
             Cancellation.ThrowIfRequested();
-            if (Bands(shape, faces, builder, stripe, corners) is not { } own)
+            if (Bands(faces, builder, stripe, corners) is not { } own)
             {
                 return null;
             }
@@ -399,7 +399,7 @@ internal static class ChamferMeet
 
     // The bands of one stripe, one for each of its surfaces; null where a surface isn't a B-spline with its contacts its u-isos,
     // or the stripe's faces aren't its edges'
-    private static List<Band>? Bands(Shape shape, Face[] faces, ChBuilder builder, Stripe stripe, List<Vertex> corners)
+    private static List<Band>? Bands(Face[] faces, ChBuilder builder, Stripe stripe, List<Vertex> corners)
     {
         NCollection_HSequence<SurfData>? set = stripe.SetOfSurfData();
         Spine spine = stripe.Spine()!;
@@ -475,7 +475,6 @@ internal static class ChamferMeet
                 Edges = own,
             });
         }
-        _ = shape;
         return bands;
     }
 
@@ -682,7 +681,7 @@ internal static class ChamferMeet
                 return extrema.IsDone && Enumerable.Range(1, extrema.ExtCount).Any(n => extrema.SquareDistance(n) < Precision.SquareConfusion());
             });
         }
-        if (!Closed(input, result, faces, f => origin[f] >= 0, tolerance))
+        if (!Closed(input, faces, f => origin[f] >= 0, tolerance))
         {
             return false;
         }
@@ -804,10 +803,10 @@ internal static class ChamferMeet
     }
 
     // Every free edge of the result runs along a free edge of the input, or is a chamfer face's end between two of them
-    private static bool Closed(Shape input, Shape result, Face[] faces, Func<Face, bool> isInputPiece, double tolerance)
+    private static bool Closed(Shape input, Face[] faces, Func<Face, bool> isInputPiece, double tolerance)
     {
-        Edge[] inputFree = FreeEdges(input, input.AllFaces().ToArray(), out _);
-        Edge[] free = FreeEdges(result, faces, out Face[] owners);
+        Edge[] inputFree = FreeEdges(input.AllFaces().ToArray(), out _);
+        Edge[] free = FreeEdges(faces, out Face[] owners);
         for (int i = 0; i < free.Length; i++)
         {
             if (Tool.Curve(free[i], out double a, out double b) is not { } curve)
@@ -825,17 +824,18 @@ internal static class ChamferMeet
             }
             return false;
         }
-        _ = result;
         return true;
     }
 
-    private static Edge[] FreeEdges(Shape shape, Face[] faces, out Face[] owners)
+    // The edges of only one of the faces, once in it, with that face
+    private static Edge[] FreeEdges(Face[] faces, out Face[] owners)
     {
         var free = new List<Edge>();
         var own = new List<Face>();
-        foreach (Edge edge in shape.AllEdges())
+        var seen = new HashSet<Shape>(ShapeHasher.Instance);
+        foreach (Edge edge in faces.SelectMany(static f => f.AllEdges()))
         {
-            if (Tool.Degenerated(edge))
+            if (!seen.Add(edge) || Tool.Degenerated(edge))
             {
                 continue;
             }
