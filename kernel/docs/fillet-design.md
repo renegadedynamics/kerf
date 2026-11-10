@@ -317,6 +317,27 @@ The tee's other 1,994 radii are ChFi3d's as before, the same volume and faces. E
 
 **What it doesn't do.** A plane and a cylinder are never tangent at a point, only along a line, so no plane–cylinder edge ends in a pinch: the support is there, but nothing yet reaches it. Ends where the fillet has width (a contact reaching another face's edge, a corner) are stage 4b. A branch flush with the side (a closed edge, tangent at its one vertex) would be a chain, but ChFi3d throws there, and the path isn't asked after a throw.
 
+## 12. Why ChFi3d's own fillets are off the ball (unit 15R)
+
+Decisions 29501 and 29502. **Native OCCT 8.0.1 does the same,** to the digits: it's OCCT's. **It isn't the walk or the approximation:** at r = 2.5 on the equal tee the walk's own points miss the ball by 1.64e-2, the approximation adds 3e-5 of its own, and the surface is off by the same at the walk's sections and between them. **It's the formulation, `BlendFunc_ConstRad`:** each section's circle lies in the plane square to the edge where the section crosses it, tangent to that plane's sections of the two faces, the faces' normals projected into it. The rolling ball's circle lies in the plane square to the curve of the ball's centres. Where the faces' normals at the contacts are square to the edge (planes and extrusions along it, circles of coaxial revolutions) the two agree; elsewhere the section is a 2D fillet in a tilted plane, and its centre isn't the ball's. A script solving ConstRad's equations for the tee, apart from ChFi3d, gives its miss (4.8e-5, 1.5e-3, 1.7e-2 at 0.3, 1, 2.5), and nothing with the curve of centres as the guide.
+
+**How far it reaches,** the ball test on ChFi3d's results, worst miss at r = 1:
+
+| Faces | Miss at r = 1 |
+|---|---:|
+| Equal tee (cylinders of 5) | 1.3e-3 |
+| Tee, 5 and 4, 3, 2 | 7.6e-4 to 1.9e-3 |
+| Branch of 3 at 60 degrees, at 45 | 2.4e-2, 2.0e-3 |
+| Branch of 2 offset by 2 | 9.8e-3 |
+| Cone into a cylinder | 1.2e-3 |
+| Cylinder through a sphere, off its centre | 3.7e-3 |
+| Cylinder through a torus's tube | 1.3e-2 |
+| Cylinder tilted 30 degrees through a plane | 1.8e-2 |
+| Cylinder through a sphere's centre; cone on a cylinder's axis (walked) | 9e-6; 2.2e-5, at every radius |
+| Upright cylinder on a plane (`ChFiKPart`'s torus) | 1e-15 |
+
+The miss grows about as the cube of the radius: on the tee 2.1e-6 at 0.1, 3.9e-5 at 0.3, 2.9e-4 at 0.6. **A fix** gives the functions the curve of the ball's centres as their guide, from a first walk, and walks again; it reaches the ends' sections and the corners, and moves every walked fillet's surface. Not done here: for the owner, beside decision 2134's cheaper choices (29502).
+
 ## Sources
 
 From documentation and the web, read on 6 and 7 November 2026; I've read no kernel's source other than OCCT's.
