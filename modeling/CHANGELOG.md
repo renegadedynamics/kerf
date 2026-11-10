@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A fillet or chamfer whose edges meet, or run along each other, fails** (kernel decision 2125): `Fillet` and `Chamfer`
+  return the kernel's `fillet.self-intersecting` error, carrying the shape (`TryGetInvalid`) and naming the edges, the
+  shorthand throws it with the advice to try a smaller radius, and `MaxFillet` stops below such a radius. OCCT #1570's
+  part filleted at 5.5 is the case; at 5 it's clean.
 - **`IsInside` classifies a point once, not twice, and asked point by point of one part reuses its classifier** (kernel
   decisions 2110 and 2111): the same answers, a fraction of the time and memory when many points are asked.
 - **A Boolean proved wrong is made again before it fails,** as the kernel's are: with its inputs the other way round, then

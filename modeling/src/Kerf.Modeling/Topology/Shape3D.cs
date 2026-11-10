@@ -133,10 +133,14 @@ public static partial class Shape3DExtensions
                     ? edges.Count > 1 && details.Length > 0 ? $"{tooLarge} It failed{details}." : tooLarge
                     : $"The fillet with a radius of {Formatting.Number(radius)}{details} failed; try a smaller radius, or MaxFillet "
                       + "to find the largest that works.";
-                throw filleted.TryGetInvalid(out var invalid)
-                    ? Failures.Invalid(invalid.Shape, invalid.Shape.Validate(), $"The fillet with a radius of {Formatting.Number(radius)}",
-                                       "Try a smaller radius, or MaxFillet to find the largest that works.")
-                    : Failures.Expected(ModelingDiagnostics.FilletFailed, message, filleted.Diagnostics, Failures.Failed(filleted.Diagnostics));
+                const string advice = "Try a smaller radius, or MaxFillet to find the largest that works.";
+                if (filleted.TryGetInvalid(out var invalid))
+                    // A result that isn't valid is described from its own report; one the kernel failed for a reason of its own (its
+                    // edges cross, fillet.self-intersecting) keeps that error and its edges, carrying the shape (decision 2123)
+                    throw filleted.Error!.Code == DiagnosticCode.InvalidResult
+                        ? Failures.Invalid(invalid.Shape, invalid.Shape.Validate(), $"The fillet with a radius of {Formatting.Number(radius)}", advice)
+                        : Failures.Expected(ModelingDiagnostics.FilletFailed, advice, filleted);
+                throw Failures.Expected(ModelingDiagnostics.FilletFailed, message, filleted.Diagnostics, Failures.Failed(filleted.Diagnostics));
             }
             var result = Shape3DExtensions.Make3DResult(built.Shape);
             return result.MadeBy(ModelHistory.FromAlgorithm(s => built!.History.Modified(s), s => built!.History.Generated(s),

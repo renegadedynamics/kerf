@@ -48,5 +48,7 @@
   <ItemGroup>
     <!-- Two of the kernel's test fonts (kernel/tests/Kerf.Kernel.ModelingAlgorithms.Tests/Fonts/Data), for Text (unit 13E) -->
     <EmbeddedResource Include="Objects\Fonts\*.ttf" LogicalName="Fonts.%(Filename)%(Extension)" />
+    <!-- OCCT #1570's part (kernel/tests/Kerf.Kernel.ModelingAlgorithms.Tests/BRepFilletAPI/Issues), for FilletCrossingTests (unit 15L) -->
+    <EmbeddedResource Include="Topology\Issues\*.brep" LogicalName="Topology.Issues.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
