@@ -1560,6 +1560,7 @@ public static class Kerf.Booleans.BooleanOperations
   public static Result<Built<Shape>> Fuse<TShape, TOther>(this TShape a, TOther b, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> FuseAll(IReadOnlyList<Shape> shapes, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> Partition(IReadOnlyList<Shape> shapes, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
+  public static Result<Built<Shape>> Retry(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> Section(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> Section<TShape, TOther>(this TShape a, TOther b, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> Split(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)

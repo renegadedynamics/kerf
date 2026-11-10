@@ -67,6 +67,24 @@ public class BooleanVolumeIssueTests
     }
 
     [Fact]
+    public void Retry_makes_again_a_Boolean_its_caller_proved_wrong()
+    {
+        // As a caller that checks after a step of its own does (Kerf.Modeling, after its clean)
+        (Shape part, Shape tool) = BooleanIssueShapes.Thread(8.0, 0.7, 1.65, 2.0, 20.0, 15.0);
+        Shape exact = part.Cut(tool, Unchecked).Value.Shape;
+        Assert.NotNull(BooleanVolumes.Check(BooleanVolumeRule.Cut, [part], [tool], exact));
+        Result<Built<Shape>> again = BooleanOperations.Retry(BooleanVolumeRule.Cut, [part], [tool], Unchecked);
+        Assert.Contains(again.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        Assert.Equal(7859.1186, Assert.Single(again.Value.Shape.AllSolids()).IntegrateVolume(new MassOptions { Tolerance = 1e-6 }), 3);
+
+        // Two arguments can't be turned round, and a fuzzy value already over ten tolerances isn't tried again: a failure
+        Shape block = Solid.Box(10, 10, 10).Value.Shape;
+        Result<Built<Shape>> none = BooleanOperations.Retry(BooleanVolumeRule.Cut, [part, block], [tool], Unchecked with { FuzzyValue = 1 });
+        Assert.True(none.IsFailure);
+        Assert.Equal(BooleanOperations.Failed, none.Error!.Code);
+    }
+
+    [Fact]
     public void Issue_1629_a_good_depth_passes()
     {
         (Shape part, Shape tool) = BooleanIssueShapes.Thread(7.5, 0.7, 1.65, 2.0, 20.0, 15.0);
