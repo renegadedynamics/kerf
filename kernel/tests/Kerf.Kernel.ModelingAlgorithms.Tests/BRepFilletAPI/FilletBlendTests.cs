@@ -130,18 +130,17 @@ public class FilletBlendTests
         Assert.Null(FilletLimits.AfterAlgorithm(tee, [.. edges.Select((e, i) => new FilletSpec(e, i == 0 ? 0.03 : 0.02))], FilletOptions.Default));
     }
 
-    // ChFi3d's own fillets on the tee are off the ball (decision 2141; occt-issues.md). BlendFunc_ConstRad puts each section's
-    // circle in the plane square to the edge where it crosses the guide, tangent there to that plane's sections of the two
-    // cylinders, with their normals projected into it: the rolling ball's circle lies in the plane square to the curve of its
-    // centres, and the two planes differ wherever the cylinders' normals at the contacts leave the first. The walk's own points
-    // miss by this, and the approximation adds 3e-5. ConstRad's equations solved apart from ChFi3d give 4.8e-5, 1.5e-3 and 1.7e-2,
-    // and none with the curve of centres as the guide. A cylinder through a sphere's centre keeps the normals in the plane, and
-    // the same walk is on the ball to the approximation's tolerance. A fix moves these numbers.
+    // ChFi3d's own fillets on the tee are on the ball (decision 30001). 15R found them off it, as OCCT's are (decision 2141;
+    // occt-issues.md): BlendFunc_ConstRad put each section's circle in the plane square to the edge, tangent there to that plane's
+    // sections of the two cylinders, where the rolling ball's circle lies in the plane square to the path of its centre. Kerf's
+    // ConstRad takes the surfaces' own normals, so the walk's sections are the ball's, and what's left is the approximation's own
+    // error; the volume the fillet adds is the slices' region to what that moves the faces by over their area. They were off by
+    // 3.9e-5, 1.30e-3 and 1.71e-2, and added 0.4853598, 5.3579340 and 33.2356606.
     [Theory]
-    [InlineData(0.3, 3.9e-5)]
-    [InlineData(1, 1.30e-3)]
-    [InlineData(2.5, 1.71e-2)]
-    public void ChFi3ds_section_is_square_to_the_edge_so_its_tee_fillet_is_off_the_ball_ReproducesOcctError(double radius, double miss)
+    [InlineData(0.3)]
+    [InlineData(1)]
+    [InlineData(2.5)]
+    public void ChFi3ds_tee_fillet_is_on_the_ball(double radius)
     {
         Shape tee = Tee();
         var chfi3d = new MakeFillet(tee);
@@ -151,21 +150,115 @@ public class FilletBlendTests
         }
         chfi3d.Build();
         Assert.True(chfi3d.IsDone);
-        Assert.Equal(miss, BallMiss(chfi3d, radius, static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 5),
-                                    static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Z * p.Z) - 5)), 0.05 * miss);
+        Assert.True(BallMiss(chfi3d, radius, static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 5),
+                             static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Z * p.Z) - 5)) < Approximation);
+        Shape shape = chfi3d.Shape();
+        double added = shape.IntegrateVolume(Precise) - tee.IntegrateVolume(Precise);
+        double area = shape.AllFaces().Where(f => new FaceSurfaceAdaptor(f).GetType() is not (SurfaceKind.Plane or SurfaceKind.Cylinder))
+                           .Sum(f => ((Shape)f).IntegrateArea(Precise));
+        Assert.Equal(TeeRegion(radius), added, Approximation * area);
+    }
 
-        Shape coaxial = Solid.Sphere(6).Value.Shape
-                             .Fuse(Solid.Cylinder(2, 10, new Frame3D(new Point3D(0, 0, 0), Direction3D.D.Z, Direction3D.D.X)).Value.Shape).Value.Shape;
-        var walked = new MakeFillet(coaxial);
-        walked.Add(radius, coaxial.AllEdges().Single(static e =>
+    // What ChFi3d's approximation of a walked fillet is asked for (its tolapp3d): the ball on its faces is within this, where the
+    // sections are the ball's
+    private const double Approximation = 1e-4;
+
+    private delegate double Distance(Point3D p);
+
+    private static double Rho(Point3D p, Point3D o, Direction3D d, out double s)
+    {
+        double vx = p.X - o.X, vy = p.Y - o.Y, vz = p.Z - o.Z;
+        s = vx * d.X + vy * d.Y + vz * d.Z;
+        double rx = vx - s * d.X, ry = vy - s * d.Y, rz = vz - s * d.Z;
+        return Math.Sqrt(rx * rx + ry * ry + rz * rz);
+    }
+
+    private static Shape Cylinder(double r, double h, Point3D o, Direction3D d) => Solid.Cylinder(r, h, new Frame3D(o, d)).Value.Shape;
+
+    // 15R's fourteen pairs of faces (decision 2141), each a solid and the distances to the two surfaces its edges lie on
+    private static (Func<Shape> Make, Distance First, Distance Second) Pair(string name)
+    {
+        Direction3D z = new(0, 0, 1), y = new(0, 1, 0);
+        Point3D origin = new(0, 0, 0);
+        Shape Main() => Cylinder(5, 20, new Point3D(0, 0, -10), z);
+        Distance Cyl(Point3D o, Direction3D d, double r) => p => Math.Abs(Rho(p, o, d, out _) - r);
+        Distance main = Cyl(origin, z, 5);
+        Distance Cone(Point3D o, Direction3D d, double r1, double r2, double h) => p =>
         {
-            Point3D p = new EdgeCurveAdaptor(e).Value(0.3);
-            return Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 2) < 1e-6 && Math.Abs(p.DistanceTo(new Point3D(0, 0, 0)) - 6) < 1e-6;
-        }));
-        walked.Build();
-        Assert.True(walked.IsDone);
-        Assert.True(BallMiss(walked, radius, static p => Math.Abs(p.DistanceTo(new Point3D(0, 0, 0)) - 6),
-                             static p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 2)) < 2e-5);
+            double rho = Rho(p, o, d, out double s), k = (r2 - r1) / h;
+            return Math.Abs(rho - r1 - k * s) / Math.Sqrt(1 + k * k);
+        };
+        Direction3D At(double degrees) => new(0, Math.Sin(degrees * Math.PI / 180), Math.Cos(degrees * Math.PI / 180));
+        Shape Plate() => Solid.Box(20, 20, 5, new Frame3D(new Point3D(-10, -10, -5), z, new Direction3D(1, 0, 0))).Value.Shape;
+        return name switch
+        {
+            "tee 5/5" or "tee 5/4" or "tee 5/3" or "tee 5/2" => (() => Main().Fuse(Cylinder(name[^1] - '0', 30, new Point3D(0, -15, 0), y)).Value.Shape,
+                                                                   main, Cyl(origin, y, name[^1] - '0')),
+            "branch 3 at 60" or "branch 3 at 45" => (() => Main().Fuse(Cylinder(3, 9, origin, At(name[^2] == '6' ? 60 : 45))).Value.Shape,
+                                                       main, Cyl(origin, At(name[^2] == '6' ? 60 : 45), 3)),
+            "branch 2 offset by 2" => (() => Main().Fuse(Cylinder(2, 15, new Point3D(2, 0, 0), y)).Value.Shape, main, Cyl(new Point3D(2, 0, 0), y, 2)),
+            "cone into a cylinder" => (() => Main().Fuse(Solid.Cone(3, 2, 12, new Frame3D(origin, y)).Value.Shape).Value.Shape,
+                                       main, Cone(origin, y, 3, 2, 12)),
+            "cylinder through a sphere's centre" => (() => Solid.Sphere(6).Value.Shape.Fuse(Cylinder(2, 10, origin, z)).Value.Shape,
+                                                     p => Math.Abs(p.DistanceTo(origin) - 6), Cyl(origin, z, 2)),
+            "cylinder through a sphere off its centre" => (() => Solid.Sphere(6).Value.Shape.Fuse(Cylinder(2, 10, new Point3D(2, 0, 0), z)).Value.Shape,
+                                                           p => Math.Abs(p.DistanceTo(origin) - 6), Cyl(new Point3D(2, 0, 0), z, 2)),
+            "cylinder through a torus's tube" => (() => Solid.Torus(6, 2).Value.Shape.Fuse(Cylinder(1, 8, new Point3D(6, 0, -4), z)).Value.Shape,
+                                                  p =>
+                                                  {
+                                                      double rho = Rho(p, origin, z, out double s);
+                                                      return Math.Abs(Math.Sqrt((rho - 6) * (rho - 6) + s * s) - 2);
+                                                  }, Cyl(new Point3D(6, 0, 0), z, 1)),
+            "cylinder tilted through a plane" => (() => Plate().Fuse(Cylinder(2, 8, new Point3D(0, 0, -2), At(30))).Value.Shape,
+                                                  p => Math.Abs(p.Z), Cyl(new Point3D(0, 0, -2), At(30), 2)),
+            "upright cylinder on a plane" => (() => Plate().Fuse(Cylinder(2, 8, new Point3D(0, 0, -2), z)).Value.Shape,
+                                              p => Math.Abs(p.Z), Cyl(new Point3D(0, 0, -2), z, 2)),
+            "cone on a cylinder's axis" => (() => Main().Fuse(Solid.Cone(7, 3, 6, new Frame3D(origin, z)).Value.Shape).Value.Shape,
+                                            main, Cone(origin, z, 7, 3, 6)),
+            _ => throw new ArgumentException(name),
+        };
+    }
+
+    // Each pair at two radii. Left out, for the next slice of unit 15W: the branch at 60 degrees at 1, whose fillet runs onto the
+    // branch's end, where ChFi3d blends a surface and that end's edge with BlendFunc_SurfRstConstRad, which has the same plane; and
+    // the branch at 45 degrees at 0.3, where ChFi3d's approximation fails as it does at 0.05 to 0.2 without the change.
+    public static TheoryData<string, double> Pairs() => new()
+    {
+        { "tee 5/5", 0.3 }, { "tee 5/5", 1 }, { "tee 5/4", 0.3 }, { "tee 5/4", 1 }, { "tee 5/3", 0.3 }, { "tee 5/3", 1 },
+        { "tee 5/2", 0.3 }, { "tee 5/2", 1 }, { "branch 3 at 60", 0.3 }, { "branch 3 at 60", 0.6 }, { "branch 3 at 45", 0.6 },
+        { "branch 3 at 45", 1 }, { "branch 2 offset by 2", 0.3 }, { "branch 2 offset by 2", 1 }, { "cone into a cylinder", 0.3 },
+        { "cone into a cylinder", 1 }, { "cylinder through a sphere's centre", 0.3 }, { "cylinder through a sphere's centre", 1 },
+        { "cylinder through a sphere off its centre", 0.3 }, { "cylinder through a sphere off its centre", 1 },
+        { "cylinder through a torus's tube", 0.3 }, { "cylinder through a torus's tube", 1 }, { "cylinder tilted through a plane", 0.3 },
+        { "cylinder tilted through a plane", 1 }, { "upright cylinder on a plane", 0.3 }, { "upright cylinder on a plane", 1 },
+        { "cone on a cylinder's axis", 0.3 }, { "cone on a cylinder's axis", 1 },
+    };
+
+    // 15N's ball on ChFi3d's walked fillets between 15R's pairs (decision 30001): within the approximation's tolerance everywhere.
+    // They were off by up to 2.4e-2 at 1 (decision 2141), growing as the radius cubed.
+    [Theory]
+    [MemberData(nameof(Pairs))]
+    public void ChFi3ds_walked_fillets_are_on_the_ball(string name, double radius)
+    {
+        (Func<Shape> make, Distance first, Distance second) = Pair(name);
+        Shape shape = make();
+        Edge[] edges = [.. shape.AllEdges().Where(e =>
+        {
+            var curve = new EdgeCurveAdaptor(e);
+            Point3D p = curve.Value(0.37 * curve.FirstParameter() + 0.63 * curve.LastParameter());
+            return first(p) < 1e-6 && second(p) < 1e-6;
+        })];
+        Assert.NotEmpty(edges);
+        var chfi3d = new MakeFillet(shape);
+        foreach (Edge edge in edges)
+        {
+            chfi3d.Add(radius, edge);
+        }
+        chfi3d.Build();
+        Assert.True(chfi3d.IsDone);
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        double miss = BallMiss(chfi3d, radius, p => first(p), p => second(p));
+        Assert.True(miss < Approximation, $"{name} at {radius}: the ball misses by {miss}");
     }
 
     // The volume added is the slices' region, to what the path's tolerance (decision 1898's confusion) moves its faces by over
