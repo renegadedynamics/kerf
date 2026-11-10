@@ -54,6 +54,14 @@ internal static class FirstLoad
             var extension = new ExtensionContext(folder, how == "files" ? new SharedContext(folder) : null);
             Assembly probe = extension.FromBytes(typeof(FirstLoad).Assembly.Location);
             volume = (string)probe.GetType(typeof(FirstLoadProbe).FullName!, throwOnError: true)!.GetMethod(nameof(FirstLoadProbe.Work))!.Invoke(null, null)!;
+            // The context has to be held until the work is done (unit 15G, decision 2099): the runtime keeps a collectible
+            // context alive only through references to the context itself, not through its assemblies' types or the frames
+            // running their code, and once it's collected its finalizer starts its unload, after which it refuses to load
+            // anything more. With the local dead after the line above, a full collection falling between two of Kerf's
+            // assemblies being resolved (the fillet and the cut, before the STEP export brings in Kerf.Kernel.DataExchange)
+            // took the process down with "AssemblyLoadContext is unloading or was already unloaded": every time with a 1 MB
+            // gen0 budget, now and then on a loaded machine. Bento's loader holds its context in a field, so Bento is fine.
+            GC.KeepAlive(extension);
         }
 
         clock.Stop();

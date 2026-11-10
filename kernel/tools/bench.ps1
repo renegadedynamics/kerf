@@ -14,6 +14,8 @@
 
   A comparison exits with 1 on a regression past the thresholds: docs/performance.md says how they were chosen from
   measured noise. A result (a volume, a face count, a number of failed runs) that differs at all is a regression too.
+  A process that fails doesn't stop the run: it's noted in the output, with its exit code and what it said, the rows it
+  wrote stand, its logs are kept, and the rest of the suites go on; the exit code at the end says a run failed.
   Exit codes: 0 fine; 1 a regression, a failed build or a failed run; 2 the machine is busy.
 .PARAMETER Quick
   The subset, for a unit's before-and-after.
@@ -327,6 +329,7 @@ $suites = @(
 $rows = New-Object Collections.ArrayList
 $busySuites = New-Object Collections.ArrayList
 $suiteNotes = New-Object Collections.ArrayList
+$failedRuns = New-Object Collections.ArrayList
 $logs = Join-Path $Work 'logs'
 New-Item -ItemType Directory -Force $logs | Out-Null
 foreach ($suite in $suites) {
@@ -348,8 +351,17 @@ foreach ($suite in $suites) {
       -RedirectStandardOutput (Join-Path $logs "$($suite.Name)-$i.out") -RedirectStandardError (Join-Path $logs "$($suite.Name)-$i.err")
     Remove-Item Env:\KERF_BENCH_ROWS
     if ($suite.Env) { foreach ($k in $suite.Env.Keys) { Remove-Item "Env:\$k" } }
-    if ($process.ExitCode) { throw "$($suite.Name) failed with exit code $($process.ExitCode): see $logs" }
-    foreach ($line in [IO.File]::ReadAllLines($rowFile)) {
+    if ($process.ExitCode) {
+      # A process that failed is noted, and the run goes on (unit 15G): the rows it wrote before failing stand, as a row is
+      # whole once written, and its logs are kept. The first line it said on stderr, and the innermost cause if it gave one
+      $said = @([IO.File]::ReadAllLines((Join-Path $logs "$($suite.Name)-$i.err")) | Where-Object { $_.Trim() })
+      $cause = @($said | Where-Object { $_ -match '^\s*---> ' } | ForEach-Object { $_.Trim() })
+      $what = if ($said.Count) { ": $($said[0].Trim())" + $(if ($cause.Count) { " / $($cause[-1])" } else { '' }) } else { '' }
+      $note = "$($suite.Name) $i of ${times}: exit code $($process.ExitCode) (0x$($process.ExitCode.ToString('X8')))$what"
+      [void] $failedRuns.Add($note)
+      "  FAILED: $note"
+    }
+    foreach ($line in $(if (Test-Path $rowFile) { [IO.File]::ReadAllLines($rowFile) } else { @() })) {
       $p = $line.Split("`t")
       [void] $rows.Add([pscustomobject]@{ Group = "$($suite.Prefix)$($p[0])"; Name = $p[1]; Metric = $p[2]; Value = $p[3] })
     }
@@ -402,6 +414,7 @@ $header = [ordered]@{
   readytorun = if ($NoReadyToRun) { 'no' } else { 'yes' }
   set        = $(if ($Only) { "only $($Only -join ', ')" } elseif ($Quick) { 'quick' } else { 'full' })
 }
+if ($failedRuns.Count) { $header['failed'] = $failedRuns -join '; ' }
 
 if (-not $Out) { $Out = if ($Quick -or $Only) { $Work } else { Join-Path $kernel 'docs/benchmarks' } }
 New-Item -ItemType Directory -Force $Out | Out-Null
@@ -491,16 +504,23 @@ foreach ($group in $groups) {
 if ($total) {
   "Recalculation $(Format-Number $recalculation) ms (native 685, target $(Format-Number $targetRecalculationMs)); opening $(Format-Number (Parse-Number $first.Value)) ms (native 921); allocation $(Format-Number (Parse-Number $allocated.Value)) MB"
 }
-if (-not $keepWork) {
-  # The results are all that's kept, unless they were written there
+if (-not $keepWork -and -not $failedRuns.Count) {
+  # The results are all that's kept, unless they were written there, or a run failed and its logs are wanted
   if ($Out -eq $Work) { Get-ChildItem $Work -Exclude "$baseName.*" | Remove-Item -Recurse -Force }
   else { Remove-Item $Work -Recurse -Force }
 }
+# Everything is said before the exit code is decided: a comparison is still worth reading past a failed run
+if ($failedRuns.Count) {
+  Write-Host "RUNS FAILED (their logs are in ${logs}): $($failedRuns -join '; ')"
+}
 if ($unstable.Count) {
   Write-Host "A result differed between processes: $($unstable -join '; ')"
-  exit 1
 }
+$regressions = 0
 if ($Compare) {
-  Exit-AfterComparing $Compare $tsvPath
+  $lines = @(Compare-Results $Compare $tsvPath)
+  $lines[0..($lines.Count - 2)] | ForEach-Object { $_ }
+  $regressions = [int] $lines[-1]
 }
+if ($failedRuns.Count -or $unstable.Count -or $regressions -gt 0) { exit 1 }
 exit 0
