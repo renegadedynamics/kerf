@@ -70,6 +70,13 @@ internal class SolidClassifier : SClassifier
         return classifier.State();
     }
 
+    /// <summary>
+    /// Kerf (unit 15C): a classifier of <paramref name="s"/> whose tree of edges and vertices is filled when a point first asks
+    /// for it, not when it's made: for a shape asked the point at infinity, which reads only the faces' intersectors, and
+    /// perhaps a point after. The tree is then what it would have been, so only for a shape nothing changes meanwhile.
+    /// </summary>
+    internal static SolidClassifier WithTreeWhenAsked(in Shape s) => new(new SolidExplorer(s, fillTree: false));
+
     /// <summary>Classifies the point <paramref name="p"/> with the tolerance <paramref name="tol"/> in the shape <paramref name="s"/>.</summary>
     public SolidClassifier(in Shape s, in Point3D p, double tol)
     {
