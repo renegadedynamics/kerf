@@ -51,6 +51,33 @@ public class CurveOnPlaneKeptTests
         Assert.Equal(aL1, aL2);
     }
 
+    // Unit 15D: a caller that only reads is given the kept curve itself, the same values as the copy others are given
+    [Fact]
+    public void A_reader_is_given_the_kept_curve_itself()
+    {
+        CircleCurve3D aCurve = Circle();
+        aCurve.Freeze();
+        PlaneSurface aPlane = Plane();
+        aPlane.Freeze();
+        Edge anEdge = EdgeOn(aCurve);
+        var aBuilder = new BrepBuilder();
+        Face aFace = new();
+        aBuilder.MakeFace(ref aFace, aPlane, 1e-7);
+
+        Curve2D? aCopy = Tool.CurveOnSurface(anEdge, aFace, out double aF1, out double aL1);
+        Curve2D? aRead = Tool.CurveOnSurfaceToRead(anEdge, aFace, out double aF2, out double aL2);
+        Curve2D? aReadAgain = Tool.CurveOnSurfaceToRead(anEdge, aFace, out _, out _);
+
+        Assert.NotNull(aRead);
+        Assert.True(aRead.IsFrozen);
+        Assert.Same(aRead, aReadAgain);
+        Assert.Equal(RadiusOf(aCopy), RadiusOf(aRead));
+        Assert.Equal(Assert.IsType<CircleCurve2D>(aCopy).Location, Assert.IsType<CircleCurve2D>(aRead).Location);
+        Assert.Equal((aF1, aL1), (aF2, aL2));
+        // and those who may keep it still get their own
+        Assert.NotSame(aRead, Tool.CurveOnSurface(anEdge, aFace, out _, out _));
+    }
+
     [Fact]
     public void AnotherRange_GivesItsOwnRange()
     {

@@ -80,6 +80,7 @@ public static class UserCases
             HousingPrism, part => part.Edges().GroupBy(Axis.X).Last(), 3, collapse: true),
         Enclosure(),
         EnclosureV016(),
+        ShaftGauge(),
     ];
 
     /// <summary>The case of this name.</summary>
@@ -187,4 +188,18 @@ public static class UserCases
         },
         outcome => new CaseResult([.. ((List<(string Label, Part Part)>)outcome).Select(s => Measure.Of(s.Label, s.Part))], null),
         Expected.Of("enclosure-v0.16"));
+
+    // Renegade's rowing blade shaft gauges (unit 15D; renegadedynamics/hardware 031bd55, shaft-gauge/README.md): every size,
+    // each one's blank and its engraved gauge. It engraves text, which came in 0.5.0
+    private static UserCase ShaftGauge() => new("shaft-gauge", "the rowing blade shaft gauges, all three sizes: a rounded hexagon with six U-shaped cutouts, their mouths filleted, every rim chamfered, the sizes engraved",
+        data =>
+        {
+#if KERF_0_5_OR_LATER
+            return ShaftGaugeModel.Build;
+#else
+            return null;
+#endif
+        },
+        outcome => new CaseResult([.. ((List<(string Label, Part Part)>)outcome).Select(s => Measure.Of(s.Label, s.Part))], null),
+        Expected.Of("shaft-gauge"));
 }

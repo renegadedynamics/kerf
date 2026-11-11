@@ -144,7 +144,7 @@ internal static partial class BrepTools
         double umin, umax, vmin, vmax;
         Box2d boxC = new Box2d(), boxS = new Box2d();
         //
-        Curve2D? c2D = Tool.CurveOnSurface(aE, aF, out double t1, out double t2);
+        Curve2D? c2D = Tool.CurveOnSurfaceToRead(aE, aF, out double t1, out double t2);
         if (c2D is null)
         {
             return;

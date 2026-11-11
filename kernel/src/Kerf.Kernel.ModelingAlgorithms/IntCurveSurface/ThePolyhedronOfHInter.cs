@@ -33,6 +33,8 @@ internal sealed class ThePolyhedronOfHInter
     private Box _theBnd = new();
     private NCollection_HArray1<Box>? _theComponentsBnd;
     private double _theDeflection;
+    // Kerf: the deflection the triangles' boxes are enlarged by, as Init leaves it (ComponentsBounding)
+    private double _componentsDeflection;
     private Point3D[]? C_MyPnts;
     private double[]? C_MyU;
     private double[]? C_MyV;
@@ -106,7 +108,7 @@ internal sealed class ThePolyhedronOfHInter
                                                     C_MyV!, C_MyIsOnBounds!, ref _theBnd);
         double tol = PolyhedronUtils.ComputeMaxDeflection(surface, this, TriangleCount);
         DeflectionOverEstimation(tol * 1.2);
-        FillBounding();
+        _componentsDeflection = _theDeflection;
         _theBorderDeflection =
             PolyhedronUtils.ComputeMaxBorderDeflection(eval, u0, v0, u1, v1, _nbdeltaU, _nbdeltaV);
     }
@@ -118,7 +120,7 @@ internal sealed class ThePolyhedronOfHInter
                                                        C_MyV!, C_MyIsOnBounds!, ref _theBnd);
         double tol = PolyhedronUtils.ComputeMaxDeflection(surface, this, TriangleCount);
         DeflectionOverEstimation(tol * 1.2);
-        FillBounding();
+        _componentsDeflection = _theDeflection;
         _theBorderDeflection = PolyhedronUtils.ComputeMaxBorderDeflection(
             eval, upars[upars.Lower()], vpars[vpars.Lower()], upars[upars.Upper()], vpars[vpars.Upper()], _nbdeltaU,
             _nbdeltaV);
@@ -148,7 +150,22 @@ internal sealed class ThePolyhedronOfHInter
     }
 
     /// <summary>The boxes of the triangles (the polyhedron's own array: don't modify).</summary>
-    public NCollection_HArray1<Box> ComponentsBounding() => _theComponentsBnd!;
+    /// <remarks>
+    /// Kerf (unit 15D): computed on the first call, not by Init as in OCCT, from the points and the deflection Init left,
+    /// so the same boxes. A solid's classifier makes a polyhedron for each of its faces on a surface other than the
+    /// elementary ones, and asks for the boxes only of the faces its line comes near: on a part with engraved text, whose
+    /// letters' sides are extrusions of Béziers, the boxes nobody asked for were a fifth of the bytes of its Booleans. A
+    /// polyhedron is its intersector's, which is one thread's at a time, as its other lazy state is.
+    /// </remarks>
+    public NCollection_HArray1<Box> ComponentsBounding()
+    {
+        if (_theComponentsBnd is null)
+        {
+            _theComponentsBnd = new NCollection_HArray1<Box>(1, TriangleCount);
+            PolyhedronUtils.FillBounding(C_MyPnts!, _nbdeltaU, _nbdeltaV, _componentsDeflection, _theComponentsBnd);
+        }
+        return _theComponentsBnd;
+    }
 
     public int TriangleCount => PolyhedronUtils.NbTriangles(_nbdeltaU, _nbdeltaV);
 

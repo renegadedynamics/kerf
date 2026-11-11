@@ -41,7 +41,14 @@ internal class CurveSurfaceIntersector : Transient
     private readonly bool _ready;
     private int _nbpnt;
     private readonly Face _face;
-    private readonly ThePolyhedronOfHInter? _polyhedron;
+    // Kerf (unit 15D): the polyhedron is built on first use (Polyhedron), not by the constructor, from what it found here
+    private ThePolyhedronOfHInter? _polyhedron;
+    private readonly bool _hasPolyhedron;
+    private readonly bool _polyhedronBySamplePars;
+    private readonly int _nbsu, _nbsv;
+    // Kerf (unit 15D): the box the polyhedron's box is surely inside (HullBox): 0 not worked out, 1 known, -1 none
+    private int _hullBoxState;
+    private double _hullXmin, _hullYmin, _hullZmin, _hullXmax, _hullYmax, _hullZmax;
     private BoundSortBox? _bndBounding;
     private bool _useBoundTol;
     private bool _isParallel; // Curve is "parallel" face surface
@@ -225,20 +232,36 @@ internal class CurveSurfaceIntersector : Transient
             int nbUOnS = _hsurface.NbUIntervals(C2);
             int nbVOnS = _hsurface.NbVIntervals(C2);
 
-            if (nbUOnS > 1 || nbVOnS > 1)
-            {
-                ComputeSamplePars(_hsurface, nbsu, nbsv, out NCollection_HArray1<double> uPars, out NCollection_HArray1<double> vPars);
-                _polyhedron = new ThePolyhedronOfHInter(_hsurface,
-                                                                         uPars.ChangeArray1(),
-                                                                         vPars.ChangeArray1());
-            }
-            else
-            {
-                _polyhedron = new ThePolyhedronOfHInter(_hsurface, nbsu, nbsv, u0, v0, u1, v1);
-            }
+            _polyhedronBySamplePars = nbUOnS > 1 || nbVOnS > 1;
+            _nbsu = nbsu;
+            _nbsv = nbsv;
+            _hasPolyhedron = true;
         }
 
         _ready = true;
+    }
+
+    // The polyhedron of the surface, as the constructor built it in OCCT; null for the elementary surfaces
+    private ThePolyhedronOfHInter? Polyhedron
+    {
+        get
+        {
+            if (_polyhedron is null && _hasPolyhedron)
+            {
+                if (_polyhedronBySamplePars)
+                {
+                    ComputeSamplePars(_hsurface, _nbsu, _nbsv, out NCollection_HArray1<double> uPars, out NCollection_HArray1<double> vPars);
+                    _polyhedron = new ThePolyhedronOfHInter(_hsurface, uPars.ChangeArray1(), vPars.ChangeArray1());
+                }
+                else
+                {
+                    _polyhedron = new ThePolyhedronOfHInter(_hsurface, _nbsu, _nbsv, _hsurface.FirstUParameter(), _hsurface.FirstVParameter(),
+                                                            _hsurface.LastUParameter(), _hsurface.LastVParameter());
+                }
+            }
+
+            return _polyhedron;
+        }
     }
 
     private void InternalCall(HInter hics, double parinf, double parsup)
@@ -396,7 +419,7 @@ internal class CurveSurfaceIntersector : Transient
         _nbpnt = 0;
 
         // Kerf: a segment of the line that passes well clear of the face can meet it nowhere (unit 13A)
-        if (_polyhedron is null && MissesFace(l, parMin, parMax))
+        if (!_hasPolyhedron && MissesFace(l, parMin, parMax))
         {
             _isParallel = false;
             return;
@@ -410,15 +433,23 @@ internal class CurveSurfaceIntersector : Transient
         double parinf = parMin;
         double parsup = parMax;
         //
-        if (_polyhedron is null)
+        if (!_hasPolyhedron)
         {
             hics.Perform(hll, _hsurface);
         }
         else
         {
+            // Kerf (unit 15D): a line clear of the box the polyhedron's box is surely inside is clear of the polyhedron's
+            // box, where OCCT returns below with nothing, so it returns here without the polyhedron
+            if (_polyhedron is null && MissesHullBox(l))
+            {
+                return;
+            }
+
+            ThePolyhedronOfHInter polyhedron = Polyhedron!;
             var bndTool = new PolygonTool();
             Box boxLine = new();
-            bndTool.LinBox(l, _polyhedron.Bounding(), ref boxLine);
+            bndTool.LinBox(l, polyhedron.Bounding(), ref boxLine);
             if (bndTool.SegmentCount == 0)
             {
                 return;
@@ -486,11 +517,11 @@ internal class CurveSurfaceIntersector : Transient
             if (_bndBounding is null)
             {
                 _bndBounding = new BoundSortBox();
-                _bndBounding.Initialize(ThePolyhedronToolOfHInter.Bounding(_polyhedron),
-                                         ThePolyhedronToolOfHInter.ComponentsBounding(_polyhedron));
+                _bndBounding.Initialize(ThePolyhedronToolOfHInter.Bounding(polyhedron),
+                                         ThePolyhedronToolOfHInter.ComponentsBounding(polyhedron));
             }
 
-            hics.Perform(hll, polygon, _hsurface, _polyhedron, _bndBounding);
+            hics.Perform(hll, polygon, _hsurface, polyhedron, _bndBounding);
         }
 
         InternalCall(hics, parinf, parsup);
@@ -520,12 +551,13 @@ internal class CurveSurfaceIntersector : Transient
         double parinf = parMin;
         double parsup = parMax;
 
-        if (_polyhedron is null)
+        if (!_hasPolyhedron)
         {
             hics.Perform(hCu, _hsurface);
         }
         else
         {
+            ThePolyhedronOfHInter polyhedron = Polyhedron!;
             parinf = TheHCurveTool.FirstParameter(hCu);
             parsup = TheHCurveTool.LastParameter(hCu);
             if (parinf < parMin)
@@ -551,11 +583,11 @@ internal class CurveSurfaceIntersector : Transient
             if (_bndBounding is null)
             {
                 _bndBounding = new BoundSortBox();
-                _bndBounding.Initialize(ThePolyhedronToolOfHInter.Bounding(_polyhedron),
-                                         ThePolyhedronToolOfHInter.ComponentsBounding(_polyhedron));
+                _bndBounding.Initialize(ThePolyhedronToolOfHInter.Bounding(polyhedron),
+                                         ThePolyhedronToolOfHInter.ComponentsBounding(polyhedron));
             }
 
-            hics.Perform(hCu, polygon, _hsurface, _polyhedron, _bndBounding);
+            hics.Perform(hCu, polygon, _hsurface, polyhedron, _bndBounding);
         }
 
         InternalCall(hics, parinf, parsup);
@@ -666,6 +698,143 @@ internal class CurveSurfaceIntersector : Transient
         return !Slab(o.X, d.X, x0, x1, ref from, ref to) || !Slab(o.Y, d.Y, y0, y1, ref from, ref to) || !Slab(o.Z, d.Z, z0, z1, ref from, ref to);
     }
 
+    /// <summary>
+    /// Kerf (unit 15D): true if the whole line <paramref name="l"/> is surely clear of the box of the polyhedron of the
+    /// surface, so that <see cref="Perform(in Line3D, double, double)"/> finds nothing, over any part of it, and changes
+    /// nothing but clearing its points; false if that isn't known, or the surface is an elementary one.
+    /// </summary>
+    internal bool SurelyMissesPolyhedron(in Line3D l) => _hasPolyhedron && _polyhedron is null && MissesHullBox(l);
+
+    // Kerf (unit 15D): whether the line is clear of a box the polyhedron's box is surely inside, worked out from the poles
+    // without building the polyhedron. A solid's classifier makes an intersector for each face, and on a part with engraved
+    // text, whose letters' sides are extrusions of Béziers, building each one's polyhedron for every classifier was a tenth
+    // of the bytes of its Booleans, where most faces are far from the classifier's line. The polyhedron's box is that of its
+    // points, which are on the surface over [FirstU, LastU] x [FirstV, LastV], enlarged by its deflection: the largest
+    // distance of a surface point (at a triangle's middle parameters) from the plane of the triangle, at least 1e-4, times
+    // 1.2. The surface's points over that range are inside the convex hull of its poles (of the basis curve's, swept along
+    // the extrusion's direction from FirstV to LastV, for an extrusion; positive weights keep a rational one inside it), so
+    // inside the box of the hull, and such a distance is at most the box's diagonal. So the polyhedron's box is inside the
+    // hull's box enlarged by 1.2 times its diagonal and 1e-4, and a margin for rounding. Only for an extrusion of a Bézier
+    // or B-spline curve and a Bézier or B-spline surface, over a range inside the curve's or surface's own; anything else
+    // builds the polyhedron, as before
+    private bool MissesHullBox(in Line3D l)
+    {
+        if (_hullBoxState == 0)
+        {
+            _hullBoxState = HullBox() ? 1 : -1;
+        }
+
+        if (_hullBoxState < 0)
+        {
+            return false;
+        }
+
+        Point3D o = l.Location;
+        Direction3D d = l.Direction;
+        double from = double.NegativeInfinity, to = double.PositiveInfinity;
+        return !Slab(o.X, d.X, _hullXmin, _hullXmax, ref from, ref to) || !Slab(o.Y, d.Y, _hullYmin, _hullYmax, ref from, ref to)
+            || !Slab(o.Z, d.Z, _hullZmin, _hullZmax, ref from, ref to);
+    }
+
+    private bool HullBox()
+    {
+        Surface? surface = Tool.Surface(_face, out Placement location);
+        if (surface is TrimmedSurface trimmed)
+        {
+            surface = trimmed.BasisSurface;
+        }
+
+        double u0 = _hsurface.FirstUParameter(), u1 = _hsurface.LastUParameter();
+        double v0 = _hsurface.FirstVParameter(), v1 = _hsurface.LastVParameter();
+        if (!double.IsFinite(u0) || !double.IsFinite(u1) || !double.IsFinite(v0) || !double.IsFinite(v1))
+        {
+            return false;
+        }
+
+        Transform3D trsf = location.Transformation;
+        double xmin = double.PositiveInfinity, ymin = double.PositiveInfinity, zmin = double.PositiveInfinity;
+        double xmax = double.NegativeInfinity, ymax = double.NegativeInfinity, zmax = double.NegativeInfinity;
+        void Add(in Point3D p)
+        {
+            xmin = Min(xmin, p.X);
+            ymin = Min(ymin, p.Y);
+            zmin = Min(zmin, p.Z);
+            xmax = Max(xmax, p.X);
+            ymax = Max(ymax, p.Y);
+            zmax = Max(zmax, p.Z);
+        }
+
+        if (surface is ExtrusionSurface extrusion)
+        {
+            Curve3D basis = extrusion.BasisCurve;
+            if (basis is TrimmedCurve3D trimmedCurve)
+            {
+                basis = trimmedCurve.BasisCurve;
+            }
+
+            if (u0 < basis.FirstParameter || u1 > basis.LastParameter)
+            {
+                return false;
+            }
+
+            Vector3D along = new Vector3D(extrusion.Direction).Transformed(trsf);
+            Vector3D first = along.Multiplied(v0), last = along.Multiplied(v1);
+            NCollection_Array1<Point3D> poles;
+            if (basis is BezierCurve3D bezier)
+            {
+                poles = bezier.InternalPoles();
+            }
+            else if (basis is BSplineCurve3D bspline)
+            {
+                poles = bspline.InternalPoles();
+            }
+            else
+            {
+                return false;
+            }
+
+            for (int i = poles.Lower(); i <= poles.Upper(); i++)
+            {
+                Point3D p = poles[i].Transformed(trsf);
+                Add(p.Translated(first));
+                Add(p.Translated(last));
+            }
+        }
+        else if (surface is Kerf.Geometry.BezierSurface or Kerf.Geometry.BSplineSurface)
+        {
+            surface.ParameterBounds(out double su0, out double su1, out double sv0, out double sv1);
+            if (u0 < su0 || u1 > su1 || v0 < sv0 || v1 > sv1)
+            {
+                return false;
+            }
+
+            NCollection_Array2<Point3D> poles = surface is Kerf.Geometry.BezierSurface bezier ? bezier.InternalPoles() : ((Kerf.Geometry.BSplineSurface)surface).InternalPoles();
+            for (int i = poles.LowerRow(); i <= poles.UpperRow(); i++)
+            {
+                for (int j = poles.LowerCol(); j <= poles.UpperCol(); j++)
+                {
+                    Add(poles[i, j].Transformed(trsf));
+                }
+            }
+        }
+        else
+        {
+            return false;
+        }
+
+        double diagonal = Math.Sqrt(((xmax - xmin) * (xmax - xmin)) + ((ymax - ymin) * (ymax - ymin)) + ((zmax - zmin) * (zmax - zmin)));
+        double size = Max(Max(Max(Math.Abs(xmin), Math.Abs(xmax)), Max(Math.Abs(ymin), Math.Abs(ymax))), Max(Math.Abs(zmin), Math.Abs(zmax)));
+        double widen = (1.2 * diagonal) + 1e-4 + (1e-9 * (diagonal + size)) + 1e-12;
+        if (!double.IsFinite(widen))
+        {
+            return false;
+        }
+
+        (_hullXmin, _hullYmin, _hullZmin) = (xmin - widen, ymin - widen, zmin - widen);
+        (_hullXmax, _hullYmax, _hullZmax) = (xmax + widen, ymax + widen, zmax + widen);
+        return true;
+    }
+
     // Narrows [from, to] to the parameters where the line is between low and high on one axis; false if none are
     private static bool Slab(double origin, double direction, double low, double high, ref double from, ref double to)
     {
@@ -686,9 +855,9 @@ internal class CurveSurfaceIntersector : Transient
     /// <summary>The box of the polyhedron of the surface; a void box for the elementary surfaces.</summary>
     public Box Bounding()
     {
-        if (_polyhedron is not null)
+        if (_hasPolyhedron)
         {
-            return _polyhedron.Bounding();
+            return Polyhedron!.Bounding();
         }
         else
         {
