@@ -87,6 +87,12 @@ time in a quiet window; anything that slows another case past the bar waits for 
 
 15D's first script is Renegade's shaft gauges (`hardware-coupon`, `products/rowing-strain/enclosure/kerf/ShaftGauge`, 031bd55): small, but text engraved, fillets after Booleans and a chamfer round every rim, which the enclosure doesn't exercise.
 
+## 9. A fillet against a cylinder of its own radius (decision 30201)
+
+| Unit | What | Done when |
+|---|---|---|
+| **15X** The sphere's piece | 15W found that where a cylinder has exactly the fillet's radius (the corpus's `blend/complex/C1`, `C5`, `F1`, `F2`), the ball can sit in one place only, so the right fillet there is a piece of a sphere, which ChFi3d can't build; with 15W those fail honestly, where main's results were off the ball by up to 1.7. The owner: "I'm not in a rush for 0.6.0 - schedule the sphere piece for C1, C5, F1 and F2." Built behind ChFi3d, proved by the ball test. | The four build, on the ball, valid, their volumes against an independent integral; nothing else in the corpus moves. |
+
 ## Not in this phase
 
 - SVG and DXF import.
