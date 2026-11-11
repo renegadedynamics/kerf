@@ -2272,3 +2272,43 @@ own events, on two processors of a loaded machine; none is waste in Kerf, and th
 an earlier run they read at or a little under it, and the host's rows no longer jump by a megabyte between runs (three
 processes: 4.199, 4.203 and 4.199 MB, where their last passes read 4.19, 5.25 and 4.19). The pauses, and these rows on
 24 heaps, are for a quiet window (`quiet-15f2.ps1`, decision 2190).
+
+## Parallel loops and a busy thread pool (unit 15AG)
+
+*November 2026, decisions 31001 to 31003. A loaded machine: times are ranges, and the verdicts rest on processor time,
+bytes and counts. Wall-clock figures are for a quiet window: `quiet-15ag.ps1` in the scratchpad's `15ag` folder.*
+
+OCCT's `evolved/voluved/AGT009` (a 10 x 2 rectangle evolved along an arc, in volume mode) took 128 s in a gate, and its
+siblings 53 to 98 s. Alone it doesn't:
+
+| Command | Kerf, warm | Native OCCT 8.0.1 (OCP) |
+|---|---|---|
+| `evolved result -s p -p t -a -solid -v` | 70 to 310 ms; `-stm` (serial) 240 to 410 ms | 80 to 220 ms; serial 410 to 770 ms |
+| `bopargcheck` | 10 to 30 ms | not compared: Draw's command turns on checks OCP's defaults leave off |
+| `checkprops`, `checkshape`, `checknbshapes`, `checkmaxtol` | 1 to 3 ms, and under 1 ms each | 1 to 2 ms each |
+
+The whole case is 1.2 s cold in the tests' process, 1.0 to 1.3 s of processor time and 122 MB warm. Of a sampled
+trace of 120 warm runs, by running thread time and bytes: the general fuse's face/face intersections 52% and 45% (a
+plane or cylinder against a swept surface), its edge/face intersections 20% and 32%, and the calling thread's own steps
+18% and 21% (`BuildSolid` 10%, the sweep 8%). Native does the same work in the same time.
+
+**Where the gate's time went:** the case runs 282 parallel loops, and `Parallel.For` called from a thread that isn't
+the pool's waits for the pool to start a task it queued, even when the caller has done all the work by then. On a free
+pool that's microseconds. With every pool thread busy, it's until the pool frees or adds a thread, about half a second a
+time. xUnit's test threads aren't the pool's, and several corpus tests run whole cases on the pool through PLINQ. A
+harness that holds the pool's threads with sleeping items and runs the case on a thread of its own:
+
+| Pool | `Parallel.For` | Kerf's own loop (decision 31002) |
+|---|---|---|
+| Free | 0.4 to 0.8 s, 0.7 to 1.4 s processor, 122.0 to 122.9 MB | 0.4 to 0.7 s, 0.7 to 1.7 s processor, 121.1 to 122.6 MB |
+| Every thread held (24) | 25.3 s, 3.4 s processor | 0.3 to 0.5 s |
+| And 100 items queued | 97.7 s, 1.3 s processor | 0.6 to 1.8 s |
+
+**The loop:** the caller takes items until none is left, helped by pool threads that are free, and waits only for
+items a helper has started; a thread leaves the pool at most a request for each loop it's in. Any client calling Kerf
+from a thread of its own in a process with a busy pool had the same waits. Elsewhere, with the pool free: the evolved
+cases' bytes within 0.5%, the users' cases' fixed results and bytes within the spread of repeats (the enclosure 2,560
+to 2,597 MB before, 2,590 to 2,635 after; which threads take which items sets it, as each makes its own intersection
+context), and synthetic loops as fast or faster than `Parallel.For` (200,000 loops of two 1 µs items: 319 to 89 ms).
+
+**Not looked into:** the 122 MB the case allocates for a ten-face result, 77% of it in the fuse's intersections.
