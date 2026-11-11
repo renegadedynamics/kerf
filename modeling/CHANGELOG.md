@@ -11,7 +11,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   49 days is refused (`ArgumentOutOfRangeException`). It's wall-clock time, so the same chamfer can build on a quiet
   machine and fail at the limit on a busy one; the failure now says the limit used and how to change it (the guide's
   section 5).
-- **`Chamfer` at a corner of convex and concave edges, where a chamfer along a wall's foot runs on past the walls' convex edge, now builds** (kernel decisions 30901, 30902): the chamfer ends against the other wall and the chamfer made before at its foot; OCCT fails there.
+- **`Chamfer` at a corner of convex and concave edges, where a chamfer along a wall's foot runs on past the walls' convex edge, now builds** (kernel decisions 2198, 2199): the chamfer ends against the other wall and the chamfer made before at its foot; OCCT fails there.
 - **`Fillet` across a cylinder of exactly its radius, as a block's rounded corners with its foot filleted at their
   radius, now builds** (kernel decisions 2166 to 2168): the ball can't roll there, so the fillet is a piece of a
   sphere, which OCCT can't build; Kerf builds it and checks it by the ball and its volume, failing it if they don't hold.
