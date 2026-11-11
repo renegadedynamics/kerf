@@ -2,6 +2,7 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
@@ -288,6 +289,89 @@ public class FilletBlendTests
         Distance side = name == "branch 3 at 60" ? p => Nearer(second(p), EndCircle(p, 60), radius) : second;
         double miss = BallMiss(chfi3d, radius, p => first(p), p => side(p));
         Assert.True(miss < Approximation, $"{name} at {radius}: the ball misses by {miss}");
+    }
+
+    // An evolving radius, 0.4 at the contour's ends and 1 at its middle (BlendFunc_EvolRad, decision 2215). Each section of the new
+    // faces (their isos across the fillet) is an arc of a great circle of the ball of the radius the law gives that section, and
+    // that ball touches both surfaces, to the approximation's tolerance; the radii run from the law's least to its greatest. OCCT's
+    // sections were 2D fillets in the plane square to the edge, as ConstRad's were (decision 2141), off by up to 2.4e-2.
+    [Theory]
+    [InlineData("cylinder tilted through a plane")]
+    [InlineData("cylinder through a sphere off its centre")]
+    [InlineData("tee 5/3")]
+    public void ChFi3ds_evolving_fillets_sections_are_on_the_ball_of_their_radius(string name)
+    {
+        (Func<Shape> make, Distance first, Distance second) = Pair(name);
+        Shape shape = make();
+        Edge[] edges = [.. shape.AllEdges().Where(e =>
+        {
+            var curve = new EdgeCurveAdaptor(e);
+            Point3D p = curve.Value(0.37 * curve.FirstParameter() + 0.63 * curve.LastParameter());
+            return first(p) < 1e-6 && second(p) < 1e-6;
+        })];
+        Assert.NotEmpty(edges);
+        var chfi3d = new MakeFillet(shape);
+        NCollection_Array1<Point2D> law = new(1, 3);
+        law.SetValue(1, new Point2D(0.0, 0.4));
+        law.SetValue(2, new Point2D(0.5, 1.0));
+        law.SetValue(3, new Point2D(1.0, 0.4));
+        foreach (Edge edge in edges)
+        {
+            chfi3d.Add(law, edge);
+        }
+        chfi3d.Build();
+        Assert.True(chfi3d.IsDone);
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        (double miss, double least, double greatest) = SectionBallMiss(chfi3d, first, second);
+        Assert.True(miss < Approximation, $"{name}: the sections' balls miss by {miss}");
+        Assert.InRange(least, 0.4 - Approximation, 0.45);
+        Assert.InRange(greatest, 0.95, 1 + Approximation);
+    }
+
+    // On 39 sections of each new face (its isos in whichever direction they're circles), the circle through three of 9 points of
+    // the section: the most the points leave it or the ball it's a great circle of misses either surface by, and the least and
+    // greatest of those balls' radii
+    private static (double Miss, double Least, double Greatest) SectionBallMiss(MakeFillet fillet, Distance first, Distance second)
+    {
+        double worst = 0, least = double.MaxValue, greatest = 0;
+        for (int i = 1; i <= fillet.SurfaceCount; i++)
+        {
+            foreach (Shape face in fillet.NewFaces(i))
+            {
+                var surface = new FaceSurfaceAdaptor((Face)face);
+                double u0 = surface.FirstUParameter(), u1 = surface.LastUParameter();
+                double v0 = surface.FirstVParameter(), v1 = surface.LastVParameter();
+                (double Miss, double Radius)[] Sections(bool alongU) => [.. Enumerable.Range(1, 39).Select(k =>
+                {
+                    Point3D[] q = [.. Enumerable.Range(0, 9).Select(j => alongU
+                        ? surface.Value(u0 + (u1 - u0) * j / 8, v0 + (v1 - v0) * k / 40)
+                        : surface.Value(u0 + (u1 - u0) * k / 40, v0 + (v1 - v0) * j / 8))];
+                    return SectionBall(q, first, second);
+                })];
+                (double Miss, double Radius)[] alongU = Sections(true), alongV = Sections(false);
+                (double Miss, double Radius)[] sections = alongU.Max(x => x.Miss) <= alongV.Max(x => x.Miss) ? alongU : alongV;
+                worst = Math.Max(worst, sections.Max(x => x.Miss));
+                least = Math.Min(least, sections.Min(x => x.Radius));
+                greatest = Math.Max(greatest, sections.Max(x => x.Radius));
+            }
+        }
+        return (worst, least, greatest);
+    }
+
+    private static (double Miss, double Radius) SectionBall(Point3D[] q, Distance first, Distance second)
+    {
+        Vector3D a = new(q[8], q[0]), b = new(q[8], q[4]), axb = a.Crossed(b);
+        if (axb.Magnitude < 1e-12)
+        {
+            return (double.MaxValue, 0);
+        }
+        Vector3D toCentre = (a.SquareMagnitude * b - b.SquareMagnitude * a).Crossed(axb) / (2 * axb.SquareMagnitude);
+        Point3D c0 = new(q[8].X + toCentre.X, q[8].Y + toCentre.Y, q[8].Z + toCentre.Z);
+        Vector3D m = axb / axb.Magnitude;
+        double rho = toCentre.Magnitude;
+        double onCircle = q.Max(p => Math.Max(Math.Abs(p.DistanceTo(c0) - rho), Math.Abs(new Vector3D(c0, p).Dot(m))));
+        // The ball whose circle it is: its centre c0, its radius rho
+        return (Math.Max(Math.Max(Math.Abs(first(c0) - rho), Math.Abs(second(c0) - rho)), onCircle), rho);
     }
 
     private static double Nearer(double a, double b, double radius) => Math.Abs(a - radius) <= Math.Abs(b - radius) ? a : b;

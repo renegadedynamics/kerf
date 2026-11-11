@@ -455,6 +455,7 @@ internal class SurfRstLineBuilder
         bool isVtxp = false, isVtxrst = false, isVtxs = false;
         Extremity extrst = new(), exts = new();
         Curve2DAdaptorBase? arc = null;
+        double pinchParam = double.PositiveInfinity;
 
         func.GetTolerance(tolerance, _tolpoint3d);
         func.GetBounds(infbound, supbound);
@@ -515,6 +516,28 @@ internal class SurfRstLineBuilder
                     else
                     {
                         echecrecad = true;
+                    }
+                }
+                // Kerf (decision 2213): where the surface's contact reaches its arc at the restriction's point, the
+                // section has no width: the surface's edge touches the restriction there, and on the ball's equations
+                // that section is singular, two branches meeting. The ball rolls on, its contact going back into the
+                // face, so the section is kept and the walk goes on beyond it on the branch inside the face.
+                if (recads && Math.Abs(ws - pinchParam) > _tolgui && IsPinch())
+                {
+                    double wPrev = parprec;
+                    _param = ws;
+                    func.Set(_param);
+                    if (AcceptPinch(func))
+                    {
+                        pinchParam = _param;
+                        StepOverPinch(parinit, wPrev, arc!, solinvs[3], stepw);
+                        parprec = _param;
+                        _param = _param + _sens * stepw;
+                        if (_sens * (_param - bound) > -_tolgui)
+                        {
+                            _param = bound;
+                        }
+                        continue;
                     }
                 }
                 if (situonc == global::Kerf.Topology.Containment.Out || situonc == On)
@@ -819,6 +842,63 @@ internal class SurfRstLineBuilder
         }
     }
 
+    // Kerf (decision 2213): whether the section, its contact on the surface reframed on one of the surface's arcs, has no
+    // width: both contacts the same point to the tolerance.
+    private bool IsPinch()
+    {
+        Point3D ps = _surf1.Value(_sol[1], _sol[2]);
+        Point2D p2drst = _rst.Value(_sol[3]);
+        Point3D prst = _surf2.Value(p2drst.X, p2drst.Y);
+        return ps.SquareDistanceTo(prst) <= _tolpoint3d * _tolpoint3d;
+    }
+
+    // The section of no width as a point of the line, with no tangents: the equations' Jacobian is singular there, the
+    // line's direction changing as it passes.
+    private bool AcceptPinch(SurfRstFunction func)
+    {
+        if (!func.IsSolution(_sol, _tolpoint3d))
+        {
+            return false;
+        }
+        BlendPoint curpoint = new();
+        Point2D pt2drst = func.Pnt2dOnRst();
+        curpoint.SetValue(func.PointOnS(), func.PointOnRst(), _param, _sol[1], _sol[2], pt2drst.X, pt2drst.Y, _sol[3]);
+        _previousP = curpoint;
+        if (_sens > 0.0)
+        {
+            _line!.Append(_previousP);
+        }
+        else
+        {
+            _line!.Prepend(_previousP);
+        }
+        return true;
+    }
+
+    // The start beyond the section of no width: the line from the last point through it carried on by the step (which
+    // is the branch going out of the face), its point on the surface reflected in the arc's tangent there, so that it
+    // starts inside the face on the branch the ball rolls on. Leaves it in prev.
+    private void StepOverPinch(math_Vector prev, double wPrev, Curve2DAdaptorBase arc, double arcParam, double step)
+    {
+        double span = _param - wPrev;
+        double k = Math.Abs(span) > _tolgui ? _sens * step / span : 0.0;
+        double u = _sol[1] + k * (_sol[1] - prev[1]);
+        double v = _sol[2] + k * (_sol[2] - prev[2]);
+        double t = _sol[3] + k * (_sol[3] - prev[3]);
+        arc.D1(arcParam, out Point2D p2d, out Vector2D t2d);
+        if (t2d.SquareMagnitude > 0.0)
+        {
+            Vector2D d = new(u - p2d.X, v - p2d.Y);
+            Vector2D along = t2d.Normalized();
+            double a = d.Dot(along);
+            u = p2d.X + 2 * a * along.X - d.X;
+            v = p2d.Y + 2 * a * along.Y - d.Y;
+        }
+        prev[1] = u;
+        prev[2] = v;
+        prev[3] = t;
+    }
+
     // Reframes the section surface / restriction on an arc of the surface's domain. Arc, IsVtx and Vtx are OCCT's
     // references (Arc and Vtx written only on the paths that find them).
     private bool Recadre(SurfCurvFuncInv finvC, math_Vector solinv, ref Curve2DAdaptorBase? arc, ref bool isVtx,
@@ -1039,6 +1119,11 @@ internal class SurfRstLineBuilder
         {
             // Kerf (decision 2158): the ball at the restriction's end is square to its tangent there.
             ballP.SetTangent(Vector3D.LinearForm(d2drst.X, d1urst, d2drst.Y, d1vrst));
+        }
+        else if (finvP is SurfPointEvolRadInv ballE)
+        {
+            // Kerf (decision 2216): likewise for the evolving radius.
+            ballE.SetTangent(Vector3D.LinearForm(d2drst.X, d1urst, d2drst.Y, d1vrst));
         }
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);
         finvP.GetTolerance(toler, _tolpoint3d);

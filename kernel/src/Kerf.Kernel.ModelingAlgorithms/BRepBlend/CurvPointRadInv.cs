@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Fillets.BlendFunctions;
 using Kerf.Engine.Geometry;
 
@@ -36,11 +37,12 @@ internal class CurvPointRadInv : CurvPointFuncInv
     }
 
     // Kerf (decision 2162): the rolling ball's equations, as RstRstConstRad's at a restriction's end, once a radius is
-    // set (the evolving radius keeps OCCT's, both points in the guide's plane): the guide's plane through the two
+    // set (and, decision 2216, an evolving radius's law, as RstRstEvolRad's): the guide's plane through the two
     // points' midpoint, and the centre at the radius from both, its chord to the point square to that restriction's
     // tangent there (SetTangent) and its chord to the curve's point square to the curve.
     private bool _isBall;
     private double _ray;
+    private LawsFunction? _law;
     private int _choix;
     private bool _pointOnFirst;
     private Vector3D _tangent;
@@ -53,6 +55,19 @@ internal class CurvPointRadInv : CurvPointFuncInv
     {
         _isBall = true;
         _ray = Math.Abs(radius);
+        _law = null;
+        _choix = choix;
+        _pointOnFirst = pointOnFirst;
+    }
+
+    /// <summary>
+    /// As <see cref="Set(double, int, bool)"/> for an evolving-radius fillet: the radius the law gives at the guide's
+    /// parameter, the first variable.
+    /// </summary>
+    public void Set(LawsFunction law, int choix, bool pointOnFirst)
+    {
+        _isBall = true;
+        _law = law;
         _choix = choix;
         _pointOnFirst = pointOnFirst;
     }
@@ -70,6 +85,11 @@ internal class CurvPointRadInv : CurvPointFuncInv
         Vector3D nplan = unsurnormd1cur1 * d1cur1;
         double theD = -(nplan.XYZ().Dot(ptcur1.XYZ()));
         _curv2.D2(x[2], out Point3D ptcur2, out Vector3D d1cur2, out Vector3D d2cur2);
+        double dray = 0.0;
+        if (_law is not null)
+        {
+            _law.D1(x[1], out _ray, out dray);
+        }
         double inv2 = ConstRad.InverseNorm(d1cur2);
         Vector3D t2 = inv2 * d1cur2;
 
@@ -94,7 +114,9 @@ internal class CurvPointRadInv : CurvPointFuncInv
         Vector3D dc = RstRstConstRad.BallCentreD1(center, _point, _tangent, ptcur2, 0.0, 0.0, -c2.Dot(d1cur2));
         d[1, 1] = (dnplan.XYZ().Dot(_point.XYZ()) + dnplan.XYZ().Dot(ptcur2.XYZ())) / 2 + dtheD;
         d[1, 2] = nplan.Dot(d1cur2) / 2;
-        d[2, 1] = 0.0;
+        // In the guide's parameter the centre moves only with the radius.
+        d[2, 1] = dray == 0.0 ? 0.0
+            : RstRstConstRad.BallCentreD1(center, _point, _tangent, ptcur2, 0.0, -_ray * dray, -_ray * dray).Dot(t2);
         d[2, 2] = (dc - d1cur2).Dot(t2) + c2.Dot(ConstRad.UnitNormalD1(t2, inv2, d2cur2));
     }
 
