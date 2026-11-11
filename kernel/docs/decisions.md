@@ -17092,3 +17092,43 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        option, off by default, for a caller building one large part, is for 0.5.1. Repacked with it off: the smoke test passes, and the release check against
        0.4.0 too, the enclosures 3.19 to 2.27 s and 3.26 to 2.26 s (29% and 31% quicker, where decision 2086's had 32% to 34%), the
        other users' cases as before (boss fuse 11.1 ms, detent 14.5, the collapsing chamfers 3.2 and 7.5).
+
+## 0.5.1: closed 3MF meshes (a user's agent's report)
+
+2191. **A part's mesh written as 3MF has a vertex per node of the part's mesh, faces meeting at an edge sharing its nodes; glTF
+       shares them where the normals agree, and STL welds within 1e-9 of the extent** (the report of 12 November 2026, from the
+       agent building Renegade's enclosure on Kerf.Modeling 0.5.0). `ThreeMf.Write` wrote each face's triangulation with its own
+       nodes, so no vertex was shared between faces, and where a face sat at a placement of its own (a pocket cut by a shape moved
+       and turned) its copies of an edge's nodes differed from the neighbouring face's in the last digits, about 1e-14 mm: slicers
+       join only identical vertices, and Bambu Studio and PrusaSlicer read the plate as open and sliced it with stray fill. The
+       part was valid. The mesher discretises each edge once and each face's triangulation holds the edge's polygon as indices into
+       its own nodes, so `ProductMesh` (with `toShareNodes`) names a part node per vertex and per inner node of an edge's polygon,
+       from the first face meeting it, and every face's copy is that node, the same by construction, not by a tolerance; a seam's
+       two sides and a degenerate edge's nodes (a cone's apex, a sphere's poles) are one node each, and the triangles left with two
+       corners one node (of no area) are dropped. An edge without a polygon on a face's triangulation, or with a different count of
+       nodes there, keeps its nodes apart, as before. The 3MF writer writes each part node once, across the colour groups. glTF's
+       vertices carry a normal, so a group holds a node once per normal: a seam or a smooth edge shares, a crease keeps a vertex
+       per face, at one position. STL has no indices and is written from a `ShapeMesh`, whose faces' triangulations have no edges
+       left to name the copies (the mesher's overlay is dropped), so where the faces have more than one placement its writer moves
+       each node to the first node within 1e-9 of the model's extent from the origin (at least 1e-9), so a node's copies can't
+       round to different floats; no mesh has two nodes that close. It isn't only in principle: native OCCT's STL of data/occ's
+       `CrankArm.brep` (meshed at 0.1), read back, has 959 nodes where the welded one has 958, with the same 1,924 triangles, one
+       node's copies having rounded apart; `RWStlNativeTests` compares the port with native unwelded (`ApiWriter.WeldsNodes`), and
+       checks that the weld moves CrankArm's node and leaves bottle's and hammer's bytes alone (of the recording's shapes compared
+       with native, only CrankArm's and MODERN_Exhaust_1's bytes change). OBJ is unchanged. The reproduction's six plates (a box, a
+       cylinder and the text "58S" pocketed into a 40 x 40 x 4 plate, at the origin and moved and turned 30 degrees), open edges by
+       the vertices as written and after joining identical coordinates: in 0.5.0 48 and 0, 48 and 8, 530 and 0, 530 and 214, 5,398
+       and 0, 5,410 and 2,408; now 0 and 0 in every case, with the same triangles (28, 28, 516, 516, 18,364, 18,430), V - E + F =
+       2, and the vertices 16, 16, 260, 260, 9,184 and 9,217 where they were 48, 48, 530, 530, 11,970 and 12,009. lib3mf
+       (build123d's `Mesher`) reads the new files with the same volumes. The cost, bytes allocated by each export (meshing
+       included, all threads, median of 7, the 0.5.0 package against this build): the turned text plate's 3MF 44.6 to 44.7 MB
+       (+0.2%), glTF 38.2 to 40.0 MB (+4.7%), STL 36.6 to 37.4 MB (+2.2%, its faces being placed apart); a filleted block's 3MF
+       14.3 to 12.5 MB (-13%, a dictionary per shared node only), glTF 9.8 to 9.7 MB (-1%), STL +0.5%; under decision 1829's bar,
+       and the files smaller (the plate's 3MF 282 to 252 kB). `ClosedMeshTests` checks the six through `Export3mf`, a part of two
+       solids, a cylinder, a cone, a sphere and a torus, each closed, consistently oriented and with the STL writer's triangles and
+       volume, and the plates through STL and glTF closed by their positions.
+2192. **Kerf 0.5.1 is 0.5.0 with decision 2191's fix** (the owner, 12 November 2026: "I want this to be applied to 0.5.0 - we'll
+       release 0.5.1 as soon as possible with the fix applied, then merge the fix into the latest version"). Made on
+       `fix/3mf-shared-vertices` from the `v0.5.0` tag, not `main`: the versions (both `Directory.Build.props`, `pack-nuget.ps1`),
+       the README's release line and both CHANGELOGs' `## 0.5.1`; the fix is carried to `main` separately. Decision 2088's per-call
+       option for parallel volumes, named for 0.5.1 there, isn't in it.
