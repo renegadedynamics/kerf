@@ -221,9 +221,23 @@ is built, its face in two meeting at that point.
 
 **A chamfer OCCT can't build** at a corner of B-spline faces, as on a loft from a square to a circle, where its side
 faces turn tangent at the top, is built Kerf's own way and checked by its volume, in seconds rather than OCCT's fraction of
-one (about 14 s for that loft with every edge chamfered). It has a limit of 20 s: past it the chamfer fails with
-`modeling.chamfer-failed`, saying it couldn't be built within its time limit, and the kernel's `fillet.time-limit`
-among the diagnostics, followed by OCCT's own failure. A token or `Cancellation.Use` still stops it sooner.
+one (about 11 to 14 s for that loft with every edge chamfered). It has a time limit, 20 s by default: past it the
+chamfer fails with `modeling.chamfer-failed`, saying it couldn't be built within its time limit of so many seconds,
+and the kernel's `fillet.time-limit` among the diagnostics, followed by OCCT's own failure. A token or
+`Cancellation.Use` still stops it sooner, as a cancellation.
+
+The limit is wall-clock time, so a chamfer close to it can build on a quiet machine and fail on a busy one. Set it
+per call with `ChamferOptions.TimeLimit`: any positive `TimeSpan` up to 49 days raises or lowers it, and
+`Timeout.InfiniteTimeSpan` turns it off, leaving only a token to stop it. Zero, a negative time or one over 49 days is
+refused with an `ArgumentOutOfRangeException`.
+
+```csharp
+Sketch square = new Rectangle(10, 10);
+Sketch circle = new Location(new Vector3D(0, 0, 10)) * new Circle(4);
+Part loft = Loft([square, circle]).Value;
+var slow = Chamfer(loft, loft.Edges(), 0.05, options: new ChamferOptions { TimeLimit = TimeSpan.FromMinutes(2) });
+var unbounded = Chamfer(loft, loft.Edges(), 0.05, options: new ChamferOptions { TimeLimit = Timeout.InfiniteTimeSpan });
+```
 
 ## 6. Results, failures and warnings
 
