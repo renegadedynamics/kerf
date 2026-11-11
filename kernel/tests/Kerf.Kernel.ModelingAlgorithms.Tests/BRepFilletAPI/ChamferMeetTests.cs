@@ -132,13 +132,13 @@ public class ChamferMeetTests
     // each top vertex the rim's two arcs are tangent and so are the side faces: ChFi3d's corner of three chamfers fails, and
     // its side stripes are off the length where they meet their faces at a narrow angle. Unit 15V's bands of Kerf's own (the
     // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths, without crossings
-    // and of the volume the sections give; the operation doesn't ask for solids yet (it takes minutes), so the public
-    // chamfer still fails. One length, as it takes a few minutes
-    [Fact]
-    public void A_loft_whose_side_faces_turn_tangent_at_its_top_corners_is_built_with_kerfs_own_bands()
+    // and of the volume the sections give; the operation doesn't ask for solids yet (decision 30113), so the public
+    // chamfer still fails
+    [Theory]
+    [InlineData(0.05, 18)]
+    [InlineData(0.2, 18)]
+    public void A_loft_whose_side_faces_turn_tangent_at_its_top_corners_is_built_with_kerfs_own_bands(double length, int faces)
     {
-        const double length = 0.05;
-        const int faces = 18;
         Shape loft = Loft();
         Edge[] edges = [.. loft.AllEdges()];
         ChamferSpec[] specs = [.. edges.Select(e => new ChamferSpec(e, length))];
@@ -156,6 +156,22 @@ public class ChamferMeetTests
         Assert.True(ChamferMeet.Proved(loft, made, specs, references, native, 1e-4));
         Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
         Assert.False(loft.Chamfer(edges, length).IsSuccess);
+    }
+
+    // The volume proof's sections along an edge (unit 15V) against Pappus: a cylinder's top rim chamfered by d takes off a
+    // triangle of d squared over two whose centroid turns at the radius less d over three
+    [Theory]
+    [InlineData(0.05)]
+    [InlineData(0.3)]
+    [InlineData(0.8)]
+    public void The_sections_along_an_edge_give_pappus_on_a_cylinders_rim(double length)
+    {
+        Shape cylinder = new ApiMakeCylinder(4.0, 10.0).Shape();
+        Face[] faces = [.. cylinder.AllFaces()];
+        Edge rim = cylinder.AllEdges().Single(e => !Tool.Degenerated(e) && faces.Count(f => f.AllEdges().Any(x => x.IsSame(e))) == 2
+                                                   && e.AllVertices().All(v => Math.Abs(v.Point.Z - 10) < 1e-9));
+        double exact = 2 * Math.PI * (4 - (length / 3)) * length * length / 2;
+        Assert.Equal(exact, ChamferMeet.SweptVolume(faces, rim, length)!.Value, 1e-7 * exact);
     }
 
     private static Shape Loft()

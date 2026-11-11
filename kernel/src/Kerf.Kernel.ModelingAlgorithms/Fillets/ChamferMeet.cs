@@ -50,7 +50,7 @@ namespace Kerf.Fillets;
 /// corner whose edges are all chamfered where its chamfers are all convex; every chamfer face one of ChFi3d's B-spline
 /// stripes, its contacts its u-isos, or one of Kerf's own (unit 15V: <c>ChamferMeet.Chains.cs</c>) where stripes run on
 /// through a vertex or ChFi3d's stripe is off the chamfer's length. A solid is built only when asked, proved by its volume
-/// against an integral apart from the fuse (<c>ChamferMeet.Volume.cs</c>), which costs too much for the operation to ask yet.
+/// against an integral apart from the fuse (<c>ChamferMeet.Volume.cs</c>); the operation doesn't ask yet (decision 30113).
 /// What doesn't fit gives null, and ChFi3d's failure stands.
 /// </para>
 /// <para>
@@ -169,7 +169,7 @@ internal static partial class ChamferMeet
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply or what it builds isn't proved. A solid is built
     /// only where <paramref name="solid"/> is asked, and proved by its volume too (unit 15V); the operation doesn't ask yet, as
-    /// that takes minutes on the loft where ChFi3d's failure takes a fraction of a second (decision 30103, for the owner).
+    /// that takes 8 to 22 s on the loft where ChFi3d's failure takes a fraction of a second (decision 30113, for the owner).
     /// </summary>
     public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
                                        bool solid = false)
@@ -491,8 +491,7 @@ internal static partial class ChamferMeet
         if (shape.AllSolids().Length == 1)
         {
             double measured = MeasuredVolume(built);
-            (double Expected, double Allowed)? volume = ExpectedVolume(shape, faces, bands, cornerRules, [.. chamfered], specs, Material,
-                                                                        (b, x, n) => SideOf(b, x, n), builder._tolapp3d);
+            (double Expected, double Allowed)? volume = ExpectedVolume(shape, faces, bands, cornerRules, [.. chamfered], specs, builder._tolapp3d);
             if (volume is not { } v || Math.Abs(measured - v.Expected) > v.Allowed)
             {
                 return null;

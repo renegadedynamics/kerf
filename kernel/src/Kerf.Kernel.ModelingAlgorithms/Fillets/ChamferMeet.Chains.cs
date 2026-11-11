@@ -33,8 +33,9 @@ namespace Kerf.Fillets;
 /// </remarks>
 internal static partial class ChamferMeet
 {
-    // Sections on each edge of a chain, gathered towards its ends
-    private const int SectionsPerEdge = 48;
+    // Sections on each edge of a chain, gathered towards its ends: 16 left the loft's contacts off the length, and 48 made the
+    // fuse a tenth slower, its bands' poles one to a section
+    private const int SectionsPerEdge = 24;
 
     // Edges are taken as running on where their tangents at the vertex are this close, in radians
     private const double Tangent = 1e-6;

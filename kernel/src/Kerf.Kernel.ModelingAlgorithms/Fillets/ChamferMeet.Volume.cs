@@ -24,13 +24,12 @@ namespace Kerf.Fillets;
 /// </para>
 /// <para>
 /// <b>At a corner,</b> what the chamfers take off together is not the sum of their sections: in a box round the corner,
-/// what's in the input and past any chamfer's surface less what's in each section's region, by the midpoint rule on two
-/// grids a half cell apart, their difference for the error. Only corners of convex chamfers, which take off what's past any
-/// of them.
+/// what's in the input and past any chamfer's surface less what's in each section's region, along lines cut exactly where
+/// they cross the corner's surfaces (<c>ChamferMeet.Corners.cs</c>). Only corners where every edge is convex.
 /// </para>
 /// <para>
 /// The result's volume, measured, has to match to a part in a million of it, the approximation's tolerance over the chamfer's
-/// area, and twice the corners' difference between grids. Everything is local to the call.
+/// area, and twice the corners' difference between two quadratures. Everything is local to the call.
 /// </para>
 /// </remarks>
 internal static partial class ChamferMeet
@@ -41,18 +40,15 @@ internal static partial class ChamferMeet
     private static ReadOnlySpan<double> GaussWeights => [0.1012285362903763, 0.2223810344533745, 0.3137066661925477, 0.3626837833783620,
                                                          0.3626837833783620, 0.3137066661925477, 0.2223810344533745, 0.1012285362903763];
 
-    // Panels of Gauss's eight points along each edge; cells along each side of a corner's box, and how far it reaches from
-    // the corner, in its widest chamfer's widths
+    // Panels of Gauss's eight points along each edge, and how far a corner's box reaches from the corner, in its widest
+    // chamfer's widths
     private const int VolumePanels = 16;
-
-    private const int CornerCells = 24;
 
     private const double CornerReach = 3;
 
     /// <summary>The expected volume and how far from it the result may be, or null where it can't be worked out.</summary>
     private static (double Expected, double Allowed)? ExpectedVolume(Shape input, Face[] faces, List<Band> bands, List<Corner> corners,
-                                                                     Edge[] chamfered, ChamferSpec[] specs, Func<Point3D, bool> material,
-                                                                     Func<Band, Point3D, bool, bool?> sideOf, double tolerance)
+                                                                     Edge[] chamfered, ChamferSpec[] specs, double tolerance)
     {
         if (bands.Any(static b => !b.Convex))
         {
@@ -76,20 +72,21 @@ internal static partial class ChamferMeet
         {
             Edge[] at = [.. chamfered.Where(e => e.AllVertices().Any(v => v.IsSame(corner.Vertex))).DistinctBy(static e => (Shape)e, ShapeHasher.Instance)];
             double reach = CornerReach * corner.Bands.Max(static b => b.Width);
-            double one = CornerExcess(corner, at, bands, reach, CornerCells, 0, material, sideOf);
-            double other = CornerExcess(corner, at, bands, reach, CornerCells, 0.5, material, sideOf);
-            if (double.IsNaN(one) || double.IsNaN(other))
+            (double excess, double error) = CornerExcess(corner, faces, at, bands, reach);
+            if (double.IsNaN(excess) || double.IsNaN(error))
             {
                 return null;
             }
-            cornersRemoved += 0.5 * (one + other);
-            cornersError += 2 * Math.Abs(one - other);
+            cornersRemoved += excess;
+            cornersError += error;
         }
         double expected = MeasuredVolume(input) - removed - cornersRemoved;
         return (expected, (1e-6 * Math.Abs(expected)) + (tolerance * area) + cornersError);
     }
 
     private static double MeasuredVolume(Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 });
+
+    internal static double? SweptVolume(Face[] faces, Edge edge, double distance) => Swept(faces, edge, distance, new IntersectionContext())?.Volume;
 
     // The region the chamfer takes off along the edge, between the planes square to it at its ends, and the chamfer's area there
     private static (double Volume, double Width)? Swept(Face[] faces, Edge edge, double distance, IntersectionContext context)
@@ -152,116 +149,5 @@ internal static partial class ChamferMeet
             moment += (new Vector3D(c, middle) + (sag * 0.4)) * segment;
         }
         return (area, moment);
-    }
-
-    // At a corner, in the box about it: what's in the input and past any of its chamfers, less what's in each of its edges'
-    // sections (past the chamfer and between the planes at the edge's ends), by the midpoint rule
-    private static double CornerExcess(Corner corner, Edge[] edges, List<Band> bands, double reach, int cells, double shift,
-                                       Func<Point3D, bool> material, Func<Band, Point3D, bool, bool?> sideOf)
-    {
-        Band?[] own = [.. edges.Select(e => bands.FirstOrDefault(b => b.Edges.Any(x => x.IsSame(e))))];
-        if (own.Any(static b => b is null))
-        {
-            return double.NaN;
-        }
-        var curves = new (Curve3D Curve, double A, double B)[edges.Length];
-        for (int k = 0; k < edges.Length; k++)
-        {
-            if (Tool.Curve(edges[k], out double a, out double b) is not { } curve)
-            {
-                return double.NaN;
-            }
-            curves[k] = (curve, a, b);
-        }
-        double h = 2 * reach / cells, sum = 0;
-        Point3D o = corner.Point;
-        var past = new bool[edges.Length];
-        var feet = new (double U, double V)[edges.Length];
-        for (int e = 0; e < edges.Length; e++)
-        {
-            var start = new ProjectPointOnSurface(o, own[e]!.Surface, own[e]!.EU0, own[e]!.EU1, own[e]!.EV0, own[e]!.EV1);
-            if (start.NbPoints() == 0)
-            {
-                return double.NaN;
-            }
-            start.LowerDistanceParameters(out double u0, out double v0);
-            feet[e] = (u0, v0);
-        }
-        for (int i = 0; i < cells; i++)
-        {
-            for (int j = 0; j < cells; j++)
-            {
-                for (int k = 0; k < cells; k++)
-                {
-                    var x = new Point3D(o.X - reach + ((i + shift) * h), o.Y - reach + ((j + shift) * h), o.Z - reach + ((k + shift) * h));
-                    bool any = false;
-                    for (int e = 0; e < edges.Length; e++)
-                    {
-                        past[e] = Beyond(own[e]!, x, ref feet[e]) ?? sideOf(own[e]!, x, true) == false;
-                        any |= past[e];
-                    }
-                    if (!any || !material(x))
-                    {
-                        continue;
-                    }
-                    int count = 1;
-                    for (int e = 0; e < edges.Length; e++)
-                    {
-                        if (past[e] && Inside(curves[e], x))
-                        {
-                            count--;
-                        }
-                    }
-                    sum += count;
-                }
-            }
-        }
-        return sum * h * h * h;
-    }
-
-    // Past the band's surface, on its edge's side (a convex chamfer's): the foot by Newton's method from the last one, as the
-    // grid's points are near each other; null where it doesn't settle
-    private static bool? Beyond(Band band, Point3D x, ref (double U, double V) foot)
-    {
-        (double u, double v) = foot;
-        for (int iteration = 0; iteration < 12; iteration++)
-        {
-            band.Surface.D1(u, v, out Point3D s, out Vector3D su, out Vector3D sv);
-            var r = new Vector3D(x, s);
-            double gu = r.Dot(su), gv = r.Dot(sv);
-            double a = su.Dot(su), b = su.Dot(sv), c = sv.Dot(sv), det = (a * c) - (b * b);
-            if (det <= 0)
-            {
-                return null;
-            }
-            double du = ((c * gu) - (b * gv)) / det, dv = ((a * gv) - (b * gu)) / det;
-            u = Math.Clamp(u - du, band.EU0, band.EU1);
-            v = band.Surface.IsVPeriodic ? v - dv : Math.Clamp(v - dv, band.EV0, band.EV1); // round a closed band, on through its seam
-            if (Math.Abs(du) * Math.Sqrt(a) + (Math.Abs(dv) * Math.Sqrt(c)) < 1e-12 * (1 + r.Magnitude))
-            {
-                break;
-            }
-        }
-        band.Surface.D1(u, v, out Point3D foot3, out Vector3D fu, out Vector3D fv);
-        Vector3D normal = fu.Crossed(fv);
-        var to = new Vector3D(foot3, x);
-        if (normal.Magnitude == 0 || Math.Abs(to.Dot(normal)) < 0.99 * to.Magnitude * normal.Magnitude)
-        {
-            return null; // not square to the surface: at its edge, or not settled
-        }
-        foot = (u, v);
-        return Math.Sign(to.Dot(normal)) == band.EdgeSign;
-    }
-
-    // The point's nearest point of the edge is inside it, not at an end: it's between the planes square to the edge there
-    private static bool Inside((Curve3D Curve, double A, double B) edge, Point3D x)
-    {
-        var projection = new ProjectPointOnCurve(x, edge.Curve, edge.A, edge.B);
-        if (projection.NbPoints() == 0)
-        {
-            return false;
-        }
-        double t = projection.LowerDistanceParameter();
-        return t > edge.A + (1e-9 * (edge.B - edge.A)) && t < edge.B - (1e-9 * (edge.B - edge.A));
     }
 }
