@@ -764,19 +764,30 @@ internal class DirectPolynomialRoots
         // The constants' product is d exactly, (y0/2 + q0)(y0/2 - q0) = y0^2/4 - q0^2. Where the two terms nearly cancel
         // in one of them, it keeps none of its digits, and a pair of roots near zero becomes a double root at zero: a circle
         // that crosses a cylinder 1e-6 radians either side of a touch saw no crossing (decision 2127). The small one is
-        // taken from the product there, as the stable quadratic formula does. (p0 can be noise there too, which leaves one
-        // of such a pair wrong; taking it from the cubic's term moved a Boolean against native, so it's left: decision 2127.)
-        // Only for the trigonometric equations, whose Newton step then finds the crossing: everywhere, it moved a 2D offset
-        // and a bisector against native.
+        // taken from the product there, as the stable quadratic formula does, and isn't cleaned to zero below, as it has
+        // its digits. The linear terms, sqrt(a^2/4 - b + y0), are then a difference of terms near y0 too, noise as large as
+        // the square root of their rounding where they're 0 (0.017 in that case); where so, they're taken from the cubic's
+        // term, a*y0/2 - c = 2*p0*q0, which q0, near y0/2, doesn't amplify (decision 30701). Only for the trigonometric
+        // equations: everywhere, the constant moved a 2D offset and a bisector against native.
+        bool keepsConstants = false;
         if (keepsSmallFactor && q0 > 0.0)
         {
             if (Math.Abs(factors.Q2) < CancelledShare * Math.Abs(factors.Q1))
             {
                 factors.Q2 = d / factors.Q1;
+                keepsConstants = true;
             }
             else if (Math.Abs(factors.Q1) < CancelledShare * Math.Abs(factors.Q2))
             {
                 factors.Q1 = d / factors.Q2;
+                keepsConstants = true;
+            }
+            double p0Rounding = 64.0 * MACHINE_EPSILON * (a * a * 0.25 + Math.Abs(b) + Math.Abs(y0));
+            if (keepsConstants && a * a * 0.25 - b + y0 < p0Rounding)
+            {
+                double p0FromCubic = Math.Abs(discr) / (2.0 * q0);
+                factors.P1 = ademi + p0FromCubic;
+                factors.P2 = ademi - p0FromCubic;
             }
         }
 
@@ -793,12 +804,12 @@ internal class DirectPolynomialRoots
             factors.P2 = 0.0;
         }
 
-        if (Math.Abs(factors.Q1) <= eps)
+        if (Math.Abs(factors.Q1) <= eps && !keepsConstants)
         {
             factors.Q1 = 0.0;
         }
 
-        if (Math.Abs(factors.Q2) <= eps)
+        if (Math.Abs(factors.Q2) <= eps && !keepsConstants)
         {
             factors.Q2 = 0.0;
         }

@@ -130,6 +130,54 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         return anOutcome + (aPF.PDS() is { } aDS ? PaveFillerDump.Write(aDS) : "");
     }
 
+    // Cases whose records differ from native's by rounding where Kerf's answer is the right one, with the most each number may
+    // move. bopfuse_simple/ZN2: one of the cones' apexes lies on the other, and the trigonometric quartic there,
+    // 256 x^4 + 192 x^2 - 1.4e-14, has roots +/-8.6e-9; native finds 8.6e-9 and 0, Kerf both (decision 30701), which moves the
+    // two section curves' points and p-curves by 3e-13 at most, as far from the cones as native's.
+    private static readonly Dictionary<int, double> s_roundedAway = new() { [389] = 1e-12 };
+
+    /// <summary>The port's record is native's, or differs only where <see cref="s_roundedAway"/> allows.</summary>
+    private static bool IsNative(Case theCase, int theMode, string thePort)
+    {
+        string aNative = theCase.Native[theMode];
+        if (aNative == thePort)
+        {
+            return true;
+        }
+        if (!s_roundedAway.TryGetValue(theCase.Id, out double aReach))
+        {
+            return false;
+        }
+        string[] aN = aNative.Split('\n'), aP = thePort.Split('\n');
+        if (aN.Length != aP.Length)
+        {
+            return false;
+        }
+        for (int i = 0; i < aN.Length; ++i)
+        {
+            string[] aTN = aN[i].Split(' '), aTP = aP[i].Split(' ');
+            if (aTN.Length != aTP.Length)
+            {
+                return false;
+            }
+            for (int j = 0; j < aTN.Length; ++j)
+            {
+                if (aTN[j] == aTP[j])
+                {
+                    continue;
+                }
+                if (aTN[j].Length != 16 || aTP[j].Length != 16
+                    || !long.TryParse(aTN[j], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long aBN)
+                    || !long.TryParse(aTP[j], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long aBP)
+                    || Math.Abs(BitConverter.Int64BitsToDouble(aBN) - BitConverter.Int64BitsToDouble(aBP)) > aReach)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private static string FirstDifference(string theNative, string thePort)
     {
         string[] aN = theNative.Split('\n'), aP = thePort.Split('\n');
@@ -156,7 +204,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
             {
                 string aPort = Run(Arguments(aCase, m == 1), false, false, aCase.Fuzzy);
                 ++aRuns;
-                if (aPort == aCase.Native[m])
+                if (IsNative(aCase, m, aPort))
                 {
                     ++anIdentical;
                 }
@@ -202,7 +250,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         {
             string aReference = DeterminismHarness.AssertSerialEqualsParallel(
                 () => Run(Arguments(aCase, false), false, true, aCase.Fuzzy), 1, 2, Environment.ProcessorCount);
-            Assert.Equal(aCase.Native[0], aReference);
+            Assert.True(IsNative(aCase, 0, aReference), $"case {aCase.Id} {aCase.Name}: {FirstDifference(aCase.Native[0], aReference)}");
         }
     }
 
@@ -217,7 +265,8 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
         {
             NCollection_List<Shape> anArgs = Arguments(aCase, false);
             string aBefore = Text(anArgs);
-            Assert.Equal(aCase.Native[1], Run(anArgs, true, false, aCase.Fuzzy));
+            string aPort = Run(anArgs, true, false, aCase.Fuzzy);
+            Assert.True(IsNative(aCase, 1, aPort), $"case {aCase.Id} {aCase.Name}: {FirstDifference(aCase.Native[1], aPort)}");
             Assert.Equal(aBefore, Text(anArgs));
         }
     }
