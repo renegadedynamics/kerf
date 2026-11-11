@@ -267,6 +267,12 @@ Part p = Fillet(box, topEdges, 2).Value;    // throws InvalidOperationException,
   with a fuzzy value of ten times their largest tolerance, then a thousand times. A retry that passes is the result, with the warning
   `boolean.other-way-round` or `boolean.fuzzy-value` (which names the value): in `Diagnostics` from `Add`, `Subtract`
   and `Common`, and raised to `Warnings` from `Cut`, `Fuse`, `Intersect` and the operators.
+  A retry is checked as the first attempt was, at the fuzzy value you asked for (none by default), so a fuzzy value
+  that only hides what was wrong doesn't make it a success.
+- **A Boolean whose result's faces don't close fails,** even where every point of it is near where it should be: the
+  faces then bound no definite solid, and its volume depends on where it's measured from. It's made again first, as
+  above, and fails with `result.invalid` only if nothing closes it; `TryGetInvalid` gives what was made. This is
+  checked only where surfaces nearly touched (a result's tolerance over 1e-5, 64 faces or fewer).
 - `part.IsValid` checks any shape, as build123d's `is_valid`. Check what you import.
 
 ## 7. Meshing

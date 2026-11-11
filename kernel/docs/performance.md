@@ -2335,3 +2335,5 @@ At 9 by 9 points a face, as the fuse's proof samples, `bug24758_2`'s cut took 13
 **The users' cases** (`Kerf.UserCases rig 5`, the sides alternating, two rounds): the same volumes and faces, and the same bytes within the rounds' spread (the enclosure 2,602 and 2,545 MB before, 2,598 and 2,590 after; the shaft gauges 4,324 and 3,738, 4,263 and 4,087; the boss 11.3 and 11.2, 11.2 and 11.0; the detent 16.3 and 16.4, 16.1 and 16.1). None of their results is asked at points, as decision 2066 found. **The rig's Booleans suite** (600 cases, once a side): 5.85 and 4.08 MB a Boolean on both sides.
 
 **For a quiet window:** `quiet-15ah.ps1` runs the users' cases and the rig's Booleans suite, both sides alternating.
+
+**The owner's answer** (14 November 2026, decision 31413): the cost is accepted for safety; optimising it is later work.
