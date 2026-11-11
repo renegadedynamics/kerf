@@ -184,8 +184,8 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         aDI.Eval("explode a e");
         aDI.Eval("blend r1 a 5 a_16");
         aDI.Eval("set s r1; set x 7.86643372; set y -191.672917; set z -35; eval $find");
-        // Since unit 15W put the fillets on the ball the second blend fails, its line without a transition on one face, the
-        // cause not yet found (decision 2164); it gave native's area, 25084[34] after the third, before
+        // Since unit 15W put the fillets on the ball the second blend fails, its line without a transition on one face; main's
+        // was off the ball by up to 0.31 at radius 5 (decision 2164), and gave native's area, 25084[34] after the third
         Assert.ThrowsAny<DrawException>(() => aDI.Eval("blend r2 r1 5 $best"));
 
         aDI.Eval($"restore {aData}/brep/bug27711.brep b");
@@ -299,7 +299,7 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         ["chamfer/equal_dist_sequence/B7"] = "native invalid at step 2 too; the port refuses (decision 1735)",
         ["chamfer/equal_dist_sequence/B9"] = "native invalid at step 2 too (decision 1722); the port refuses (decision 1735)",
         ["blend/complex/G8"] = "reconstruction order: the third blend names an edge by explode index of the second result, another edge here; blend fails (decision 1738); "
-                               + "with native's edges, its second blend fails since the fillets are on the ball, its line without a transition, the cause not yet found (decision 2164)",
+                               + "with native's edges, its second blend fails since the fillets are on the ball, its line without a transition; main's was off the ball by up to 0.31 at radius 5 (decision 2164)",
         // Unit 15W: ChFi3d's walked fillets on the rolling ball (decisions 2156 to 2164)
         ["blend/complex/C1"] = "a cylinder of the fillet's own radius: the ball can't roll there, the right fillet is a sphere's piece; main's result was off the ball (decision 2159)",
         ["blend/complex/C5"] = "a pocket's corner of the fillet's own radius: the ball can't roll there; main's result was off the ball (decision 2159)",
