@@ -35,9 +35,11 @@ namespace Kerf.Fillets;
 /// </para>
 /// <para>
 /// <b>The faces carried on.</b> Each face of the formula that isn't one of its chamfers' own two is carried on past its
-/// edges, as the chamfers' surfaces are: its surface extended by the same length on every side, its parameters kept, and
-/// given to the fuse as the face itself on that surface and a ring of it round the face, so that the pieces of the two that
-/// are kept are one face again after the fuse. Only the ring's pieces near a corner of this kind can be kept.
+/// edges, as the chamfers' surfaces are: a plane, or a surface that already runs on past the face by the length (a chamfer
+/// ChFi3d made before), as it is; otherwise its surface, each parameter scaled to the face's length along it (unit 15Y), and
+/// extended by the length on every side. It goes to the fuse as the face on that surface and a ring of it round the face, so
+/// that the pieces of the two that are kept are one face again after the fuse. Only the ring's pieces near a corner of this
+/// kind can be kept.
 /// </para>
 /// </remarks>
 internal static partial class ChamferMeet
@@ -173,8 +175,9 @@ internal static partial class ChamferMeet
         return held;
     }
 
-    // The face carried on past its edges by length: a plane as it is, a Bézier or B-spline surface extended on every side,
-    // its parameters kept; null where it can't be (a periodic surface, a seam, a placed surface, more than one wire)
+    // The face carried on past its edges by length: a plane, or a surface that runs on past it that far, as it is; a Bézier or
+    // B-spline surface scaled and extended on every side; null where it can't be (a periodic surface, a seam, a placed
+    // surface, more than one wire)
     private static Carried? Carry(Face face, double length)
     {
         Face forward = ShapeCasts.Face(face.Oriented(Orientation.Forward));
@@ -192,6 +195,19 @@ internal static partial class ChamferMeet
             builder.Add(planeRing, wires[0].Reversed());
             return new Carried(face, face, planeRing, surface, u0, u1, v0, v1);
         }
+        // A surface that already runs on past the face by the length on every side (a chamfer ChFi3d made before, which it
+        // extended and trimmed) is carried on as it is: extended again, a stripe's parameter across, by its length along
+        // the edge, makes curves the fuse can't follow (unit 15Y)
+        surface.ParameterBounds(out double su0, out double su1, out double sv0, out double sv1);
+        double mu = (fu0 + fu1) / 2, mv = (fv0 + fv1) / 2;
+        if (!surface.IsUPeriodic && !surface.IsVPeriodic && surface is BoundedSurface
+            && surface.EvalD0(fu0, mv).DistanceTo(surface.EvalD0(su0, mv)) >= length && surface.EvalD0(fu1, mv).DistanceTo(surface.EvalD0(su1, mv)) >= length
+            && surface.EvalD0(mu, fv0).DistanceTo(surface.EvalD0(mu, sv0)) >= length && surface.EvalD0(mu, fv1).DistanceTo(surface.EvalD0(mu, sv1)) >= length)
+        {
+            Face ownRing = Polygon(surface, [new(su0, sv0), new(su1, sv0), new(su1, sv1), new(su0, sv1)]);
+            builder.Add(ownRing, wires[0].Reversed());
+            return new Carried(face, face, ownRing, surface, su0, su1, sv0, sv1);
+        }
         BSplineSurface? spline = surface switch
         {
             BSplineSurface b => b,
@@ -202,13 +218,19 @@ internal static partial class ChamferMeet
         {
             return null;
         }
+        // Each parameter by the face's length along it first, so that the extension, which adds its length in parameter, runs
+        // as fast as the face: a chamfer ChFi3d made before has its parameter across by its length along the edge, and
+        // carried on across as it was, it made curves the fuse couldn't follow (unit 15Y's slivers)
+        double su = Speed(surface.EvalD0(fu0, mv), surface.EvalD0(fu1, mv), fu1 - fu0), sv = Speed(surface.EvalD0(mu, fv0), surface.EvalD0(mu, fv1), fv1 - fv0);
+        spline = new BSplineSurface(spline.Poles, [.. spline.UKnots.Select(k => k * su)], [.. spline.VKnots.Select(k => k * sv)],
+                                    [.. spline.UMultiplicities], [.. spline.VMultiplicities], spline.UDegree, spline.VDegree,
+                                    false, false, spline.IsURational || spline.IsVRational ? spline.Weights : default);
         BoundedSurface extended = spline;
         foreach ((bool inU, bool after) in (ReadOnlySpan<(bool, bool)>)[(true, true), (true, false), (false, true), (false, false)])
         {
             GeomLib.ExtendSurfByLength(ref extended, length, 1, inU, after);
         }
-        double mu = (fu0 + fu1) / 2, mv = (fv0 + fv1) / 2;
-        if (extended is not BSplineSurface carried || carried.EvalD0(mu, mv).DistanceTo(surface.EvalD0(mu, mv)) > Precision.Confusion())
+        if (extended is not BSplineSurface carried || carried.EvalD0(mu * su, mv * sv).DistanceTo(surface.EvalD0(mu, mv)) > Precision.Confusion())
         {
             return null; // the extension moved the parameters
         }
@@ -218,11 +240,21 @@ internal static partial class ChamferMeet
         var curves = new List<(Edge Edge, Curve2D Curve)>();
         foreach (Edge edge in copy.Explore<Edge>(ShapeType.Edge))
         {
-            if (Tool.IsClosed(edge, copy) || Tool.CurveOnSurface(edge, copy, out _, out _) is not { } curve)
+            if (Tool.IsClosed(edge, copy) || Tool.CurveOnSurface(edge, copy, out double first, out double last) is not { } curve)
             {
                 return null;
             }
-            curves.Add((edge, curve));
+            // The edge's curve on the face, its parameters scaled as the surface's
+            Curve2D scaled = Scaled(curve, first, last, su, sv);
+            foreach (double t in (ReadOnlySpan<double>)[first, (first + last) / 2, last])
+            {
+                Point2D was = curve.EvalD0(t), now = scaled.EvalD0(t);
+                if (carried.EvalD0(now.X, now.Y).DistanceTo(surface.EvalD0(was.X, was.Y)) > Precision.Confusion())
+                {
+                    return null;
+                }
+            }
+            curves.Add((edge, scaled));
         }
         builder.UpdateFace(copy, carried, new Placement(), Tool.Tolerance(copy));
         foreach ((Edge edge, Curve2D curve) in curves)
@@ -234,6 +266,26 @@ internal static partial class ChamferMeet
         builder.Add(ring, copy.Explore<Wire>(ShapeType.Wire).Single().Reversed());
         return new Carried(face, ShapeCasts.Face(copy.Oriented(face.Orientation)), ring, carried, cu0, cu1, cv0, cv1);
     }
+
+    // The curve on [first, last] with its points' coordinates scaled, its parameter as it was: a line as a B-spline of degree
+    // 1, a B-spline or a Bézier curve by its poles, a trimmed curve by its basis
+    private static BSplineCurve2D Scaled(Curve2D curve, double first, double last, double su, double sv)
+    {
+        BSplineCurve2D spline = curve switch
+        {
+            TrimmedCurve2D trimmed => Scaled(trimmed.BasisCurve, first, last, 1, 1),
+            LineCurve2D => new BSplineCurve2D([curve.EvalD0(first), curve.EvalD0(last)], [first, last], [2, 2], 1),
+            BSplineCurve2D { IsPeriodic: false } b => b,
+            BezierCurve2D z => new BSplineCurve2D([.. z.Poles], [0, 1], [z.Degree + 1, z.Degree + 1], z.Degree, false, z.IsRational ? [.. z.Weights] : default),
+            _ => Geom2dConvert2D.CurveToBSplineCurve(new TrimmedCurve2D(curve, first, last)),
+        };
+        return new BSplineCurve2D([.. spline.Poles.Select(q => new Point2D(q.X * su, q.Y * sv))], [.. spline.Knots], [.. spline.Multiplicities],
+                                  spline.Degree, false, spline.IsRational ? [.. spline.Weights] : default);
+    }
+
+    // A parameter's speed over a face: the chord across it over its span, or 1 where it's too short to say
+    private static double Speed(Point3D a, Point3D b, double span) =>
+        span > Precision.PConfusion() && a.DistanceTo(b) > Precision.Confusion() ? a.DistanceTo(b) / span : 1;
 
     // Behind a face's surface, carried on where it is, as the shell orients the face: on the material's side of it
     private static bool Behind(Face oriented, Surface surface, double u0, double u1, double v0, double v1, Point3D x, int material)
