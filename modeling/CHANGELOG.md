@@ -5,6 +5,12 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Chamfer`'s time limit is set per call: `ChamferOptions.TimeLimit`** (kernel decisions 30401, 30402): the time the
+  kernel's own construction may take where OCCT's chamfer fails, a `TimeSpan`, 20 s by default as before; any positive
+  time up to 49 days raises or lowers it, and `Timeout.InfiniteTimeSpan` turns it off. Zero, a negative time or one over
+  49 days is refused (`ArgumentOutOfRangeException`). It's wall-clock time, so the same chamfer can build on a quiet
+  machine and fail at the limit on a busy one; the failure now says the limit used and how to change it (the guide's
+  section 5).
 - **`Fillet` across a cylinder of exactly its radius, as a block's rounded corners with its foot filleted at their
   radius, now builds** (kernel decisions 2166 to 2168): the ball can't roll there, so the fillet is a piece of a
   sphere, which OCCT can't build; Kerf builds it and checks it by the ball and its volume, failing it if they don't hold.
