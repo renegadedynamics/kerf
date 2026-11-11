@@ -2349,7 +2349,7 @@ why the finer polyline's medial axis loops where the coarser one's doesn't; and 
 runs to OCCT's count.
 ## The point check for commons and cuts (unit 15AH)
 
-*11 November 2026, on a machine shared with the owner and other helpers: bytes are exact, times from a loaded machine. Decisions 31401 to 31405.*
+*11 November 2026, on a machine shared with the owner and other helpers: bytes are exact, times from a loaded machine. Decisions 2223 to 2227.*
 
 Decision 1937's proof that a fuse lost nothing, extended to commons and cuts, and the test that a result's faces close, both where decision 2066's points are asked (a result's tolerance over 1e-5, 64 faces or fewer). Nothing new runs elsewhere.
 
@@ -2364,10 +2364,10 @@ Decision 1937's proof that a fuse lost nothing, extended to commons and cuts, an
 | `bug27760`'s common | 3.1 s, 101 MB | 7.9 s, 208 MB |
 | `bug24758_2`'s cut | 2.2 s, 129 MB | 5.3 s, 383 MB |
 
-At 9 by 9 points a face, as the fuse's proof samples, `bug24758_2`'s cut took 13.8 s; at 5 by 5, 5.3. The two dear ones are complex results whose classifications are dear, as decision 2066 found for its own points: past decision 1829's bar on those checks, so for the owner (decision 31405).
+At 9 by 9 points a face, as the fuse's proof samples, `bug24758_2`'s cut took 13.8 s; at 5 by 5, 5.3. The two dear ones are complex results whose classifications are dear, as decision 2066 found for its own points: past decision 1829's bar on those checks, so for the owner (decision 2227).
 
 **The users' cases** (`Kerf.UserCases rig 5`, the sides alternating, two rounds): the same volumes and faces, and the same bytes within the rounds' spread (the enclosure 2,602 and 2,545 MB before, 2,598 and 2,590 after; the shaft gauges 4,324 and 3,738, 4,263 and 4,087; the boss 11.3 and 11.2, 11.2 and 11.0; the detent 16.3 and 16.4, 16.1 and 16.1). None of their results is asked at points, as decision 2066 found. **The rig's Booleans suite** (600 cases, once a side): 5.85 and 4.08 MB a Boolean on both sides.
 
 **For a quiet window:** `quiet-15ah.ps1` runs the users' cases and the rig's Booleans suite, both sides alternating.
 
-**The owner's answer** (14 November 2026, decision 31413): the cost is accepted for safety; optimising it is later work.
+**The owner's answer** (14 November 2026, decision 2230): the cost is accepted for safety; optimising it is later work.
