@@ -9,18 +9,25 @@ namespace Kerf.Engine.Foundation;
 
 /// <summary>
 /// The one parallel-loop helper of the port (decision 487): OCCT's <c>OSD_Parallel::For</c> and <c>ForEach</c>, with
-/// their <c>isForceSingleThreadExecution</c> flag, over <see cref="Parallel"/>.
+/// their <c>isForceSingleThreadExecution</c> flag, over the thread pool.
 /// </summary>
 /// <remarks>
 /// <para>
 /// A loop runs as a plain loop, on the calling thread and in order, when the flag is set, when there is one item, or
 /// when the runtime has no threads (<see cref="HasThreads"/>: browser WebAssembly and WASI, which Bento.Web is, where
-/// <see cref="Parallel"/> can't block on other threads). Every loop body of the port writes only its own item, so the
-/// plain loop gives the parallel loop's result (decision 490).
+/// a thread can't block on others). Every loop body of the port writes only its own item, so the plain loop gives the
+/// parallel loop's result (decision 490).
 /// </para>
 /// <para>
-/// An exception thrown by a loop body is rethrown as itself, the first one of the <see cref="AggregateException"/>
-/// that <see cref="Parallel"/> throws (decision 431); OCCT's thread pool also rethrows the first failure.
+/// A parallel loop never waits for the thread pool (decision 31001). The calling thread takes items itself until none
+/// is left, helped by whichever pool threads are free, and then waits only for the items a helper has already taken.
+/// <see cref="Parallel"/> isn't used: called from a thread that isn't the pool's, it waits for the pool to start a
+/// task it queued, even when no work is left for that task. With the pool busy, a loop of a few microseconds then
+/// takes as long as the pool takes to free or add a thread, which can be half a second.
+/// </para>
+/// <para>
+/// An exception thrown by a loop body is rethrown as itself, and items not yet taken are left (decision 431); OCCT's
+/// thread pool also rethrows the first failure.
 /// </para>
 /// <para>
 /// Left out: <c>ToUseOcctThreads</c>/<c>SetUseOcctThreads</c> (OCCT's choice between its own thread pool and TBB:
@@ -70,14 +77,13 @@ internal static class OsdParallel
         return new DegreeScope(previous);
     }
 
-    // The options of a parallel loop: the test scope's degree of parallelism, if any.
-    private static ParallelOptions LoopOptions()
+    // The threads a parallel loop may run on at once, the caller among them: the test scope's degree of parallelism, if
+    // any, or a thread for each processor.
+    private static int LoopDegree()
     {
         int maxDegree = MaxDegree.Value;
-        return maxDegree > 0 ? new ParallelOptions { MaxDegreeOfParallelism = maxDegree } : DefaultOptions;
+        return maxDegree > 0 ? maxDegree : Environment.ProcessorCount;
     }
-
-    private static readonly ParallelOptions DefaultOptions = new();
 
     /// <summary>True if loops started from this execution flow run as plain loops (no threads, or a test scope).</summary>
     internal static bool IsSerial => !HasThreads || ForceSerial.Value;
@@ -110,15 +116,7 @@ internal static class OsdParallel
         }
         else if (range > 1)
         {
-            try
-            {
-                Parallel.For(begin, end, LoopOptions(), functor);
-            }
-            catch (AggregateException aggregate) when (aggregate.InnerExceptions.Count > 0)
-            {
-                // OSD_Parallel rethrows the first exception of a task
-                ExceptionDispatchInfo.Capture(aggregate.InnerExceptions[0]).Throw();
-            }
+            new Loop(begin, end, functor, LoopDegree()).Run();
         }
     }
 
@@ -139,16 +137,214 @@ internal static class OsdParallel
         }
         else
         {
-            try
+            // read here, on the calling thread: the loop's threads then share only the list
+            IReadOnlyList<T> list = items as IReadOnlyList<T> ?? [.. items];
+            if (list.Count == 1)
             {
-                Parallel.ForEach(items, LoopOptions(), functor);
+                functor(list[0]);
             }
-            catch (AggregateException aggregate) when (aggregate.InnerExceptions.Count > 0)
+            else if (list.Count > 1)
             {
-                // OSD_Parallel rethrows the first exception of a task
-                ExceptionDispatchInfo.Capture(aggregate.InnerExceptions[0]).Throw();
+                new Loop(0, list.Count, index => functor(list[index]), LoopDegree()).Run();
             }
         }
+    }
+
+    /// <summary>
+    /// One parallel loop: the indices are taken a chunk at a time by the calling thread and by helpers on the pool's
+    /// threads, each helper asking for the next when it starts (so a short loop wakes few threads).
+    /// </summary>
+    private sealed class Loop
+    {
+        // chunks for each thread, so that a thread whose items are slow leaves the rest to the others
+        private const int ChunksPerThread = 16;
+
+        private readonly int _end;
+        private readonly int _chunk;
+        private readonly int _maxHelpers;
+
+        // the caller's, for the helpers: it carries the operation's context and the tests' scopes
+        private readonly ExecutionContext? _context;
+
+        // null once the loop is over
+        private Action<int>? _body;
+
+        // the next index to take; past _end once none is left, or a body has thrown
+        private long _next;
+
+        // helpers asked for so far
+        private int _helpers;
+
+        // helpers that have started and not finished: only these are waited for
+        private int _running;
+
+        private ExceptionDispatchInfo? _failure;
+
+        internal Loop(int begin, int end, Action<int> body, int degree)
+        {
+            _next = begin;
+            _end = end;
+            _body = body;
+            int range = end - begin;
+            _chunk = Math.Max(1, range / (Math.Max(1, degree) * ChunksPerThread));
+            _maxHelpers = Math.Min(degree, (range + _chunk - 1) / _chunk) - 1;
+            _context = _maxHelpers > 0 ? ExecutionContext.Capture() : null;
+        }
+
+        /// <summary>True once <see cref="Run"/> has finished: a helper has nothing to do for it.</summary>
+        internal bool IsOver => Volatile.Read(ref _body) is null;
+
+        /// <summary>Runs the loop: returns when every index has been run, or throws what a body threw.</summary>
+        internal void Run()
+        {
+            AskForHelper();
+            Work(_body!);
+            // the indices are all taken: wait for those a helper is still running, briefly without blocking
+            if (Volatile.Read(ref _running) != 0)
+            {
+                SpinWait spin = new();
+                while (!spin.NextSpinWillYield && Volatile.Read(ref _running) != 0)
+                {
+                    spin.SpinOnce();
+                }
+
+                lock (this)
+                {
+                    while (_running != 0)
+                    {
+                        Monitor.Wait(this);
+                    }
+                }
+            }
+
+            // a helper that starts from now on finds nothing to take: it mustn't keep the body's data alive until then
+            Volatile.Write(ref _body, null);
+            _failure?.Throw();
+        }
+
+        private void AskForHelper()
+        {
+            if (Interlocked.Increment(ref _helpers) <= _maxHelpers)
+            {
+                Ticket.Offer(this);
+            }
+        }
+
+        /// <summary>A pool thread's part: it takes indices as the caller does, if any are left.</summary>
+        internal void Help()
+        {
+            if (IsOver)
+            {
+                return;
+            }
+
+            if (_context is null)
+            {
+                HelpInContext();
+            }
+            else
+            {
+                ExecutionContext.Run(_context, static loop => ((Loop)loop!).HelpInContext(), this);
+            }
+        }
+
+        private void HelpInContext()
+        {
+            Interlocked.Increment(ref _running);
+            try
+            {
+                // read after the count: Run clears it only once it has seen no helper running and no index left
+                if (Volatile.Read(ref _body) is { } body && Interlocked.Read(ref _next) < _end)
+                {
+                    AskForHelper();
+                    Work(body);
+                }
+            }
+            finally
+            {
+                if (Interlocked.Decrement(ref _running) == 0)
+                {
+                    lock (this)
+                    {
+                        Monitor.PulseAll(this);
+                    }
+                }
+            }
+        }
+
+        private void Work(Action<int> body)
+        {
+            try
+            {
+                while (true)
+                {
+                    long first = Interlocked.Add(ref _next, _chunk) - _chunk;
+                    if (first >= _end)
+                    {
+                        return;
+                    }
+
+                    int last = (int)Math.Min(first + _chunk, _end);
+                    for (int index = (int)first; index < last; ++index)
+                    {
+                        if (_chunk > 1 && Volatile.Read(ref _failure) is not null)
+                        {
+                            return;
+                        }
+
+                        body(index);
+                    }
+                }
+            }
+            catch (Exception failure)
+            {
+                // the first to fail is the one rethrown; nothing more is taken
+                Interlocked.CompareExchange(ref _failure, ExceptionDispatchInfo.Capture(failure), null);
+                Interlocked.Exchange(ref _next, long.MaxValue / 2);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A loop's request for a helper, queued to the pool. A thread keeps those it has queued that no pool thread has
+    /// taken yet, and gives its next loop to one whose own loop is over. So a busy pool is left a request for each loop
+    /// the thread is in, not one for every loop it has run meanwhile.
+    /// </summary>
+    private sealed class Ticket : IThreadPoolWorkItem
+    {
+        private static readonly object Taken = new();
+
+        [ThreadStatic]
+        private static List<Ticket>? s_tWaiting;
+
+        // the loop to help, or taken once a pool thread has it
+        private object _loop;
+
+        private Ticket(Loop loop) => _loop = loop;
+
+        internal static void Offer(Loop loop)
+        {
+            List<Ticket> waiting = s_tWaiting ??= [];
+            for (int i = waiting.Count - 1; i >= 0; --i)
+            {
+                object seen = Volatile.Read(ref waiting[i]._loop);
+                if (ReferenceEquals(seen, Taken))
+                {
+                    waiting.RemoveAt(i);
+                }
+                else if (((Loop)seen).IsOver && ReferenceEquals(Interlocked.CompareExchange(ref waiting[i]._loop, loop, seen), seen))
+                {
+                    return;
+                }
+            }
+
+            Ticket ticket = new(loop);
+            waiting.Add(ticket);
+            // on the calling thread's own queue if it is the pool's: free threads take it from there
+            ThreadPool.UnsafeQueueUserWorkItem(ticket, preferLocal: true);
+        }
+
+        void IThreadPoolWorkItem.Execute() => (Interlocked.Exchange(ref _loop, Taken) as Loop)?.Help();
     }
 
     private sealed class SerialScope(bool thePrevious) : IDisposable

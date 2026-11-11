@@ -207,6 +207,118 @@ public class OSD_ParallelAdditionsTest
         Assert.All(aVisits2, theCount => Assert.Equal(1, theCount));
     }
 
+    // Decision 31001: Parallel.For, called from a thread that isn't the pool's, waits for the pool to start a task it
+    // queued even when no work is left for it, so each loop took as long as a busy pool took to free or add a thread
+    [Fact]
+    public void A_loop_does_not_wait_for_a_busy_thread_pool()
+    {
+        using ManualResetEventSlim aRelease = new();
+        int aBlocked = 0;
+        int aBlockers = 2 * Environment.ProcessorCount;
+        try
+        {
+            // every thread of the pool busy, and as many items again queued ahead of anything a loop queues
+            for (int i = 0; i < aBlockers; ++i)
+            {
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    Interlocked.Increment(ref aBlocked);
+                    aRelease.Wait();
+                });
+            }
+            // (other tests may hold some of its threads: then the rest are held here, and theirs are busy anyway)
+            SpinWait.SpinUntil(() => Volatile.Read(ref aBlocked) >= Environment.ProcessorCount, TimeSpan.FromSeconds(5));
+
+            long aQueued = ThreadPool.PendingWorkItemCount;
+            int[] aVisits = new int[64];
+            int aLoops = 0;
+            Thread aCaller = new(() =>
+            {
+                for (int i = 0; i < 50; ++i)
+                {
+                    OsdParallel.For(0, aVisits.Length, theIndex => Interlocked.Increment(ref aVisits[theIndex]));
+                    OsdParallel.ForEach(Enumerable.Range(0, aVisits.Length), theIndex => Interlocked.Increment(ref aVisits[theIndex]));
+                    ++aLoops;
+                }
+            });
+            aCaller.Start();
+            // while the pool is still held: on Parallel.For each loop waited for the pool to add a thread
+            Assert.True(aCaller.Join(TimeSpan.FromSeconds(60)), $"{aLoops} of 50 rounds done with the pool busy");
+            Assert.All(aVisits, theCount => Assert.Equal(100, theCount));
+            // and the 100 loops left the pool a request for a helper or two, not one each
+            Assert.InRange(ThreadPool.PendingWorkItemCount - aQueued, -aBlockers, 20);
+        }
+        finally
+        {
+            aRelease.Set();
+            // the blockers leave before the event goes
+            SpinWait.SpinUntil(() => ThreadPool.PendingWorkItemCount == 0, TimeSpan.FromSeconds(30));
+            Thread.Sleep(50);
+        }
+    }
+
+    [Fact]
+    public void A_loop_runs_on_no_more_threads_than_its_degree_and_carries_the_execution_context()
+    {
+        AsyncLocal<string> aLocal = new() { Value = "the caller's" };
+        foreach (int aDegree in new[] { 1, 2, 3 })
+        {
+            int aRunning = 0, aMost = 0, aVisited = 0;
+            using (OsdParallel.MaxDegreeOfParallelismScope(aDegree))
+            {
+                OsdParallel.For(0, 200, _ =>
+                {
+                    int aNow = Interlocked.Increment(ref aRunning);
+                    InterlockedMax(ref aMost, aNow);
+                    Assert.Equal("the caller's", aLocal.Value);
+                    Thread.SpinWait(20000);
+                    Interlocked.Increment(ref aVisited);
+                    Interlocked.Decrement(ref aRunning);
+                });
+            }
+            Assert.Equal(200, aVisited);
+            Assert.InRange(aMost, 1, aDegree);
+        }
+    }
+
+    private static void InterlockedMax(ref int theTarget, int theValue)
+    {
+        int aSeen;
+        while ((aSeen = Volatile.Read(ref theTarget)) < theValue && Interlocked.CompareExchange(ref theTarget, theValue, aSeen) != aSeen)
+        {
+        }
+    }
+
+    [Fact]
+    public void A_failing_loop_leaves_what_it_has_not_taken_and_waits_for_what_is_running()
+    {
+        int aRunning = 0, aStarted = 0;
+        EngineAssert.Throws<DomainErrorException>(() =>
+            OsdParallel.For(0, 100000, theIndex =>
+            {
+                Interlocked.Increment(ref aRunning);
+                Interlocked.Increment(ref aStarted);
+                try
+                {
+                    if (theIndex == 5)
+                    {
+                        throw new DomainErrorException("index 5");
+                    }
+                    Thread.SpinWait(2000);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref aRunning);
+                }
+            }));
+        // nothing is still running when the loop throws, and it stopped well short of the end
+        Assert.Equal(0, Volatile.Read(ref aRunning));
+        int aSeen = Volatile.Read(ref aStarted);
+        Assert.InRange(aSeen, 1, 99999);
+        Thread.Sleep(20);
+        Assert.Equal(aSeen, Volatile.Read(ref aStarted));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
