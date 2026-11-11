@@ -19,6 +19,15 @@ public static partial class Operations
         /// collapse to a point (a Kerf addition). Only a chamfer with such an arc is affected.
         /// </summary>
         public TightCorners TightCorners { get; init; } = TightCorners.Refuse;
+
+        /// <summary>
+        /// How long the kernel's own construction may take where OCCT's chamfer fails or is invalid and the chamfer's faces
+        /// are carried on until they meet instead (a Kerf addition): 20 s by default; any positive time up to 49 days, or
+        /// <see cref="Timeout.InfiniteTimeSpan"/> for no limit. Past it the chamfer fails, saying the limit. It's wall-clock
+        /// time, so a chamfer close to it can build on a quiet machine and fail on a busy one. Zero, a negative time or one
+        /// over 49 days is refused.
+        /// </summary>
+        public TimeSpan TimeLimit { get; init; } = Kerf.Fillets.ChamferOptions.Default.TimeLimit;
     }
 
     /// <summary>How <see cref="Extrude(Shape, double, ExtrudeOptions?)"/> extrudes.</summary>

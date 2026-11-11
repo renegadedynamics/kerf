@@ -42,22 +42,45 @@ public class ReliabilityTests
     }
 
     // reliability.md's island 3: a loft from a square to a circle, every edge chamfered. OCCT fails at its top corners, where
-    // the side faces turn tangent; Kerf's own construction builds it, proved, within its 20 s limit (kernel decision 2179)
+    // the side faces turn tangent; Kerf's own construction builds it, proved (kernel decision 2179). Its 11 to 14 s can pass
+    // the default limit of 20 s on a loaded machine, so the option raises it, and the layer passes it on (kernel decision 30401)
     [Fact]
     public void A_lofts_chamfer_that_OCCT_cant_build_is_built()
     {
-        Part loft = Ops.Loft([(Kerf.Topology.Shape)(Plane.XY * new Rectangle(10, 10)), (Kerf.Topology.Shape)(Plane.XY.Offset(10) * new Circle(4))]).Value;
-        Kerf.Topology.Shape shape = loft;
-        Kerf.Result<Part> made;
-        using (Kerf.Fillets.ChamferMeet.LimitScope()) // without the wall clock, which a loaded machine can push past the limit
-        {
-            made = Ops.Chamfer(shape, shape.Edges(), 0.05);
-        }
+        Kerf.Topology.Shape shape = Loft();
+        var made = Ops.Chamfer(shape, shape.Edges(), 0.05, options: new Ops.ChamferOptions { TimeLimit = TimeSpan.FromMinutes(10) });
         Assert.True(made.IsSuccess, made.Error?.ToString());
         Kerf.Topology.Shape chamfered = (Kerf.Topology.Shape)made.Value!;
         Assert.True(Kerf.Healing.HealingOperations.Validate(chamfered).IsValid);
         Assert.Equal(740.8526, chamfered.Volume, 3);
     }
+
+    // The same chamfer with a limit of a second: the layer's failure names the limit and how to change it, and carries the
+    // kernel's fillet.time-limit
+    [Fact]
+    public void A_lofts_chamfer_past_its_time_limit_fails_saying_so()
+    {
+        Kerf.Topology.Shape shape = Loft();
+        var made = Ops.Chamfer(shape, shape.Edges(), 0.05, options: new Ops.ChamferOptions { TimeLimit = TimeSpan.FromSeconds(1) });
+        Assert.False(made.IsSuccess);
+        Assert.Equal(ModelingDiagnostics.ChamferFailed, made.Error!.Code);
+        Assert.Contains("time limit of 1 s; try another length, or a longer limit (ChamferOptions.TimeLimit", made.Error.Message, StringComparison.Ordinal);
+        Assert.Contains(made.Diagnostics, d => d.Code == Kerf.Fillets.FilletOperations.TimeLimit && d.Message.Contains("limit of 1 s", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(50 * 24 * 3600)]
+    public void A_chamfer_time_limit_that_isnt_positive_or_off_is_refused(int seconds)
+    {
+        Part box = new Box(10, 10, 10);
+        Kerf.Topology.Shape shape = box;
+        Assert.Throws<ArgumentOutOfRangeException>(() => Ops.Chamfer(shape, shape.Edges(), 1, options: new Ops.ChamferOptions { TimeLimit = TimeSpan.FromSeconds(seconds) }));
+    }
+
+    private static Kerf.Topology.Shape Loft() =>
+        Ops.Loft([(Kerf.Topology.Shape)(Plane.XY * new Rectangle(10, 10)), (Kerf.Topology.Shape)(Plane.XY.Offset(10) * new Circle(4))]).Value;
 
     [Theory]
     [InlineData(2_000_000_000)]

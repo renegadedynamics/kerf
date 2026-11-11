@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using System.Collections.Immutable;
+using System.Globalization;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Fillets.Planar;
@@ -114,6 +115,15 @@ public sealed record ChamferOptions
     /// <summary>What to do at a convex arc whose radius is no more than the length on its face: refuse (the default), or collapse
     /// the corner to a point (docs/chamfer-corners.md).</summary>
     public TightCorners TightCorners { get; init; } = TightCorners.Refuse;
+
+    /// <summary>
+    /// How long Kerf's own construction may take, where ChFi3d fails or makes something invalid and the chamfer's faces are
+    /// carried on until they meet instead (decisions 2179, 30401): 20 s by default; any positive time up to 49 days, or
+    /// <see cref="Timeout.InfiniteTimeSpan"/> for no limit. Past it the chamfer fails with <c>fillet.time-limit</c>. It's
+    /// wall-clock time, so a chamfer close to it can build on a quiet machine and fail on a busy one. The caller's own
+    /// cancellation stops the construction first, as a cancellation. Zero, a negative time or one over 49 days is refused.
+    /// </summary>
+    public TimeSpan TimeLimit { get; init; } = TimeSpan.FromSeconds(20);
 }
 
 /// <summary>
@@ -138,15 +148,20 @@ public static class FilletOperations
 
     /// <summary>
     /// ChFi3d couldn't build the chamfer, and Kerf's own construction, which carries the chamfer faces on until they meet,
-    /// didn't finish within its limit of 20 s (the owner, decision 2179): <c>fillet.time-limit</c>. ChFi3d's own failure
-    /// follows it among the diagnostics.
+    /// didn't finish within its limit, <see cref="ChamferOptions.TimeLimit"/> (20 s by default; the owner, decisions 2179 and
+    /// 30401): <c>fillet.time-limit</c>. The message names the limit. ChFi3d's own failure follows it among the diagnostics.
     /// </summary>
     public static DiagnosticCode TimeLimit { get; } = new("fillet.time-limit");
 
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
 
-    internal static Diagnostic LateFailure() =>
-        Diagnostic.Error(TimeLimit, $"The chamfer couldn't be built: ChFi3d failed, and building its faces until they meet took longer than its limit of {ChamferMeet.Limit.TotalSeconds:0} s.");
+    internal static Diagnostic LateFailure(TimeSpan limit) =>
+        Diagnostic.Error(TimeLimit, "The chamfer couldn't be built: ChFi3d failed, and building its faces until they meet took longer than its limit of "
+                                    + limit.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)
+                                    + " s (ChamferOptions.TimeLimit; Timeout.InfiniteTimeSpan for none).");
+
+    // The longest limit a deadline can have (CancellationTokenSource.CancelAfter's), about 49.7 days
+    private static readonly TimeSpan LongestTimeLimit = TimeSpan.FromMilliseconds(uint.MaxValue - 1.0);
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
@@ -328,7 +343,8 @@ public static class FilletOperations
 
         /// <summary>The shape with each edge chamfered as its spec says.</summary>
         /// <exception cref="ArgumentException">No edges, an edge or reference face not of the shape, a distance that isn't
-        /// positive, or both a second distance and an angle.</exception>
+        /// positive, both a second distance and an angle, or a time limit (<see cref="ChamferOptions.TimeLimit"/>) other than
+        /// <see cref="Timeout.InfiniteTimeSpan"/> that isn't positive or is over 49 days.</exception>
         public Result<Built<Shape>> Chamfer(IEnumerable<ChamferSpec> edges, ChamferOptions? options = null,
                                             IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
@@ -359,6 +375,11 @@ public static class FilletOperations
                 ChamferMode.ConstantThroatWithPenetration => ChamfMode.ConstThroatWithPenetrationChamfer,
                 _ => throw new KernelArgumentOutOfRangeException(nameof(options), options.Mode, "An unknown chamfer mode."),
             };
+            if (options.TimeLimit != Timeout.InfiniteTimeSpan && (options.TimeLimit <= TimeSpan.Zero || options.TimeLimit > LongestTimeLimit))
+            {
+                throw new KernelArgumentOutOfRangeException(nameof(options), options.TimeLimit,
+                                                            "A chamfer's time limit must be positive and at most 49 days, or Timeout.InfiniteTimeSpan for none.");
+            }
             ChamferSpec[] specs = given;
             MakeChamfer? built = null;
             Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
@@ -417,7 +438,7 @@ public static class FilletOperations
                 {
                     return met;
                 }
-                return late ? new EngineOutcome(false, static () => default, Failure: LateFailure(), MoreFailures: Failures(outcome)) : outcome;
+                return late ? new EngineOutcome(false, static () => default, Failure: LateFailure(options.TimeLimit), MoreFailures: Failures(outcome)) : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null, Check);
 
             Diagnostic? Check(Shape made) =>
@@ -449,7 +470,7 @@ public static class FilletOperations
             {
                 ImmutableArray<Diagnostic> all = done.Diagnostics;
                 all = all.Replace(error, error with { Message = $"{error.Message} {CouldNotBuild(specs)}" });
-                return Result<Built<Shape>>.Invalid(invalid, tooLong ? [LateFailure(), .. all] : all);
+                return Result<Built<Shape>>.Invalid(invalid, tooLong ? [LateFailure(options.TimeLimit), .. all] : all);
             }
             return done;
         }
