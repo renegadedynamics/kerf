@@ -27,8 +27,49 @@ public class BRepBlendNativeTests
     private static void Compare(Func<string, bool> theFilter, int theExpectedCases)
     {
         Dictionary<string, List<string>> aPort =
-            thePort.Value.Where(kv => theFilter(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
-        BlendFuncNativeTests.Compare(aPort, k => BlendFuncNativeTests.IsWalk(k) && theFilter(k), theExpectedCases);
+            thePort.Value.Where(kv => theFilter(kv.Key) && !IsBallSection(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
+        BlendFuncNativeTests.Compare(aPort, k => BlendFuncNativeTests.IsWalk(k) && theFilter(k) && !IsBallSection(k),
+                                     theExpectedCases);
+    }
+
+    // The constant-radius walks whose faces' normals at the contacts leave the plane square to the guide: since
+    // decision 2156 their sections are the rolling ball's, where OCCT's are the 2D fillet in that plane, so they
+    // differ from native (planes, whose normals stay in it, and every evolving radius still match bit for bit).
+    private static readonly string[] THE_BALL_SECTIONS =
+    [
+        "case walk planecyl 1", "case walk planecyl 2", "case walk planecyl 7", "case walk planecyl 8",
+        "case walk bspline 1", "case walk bspline 2", "case walk bspline 3", "case walk bspline 4",
+        "case walk bspline 5", "case walk bspline 6", "case walk bspline 7", "case walk bspline 8",
+        "case walk firstsection 3", "case walk firstsection 4",
+        // SurfRstConstRad's (decision 2158): the same walk to the last few bits
+        "case walk surfrst 1 1", "case walk surfrst 1 3", "case walk surfrst 1 5", "case walk surfrst 1 7",
+    ];
+
+    private static bool IsBallSection(string theKey) => THE_BALL_SECTIONS.Contains(theKey);
+
+    [Fact]
+    public void Walking_OnTheBall_WalksAndApproximatesWhereNativeDoes()
+    {
+        // Decision 2156: the cases that differ from native still walk, end and are approximated where native's are,
+        // with points spaced as native's to within a few.
+        Dictionary<string, List<string>> aNative = BlendFuncNativeTests.Recording;
+        foreach (string aKey in THE_BALL_SECTIONS)
+        {
+            List<string> aN = aNative[aKey], aP = thePort.Value[aKey];
+            foreach (string aTag in new[] { "perform 1", "appsurface 1", "appsurf 1", "exception" })
+            {
+                Assert.True(aN.Contains(aTag) == aP.Contains(aTag), $"{aKey}: {aTag}");
+            }
+
+            string? aNLine = aN.FirstOrDefault(l => l.StartsWith("line ", StringComparison.Ordinal));
+            string? aPLine = aP.FirstOrDefault(l => l.StartsWith("line ", StringComparison.Ordinal));
+            Assert.Equal(aNLine is null, aPLine is null);
+            if (aNLine is not null)
+            {
+                Assert.InRange(int.Parse(aPLine!.Split(' ')[1]), int.Parse(aNLine.Split(' ')[1]) - 3,
+                               int.Parse(aNLine.Split(' ')[1]) + 3);
+            }
+        }
     }
 
     private static bool Is(string theKey, string theName)
@@ -37,13 +78,13 @@ public class BRepBlendNativeTests
     [Fact]
     public void Walking_SurfSurf_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_WALKS.Any(w => Is(k, w.Name)), BlendRecorder.THE_WALKS.Length * 8);
+        Compare(k => BlendRecorder.THE_WALKS.Any(w => Is(k, w.Name)), BlendRecorder.THE_WALKS.Length * 8 - 12);
     }
 
     [Fact]
     public void Walking_FirstSections_MatchNativeBitForBit()
     {
-        Compare(k => Is(k, "firstsection"), 8);
+        Compare(k => Is(k, "firstsection"), 8 - 2);
     }
 
     [Fact]
@@ -55,7 +96,7 @@ public class BRepBlendNativeTests
     [Fact]
     public void SurfRstLineBuilder_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16);
+        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 4);
     }
 
     [Fact]

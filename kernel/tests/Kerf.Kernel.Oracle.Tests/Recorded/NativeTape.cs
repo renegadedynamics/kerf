@@ -112,6 +112,14 @@ public static partial class Tape
         }
     }
 
+    /// <summary>
+    /// Passes over the recorded calls up to and including call <paramref name="theLastCall"/>, which the test no longer
+    /// makes as <paramref name="theReason"/> says (the port's results that fed native's arguments there changed for a
+    /// recorded reason): their results are read and dropped, and the running check of the arguments is set to the one
+    /// recorded after that call, <paramref name="theRunning"/>, so the calls after them are checked as before.
+    /// </summary>
+    public static void SkipRecorded(int theLastCall, uint theRunning, string theReason) => Current.SkipRecorded(theLastCall, theRunning, theReason);
+
     // ---------------------------------------------------------------------------------------------------------------
     // Calls
 
@@ -298,6 +306,52 @@ public static partial class Tape
             if (theCheck && myReader is not null && !myReader.AtEnd)
             {
                 throw new InvalidOperationException($"{File}.{Key}: the test made {myCalls} native calls, fewer than recorded");
+            }
+        }
+
+        public void SkipRecorded(int theLastCall, uint theRunning, string theReason)
+        {
+            lock (myLock)
+            {
+                if (string.IsNullOrWhiteSpace(theReason) || theLastCall < myCalls)
+                {
+                    throw new InvalidOperationException($"{File}.{Key}: no reason, or call {theLastCall} already made");
+                }
+                TapeReader aReader = Reader;
+                while (myCalls < theLastCall)
+                {
+                    if (aReader.AtEnd)
+                    {
+                        throw new InvalidOperationException($"{File}.{Key}: the recording ends at call {myCalls}, before {theLastCall}");
+                    }
+                    myCalls++;
+                    string aSignature = aReader.String()!;
+                    byte aHeader = aReader.Byte();
+                    aReader.Byte();
+                    if ((aHeader & 1) != 0)
+                    {
+                        aReader.Exception();
+                        continue;
+                    }
+                    if (aSignature.Contains("..ctor(", StringComparison.Ordinal))
+                    {
+                        NextId(); // as New numbers the object it made
+                    }
+                    for (int i = 0; i < aHeader >> 2; i++)
+                    {
+                        aReader.Value();
+                    }
+                    if ((aHeader & 2) != 0)
+                    {
+                        int aFiles = aReader.Int();
+                        for (int i = 0; i < aFiles; i++)
+                        {
+                            aReader.Int();
+                            aReader.Value();
+                        }
+                    }
+                }
+                myRunning = theRunning;
             }
         }
 

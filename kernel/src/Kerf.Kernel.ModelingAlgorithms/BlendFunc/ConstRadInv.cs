@@ -217,21 +217,10 @@ internal class ConstRadInv : FuncInv
             }
         }
 
-        double norm1 = nplan.Crossed(ns1).Magnitude;
-        double norm2 = nplan.Crossed(ns2).Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1;
-        }
-
-        if (norm2 < Eps)
-        {
-            norm2 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
+        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 2156).
         Vector3D resul = new Vector3D();
-        ns1 = Vector3D.LinearForm(nplan.Dot(ns1) / norm1, nplan, -1.0 / norm1, ns1);
-        ns2 = Vector3D.LinearForm(nplan.Dot(ns2) / norm2, nplan, -1.0 / norm2, ns2);
+        ns1 = -ConstRad.InverseNorm(ns1) * ns1;
+        ns2 = -ConstRad.InverseNorm(ns2) * ns2;
         resul = Vector3D.LinearForm(_ray1, ns1, -1.0, new Vector3D(pts2.XYZ()), -_ray2, ns2, new Vector3D(pts1.XYZ()));
         f[2] = resul.X;
         f[3] = resul.Y;
@@ -243,18 +232,17 @@ internal class ConstRadInv : FuncInv
     {
         Vector3D d1u1, d1v1, d1u2, d1v2;
         Vector3D d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2;
-        Vector3D ns1, ns2, nplan, dnplan = new Vector3D(), ncrossns1, ncrossns2, temp = new Vector3D();
+        Vector3D ns1, ns2, nplan, dnplan = new Vector3D(), temp = new Vector3D();
         Point3D pts1, pts2;
-        double norm1, norm2, ndotns1, ndotns2, normtgcur;
-        double theD;
+        double invnorm1, invnorm2, normtgcur;
 
         _curv.D2(x[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
         normtgcur = d1cur.Magnitude;
         nplan = d1cur.Normalized();
-        theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
 
-        // OCCT: the plane's offset theD stands where Values has -nplan.Dot(d2cur) (decision 1038).
-        dnplan = Vector3D.LinearForm(theD, nplan, d2cur);
+        // OCCT has the plane's offset where Values has -nplan.Dot(d2cur) (decision 1038); Kerf's agree since the
+        // function no longer matches native's (decision 2156).
+        dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur), nplan, d2cur);
         dnplan /= normtgcur;
 
         _csurf!.D1(x[1], out Point2D p2d, out Vector2D v2d);
@@ -310,49 +298,30 @@ internal class ConstRadInv : FuncInv
             }
         }
 
-        ncrossns1 = nplan.Crossed(ns1);
-        ncrossns2 = nplan.Crossed(ns2);
-        norm1 = ncrossns1.Magnitude;
-        norm2 = ncrossns2.Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
+        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 2156).
+        invnorm1 = ConstRad.InverseNorm(ns1);
+        invnorm2 = ConstRad.InverseNorm(ns2);
 
-        if (norm2 < Eps)
-        {
-            norm2 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        ndotns1 = nplan.Dot(ns1);
-        ndotns2 = nplan.Dot(ns2);
-
-        DerivativesTail(d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, nplan, dnplan,
-                        ncrossns1, ncrossns2, v2d, norm1, norm2, ndotns1, ndotns2);
+        DerivativesTail(d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, v2d, invnorm1, invnorm2);
         return true;
     }
 
-    // The derivatives in the 2nd to 4th rows, which Derivatives and Values compute with the same code.
+    // The derivatives in the 2nd to 4th rows, which Derivatives and Values compute with the same code: the centre
+    // pts1 - ray1 * ns1 / |ns1| = pts2 - ray2 * ns2 / |ns2|, with invnorm1 = 1 / |ns1| and invnorm2 = 1 / |ns2|. The
+    // surfaces' own normals don't depend on the guide (decision 2156).
     private void DerivativesTail(Matrix d, in Vector3D d1u1, in Vector3D d1v1, in Vector3D d1u2,
                                  in Vector3D d1v2, in Vector3D d2u1, in Vector3D d2v1, in Vector3D d2uv1, in Vector3D d2u2,
-                                 in Vector3D d2v2, in Vector3D d2uv2, in Vector3D ns1, in Vector3D ns2, in Vector3D nplan,
-                                 in Vector3D dnplan, in Vector3D ncrossns1, in Vector3D ncrossns2, in Vector2D v2d,
-                                 double norm1, double norm2, double ndotns1, double ndotns2)
+                                 in Vector3D d2v2, in Vector3D d2uv2, in Vector3D ns1, in Vector3D ns2, in Vector2D v2d,
+                                 double invnorm1, double invnorm2)
     {
-        Vector3D resul1 = new Vector3D(), resul2 = new Vector3D(), temp;
-        double grosterme;
+        Vector3D resul1, resul2;
+        Vector3D nn1 = invnorm1 * ns1, nn2 = invnorm2 * ns2;
 
         // Derived compared to u1
-        temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
-        grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul1 = Vector3D.LinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
-                             _ray1 * grosterme / norm1, ns1, -_ray1 / norm1, temp, d1u1);
+        resul1 = d1u1 - _ray1 * ConstRad.UnitNormalD1(nn1, invnorm1, d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1)));
 
         // Derived compared to v1
-        temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
-        grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul2 = Vector3D.LinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
-                             _ray1 * grosterme / norm1, ns1, -_ray1 / norm1, temp, d1v1);
+        resul2 = d1v1 - _ray1 * ConstRad.UnitNormalD1(nn1, invnorm1, d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1)));
 
         if (_first)
         {
@@ -370,33 +339,16 @@ internal class ConstRadInv : FuncInv
             d[4, 4] = resul2.Z;
         }
 
-        // derived compared to w (parameter on guideline)
-        // It is assumed that the radius is constant
-        grosterme = ncrossns1.Dot(dnplan.Crossed(ns1)) / norm1 / norm1;
-        resul1 = Vector3D.LinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - dnplan.Dot(ns1)), nplan, _ray1 * ndotns1 / norm1,
-                             dnplan, _ray1 * grosterme / norm1, ns1);
-
-        grosterme = ncrossns2.Dot(dnplan.Crossed(ns2)) / norm2 / norm2;
-        resul2 = Vector3D.LinearForm(_ray2 / norm2 * (grosterme * ndotns2 - dnplan.Dot(ns2)), nplan, -_ray2 * ndotns2 / norm2,
-                             dnplan, -_ray2 * grosterme / norm2, ns2);
-
-        d[2, 2] = resul1.X + resul2.X;
-        d[3, 2] = resul1.Y + resul2.Y;
-        d[4, 2] = resul1.Z + resul2.Z;
+        // derived compared to w (parameter on guideline): the normals don't move with it
+        d[2, 2] = 0;
+        d[3, 2] = 0;
+        d[4, 2] = 0;
 
         // Derived compared to u2
-        temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
-        grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul1 = Vector3D.LinearForm(_ray2 / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
-                             -_ray2 * grosterme / norm2, ns2, _ray2 / norm2, temp);
-        resul1 = resul1.Subtracted(d1u2);
+        resul1 = _ray2 * ConstRad.UnitNormalD1(nn2, invnorm2, d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2))) - d1u2;
 
         // Derived compared to v2
-        temp = d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2));
-        grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul2 = Vector3D.LinearForm(_ray2 / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
-                             -_ray2 * grosterme / norm2, ns2, _ray2 / norm2, temp);
-        resul2 = resul2.Subtracted(d1v2);
+        resul2 = _ray2 * ConstRad.UnitNormalD1(nn2, invnorm2, d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2))) - d1v2;
 
         if (!_first)
         {
@@ -419,10 +371,10 @@ internal class ConstRadInv : FuncInv
     {
         Vector3D d1u1, d1v1, d1u2, d1v2;
         Vector3D d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2;
-        Vector3D ns1, ns2, nplan, dnplan = new Vector3D(), ncrossns1, ncrossns2, resul1 = new Vector3D(),
+        Vector3D ns1, ns2, nplan, dnplan = new Vector3D(), resul1 = new Vector3D(),
                temp = new Vector3D();
         Point3D pts1, pts2;
-        double norm1, norm2, ndotns1, ndotns2, normtgcur;
+        double invnorm1, invnorm2, normtgcur;
         double theD;
 
         _curv.D2(x[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
@@ -490,34 +442,18 @@ internal class ConstRadInv : FuncInv
             }
         }
 
-        ncrossns1 = nplan.Crossed(ns1);
-        ncrossns2 = nplan.Crossed(ns2);
-        norm1 = ncrossns1.Magnitude;
-        norm2 = ncrossns2.Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
+        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 2156).
+        invnorm1 = ConstRad.InverseNorm(ns1);
+        invnorm2 = ConstRad.InverseNorm(ns2);
 
-        if (norm2 < Eps)
-        {
-            norm2 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        ndotns1 = nplan.Dot(ns1);
-        ndotns2 = nplan.Dot(ns2);
-
-        temp = Vector3D.LinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
-        resul1 = Vector3D.LinearForm(_ray1, temp, new Vector3D(pts2, pts1));
-        temp = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
-        resul1 = resul1.Subtracted(_ray2 * temp);
+        resul1 = Vector3D.LinearForm(-_ray1 * invnorm1, ns1, new Vector3D(pts2, pts1));
+        resul1 = resul1.Added(_ray2 * invnorm2 * ns2);
 
         f[2] = resul1.X;
         f[3] = resul1.Y;
         f[4] = resul1.Z;
 
-        DerivativesTail(d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, nplan, dnplan,
-                        ncrossns1, ncrossns2, v2d, norm1, norm2, ndotns1, ndotns2);
+        DerivativesTail(d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, v2d, invnorm1, invnorm2);
         return true;
     }
 }

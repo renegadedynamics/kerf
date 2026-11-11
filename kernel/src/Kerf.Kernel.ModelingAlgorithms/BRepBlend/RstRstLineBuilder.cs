@@ -1103,10 +1103,15 @@ internal class RstRstLineBuilder
         {
             upoint = lastrst1;
         }
-        p2drst1 = _rst1.Value(upoint);
-        Point3D thepoint = _surf1.Value(p2drst1.X, p2drst1.Y);
+        _rst1.D1(upoint, out p2drst1, out Vector2D d2drst1);
+        _surf1.D1(p2drst1.X, p2drst1.Y, out Point3D thepoint, out Vector3D d1urst, out Vector3D d1vrst);
 
         finvP.Set(thepoint);
+        if (finvP is CurvPointRadInv ballP)
+        {
+            // Kerf (decision 2162): the ball at the restriction's end is square to its tangent there.
+            ballP.SetTangent(Vector3D.LinearForm(d2drst1.X, d1urst, d2drst1.Y, d1vrst));
+        }
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);
         finvP.GetTolerance(toler, _tolpoint3d);
         finvP.GetBounds(infb, supb);
@@ -1167,10 +1172,15 @@ internal class RstRstLineBuilder
         {
             vpoint = lastrst2;
         }
-        p2drst2 = _rst2.Value(vpoint);
-        Point3D thepoint = _surf2.Value(p2drst2.X, p2drst2.Y);
+        _rst2.D1(vpoint, out p2drst2, out Vector2D d2drst2);
+        _surf2.D1(p2drst2.X, p2drst2.Y, out Point3D thepoint, out Vector3D d1urst, out Vector3D d1vrst);
 
         finvP.Set(thepoint);
+        if (finvP is CurvPointRadInv ballP)
+        {
+            // Kerf (decision 2162): the ball at the restriction's end is square to its tangent there.
+            ballP.SetTangent(Vector3D.LinearForm(d2drst2.X, d1urst, d2drst2.Y, d1vrst));
+        }
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);
         finvP.GetTolerance(toler, _tolpoint3d);
         finvP.GetBounds(infb, supb);

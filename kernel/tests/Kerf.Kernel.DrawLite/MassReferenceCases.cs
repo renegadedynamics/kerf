@@ -13,8 +13,9 @@ internal static class MassReferenceCases
     {
         ["blend/buildevol/F1"] = ["The area of result shape is 76963.4"],
         ["blend/buildevol/F4"] = ["The area of result shape is 49513.7"],
-        ["blend/simple/J6"] = ["The area of result shape is 77933.5"],
-        ["blend/simple/J8"] = ["The area of result shape is 51088.7"],
+        // J6 and J8 at Kerf's figures since its fillets are on the rolling ball (decision 2157: 77933.5 and 51088.7 before)
+        ["blend/simple/J6"] = ["The area of result shape is 77933.3"],
+        ["blend/simple/J8"] = ["The area of result shape is 51087.3"],
         ["boolean/removefeatures/C6"] = ["The area of result shape is 441103", "The volume of result shape is 8.18198e+06"],
         ["boolean/removefeatures/C7"] = ["The area of result shape is 439514", "The volume of result shape is 8.11394e+06"],
         ["boolean/removefeatures/C8"] = ["The area of result shape is 441341", "The volume of result shape is 8.18281e+06"],
