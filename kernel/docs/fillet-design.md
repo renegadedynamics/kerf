@@ -350,7 +350,7 @@ The miss grows about as the cube of the radius: on the tee 2.1e-6 at 0.1, 3.9e-5
 
 ## 14. Stage 4c: the ball that can't move (unit 15X)
 
-Decisions 30202 to 30207. Timings are from a loaded machine.
+Decisions 2166 to 2171. Timings are from a loaded machine.
 
 **Where the ball stands still.** Where a fillet's contour crosses a cylinder of exactly its radius, with the ball on the cylinder's inside (a block's rounded corner with its foot filleted at the corner's radius, or a pocket's), the ball's centre has to be on the cylinder's axis and at the radius from the face the contour runs along: one point. Over that stretch the ball doesn't roll; it touches the common face at one point and the cylinder round a circle, and the fillet there is a piece of the sphere, as a ball-end mill leaves in a pocket's corner. Since 15W ChFi3d's walk finds exactly that, and fails, as the fillet's edge on the common face is a point (decision 2159).
 

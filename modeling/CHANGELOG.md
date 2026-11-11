@@ -6,7 +6,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 ## Unreleased
 
 - **`Fillet` across a cylinder of exactly its radius, as a block's rounded corners with its foot filleted at their
-  radius, now builds** (kernel decisions 30202 to 30204): the ball can't roll there, so the fillet is a piece of a
+  radius, now builds** (kernel decisions 2166 to 2168): the ball can't roll there, so the fillet is a piece of a
   sphere, which OCCT can't build; Kerf builds it and checks it by the ball and its volume, failing it if they don't hold.
 - **`Fillet` of constant radius now lies on the true rolling-ball surface** (kernel decisions 2156, 2158, 2162):
   OCCT's sections put it off by up to 2.4% of the radius, so volumes and areas move slightly (most by under 1e-4,
