@@ -1031,10 +1031,15 @@ internal class SurfRstLineBuilder
         {
             wpoint = lastrst;
         }
-        p2drst = _rst.Value(wpoint);
-        Point3D thepoint = _surf2.Value(p2drst.X, p2drst.Y);
+        _rst.D1(wpoint, out p2drst, out Vector2D d2drst);
+        _surf2.D1(p2drst.X, p2drst.Y, out Point3D thepoint, out Vector3D d1urst, out Vector3D d1vrst);
 
         finvP.Set(thepoint);
+        if (finvP is SurfPointConstRadInv ballP)
+        {
+            // Kerf (decision 30011): the ball at the restriction's end is square to its tangent there.
+            ballP.SetTangent(Vector3D.LinearForm(d2drst.X, d1urst, d2drst.Y, d1vrst));
+        }
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);
         finvP.GetTolerance(toler, _tolpoint3d);
         finvP.GetBounds(infb, supb);

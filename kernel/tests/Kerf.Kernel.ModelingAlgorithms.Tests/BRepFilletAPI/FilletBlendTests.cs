@@ -219,13 +219,14 @@ public class FilletBlendTests
         };
     }
 
-    // Each pair at two radii. Left out, for the next slice of unit 15W: the branch at 60 degrees at 1, whose fillet runs onto the
-    // branch's end, where ChFi3d blends a surface and that end's edge with BlendFunc_SurfRstConstRad, which has the same plane; and
-    // the branch at 45 degrees at 0.3, where ChFi3d's approximation fails as it does at 0.05 to 0.2 without the change.
+    // Each pair at two radii, and the branch at 60 degrees at 1, whose fillet runs onto the branch's end, where ChFi3d blends a
+    // surface and that end's edge with BlendFunc_SurfRstConstRad, on the ball since decision 30011. Left out: the branch at 45
+    // degrees at 0.3, where ChFi3d's approximation fails as it does at 0.05 to 0.2 without the change.
     public static TheoryData<string, double> Pairs() => new()
     {
         { "tee 5/5", 0.3 }, { "tee 5/5", 1 }, { "tee 5/4", 0.3 }, { "tee 5/4", 1 }, { "tee 5/3", 0.3 }, { "tee 5/3", 1 },
-        { "tee 5/2", 0.3 }, { "tee 5/2", 1 }, { "branch 3 at 60", 0.3 }, { "branch 3 at 60", 0.6 }, { "branch 3 at 45", 0.6 },
+        { "tee 5/2", 0.3 }, { "tee 5/2", 1 }, { "branch 3 at 60", 0.3 }, { "branch 3 at 60", 0.6 }, { "branch 3 at 60", 1 },
+        { "branch 3 at 45", 0.6 },
         { "branch 3 at 45", 1 }, { "branch 2 offset by 2", 0.3 }, { "branch 2 offset by 2", 1 }, { "cone into a cylinder", 0.3 },
         { "cone into a cylinder", 1 }, { "cylinder through a sphere's centre", 0.3 }, { "cylinder through a sphere's centre", 1 },
         { "cylinder through a sphere off its centre", 0.3 }, { "cylinder through a sphere off its centre", 1 },
@@ -257,8 +258,21 @@ public class FilletBlendTests
         chfi3d.Build();
         Assert.True(chfi3d.IsDone);
         Assert.True(chfi3d.Shape().Validate().IsValid);
-        double miss = BallMiss(chfi3d, radius, p => first(p), p => second(p));
+        // Where the branch at 60 degrees ends, the ball rolls on the end's edge, a circle of radius 3 at 9 along its axis
+        // (BlendFunc_SurfRstConstRad, decision 30011): there it's at the radius from that circle
+        Distance side = name == "branch 3 at 60" ? p => Nearer(second(p), EndCircle(p, 60), radius) : second;
+        double miss = BallMiss(chfi3d, radius, p => first(p), p => side(p));
         Assert.True(miss < Approximation, $"{name} at {radius}: the ball misses by {miss}");
+    }
+
+    private static double Nearer(double a, double b, double radius) => Math.Abs(a - radius) <= Math.Abs(b - radius) ? a : b;
+
+    // The distance from the circle that ends the branch at the angle: radius 3, at 9 along its axis
+    private static double EndCircle(Point3D p, double degrees)
+    {
+        Direction3D d = new(0, Math.Sin(degrees * Math.PI / 180), Math.Cos(degrees * Math.PI / 180));
+        double rho = Rho(p, new Point3D(0, 0, 0), d, out double s);
+        return Math.Sqrt((rho - 3) * (rho - 3) + (s - 9) * (s - 9));
     }
 
     // The volume added is the slices' region, to what the path's tolerance (decision 1898's confusion) moves its faces by over

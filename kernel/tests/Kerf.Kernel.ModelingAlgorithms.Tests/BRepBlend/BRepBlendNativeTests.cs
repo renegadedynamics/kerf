@@ -41,6 +41,8 @@ public class BRepBlendNativeTests
         "case walk bspline 1", "case walk bspline 2", "case walk bspline 3", "case walk bspline 4",
         "case walk bspline 5", "case walk bspline 6", "case walk bspline 7", "case walk bspline 8",
         "case walk firstsection 3", "case walk firstsection 4",
+        // SurfRstConstRad's (decision 30011): the same walk to the last few bits
+        "case walk surfrst 1 1", "case walk surfrst 1 3", "case walk surfrst 1 5", "case walk surfrst 1 7",
     ];
 
     private static bool IsBallSection(string theKey) => THE_BALL_SECTIONS.Contains(theKey);
@@ -94,7 +96,7 @@ public class BRepBlendNativeTests
     [Fact]
     public void SurfRstLineBuilder_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16);
+        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 4);
     }
 
     [Fact]

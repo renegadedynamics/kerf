@@ -97,6 +97,7 @@ public class BRepBlend_InverseFunctionTests
         var aF = new SurfPointConstRadInv(Cylinder(), Guide());
         aF.Set(R, theChoice);
         aF.Set(new Point3D(3, 4, 5));
+        aF.SetTangent(new Vector3D(1, 2, -1)); // the restriction's, at the point (decision 30011)
         AssertDerivatives(aF, Vec(0.4, 0.3, 2));
     }
 
@@ -152,6 +153,7 @@ public class BRepBlend_InverseFunctionTests
         var aF = new SurfPointConstRadInv(Plane(), aGuide);
         aF.Set(R, theChoice);
         aF.Set(new Point3D(4, R, theSide * R)); // on the ball's section
+        aF.SetTangent(new Vector3D(1, 0, 0)); // a restriction along the guide (decision 30011)
         Assert.True(aF.IsSolution(Vec(4, 4, 0), 1e-9));
         Assert.False(aF.IsSolution(Vec(4.1, 4, 0), 1e-9));
         Assert.False(aF.IsSolution(Vec(4, 4, 0.1), 1e-9));

@@ -113,10 +113,11 @@ public class FilletPinchTests
         }
 
         // What it adds, over the radius squared, changes smoothly with the radius, through the radii where ChFi3d split the face
-        // itself and where it didn't
+        // itself and where it didn't (on the ball, decision 30013, it rises by 7.5e-4 between two of them, where the
+        // off-ball sections fell)
         for (int i = 1; i < added.Count; i++)
         {
-            Assert.InRange(added[i] / added[i - 1], 0.99, 1.0);
+            Assert.InRange(added[i] / added[i - 1], 0.99, 1.01);
         }
     }
 

@@ -43,7 +43,8 @@ public class FilletIssueTests
 
     // OCCT #1570's part (a FreeCAD report), its edges 1 and 8 filleted together. At 5.5 the fillet is valid by the shape's
     // own check with two pairs of its edges running along each other, the sides of slivers where the fillets' ends meet
-    // (bopcheck: E/E x33 x34, E/E x37 x38); at 5 it's clean (decision 2120).
+    // (bopcheck: E/E x33 x34, E/E x37 x38); at 5 it's clean (decision 2120). On the ball (decision 30013) one of the slivers
+    // is gone and the other's edge is made with a tolerance of 2.4e10, so the fillet at 5.5 still fails, for that.
     [Fact]
     public void Issue_1570_a_fillet_whose_edges_cross_fails_naming_them()
     {
@@ -51,12 +52,10 @@ public class FilletIssueTests
         ImmutableArray<Edge> edges = solid.AllEdges();
         Result<Built<Shape>> crossed = solid.Fillet([edges[0], edges[7]], 5.5);
         Assert.False(crossed.IsSuccess);
-        Assert.Equal(FilletOperations.SelfIntersecting, crossed.Error!.Code);
-        Assert.EndsWith("two of its edges run along each other.", crossed.Error.Message, StringComparison.Ordinal);
+        Assert.Equal(DiagnosticCode.InvalidResult, crossed.Error!.Code);
+        Assert.Contains("isn't reliable: it has a tolerance of", crossed.Error.Message, StringComparison.Ordinal);
         Assert.True(crossed.TryGetInvalid(out Built<Shape>? invalid));
         Assert.True(invalid!.Shape.Validate().IsValid);
-        Assert.Equal(2, crossed.Error.Shapes.Length);
-        Assert.All(crossed.Error.Shapes, e => Assert.Contains(invalid.Shape.AllEdges(), own => own.IsSame(e)));
 
         Assert.True(solid.Fillet([edges[0], edges[7]], 5.0).IsSuccess);
         Assert.True(solid.Fillet([edges[0], edges[7]], 5.5, new FilletOptions { CheckResult = false }).IsSuccess);
