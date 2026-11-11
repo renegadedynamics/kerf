@@ -19,7 +19,7 @@ namespace Kerf.Engine.Foundation;
 /// parallel loop's result (decision 490).
 /// </para>
 /// <para>
-/// A parallel loop never waits for the thread pool (decisions 31001, 31002). The calling thread takes items itself until none
+/// A parallel loop never waits for the thread pool (decisions 2201, 2202). The calling thread takes items itself until none
 /// is left, helped by whichever pool threads are free, and then waits only for the items a helper has already taken.
 /// <see cref="Parallel"/> isn't used: called from a thread that isn't the pool's, it waits for the pool to start a
 /// task it queued, even when no work is left for that task. With the pool busy, a loop of a few microseconds then

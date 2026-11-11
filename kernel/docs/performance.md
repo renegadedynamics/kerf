@@ -2275,7 +2275,7 @@ processes: 4.199, 4.203 and 4.199 MB, where their last passes read 4.19, 5.25 an
 
 ## Parallel loops and a busy thread pool (unit 15AG)
 
-*November 2026, decisions 31001 to 31003. A loaded machine: times are ranges, and the verdicts rest on processor time,
+*November 2026, decisions 2201 to 2203. A loaded machine: times are ranges, and the verdicts rest on processor time,
 bytes and counts. Wall-clock figures are for a quiet window: `quiet-15ag.ps1` in the scratchpad's `15ag` folder.*
 
 OCCT's `evolved/voluved/AGT009` (a 10 x 2 rectangle evolved along an arc, in volume mode) took 128 s in a gate, and its
@@ -2298,7 +2298,7 @@ pool that's microseconds. With every pool thread busy, it's until the pool frees
 time. xUnit's test threads aren't the pool's, and several corpus tests run whole cases on the pool through PLINQ. A
 harness that holds the pool's threads with sleeping items and runs the case on a thread of its own:
 
-| Pool | `Parallel.For` | Kerf's own loop (decision 31002) |
+| Pool | `Parallel.For` | Kerf's own loop (decision 2202) |
 |---|---|---|
 | Free | 0.4 to 0.8 s, 0.7 to 1.4 s processor, 122.0 to 122.9 MB | 0.4 to 0.7 s, 0.7 to 1.7 s processor, 121.1 to 122.6 MB |
 | Every thread held (24) | 25.3 s, 3.4 s processor | 0.3 to 0.5 s |

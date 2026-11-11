@@ -207,7 +207,7 @@ public class OSD_ParallelAdditionsTest
         Assert.All(aVisits2, theCount => Assert.Equal(1, theCount));
     }
 
-    // Decision 31001: Parallel.For, called from a thread that isn't the pool's, waits for the pool to start a task it
+    // Decision 2201: Parallel.For, called from a thread that isn't the pool's, waits for the pool to start a task it
     // queued even when no work is left for it, so each loop took as long as a busy pool took to free or add a thread
     [Fact]
     public void A_loop_does_not_wait_for_a_busy_thread_pool()
