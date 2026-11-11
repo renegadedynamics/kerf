@@ -240,4 +240,132 @@ public class BRepBlend_InverseFunctionTests
         aF.GetTolerance(aTol, 1e-3);
         Assert.True(aTol[3] > 0);
     }
+
+    // The ball between two edges (decision 30021): edge 1 on the plane z = 0, edge 2 on the plane y = 0, neither along
+    // the guide (the X axis), so OCCT's section in the guide's plane is off the ball there.
+    private static SurfaceAdaptor PlaneY() =>
+        new(new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0))));
+
+    private static CurveAdaptor2D Edge1() => new(new LineCurve2D(new Point2D(0, 1), new Direction2D(1, 0.3)), -5, 15);
+
+    private static CurveAdaptor2D Edge2() => new(new LineCurve2D(new Point2D(0, -1), new Direction2D(1, -0.2)), -5, 15);
+
+    private static CurveAdaptor AlongX() => new(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 10);
+
+    private static RstRstConstRad BetweenEdges(int theChoice, double theParam)
+    {
+        var aF = new RstRstConstRad(Plane(), Edge1(), PlaneY(), Edge2(), AlongX());
+        aF.Set(Plane(), Edge1(), PlaneY(), Edge2());
+        aF.Set(R, theChoice);
+        aF.Set(theParam);
+        return aF;
+    }
+
+    private static math_Vector Vec(double a, double b)
+    {
+        var aV = new math_Vector(1, 2);
+        aV[1] = a;
+        aV[2] = b;
+        return aV;
+    }
+
+    // As AssertDerivatives, for the functions of two variables
+    private static void AssertDerivatives2(FunctionSetWithDerivatives theF, math_Vector theX)
+    {
+        Assert.Equal(2, theF.NbEquations());
+        var aD = new Matrix(1, 2, 1, 2);
+        Assert.True(theF.Derivatives(theX, aD));
+        const double H = 1e-6;
+        for (int j = 1; j <= 2; j++)
+        {
+            var aXp = Vec(theX[1], theX[2]);
+            var aXm = Vec(theX[1], theX[2]);
+            aXp[j] += H;
+            aXm[j] -= H;
+            var aFp = new math_Vector(1, 2);
+            var aFm = new math_Vector(1, 2);
+            theF.Value(aXp, aFp);
+            theF.Value(aXm, aFm);
+            for (int i = 1; i <= 2; i++)
+            {
+                double aFd = (aFp[i] - aFm[i]) / (2 * H);
+                Assert.True(Math.Abs(aFd - aD[i, j]) < 1e-5 * (1 + Math.Abs(aFd)), $"d f{i} / d x{j}: analytic {aD[i, j]}, differences {aFd}");
+            }
+        }
+        var aValue = new math_Vector(1, 2);
+        var aF2 = new math_Vector(1, 2);
+        var aD2 = new Matrix(1, 2, 1, 2);
+        theF.Value(theX, aValue);
+        Assert.True(theF.Values(theX, aF2, aD2));
+        for (int i = 1; i <= 2; i++)
+        {
+            Assert.Equal(aValue[i], aF2[i], 12);
+            for (int j = 1; j <= 2; j++)
+            {
+                Assert.Equal(aD[i, j], aD2[i, j], 10);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void RstRstConstRad_DerivativesAreThoseOfItsValues(int theChoice)
+    {
+        AssertDerivatives2(BetweenEdges(theChoice, 4), Vec(4.2, 3.7));
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(3, true)]
+    [InlineData(2, false)]
+    [InlineData(4, false)]
+    public void CurvPointRadInv_DerivativesAreThoseOfItsValues(int theChoice, bool thePointOnFirst)
+    {
+        var aF = new CurvPointRadInv(Guide(), new CurveOnSurface(Edge2(), PlaneY()));
+        aF.Set(R, theChoice, thePointOnFirst);
+        aF.Set(new Point3D(7.5, 1.2, 0.4));
+        aF.SetTangent(new Vector3D(1, 0.3, 0)); // edge 1's
+        AssertDerivatives2(aF, Vec(0.4, 7.2));
+    }
+
+    // Solved, the section is the ball's: the centre at R from both edges' points, its chord to each square to that edge,
+    // the points' midpoint in the guide's plane; and the centre is off that plane, where OCCT put it
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void RstRstConstRad_HasTheBallBetweenTheEdgesForItsSolution(int theChoice)
+    {
+        RstRstConstRad aF = BetweenEdges(theChoice, 4);
+        var aTol = new math_Vector(1, 2);
+        var aInf = new math_Vector(1, 2);
+        var aSup = new math_Vector(1, 2);
+        aF.GetTolerance(aTol, 1e-10);
+        aF.GetBounds(aInf, aSup);
+        var aRoot = new FunctionSetRoot(aF, aTol, 50);
+        aRoot.Perform(aF, Vec(4, 4), aInf, aSup);
+        Assert.True(aRoot.IsDone);
+        var aSol = new math_Vector(1, 2);
+        aRoot.Root(aSol);
+        Assert.True(aF.IsSolution(aSol, 1e-9));
+
+        Point3D aP1 = aF.PointOnRst1(), aP2 = aF.PointOnRst2();
+        var aCircle = new Circle3D();
+        aF.Section(4, aSol[1], aSol[2], out _, out _, ref aCircle);
+        Point3D aC = aCircle.Location;
+        Assert.Equal(R, aCircle.Radius, 12);
+        Assert.Equal(R, aC.DistanceTo(aP1), 9);
+        Assert.Equal(R, aC.DistanceTo(aP2), 9);
+        Assert.Equal(0, new Vector3D(aP1, aC).Dot(new Vector3D(1, 0.3, 0).Normalized()), 9);
+        Assert.Equal(0, new Vector3D(aP2, aC).Dot(new Vector3D(1, 0, 0.2).Normalized()), 9);
+        Assert.Equal(4, (aP1.X + aP2.X) / 2, 9);
+        Assert.True(Math.Abs(aC.X - 4) > 1e-2, $"the centre at {aC.X}, in the guide's plane");
+        // The circle's plane holds both points
+        Assert.Equal(0, new Vector3D(aC, aP1).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
+        Assert.Equal(0, new Vector3D(aC, aP2).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
+    }
 }

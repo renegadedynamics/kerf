@@ -1003,9 +1003,9 @@ internal partial class FilBuilder : FilletBuilderBase
             }
 
             finv1.Set(rad, ch1);
-            finvp1.Set(choix);
+            finvp1.Set(rad, choix, true);
             finv2.Set(rad, ch2);
-            finvp2.Set(choix);
+            finvp2.Set(rad, choix, false);
             func.Set(rad, choix);
             func.Set(_shape);
 
@@ -1466,9 +1466,9 @@ internal partial class FilBuilder : FilletBuilderBase
             }
 
             finv1.Set(rad, ch1);
-            finvp1.Set(choix);
+            finvp1.Set(rad, choix, true);
             finv2.Set(rad, ch2);
-            finvp2.Set(choix);
+            finvp2.Set(rad, choix, false);
             func.Set(rad, choix);
             func.Set(_shape);
 

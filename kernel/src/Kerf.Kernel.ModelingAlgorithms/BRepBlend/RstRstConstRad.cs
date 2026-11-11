@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Fillets.BlendFunctions;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Numerics;
@@ -103,40 +104,157 @@ internal class RstRstConstRad : RstRstFunction
         return 2;
     }
 
+    // Kerf (decision 30021): the rolling ball's equations, as SurfRstConstRad's (decision 30011). OCCT puts both
+    // points in the plane square to the guide and the centre in it, at the radius from both; the ball touches each
+    // edge where the centre's foot on it is, so the centre is at the radius from both points and its chord to each is
+    // square to that edge's tangent, which puts it off the guide's plane wherever the edges aren't square to it. The
+    // guide's plane only places the section, through the points' midpoint, as ConstRad's and SurfRstConstRad's do, so
+    // the functions meet where one hands over to another.
+    //   f1 = nplan . (ptrst1 + ptrst2) / 2 + d
+    //   f2 = (centre - ptrst2) . t2, t2 the second edge's unit tangent
+    // the centre the point at the radius from both points with its chord to the first square to that edge (BallCentre).
+    // Scratch of the last evaluation, read by IsSolution and the sections.
+    private Vector3D _d11, _d21, _t1, _t2, _dt1, _dt2;
+    private Point3D _center;
+    private bool _isBall;
+
+    // The sides of the centre OCCT's CenterCircleRst1Rst2 takes: its bisector, (ptrst2 - ptrst1) ^ np, reversed for
+    // choix 3 and 4.
+    private Vector3D Side(in Point3D ptRst1, in Point3D ptRst2, in Vector3D np)
+    {
+        Vector3D side = new Vector3D(ptRst1, ptRst2).Crossed(np);
+        return _choix > 2 ? side.Reversed() : side;
+    }
+
+    // Evaluates both edges (to the second order) at x, their unit tangents and those's derivatives, and the centre.
+    private void Ball(math_Vector x, in Vector3D np)
+    {
+        _cons1.D2(x[1], out _ptrst1, out _d11, out Vector3D d2rst1);
+        _cons2.D2(x[2], out _ptrst2, out _d21, out Vector3D d2rst2);
+        double inv1 = ConstRad.InverseNorm(_d11), inv2 = ConstRad.InverseNorm(_d21);
+        _t1 = inv1 * _d11;
+        _t2 = inv2 * _d21;
+        _dt1 = ConstRad.UnitNormalD1(_t1, inv1, d2rst1);
+        _dt2 = ConstRad.UnitNormalD1(_t2, inv2, d2rst2);
+        _isBall = BallCentre(_ptrst1, _t1, _ptrst2, _ray, Side(_ptrst1, _ptrst2, np), out _center);
+    }
+
+    private void BallValues(math_Vector f)
+    {
+        f[1] = (_nplan.XYZ().Dot(_ptrst1.XYZ()) + _nplan.XYZ().Dot(_ptrst2.XYZ())) / 2 + _d;
+        f[2] = new Vector3D(_ptrst2, _center).Dot(_t2);
+    }
+
+    // The centre's derivatives in the two parameters (BallCentreD1).
+    private void CentreD1(out Vector3D dcu, out Vector3D dcv)
+    {
+        Vector3D c1 = new(_ptrst1, _center), c2 = new(_ptrst2, _center);
+        dcu = BallCentreD1(_center, _ptrst1, _t1, _ptrst2, -_d11.Dot(_t1) + c1.Dot(_dt1), -c1.Dot(_d11), 0.0);
+        dcv = BallCentreD1(_center, _ptrst1, _t1, _ptrst2, 0.0, 0.0, -c2.Dot(_d21));
+    }
+
+    private void BallDerivatives(Matrix d)
+    {
+        CentreD1(out Vector3D dcu, out Vector3D dcv);
+        d[1, 1] = _nplan.Dot(_d11) / 2;
+        d[1, 2] = _nplan.Dot(_d21) / 2;
+        d[2, 1] = dcu.Dot(_t2);
+        d[2, 2] = (dcv - _d21).Dot(_t2) + new Vector3D(_ptrst2, _center).Dot(_dt2);
+    }
+
     public override bool Value(math_Vector x, math_Vector f)
     {
-        _ptrst1 = _cons1.Value(x[1]);
-        _ptrst2 = _cons2.Value(x[2]);
-
-        f[1] = _nplan.XYZ().Dot(_ptrst1.XYZ()) + _d;
-        f[2] = _nplan.XYZ().Dot(_ptrst2.XYZ()) + _d;
-
+        Ball(x, _nplan);
+        BallValues(f);
         return true;
     }
 
     public override bool Derivatives(math_Vector x, Matrix d)
     {
-        Vector3D d11, d21;
-
-        _cons1.D1(x[1], out _ptrst1, out d11);
-        _cons2.D1(x[2], out _ptrst2, out d21);
-
-        d[1, 1] = _nplan.Dot(d11);
-        d[1, 2] = 0.0;
-
-        d[2, 1] = 0.0;
-        d[2, 2] = _nplan.Dot(d21);
-
+        Ball(x, _nplan);
+        BallDerivatives(d);
         return true;
     }
 
     public override bool Values(math_Vector x, math_Vector f, Matrix d)
     {
-        Value(x, f);
-        Derivatives(x, d);
-
+        Ball(x, _nplan);
+        BallValues(f);
+        BallDerivatives(d);
         return true;
     }
+
+    /// <summary>
+    /// The centre of the ball of radius <paramref name="ray"/> touching an edge at <paramref name="p1"/> (its unit
+    /// tangent <paramref name="t1"/>) and passing through <paramref name="p2"/>: at the radius from both, its chord to
+    /// <paramref name="p1"/> square to <paramref name="t1"/>, of the two such points the one on the side of
+    /// <paramref name="side"/>. False where there is none (the points too far apart, or the edge too steep to the
+    /// chord); the centre is then the nearest point of the same construction.
+    /// </summary>
+    internal static bool BallCentre(in Point3D p1, in Vector3D t1, in Point3D p2, double ray, in Vector3D side,
+                                    out Point3D centre)
+    {
+        // The centre is m + w, m the points' midpoint and w square to the chord, |w| = h, w . t1 = -chord . t1 / 2.
+        Vector3D chord = new(p1, p2);
+        double dd = chord.SquareMagnitude;
+        double h2 = ray * ray - 0.25 * dd;
+        bool isBall = h2 >= -1.0e-7; // OCCT's CenterCircleRst1Rst2's bound
+        double h = Math.Sqrt(Math.Max(h2, 0.0));
+        Xyz m = 0.5 * (p1.XYZ() + p2.XYZ());
+        Vector3D e = dd > Eps * Eps ? chord / Math.Sqrt(dd) : t1.Crossed(side);
+        Vector3D tp = t1 - t1.Dot(e) * e;
+        double q = tp.Magnitude;
+        if (q < Eps || e.Magnitude < Eps)
+        {
+            // The edge along the chord: the centre on the side's bisector.
+            Vector3D s = side - side.Dot(e) * e;
+            centre = new Point3D(m + (s.Magnitude > Eps ? h * s.Normalized().XYZ() : new Xyz()));
+            return false;
+        }
+        Vector3D a = tp / q, b = e.Crossed(a);
+        double hq = h * q, alpha = -0.5 * chord.Dot(t1);
+        double cs;
+        if (hq > Eps)
+        {
+            cs = alpha / hq;
+        }
+        else
+        {
+            cs = alpha >= 0 ? 1.0 : -1.0;
+        }
+        if (Math.Abs(cs) > 1.0)
+        {
+            isBall = isBall && Math.Abs(alpha) - hq <= 1.0e-9 * Math.Max(1.0, Math.Abs(ray));
+            cs = cs > 0 ? 1.0 : -1.0;
+        }
+        double sn = Math.Sqrt(1.0 - cs * cs);
+        if (b.Dot(side) < 0.0)
+        {
+            sn = -sn;
+        }
+        centre = new Point3D(m + h * (cs * a.XYZ() + sn * b.XYZ()));
+        return isBall;
+    }
+
+    /// <summary>
+    /// The derivative of <see cref="BallCentre"/>'s centre <paramref name="c"/> where its equations, taken at the
+    /// fixed centre, move by <paramref name="g1"/> ((c - p1) . t1), <paramref name="g2"/> (|c - p1|^2 / 2) and
+    /// <paramref name="g3"/> (|c - p2|^2 / 2): the solution of the system whose rows are t1, c - p1 and c - p2.
+    /// </summary>
+    internal static Vector3D BallCentreD1(in Point3D c, in Point3D p1, in Vector3D t1, in Point3D p2, double g1,
+                                          double g2, double g3)
+    {
+        Vector3D r2 = new(p1, c), r3 = new(p2, c);
+        Vector3D c23 = r2.Crossed(r3), c31 = r3.Crossed(t1), c12 = t1.Crossed(r2);
+        double det = t1.Dot(c23);
+        if (Math.Abs(det) < Eps)
+        {
+            return new Vector3D();
+        }
+        return -(g1 * c23 + g2 * c31 + g3 * c12) / det;
+    }
+
+    private const double Eps = 1.0e-15;
 
     /// <summary>The reference surfaces and restrictions <see cref="Decroch"/> tests against.</summary>
     public void Set(SurfaceAdaptorBase surfRef1, Curve2DAdaptorBase rstRef1, SurfaceAdaptorBase surfRef2,
@@ -184,7 +302,7 @@ internal class RstRstConstRad : RstRstFunction
         math_Vector valsol = new(1, 2), secmember = new(1, 2);
         Matrix gradsol = new(1, 2, 1, 2);
 
-        Vector3D dnplan = new(), d1urst1, d1vrst1, d1urst2, d1vrst2, d11, d21, temp = new();
+        Vector3D dnplan, d1urst1, d1vrst1, d1urst2, d1vrst2;
         Point3D bid;
 
         double cosa, sina, angle;
@@ -193,22 +311,21 @@ internal class RstRstConstRad : RstRstFunction
 
         if (Math.Abs(valsol[1]) <= tol && Math.Abs(valsol[2]) <= tol)
         {
+            // The ball (decision 30021): none where the points are too far apart, as OCCT's CenterCircleRst1Rst2.
+            if (!_isBall)
+            {
+                _istangent = true;
+                return false;
+            }
+
             // Calculation of tangents
             _prmrst1 = sol[1];
             _pt2drst1 = _rst1.Value(_prmrst1);
             _prmrst2 = sol[2];
             _pt2drst2 = _rst2.Value(_prmrst2);
 
-            _cons1.D1(sol[1], out _ptrst1, out d11);
-            _cons2.D1(sol[2], out _ptrst2, out d21);
-
             dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
-
-            temp = temp.WithXYZ(_ptrst1.XYZ() - _ptgui.XYZ());
-            secmember[1] = _normtg - dnplan.Dot(temp);
-
-            temp = temp.WithXYZ(_ptrst2.XYZ() - _ptgui.XYZ());
-            secmember[2] = _normtg - dnplan.Dot(temp);
+            GuideSecondMember(secmember, dnplan);
 
             Gauss resol = new(gradsol);
 
@@ -222,8 +339,6 @@ internal class RstRstConstRad : RstRstFunction
                 Svd singRS = new(gradsol);
                 if (singRS.IsDone)
                 {
-                    // OCCT: DEDT has 3 entries for this 2x2 system; native's release build (its dimension checks
-                    // compiled out) copies secmember's 2 and solves on them, as here.
                     math_Vector dedt = new(1, 2);
                     dedt.Initialized(secmember);
                     singRS.Solve(dedt, secmember, 1.0e-6);
@@ -237,30 +352,20 @@ internal class RstRstConstRad : RstRstFunction
 
             if (!_istangent)
             {
-                _tgrst1 = secmember[1] * d11;
-                _tgrst2 = secmember[2] * d21;
+                _tgrst1 = secmember[1] * _d11;
+                _tgrst2 = secmember[2] * _d21;
 
                 double a, b;
                 _surf1.D1(_pt2drst1.X, _pt2drst1.Y, out bid, out d1urst1, out d1vrst1);
                 T3dto2d(out a, out b, _tgrst1, d1urst1, d1vrst1);
                 _tg2drst1 = _tg2drst1.WithCoord(a, b);
                 _surf2.D1(_pt2drst2.X, _pt2drst2.Y, out bid, out d1urst2, out d1vrst2);
-                T3dto2d(out a, out b, _tgrst1, d1urst2, d1vrst2); // OCCT: tgrst1 where tgrst2 is meant
+                // Kerf: OCCT passes tgrst1 here where tgrst2 is meant.
+                T3dto2d(out a, out b, _tgrst2, d1urst2, d1vrst2);
                 _tg2drst2 = _tg2drst2.WithCoord(a, b);
             }
 
-            Point3D center = new();
-            Vector3D notUsed;
-            bool isCenter;
-
-            isCenter = CenterCircleRst1Rst2(_ptrst1, _ptrst2, _nplan, ref center, out notUsed);
-
-            if (!isCenter)
-            {
-                return false;
-            }
-
-            Vector3D n1 = new(center, _ptrst1), n2 = new(center, _ptrst2);
+            Vector3D n1 = new(_center, _ptrst1), n2 = new(_center, _ptrst2);
 
             n1 = n1.Normalized();
             n2 = n2.Normalized();
@@ -293,6 +398,15 @@ internal class RstRstConstRad : RstRstFunction
         }
         _istangent = true;
         return false;
+    }
+
+    // The guide's term of the equations' derivative along the walk, with the sign the solvers take it (-df/dt): only
+    // f1 moves with the guide.
+    private void GuideSecondMember(math_Vector secmember, in Vector3D dnplan)
+    {
+        Vector3D temp = new((_ptrst1.XYZ() + _ptrst2.XYZ()) / 2 - _ptgui.XYZ());
+        secmember[1] = _normtg - dnplan.Dot(temp);
+        secmember[2] = 0;
     }
 
     public override double GetMinimalDistance()
@@ -354,10 +468,10 @@ internal class RstRstConstRad : RstRstFunction
     public override DecrochStatus Decroch(math_Vector sol, out Vector3D nRst1, out Vector3D tgRst1,
                                                 out Vector3D nRst2, out Vector3D tgRst2)
     {
-        Vector3D nRst1InPlane = new(), nRst2InPlane = new();
-        Point3D ptTmp1, ptTmp2, center = new();
-        Vector3D d1u, d1v, centptrst = new(), notUsed;
-        double norm, unsurnorm;
+        Vector3D nRst1InPlane, nRst2InPlane;
+        Point3D ptTmp1, ptTmp2;
+        Vector3D d1u, d1v, centptrst;
+        double norm;
         double u, v;
 
         _rstref1!.Value(sol[1]).Coord(out u, out v);
@@ -369,33 +483,36 @@ internal class RstRstConstRad : RstRstFunction
         // Normal to the reference surface 2
         nRst2 = d1u.Crossed(d1v);
 
-        CenterCircleRst1Rst2(ptTmp1, ptTmp2, _nplan, ref center, out notUsed);
+        // The ball's (decision 30021): its centre, the section in the plane through it and both points, the reference
+        // surfaces' normals projected into it.
+        Ball(sol, _nplan);
+        Point3D center = _center;
+        Vector3D np = ConstRad.SectionNormal(new Vector3D(center, ptTmp1), new Vector3D(center, ptTmp2), _nplan);
 
-        norm = _nplan.Crossed(nRst1).Magnitude;
-        unsurnorm = 1.0 / norm;
+        nRst1InPlane = nRst1 - np.Dot(nRst1) * np;
+        norm = nRst1InPlane.Magnitude;
+        nRst1InPlane = norm > Eps ? -nRst1InPlane / norm : -nRst1InPlane; // OCCT's sign, where the chord is square to it
 
-        nRst1InPlane = Vector3D.LinearForm(_nplan.Dot(nRst1) * unsurnorm, _nplan, -unsurnorm, nRst1);
-
-        centptrst = centptrst.WithXYZ(ptTmp1.XYZ() - center.XYZ());
+        centptrst = new Vector3D(center, ptTmp1);
 
         if (centptrst.Dot(nRst1InPlane) < 0.0)
         {
             nRst1InPlane = nRst1InPlane.Reversed();
         }
 
-        tgRst1 = _nplan.Crossed(centptrst);
+        tgRst1 = np.Crossed(centptrst);
 
-        norm = _nplan.Crossed(nRst2).Magnitude;
-        unsurnorm = 1.0 / norm;
-        nRst2InPlane = Vector3D.LinearForm(_nplan.Dot(nRst2) * unsurnorm, _nplan, -unsurnorm, nRst2);
-        centptrst = centptrst.WithXYZ(ptTmp2.XYZ() - center.XYZ());
+        nRst2InPlane = nRst2 - np.Dot(nRst2) * np;
+        norm = nRst2InPlane.Magnitude;
+        nRst2InPlane = norm > Eps ? -nRst2InPlane / norm : -nRst2InPlane; // OCCT's sign, where the chord is square to it
+        centptrst = new Vector3D(center, ptTmp2);
 
         if (centptrst.Dot(nRst2InPlane) < 0.0)
         {
             nRst2InPlane = nRst2InPlane.Reversed();
         }
 
-        tgRst2 = _nplan.Crossed(centptrst);
+        tgRst2 = np.Crossed(centptrst);
 
         if (_choix % 2 != 0)
         {
@@ -486,15 +603,19 @@ internal class RstRstConstRad : RstRstFunction
     /// <summary>The circular section at <paramref name="param"/> through the points U and V, and its bounds.</summary>
     public void Section(double param, double u, double v, out double pdeb, out double pfin, ref Circle3D c)
     {
-        Vector3D ns, np, notUsed;
-        Point3D center = new();
+        Vector3D ns, np;
+        Point3D center;
 
         _tguide.D1(param, out _ptgui, out _d1gui);
         np = _d1gui.Normalized();
-        _ptrst1 = _cons1.Value(u);
-        _ptrst2 = _cons2.Value(v);
 
-        CenterCircleRst1Rst2(_ptrst1, _ptrst2, np, ref center, out notUsed);
+        // The ball's circle (decision 30021): its centre, in the plane through it and both points.
+        math_Vector x = new(1, 2);
+        x[1] = u;
+        x[2] = v;
+        Ball(x, np);
+        center = _center;
+        np = ConstRad.SectionNormal(new Vector3D(center, _ptrst1), new Vector3D(center, _ptrst2), np);
 
         c = c.WithRadius(Math.Abs(_ray));
         ns = new Vector3D(center, _ptrst1).Normalized();
@@ -582,9 +703,8 @@ internal class RstRstConstRad : RstRstFunction
     public override void Section(in BlendPoint p, NCollection_Array1<Point3D> poles,
                                  NCollection_Array1<Point2D> poles2d, NCollection_Array1<double> weights)
     {
-        Vector3D ns, ns2, notUsed;
-        Point3D center = new();
-        double u, v;
+        Vector3D ns, ns2;
+        Point3D center;
 
         double prm = p.Parameter();
         int low = poles.Lower();
@@ -593,14 +713,15 @@ internal class RstRstConstRad : RstRstFunction
         _tguide.D1(prm, out _ptgui, out _d1gui);
         _nplan = _d1gui.Normalized();
 
-        u = p.ParameterOnC1();
-        v = p.ParameterOnC2();
+        math_Vector x = new(1, 2);
+        x[1] = p.ParameterOnC1();
+        x[2] = p.ParameterOnC2();
 
-        Point2D pt2d1 = _rst1.Value(u);
-        Point2D pt2d2 = _rst2.Value(v);
+        Point2D pt2d1 = _rst1.Value(x[1]);
+        Point2D pt2d2 = _rst2.Value(x[2]);
 
-        _ptrst1 = _cons1.Value(u);
-        _ptrst2 = _cons2.Value(v);
+        // The ball's (decision 30021).
+        Ball(x, _nplan);
         _distmin = Min(_distmin, _ptrst1.DistanceTo(_ptrst2));
 
         poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(pt2d1.X, pt2d1.Y);
@@ -616,8 +737,7 @@ internal class RstRstConstRad : RstRstFunction
             return;
         }
 
-        // Calculate the center of the circle
-        CenterCircleRst1Rst2(_ptrst1, _ptrst2, _nplan, ref center, out notUsed);
+        center = _center;
 
         // normals to the section with points
         ns = new Vector3D(center, _ptrst1).Normalized();
@@ -628,22 +748,19 @@ internal class RstRstConstRad : RstRstFunction
             _nplan = _nplan.Reversed();
         }
 
-        global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _ptrst1, _ptrst2, Math.Abs(_ray), center, poles, weights);
+        global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, ConstRad.SectionNormal(ns, ns2, _nplan), _ptrst1, _ptrst2, Math.Abs(_ray), center, poles, weights);
     }
 
     public override bool Section(in BlendPoint p, NCollection_Array1<Point3D> poles, NCollection_Array1<Vector3D> dPoles,
                                  NCollection_Array1<Point2D> poles2d, NCollection_Array1<Vector2D> dPoles2d,
                                  NCollection_Array1<double> weights, NCollection_Array1<double> dWeights)
     {
-        Vector3D d11, d21;
-        Vector3D dnplan = new(), d1n1 = new(), d1n2 = new();
-        Vector3D temp = new(), tgct = new();
+        Vector3D dnplan, d1n1 = new(), d1n2 = new();
+        Vector3D tgct = new();
         Vector3D d1urst, d1vrst;
-        Point3D center = new(), notUsed;
+        Point3D center, notUsed;
 
-        double norm2, normmed, dist;
-
-        math_Vector sol = new(1, 2), valsol = new(1, 2), secmember = new(1, 2);
+        math_Vector sol = new(1, 2), secmember = new(1, 2);
         Matrix gradsol = new(1, 2, 1, 2);
 
         double prm = p.Parameter();
@@ -661,16 +778,10 @@ internal class RstRstConstRad : RstRstFunction
         _pt2drst1 = _rst1.Value(_prmrst1);
         _pt2drst2 = _rst2.Value(_prmrst2);
 
-        Values(sol, valsol, gradsol);
-
-        _cons1.D1(sol[1], out _ptrst1, out d11);
-        _cons2.D1(sol[2], out _ptrst2, out d21);
-
-        temp = temp.WithXYZ(_ptrst1.XYZ() - _ptgui.XYZ());
-        secmember[1] = _normtg - dnplan.Dot(temp);
-
-        temp = temp.WithXYZ(_ptrst2.XYZ() - _ptgui.XYZ());
-        secmember[2] = _normtg - dnplan.Dot(temp);
+        // The ball's (decision 30021): its centre, which moves with the points only.
+        Ball(sol, _nplan);
+        BallDerivatives(gradsol);
+        GuideSecondMember(secmember, dnplan);
 
         Gauss resol = new(gradsol, 1.0e-9);
 
@@ -695,67 +806,30 @@ internal class RstRstConstRad : RstRstFunction
             }
         }
 
-        Vector3D med;
-        Vector3D rst1rst2 = new(_ptrst1, _ptrst2);
-        bool isCenter;
-
-        isCenter = CenterCircleRst1Rst2(_ptrst1, _ptrst2, _nplan, ref center, out med);
-        if (!isCenter)
+        if (!_isBall)
         {
             return false;
         }
+        center = _center;
 
-        normmed = med.Magnitude;
-        med = med.Normalized();
         Vector3D n1 = new(center, _ptrst1), n2 = new(center, _ptrst2);
+        double norm1 = n1.Magnitude, norm2 = n2.Magnitude;
         n1 = n1.Normalized();
         n2 = n2.Normalized();
 
         if (!istgt)
         {
             // secmember contains derivatives of parameters on curves compared to t
-            _tgrst1 = secmember[1] * d11;
-            _tgrst2 = secmember[2] * d21;
+            _tgrst1 = secmember[1] * _d11;
+            _tgrst2 = secmember[2] * _d21;
 
-            Vector3D d1rst1rst2;
-
-            norm2 = rst1rst2.SquareMagnitude;
-            d1rst1rst2 = _tgrst2 - _tgrst1;
-            dist = _ray * _ray - 0.25 * norm2;
-
-            if (dist > 1.0E-07)
-            {
-                Vector3D d1P1P2CrosNp, dmed;
-                d1P1P2CrosNp = d1rst1rst2.Crossed(_nplan) + rst1rst2.Crossed(dnplan);
-                // derivative of the perpendicular bisector
-                dmed = d1P1P2CrosNp - med.Dot(d1P1P2CrosNp) * med;
-                dmed /= normmed;
-                dist = Math.Sqrt(dist);
-                double d1Dist = -(0.25 / dist) * rst1rst2.Dot(d1rst1rst2);
-
-                if (_choix > 2)
-                {
-                    dmed = dmed.Reversed();
-                }
-
-                // the derivative of coefficient Dist is located in dmed
-                dmed = Vector3D.LinearForm(dist, dmed, d1Dist, med);
-                d1rst1rst2 *= 0.5;
-                // derivative of the Normal to the curve in P1
-                d1n1 = -(dmed + d1rst1rst2) / _ray;
-
-                // derivative of the Normal to the curve in P2
-                d1n2 = (d1rst1rst2 - dmed) / _ray;
-            }
-            else
-            {
-                d1rst1rst2 *= 0.5;
-                // Normal to the curve in P1
-                d1n1 = -d1rst1rst2 / _ray;
-
-                // Normal to the curve in P2
-                d1n2 = d1rst1rst2 / _ray;
-            }
+            // The centre's derivative along the walk, then the unit chords'.
+            CentreD1(out Vector3D dcu, out Vector3D dcv);
+            tgct = Vector3D.LinearForm(secmember[1], dcu, secmember[2], dcv);
+            d1n1 = (_tgrst1 - tgct) / norm1;
+            d1n1 = d1n1 - n1.Dot(d1n1) * n1;
+            d1n2 = (_tgrst2 - tgct) / norm2;
+            d1n2 = d1n2 - n2.Dot(d1n2) * n2;
         }
 
         // Tops 2d
@@ -792,26 +866,25 @@ internal class RstRstConstRad : RstRstFunction
         }
 
         // Case of the circle
-        // tangent to the center of the circle
-        if (!istgt)
-        {
-            tgct = Vector3D.LinearForm(-_ray, d1n1, _tgrst1);
-        }
-
+        Vector3D np = _nplan;
         if (_choix % 2 != 0)
         {
-            _nplan = _nplan.Reversed();
+            np = np.Reversed();
             dnplan = dnplan.Reversed();
         }
 
+        // The plane of the ball's circle, through its centre and both points, on the guide plane's side.
+        Vector3D zero = new();
+        ConstRad.SectionNormal(n1, n2, d1n1, d1n2, zero, zero, np, dnplan, zero, out Vector3D npBall, out Vector3D dnpBall, out _);
+
         if (!istgt)
         {
-            return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, n1, n2, d1n1, d1n2, _nplan, dnplan, _ptrst1, _ptrst2, _tgrst1, _tgrst2,
+            return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, n1, n2, d1n1, d1n2, npBall, dnpBall, _ptrst1, _ptrst2, _tgrst1, _tgrst2,
                                       Math.Abs(_ray), 0, center, tgct, poles, dPoles, weights, dWeights);
         }
         else
         {
-            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, n1, n2, _nplan, _ptrst1, _ptrst2, Math.Abs(_ray), center, poles, weights);
+            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, n1, n2, npBall, _ptrst1, _ptrst2, Math.Abs(_ray), center, poles, weights);
             return false;
         }
     }
