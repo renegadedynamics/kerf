@@ -2165,3 +2165,94 @@ IN. **Left:** the checks' grid points in large parts are still classified one by
 and intersecting its line with the faces it nears, OCCT's way. A classifier shared within a check carried OCCT's parallel
 flag from point to point (decision 2111) until unit 15C2, which sets it back before every point (decision 2121): no point
 of the suites' or the corpus's checks changed state, and the reset costs nothing measurable.
+
+## The shaft gauges (unit 15D)
+
+*10 November 2026, decisions 29901 to 29907. Other helpers' test runs shared the machine throughout: **every time here is
+from a loaded machine**, and the verdicts rest on bytes allocated (all threads), processor time (the process's) and
+samples. Each process had two processors (affinity and `DOTNET_PROCESSOR_COUNT=2`).*
+
+**The script:** renegadedynamics/hardware `031bd55`, `products/rowing-strain/enclosure/kerf/ShaftGauge`: for each shaft size
+(35, 50 and 58 mm, all three by default) a hexagon 4 thick is extruded, its six corners filleted (6), six U-shaped cutouts
+cut (a cylinder and a box each, twelve Booleans), their mouths filleted (1, 12 edges), every rim of both faces chamfered
+0.4 (96 edges), and six size labels and the gauge's name engraved 0.6 deep in Liberation Sans Bold, one cut each; the gauge
+is exported as STEP, STL (0.01) and 3MF, and rendered top and iso; `--publish` adds `Publisher.Publish` (renders and an A3
+drawing of three exact hidden-line views and a section). The harness (`Gauge.cs` and `Publisher.cs` unchanged, `Program.cs`'s
+steps copied with a timer round each, a step-by-step copy of `MakeBlank` and `MakeGauge` checked against the script's own
+part, and `--publish` writing to a folder of my own) is in the scratchpad's `p15d` folder, not in the tree.
+
+### The build, cold and warm
+
+*Cold*: a fresh process, all three sizes, the script's steps once (no publishing), ReadyToRun as the packages are, the
+median of two, interleaved. *Warm*: the median of repeats 2 and 3 in one process. Main is `86bb21f86`; the branch is this
+unit's.
+
+| | Main MB | Branch MB | Main processor s | Branch processor s |
+|---|---:|---:|---:|---:|
+| Cold, all sizes | 7,025 | 5,081 (−28%) | 38.9 | 32.4 |
+| of which the build (`Make`) | 5,254 | 3,301 (−37%) | 18.6 | 12.7 |
+| Warm, all sizes | 7,020 | 5,008 (−29%) | 13.2 | 12.7 |
+| of which the build | 5,278 | 3,268 (−38%) | 7.2 | 6.2 |
+| Warm, 35 mm, published | 4,758 | 3,652 (−23%) | | |
+| of which `Publisher.Publish` | 2,430 | 1,978 (−19%) | | |
+
+The exports are the same on both: STEP 74 to 87 MB a size, STL 118 to 143, 3MF 222 to 277 (it meshes at its default
+0.001, the STL at 0.01), and STL and 3MF are 15 of the cold process's 39 s of processor time, as the meshes are made on
+worker threads; the two renders 125 MB a size. A cold process costs about 19 s of processor time more than a warm build
+(the JIT's and loading's share, as decisions 1891 and 1892 found; the meshers' and the Booleans' code is most of what is
+compiled).
+
+### Where it goes
+
+Main, warm, 35 mm, the build step by step: 1,768 MB. The hexagon, its fillets, the twelve cuts and the chamfer are 9%
+(the chamfer of 96 edges 50 MB and 46 ms); **the seven engravings' cuts are 88%**, growing from 85 to 315 MB as the
+letters pile up (the gauge reaches 665 faces). An EventPipe trace of two warm builds (791 samples and 6.8 GB in allocation
+ticks after the first): Booleans 88% of the samples and 89% of the bytes, and within them:
+
+| What | Samples | Bytes | |
+|---|---:|---:|---|
+| Each classifier's surface polyhedra: every face that isn't a plane, cylinder, cone, sphere or torus gets a grid of 20 × 20 points and the boxes of its 800 triangles, for every classifier of a solid (the split solids' `IsHole`, `IsInvertedSolid`'s infinite point) | 11% | 21% (the triangles' boxes alone 19.5%) | the letters' sides are extrusions of Béziers: each cut builds them for every letter already cut |
+| Face/face intersections of the gauge's top with the letters' sides (`ImpPrmIntersection`, walking a plane against an extrusion) | 22% | 22% | the root finder (`FunctionSetRoot`) 11% of the samples and 15% of the bytes, most of it new solvers and vectors |
+| The 2D curves on planes, copied for every reader (`Tool.CurveOnPlane`) | 8% | 9% | the top face's wires checked against each other ask each curve once for each edge of the other wire |
+| The builder's other work, the pave filler's, the checks (validity 6%, volume 2%), the clean (4%) | the rest | the rest | |
+
+Publishing (35 mm, warm, main 2,430 MB): the three exact hidden-line views 1,622 MB of it (67%), the top view seeing every
+letter's walls edge on (tangent zones of coincident projected edges are 334 MB alone); renders and PNG writing about 10%.
+
+### What changed in Kerf, and its effect elsewhere
+
+Four changes, each the same results by construction and checked (decisions 29902 to 29905): **a polyhedron's triangle boxes
+made when first asked for** (most classifiers never ask, as their line misses the face); **the kept curve on a plane given
+to a reader, not a copy**; **the root finder's solvers kept for the whole problem and a sub-problem at a bound, and its
+search's vectors in its rented work**, where it made a new solver at every turn between them; and **a face intersector's
+polyhedron built only when its line can reach it**, a line clear of the box of the surface's poles (widened past anything
+the polyhedron's box can be) needing none. The build (main → branch, warm, all sizes): 5,278 to 3,268 MB (−38%), with the
+same gauges to the bit (their BREP text, STL and 3MF hashed: 2E13950418D1A727, F27196E333CBBAA5, 74C4CE51273105D3) and
+the same states for 189,771 points classified against them.
+
+| Elsewhere (bytes, main → branch, the mean of two processes each) | Change | Results |
+|---|---|---|
+| The rig's complex Booleans (193 cases) | 1,159 to 1,122 MB (−3.2%) | the same |
+| Its simple Booleans (407 cases), with their clean | 1,766 to 1,753 (−0.7%) | the same |
+| STEP and healing (289 files) | 5,346 to 5,218 (−2.4%); `ShapeFixer` 1,193 to 1,137 (−4.7%) | the same |
+| Bento's recalculation (its 36 examples) | 106.9 to 100.5 (−5.9%); extrude-until 31.4 to 27.3 (−13%), the bottle −6% | the same |
+| Features (offsets, drafts, pipes and the rest) | 267.4 to 267.0 | the same |
+| Meshing (14 rows) | 270.8 to 275.2 (+1.6%): every serial row the same to 0.01 MB; `Axis_of_bearing.brep` meshed in parallel 34.7 to 36.8 on main against 37.1 to 41.6 here (10 processes), which bisecting puts on decision 29905's change, unexplained (the serial mesh doesn't move; inferred: something per worker thread) | the same |
+| The users' cases | the enclosure 2,540 to 2,492 (−1.9%), v0.16's 2,496 to 2,453 (−1.7%), the fuses and chamfers the same within 2% | `check`: their fixed results |
+| The corpus: Boolean groups of complex shapes, the volume maker, HLR, blends, chamfers and features (2,101 cases) | | the same statuses as `corpus-13.txt` but `chamfer/dist_angle_sequence/B6` and `equal_dist_sequence/B4`, decision 2143's, already on main |
+
+No result changed, and nothing allocates more past decision 1829's bar: the parallel mesh of one shape, +5% to +10%, is the only row up, under the bar for a single operation and 1.6% of the meshing suite; nothing was held back for the owner. Times, from the
+loaded machine, aren't a verdict either way.
+
+**15L's crossing check** on the gauge: the chamfer of 96 rims 0.84 to 0.89 MB of 49 to 51 MB (1.7%) and about 2.8 ms of
+46 to 56 (5%); the corner and mouth fillets 0.09 and 0.36 MB of 2.3 and 7.3 (4% and 5%), 0.2 and 0.8 ms. Well under
+decision 1742's tenth.
+
+### What's left, for the owner (decision 29907)
+
+| # | Hot path | Share (branch, warm) | What it would take |
+|---:|---|---|---|
+| 1 | A small tool cut from a large solid: every engraving pays for every letter before it | 88% of the build | In the script: one cut of all the engravings, −37% (`shaft-gauge-feedback.md`). In Kerf, as decision 2055 named for the enclosure: a frozen solid's pave filler data, classifier and checks kept with it |
+| 2 | A plane square to an extrusion, walked (`ImpPrmIntersection`) where the section is the extruded curve itself, moved | 22% of the build's samples on main, about a third on the branch | An exact section for the pair, which Kerf isn't bound not to make (decision 1743), but the curves differ from the walked ones, so every result with engraved or extruded text changes: the owner's |
+| 3 | The exact hidden-line views of a part with text | 67% of publishing | In the script: polygonal views, −83%, not the same drawing. In Kerf: HLR's tangent zones, kept in linked sequences node by node |
+| 4 | The 3MF meshed at 0.001 beside the STL at 0.01 | 38% of the 3MF's bytes | In the script: the STL's deflection (a coarser mesh) |
