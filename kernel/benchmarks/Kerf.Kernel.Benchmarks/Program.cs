@@ -170,6 +170,7 @@ namespace Kerf.Kernel.Benchmarks
                     continue;
                 }
                 Shape aPortInput = Cases.PortRead(aCase.F1);
+                bool isEachRunPrinted = Environment.GetEnvironmentVariable("KERF_MESH_RUNS") == "1";
                 foreach (bool isParallel in new[] { false, true })
                 {
                     // The bytes are a median too: a parallel mesh's depend on which threads take which faces (decision 1940)
@@ -181,7 +182,14 @@ namespace Kerf.Kernel.Benchmarks
                         long t1 = Stopwatch.GetTimestamp();
                         global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, aCase.Deflection, Cases.Angle);
                         long t2 = Stopwatch.GetTimestamp();
-                        return [Ms(t1 - t0), Ms(t2 - t1), Ms(t2 - t0), GC.GetTotalAllocatedBytes(true) - aBytes];
+                        long anAll = GC.GetTotalAllocatedBytes(true) - aBytes;
+                        if (isEachRunPrinted)
+                        {
+                            // KERF_MESH_RUNS=1: every run's bytes, the pool's threads and the collections so far, to the error stream
+                            Console.Error.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                                $"run\t{aCase.Name}\t{(isParallel ? "parallel" : "serial")}\t{anAll}\t{ThreadPool.ThreadCount}\t{GC.CollectionCount(0)}\t{GC.CollectionCount(2)}"));
+                        }
+                        return [Ms(t1 - t0), Ms(t2 - t1), Ms(t2 - t0), anAll];
                     });
                     double anAllocated = aPort[3];
                     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
