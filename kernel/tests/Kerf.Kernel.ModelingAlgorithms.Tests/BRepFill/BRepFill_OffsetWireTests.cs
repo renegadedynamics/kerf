@@ -309,7 +309,7 @@ public class BRepFill_OffsetWireTests
         // polyline at 0.001 of the distance (216 edges, decision 1980) removes and puts back the same six pieces of the
         // contour on every pass from the 18th, which OCCT's loop stops only after 47,524 passes (the square of the 218
         // elements): 9 s and 22.4 GB to fail, before OCCT's polyline gave the answer in 10 ms. MatCycle sees the state come
-        // back and ends the loop where the count would have (decision 31501): the same result, native OCCT's (291.991, 20
+        // back and ends the loop where the count would have (decision 2220): the same result, native OCCT's (291.991, 20
         // edges), in 46 MB
         string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
                                         .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "offset_wire_081.brep");

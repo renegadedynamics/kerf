@@ -2315,7 +2315,7 @@ context), and synthetic loops as fast or faster than `Parallel.For` (200,000 loo
 
 ## A wire offset that allocated 22 GB (unit 15AI)
 
-*November 2026, decisions 31501 to 31503. A loaded machine: the verdicts rest on bytes, counts and processor time.
+*November 2026, decisions 2220 to 2222. A loaded machine: the verdicts rest on bytes, counts and processor time.
 Wall-clock figures are for a quiet window: `quiet-15ai.ps1` in the scratchpad's `15ai` folder.*
 
 OCCT's `offset/wire_closed_inside_0_025/G4` offsets a closed wire of 36 B-splines inwards by 0.025 of its length, past
