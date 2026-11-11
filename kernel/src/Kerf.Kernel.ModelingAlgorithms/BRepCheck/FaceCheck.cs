@@ -739,7 +739,7 @@ internal class FaceCheck : ResultCheck
         for (exp1.Init(wir1, ShapeType.Edge); exp1.More(); exp1.Next())
         {
             Edge edg1 = ShapeCasts.Edge(exp1.Current());
-            c1.Load(Tool.CurveOnSurface(edg1, f, out first1, out last1)!);
+            c1.Load(Tool.CurveOnSurfaceToRead(edg1, f, out first1, out last1)!);
             // To avoid exception in Segment if C1 is BSpline - IFV
             if (c1.FirstParameter() > first1)
             {
@@ -767,7 +767,7 @@ internal class FaceCheck : ResultCheck
                 Edge edg2 = ShapeCasts.Edge(exp2.Current());
                 if (!edg1.IsSame(edg2))
                 {
-                    c2.Load(Tool.CurveOnSurface(edg2, f, out first2, out last2)!);
+                    c2.Load(Tool.CurveOnSurfaceToRead(edg2, f, out first2, out last2)!);
                     // To avoid exception in Segment if C2 is BSpline - IFV
                     if (c2.FirstParameter() > first2)
                     {

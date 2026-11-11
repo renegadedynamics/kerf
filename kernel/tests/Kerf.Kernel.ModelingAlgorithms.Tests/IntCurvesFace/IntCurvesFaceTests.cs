@@ -1,8 +1,10 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.CurveSurface;
+using Kerf.Engine.Intersection.Polygons;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -174,5 +176,82 @@ public class IntCurvesFaceTests
         Assert.Equal(0, anInter.PntCount); // the second box is missed
         anInter.Perform(new Line3D(new Point3D(5, 5, -5), new Direction3D(0, 0, 1)), -RealLast(), RealLast());
         Assert.Equal(2, anInter.PntCount); // the first box is met
+    }
+
+    // Faces whose polyhedron the hull box can stand for: a cubic Bézier extruded along a slant, trimmed in both
+    // directions and placed by a rotation and a move, and a bent B-spline surface
+    private static IEnumerable<Face> HullFaces()
+    {
+        var aBezier = new BezierCurve3D([new Point3D(-3, -1, 0), new Point3D(-1, 4, 0.5), new Point3D(2, -3, 0), new Point3D(4, 2, 1)]);
+        var anExtrusion = new ExtrusionSurface(aBezier, new Direction3D(0.2, -0.1, 1));
+        Face anExtruded = BRepGPropTestShapes.NaturalFace(new TrimmedSurface(anExtrusion, 0.1, 0.9, -0.5, 2.0));
+        yield return anExtruded;
+        Transform3D aMove = new Transform3D().WithRotation(new Axis3D(new Point3D(1, 0, 0), new Direction3D(1, 1, 1)), 0.7);
+        aMove = aMove.Multiplied(new Transform3D().WithTranslation(new Vector3D(2, -1, 3)));
+        yield return ShapeCasts.Face(anExtruded.Moved(new Placement(aMove)));
+        var aPoles = new NCollection_Array2<Point3D>(1, 3, 1, 3);
+        for (int i = 1; i <= 3; i++)
+        {
+            for (int j = 1; j <= 3; j++)
+            {
+                aPoles.SetValue(i, j, new Point3D(3 * (i - 2), 3 * (j - 2), (i == 2 && j == 2) ? 3 : 0.5 * (i - j)));
+            }
+        }
+        var aKnots = NCollection_Array1<double>.From([0.0, 1.0]);
+        var aMults = NCollection_Array1<int>.From([3, 3]);
+        yield return BRepGPropTestShapes.NaturalFace(new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 2, 2));
+    }
+
+    // Unit 15D: a line the intersector says is surely clear of its polyhedron's box is clear of it (LinBox finds no part of
+    // the line in it, where OCCT's Perform returns with nothing), and a line through a face is never said to be; Perform
+    // gives the same, without the polyhedron, as an intersector whose polyhedron was built first
+    [Fact]
+    public void A_line_clear_of_the_poles_box_is_clear_of_the_polyhedron()
+    {
+        int aCleared = 0, aMet = 0;
+        foreach (Face aFace in HullFaces())
+        {
+            var aBuilt = new CurveSurfaceIntersector(TestShapes.Frozen(aFace), 1e-7);
+            Box aPolyhedronBox = aBuilt.Bounding();
+            Assert.False(aPolyhedronBox.IsVoid);
+            Assert.False(aBuilt.SurelyMissesPolyhedron(new Line3D(new Point3D(100, 100, 100), new Direction3D(1, 0, 0)))); // built: not asked
+            Direction3D[] aDirections = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1), new(1, 1, 0), new(1, -2, 3), new(-3, 1, 1), new(0.01, 0, 1)];
+            for (int i = -6; i <= 6; i++)
+            {
+                for (int j = -6; j <= 6; j++)
+                {
+                    for (int k = -6; k <= 6; k += 3)
+                    {
+                        foreach (Direction3D aDirection in aDirections)
+                        {
+                            var aLine = new Line3D(new Point3D(i * Math.Abs(i), j * Math.Abs(j), 2.0 * k), aDirection); // nearer the faces, closer together
+                            var aLazy = new CurveSurfaceIntersector(TestShapes.Frozen(aFace), 1e-7);
+                            bool aClear = aLazy.SurelyMissesPolyhedron(aLine);
+                            var aTool = new PolygonTool();
+                            Box aLineBox = new();
+                            aTool.LinBox(aLine, aPolyhedronBox, ref aLineBox);
+                            if (aClear)
+                            {
+                                aCleared++;
+                                // LinBox gives the slabs' common range even where it's empty, from beyond its end back to its start
+                                Assert.True(aTool.SegmentCount == 0 || aTool.BeginParam(1) > aTool.EndParam(1));
+                            }
+                            aLazy.Perform(aLine, -RealLast(), RealLast());
+                            aBuilt.Perform(aLine, -RealLast(), RealLast());
+                            Assert.Equal(aBuilt.PntCount, aLazy.PntCount);
+                            for (int n = 1; n <= aBuilt.PntCount; n++)
+                            {
+                                Assert.Equal(aBuilt.WParameter(n), aLazy.WParameter(n));
+                                Assert.Equal(aBuilt.State(n), aLazy.State(n));
+                            }
+                            aMet += aBuilt.PntCount > 0 ? 1 : 0;
+                            Assert.False(aClear && aBuilt.PntCount > 0);
+                        }
+                    }
+                }
+            }
+        }
+        Assert.True(aCleared > 1000, $"{aCleared} lines cleared");
+        Assert.True(aMet > 100, $"{aMet} lines met a face");
     }
 }
