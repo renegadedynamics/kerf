@@ -89,6 +89,11 @@ internal sealed class MatCycle
     private void Write(MedialListOfEdge edges, Tool2d tool, int old, int begin, ReadOnlySpan<int> counters,
         int carriedPoint)
     {
+        int number = edges.Number();
+        if (_current.Length < 64 + 40 * number)
+        {
+            _current = new long[64 + 40 * number];
+        }
         _currentLength = 0;
         foreach (int counter in counters)
         {
@@ -96,8 +101,8 @@ internal sealed class MatCycle
         }
         PushPoint(tool, carriedPoint);
 
-        int number = edges.Number();
         Push(number);
+        MedialBisector? last = null;
         MedialTListNode<MedialEdge>? node = edges.FirstNode;
         for (int i = 0; i < number && node is not null; i++, node = node.Next())
         {
@@ -106,8 +111,17 @@ internal sealed class MatCycle
             Push(node.Previous()?.GetItem().EdgeNumber() ?? -1);
             Push(edge.Distance());
             PushPoint(tool, edge.IntersectionPoint());
-            PushBisector(tool, edge.FirstBisector(), old, begin);
-            PushBisector(tool, edge.SecondBisector(), old, begin);
+            // An edge's first bisector is as a rule the second of the edge before, written already
+            if (last is not null && ReferenceEquals(edge.FirstBisector(), last))
+            {
+                Push(-2);
+            }
+            else
+            {
+                PushBisector(tool, edge.FirstBisector(), old, begin);
+            }
+            last = edge.SecondBisector();
+            PushBisector(tool, last, old, begin);
         }
     }
 
