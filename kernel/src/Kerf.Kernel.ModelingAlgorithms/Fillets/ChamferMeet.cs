@@ -163,7 +163,8 @@ internal static partial class ChamferMeet
         }
     }
 
-    private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands);
+    // How a corner's chamfers combine: all or any (a corner of one kind), or by the formula of its faces (unit 15U2)
+    private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands, Term? Mixed = null);
 
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
@@ -321,6 +322,10 @@ internal static partial class ChamferMeet
             chamfered.AddRange(chain.Edges.Select(static x => x.Edge));
         }
 
+        // How far the surfaces are carried, in the widest chamfer's widths, and where the corner's rule holds: three times as far
+        // where Kerf's own bands are among them, as the loft's corners need (2 widths left its bottom corners' faces uncut)
+        double width = bands.Max(static b => b.Width) * (bands.Any(static b => b.Own) ? OwnReach : 1);
+
         // How the chamfers combine at each corner
         var cornerRules = new List<Corner>();
         Edge[] edges = shape.AllEdges().ToArray();
@@ -334,6 +339,16 @@ internal static partial class ChamferMeet
             }
             Band[] at = [.. ending, .. bands.Where(b => b.Own && !b.EndsAt(corner) && b.Passes(corner))];
             bool?[] kinds = others.Length == 0 && at.Length > 1 && at.All(static b => b.Convex) ? [true] : [.. others.Select(e => IsConvex(faces, e)).Distinct()];
+            if (kinds is [true, false] or [false, true])
+            {
+                // Convex and concave: by the formula of the faces there (unit 15U2)
+                if (MixedFormula(faces, corner, Near * width, at) is not { } formula)
+                {
+                    return null;
+                }
+                cornerRules.Add(new Corner(corner, corner.Point, false, at, formula));
+                continue;
+            }
             if (kinds.Length != 1 || kinds[0] is not { } all || at.Length == 0 || at.Any(b => b.Convex != at[0].Convex)
                 || (at.Length == 1 && !(at[0].Convex && all)))
             {
@@ -342,10 +357,25 @@ internal static partial class ChamferMeet
             cornerRules.Add(new Corner(corner, corner.Point, all, at));
         }
 
+        // The faces of the mixed corners' formulas that aren't their chamfers' own, carried on past their edges (unit 15U2)
+        var carried = new List<Carried>();
+        foreach (Corner c in cornerRules.Where(static c => c.Mixed is not null))
+        {
+            foreach (Leaf leaf in Leaves(c.Mixed!))
+            {
+                if (c.Bands.Any(b => b.Face1.IsSame(leaf.Face) || b.Face2.IsSame(leaf.Face)) || carried.Any(x => x.Input.IsSame(leaf.Face)))
+                {
+                    continue;
+                }
+                if (Carry(faces.First(f => f.IsSame(leaf.Face)), Past * width) is not { } face)
+                {
+                    return null;
+                }
+                carried.Add(face);
+            }
+        }
+
         // Each surface carried past its corners and across its contacts, its parameters kept, and made a face
-        // How far the surfaces are carried, in the widest chamfer's widths, and where the corner's rule holds: three times as far
-        // where Kerf's own bands are among them, as the loft's corners need (2 widths left its bottom corners' faces uncut)
-        double width = bands.Max(static b => b.Width) * (bands.Any(static b => b.Own) ? OwnReach : 1);
         foreach (Band band in bands)
         {
             BoundedSurface extended = band.Own ? Across1(band.Original, Across * width / band.Width) : band.Original;
@@ -428,6 +458,18 @@ internal static partial class ChamferMeet
             bool edgeSide = Math.Sign(along) == band.EdgeSign;
             return band.Convex ? !edgeSide : edgeSide;
         }
+        // Behind a face of a mixed corner's formula: its surface carried on, where it is, else its own
+        bool BehindFace(Face face, Point3D x)
+        {
+            Face shelled = oriented.First(f => f.IsSame(face));
+            if (carried.FirstOrDefault(x => x.Input.IsSame(face)) is { } c)
+            {
+                return Behind(shelled, c.Surface, c.U0, c.U1, c.V0, c.V1, x, material);
+            }
+            Surface surface = Tool.Surface(face)!;
+            surface.ParameterBounds(out double u0, out double u1, out double v0, out double v1);
+            return Behind(shelled, surface, u0, u1, v0, v1, x, material);
+        }
         bool Region(Point3D x)
         {
             bool inside = Material(x);
@@ -435,6 +477,10 @@ internal static partial class ChamferMeet
             if (close.Length > 0)
             {
                 Corner c = close[0];
+                if (c.Mixed is { } formula)
+                {
+                    return Holds(formula, x, BehindFace, (b, p) => SideOf(b, p, true));
+                }
                 bool[] sides = [.. c.Bands.Select(b => SideOf(b, x, true)).OfType<bool>()];
                 if (sides.Length == 0)
                 {
@@ -457,6 +503,12 @@ internal static partial class ChamferMeet
         var arguments = new NCollection_List<Shape>();
         foreach (Face face in faces)
         {
+            if (carried.FirstOrDefault(x => x.Input.IsSame(face)) is { } c)
+            {
+                arguments.Append(c.Replacement);
+                arguments.Append(c.Ring);
+                continue;
+            }
             arguments.Append(face);
         }
         foreach (Band band in bands)
@@ -475,6 +527,15 @@ internal static partial class ChamferMeet
         }
         var context = new IntersectionContext();
         double step = 1e-4 * width;
+        // The rings' pieces, of which only those near a mixed corner can be kept
+        var ringPieces = new HashSet<Shape>(ShapeHasher.Instance);
+        foreach (Carried c in carried)
+        {
+            foreach (Shape piece in Images(made, c.Ring))
+            {
+                ringPieces.Add(piece);
+            }
+        }
         var kept = new Dictionary<Shape, Face>(ShapeHasher.Instance);
         var result = new BrepBuilder();
         Shell shell = default;
@@ -487,6 +548,10 @@ internal static partial class ChamferMeet
             if (!InFace(piece, ref p, ref uv, context) || Tool.Surface(piece) is not { } surface)
             {
                 return null;
+            }
+            if (ringPieces.Contains(piece) && !cornerRules.Any(c => c.Mixed is not null && c.Point.DistanceTo(p) < Near * width))
+            {
+                continue;
             }
             Vector3D n = Normal(surface, uv.X, uv.Y);
             if (piece.Orientation == Orientation.Reversed)
@@ -540,8 +605,8 @@ internal static partial class ChamferMeet
         var history = new History();
         foreach (Face face in faces)
         {
-            IReadOnlyList<Shape> pieces = made.Modified(face);
-            Face[] own = pieces.Count == 0 ? (kept.TryGetValue(face, out Face same) ? [same] : []) : [.. pieces.Where(kept.ContainsKey).Select(p => kept[p])];
+            Shape[] given = carried.FirstOrDefault(x => x.Input.IsSame(face)) is { } c ? [c.Replacement, c.Ring] : [face];
+            Face[] own = [.. given.SelectMany(g => Images(made, g)).Where(kept.ContainsKey).Select(p => kept[p])];
             if (own.Length == 0)
             {
                 history.Remove(face);
@@ -563,6 +628,13 @@ internal static partial class ChamferMeet
         }
         history.Merge(unified);
         return new EngineOutcome(true, () => built, history);
+    }
+
+    // What the fuse made of an argument: its pieces, or the argument itself where it's whole
+    private static IReadOnlyList<Shape> Images(History made, Shape argument)
+    {
+        IReadOnlyList<Shape> pieces = made.Modified(argument);
+        return pieces.Count > 0 ? pieces : made.IsRemoved(argument) ? [] : [argument];
     }
 
     // The bands of one stripe, one for each of its surfaces; null where a surface isn't a B-spline with its contacts its u-isos,
@@ -888,6 +960,14 @@ internal static partial class ChamferMeet
         Face[] faces = result.AllFaces().ToArray();
         var context = new IntersectionContext();
 
+        // A point inside each input face, for faces carried on past their edges (unit 15U2)
+        Point3D?[] inside = [.. inputFaces.Select(f =>
+        {
+            Point3D q = default;
+            Point2D quv = default;
+            return AlgoTools3D.PointInFace(f, ref q, ref quv, context) == 0 ? q : (Point3D?)null;
+        })];
+
         // Each face of the result: the input face it lies on, or none (a chamfer's)
         var origin = new Dictionary<Shape, int>(ShapeHasher.Instance);
         foreach (Face face in faces)
@@ -898,8 +978,29 @@ internal static partial class ChamferMeet
             {
                 return false;
             }
+            origin[face] = OnInputFace(p);
+            // A face carried on past its edges (unit 15U2) may have that point beyond its input face: then the input face whose
+            // point inside lies on its surface (a chamfer's surface crosses the input's faces only along curves)
+            if (origin[face] < 0 && Tool.Surface(face) is { } own)
+            {
+                own.ParameterBounds(out double u0, out double u1, out double v0, out double v1);
+                origin[face] = Array.FindIndex(inside, q =>
+                {
+                    if (q is not { } at)
+                    {
+                        return false;
+                    }
+                    var onIt = double.IsInfinity(u0) || double.IsInfinity(v0) ? new ProjectPointOnSurface(at, own) : new ProjectPointOnSurface(at, own, u0, u1, v0, v1);
+                    return onIt.NbPoints() > 0 && onIt.LowerDistance() < Precision.Confusion();
+                });
+            }
+        }
+
+        // The input face a point lies on, or -1
+        int OnInputFace(Point3D p)
+        {
             Vertex vertex = new LibraryMakeVertex(p).InternalVertex();
-            origin[face] = Array.FindIndex(inputFaces, f =>
+            return Array.FindIndex(inputFaces, f =>
             {
                 var extrema = new ExtPF(vertex, f);
                 return extrema.IsDone && Enumerable.Range(1, extrema.ExtCount).Any(n => extrema.SquareDistance(n) < Precision.SquareConfusion());

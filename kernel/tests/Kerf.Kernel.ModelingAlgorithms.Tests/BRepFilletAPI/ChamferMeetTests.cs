@@ -3,11 +3,13 @@
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Fillets;
 using Kerf.Geometry;
 using Kerf.Healing;
+using Kerf.Measurement;
 using Kerf.Topology;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepFilletAPI;
@@ -107,18 +109,79 @@ public class ChamferMeetTests
         Assert.True(ChamferMeet.Proved(shape, made, specs, [first], native, 1e-4));
     }
 
-    // chamfer/dist_dist_sequence/B7, its second step: the stripe runs onto another edge of its face before the corner, whose
-    // other edges are one convex and one concave (decision 2144). Not built: the corner would need a face of the input
-    // carried on too, so ChFi3d's failure stands
-    [Fact]
-    public void A_corner_of_convex_and_concave_edges_still_fails()
+    // chamfer/dist_dist_sequence/B7 and equal_dist_sequence/B5, their second step on 8_J1: the first wall's foot was chamfered
+    // in the first step, and now the second wall's foot, whose contact on the wall runs onto the walls' convex edge before
+    // the corner, where the corner's other edges are one convex and one concave (decision 2144). ChFi3d fails; unit 15U2
+    // builds it from the faces' formula there, floor or else (the wall or this chamfer) and (the other wall or its chamfer),
+    // with the other wall and its chamfer carried on past their edges, so the new chamfer ends against both
+    [Theory]
+    [InlineData(0.2, 0.21)]
+    [InlineData(0.2, null)]
+    public void A_corner_of_convex_and_concave_edges_is_built_with_the_faces_beside_it_carried_on(double distance, double? second)
     {
         Shape shape = Read("chamfer-B5-step2");
         Edge edge = EdgeBetween(shape, new Point3D(-0.606778, 0.0116437, 0.226719), Corner);
         Face floor = shape.AllFaces().Single(f => f.AllVertices().Any(v => v.Point.DistanceTo(new Point3D(0.473048, 0.5374, 0.308257)) < 1e-5));
-        Result<Built<Shape>> made = shape.Chamfer([new ChamferSpec(edge, 0.2, 0.21, ReferenceFace: floor)], NoLimit);
-        Assert.False(made.IsSuccess);
-        Assert.Equal(FilletOperations.Failed, made.Error!.Code);
+        ChamferSpec[] specs = [new ChamferSpec(edge, distance, second, ReferenceFace: second is null ? null : floor)];
+        MakeChamfer native = Native(shape, specs);
+        native.Build();
+        Assert.False(native.IsDone);
+
+        Result<Built<Shape>> made = shape.Chamfer(specs, NoLimit);
+        Assert.True(made.IsSuccess, made.Error?.ToString());
+        Shape result = made.Value.Shape;
+        Assert.Equal(ShapeType.Shell, result.Type);
+        Assert.True(result.Validate().IsValid);
+        Assert.Equal(5, result.AllFaces().Length); // the four faces, two of them carried on, and the chamfer
+        Assert.True(ChamferMeet.Proved(shape, result, specs, [floor], native, 1e-4));
+        Assert.Null(EdgeCrossings.Problem(shape, result, "The chamfer's result", FilletOperations.SelfIntersecting));
+        AssertCarriedOn(shape, result, edge);
+    }
+
+    // chamfer/dist_dist_sequence/B9 and equal_dist_sequence/B9, their second step on OCCT's 4_L1.draw: a tilted floor, two walls
+    // meeting at a convex edge, the foot of one chamfered in the first step; now the other's foot, a chamfer of 1 on the floor
+    // and 1.2 on the wall (B9) or 1.1 (equal), whose contact on the wall runs onto the walls' edge before the corner
+    [Theory]
+    [InlineData(1.0, 1.2)]
+    [InlineData(1.1, null)]
+    public void The_same_corner_on_4_L1_is_built(double distance, double? second)
+    {
+        Shape shape = Read("chamfer-4_L1-step2");
+        Edge edge = EdgeBetween(shape, new Point3D(3.33333, 5, 0.5), new Point3D(3.33333, 10, 1));
+        Face floor = shape.AllFaces().Single(f => f.AllVertices().Any(v => v.Point.DistanceTo(new Point3D(10, 0, 0)) < 1e-5));
+        ChamferSpec[] specs = [new ChamferSpec(edge, distance, second, ReferenceFace: second is null ? null : floor)];
+        MakeChamfer native = Native(shape, specs);
+        native.Build();
+        Assert.False(native.IsDone);
+
+        Result<Built<Shape>> made = shape.Chamfer(specs, NoLimit);
+        Assert.True(made.IsSuccess, made.Error?.ToString());
+        Shape result = made.Value.Shape;
+        Assert.True(result.Validate().IsValid);
+        Assert.Equal(5, result.AllFaces().Length);
+        Assert.True(ChamferMeet.Proved(shape, result, specs, [floor], native, 1e-4));
+        Assert.Null(EdgeCrossings.Problem(shape, result, "The chamfer's result", FilletOperations.SelfIntersecting));
+        AssertCarriedOn(shape, result, edge);
+    }
+
+    // The two faces at the corner that aren't the chamfered edge's are carried on past their edges: each is one face of the
+    // result, on a surface through all of the input face's vertices, and larger than in the input, as the chamfer ends against it
+    private static void AssertCarriedOn(Shape input, Shape result, Edge edge)
+    {
+        Face[] beside = [.. input.AllFaces().Where(f => !f.AllEdges().Any(e => e.IsSame(edge)))];
+        Assert.Equal(2, beside.Length);
+        foreach (Face face in beside)
+        {
+            Face[] same = [.. result.AllFaces().Where(f => face.AllVertices().All(v => OnSurface(f, v.Point)))];
+            Assert.Single(same);
+            Assert.True(same[0].IntegrateArea() > face.IntegrateArea() * (1 + 1e-4), $"{same[0].IntegrateArea()} against {face.IntegrateArea()}");
+        }
+    }
+
+    private static bool OnSurface(Face face, Point3D p)
+    {
+        var projection = new ProjectPointOnSurface(p, Tool.Surface(face)!);
+        return projection.NbPoints() > 0 && projection.LowerDistance() < 1e-6;
     }
 
     // A caller who leaves the check out asks for what ChFi3d makes, and it made nothing
