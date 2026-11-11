@@ -385,6 +385,8 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         ["blend/simple/C8"] = "the fillet on the ball (0.11 off it before, 2.1e-6 now): its area 9781.91, OCCT's script holds its off-ball 9640.68 (decisions 2157, 2160)",
         ["blend/simple/D1"] = "the fillet on the ball, as C8's: its area 10080.1, OCCT's script holds its off-ball 9940.87 (decisions 2157, 2160)",
         ["blend/complex/A7"] = "its second fillet, which OCCT fails (its TODO), now builds, valid, its walked faces on the ball; the script expects an area of 0 (decision 2164)",
+        // Unit 15W2: the evolving radius on the ball (decisions 31203 to 31205)
+        ["blend/buildevol/K2"] = "faulty natively and before (OCCT's TODO); on the ball, the ball between two edges pivots about a point of the cylinder's rim, the walk between them stops there and the evolving fillet fails (decision 31205)",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails (decision 1738)",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
         // replaced, and native OCCT fails the same way on the same Booleans; the sample then needs the viewer
