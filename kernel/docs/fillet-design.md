@@ -384,7 +384,7 @@ Draw's `blend` calls the engine alone, so the corpus's statuses don't move: the 
 
 ## 15. Stage 4b, slice 1: convex first, behind ChFi3d (unit 15T2)
 
-Decisions 30501 to 30504. Timings are from a loaded machine.
+Decisions 2193 to 2196. Timings are from a loaded machine.
 
 **ChFi3d's two-step build is on the ball since 15W.** 15T found it valid at 21 of 21 radii but off the ball by up to 1.6e-2 and not tangent to the rim's torus by up to 0.1 radians (section 12). Asked again at this head, the same probe (each cylinder rimmed alone, fused, then the concave loop): on the ball to 1.2e-5 to 2.6e-5 at radius 0.5, 1, 2, 3 and 4.9, against the cylinders' cores in closed form, and tangent across every edge to 7e-5 to 3.5e-4 radians; the tori exact. That's within ChFi3d's own approximation (1e-4), as its other walked fillets now are (decision 2156). So the corner 15T described is what ChFi3d makes in two steps, and slice 1 makes those steps behind it, where its one step fails.
 
