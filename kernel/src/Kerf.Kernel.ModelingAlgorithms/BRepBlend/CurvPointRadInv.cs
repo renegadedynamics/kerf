@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Fillets.BlendFunctions;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Geometry.Adaptors;
@@ -14,7 +15,8 @@ namespace Kerf.Engine.Fillets.Blend;
 
 /// <summary>
 /// The inverse of the restriction/restriction function at an extremity: the section plane of the first curve (the
-/// guide) through a given point and a point of the second curve. The variables are the parameters on the two curves.
+/// guide) through a given point and a point of the second curve, and for a constant radius the ball through both. The
+/// variables are the parameters on the two curves.
 /// </summary>
 internal class CurvPointRadInv : CurvPointFuncInv
 {
@@ -33,6 +35,69 @@ internal class CurvPointRadInv : CurvPointFuncInv
     {
     }
 
+    // Kerf (decision 2162): the rolling ball's equations, as RstRstConstRad's at a restriction's end, once a radius is
+    // set (the evolving radius keeps OCCT's, both points in the guide's plane): the guide's plane through the two
+    // points' midpoint, and the centre at the radius from both, its chord to the point square to that restriction's
+    // tangent there (SetTangent) and its chord to the curve's point square to the curve.
+    private bool _isBall;
+    private double _ray;
+    private int _choix;
+    private bool _pointOnFirst;
+    private Vector3D _tangent;
+
+    /// <summary>
+    /// Sets the radius and the "quadrant" <paramref name="choix"/> of a constant-radius fillet, and whether the point
+    /// is on the first restriction (the curve then the second's) or on the second, which places the ball's centre.
+    /// </summary>
+    public void Set(double radius, int choix, bool pointOnFirst)
+    {
+        _isBall = true;
+        _ray = Math.Abs(radius);
+        _choix = choix;
+        _pointOnFirst = pointOnFirst;
+    }
+
+    /// <summary>The restriction's tangent at the point <see cref="Set(in Point3D)"/> gives, which the ball is square to.</summary>
+    public void SetTangent(in Vector3D tangent)
+    {
+        _tangent = tangent.Magnitude > 0 ? tangent.Normalized() : tangent;
+    }
+
+    private void Ball(math_Vector x, math_Vector f, Matrix? d)
+    {
+        _curv1.D2(x[1], out Point3D ptcur1, out Vector3D d1cur1, out Vector3D d2cur1);
+        double unsurnormd1cur1 = 1.0 / d1cur1.Magnitude;
+        Vector3D nplan = unsurnormd1cur1 * d1cur1;
+        double theD = -(nplan.XYZ().Dot(ptcur1.XYZ()));
+        _curv2.D2(x[2], out Point3D ptcur2, out Vector3D d1cur2, out Vector3D d2cur2);
+        double inv2 = ConstRad.InverseNorm(d1cur2);
+        Vector3D t2 = inv2 * d1cur2;
+
+        // The side OCCT's CenterCircleRst1Rst2 puts the centre on, from the first restriction's point to the second's.
+        Vector3D side = (_pointOnFirst ? new Vector3D(_point, ptcur2) : new Vector3D(ptcur2, _point)).Crossed(nplan);
+        if (_choix > 2)
+        {
+            side = side.Reversed();
+        }
+        RstRstConstRad.BallCentre(_point, _tangent, ptcur2, _ray, side, out Point3D center);
+        Vector3D c2 = new(ptcur2, center);
+
+        f[1] = (nplan.XYZ().Dot(_point.XYZ()) + nplan.XYZ().Dot(ptcur2.XYZ())) / 2 + theD;
+        f[2] = c2.Dot(t2);
+        if (d is null)
+        {
+            return;
+        }
+
+        Vector3D dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur1), nplan, d2cur1).Multiplied(unsurnormd1cur1);
+        double dtheD = -nplan.XYZ().Dot(d1cur1.XYZ()) - dnplan.XYZ().Dot(ptcur1.XYZ());
+        Vector3D dc = RstRstConstRad.BallCentreD1(center, _point, _tangent, ptcur2, 0.0, 0.0, -c2.Dot(d1cur2));
+        d[1, 1] = (dnplan.XYZ().Dot(_point.XYZ()) + dnplan.XYZ().Dot(ptcur2.XYZ())) / 2 + dtheD;
+        d[1, 2] = nplan.Dot(d1cur2) / 2;
+        d[2, 1] = 0.0;
+        d[2, 2] = (dc - d1cur2).Dot(t2) + c2.Dot(ConstRad.UnitNormalD1(t2, inv2, d2cur2));
+    }
+
     public override int NbEquations()
     {
         return 2;
@@ -40,6 +105,11 @@ internal class CurvPointRadInv : CurvPointFuncInv
 
     public override bool Value(math_Vector x, math_Vector f)
     {
+        if (_isBall)
+        {
+            Ball(x, f, null);
+            return true;
+        }
         double theD;
         Point3D ptcur1, ptcur2;
         Vector3D d1cur1, d1cur2;
@@ -55,6 +125,11 @@ internal class CurvPointRadInv : CurvPointFuncInv
 
     public override bool Derivatives(math_Vector x, Matrix d)
     {
+        if (_isBall)
+        {
+            Ball(x, new math_Vector(1, 2), d);
+            return true;
+        }
         Point3D ptcur1, ptcur2;
         Vector3D d1cur1, d2cur1, d1cur2, nplan, dnplan = new();
         double dtheD, normd1cur1, unsurnormd1cur1;

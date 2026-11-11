@@ -191,10 +191,11 @@ public class BlendFuncDerivativeTests
     }
 
     [Fact]
-    public void ConstRadInv_DerivativesUsesThePlanesOffset()
+    public void ConstRadInv_DerivativesAgreesWithValues()
     {
         // OCCT: Derivatives computes the derivative of the plane's normal with the plane's offset where Values has
-        // -nplan.d2cur, so their second columns differ off the origin (decision 1038); the other columns agree.
+        // -nplan.d2cur, so their second columns differ off the origin (decision 1038). Kerf's agree since the function
+        // no longer matches native's (decision 2156).
         PairCase C = THE_PAIRS[0];
         ConstRadInv F = new(Surf(C.S1), Surf(C.S2), Guide(C.G));
         F.Set(1.0, 1);
@@ -208,12 +209,90 @@ public class BlendFuncDerivativeTests
         Matrix aD1 = new(1, 4, 1, 4), aD2 = new(1, 4, 1, 4);
         F.Derivatives(X, aD1);
         F.Values(X, aF, aD2);
-        Assert.True(aD2[2, 2] != aD1[2, 2] || aD2[3, 2] != aD1[3, 2] || aD2[4, 2] != aD1[4, 2]);
         for (int i = 1; i <= 4; i++)
         {
+            Assert.Equal(aD2[i, 2], aD1[i, 2]);
             Assert.Equal(aD2[i, 1], aD1[i, 1]);
             Assert.Equal(aD2[i, 3], aD1[i, 3]);
             Assert.Equal(aD2[i, 4], aD1[i, 4]);
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void ConstRad_SectionIsTheRollingBallsCircle(int thePair)
+    {
+        // Decision 2156: at a solution the centre is at the radius from each contact along that surface's own normal,
+        // and the section's circle lies in the plane through the centre square to both normals; OCCT projected the
+        // normals into the plane square to the guide.
+        PairCase C = THE_PAIRS[thePair];
+        SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
+        CurveAdaptorBase G = Guide(C.G);
+        foreach (int aChoix in new[] { 1, 2, 3, 4, 5, 6, 7, 8 })
+        {
+            ConstRad F = new(S1, S2, G);
+            F.Set(1.0, aChoix);
+            F.Set(G.FirstParameter(), G.LastParameter());
+            F.Set(C.W);
+            math_Vector X0 = new(1, 4), Tol = new(1, 4), Inf = new(1, 4), Sup = new(1, 4);
+            for (int i = 1; i <= 4; i++)
+            {
+                X0[i] = C.X0[i - 1];
+            }
+
+            F.GetTolerance(Tol, 1.0e-12);
+            F.GetBounds(Inf, Sup);
+            FunctionSetRoot aRoot = new(F, Tol, 30);
+            aRoot.Perform(F, X0, Inf, Sup);
+            if (!aRoot.IsDone || !F.IsSolution(aRoot.Root(), 1.0e-9))
+            {
+                continue; // not every quadrant has a ball from this start
+            }
+
+            math_Vector X = aRoot.Root();
+            S1.D1(X[1], X[2], out Point3D aP1, out Vector3D aU1, out Vector3D aV1);
+            S2.D1(X[3], X[4], out Point3D aP2, out Vector3D aU2, out Vector3D aV2);
+            Vector3D aN1 = aU1.Crossed(aV1).Normalized(), aN2 = aU2.Crossed(aV2).Normalized();
+            // The centre on both normals at the radius.
+            Vector3D aC1 = new Vector3D(aP1.XYZ()), aC2 = new Vector3D(aP2.XYZ());
+            Point3D aCentre = default;
+            bool aFound = false;
+            foreach (double s1 in new[] { 1.0, -1.0 })
+            {
+                foreach (double s2 in new[] { 1.0, -1.0 })
+                {
+                    Vector3D aD = (aC1 + s1 * aN1) - (aC2 + s2 * aN2);
+                    if (aD.Magnitude < 1.0e-9)
+                    {
+                        aCentre = new Point3D((aC1 + s1 * aN1).XYZ());
+                        aFound = true;
+                    }
+                }
+            }
+
+            Assert.True(aFound, $"pair {thePair} choix {aChoix}: no centre on both normals at the radius");
+            F.GetShape(out int aNbPoles, out _, out _, out _);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
+            var aPoles2d = new NCollection_Array1<Point2D>(1, 2);
+            var aWeights = new NCollection_Array1<double>(1, aNbPoles);
+            BlendPoint aPoint = new(aP1, aP2, C.W, X[1], X[2], X[3], X[4]);
+            F.Section(aPoint, aPoles, aPoles2d, aWeights);
+            Vector3D aAxis = aN1.Crossed(aN2);
+            if (aAxis.Magnitude < 1.0e-6)
+            {
+                continue;
+            }
+
+            aAxis = aAxis.Normalized();
+            for (int i = 1; i <= aNbPoles; i++)
+            {
+                Assert.True(Math.Abs(new Vector3D(aCentre, aPoles[i]).Dot(aAxis)) < 1.0e-9,
+                            $"pair {thePair} choix {aChoix}: pole {i} off the ball's plane");
+            }
         }
     }
 
@@ -242,12 +321,16 @@ public class BlendFuncDerivativeTests
         CheckValues(aCirc, X2, "cscircular");
     }
 
-    [Fact]
-    public void ConstRad_SecondOrderSectionMatchesFiniteDifferencesOfTheFirst()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void ConstRad_SecondOrderSectionMatchesFiniteDifferencesOfTheFirst(int thePair)
     {
         // The derivative of the poles (Section with D2Poles) against finite differences of the first-order section
-        // along the guide, on the plane/cylinder pair.
-        PairCase C = THE_PAIRS[1];
+        // along the guide, on the plane/cylinder, cylinder/cylinder, cone/plane and B-spline pairs.
+        PairCase C = THE_PAIRS[thePair];
         SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
         CurveAdaptorBase G = Guide(C.G);
         ConstRad F = new(S1, S2, G);

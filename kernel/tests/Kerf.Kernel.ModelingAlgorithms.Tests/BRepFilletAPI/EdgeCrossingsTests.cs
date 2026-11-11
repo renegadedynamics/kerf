@@ -38,7 +38,8 @@ public class EdgeCrossingsTests
         ImmutableArray<Edge> edges = solid.AllEdges();
         Shape result = solid.Fillet([edges[0], edges[7]], 5.5, new FilletOptions { CheckResult = false }).Value.Shape;
         IReadOnlyList<EdgeCrossings.Crossing> crossings = EdgeCrossings.All(solid, result);
-        Assert.Equal(2, crossings.Count);
+        // one pair on the ball (decision 2160), where the off-ball fillet had two
+        Assert.Single(crossings);
         Assert.All(crossings, c => Assert.True(c.Along));
         Assert.All(crossings, c => Assert.False(c.Edge1.IsSame(c.Edge2)));
         // bopcheck's E/E x33 x34 and x37 x38: each pair is the two sides of a sliver where the fillets' ends meet, 4.26 long

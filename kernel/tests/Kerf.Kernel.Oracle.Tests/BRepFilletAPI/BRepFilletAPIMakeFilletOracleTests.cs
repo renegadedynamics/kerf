@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Classification;
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
@@ -10,6 +11,7 @@ using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Measurement;
+using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -237,23 +239,33 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             new ApiMakeCylinder(new Frame3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 3, 20).Shape(),
             new ApiMakeCylinder(new Frame3D(new Point3D(0, -10, 0), new Direction3D(0, 1, 0)), 3, 20).Shape(),
         ];
+        // Native was recorded on the port's fillet of the first cut as it was before unit 15W put it on the rolling ball
+        // (decision 2156): the next cuts' inputs, the port's own, are no longer those, and native can't be asked again.
+        // Its recorded steps for them (calls 510 to 1557, the arguments' running check as recorded after them) are passed
+        // over, and the port's fillets of the next cuts are checked by the ball instead: valid, and on it.
+        Tape.SkipRecorded(1557, 2301023607, "the port's fillets that were the next cuts' inputs are on the ball since decision 2156");
         for (int c = 0; c < aCyls.Length; c++)
         {
             Cut aCutC = new(aStage, aCyls[c]);
             Shape aCutCShape = aCutC.Shape();
             IndexedSet<Shape> anEdgesC = Map(aCutCShape, ShapeType.Edge);
-            CaseEdge[] aSectionC = [.. aCutC.SectionEdges().Select(e => new CaseEdge(anEdgesC.IndexOf(e) + 1, 0.7))];
-            Compare(aRun, aTally, new Case($"OCC1077 cut {c + 2}, section edges r0.7", false, aSectionC), aCutCShape, theAsRecorded: true);
             MakeFillet aF = new(aCutCShape);
-            foreach (CaseEdge e in aSectionC)
+            foreach (Shape e in aCutC.SectionEdges())
             {
-                aF.Add(0.7, ShapeCasts.Edge(anEdgesC[e.K - 1]));
+                aF.Add(0.7, ShapeCasts.Edge(anEdgesC[anEdgesC.IndexOf(e)]));
             }
             aF.Build();
-            if (!aF.IsDone)
-            {
-                break;
-            }
+            Assert.True(aF.IsDone, $"OCC1077 cut {c + 2}");
+            Assert.True(new Analyzer(aF.Shape()).IsValid(), $"OCC1077 cut {c + 2}");
+            double[] aMisses = BallMisses(aF, aCutCShape, 0.7);
+            output.WriteLine($"OCC1077 cut {c + 2}, section edges r0.7, the walked surfaces against the ball: "
+                             + string.Join(" ", aMisses.Select(m => m.ToString("G2", CultureInfo.InvariantCulture))));
+            // All on the ball to the approximation's tolerance (1e-4), the second cut's to 1.7e-6, but four of the third's:
+            // its surfaces 10 to 13, the first four of its second contour, where it runs between the two earlier fillets at
+            // the three cylinders' corner, miss by 7.1e-3 and 1.2e-3 (1% and 0.2% of the radius); left open (decision 2164)
+            int[] anOff = [.. Enumerable.Range(1, aMisses.Length).Where(i => aMisses[i - 1] >= 1.0e-4)];
+            Assert.Equal(c == 1 ? [10, 11, 12, 13] : [], anOff);
+            Assert.All(anOff, i => Assert.True(aMisses[i - 1] < 1.0e-2, $"OCC1077 cut {c + 2}, surface {i}: the ball misses by {aMisses[i - 1]}"));
             ShapeFixer aFix = new(aF.Shape());
             aFix.Perform();
             aStage = aFix.Shape();
@@ -261,6 +273,21 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         // OCC426: three revolved rings fused and unified, every edge r1
         Compare(aRun, aTally, new Case("OCC426 all edges r1", false, [.. SharpEdges(OCC426Input()).Select(k => new CaseEdge(k, 1.0))]),
                 OCC426Input());
+        {
+            // its difference from native, attributed below, is the ball's: the port's walked faces are on it
+            Shape anInput = OCC426Input();
+            IndexedSet<Shape> anEdges426 = Map(anInput, ShapeType.Edge);
+            MakeFillet aF = new(anInput);
+            foreach (int k in SharpEdges(anInput))
+            {
+                aF.Add(1.0, ShapeCasts.Edge(anEdges426[k - 1]));
+            }
+            aF.Build();
+            double[] aMisses = BallMisses(aF, anInput, 1.0);
+            output.WriteLine("OCC426 all edges r1, the walked surfaces against the ball: "
+                             + string.Join(" ", aMisses.Select(m => m.ToString("G2", CultureInfo.InvariantCulture))));
+            Assert.All(aMisses, m => Assert.True(m < 1.0e-4, $"OCC426: the ball misses by {m}"));
+        }
         // OCC570: a box's first wire, variable and constant radii
         Shape aBox = new MakeBox(100, 100, 100).Shape();
         IndexedSet<Shape> aBoxEdges = Map(aBox, ShapeType.Edge);
@@ -273,6 +300,48 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Compare(aRun, aTally, new Case("OCC570", false, [new CaseEdge(aWire[0], 0, Mode: 1, Pairs: aVar), new CaseEdge(aWire[1], 5.0),
                                                            new CaseEdge(aWire[2], 0, Mode: 1, Pairs: aVar), new CaseEdge(aWire[3], 5.0)]), aBox);
         Report(aTally, "OCCT's GTests' inputs", KnownGTestDifferences);
+    }
+
+    // The most a ball of the radius, centred along the normal of a walked fillet face at 9 by 5 points of each, misses
+    // touching the filleted shape by: its centre is at the radius from it (decision 2156's ball test, as unit 15W measured
+    // the corpus). The walked faces are the stripes' surfaces, the data structure's first; the corners' after them are
+    // filled, not walked, so not the ball's (decision 2164)
+    private static double[] BallMisses(MakeFillet theFillet, in Shape theInput, double theRadius)
+    {
+        int aWalked = Enumerable.Range(1, theFillet.ContourCount).Sum(theFillet.NbSurf);
+        double[] aMisses = new double[aWalked];
+        for (int i = 1; i <= aWalked; i++)
+        {
+            double aWorst = 0;
+            foreach (Shape aFace in theFillet.NewFaces(i))
+            {
+                var aSurface = new FaceSurfaceAdaptor(ShapeCasts.Face(aFace));
+                for (int a = 1; a < 10; a++)
+                {
+                    for (int b = 1; b < 6; b++)
+                    {
+                        double u = aSurface.FirstUParameter() + (aSurface.LastUParameter() - aSurface.FirstUParameter()) * a / 10;
+                        double v = aSurface.FirstVParameter() + (aSurface.LastVParameter() - aSurface.FirstVParameter()) * b / 6;
+                        if (new FaceClassifier(ShapeCasts.Face(aFace), new Point2D(u, v), 1.0e-7).State() != Containment.In)
+                        {
+                            continue;
+                        }
+                        aSurface.D1(u, v, out Point3D p, out Vector3D du, out Vector3D dv);
+                        Vector3D n = du.Crossed(dv);
+                        n = n.Divided(n.Magnitude).Multiplied(theRadius);
+                        double aMiss = double.MaxValue;
+                        foreach (double s in new[] { 1.0, -1.0 })
+                        {
+                            var aDist = new DistanceShapeShape(theInput, new MakeVertex(new Point3D(p.X + s * n.X, p.Y + s * n.Y, p.Z + s * n.Z)).Vertex());
+                            aMiss = Math.Min(aMiss, Math.Abs(aDist.Value() - theRadius));
+                        }
+                        aWorst = Math.Max(aWorst, aMiss);
+                    }
+                }
+            }
+            aMisses[i - 1] = aWorst;
+        }
+        return aMisses;
     }
 
     private static Shape OCC426Input()
@@ -896,6 +965,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     internal static readonly Dictionary<string, string> KnownGTestDifferences = new(StringComparer.Ordinal)
     {
         // OCC1077's third cut and OCC426: the seam band, fixed by unit 7R3 (decision 1155)
+        ["OCC426 all edges r1"] = "the walked fillets on the rolling ball (decisions 2156, 2158, 2162), native's off it: the faces the edges "
+                                  + "between the rings generate end elsewhere, as their areas show (12.58 for native's 12.5847); the test checks the ball",
     };
 
     internal static readonly string[] KnownMaxFilletDifferences = [];
