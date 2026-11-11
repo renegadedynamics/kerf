@@ -2313,6 +2313,40 @@ context), and synthetic loops as fast or faster than `Parallel.For` (200,000 loo
 
 **Not looked into:** the 122 MB the case allocates for a ten-face result, 77% of it in the fuse's intersections.
 
+## A wire offset that allocated 22 GB (unit 15AI)
+
+*November 2026, decisions 2220 to 2222. A loaded machine: the verdicts rest on bytes, counts and processor time.
+Wall-clock figures are for a quiet window: `quiet-15ai.ps1` in the scratchpad's `15ai` folder.*
+
+OCCT's `offset/wire_closed_inside_0_025/G4` offsets a closed wire of 36 B-splines inwards by 0.025 of its length, past
+their bends. One `mkoffset` took 10 to 29 s and allocated 22.4 GB, and 95 s in a gate.
+
+| | Before | After | Native OCCT 8.0.1 (OCP) |
+|---|---|---|---|
+| The case (restore, `mkoffset`, checks), warm | 7.36 s, 7.38 s processor, 22,433 MB | 0.05 s, 0.05 s processor, 46 MB | the offset alone 26 ms, working set 3 MB larger |
+| Result | 291.991, 20 vertices, 20 edges, 1 wire | the same, its log to the byte | the same |
+| Every `offset/wire_*` case (621) | 31,309 MB, 26.4 s processor | 8,942 MB, 18.0 s processor | |
+| The same without G4 | 8,876 MB, 19.0 s | 8,896 MB, 18.0 s | |
+
+**Where it went:** an offset past a curve's bends stands a polyline in for the curve, and Kerf tries one ten times
+finer than OCCT's first (decision 1980): 216 edges here for OCCT's 72. The medial axis of the finer one took 22,412 MB
+and all but 50 ms of the time, and failed; OCCT's then gave the result. From about its 20th pass that map removed the
+same six pieces of its contour and put them back, bit for bit the same each pass, and OCCT stops such a loop only after
+the square of the number of elements in passes: 47,524 of them at 470 kB each, 97.5% of it intersecting the same
+bisectors again (`MAT2d_Tool2d::IntersectBisector`: the intersection itself 36% of the bytes and 58% of the samples,
+the check that the point is equally far from each element 57% and 27%). Native OCCT never tries the finer polyline, so
+the cost was Kerf's; the guard is OCCT's, and would cost native the same on a contour that looped.
+
+**The change:** `MatCycle` writes down the loop's state after each pass, once a pass has ended without the contour being
+shorter than ever, and when a state comes back the count of passes moves on to the pass that leaves the map as OCCT's
+last would. The map fails as before and OCCT's polyline is used, so the result is the same. In a build where the finder
+only watched, it fired on this map alone of 4,150 (the wire offsets and evolved shapes of the corpus, and three
+suites), and that map then ran its 47,487 further passes in the same state.
+
+**Not looked into:** `D1` of each closed wire group, the largest left (260 to 390 MB, 0.5 to 0.7 s for a wire of long
+B-splines), whose bytes are spread over the trimming of the parallel edges, the medial axes and copies of the curves;
+why the finer polyline's medial axis loops where the coarser one's doesn't; and a loop whose state drifts, which still
+runs to OCCT's count.
 ## The point check for commons and cuts (unit 15AH)
 
 *11 November 2026, on a machine shared with the owner and other helpers: bytes are exact, times from a loaded machine. Decisions 31401 to 31405.*
