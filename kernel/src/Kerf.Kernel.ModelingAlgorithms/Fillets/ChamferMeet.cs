@@ -49,9 +49,9 @@ namespace Kerf.Fillets;
 /// the chamfers there all convex or all concave, a corner with one chamfer only where it and the corner are convex, and a
 /// corner whose edges are all chamfered where its chamfers are all convex; every chamfer face one of ChFi3d's B-spline
 /// stripes, its contacts its u-isos, or one of Kerf's own (unit 15V: <c>ChamferMeet.Chains.cs</c>) where stripes run on
-/// through a vertex or ChFi3d's stripe is off the chamfer's length. A solid is built only when asked, for measuring: its
-/// proof needs its volume against an independent integral, which isn't built yet, so the operation doesn't ask. What doesn't
-/// fit gives null, and ChFi3d's failure stands.
+/// through a vertex or ChFi3d's stripe is off the chamfer's length. A solid is built only when asked, proved by its volume
+/// against an integral apart from the fuse (<c>ChamferMeet.Volume.cs</c>), which costs too much for the operation to ask yet.
+/// What doesn't fit gives null, and ChFi3d's failure stands.
 /// </para>
 /// <para>
 /// <b>The proof</b> (<see cref="Proved"/>), of the result alone and the chamfer's specs, not of how it was made: every free
@@ -168,8 +168,8 @@ internal static partial class ChamferMeet
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply or what it builds isn't proved. A solid is built
-    /// only where <paramref name="solid"/> is asked, which the operation doesn't ask yet: its volume isn't proved (unit 15V), so
-    /// it's for measuring the construction, not a result.
+    /// only where <paramref name="solid"/> is asked, and proved by its volume too (unit 15V); the operation doesn't ask yet, as
+    /// that takes minutes on the loft where ChFi3d's failure takes a fraction of a second (decision 30103, for the owner).
     /// </summary>
     public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
                                        bool solid = false)
@@ -486,6 +486,17 @@ internal static partial class ChamferMeet
         if (built.Type != (shape.AllSolids().Length == 1 ? ShapeType.Solid : ShapeType.Shell) || Proved(shape, built, specs, referenceFaces, chamfer, builder._tolapp3d) is not true)
         {
             return null;
+        }
+        // A solid's volume against the integral apart from the fuse's faces (unit 15V)
+        if (shape.AllSolids().Length == 1)
+        {
+            double measured = MeasuredVolume(built);
+            (double Expected, double Allowed)? volume = ExpectedVolume(shape, faces, bands, cornerRules, [.. chamfered], specs, Material,
+                                                                        (b, x, n) => SideOf(b, x, n), builder._tolapp3d);
+            if (volume is not { } v || Math.Abs(measured - v.Expected) > v.Allowed)
+            {
+                return null;
+            }
         }
         History unified = unifier.InternalHistory()!;
 

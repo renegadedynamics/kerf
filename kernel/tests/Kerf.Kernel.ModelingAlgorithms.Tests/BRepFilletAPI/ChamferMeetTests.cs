@@ -131,13 +131,14 @@ public class ChamferMeetTests
     // A loft from a 10 by 10 square to a circle of radius 4, 10 above (reliability.md's island 3), every edge chamfered. At
     // each top vertex the rim's two arcs are tangent and so are the side faces: ChFi3d's corner of three chamfers fails, and
     // its side stripes are off the length where they meet their faces at a narrow angle. Unit 15V's bands of Kerf's own (the
-    // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths and without
-    // crossings; it isn't returned yet, as its volume isn't proved, so the public chamfer still fails
-    [Theory]
-    [InlineData(0.05, 18)]
-    [InlineData(0.2, 18)]
-    public void A_loft_whose_side_faces_turn_tangent_at_its_top_corners_is_built_with_kerfs_own_bands(double length, int faces)
+    // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths, without crossings
+    // and of the volume the sections give; the operation doesn't ask for solids yet (it takes minutes), so the public
+    // chamfer still fails. One length, as it takes a few minutes
+    [Fact]
+    public void A_loft_whose_side_faces_turn_tangent_at_its_top_corners_is_built_with_kerfs_own_bands()
     {
+        const double length = 0.05;
+        const int faces = 18;
         Shape loft = Loft();
         Edge[] edges = [.. loft.AllEdges()];
         ChamferSpec[] specs = [.. edges.Select(e => new ChamferSpec(e, length))];
