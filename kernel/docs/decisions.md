@@ -17368,4 +17368,5 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        decision 2088's per-call option for parallel volumes, named for 0.5.1 there, isn't in it (it is in `main`'s Unreleased).
        The fix came to `main` afterwards, on `fix/3mf-shared-vertices-main`: the code and tests as on the release branch (the
        exchange writers hadn't changed since 0.5.0), and both CHANGELOGs' `## 0.5.1` between `## Unreleased` and `## 0.5.0`, so
-       `main`'s history has the release; `main` keeps its own version.
+       `main`'s history has the release; `main` keeps its own version. On `main`, with phase 15's mesher changes, the
+       reproduction's six plates give decision 2191's figures exactly: 0 open edges each way, the same triangles and vertices.
