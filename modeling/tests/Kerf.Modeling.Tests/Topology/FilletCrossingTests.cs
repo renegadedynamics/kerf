@@ -8,7 +8,7 @@ namespace Kerf.Modeling.Tests.Topology;
 /// <summary>
 /// A fillet whose edges cross fails, carrying the result (kernel decision 2123; OCCT #1570): the kernel's error passes
 /// through, with its code <c>fillet.self-intersecting</c> and the edges, as a chamfer's does; OCCT #1570's fillet, on the
-/// ball since kernel decision 30013, fails for an edge's tolerance instead.
+/// ball since kernel decision 2160, fails for an edge's tolerance instead.
 /// </summary>
 public class FilletCrossingTests
 {
@@ -26,7 +26,7 @@ public class FilletCrossingTests
         var edges = part.Edges();
         Result<Part> crossed = Fillet(part, [edges[0], edges[7]], 5.5);
         Assert.True(crossed.IsFailure);
-        // On the ball (kernel decision 30013) one of the two slivers where the fillets' ends meet is gone and the other's
+        // On the ball (kernel decision 2160) one of the two slivers where the fillets' ends meet is gone and the other's
         // edge is made with a tolerance of 2.4e10: the kernel's FilletIssueTests hold the same
         Assert.Equal(DiagnosticCode.InvalidResult, crossed.Error!.Code);
         Assert.True(crossed.TryGetInvalid(out Part? invalid));

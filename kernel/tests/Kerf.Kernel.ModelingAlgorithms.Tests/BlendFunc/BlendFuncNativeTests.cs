@@ -76,7 +76,7 @@ public class BlendFuncNativeTests
 
     private static bool IsSpine(string theKey) => theKey.Contains("spine", StringComparison.Ordinal);
 
-    // BlendFunc_ConstRad and its inverse, which Kerf changed (decision 30001).
+    // BlendFunc_ConstRad and its inverse, which Kerf changed (decision 2156).
     private static bool IsConstRad(string theKey) => theKey.StartsWith("case constrad ", StringComparison.Ordinal)
                                                      || theKey.StartsWith("case constradinv ", StringComparison.Ordinal);
 
@@ -121,7 +121,7 @@ public class BlendFuncNativeTests
         aRec.RecordFunctions();
         // 5 pairs x (16 ConstRad and EvolRad + 10 chamfers and ruled), 4 restrictions x 3 x 7 inverses, 16 CS; less
         // ConstRad's 5 x 8 and ConstRadInv's 4 x 3, which take the surfaces' own normals where OCCT projects them into
-        // the plane square to the guide (decision 30001; BlendFuncDerivativeTests checks them)
+        // the plane square to the guide (decision 2156; BlendFuncDerivativeTests checks them)
         Dictionary<string, List<string>> aPort = Split(aRec.Text);
         foreach (string aKey in aPort.Keys.Where(IsConstRad).ToList())
         {

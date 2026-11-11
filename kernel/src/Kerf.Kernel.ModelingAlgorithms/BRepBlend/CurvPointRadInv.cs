@@ -35,7 +35,7 @@ internal class CurvPointRadInv : CurvPointFuncInv
     {
     }
 
-    // Kerf (decision 30021): the rolling ball's equations, as RstRstConstRad's at a restriction's end, once a radius is
+    // Kerf (decision 2162): the rolling ball's equations, as RstRstConstRad's at a restriction's end, once a radius is
     // set (the evolving radius keeps OCCT's, both points in the guide's plane): the guide's plane through the two
     // points' midpoint, and the centre at the radius from both, its chord to the point square to that restriction's
     // tangent there (SetTangent) and its chord to the curve's point square to the curve.

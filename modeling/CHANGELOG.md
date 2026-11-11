@@ -5,7 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
-- **`Fillet` of constant radius now lies on the true rolling-ball surface** (kernel decisions 30001, 30011, 30021):
+- **`Fillet` of constant radius now lies on the true rolling-ball surface** (kernel decisions 2156, 2158, 2162):
   OCCT's sections put it off by up to 2.4% of the radius, so volumes and areas move slightly (most by under 1e-4,
   fillets on a cone's sector by about 1.4%). A fillet along a cylinder of exactly its own radius, or one no ball of its
   radius fits, now fails rather than returning a surface off the ball.

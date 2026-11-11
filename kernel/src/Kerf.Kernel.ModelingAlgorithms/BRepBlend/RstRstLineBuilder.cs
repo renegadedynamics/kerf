@@ -1109,7 +1109,7 @@ internal class RstRstLineBuilder
         finvP.Set(thepoint);
         if (finvP is CurvPointRadInv ballP)
         {
-            // Kerf (decision 30021): the ball at the restriction's end is square to its tangent there.
+            // Kerf (decision 2162): the ball at the restriction's end is square to its tangent there.
             ballP.SetTangent(Vector3D.LinearForm(d2drst1.X, d1urst, d2drst1.Y, d1vrst));
         }
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);
@@ -1178,7 +1178,7 @@ internal class RstRstLineBuilder
         finvP.Set(thepoint);
         if (finvP is CurvPointRadInv ballP)
         {
-            // Kerf (decision 30021): the ball at the restriction's end is square to its tangent there.
+            // Kerf (decision 2162): the ball at the restriction's end is square to its tangent there.
             ballP.SetTangent(Vector3D.LinearForm(d2drst2.X, d1urst, d2drst2.Y, d1vrst));
         }
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);

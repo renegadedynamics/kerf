@@ -98,7 +98,7 @@ internal class SurfRstConstRad : SurfRstFunction
         return 3;
     }
 
-    // Kerf (decision 30011): the rolling ball's equations, as BlendFunc_ConstRad's (decision 30001). The centre is at
+    // Kerf (decision 2158): the rolling ball's equations, as BlendFunc_ConstRad's (decision 2156). The centre is at
     // the radius from the surface's contact along its own unit normal (OCCT projects the normal into the plane square
     // to the guide); the ball touches the restriction where the centre's foot on it is, so the centre minus that point
     // is square to the restriction's tangent and as long as the radius; the guide's plane only places the section,
@@ -270,7 +270,7 @@ internal class SurfRstConstRad : SurfRstFunction
             dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
             GuideSecondMember(secmember, dnplan);
 
-            // The ball's (decision 30011): the reversed unit normal, and the centre's chord to the restriction.
+            // The ball's (decision 2158): the reversed unit normal, and the centre's chord to the restriction.
             ns = -_nn;
             resul = new Vector3D(_ptrst, _center);
 
@@ -407,7 +407,7 @@ internal class SurfRstConstRad : SurfRstFunction
         _surf.D1(sol[1], sol[2], out bid, out d1u, out d1v);
         ns = d1u.Crossed(d1v);
 
-        // The ball's (decision 30011): the centre along the surface's own normal, the section in the plane square to
+        // The ball's (decision 2158): the centre along the surface's own normal, the section in the plane square to
         // that normal and to the centre's chord to the restriction, the reference surface's normal projected into it.
         nsInPlane = -ConstRad.InverseNorm(ns) * ns;
         center = center.WithXYZ(bid.XYZ() + _ray * nsInPlane.XYZ());
@@ -494,7 +494,7 @@ internal class SurfRstConstRad : SurfRstFunction
         _surf.D1(u, v, out _pts, out d1u1, out d1v1);
         _ptrst = _cons.Value(w);
 
-        // The ball's circle (decision 30011): the surface's own normal, the plane square to it and to the chord.
+        // The ball's circle (decision 2158): the surface's own normal, the plane square to it and to the chord.
         ns = d1u1.Crossed(d1v1);
         ns = -ConstRad.InverseNorm(ns) * ns;
         center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
@@ -623,7 +623,7 @@ internal class SurfRstConstRad : SurfRstFunction
             return;
         }
 
-        // The ball's circle (decision 30011): the surface's own normal, the plane square to it and to the chord.
+        // The ball's circle (decision 2158): the surface's own normal, the plane square to it and to the chord.
         ns = d1u1.Crossed(d1v1);
         ns = -ConstRad.InverseNorm(ns) * ns;
 
@@ -672,7 +672,7 @@ internal class SurfRstConstRad : SurfRstFunction
         sol[3] = _prmrst = p.ParameterOnC();
         _pt2drst = _rst.Value(_prmrst);
 
-        // The ball's (decision 30011): the centre along the surface's own normal, which doesn't move with the guide.
+        // The ball's (decision 2158): the centre along the surface's own normal, which doesn't move with the guide.
         Ball(sol, out d1u1, out d1v1);
         BallDerivatives(gradsol, d1u1, d1v1);
         d1 = _drst;

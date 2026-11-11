@@ -130,7 +130,7 @@ public class FilletBlendTests
         Assert.Null(FilletLimits.AfterAlgorithm(tee, [.. edges.Select((e, i) => new FilletSpec(e, i == 0 ? 0.03 : 0.02))], FilletOptions.Default));
     }
 
-    // ChFi3d's own fillets on the tee are on the ball (decision 30001). 15R found them off it, as OCCT's are (decision 2141;
+    // ChFi3d's own fillets on the tee are on the ball (decision 2156). 15R found them off it, as OCCT's are (decision 2141;
     // occt-issues.md): BlendFunc_ConstRad put each section's circle in the plane square to the edge, tangent there to that plane's
     // sections of the two cylinders, where the rolling ball's circle lies in the plane square to the path of its centre. Kerf's
     // ConstRad takes the surfaces' own normals, so the walk's sections are the ball's, and what's left is the approximation's own
@@ -220,7 +220,7 @@ public class FilletBlendTests
     }
 
     // Each pair at two radii, and the branch at 60 degrees at 1, whose fillet runs onto the branch's end, where ChFi3d blends a
-    // surface and that end's edge with BlendFunc_SurfRstConstRad, on the ball since decision 30011. Left out: the branch at 45
+    // surface and that end's edge with BlendFunc_SurfRstConstRad, on the ball since decision 2158. Left out: the branch at 45
     // degrees at 0.3, where ChFi3d's approximation fails as it does at 0.05 to 0.2 without the change.
     public static TheoryData<string, double> Pairs() => new()
     {
@@ -235,7 +235,7 @@ public class FilletBlendTests
         { "cone on a cylinder's axis", 0.3 }, { "cone on a cylinder's axis", 1 },
     };
 
-    // 15N's ball on ChFi3d's walked fillets between 15R's pairs (decision 30001): within the approximation's tolerance everywhere.
+    // 15N's ball on ChFi3d's walked fillets between 15R's pairs (decision 2156): within the approximation's tolerance everywhere.
     // They were off by up to 2.4e-2 at 1 (decision 2141), growing as the radius cubed.
     [Theory]
     [MemberData(nameof(Pairs))]
@@ -259,7 +259,7 @@ public class FilletBlendTests
         Assert.True(chfi3d.IsDone);
         Assert.True(chfi3d.Shape().Validate().IsValid);
         // Where the branch at 60 degrees ends, the ball rolls on the end's edge, a circle of radius 3 at 9 along its axis
-        // (BlendFunc_SurfRstConstRad, decision 30011): there it's at the radius from that circle
+        // (BlendFunc_SurfRstConstRad, decision 2158): there it's at the radius from that circle
         Distance side = name == "branch 3 at 60" ? p => Nearer(second(p), EndCircle(p, 60), radius) : second;
         double miss = BallMiss(chfi3d, radius, p => first(p), p => side(p));
         Assert.True(miss < Approximation, $"{name} at {radius}: the ball misses by {miss}");

@@ -38,7 +38,7 @@ public class EdgeCrossingsTests
         ImmutableArray<Edge> edges = solid.AllEdges();
         Shape result = solid.Fillet([edges[0], edges[7]], 5.5, new FilletOptions { CheckResult = false }).Value.Shape;
         IReadOnlyList<EdgeCrossings.Crossing> crossings = EdgeCrossings.All(solid, result);
-        // one pair on the ball (decision 30013), where the off-ball fillet had two
+        // one pair on the ball (decision 2160), where the off-ball fillet had two
         Assert.Single(crossings);
         Assert.All(crossings, c => Assert.True(c.Along));
         Assert.All(crossings, c => Assert.False(c.Edge1.IsSame(c.Edge2)));

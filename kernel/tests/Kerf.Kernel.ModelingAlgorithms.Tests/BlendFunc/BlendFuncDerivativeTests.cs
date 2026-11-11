@@ -195,7 +195,7 @@ public class BlendFuncDerivativeTests
     {
         // OCCT: Derivatives computes the derivative of the plane's normal with the plane's offset where Values has
         // -nplan.d2cur, so their second columns differ off the origin (decision 1038). Kerf's agree since the function
-        // no longer matches native's (decision 30001).
+        // no longer matches native's (decision 2156).
         PairCase C = THE_PAIRS[0];
         ConstRadInv F = new(Surf(C.S1), Surf(C.S2), Guide(C.G));
         F.Set(1.0, 1);
@@ -226,7 +226,7 @@ public class BlendFuncDerivativeTests
     [InlineData(4)]
     public void ConstRad_SectionIsTheRollingBallsCircle(int thePair)
     {
-        // Decision 30001: at a solution the centre is at the radius from each contact along that surface's own normal,
+        // Decision 2156: at a solution the centre is at the radius from each contact along that surface's own normal,
         // and the section's circle lies in the plane through the centre square to both normals; OCCT projected the
         // normals into the plane square to the guide.
         PairCase C = THE_PAIRS[thePair];

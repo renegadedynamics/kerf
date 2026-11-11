@@ -63,7 +63,7 @@ internal class SurfPointConstRadInv : SurfPointFuncInv
         return 3;
     }
 
-    // Kerf (decision 30011): the rolling ball's equations, as SurfRstConstRad's at the restriction's end: the centre at
+    // Kerf (decision 2158): the rolling ball's equations, as SurfRstConstRad's at the restriction's end: the centre at
     // the radius from the surface's point along its own unit normal, as far from the point as the radius and square there
     // to the restriction's tangent (SetTangent; OCCT has the point in the guide's plane instead); the guide's plane through
     // the two points' midpoint.

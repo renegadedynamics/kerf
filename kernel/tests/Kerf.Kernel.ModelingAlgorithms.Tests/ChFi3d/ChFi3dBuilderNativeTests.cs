@@ -217,7 +217,7 @@ public class ChFi3dBuilderNativeTests
         Assert.NotNull(aRec.Text);
         if (BallSections.TryGetValue(theName, out double aTol))
         {
-            // Decisions 30001 and 30011: the walked sections are the rolling ball's, native's the 2D fillet in the guide's
+            // Decisions 2156 and 2158: the walked sections are the rolling ball's, native's the 2D fillet in the guide's
             // plane; the same data structure, line for line and number for number, its numbers within aTol of native's
             // (relative), or where the surfaces moved (aTol < 0) only its shape
             string[] e = aCase.DsText.Split('\n'), a = aRec.Text!.Split('\n');
@@ -243,7 +243,7 @@ public class ChFi3dBuilderNativeTests
     }
 
     /// <summary>
-    /// The walked cases whose sections are the rolling ball's since decisions 30001 and 30011, with how close their numbers
+    /// The walked cases whose sections are the rolling ball's since decisions 2156 and 2158, with how close their numbers
     /// stay to native's, where the corners' tolerances and the walks' points
     /// moved onto the ball: the pyramid and the torus in shape only, the cone, whose walk takes fewer points, not at all
     /// (its volume in <see cref="BallVolumes"/>).
@@ -256,7 +256,7 @@ public class ChFi3dBuilderNativeTests
     };
 
     /// <summary>
-    /// The pipeline's volumes where the fillet moved onto the ball (decision 30012): native's is the off-ball 2D fillet's.
+    /// The pipeline's volumes where the fillet moved onto the ball (decision 2159): native's is the off-ball 2D fillet's.
     /// </summary>
     private static readonly Dictionary<string, double> BallVolumes = new()
     {

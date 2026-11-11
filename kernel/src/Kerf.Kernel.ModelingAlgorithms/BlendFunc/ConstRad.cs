@@ -345,7 +345,7 @@ internal class ConstRad : BlendFunction
         }
 
         // -------------------- Positioning of order 0 ---------------------
-        // Kerf (decision 30001): the centre is at the radius from each contact along that surface's own normal, so each
+        // Kerf (decision 2156): the centre is at the radius from each contact along that surface's own normal, so each
         // section is the rolling ball's. OCCT projects the normals into the plane square to the guide, which is the
         // ball's only where they are square to the guide (occt-issues.md, unit 15R). The guide's plane now only places
         // the section along the guide, through the contacts' midpoint; the normals don't depend on the guide.
@@ -536,7 +536,7 @@ internal class ConstRad : BlendFunction
     private const double SectionPlaneSine = 1.0e-6;
 
     /// <summary>
-    /// The normal to the plane of the ball's circle through the contacts (decision 30001): square to both contacts'
+    /// The normal to the plane of the ball's circle through the contacts (decision 2156): square to both contacts'
     /// normals <paramref name="ns1"/> and <paramref name="ns2"/>, which is square to the path of the ball's centre, on
     /// the side of <paramref name="reference"/> (the guide's plane normal as the section orients it). Where the normals
     /// are parallel, the reference made square to <paramref name="ns1"/>.
@@ -639,7 +639,7 @@ internal class ConstRad : BlendFunction
             ns2 = _nsurf2;
             np = _nplan;
 
-            // The surfaces' own normals, reversed (decision 30001).
+            // The surfaces' own normals, reversed (decision 2156).
             ns1 = -InverseNorm(ns1) * ns1;
             ns2 = -InverseNorm(ns2) * ns2;
 
@@ -851,7 +851,7 @@ internal class ConstRad : BlendFunction
             nmL = _nsurf2;
         }
 
-        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 30001).
+        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 2156).
         invnorm1 = InverseNorm(ns1);
         ns1 = -invnorm1 * ns1;
         center = center.WithXYZ(_pts1.XYZ() + _ray1 * ns1.XYZ());
@@ -905,7 +905,7 @@ internal class ConstRad : BlendFunction
 
         ComputeValues(x, 0, true, prm);
 
-        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 30001).
+        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 2156).
         ns1 = -InverseNorm(_nsurf1) * _nsurf1;
         np = SectionNormal(_nsurf1, _nsurf2, _nplan);
         center = center.WithXYZ(_pts1.XYZ() + _ray1 * ns1.XYZ());
@@ -1036,7 +1036,7 @@ internal class ConstRad : BlendFunction
             return;
         }
 
-        // The ball's circle: the surfaces' own normals, and the plane square to both (decision 30001).
+        // The ball's circle: the surfaces' own normals, and the plane square to both (decision 2156).
         np = SectionNormal(ns1, ns2, _nplan);
         ns1 = -InverseNorm(ns1) * ns1;
         ns2 = -InverseNorm(ns2) * ns2;
@@ -1149,7 +1149,7 @@ internal class ConstRad : BlendFunction
         }
 
         // Case of the circle
-        // The surfaces' own normals (decision 30001); the plane, square to both, is set below.
+        // The surfaces' own normals (decision 2156); the plane, square to both, is set below.
         ns1 = -InverseNorm(ns1) * ns1;
         ns2 = -InverseNorm(ns2) * ns2;
 
@@ -1329,7 +1329,7 @@ internal class ConstRad : BlendFunction
         }
 
         // Case of circle
-        // The surfaces' own normals (decision 30001); the plane, square to both, is set below.
+        // The surfaces' own normals (decision 2156); the plane, square to both, is set below.
         ns1 = -InverseNorm(ns1) * ns1;
         ns2 = -InverseNorm(ns2) * ns2;
 

@@ -65,7 +65,7 @@ internal class SurfCurvConstRadInv : SurfCurvFuncInv
         return 3;
     }
 
-    // Kerf (decision 30011): the rolling ball's equations, as SurfRstConstRad's: the centre at the radius from the
+    // Kerf (decision 2158): the rolling ball's equations, as SurfRstConstRad's: the centre at the radius from the
     // surface's point along its own unit normal, square to the curve at its point and as far from it as the radius; the
     // guide's plane through the two points' midpoint.
     private void Ball(math_Vector x, int order, math_Vector f, Matrix? d)

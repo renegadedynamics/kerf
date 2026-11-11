@@ -217,7 +217,7 @@ internal class ConstRadInv : FuncInv
             }
         }
 
-        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 30001).
+        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 2156).
         Vector3D resul = new Vector3D();
         ns1 = -ConstRad.InverseNorm(ns1) * ns1;
         ns2 = -ConstRad.InverseNorm(ns2) * ns2;
@@ -241,7 +241,7 @@ internal class ConstRadInv : FuncInv
         nplan = d1cur.Normalized();
 
         // OCCT has the plane's offset where Values has -nplan.Dot(d2cur) (decision 1038); Kerf's agree since the
-        // function no longer matches native's (decision 30001).
+        // function no longer matches native's (decision 2156).
         dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur), nplan, d2cur);
         dnplan /= normtgcur;
 
@@ -298,7 +298,7 @@ internal class ConstRadInv : FuncInv
             }
         }
 
-        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 30001).
+        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 2156).
         invnorm1 = ConstRad.InverseNorm(ns1);
         invnorm2 = ConstRad.InverseNorm(ns2);
 
@@ -308,7 +308,7 @@ internal class ConstRadInv : FuncInv
 
     // The derivatives in the 2nd to 4th rows, which Derivatives and Values compute with the same code: the centre
     // pts1 - ray1 * ns1 / |ns1| = pts2 - ray2 * ns2 / |ns2|, with invnorm1 = 1 / |ns1| and invnorm2 = 1 / |ns2|. The
-    // surfaces' own normals don't depend on the guide (decision 30001).
+    // surfaces' own normals don't depend on the guide (decision 2156).
     private void DerivativesTail(Matrix d, in Vector3D d1u1, in Vector3D d1v1, in Vector3D d1u2,
                                  in Vector3D d1v2, in Vector3D d2u1, in Vector3D d2v1, in Vector3D d2uv1, in Vector3D d2u2,
                                  in Vector3D d2v2, in Vector3D d2uv2, in Vector3D ns1, in Vector3D ns2, in Vector2D v2d,
@@ -442,7 +442,7 @@ internal class ConstRadInv : FuncInv
             }
         }
 
-        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 30001).
+        // The surfaces' own normals, as BlendFunc_ConstRad's (decision 2156).
         invnorm1 = ConstRad.InverseNorm(ns1);
         invnorm2 = ConstRad.InverseNorm(ns2);
 

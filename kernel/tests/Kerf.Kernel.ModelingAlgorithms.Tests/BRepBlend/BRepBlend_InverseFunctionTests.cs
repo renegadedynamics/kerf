@@ -97,7 +97,7 @@ public class BRepBlend_InverseFunctionTests
         var aF = new SurfPointConstRadInv(Cylinder(), Guide());
         aF.Set(R, theChoice);
         aF.Set(new Point3D(3, 4, 5));
-        aF.SetTangent(new Vector3D(1, 2, -1)); // the restriction's, at the point (decision 30011)
+        aF.SetTangent(new Vector3D(1, 2, -1)); // the restriction's, at the point (decision 2158)
         AssertDerivatives(aF, Vec(0.4, 0.3, 2));
     }
 
@@ -153,7 +153,7 @@ public class BRepBlend_InverseFunctionTests
         var aF = new SurfPointConstRadInv(Plane(), aGuide);
         aF.Set(R, theChoice);
         aF.Set(new Point3D(4, R, theSide * R)); // on the ball's section
-        aF.SetTangent(new Vector3D(1, 0, 0)); // a restriction along the guide (decision 30011)
+        aF.SetTangent(new Vector3D(1, 0, 0)); // a restriction along the guide (decision 2158)
         Assert.True(aF.IsSolution(Vec(4, 4, 0), 1e-9));
         Assert.False(aF.IsSolution(Vec(4.1, 4, 0), 1e-9));
         Assert.False(aF.IsSolution(Vec(4, 4, 0.1), 1e-9));
@@ -241,7 +241,7 @@ public class BRepBlend_InverseFunctionTests
         Assert.True(aTol[3] > 0);
     }
 
-    // The ball between two edges (decision 30021): edge 1 on the plane z = 0, edge 2 on the plane y = 0, neither along
+    // The ball between two edges (decision 2162): edge 1 on the plane z = 0, edge 2 on the plane y = 0, neither along
     // the guide (the X axis), so OCCT's section in the guide's plane is off the ball there.
     private static SurfaceAdaptor PlaneY() =>
         new(new PlaneSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0))));

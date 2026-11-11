@@ -1037,7 +1037,7 @@ internal class SurfRstLineBuilder
         finvP.Set(thepoint);
         if (finvP is SurfPointConstRadInv ballP)
         {
-            // Kerf (decision 30011): the ball at the restriction's end is square to its tangent there.
+            // Kerf (decision 2158): the ball at the restriction's end is square to its tangent there.
             ballP.SetTangent(Vector3D.LinearForm(d2drst.X, d1urst, d2drst.Y, d1vrst));
         }
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);

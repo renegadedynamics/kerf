@@ -33,7 +33,7 @@ public class BRepBlendNativeTests
     }
 
     // The constant-radius walks whose faces' normals at the contacts leave the plane square to the guide: since
-    // decision 30001 their sections are the rolling ball's, where OCCT's are the 2D fillet in that plane, so they
+    // decision 2156 their sections are the rolling ball's, where OCCT's are the 2D fillet in that plane, so they
     // differ from native (planes, whose normals stay in it, and every evolving radius still match bit for bit).
     private static readonly string[] THE_BALL_SECTIONS =
     [
@@ -41,7 +41,7 @@ public class BRepBlendNativeTests
         "case walk bspline 1", "case walk bspline 2", "case walk bspline 3", "case walk bspline 4",
         "case walk bspline 5", "case walk bspline 6", "case walk bspline 7", "case walk bspline 8",
         "case walk firstsection 3", "case walk firstsection 4",
-        // SurfRstConstRad's (decision 30011): the same walk to the last few bits
+        // SurfRstConstRad's (decision 2158): the same walk to the last few bits
         "case walk surfrst 1 1", "case walk surfrst 1 3", "case walk surfrst 1 5", "case walk surfrst 1 7",
     ];
 
@@ -50,7 +50,7 @@ public class BRepBlendNativeTests
     [Fact]
     public void Walking_OnTheBall_WalksAndApproximatesWhereNativeDoes()
     {
-        // Decision 30001: the cases that differ from native still walk, end and are approximated where native's are,
+        // Decision 2156: the cases that differ from native still walk, end and are approximated where native's are,
         // with points spaced as native's to within a few.
         Dictionary<string, List<string>> aNative = BlendFuncNativeTests.Recording;
         foreach (string aKey in THE_BALL_SECTIONS)

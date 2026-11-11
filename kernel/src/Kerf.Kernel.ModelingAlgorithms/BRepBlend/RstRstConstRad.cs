@@ -104,7 +104,7 @@ internal class RstRstConstRad : RstRstFunction
         return 2;
     }
 
-    // Kerf (decision 30021): the rolling ball's equations, as SurfRstConstRad's (decision 30011). OCCT puts both
+    // Kerf (decision 2162): the rolling ball's equations, as SurfRstConstRad's (decision 2158). OCCT puts both
     // points in the plane square to the guide and the centre in it, at the radius from both; the ball touches each
     // edge where the centre's foot on it is, so the centre is at the radius from both points and its chord to each is
     // square to that edge's tangent, which puts it off the guide's plane wherever the edges aren't square to it. The
@@ -311,7 +311,7 @@ internal class RstRstConstRad : RstRstFunction
 
         if (Math.Abs(valsol[1]) <= tol && Math.Abs(valsol[2]) <= tol)
         {
-            // The ball (decision 30021): none where the points are too far apart, as OCCT's CenterCircleRst1Rst2.
+            // The ball (decision 2162): none where the points are too far apart, as OCCT's CenterCircleRst1Rst2.
             if (!_isBall)
             {
                 _istangent = true;
@@ -483,7 +483,7 @@ internal class RstRstConstRad : RstRstFunction
         // Normal to the reference surface 2
         nRst2 = d1u.Crossed(d1v);
 
-        // The ball's (decision 30021): its centre, the section in the plane through it and both points, the reference
+        // The ball's (decision 2162): its centre, the section in the plane through it and both points, the reference
         // surfaces' normals projected into it.
         Ball(sol, _nplan);
         Point3D center = _center;
@@ -609,7 +609,7 @@ internal class RstRstConstRad : RstRstFunction
         _tguide.D1(param, out _ptgui, out _d1gui);
         np = _d1gui.Normalized();
 
-        // The ball's circle (decision 30021): its centre, in the plane through it and both points.
+        // The ball's circle (decision 2162): its centre, in the plane through it and both points.
         math_Vector x = new(1, 2);
         x[1] = u;
         x[2] = v;
@@ -720,7 +720,7 @@ internal class RstRstConstRad : RstRstFunction
         Point2D pt2d1 = _rst1.Value(x[1]);
         Point2D pt2d2 = _rst2.Value(x[2]);
 
-        // The ball's (decision 30021).
+        // The ball's (decision 2162).
         Ball(x, _nplan);
         _distmin = Min(_distmin, _ptrst1.DistanceTo(_ptrst2));
 
@@ -778,7 +778,7 @@ internal class RstRstConstRad : RstRstFunction
         _pt2drst1 = _rst1.Value(_prmrst1);
         _pt2drst2 = _rst2.Value(_prmrst2);
 
-        // The ball's (decision 30021): its centre, which moves with the points only.
+        // The ball's (decision 2162): its centre, which moves with the points only.
         Ball(sol, _nplan);
         BallDerivatives(gradsol);
         GuideSecondMember(secmember, dnplan);
