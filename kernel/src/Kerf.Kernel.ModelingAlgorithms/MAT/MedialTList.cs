@@ -124,6 +124,9 @@ internal abstract class MedialTList<TItem> : Transient
 
     public TItem FirstItem() => _thefirstnode!.GetItem();
 
+    /// <summary>The first node, for reading the list without moving its current position (Kerf's).</summary>
+    internal MedialTListNode<TItem>? FirstNode => _thefirstnode;
+
     public TItem LastItem() => _thelastnode!.GetItem();
 
     public TItem PreviousItem() => _thecurrentnode!.Previous()!.GetItem();

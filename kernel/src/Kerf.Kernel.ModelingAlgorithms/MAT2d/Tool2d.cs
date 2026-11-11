@@ -878,6 +878,14 @@ internal sealed class Tool2d
 
     public Circuit Circuit() => _circuit!;
 
+    // Kerf: the point, the vector and the trimmed curve of an index that may have none, for MatCycle
+
+    internal bool TryGeomPnt(int index, out Point2D point) => _geomPnts.TryGetValue(index, out point);
+
+    internal bool TryGeomVec(int index, out Vector2D vector) => _geomVecs.TryGetValue(index, out vector);
+
+    internal TrimmedCurve2D? TrimmedBisector(int index) => _geomBisectors.TryGetValue(index, out Bisec? bisector) ? bisector.Value() : null;
+
     /// <summary>Merges the bisector I2 into the bisector I1 (I1 is extended over I2).</summary>
     public void BisecFusion(int i1, int i2)
     {

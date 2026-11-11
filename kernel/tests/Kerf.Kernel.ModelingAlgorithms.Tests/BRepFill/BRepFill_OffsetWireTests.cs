@@ -301,4 +301,33 @@ public class BRepFill_OffsetWireTests
         Assert.Equal(10.6026, Length(aResult), 1.0e-4);
         Assert.True(new global::Kerf.Engine.Healing.Checks.Analyzer(new MakeFace(aWire, true).Face()).IsValid());
     }
+
+    [Fact]
+    public void A_medial_axis_that_goes_round_in_circles_fails_at_once()
+    {
+        // tests/offset/wire_closed_inside_0_025/G4: 36 B-splines offset inwards past their bends. The medial axis of the
+        // polyline at 0.001 of the distance (216 edges, decision 1980) removes and puts back the same six pieces of the
+        // contour on every pass from the 18th, which OCCT's loop stops only after 47,524 passes (the square of the 218
+        // elements): 9 s and 22.4 GB to fail, before OCCT's polyline gave the answer in 10 ms. MatCycle sees the state come
+        // back and ends the loop where the count would have (decision 2220): the same result, native OCCT's (291.991, 20
+        // edges), in 46 MB
+        string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                                        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "offset_wire_081.brep");
+        if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
+        {
+            return;
+        }
+        MakeWireOffset anOffset = new();
+        anOffset.Init(global::Kerf.Geometry.JoinKind.Arc);
+        anOffset.AddWire(ShapeCasts.Wire(aShape));
+        long aBefore = GC.GetAllocatedBytesForCurrentThread();
+        anOffset.Perform(-0.025 * Length(aShape));
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - aBefore, 0, 1_000_000_000);
+        Assert.True(anOffset.IsDone);
+        Shape aResult = anOffset.Shape();
+        Assert.Equal(1, Count(aResult, ShapeType.Wire));
+        Assert.Equal(20, Count(aResult, ShapeType.Edge));
+        Assert.Equal(20, Count(aResult, ShapeType.Vertex));
+        Assert.Equal(291.991362, Length(aResult), 1.0e-5);
+    }
 }

@@ -142,6 +142,8 @@ internal sealed class Mat2d
         //                         Main loop   (step 2)
         //===========================================================================
         int numberOfIte = 0;
+        MatCycle? cycle = new();
+        Span<int> loopState = stackalloc int[14];
 
         while (_theedgelist.Number() > 1)
         {
@@ -303,6 +305,25 @@ internal sealed class Mat2d
                 RemoveArea(atool, ref edgetoremove, ref noofbisectors, ref shift, all, noofarea[i]);
             }
 
+            // Kerf: a pass that ends in the state an earlier pass ended in is followed by the same passes until the
+            // count below runs out, so the count moves on to the pass that leaves the map as the last would (MatCycle)
+            if (cycle is not null && numberOfIte <= numberMaxOfIte)
+            {
+                loopState[0] = Math.Min(nbIterBis, evenNbIterBis + 2);
+                loopState[1] = toNullifyNoofbisectorstoremove ? 1 : 0;
+                loopState[2] = noofbisectors - beginbisector;
+                for (k = 1; k <= evenNbIterBis + 1; k++)
+                {
+                    loopState[2 + k] = edgeNumbers[k];
+                }
+                int period = cycle.Step(numberOfIte, _theedgelist, atool, beginbisector, loopState, intersectionpoint);
+                if (period > 0)
+                {
+                    numberOfIte = numberMaxOfIte + 1 - (numberMaxOfIte + 1 - numberOfIte) % period;
+                    cycle = null;
+                }
+            }
+
             // The number of iterations: each removes an element of the contour that is never reinserted, so it
             // must stay below the number of elements; the maximum is numberofedges * numberofedges.
             if (numberOfIte > numberMaxOfIte)
@@ -438,6 +459,8 @@ internal sealed class Mat2d
         //                         Main loop   (step 2)
         //===========================================================================
         int numberOfIte = 0;
+        MatCycle? cycle = new();
+        Span<int> loopState = stackalloc int[21];
 
         while (_theedgelist.Number() > 1)
         {
@@ -642,6 +665,32 @@ internal sealed class Mat2d
                 edgetoremove = _theedgelist.Brackets(firstarea[i] - shift);
 
                 RemoveArea(atool, ref edgetoremove, ref noofbisectors, ref shift, all, noofarea[i]);
+            }
+
+            // Kerf: a pass that ends in the state an earlier pass ended in is followed by the same passes until the
+            // count below runs out, so the count moves on to the pass that leaves the map as the last would (MatCycle)
+            if (cycle is not null && numberOfIte <= numberMaxOfIte)
+            {
+                loopState[0] = Math.Min(nbIterBis, evenNbIterBis + 2);
+                loopState[1] = toNullifyNoofbisectorstoremove ? 1 : 0;
+                loopState[2] = noofbisectors - beginbisector;
+                for (k = 1; k <= evenNbIterBis + 1; k++)
+                {
+                    loopState[2 + k] = edgeNumbers[k];
+                }
+                loopState[14] = nbOfNarea1;
+                loopState[15] = prefNarea;
+                loopState[16] = nbElts[0];
+                loopState[17] = nbElts[1];
+                loopState[18] = countElts[0];
+                loopState[19] = countElts[1];
+                loopState[20] = isBreak ? 1 : 0;
+                int period = cycle.Step(numberOfIte, _theedgelist, atool, beginbisector, loopState, intersectionpoint);
+                if (period > 0)
+                {
+                    numberOfIte = numberMaxOfIte + 1 - (numberMaxOfIte + 1 - numberOfIte) % period;
+                    cycle = null;
+                }
             }
 
             // The number of iterations: each removes an element of the contour that is never reinserted, so it
