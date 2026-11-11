@@ -160,7 +160,7 @@ internal class SurfRstEvolRad : SurfRstFunction
         return 3;
     }
 
-    // Kerf (decision 31204): the rolling ball's equations, as SurfRstConstRad's (decision 2158), of the radius the law
+    // Kerf (decision 2216): the rolling ball's equations, as SurfRstConstRad's (decision 2158), of the radius the law
     // gives where the section crosses the guide. The centre is at the radius from the surface's contact along its own
     // unit normal (OCCT projects the normal into the plane square to the guide and puts both contacts in that plane);
     // the ball touches the restriction where the centre's foot on it is, so the centre minus that point is square to
@@ -782,7 +782,7 @@ internal class SurfRstEvolRad : SurfRstFunction
         sol[3] = _prmrst = p.ParameterOnC();
         _pt2drst = _rst.Value(_prmrst);
 
-        // The ball's (decision 31204): the centre along the surface's own normal, moving with the radius.
+        // The ball's (decision 2216): the centre along the surface's own normal, moving with the radius.
         Ball(sol, out d1u1, out d1v1);
         BallDerivatives(gradsol, d1u1, d1v1);
         d1 = _drst;

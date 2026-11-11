@@ -266,7 +266,7 @@ public class FilletBlendTests
         Assert.True(miss < Approximation, $"{name} at {radius}: the ball misses by {miss}");
     }
 
-    // An evolving radius, 0.4 at the contour's ends and 1 at its middle (BlendFunc_EvolRad, decision 31203). Each section of the new
+    // An evolving radius, 0.4 at the contour's ends and 1 at its middle (BlendFunc_EvolRad, decision 2215). Each section of the new
     // faces (their isos across the fillet) is an arc of a great circle of the ball of the radius the law gives that section, and
     // that ball touches both surfaces, to the approximation's tolerance; the radii run from the law's least to its greatest. OCCT's
     // sections were 2D fillets in the plane square to the edge, as ConstRad's were (decision 2141), off by up to 2.4e-2.

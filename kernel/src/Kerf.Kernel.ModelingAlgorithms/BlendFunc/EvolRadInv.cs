@@ -220,7 +220,7 @@ internal class EvolRadInv : FuncInv
             }
         }
 
-        // The surfaces' own normals, as BlendFunc_EvolRad's (decision 31203).
+        // The surfaces' own normals, as BlendFunc_EvolRad's (decision 2215).
         Vector3D resul;
         ns1 = -ConstRad.InverseNorm(ns1) * ns1;
         ns2 = -ConstRad.InverseNorm(ns2) * ns2;
@@ -312,7 +312,7 @@ internal class EvolRadInv : FuncInv
             }
         }
 
-        // The surfaces' own normals, as BlendFunc_EvolRad's (decision 31203): the centre is
+        // The surfaces' own normals, as BlendFunc_EvolRad's (decision 2215): the centre is
         // pts1 - sg1 * ray * nn1 = pts2 - sg2 * ray * nn2, the nn the unit normals, which don't move with the guide.
         double invnorm1 = ConstRad.InverseNorm(ns1);
         double invnorm2 = ConstRad.InverseNorm(ns2);

@@ -157,7 +157,7 @@ internal class RstRstEvolRad : RstRstFunction
         return 2;
     }
 
-    // Kerf (decision 31204): the rolling ball's equations, as RstRstConstRad's (decision 2162), of the radius the law
+    // Kerf (decision 2216): the rolling ball's equations, as RstRstConstRad's (decision 2162), of the radius the law
     // gives where the section crosses the guide. As there (decision 2162): OCCT puts both
     // points in the plane square to the guide and the centre in it, at the radius from both; the ball touches each
     // edge where the centre's foot on it is, so the centre is at the radius from both points and its chord to each is
@@ -814,7 +814,7 @@ internal class RstRstEvolRad : RstRstFunction
         _pt2drst1 = _rst1.Value(_prmrst1);
         _pt2drst2 = _rst2.Value(_prmrst2);
 
-        // The ball's (decision 31204): its centre, which moves with the points and the radius.
+        // The ball's (decision 2216): its centre, which moves with the points and the radius.
         Ball(sol, _nplan);
         BallDerivatives(gradsol);
         GuideSecondMember(secmember, dnplan);

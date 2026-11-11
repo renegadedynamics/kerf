@@ -306,7 +306,7 @@ internal class EvolRad : BlendFunction
                     }
                 case 2:
                     {
-                        // Kerf (decision 31203): the derivatives of the normals at this point, as BlendFunc_ConstRad's
+                        // Kerf (decision 2215): the derivatives of the normals at this point, as BlendFunc_ConstRad's
                         // order 2; OCCT kept those of the last order-1 positioning here (decision 1039), which the unit
                         // normals' second derivatives can't take.
                         _surf1.D3(x[1], x[2], out _pts1, out _d1u1, out _d1v1, out _d2u1, out _d2v1, out _d2uv1, out _d3u1,
@@ -354,7 +354,7 @@ internal class EvolRad : BlendFunction
         }
 
         // -------------------- Positioning of order 0 ---------------------
-        // Kerf (decision 31203): as BlendFunc_ConstRad's (decision 2156), the centre is at the radius from each contact
+        // Kerf (decision 2215): as BlendFunc_ConstRad's (decision 2156), the centre is at the radius from each contact
         // along that surface's own unit normal, so each section is the rolling ball's, of the radius the law gives where
         // the section crosses the guide. OCCT projects the normals into the plane square to the guide. The guide's plane
         // only places the section, through the contacts' midpoint; the normals don't depend on the guide, the radius does.
@@ -607,7 +607,7 @@ internal class EvolRad : BlendFunction
             ns2 = _nsurf2;
             np = _nplan;
 
-            // The surfaces' own normals, reversed (decision 31203).
+            // The surfaces' own normals, reversed (decision 2215).
             ns1 = -ConstRad.InverseNorm(ns1) * ns1;
             ns2 = -ConstRad.InverseNorm(ns2) * ns2;
 
@@ -814,7 +814,7 @@ internal class EvolRad : BlendFunction
             nmL = _nsurf2;
         }
 
-        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 31203).
+        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 2215).
         invnorm1 = ConstRad.InverseNorm(ns1);
         ns1 = -invnorm1 * ns1;
         center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
@@ -868,7 +868,7 @@ internal class EvolRad : BlendFunction
 
         ComputeValues(x, 0, true, prm);
 
-        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 31203).
+        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 2215).
         ns1 = -ConstRad.InverseNorm(_nsurf1) * _nsurf1;
         np = ConstRad.SectionNormal(_nsurf1, _nsurf2, _nplan);
         center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
@@ -1095,7 +1095,7 @@ internal class EvolRad : BlendFunction
             return;
         }
 
-        // The ball's circle: the surfaces' own normals, and the plane square to both (decision 31203).
+        // The ball's circle: the surfaces' own normals, and the plane square to both (decision 2215).
         np = ConstRad.SectionNormal(ns1, ns2, _nplan);
         ns1 = -ConstRad.InverseNorm(ns1) * ns1;
         ns2 = -ConstRad.InverseNorm(ns2) * ns2;
@@ -1212,7 +1212,7 @@ internal class EvolRad : BlendFunction
         }
 
         // Case of the circle
-        // The surfaces' own normals (decision 31203); the plane, square to both, is set below.
+        // The surfaces' own normals (decision 2215); the plane, square to both, is set below.
         ns1 = -ConstRad.InverseNorm(ns1) * ns1;
         ns2 = -ConstRad.InverseNorm(ns2) * ns2;
 
@@ -1401,7 +1401,7 @@ internal class EvolRad : BlendFunction
         }
 
         // Case of circle
-        // The surfaces' own normals (decision 31203); the plane, square to both, is set below.
+        // The surfaces' own normals (decision 2215); the plane, square to both, is set below.
         ns1 = -ConstRad.InverseNorm(ns1) * ns1;
         ns2 = -ConstRad.InverseNorm(ns2) * ns2;
 

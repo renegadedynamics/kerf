@@ -256,7 +256,7 @@ public class BlendFuncDerivativeTests
     [MemberData(nameof(BallPairs))]
     public void ConstRad_and_EvolRad_sections_are_the_rolling_balls_circle(string theName, int thePair)
     {
-        // Decisions 2156 and 31203: at a solution the centre is at the radius from each contact along that surface's own
+        // Decisions 2156 and 2215: at a solution the centre is at the radius from each contact along that surface's own
         // normal (EvolRad's radius the law's where the section crosses the guide), and the section's circle lies in the
         // plane through the centre square to both normals; OCCT projected the normals into the plane square to the guide.
         PairCase C = THE_PAIRS[thePair];

@@ -167,7 +167,7 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
     }
 
     /// <summary>
-    /// blend/complex/A6 (decision 31201): where the face the fillet's edge bounds narrows to nothing, the ball rests on that face's
+    /// blend/complex/A6 (decision 2213): where the face the fillet's edge bounds narrows to nothing, the ball rests on that face's
     /// edge and the other face, and their contacts meet; on the ball's equations that section is singular, and the walk stopped
     /// there at scale 1 (decision 2163). It now keeps that section and goes on beyond it, so the case passes at its five scales,
     /// valid, with OCCT's area; at 1 and 1000 the fillet's faces are on the ball (its centre at the radius from the input).
@@ -354,7 +354,7 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         // K3, bug28828_4 pass). Its points at edge ends, overflowing sections and hole-like fillet loops (11203-11206):
         // OK 736, IMPROVEMENT 10, BAD 33, FAILED 20. Every failure is attributed (KnownFailures). Unit 8F's STEP commands:
         // 884 runnable, OK 737. Unit 15W's fillets on the ball (decisions 2157 to 2164): OK 735, as C1, C5, F1, F2, Y6, C8, D1
-        // and A6 fail, each attributed. Unit 15W2's walk through the point A6's fillet narrows to (decision 31201): OK 736.
+        // and A6 fail, each attributed. Unit 15W2's walk through the point A6's fillet narrows to (decision 2213): OK 736.
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(884, aNew.Count);
@@ -385,8 +385,8 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         ["blend/simple/C8"] = "the fillet on the ball (0.11 off it before, 2.1e-6 now): its area 9781.91, OCCT's script holds its off-ball 9640.68 (decisions 2157, 2160)",
         ["blend/simple/D1"] = "the fillet on the ball, as C8's: its area 10080.1, OCCT's script holds its off-ball 9940.87 (decisions 2157, 2160)",
         ["blend/complex/A7"] = "its second fillet, which OCCT fails (its TODO), now builds, valid, its walked faces on the ball; the script expects an area of 0 (decision 2164)",
-        // Unit 15W2: the evolving radius on the ball (decisions 31203 to 31205)
-        ["blend/buildevol/K2"] = "faulty natively and before (OCCT's TODO); on the ball, the ball between two edges pivots about a point of the cylinder's rim, the walk between them stops there and the evolving fillet fails (decision 31205)",
+        // Unit 15W2: the evolving radius on the ball (decisions 2215 to 2217)
+        ["blend/buildevol/K2"] = "faulty natively and before (OCCT's TODO); on the ball, the ball between two edges pivots about a point of the cylinder's rim, the walk between them stops there and the evolving fillet fails (decision 2217)",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails (decision 1738)",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
         // replaced, and native OCCT fails the same way on the same Booleans; the sample then needs the viewer

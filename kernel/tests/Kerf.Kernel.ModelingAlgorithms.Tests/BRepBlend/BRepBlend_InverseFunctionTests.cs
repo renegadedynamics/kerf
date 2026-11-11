@@ -369,7 +369,7 @@ public class BRepBlend_InverseFunctionTests
         Assert.Equal(0, new Vector3D(aC, aP2).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
     }
 
-    // The evolving radius between the two edges (decision 31204): 1.5 + w / 10 along the guide, 1.9 at w = 4
+    // The evolving radius between the two edges (decision 2216): 1.5 + w / 10 along the guide, 1.9 at w = 4
     private static LawsFunction AlongTheGuide()
     {
         var aLaw = new Linear();

@@ -518,7 +518,7 @@ internal class SurfRstLineBuilder
                         echecrecad = true;
                     }
                 }
-                // Kerf (decision 31201): where the surface's contact reaches its arc at the restriction's point, the
+                // Kerf (decision 2213): where the surface's contact reaches its arc at the restriction's point, the
                 // section has no width: the surface's edge touches the restriction there, and on the ball's equations
                 // that section is singular, two branches meeting. The ball rolls on, its contact going back into the
                 // face, so the section is kept and the walk goes on beyond it on the branch inside the face.
@@ -842,7 +842,7 @@ internal class SurfRstLineBuilder
         }
     }
 
-    // Kerf (decision 31201): whether the section, its contact on the surface reframed on one of the surface's arcs, has no
+    // Kerf (decision 2213): whether the section, its contact on the surface reframed on one of the surface's arcs, has no
     // width: both contacts the same point to the tolerance.
     private bool IsPinch()
     {
@@ -1122,7 +1122,7 @@ internal class SurfRstLineBuilder
         }
         else if (finvP is SurfPointEvolRadInv ballE)
         {
-            // Kerf (decision 31204): likewise for the evolving radius.
+            // Kerf (decision 2216): likewise for the evolving radius.
             ballE.SetTangent(Vector3D.LinearForm(d2drst.X, d1urst, d2drst.Y, d1vrst));
         }
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);

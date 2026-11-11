@@ -37,7 +37,7 @@ internal class CurvPointRadInv : CurvPointFuncInv
     }
 
     // Kerf (decision 2162): the rolling ball's equations, as RstRstConstRad's at a restriction's end, once a radius is
-    // set (and, decision 31204, an evolving radius's law, as RstRstEvolRad's): the guide's plane through the two
+    // set (and, decision 2216, an evolving radius's law, as RstRstEvolRad's): the guide's plane through the two
     // points' midpoint, and the centre at the radius from both, its chord to the point square to that restriction's
     // tangent there (SetTangent) and its chord to the curve's point square to the curve.
     private bool _isBall;

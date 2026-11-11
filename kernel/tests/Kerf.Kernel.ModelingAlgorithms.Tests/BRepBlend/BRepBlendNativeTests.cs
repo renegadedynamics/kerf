@@ -43,7 +43,7 @@ public class BRepBlendNativeTests
         "case walk firstsection 3", "case walk firstsection 4",
         // SurfRstConstRad's (decision 2158): the same walk to the last few bits
         "case walk surfrst 1 1", "case walk surfrst 1 3", "case walk surfrst 1 5", "case walk surfrst 1 7",
-        // The evolving radius's (decision 31204): the same walks to the last few bits
+        // The evolving radius's (decision 2216): the same walks to the last few bits
         "case walk surfrstevol 1 7", "case walk rstrstevol 1", "case walk rstrstevol 3",
     ];
 
