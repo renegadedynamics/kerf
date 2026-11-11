@@ -18,6 +18,10 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepFilletAPI;
 /// </summary>
 public class ChamferMeetTests
 {
+    // The tests of what the path builds run without the wall-clock limit, so a loaded machine (the gate's suites side by
+    // side) can't turn a build into fillet.time-limit; the limit's own tests set theirs
+    private static readonly ChamferOptions NoLimit = new() { TimeLimit = Timeout.InfiniteTimeSpan };
+
     private static Shape Read(string name)
     {
         using Stream stream = typeof(ChamferMeetTests).Assembly.GetManifestResourceStream($"BRepFilletAPI.Issues.{name}.brep")
@@ -75,7 +79,7 @@ public class ChamferMeetTests
         Assert.False(native.IsDone, corpusCase);
         Assert.Equal(1, native.InternalBuilder().FaultyVertexCount);
 
-        Shape made = shell.Chamfer(specs).Value.Shape;
+        Shape made = shell.Chamfer(specs, NoLimit).Value.Shape;
         Assert.Equal(ShapeType.Shell, made.Type);
         Assert.True(made.Validate().IsValid, corpusCase);
         Assert.Equal(5, made.AllFaces().Length); // the three faces cut back, and the two chamfers
@@ -96,7 +100,7 @@ public class ChamferMeetTests
         native.Build();
         Assert.False(native.IsDone);
 
-        Shape made = shape.Chamfer(specs).Value.Shape;
+        Shape made = shape.Chamfer(specs, NoLimit).Value.Shape;
         Assert.True(made.Validate().IsValid);
         Assert.Equal(6, made.AllFaces().Length);
         Face first = shape.AllFaces().First(f => f.AllEdges().Any(e => e.IsSame(edge)));
@@ -112,7 +116,7 @@ public class ChamferMeetTests
         Shape shape = Read("chamfer-B5-step2");
         Edge edge = EdgeBetween(shape, new Point3D(-0.606778, 0.0116437, 0.226719), Corner);
         Face floor = shape.AllFaces().Single(f => f.AllVertices().Any(v => v.Point.DistanceTo(new Point3D(0.473048, 0.5374, 0.308257)) < 1e-5));
-        Result<Built<Shape>> made = shape.Chamfer([new ChamferSpec(edge, 0.2, 0.21, ReferenceFace: floor)]);
+        Result<Built<Shape>> made = shape.Chamfer([new ChamferSpec(edge, 0.2, 0.21, ReferenceFace: floor)], NoLimit);
         Assert.False(made.IsSuccess);
         Assert.Equal(FilletOperations.Failed, made.Error!.Code);
     }
