@@ -49,6 +49,16 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   `parallelVolumes` for one call. Off by default: for one large part on an idle processor, not for parts built side by
   side (guide, section 9).
 
+## 0.5.1
+
+- **`Export3mf` writes closed meshes** (kernel decision 2191). In 0.5.0 a part whose faces had been placed by a move
+  and a turn, such as a plate with a pocket cut by a moved and turned box, cylinder or text, came out with its mesh open
+  along those faces' edges in slicers: each face had its own copies of its edges' vertices, some differing from the
+  neighbouring face's in the last digits, and Bambu Studio and PrusaSlicer sliced it with stray fill. Faces now share
+  their edges' vertices, so a closed part's 3MF is a closed mesh, with the same triangles and fewer vertices.
+- **`ExportGltf` and `ExportStl`:** a vertex shared by faces has the same coordinates in each, so readers that join
+  identical vertices join them; glTF also shares the vertex itself where the faces' normals agree.
+
 ## 0.5.0
 
 - **`Text`, DXF export and drawing sheets:** build123d's `Text` and `ExportDXF`, and notes and sheets with a title block
