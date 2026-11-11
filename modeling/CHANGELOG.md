@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A Boolean whose result's faces don't close is made again, and kept with the warning `boolean.faces-open` if nothing closes it** (kernel decisions 31402 to 31404): the kernel's new checks of commons and cuts run on what comes out of the clean, as its other checks do. Where the faces of a near-touching result don't close, its volume depends on where it's measured from; the Boolean is made again (the other way round, then with a fuzzy value), and where that fails too the first result is returned with the warning rather than an exception. Two cylinders of radius 5000 crossing just past a touch gave a common 1.4e-4 short; it now comes out right.
 - **`Chamfer`'s time limit is set per call: `ChamferOptions.TimeLimit`** (kernel decisions 2185, 2186): the time the
   kernel's own construction may take where OCCT's chamfer fails, a `TimeSpan`, 20 s by default as before; any positive
   time up to 49 days raises or lowers it, and `Timeout.InfiniteTimeSpan` turns it off. Zero, a negative time or one over
