@@ -176,6 +176,7 @@ internal static partial class ChamferMeet
         // Along the line through (a, b) square to the box's face: the length where the excess is, between its sign changes
         double Line(double a, double b)
         {
+            Cancellation.ThrowIfRequested();
             Point3D At(double z) => new(o.X + a, o.Y + b, o.Z + z);
             var cuts = new List<double> { -reach, reach };
             var values = new double[all.Length, LineSamples + 1];

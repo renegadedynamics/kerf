@@ -41,6 +41,20 @@ public class ReliabilityTests
         Assert.Equal(1000 - Math.PI * 4 * 10, (box - cylinder).Volume, 3);
     }
 
+    // reliability.md's island 3: a loft from a square to a circle, every edge chamfered. OCCT fails at its top corners, where
+    // the side faces turn tangent; Kerf's own construction builds it, proved, within its 20 s limit (kernel decision 30121)
+    [Fact]
+    public void A_lofts_chamfer_that_OCCT_cant_build_is_built()
+    {
+        Part loft = Ops.Loft([(Kerf.Topology.Shape)(Plane.XY * new Rectangle(10, 10)), (Kerf.Topology.Shape)(Plane.XY.Offset(10) * new Circle(4))]).Value;
+        Kerf.Topology.Shape shape = loft;
+        var made = Ops.Chamfer(shape, shape.Edges(), 0.05);
+        Assert.True(made.IsSuccess, made.Error?.ToString());
+        Kerf.Topology.Shape chamfered = (Kerf.Topology.Shape)made.Value!;
+        Assert.True(Kerf.Healing.HealingOperations.Validate(chamfered).IsValid);
+        Assert.Equal(740.8526, chamfered.Volume, 3);
+    }
+
     [Theory]
     [InlineData(2_000_000_000)]
     [InlineData(LocationList.MaxCount + 1)]

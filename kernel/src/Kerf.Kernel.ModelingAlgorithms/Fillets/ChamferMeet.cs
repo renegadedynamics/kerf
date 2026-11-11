@@ -165,23 +165,46 @@ internal static partial class ChamferMeet
 
     private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands);
 
+    /// <summary>How long the construction may take, the caller's own cancellation aside (the owner, decision 30121).</summary>
+    public static TimeSpan Limit { get; } = TimeSpan.FromSeconds(20);
+
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
-    /// stripes and failed at a corner, and proved; null where this doesn't apply or what it builds isn't proved. A solid is built
-    /// only where <paramref name="solid"/> is asked, and proved by its volume too (unit 15V); the operation doesn't ask yet, as
-    /// that takes 8 to 22 s on the loft where ChFi3d's failure takes a fraction of a second (decision 30113, for the owner).
+    /// stripes and failed at a corner, and proved; null where this doesn't apply, what it builds isn't proved, or it took longer
+    /// than <see cref="Limit"/> (<paramref name="late"/>). A solid is proved by its volume too (unit 15V).
     /// </summary>
+    /// <exception cref="OperationCanceledException">The caller's own token, or the one in force, was cancelled.</exception>
     public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
-                                       bool solid = false)
+                                       out bool late)
     {
-        int solids = shape.AllSolids().Length;
-        if (options.Mode != ChamferMode.Classic || solids > (solid ? 1 : 0) || shape.AllFaces().Length == 0)
+        late = false;
+        if (options.Mode != ChamferMode.Classic || shape.AllSolids().Length > 1 || shape.AllFaces().Length == 0)
         {
             return null;
         }
 
-        // Kerf's own bands for ChFi3d's stripes that are off the chamfer's distance first, and if that isn't built, ChFi3d's
-        // (unless a chain through a vertex needs Kerf's own anyway, whose corners ChFi3d's stripes beside it don't make)
+        // The limit is a deadline joined to the token in force, so a caller's own cancellation still stops it, and as itself
+        CancellationToken caller = Cancellation.Current;
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(caller);
+        deadline.CancelAfter(Limit);
+        try
+        {
+            using (Cancellation.Use(deadline.Token))
+            {
+                return Attempts(shape, chamfer, specs, referenceFaces);
+            }
+        }
+        catch (OperationCanceledException) when (!caller.IsCancellationRequested)
+        {
+            late = true;
+            return null;
+        }
+    }
+
+    // Kerf's own bands for ChFi3d's stripes that are off the chamfer's distance first, and if that isn't built, ChFi3d's (unless
+    // a chain through a vertex needs Kerf's own anyway, whose corners ChFi3d's stripes beside it don't make)
+    private static EngineOutcome? Attempts(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
+    {
         bool anyOff = false;
         foreach (bool own in (ReadOnlySpan<bool>)[true, false])
         {
@@ -195,6 +218,7 @@ internal static partial class ChamferMeet
             catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
             {
             }
+            Cancellation.ThrowIfRequested();
             if (!anyOff)
             {
                 break;
@@ -431,7 +455,8 @@ internal static partial class ChamferMeet
         fuse.SetArguments(arguments);
         fuse.SetToFillHistory(true);
         fuse.SetRunParallel(false);
-        fuse.Build();
+        fuse.Build(new ProgressIndicator().Start()); // so the fuse sees the limit or a cancellation between its intersections
+        Cancellation.ThrowIfRequested();
         if (fuse.HasErrors || !fuse.IsDone || fuse.History() is not { } made)
         {
             return null;

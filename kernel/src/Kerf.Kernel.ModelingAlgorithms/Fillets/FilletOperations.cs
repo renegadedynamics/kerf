@@ -136,7 +136,17 @@ public static class FilletOperations
     /// </summary>
     public static DiagnosticCode SelfIntersecting { get; } = new("fillet.self-intersecting");
 
+    /// <summary>
+    /// ChFi3d couldn't build the chamfer, and Kerf's own construction, which carries the chamfer faces on until they meet,
+    /// didn't finish within its limit of 20 s (the owner, decision 30121): <c>fillet.time-limit</c>. ChFi3d's own failure
+    /// follows it among the diagnostics.
+    /// </summary>
+    public static DiagnosticCode TimeLimit { get; } = new("fillet.time-limit");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
+
+    private static Diagnostic LateFailure() =>
+        Diagnostic.Error(TimeLimit, $"The chamfer couldn't be built: ChFi3d failed, and building its faces until they meet took longer than its limit of {ChamferMeet.Limit.TotalSeconds:0} s.");
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
@@ -398,21 +408,39 @@ public static class FilletOperations
                     return limit;
                 }
 
-                // Or its faces carried on until they meet, where it failed at a corner (unit 15U)
-                return options.CheckResult && ChamferMeet.Build(solid, chamfer, specs, faces, options) is { } met ? met : outcome;
+                // Or its faces carried on until they meet, where it failed at a corner (units 15U, 15V), within its time limit
+                if (!options.CheckResult)
+                {
+                    return outcome;
+                }
+                if (ChamferMeet.Build(solid, chamfer, specs, faces, options, out bool late) is { } met)
+                {
+                    return met;
+                }
+                return late ? new EngineOutcome(false, static () => default, Failure: LateFailure(), MoreFailures: Failures(outcome)) : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null, Check);
 
             Diagnostic? Check(Shape made) =>
                 Validity.ToleranceProblem(made, ToleranceLimit(solid, specs.Max(s => Math.Max(s.Distance, s.Distance2 ?? 0.0))), "The chamfer's result")
                 ?? EdgeCrossings.Problem(solid, made, "The chamfer's result", SelfIntersecting);
 
-            // What ChFi3d made is broken at a corner: its faces carried on until they meet instead, if that's proved (unit 15U)
-            if (done.TryGetInvalid(out _) && built is not null && ChamferMeet.Build(solid, built, specs, faces, options) is { } instead)
+            // What ChFi3d made is broken at a corner: its faces carried on until they meet instead, if that's proved (units 15U,
+            // 15V), within its time limit, under the caller's token
+            bool tooLong = false;
+            if (done.TryGetInvalid(out _) && built is not null)
             {
-                Result<Built<Shape>> met = EngineOperation.Run<Shape>(_ => instead, Failure, progress, cancellationToken, "The chamfer's result", Check);
-                if (met.IsSuccess)
+                EngineOutcome? instead;
+                using (Cancellation.Enter(Cancellation.Effective(cancellationToken)))
                 {
-                    return met;
+                    instead = ChamferMeet.Build(solid, built, specs, faces, options, out tooLong);
+                }
+                if (instead is { } outcome)
+                {
+                    Result<Built<Shape>> met = EngineOperation.Run<Shape>(_ => outcome, Failure, progress, cancellationToken, "The chamfer's result", Check);
+                    if (met.IsSuccess)
+                    {
+                        return met;
+                    }
                 }
             }
 
@@ -420,11 +448,17 @@ public static class FilletOperations
             if (done.TryGetInvalid(out Built<Shape>? invalid) && done.Error is { } error)
             {
                 ImmutableArray<Diagnostic> all = done.Diagnostics;
-                return Result<Built<Shape>>.Invalid(invalid, all.Replace(error, error with { Message = $"{error.Message} {CouldNotBuild(specs)}" }));
+                all = all.Replace(error, error with { Message = $"{error.Message} {CouldNotBuild(specs)}" });
+                return Result<Built<Shape>>.Invalid(invalid, tooLong ? [LateFailure(), .. all] : all);
             }
             return done;
         }
     }
+
+    // ChFi3d's own failure, as the operation would have given it
+    private static ImmutableArray<Diagnostic> Failures(EngineOutcome outcome) =>
+        outcome.Failure is { } known ? (outcome.MoreFailures.IsDefaultOrEmpty ? [known] : [known, .. outcome.MoreFailures])
+        : outcome.Report is { } report ? OperationDiagnostics.FromReport(report, Failure) : [Failure];
 
     extension(Face face)
     {

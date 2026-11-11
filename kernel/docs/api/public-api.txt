@@ -2030,6 +2030,7 @@ public readonly record struct Kerf.Fillets.ChamferSpec : IEquatable<ChamferSpec>
 public static class Kerf.Fillets.FilletOperations
   public static DiagnosticCode Failed { get; }
   public static DiagnosticCode SelfIntersecting { get; }
+  public static DiagnosticCode TimeLimit { get; }
   public static DiagnosticCode TooLarge { get; }
   public static Result<Built<Face>> Chamfer2D(this Face face, IEnumerable<(Edge, Edge)> corners, double distance, double? distance2 = default, bool checkResult = true)
   public static Result<Built<Face>> Chamfer2D(this Face face, IEnumerable<Vertex> vertices, double distance, double? distance2 = default, bool checkResult = true)

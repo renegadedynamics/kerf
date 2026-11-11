@@ -132,8 +132,7 @@ public class ChamferMeetTests
     // each top vertex the rim's two arcs are tangent and so are the side faces: ChFi3d's corner of three chamfers fails, and
     // its side stripes are off the length where they meet their faces at a narrow angle. Unit 15V's bands of Kerf's own (the
     // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths, without crossings
-    // and of the volume the sections give; the operation doesn't ask for solids yet (decision 30113), so the public
-    // chamfer still fails
+    // and of the volume the sections give, and the public chamfer returns it (decision 30121)
     [Theory]
     [InlineData(0.05, 18)]
     [InlineData(0.2, 18)]
@@ -147,15 +146,41 @@ public class ChamferMeetTests
         native.Build();
         Assert.True(!native.IsDone || !native.Shape().Validate().IsValid);
 
-        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, ChamferOptions.Default, solid: true);
-        Assert.NotNull(met);
-        Shape made = met.Value.Shape();
+        Result<Built<Shape>> chamfered = loft.Chamfer(edges, length);
+        Assert.True(chamfered.IsSuccess, chamfered.Error?.ToString());
+        Shape made = chamfered.Value.Shape;
         Assert.Equal(ShapeType.Solid, made.Type);
         Assert.True(made.Validate().IsValid);
         Assert.Equal(faces, made.AllFaces().Length);
         Assert.True(ChamferMeet.Proved(loft, made, specs, references, native, 1e-4));
         Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
-        Assert.False(loft.Chamfer(edges, length).IsSuccess);
+    }
+
+    // Near 0.01 the loft's fuse runs far past the construction's limit (unit 15Y's to look into): the chamfer fails at the
+    // limit, saying so, with ChFi3d's own failure after it, rather than running on
+    [Fact]
+    public void A_chamfer_whose_construction_runs_past_its_limit_fails_at_the_limit_saying_so()
+    {
+        Shape loft = Loft();
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Result<Built<Shape>> chamfered = loft.Chamfer(loft.AllEdges(), 0.0105);
+        watch.Stop();
+        Assert.False(chamfered.IsSuccess);
+        Assert.Equal(FilletOperations.TimeLimit, chamfered.Error!.Code);
+        Assert.Contains("20 s", chamfered.Error.Message, StringComparison.Ordinal);
+        Assert.True(chamfered.Diagnostics.Length > 1); // ChFi3d's failure, carried
+        Assert.True(watch.Elapsed < ChamferMeet.Limit + TimeSpan.FromSeconds(10), $"{watch.Elapsed}");
+    }
+
+    // The caller's own cancellation still stops the construction, and as a cancellation, not the limit
+    [Fact]
+    public void A_callers_cancellation_stops_the_construction_before_its_limit()
+    {
+        Shape loft = Loft();
+        using var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Assert.ThrowsAny<OperationCanceledException>(() => loft.Chamfer(loft.AllEdges(), 0.0105, cancellationToken: cancel.Token));
+        Assert.True(watch.Elapsed < ChamferMeet.Limit, $"{watch.Elapsed}");
     }
 
     // The volume proof's sections along an edge (unit 15V) against Pappus: a cylinder's top rim chamfered by d takes off a

@@ -69,7 +69,9 @@ public static partial class Shape3DExtensions
             if (!chamfered.TryGetValue(out var built))
                 throw Failures.Expected(ModelingDiagnostics.ChamferFailed,
                                         Shape3DExtensions.TooLargeMessage(chamfered.Diagnostics)
-                                        ?? (chamfered.TryGetInvalid(out _) ? "" : $"The chamfer with a length of {Formatting.Number(length)} failed; try a smaller length."),
+                                        ?? (chamfered.Diagnostics.Any(d => d.Code == FilletOperations.TimeLimit)
+                                            ? $"The chamfer with a length of {Formatting.Number(length)} couldn't be built within its time limit; try another length."
+                                            : chamfered.TryGetInvalid(out _) ? "" : $"The chamfer with a length of {Formatting.Number(length)} failed; try a smaller length."),
                                         chamfered);
             var result = Shape3DExtensions.Make3DResult(built.Shape);
             return result.MadeBy(ModelHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s), [self.AsShape()], result));
