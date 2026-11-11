@@ -104,62 +104,14 @@ internal static partial class FilletLimits
                 }
                 taus[i] = taus[i - 1] + step;
             }
-
-            // A cubic through every section, not-a-knot: the knots at the sections but the second and the second last
-            var flat = new NCollection_Array1<double>(1, n + 4);
-            for (int i = 1; i <= 4; i++)
-            {
-                flat.SetValue(i, taus[0]);
-                flat.SetValue(n + i, taus[n - 1]);
-            }
-            for (int i = 2; i <= n - 3; i++)
-            {
-                flat.SetValue(i + 3, taus[i]);
-            }
-            var parameters = new NCollection_Array1<double>(1, n);
-            var orders = new NCollection_Array1<int>(1, n);
-            for (int i = 0; i < n; i++)
-            {
-                parameters.SetValue(i + 1, taus[i]);
-                orders.SetValue(i + 1, 0);
-            }
-            double[] poles = [.. values];
-            Splines.Interpolate(3, flat, parameters, orders, Dimension, poles, out int problem);
-            if (problem != 0)
+            if (Interpolate([.. values], taus) is not { } fit)
             {
                 return null;
             }
-
-            double[] knots = [taus[0], .. taus[2..(n - 2)], taus[n - 1]];
-            int[] multiplicities = [4, .. Enumerable.Repeat(1, n - 4), 4];
-            var grid = new Point3D[n * 3];
-            var weights = new double[n * 3];
-            var row1 = new Point3D[n];
-            var row2 = new Point3D[n];
-            var uv1 = new Point2D[n];
-            var uv2 = new Point2D[n];
-            for (int i = 0; i < n; i++)
-            {
-                ReadOnlySpan<double> p = poles.AsSpan(i * Dimension, Dimension);
-                double w = p[6];
-                if (w <= 0)
-                {
-                    return null;
-                }
-                grid[3 * i] = row1[i] = new Point3D(p[0], p[1], p[2]);
-                grid[3 * i + 1] = new Point3D(p[3] / w, p[4] / w, p[5] / w);
-                grid[3 * i + 2] = row2[i] = new Point3D(p[7], p[8], p[9]);
-                (weights[3 * i], weights[3 * i + 1], weights[3 * i + 2]) = (1, w, 1);
-                uv1[i] = new Point2D(p[10], p[11]);
-                uv2[i] = new Point2D(p[12], p[13]);
-            }
-            var surface = new BSplineSurface(new Grid<Point3D>(grid, n, 3), knots, [0.0, 1.0], multiplicities, [3, 3], 3, 2,
-                                             weights: new Grid<double>(weights, n, 3));
             var blend = new Blend
             {
-                Chain = chain, Radius = radius, Surface = surface, Taus = taus, Sections = [.. sections], Error = 0,
-                Curve1 = new BSplineCurve3D(row1, knots, multiplicities, 3), Curve2 = new BSplineCurve3D(row2, knots, multiplicities, 3),
-                OnOne = new BSplineCurve2D(uv1, knots, multiplicities, 3), OnTwo = new BSplineCurve2D(uv2, knots, multiplicities, 3),
+                Chain = chain, Radius = radius, Surface = fit.Surface, Taus = taus, Sections = [.. sections], Error = 0,
+                Curve1 = fit.Curve1, Curve2 = fit.Curve2, OnOne = fit.OnOne, OnTwo = fit.OnTwo,
             };
             return blend.With(blend.Deviation());
         }
@@ -171,26 +123,91 @@ internal static partial class FilletLimits
         };
 
         // How far, between the sections, the surface is from a ball's and the curves from their surfaces and each other
-        private double Deviation()
+        private double Deviation() => DeviationOf(Surface, Curve1, Curve2, OnOne, OnTwo, Taus, Chain.One, Chain.Two, Chain.Side, Radius);
+    }
+
+    // The surface through the sections' arcs, its two contact curves and their curves on the supports, all in tau
+    private sealed record Fitted(BSplineSurface Surface, BSplineCurve3D Curve1, BSplineCurve3D Curve2, BSplineCurve2D OnOne, BSplineCurve2D OnTwo);
+
+    // The values at each section (Dimension of them) through a cubic in tau
+    private static Fitted? Interpolate(double[] poles, double[] taus)
+    {
+        int n = taus.Length;
+
+        // A cubic through every section, not-a-knot: the knots at the sections but the second and the second last
+        var flat = new NCollection_Array1<double>(1, n + 4);
+        for (int i = 1; i <= 4; i++)
         {
-            var adaptor = new SurfaceAdaptor(Surface);
-            double worst = 0;
-            for (int i = 0; i + 1 < Taus.Length; i++)
-            {
-                double tau = 0.5 * (Taus[i] + Taus[i + 1]);
-                V c1 = V.Of(Curve1.Value(tau)), c2 = V.Of(Curve2.Value(tau));
-                worst = Math.Max(worst, Math.Abs(Chain.One.Distance(c1)));
-                worst = Math.Max(worst, Math.Abs(Chain.Two.Distance(c2)));
-                worst = Math.Max(worst, (c1 - V.Of(At(Chain.One, OnOne.Value(tau)))).Length);
-                worst = Math.Max(worst, (c2 - V.Of(At(Chain.Two, OnTwo.Value(tau)))).Length);
-                if (BallError(adaptor, tau, 0.5, Chain, Radius, null) is { } error)
-                {
-                    worst = Math.Max(worst, error);
-                }
-                worst = Math.Max(worst, Math.Max(Gap(adaptor, tau, 0, Chain.One), Gap(adaptor, tau, 1, Chain.Two)));
-            }
-            return worst;
+            flat.SetValue(i, taus[0]);
+            flat.SetValue(n + i, taus[n - 1]);
         }
+        for (int i = 2; i <= n - 3; i++)
+        {
+            flat.SetValue(i + 3, taus[i]);
+        }
+        var parameters = new NCollection_Array1<double>(1, n);
+        var orders = new NCollection_Array1<int>(1, n);
+        for (int i = 0; i < n; i++)
+        {
+            parameters.SetValue(i + 1, taus[i]);
+            orders.SetValue(i + 1, 0);
+        }
+        Splines.Interpolate(3, flat, parameters, orders, Dimension, poles, out int problem);
+        if (problem != 0)
+        {
+            return null;
+        }
+
+        double[] knots = [taus[0], .. taus[2..(n - 2)], taus[n - 1]];
+        int[] multiplicities = [4, .. Enumerable.Repeat(1, n - 4), 4];
+        var grid = new Point3D[n * 3];
+        var weights = new double[n * 3];
+        var row1 = new Point3D[n];
+        var row2 = new Point3D[n];
+        var uv1 = new Point2D[n];
+        var uv2 = new Point2D[n];
+        for (int i = 0; i < n; i++)
+        {
+            ReadOnlySpan<double> p = poles.AsSpan(i * Dimension, Dimension);
+            double w = p[6];
+            if (w <= 0)
+            {
+                return null;
+            }
+            grid[3 * i] = row1[i] = new Point3D(p[0], p[1], p[2]);
+            grid[3 * i + 1] = new Point3D(p[3] / w, p[4] / w, p[5] / w);
+            grid[3 * i + 2] = row2[i] = new Point3D(p[7], p[8], p[9]);
+            (weights[3 * i], weights[3 * i + 1], weights[3 * i + 2]) = (1, w, 1);
+            uv1[i] = new Point2D(p[10], p[11]);
+            uv2[i] = new Point2D(p[12], p[13]);
+        }
+        var surface = new BSplineSurface(new Grid<Point3D>(grid, n, 3), knots, [0.0, 1.0], multiplicities, [3, 3], 3, 2,
+                                         weights: new Grid<double>(weights, n, 3));
+        return new Fitted(surface, new BSplineCurve3D(row1, knots, multiplicities, 3), new BSplineCurve3D(row2, knots, multiplicities, 3),
+                       new BSplineCurve2D(uv1, knots, multiplicities, 3), new BSplineCurve2D(uv2, knots, multiplicities, 3));
+    }
+
+    // How far, between the sections, the surface is from a ball's and the curves from their surfaces and each other
+    private static double DeviationOf(BSplineSurface surface, BSplineCurve3D curve1, BSplineCurve3D curve2, BSplineCurve2D onOne, BSplineCurve2D onTwo,
+                                      double[] taus, Support one, Support two, double side, double radius)
+    {
+        var adaptor = new SurfaceAdaptor(surface);
+        double worst = 0;
+        for (int i = 0; i + 1 < taus.Length; i++)
+        {
+            double tau = 0.5 * (taus[i] + taus[i + 1]);
+            V c1 = V.Of(curve1.Value(tau)), c2 = V.Of(curve2.Value(tau));
+            worst = Math.Max(worst, Math.Abs(one.Distance(c1)));
+            worst = Math.Max(worst, Math.Abs(two.Distance(c2)));
+            worst = Math.Max(worst, (c1 - V.Of(At(one, onOne.Value(tau)))).Length);
+            worst = Math.Max(worst, (c2 - V.Of(At(two, onTwo.Value(tau)))).Length);
+            if (BallError(adaptor, tau, 0.5, one, two, side, radius, null) is { } error)
+            {
+                worst = Math.Max(worst, error);
+            }
+            worst = Math.Max(worst, Math.Max(Gap(adaptor, tau, 0, one), Gap(adaptor, tau, 1, two)));
+        }
+        return worst;
     }
 
     // The most a fillet built here may be from the true one, in the model's units: the kernel's confusion, or a part in a billion
@@ -200,6 +217,10 @@ internal static partial class FilletLimits
     // A point of a support from its parameters
     private static Point3D At(Support support, Point2D uv)
     {
+        if (support.IsExtrusion)
+        {
+            return support.At(uv.X, uv.Y, out _).Point;
+        }
         V p = support.IsCylinder
             ? support.Origin + (support.X * Math.Cos(uv.X) + support.Y * Math.Sin(uv.X)) * support.Rho + support.Axis * uv.Y
             : support.Origin + support.X * uv.X + support.Y * uv.Y;
@@ -244,19 +265,26 @@ internal static partial class FilletLimits
         {
             return null;
         }
-        tangent = tangent.Unit;
+        return Solve(chain.One, chain.Two, chain.Side, radius, q, tangent.Unit);
+    }
+
+    // The ball at the radius from both supports, its centre in the plane through q square to the tangent
+    private static Section? Solve(Support one, Support two, double sideOf, double radius, V q, V tangent)
+    {
+        double side = sideOf * radius;
+        V n1 = one.Normal(q), n2 = two.Normal(q);
         V e1 = (n1 - tangent * n1.Dot(tangent)).Unit;
         V e2 = tangent.Cross(e1);
         V c = q + (n1 + n2) * (side / (1 + n1.Dot(n2)));
         double scale = Math.Max(1, radius);
         for (int iteration = 0; iteration < 60; iteration++)
         {
-            double f1 = chain.One.Distance(c) - side, f2 = chain.Two.Distance(c) - side;
+            double f1 = one.Distance(c) - side, f2 = two.Distance(c) - side;
             if (Math.Abs(f1) + Math.Abs(f2) < 1e-14 * scale)
             {
                 break;
             }
-            V g1 = chain.One.Normal(c), g2 = chain.Two.Normal(c);
+            V g1 = one.Normal(c), g2 = two.Normal(c);
             double a11 = g1.Dot(e1), a12 = g1.Dot(e2), a21 = g2.Dot(e1), a22 = g2.Dot(e2);
             double det = a11 * a22 - a12 * a21;
             if (Math.Abs(det) < 1e-300)
@@ -274,13 +302,16 @@ internal static partial class FilletLimits
         {
             return null;
         }
-        return new Section(q, c, chain.One.Foot(c), chain.Two.Foot(c));
+        return new Section(q, c, one.Foot(c), two.Foot(c));
     }
 
     // How far the ball put back at a point of the fillet's surface is from touching both supports, or, on a rail, how far the point
     // is from its support and the surface from tangent to it, as a length at the radius. Null where the surface's normal isn't
     // defined, as where it narrows to nothing
-    private static double? BallError(SurfaceAdaptorBase surface, double tau, double s, Chain chain, double radius, bool? reversed)
+    private static double? BallError(SurfaceAdaptorBase surface, double tau, double s, Chain chain, double radius, bool? reversed) =>
+        BallError(surface, tau, s, chain.One, chain.Two, chain.Side, radius, reversed);
+
+    private static double? BallError(SurfaceAdaptorBase surface, double tau, double s, Support one, Support two, double sideOf, double radius, bool? reversed)
     {
         surface.D1(tau, s, out Point3D point, out Vector3D du, out Vector3D dv);
         V normal = V.Of(du).Cross(V.Of(dv));
@@ -291,12 +322,12 @@ internal static partial class FilletLimits
         V p = V.Of(point);
 
         // The centre is inside the solid for a convex edge, outside for a concave one, along the face's outward normal
-        double side = chain.Side * radius;
+        double side = sideOf * radius;
         double Off(bool flipped)
         {
             V outward = normal.Unit * (flipped ? -1 : 1);
-            V centre = p + (chain.Side < 0 ? -outward : outward) * radius;
-            return Math.Max(Math.Abs(chain.One.Distance(centre) - side), Math.Abs(chain.Two.Distance(centre) - side));
+            V centre = p + (sideOf < 0 ? -outward : outward) * radius;
+            return Math.Max(Math.Abs(one.Distance(centre) - side), Math.Abs(two.Distance(centre) - side));
         }
 
         // Where the face's orientation isn't settled yet, the side the ball is nearer
