@@ -2256,3 +2256,19 @@ decision 1742's tenth.
 | 2 | A plane square to an extrusion, walked (`ImpPrmIntersection`) where the section is the extruded curve itself, moved | 22% of the build's samples on main, about a third on the branch | An exact section for the pair, which Kerf isn't bound not to make (decision 1743), but the curves differ from the walked ones, so every result with engraved or extruded text changes: the owner's |
 | 3 | The exact hidden-line views of a part with text | 67% of publishing | In the script: polygonal views, −83%, not the same drawing. In Kerf: HLR's tangent zones, kept in linked sequences node by node |
 | 4 | The 3MF meshed at 0.001 beside the STL at 0.01 | 38% of the 3MF's bytes | In the script: the STL's deflection (a coarser mesh) |
+
+## Wasteful cases, second slice: the rig's flags (unit 15F)
+
+The quiet run at 232c0e477 against 0.5.0's left three rises unexplained. Each was counted, by bytes and the collector's
+own events, on two processors of a loaded machine; none is waste in Kerf, and the only change is to the rig.
+
+| Flag | Cause | Done |
+|---|---|---|
+| The host's `10 select last, hole` 4.35 to 5.27 MB (+21%), extrude-until +4.8% | One pass, the last, measured: after a generation 2 collection the mesher grows its large lists again (decision 1762), about 1.1 MB on that example; 0.5.0 does the same, and where the collections fall moved as phase 15 allocated less (decision 2187) | The Bento rows' bytes are the median of passes 2 to 9, as their times; `KERF_BENTO_PASSES=1` prints every pass |
+| The serial passes' pauses 161 to 189 ms (+17%); the parallel rounds' longest 20.9 to 30.0 ms | 15F's kept curves on planes (decision 2106): what generation 1 promotes in 20 passes 7.5 to 8.8 MB before it, 12.7 to 14.3 at it, and the same since; a thread keeps 250 kB of curves of shapes already let go, against 19 kB (decision 2188) | Left, the price of a 16% to 20% cut in the chamfers' and fuses' bytes; the benchmark's last line now gives what the collections promoted |
+| `Axis_of_bearing.brep` meshed in parallel, +5% to 10% at 15D's polyhedron change | Not that change, which the mesher never reaches: before and after, five processes each, 34.9 to 38.4 MB against 35.6 to 38.2; one process's runs span 32.6 to 39.5 by which threads take which faces (decisions 1940, 2189) | Nothing; `KERF_MESH_RUNS=1` prints every timed mesh's bytes and the pool's threads |
+
+**Reading runs from now on:** a Bento example's bytes are a median of eight passes where they were one pass, so against
+an earlier run they read at or a little under it, and the host's rows no longer jump by a megabyte between runs (three
+processes: 4.199, 4.203 and 4.199 MB, where their last passes read 4.19, 5.25 and 4.19). The pauses, and these rows on
+24 heaps, are for a quiet window (`quiet-15f2.ps1`, decision 2190).
