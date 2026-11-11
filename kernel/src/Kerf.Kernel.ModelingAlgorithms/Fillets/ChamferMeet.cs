@@ -171,11 +171,12 @@ internal static partial class ChamferMeet
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply, what it builds isn't proved, or it took longer
-    /// than <see cref="Limit"/> (<paramref name="late"/>). A solid is proved by its volume too (unit 15V).
+    /// than <see cref="Limit"/>, or than <paramref name="limit"/> where a test gives one (<paramref name="late"/>). A solid is
+    /// proved by its volume too (unit 15V).
     /// </summary>
     /// <exception cref="OperationCanceledException">The caller's own token, or the one in force, was cancelled.</exception>
     public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
-                                       out bool late)
+                                       out bool late, TimeSpan? limit = null)
     {
         late = false;
         if (options.Mode != ChamferMode.Classic || shape.AllSolids().Length > 1 || shape.AllFaces().Length == 0)
@@ -186,7 +187,7 @@ internal static partial class ChamferMeet
         // The limit is a deadline joined to the token in force, so a caller's own cancellation still stops it, and as itself
         CancellationToken caller = Cancellation.Current;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(caller);
-        deadline.CancelAfter(Limit);
+        deadline.CancelAfter(limit ?? Limit);
         try
         {
             using (Cancellation.Use(deadline.Token))
@@ -230,7 +231,7 @@ internal static partial class ChamferMeet
     private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, bool ownWhereOff, ref bool anyOff)
     {
         ChBuilder builder = chamfer.InternalBuilder();
-        if (builder._listStripe.IsEmpty() || builder._badstripes.Extent() != 0)
+        if (builder._listStripe.IsEmpty() || (builder._badstripes.Extent() != 0 && !ownWhereOff))
         {
             return null;
         }
@@ -275,6 +276,17 @@ internal static partial class ChamferMeet
             Cancellation.ThrowIfRequested();
             if (chains.Any(c => c.Stripes.Contains(stripe)))
             {
+                continue;
+            }
+            // A stripe ChFi3d couldn't walk has no surface: Kerf's own band, where its chamfer is of one length (unit 15Y)
+            if (builder._badstripes.Any(b => ReferenceEquals(b, stripe)))
+            {
+                Spine walked = stripe.Spine()!;
+                if (!ownWhereOff || EqualDistance(specs, [.. Enumerable.Range(1, walked.EdgeCount).Select(walked.Edges)]) is null)
+                {
+                    return null;
+                }
+                off.Add(stripe);
                 continue;
             }
             if (Bands(faces, builder, stripe, corners) is not { } own)
@@ -595,6 +607,22 @@ internal static partial class ChamferMeet
             {
                 return null;
             }
+
+            // ChFi3d's u runs from 0 to the stripe's length along its edge whatever the band's width: across a band 0.02 wide
+            // and 10 long the surface moves 0.002 for each unit of u. Carried on across by a length, which adds that length
+            // in u, its speed jumps 500-fold where the extension starts, and the fuse's curves on such a surface came out up
+            // to 0.5 off it (unit 15Y, decision 30301). So u by the band's width, the surface the same
+            double width = surface.EvalD0(0, (a1.Y + b1.Y) / 2).DistanceTo(surface.EvalD0(umax, (a2.Y + b2.Y) / 2));
+            if (width > Precision.Confusion() && !surface.IsUPeriodic)
+            {
+                double scale = width / umax;
+                surface = new BSplineSurface(surface.Poles, [.. surface.UKnots.Select(k => k * scale)], [.. surface.VKnots],
+                                             [.. surface.UMultiplicities], [.. surface.VMultiplicities], surface.UDegree, surface.VDegree,
+                                             false, surface.IsVPeriodic, surface.IsURational || surface.IsVRational ? surface.Weights : default);
+                umax = width;
+                a2 = new Point2D(umax, a2.Y);
+                b2 = new Point2D(umax, b2.Y);
+            }
             Point3D middle = surface.EvalD0(umax / 2, (Math.Min(a1.Y, a2.Y) + Math.Max(b1.Y, b2.Y)) / 2);
             Point3D? onEdge = null;
             double nearest = double.MaxValue;
@@ -623,7 +651,7 @@ internal static partial class ChamferMeet
                 A2 = a2,
                 B1 = b1,
                 B2 = b2,
-                Width = surface.EvalD0(0, (a1.Y + b1.Y) / 2).DistanceTo(surface.EvalD0(umax, (a2.Y + b2.Y) / 2)),
+                Width = width,
                 Convex = convex,
                 FirstCorner = k == 1 ? first : default,
                 LastCorner = k == set.Length() ? last : default,
