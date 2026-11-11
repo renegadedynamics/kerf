@@ -2018,6 +2018,7 @@ public sealed record Kerf.Fillets.ChamferOptions : IEquatable<ChamferOptions>
   public ChamferOptions()
   public ChamferMode Mode { get; init; }
   public TightCorners TightCorners { get; init; }
+  public TimeSpan TimeLimit { get; init; }
   public bool CheckResult { get; init; }
   public static ChamferOptions Default { get; }
 public readonly record struct Kerf.Fillets.ChamferSpec : IEquatable<ChamferSpec>

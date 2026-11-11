@@ -971,6 +971,7 @@ public static class Kerf.Modeling.Operations
 public sealed record Kerf.Modeling.Operations.ChamferOptions : IEquatable<Operations.ChamferOptions>
   public ChamferOptions()
   public TightCorners TightCorners { get; init; }
+  public TimeSpan TimeLimit { get; init; }
   public static Operations.ChamferOptions Default { get; }
 public sealed record Kerf.Modeling.Operations.ExtrudeOptions : IEquatable<Operations.ExtrudeOptions>
   public ExtrudeOptions()
