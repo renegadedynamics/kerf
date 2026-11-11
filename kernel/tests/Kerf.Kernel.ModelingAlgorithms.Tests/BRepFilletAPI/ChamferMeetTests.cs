@@ -156,20 +156,60 @@ public class ChamferMeetTests
         Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
     }
 
-    // Near 0.01 the loft's fuse runs far past the construction's limit (unit 15Y's to look into): the chamfer fails at the
-    // limit, saying so, with ChFi3d's own failure after it, rather than running on
-    [Fact]
-    public void A_chamfer_whose_construction_runs_past_its_limit_fails_at_the_limit_saying_so()
+    // Near 0.01 the loft's fuse ran 36 to 82 s and its pieces still weren't a chamfer (unit 15Y, decisions 30301 and 30302).
+    // The time was each side edge against its own chamfer's band, 0.007 away along its whole length: the edge/face
+    // intersection's localisation listed up to 99,873 pairs of samples, now given up at 2,000. The pieces were ChFi3d's bands
+    // carried on across by a length, their parameter across running 0 to 10 over a width of 0.02: the fuse's curves on them were
+    // up to 0.5 off their surfaces. With that parameter by the band's width they're within 1e-5, and the loft builds as at
+    // 0.05; at 0.01, where ChFi3d can't walk one stripe, that stripe takes a band of Kerf's own. Asked of the construction
+    // itself with a long limit, so that a loaded machine can't fail it
+    [Theory]
+    [InlineData(0.01, 17, 740.964618)]
+    [InlineData(0.0122, 18, 740.962334)]
+    public void The_lofts_chamfers_near_a_hundredth_are_built(double length, int faces, double volume)
     {
         Shape loft = Loft();
+        Edge[] edges = [.. loft.AllEdges()];
+        ChamferSpec[] specs = [.. edges.Select(e => new ChamferSpec(e, length))];
+        Face[] references = [.. edges.Select(e => loft.AllFaces().First(f => f.AllEdges().Any(x => x.IsSame(e))))];
+        MakeChamfer native = Native(loft, specs);
+        native.Build();
+        Assert.True(!native.IsDone || !native.Shape().Validate().IsValid);
+
+        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, ChamferOptions.Default, out bool late, TimeSpan.FromMinutes(10));
+        Assert.False(late);
+        Assert.NotNull(met);
+        Shape made = met.Value.Shape();
+        Assert.Equal(ShapeType.Solid, made.Type);
+        Assert.True(made.Validate().IsValid);
+        Assert.Equal(faces, made.AllFaces().Length);
+        Assert.True(ChamferMeet.Proved(loft, made, specs, references, native, 1e-4));
+        Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
+        Assert.Equal(volume, Kerf.Measurement.MeasureOperations.IntegrateVolume(made, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 }), 1e-5);
+    }
+
+    // A construction that runs past its limit stops there and says it was late, and the operation's failure for that names
+    // the limit. No chamfer known takes the 20 s any more (the loft's near 0.01 did, before unit 15Y), so the limit is set
+    // short here
+    [Fact]
+    public void A_construction_that_runs_past_its_limit_stops_there_and_says_so()
+    {
+        Shape loft = Loft();
+        Edge[] edges = [.. loft.AllEdges()];
+        ChamferSpec[] specs = [.. edges.Select(e => new ChamferSpec(e, 0.05))];
+        Face[] references = [.. edges.Select(e => loft.AllFaces().First(f => f.AllEdges().Any(x => x.IsSame(e))))];
+        MakeChamfer native = Native(loft, specs);
+        native.Build();
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        Result<Built<Shape>> chamfered = loft.Chamfer(loft.AllEdges(), 0.0105);
+        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, ChamferOptions.Default, out bool late, TimeSpan.FromSeconds(1));
         watch.Stop();
-        Assert.False(chamfered.IsSuccess);
-        Assert.Equal(FilletOperations.TimeLimit, chamfered.Error!.Code);
-        Assert.Contains("20 s", chamfered.Error.Message, StringComparison.Ordinal);
-        Assert.True(chamfered.Diagnostics.Length > 1); // ChFi3d's failure, carried
-        Assert.True(watch.Elapsed < ChamferMeet.Limit + TimeSpan.FromSeconds(10), $"{watch.Elapsed}");
+        Assert.Null(met);
+        Assert.True(late);
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(11), $"{watch.Elapsed}");
+
+        Diagnostic failure = FilletOperations.LateFailure();
+        Assert.Equal(FilletOperations.TimeLimit, failure.Code);
+        Assert.Contains("20 s", failure.Message, StringComparison.Ordinal);
     }
 
     // The caller's own cancellation still stops the construction, and as a cancellation, not the limit

@@ -145,7 +145,7 @@ public static class FilletOperations
 
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
 
-    private static Diagnostic LateFailure() =>
+    internal static Diagnostic LateFailure() =>
         Diagnostic.Error(TimeLimit, $"The chamfer couldn't be built: ChFi3d failed, and building its faces until they meet took longer than its limit of {ChamferMeet.Limit.TotalSeconds:0} s.");
 
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
