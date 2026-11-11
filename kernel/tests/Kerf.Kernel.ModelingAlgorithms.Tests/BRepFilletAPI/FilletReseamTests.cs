@@ -144,7 +144,7 @@ public class FilletReseamTests
         Assert.Equal(20, blends.Length);
 
         // The twelve along the edges, cylinders and tori, are on the ball; the eight at the corners are ChFi3d's corner fillings,
-        // B-splines tangent to the blends round them but not the ball's (decision 31303), as in ChFi3d's one step on the same solid
+        // B-splines tangent to the blends round them but not the ball's (decision 2210), as in ChFi3d's one step on the same solid
         Face[] along = blends;
         double miss = BallMiss(along, radius);
         Assert.True(miss < Approximation, $"the ball misses by {miss}");

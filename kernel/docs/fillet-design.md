@@ -406,7 +406,7 @@ Decisions 2193 to 2196. Timings are from a loaded machine.
 
 ## 16. Stage 4a beside a reversed face, and stage 4b's second slice: seams in the way (unit 15T3)
 
-Decisions 31301 to 31305. Timings are from a loaded machine.
+Decisions 2208 to 2212. Timings are from a loaded machine.
 
 **Stage 4a beside a reversed face** (decision 2170). `Assemble` replaced the chain's first face by a compound of its copy and the new fillets, and `ReShape` turned the whole compound as the shell holds that face, so beside a face reversed in its shell the fillets came out the wrong way round and the result was refused. They're now turned back there, as 4c's are. The case is the equal tee mirrored in z = 0, the same solid with its cylinders' faces held reversed: through `Kerf.Modeling` at r = 0.02 to 3 by 2%, 67 of 254 radii failed before, each refused by 4a; now none fails, those 67 built by 4a, on the ball and the slices' volume (`FilletBlendTests`). The equal tee itself (65 of those radii by 4a) and the crossing cylinders (401 of 401 by slice 1) are built as before. Nothing built before changes: the turn applies only beside a reversed face, where everything was refused.
 

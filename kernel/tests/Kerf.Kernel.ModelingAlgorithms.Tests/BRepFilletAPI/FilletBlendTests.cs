@@ -76,7 +76,7 @@ public class FilletBlendTests
     }
 
     // The tee mirrored in z = 0, the same solid, holds its cylinders' faces reversed in its shell. The new faces go in beside the
-    // chain's first face as the shell holds it; before decision 31301 they came out turned the wrong way there, and the result was
+    // chain's first face as the shell holds it; before decision 2208 they came out turned the wrong way there, and the result was
     // refused (decision 2170)
     [Theory]
     [InlineData(0.02)]
