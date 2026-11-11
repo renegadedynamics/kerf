@@ -353,7 +353,7 @@ internal static partial class FilletLimits
             return null;
         }
         return Safely(() => BuildRims(shape, specs) ?? BuildCorners(shape, specs) ?? BuildCornersOnUnified(shape, specs) ?? BuildBlends(shape, specs)
-                                  ?? BuildSpheres(shape, specs));
+                                  ?? BuildSpheres(shape, specs) ?? BuildConvexFirst(shape, specs, options));
     }
 
     /// <summary>The chamfer, under the same conditions as <see cref="Fillet"/>; a chamfer by an angle isn't handled.</summary>
@@ -1033,14 +1033,15 @@ internal static partial class FilletLimits
     /// <summary>A whole circle between two surfaces turned about its axis, each straight in section: plane, cylinder or cone. In the
     /// section through the axis it's a corner of two lines, so the arithmetic is a straight edge's; it starts and ends at one point
     /// of the circle, where its sides are read.</summary>
-    private static Corner? ReadRim(Neighbours neighbours, Edge edge)
+    // An arc, for stage 4b (unit 15T2), is read as its whole circle would be: the tool is turned all the way round
+    private static Corner? ReadRim(Neighbours neighbours, Edge edge, bool arc = false)
     {
         if (Tool.Degenerated(edge))
         {
             return null;
         }
         var curve = new EdgeCurveAdaptor(edge);
-        if (!WholeCircle(edge, curve))
+        if (arc ? curve.GetType() != CurveKind.Circle || edge.AllVertices().Length != 2 : !WholeCircle(edge, curve))
         {
             return null;
         }
