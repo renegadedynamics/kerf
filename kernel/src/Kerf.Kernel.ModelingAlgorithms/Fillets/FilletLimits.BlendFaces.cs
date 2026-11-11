@@ -130,9 +130,10 @@ internal static partial class FilletLimits
     private sealed record Fitted(BSplineSurface Surface, BSplineCurve3D Curve1, BSplineCurve3D Curve2, BSplineCurve2D OnOne, BSplineCurve2D OnTwo);
 
     // The values at each section (Dimension of them) through a cubic in tau
-    private static Fitted? Interpolate(double[] poles, double[] taus)
+    private static Fitted? Interpolate(double[] poles, double[] taus, bool fixedOne = false)
     {
         int n = taus.Length;
+        double[] firstValues = poles[..Dimension];
 
         // A cubic through every section, not-a-knot: the knots at the sections but the second and the second last
         var flat = new NCollection_Array1<double>(1, n + 4);
@@ -156,6 +157,19 @@ internal static partial class FilletLimits
         if (problem != 0)
         {
             return null;
+        }
+
+        // A first contact that's one point (a pin's, unit 15X) is that point at every pole, not that within rounding
+        if (fixedOne)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                poles[i * Dimension] = firstValues[0];
+                poles[i * Dimension + 1] = firstValues[1];
+                poles[i * Dimension + 2] = firstValues[2];
+                poles[i * Dimension + 10] = firstValues[10];
+                poles[i * Dimension + 11] = firstValues[11];
+            }
         }
 
         double[] knots = [taus[0], .. taus[2..(n - 2)], taus[n - 1]];
