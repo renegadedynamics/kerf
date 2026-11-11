@@ -155,6 +155,32 @@ public class FilletSphereTests
     }
 
     [Theory]
+    [InlineData(30)]
+    [InlineData(55)]
+    public void An_end_face_round_a_rounded_edge_of_its_radius_ends_on_a_slanted_face_beyond_a_concave_corner(double degrees)
+    {
+        // As above, but the end face's foot runs to a concave corner with a face slanted to it: the fillet is cut by that face's
+        // plane, which is carried on past the corner, as blend/complex/C1's is. The slanted end takes the spandrel up to the plane
+        const double r = 1.5, l = 30, w = 8, h = 6, reach = 10;
+        double phi = degrees * Math.PI / 180, tan = Math.Tan(phi);
+        Shape block = Solid.Box(l + reach * Math.Cos(phi), w + reach * Math.Sin(phi), h).Value.Shape;
+        Shape notch = Solid.Box(reach * 2, w + 1, h + 2, new Frame3D(new Point3D(l, -1, -1), Direction3D.D.Z, Direction3D.D.X)).Value.Shape;
+        Shape wedge = Solid.Box(reach * 2, reach * 2, h + 2, new Frame3D(new Point3D(l, w, -1), new Direction3D(0, 0, 1), new Direction3D(Math.Cos(phi), Math.Sin(phi), 0))).Value.Shape
+                           .Moved(new Placement(new Transform3D().WithTranslation(new Vector3D(Math.Sin(phi) * reach * 2, -Math.Cos(phi) * reach * 2, 0))));
+        Shape bar = block.Cut(notch).Value.Shape.Cut(wedge).Value.Shape;
+        Shape rounded = Rounded(bar, bar.AllEdges().Where(e => At(e, p => Math.Abs(p.Y) < 1e-9 && Math.Abs(p.Z) < 1e-9)), r);
+        Edge side = rounded.AllEdges().First(e => Upright(e) && At(e, p => Math.Abs(p.X - l) < 1e-9 && Math.Abs(p.Y) < 1e-9));
+        double spandrel = Spandrel(r), mean = r * (10 - 3 * Math.PI) / (3 * (4 - Math.PI));
+        double removed = spandrel * (h - r) + Corner(r) + spandrel * (w - r) - tan * spandrel * mean;
+        double expected = rounded.IntegrateVolume(Precise) - removed;
+
+        Shape made = Staged(rounded, side, r);
+        Sound(rounded, made);
+        Assert.Equal(expected, made.IntegrateVolume(Precise), 1e-6 * removed);
+        OnTheBall(rounded, made, r, -1, p => Math.Abs(p.Z - h) < 1e-9 || Math.Abs((p.X - l) * Math.Sin(phi) - (p.Y - w) * Math.Cos(phi)) < 1e-9);
+    }
+
+    [Theory]
     [InlineData(5)]
     [InlineData(12)]
     public void A_tilted_foot_round_corners_of_its_radius_is_built_where_ChFi3d_fails(double degrees)
@@ -204,8 +230,8 @@ public class FilletSphereTests
     {
         ReadOnlySpan<double> nodes = [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
                                       0.1834346424956498, 0.5255324099163290, 0.7966664774136267, 0.9602898564975363];
-        ReadOnlySpan<double> weights = [0.1012285362903763, 0.2223810344533745, 0.3137066661925477, 0.3626837833783620,
-                                        0.3626837833783620, 0.3137066661925477, 0.2223810344533745, 0.1012285362903763];
+        ReadOnlySpan<double> weights = [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620,
+                                        0.3626837833783620, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
         Vector3D down = up * -1;
         Vector3D Direction(double azimuth, double w)
         {

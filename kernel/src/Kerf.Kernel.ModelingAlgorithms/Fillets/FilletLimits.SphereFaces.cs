@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Measurement.Distance;
@@ -8,6 +9,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using Splines = Kerf.Engine.Geometry.Splines.BSplCLib;
 
 namespace Kerf.Fillets;
 
@@ -67,7 +69,7 @@ internal static partial class FilletLimits
                 Add(cuts, pin.SeamIn, (pin.Run.Start, into, pin.SeamInT));
                 Add(cuts, pin.SeamOut, (pin.Run.End, outOf, pin.SeamOutT));
             }
-            var squared = new Dictionary<Square, (Vertex OnCommon, Vertex OnOther, Edge Arc)>();
+            var squared = new Dictionary<Square, (Vertex OnCommon, Vertex OnOther)>();
             foreach ((Stretch stretch, _) in ball.Stretches)
             {
                 foreach (Square? square in (ReadOnlySpan<Square?>)[stretch.FromSquare, stretch.ToSquare])
@@ -76,40 +78,82 @@ internal static partial class FilletLimits
                     {
                         continue;
                     }
-                    double commonGap = (V.Of(new EdgeCurveAdaptor(square.OnCommon).Value(square.CommonT)) - square.Section.One).Length;
-                    double otherGap = (V.Of(new EdgeCurveAdaptor(square.OnOther).Value(square.OtherT)) - square.Section.Two).Length;
-                    Vertex onCommon = Point(square.Section.One, Math.Max(tolerance, 1.01 * commonGap));
-                    Vertex onOther = Point(square.Section.Two, Math.Max(tolerance, 1.01 * otherGap));
-                    Edge arc = ArcEdge(builder, square.Section, onCommon, onOther, tolerance);
-
-                    // Its curve on the end's plane: the arc's poles in the plane's parameters, as the map is affine
-                    double w = Weight(square.Section, out V middle);
-                    Point2D On(V p) => new(square.Plane.Parameters(p).U, square.Plane.Parameters(p).V);
-                    builder.UpdateEdge(arc, new BSplineCurve2D([On(square.Section.One), On(middle), On(square.Section.Two)], [0.0, 1.0], [3, 3], 2,
-                                                               weights: [1.0, w, 1.0]), square.Plane.Face, tolerance);
-                    squared[square] = (onCommon, onOther, arc);
+                    double commonGap = (V.Of(new EdgeCurveAdaptor(square.OnCommon).Value(square.CommonT)) - square.Common.One).Length;
+                    double otherGap = (V.Of(new EdgeCurveAdaptor(square.OnOther).Value(square.OtherT)) - square.Other.Two).Length;
+                    Vertex onCommon = Point(square.Common.One, Math.Max(tolerance, 1.01 * commonGap));
+                    Vertex onOther = Point(square.Other.Two, Math.Max(tolerance, 1.01 * otherGap));
+                    squared[square] = (onCommon, onOther);
                     Add(cuts, square.OnCommon, (square.At, onCommon, square.CommonT));
                     Add(cuts, square.OnOther, (square.At, onOther, square.OtherT));
-                    inserts.Add((square, arc));
                 }
             }
 
-            // Each stretch's face: its contact edges, and its ends' arcs
+            // Each stretch's face: its contact edges, and its ends' arcs, or at a slanted end where the plane cuts it
             foreach ((Stretch stretch, Patch patch) in ball.Stretches)
             {
                 Face face = faces[patch];
                 Run run = stretch.Run;
-                (Vertex startOne, Vertex startTwo, Edge startArc) = stretch.FromPin is { } fp
-                    ? (pinned[fp].Foot, pinned[fp].Out, pinned[fp].OutArc) : squared[stretch.FromSquare!];
-                (Vertex endOne, Vertex endTwo, Edge endArc) = stretch.ToPin is { } tp
-                    ? (pinned[tp].Foot, pinned[tp].In, pinned[tp].InArc) : squared[stretch.ToSquare!];
-                Edge one = ContactEdge(builder, patch, patch.Fit.Curve1, patch.Fit.OnOne, common.Face, face, 0, startOne, endOne, tolerance);
-                Edge two = ContactEdge(builder, patch, patch.Fit.Curve2, patch.Fit.OnTwo, run.Other.Face, face, 1, startTwo, endTwo, tolerance);
-                IsoOn(builder, startArc, face, patch.First, tolerance);
-                IsoOn(builder, endArc, face, patch.Last, tolerance);
-                Wired(builder, face, [one, endArc, ShapeCasts.Edge(two.Reversed()), ShapeCasts.Edge(startArc.Reversed())]);
-                exact[one] = s => Contact(stretch, common, ball.Side, radius, s).One;
-                exact[two] = s => Contact(stretch, common, ball.Side, radius, s).Two;
+                int n = patch.Taus.Length, step = (n - 1) / stretch.Segments.Length;
+                double commonFrom = stretch.CommonStartsLate ? patch.Taus[step] : patch.First;
+                double otherFrom = stretch.FromSquare is { IsSquare: false } && !stretch.CommonStartsLate ? patch.Taus[step] : patch.First;
+                double commonTo = stretch.CommonEndsEarly ? patch.Taus[n - 1 - step] : patch.Last;
+                double otherTo = stretch.ToSquare is { IsSquare: false } && !stretch.CommonEndsEarly ? patch.Taus[n - 1 - step] : patch.Last;
+                Edge? Stop(Square square, double tauOne, double tauTwo)
+                {
+                    (Vertex onCommon, Vertex onOther) = squared[square];
+                    Edge? stop;
+                    if (square.IsSquare)
+                    {
+                        stop = ArcEdge(builder, square.Common, onCommon, onOther, tolerance);
+                        IsoOn(builder, stop.Value, face, tauOne, tolerance);
+
+                        // Its curve on the end's plane: the arc's poles in the plane's parameters, as the map is affine
+                        double w = Weight(square.Common, out V middle);
+                        Point2D On(V p) => new(square.Plane.Parameters(p).U, square.Plane.Parameters(p).V);
+                        builder.UpdateEdge(stop.Value, new BSplineCurve2D([On(square.Common.One), On(middle), On(square.Common.Two)], [0.0, 1.0], [3, 3], 2,
+                                                                          weights: [1.0, w, 1.0]), square.Plane.Face, tolerance);
+                    }
+                    else if ((stop = CutEdge(builder, patch, face, square.Plane, tauOne, tauTwo, onCommon, onOther, tolerance)) is { } cut)
+                    {
+                        exact[cut] = s => Cut(stretch, square, common, ball.Side, radius, s);
+                    }
+                    if (stop is { } made)
+                    {
+                        inserts.Add((square, made));
+                    }
+                    return stop;
+                }
+                (Vertex startOne, Vertex startTwo, Edge? startArc) = stretch.FromPin is { } fp
+                    ? (pinned[fp].Foot, pinned[fp].Out, pinned[fp].OutArc)
+                    : (squared[stretch.FromSquare!].OnCommon, squared[stretch.FromSquare!].OnOther, Stop(stretch.FromSquare!, commonFrom, otherFrom));
+                (Vertex endOne, Vertex endTwo, Edge? endArc) = stretch.ToPin is { } tp
+                    ? (pinned[tp].Foot, pinned[tp].In, pinned[tp].InArc)
+                    : (squared[stretch.ToSquare!].OnCommon, squared[stretch.ToSquare!].OnOther, Stop(stretch.ToSquare!, commonTo, otherTo));
+                if (startArc is not { } startEdge || endArc is not { } endEdge)
+                {
+                    return null;
+                }
+                Edge one = ContactEdge(builder, patch.Fit.Curve1, patch.Fit.OnOne, common.Face, face, 0, startOne, endOne, commonFrom, commonTo, tolerance);
+                Edge two = ContactEdge(builder, patch.Fit.Curve2, patch.Fit.OnTwo, run.Other.Face, face, 1, startTwo, endTwo, otherFrom, otherTo, tolerance);
+                if (stretch.FromPin is not null)
+                {
+                    IsoOn(builder, startEdge, face, patch.First, tolerance);
+                }
+                if (stretch.ToPin is not null)
+                {
+                    IsoOn(builder, endEdge, face, patch.Last, tolerance);
+                }
+                Wired(builder, face, [one, endEdge, ShapeCasts.Edge(two.Reversed()), ShapeCasts.Edge(startEdge.Reversed())]);
+                var commonPath = stretch.Segments[(stretch.CommonStartsLate ? 1 : 0)..(stretch.Segments.Length - (stretch.CommonEndsEarly ? 1 : 0))];
+                int otherStart = stretch.FromSquare is { IsSquare: false } && !stretch.CommonStartsLate ? 1 : 0;
+                int otherEnd = stretch.ToSquare is { IsSquare: false } && !stretch.CommonEndsEarly ? 1 : 0;
+                var otherPath = stretch.Segments[otherStart..(stretch.Segments.Length - otherEnd)];
+                Section commonFirst = stretch.CommonStartsLate ? stretch.FromSquare!.Common : stretch.First;
+                Section commonLast = stretch.CommonEndsEarly ? stretch.ToSquare!.Common : stretch.Last;
+                Section otherFirst = otherStart == 1 ? stretch.FromSquare!.Other : stretch.First;
+                Section otherLast = otherEnd == 1 ? stretch.ToSquare!.Other : stretch.Last;
+                exact[one] = s => Contact(stretch, commonPath, commonFirst, commonLast, common, ball.Side, radius, s).One;
+                exact[two] = s => Contact(stretch, otherPath, otherFirst, otherLast, common, ball.Side, radius, s).Two;
                 for (int i = 0; i < run.Edges.Length; i++)
                 {
                     Replace(common.Face, run.Edges[i], i == 0 ? [Along(one, run.Forward[0])] : []);
@@ -131,7 +175,7 @@ internal static partial class FilletLimits
                 builder.Add(point, foot.Oriented(Orientation.Forward));
                 builder.Add(point, foot.Oriented(Orientation.Reversed));
                 builder.Degenerated(point, true);
-                Edge circle = ContactEdge(builder, patch, patch.Fit.Curve2, patch.Fit.OnTwo, run.Other.Face, face, 1, into, outOf, tolerance);
+                Edge circle = ContactEdge(builder, patch.Fit.Curve2, patch.Fit.OnTwo, run.Other.Face, face, 1, into, outOf, patch.First, patch.Last, tolerance);
                 IsoOn(builder, inArc, face, patch.First, tolerance);
                 IsoOn(builder, outArc, face, patch.Last, tolerance);
                 Wired(builder, face, [point, outArc, ShapeCasts.Edge(circle.Reversed()), ShapeCasts.Edge(inArc.Reversed())]);
@@ -187,7 +231,7 @@ internal static partial class FilletLimits
             }
         }
 
-        // At a square end, the arc goes into the end face between its two cut edges; an edge can have one at each end
+        // At an end, the arc or the cut goes into the end face between its two cut edges; an edge can have one at each end
         foreach (IGrouping<Shape, (Square Square, Edge Arc)> group in inserts.GroupBy(i => (Shape)i.Square.OnCommon, ShapeHasher.Instance))
         {
             Square square = group.First().Square;
@@ -319,9 +363,9 @@ internal static partial class FilletLimits
         builder.Range(arc, face, 0, 1);
     }
 
-    // A contact edge: the patch's curve, its curve on the support's face, and the line along the patch at v
-    private static Edge ContactEdge(BrepBuilder builder, Patch patch, BSplineCurve3D curve, BSplineCurve2D on, Face support, Face face, double v,
-                                    Vertex start, Vertex end, double tolerance)
+    // A contact edge: the patch's curve from one tau to another, its curve on the support's face, and the line along the patch at v
+    private static Edge ContactEdge(BrepBuilder builder, BSplineCurve3D curve, BSplineCurve2D on, Face support, Face face, double v,
+                                    Vertex start, Vertex end, double from, double to, double tolerance)
     {
         var edge = new Edge();
         builder.MakeEdge(ref edge, curve, tolerance);
@@ -329,8 +373,108 @@ internal static partial class FilletLimits
         builder.Add(edge, end.Oriented(Orientation.Reversed));
         builder.UpdateEdge(edge, on, support, tolerance);
         builder.UpdateEdge(edge, new LineCurve2D(new Point2D(0, v), new Direction2D(1, 0)), face, tolerance);
-        builder.Range(edge, patch.First, patch.Last);
+        builder.Range(edge, from, to);
         return edge;
+    }
+
+    // Where a plane cuts a patch between its contacts' meetings with it, at (one, 0) and (two, 1): through points of the patch's
+    // surface on the plane, its curve, its curve on the patch and its curve on the plane, cubics in v, the edge's tolerance what
+    // they're apart between those points
+    private static Edge? CutEdge(BrepBuilder builder, Patch patch, Face face, Support plane, double one, double two, Vertex start, Vertex end,
+                                 double tolerance)
+    {
+        const int count = 32;
+        var surface = new SurfaceAdaptor(patch.Fit.Surface);
+        V At(double tau, double v)
+        {
+            surface.D0(tau, v, out Point3D p);
+            return V.Of(p);
+        }
+        var ws = new double[count + 1];
+        var values = new double[(count + 1) * 7];
+        double lo = Math.Min(one, two), hi = Math.Max(one, two);
+        for (int k = 0; k <= count; k++)
+        {
+            double w = 0.5 * (1 - Math.Cos(Math.PI * k / count));
+            double tau = k == 0 ? one : k == count ? two : double.NaN;
+            if (double.IsNaN(tau))
+            {
+                double a = lo, b = hi, ga = plane.Distance(At(a, w)), gb = plane.Distance(At(b, w));
+                if (ga * gb > 0)
+                {
+                    return null;
+                }
+                for (int i = 0; i < 80 && b - a > 1e-15 * Math.Max(1, Math.Abs(b)); i++)
+                {
+                    double m = 0.5 * (a + b), gm = plane.Distance(At(m, w));
+                    (a, ga, b, gb) = gm * ga <= 0 ? (a, ga, m, gm) : (m, gm, b, gb);
+                }
+                tau = 0.5 * (a + b);
+            }
+            V p = At(tau, w);
+            (double u, double v) = plane.Parameters(p);
+            ws[k] = w;
+            new[] { p.X, p.Y, p.Z, tau, w, u, v }.CopyTo(values, k * 7);
+        }
+        if (Cubic(values, 7, ws) is not var (knots, multiplicities, poles))
+        {
+            return null;
+        }
+        Point3D[] points = [.. Enumerable.Range(0, count + 1).Select(i => new Point3D(poles[i * 7], poles[i * 7 + 1], poles[i * 7 + 2]))];
+        Point2D[] onPatch = [.. Enumerable.Range(0, count + 1).Select(i => new Point2D(poles[i * 7 + 3], poles[i * 7 + 4]))];
+        Point2D[] onPlane = [.. Enumerable.Range(0, count + 1).Select(i => new Point2D(poles[i * 7 + 5], poles[i * 7 + 6]))];
+        var curve = new BSplineCurve3D(points, knots, multiplicities, 3);
+        var pcurve = new BSplineCurve2D(onPatch, knots, multiplicities, 3);
+        var planar = new BSplineCurve2D(onPlane, knots, multiplicities, 3);
+        double gap = 0;
+        for (int k = 0; k < count; k++)
+        {
+            double w = 0.5 * (ws[k] + ws[k + 1]);
+            V c = V.Of(curve.Value(w));
+            Point2D q = pcurve.Value(w), r = planar.Value(w);
+            gap = Math.Max(gap, Math.Max((c - At(q.X, q.Y)).Length, Math.Max(Math.Abs(plane.Distance(c)), (c - V.Of(FilletLimits.At(plane, r))).Length)));
+        }
+        double own = Math.Max(tolerance, 1.5 * gap);
+        var edge = new Edge();
+        builder.MakeEdge(ref edge, curve, own);
+        builder.Add(edge, start.Oriented(Orientation.Forward));
+        builder.Add(edge, end.Oriented(Orientation.Reversed));
+        builder.UpdateEdge(edge, pcurve, face, own);
+        builder.UpdateEdge(edge, planar, plane.Face, own);
+        builder.Range(edge, 0, 1);
+        builder.UpdateVertex(start, own);
+        builder.UpdateVertex(end, own);
+        return edge;
+    }
+
+    // A cubic through values of the given dimension at the parameters, not-a-knot, as Interpolate's
+    private static (double[] Knots, int[] Multiplicities, double[] Poles)? Cubic(double[] values, int dimension, double[] parameters)
+    {
+        int n = parameters.Length;
+        var flat = new NCollection_Array1<double>(1, n + 4);
+        for (int i = 1; i <= 4; i++)
+        {
+            flat.SetValue(i, parameters[0]);
+            flat.SetValue(n + i, parameters[n - 1]);
+        }
+        for (int i = 2; i <= n - 3; i++)
+        {
+            flat.SetValue(i + 3, parameters[i]);
+        }
+        var at = new NCollection_Array1<double>(1, n);
+        var orders = new NCollection_Array1<int>(1, n);
+        for (int i = 0; i < n; i++)
+        {
+            at.SetValue(i + 1, parameters[i]);
+            orders.SetValue(i + 1, 0);
+        }
+        double[] poles = [.. values];
+        Splines.Interpolate(3, flat, at, orders, dimension, poles, out int problem);
+        if (problem != 0)
+        {
+            return null;
+        }
+        return ([parameters[0], .. parameters[2..(n - 2)], parameters[n - 1]], [4, .. Enumerable.Repeat(1, n - 4), 4], poles);
     }
 
     private static void Wired(BrepBuilder builder, Face face, Edge[] edges)
@@ -356,23 +500,69 @@ internal static partial class FilletLimits
         return V.Of(du).Cross(V.Of(dv)).Dot(away) * -side < 0 ? ShapeCasts.Face(face.Reversed()) : face;
     }
 
-    // The exact section of a stretch at s from its first to its last, the segments taking equal shares
-    private static Section Contact(Stretch stretch, Support common, double side, double radius, double s)
+    // The exact section of a stretch at s along some of its segments, from the first section given to the last, the segments
+    // taking equal shares
+    private static Section Contact(Stretch stretch, (Edge Edge, double From, double To)[] path, Section first, Section last, Support common,
+                                   double side, double radius, double s)
     {
         if (s <= 0)
         {
-            return stretch.First;
+            return first;
         }
         if (s >= 1)
         {
-            return stretch.Last;
+            return last;
         }
-        int n = stretch.Segments.Length;
+        int n = path.Length;
         int k = Math.Min((int)(s * n), n - 1);
-        (Edge edge, double a, double b) = stretch.Segments[k];
+        (Edge edge, double a, double b) = path[k];
         double t = a + (b - a) * (s * n - k);
         V nowhere = new(double.NaN, double.NaN, double.NaN); // fails the volume, so the result
         return StretchSection(stretch, edge, t, common, side, radius) ?? new Section(nowhere, nowhere, nowhere, nowhere);
+    }
+
+    // At a slanted end, the segment where the plane cuts the fillet: whether the contact on the common face is the one still short
+    // of the plane there, and that segment's index
+    private static (bool CommonInside, int Index)? Slanted(Stretch stretch, Square square) =>
+        square.IsSquare ? null
+        : ReferenceEquals(square, stretch.FromSquare) ? (!stretch.CommonStartsLate, 0)
+        : (!stretch.CommonEndsEarly, stretch.Segments.Length - 1);
+
+    // The part of a section's arc on the fillet's side of a slanted end's plane, as a range of w
+    private static (double Lo, double Hi) Kept(Section section, Support plane, bool commonInside)
+    {
+        double side = plane.Distance(commonInside ? section.One : section.Two);
+        double lo = 0, hi = 1;
+        for (int i = 0; i < 60; i++)
+        {
+            double m = 0.5 * (lo + hi);
+            bool inside = plane.Distance(ArcAt(section, m, out _)) * side > 0;
+            (lo, hi) = inside == commonInside ? (m, hi) : (lo, m);
+        }
+        double cut = 0.5 * (lo + hi);
+        return commonInside ? (0, cut) : (cut, 1);
+    }
+
+    // The exact cut at a slanted end, at w = s across the sections: the section in its segment whose arc there is on the plane
+    private static V Cut(Stretch stretch, Square square, Support common, double side, double radius, double s)
+    {
+        if (s <= 0)
+        {
+            return square.Common.One;
+        }
+        if (s >= 1)
+        {
+            return square.Other.Two;
+        }
+        (Edge edge, double a, double b) = stretch.Segments[Slanted(stretch, square)!.Value.Index];
+        V Point(double t) => StretchSection(stretch, edge, t, common, side, radius) is { } section ? ArcAt(section, s, out _) : new V(double.NaN, double.NaN, double.NaN);
+        double ga = square.Plane.Distance(Point(a));
+        for (int i = 0; i < 60; i++)
+        {
+            double m = 0.5 * (a + b), gm = square.Plane.Distance(Point(m));
+            (a, b, ga) = gm * ga <= 0 ? (a, m, ga) : (m, b, gm);
+        }
+        return Point(0.5 * (a + b));
     }
 
     private static Section? StretchSection(Stretch stretch, Edge edge, double t, Support common, double side, double radius)
@@ -445,9 +635,18 @@ internal static partial class FilletLimits
                 {
                     return false;
                 }
-                foreach ((Edge edge, double a, double b) in stretch.Segments)
+                for (int k = 0; k < stretch.Segments.Length; k++)
                 {
-                    flux += Swept(a, b, t => StretchSection(stretch, edge, t, ball.Common, ball.Side, radius), ball.Side, radius, origin);
+                    (Edge edge, double a, double b) = stretch.Segments[k];
+                    Func<Section, (double, double)>? keep = null;
+                    foreach (Square? square in (ReadOnlySpan<Square?>)[stretch.FromSquare, stretch.ToSquare])
+                    {
+                        if (square is not null && Slanted(stretch, square) is var (commonInside, index) && index == k)
+                        {
+                            keep = section => Kept(section, square.Plane, commonInside);
+                        }
+                    }
+                    flux += Swept(a, b, t => StretchSection(stretch, edge, t, ball.Common, ball.Side, radius), ball.Side, radius, origin, keep);
                 }
             }
             foreach ((Pin pin, Patch patch) in ball.Pins)
@@ -489,14 +688,16 @@ internal static partial class FilletLimits
     // Gauss's points on [-1, 1]
     private static ReadOnlySpan<double> Nodes => [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
                                                   0.1834346424956498, 0.5255324099163290, 0.7966664774136267, 0.9602898564975363];
-    private static ReadOnlySpan<double> Weights => [0.1012285362903763, 0.2223810344533745, 0.3137066661925477, 0.3626837833783620,
-                                                    0.3626837833783620, 0.3137066661925477, 0.2223810344533745, 0.1012285362903763];
+    private static ReadOnlySpan<double> Weights => [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620,
+                                                    0.3626837833783620, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
 
     // (X - O) . n over the arcs of sections from a to b, n the outward normal of what's left: away from the ball's centre on a convex
     // edge, towards it on a concave one
-    private static double Swept(double a, double b, Func<double, Section?> sectionAt, double side, double radius, V origin)
+    private static double Swept(double a, double b, Func<double, Section?> sectionAt, double side, double radius, V origin,
+                                Func<Section, (double Lo, double Hi)>? keep = null)
     {
-        const int panels = 16;
+        // A segment a slanted end's plane cuts more finely, as the cut's ends move fast across the sections
+        int panels = keep is null ? 16 : 64;
         double h = 1e-5 * (b - a);
         double sum = 0;
         for (int panel = 0; panel < panels; panel++)
@@ -510,13 +711,14 @@ internal static partial class FilletLimits
                     return double.NaN;
                 }
                 double across = 0;
+                (double from, double to) = keep?.Invoke(here) ?? (0, 1);
                 for (int j = 0; j < Nodes.Length; j++)
                 {
-                    double w = 0.5 + 0.5 * Nodes[j];
+                    double w = from + (to - from) * (0.5 + 0.5 * Nodes[j]);
                     V x = ArcAt(here, w, out V dw);
                     V dt = (ArcAt(after, w, out _) - ArcAt(before, w, out _)) / (2 * h);
                     V outward = (x - here.Centre) * (-side / radius);
-                    across += Weights[j] * 0.5 * (x - origin).Dot(outward) * dt.Cross(dw).Length;
+                    across += Weights[j] * 0.5 * (to - from) * (x - origin).Dot(outward) * dt.Cross(dw).Length;
                 }
                 sum += Weights[i] * 0.5 * (hi - lo) * across;
             }

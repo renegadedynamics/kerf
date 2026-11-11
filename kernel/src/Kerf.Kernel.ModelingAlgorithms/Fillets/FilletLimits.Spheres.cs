@@ -43,13 +43,26 @@ internal static partial class FilletLimits
     private sealed record Pin(Run Run, V Centre, V Foot, V In, V Out, double From, double To, Edge SeamIn, double SeamInT, Edge SeamOut,
                               double SeamOutT);
 
-    // An end square to the contour: its vertex, the plane face there, its edges with the common face and the other, where the
-    // section cuts them, and the section
-    private sealed record Square(Vertex At, Support Plane, Edge OnCommon, double CommonT, Edge OnOther, double OtherT, Section Section);
+    // An open contour's end on a plane face: its vertex, the plane, its edges with the common face and the other, and where each
+    // contact meets the plane: the section there, its parameter on the contour's edge, and the parameter on the plane's edge, past
+    // the vertex where that edge is carried on. Square to the contour, both are the section at the vertex; slanted to it, the fillet
+    // is cut by the plane between them
+    private sealed record Square(Vertex At, Support Plane, Edge OnCommon, double CommonT, Edge OnOther, double OtherT, Section Common, double CommonAt,
+                                 Section Other, double OtherAt)
+    {
+        public bool IsSquare => CommonAt == OtherAt;
+    }
 
-    // A run between two ends, with the stretches of its edges' parameters the sections are taken over, and the end sections
+    // A run between two ends, with the stretches of its edges' parameters the sections are taken over (at a slanted end, from one
+    // contact's meeting the plane to the other's is a segment of its own), and the end sections
     private sealed record Stretch(Run Run, Pin? FromPin, Square? FromSquare, Pin? ToPin, Square? ToSquare, (Edge Edge, double From, double To)[] Segments,
-                                  Section First, Section Last);
+                                  Section First, Section Last)
+    {
+        // At a slanted start, whether the contact on the common face meets the plane later along the contour, so it starts at the
+        // first segment's end; at a slanted end, whether it meets it sooner, so it ends at the last segment's start
+        public bool CommonStartsLate => FromSquare is { IsSquare: false } s && (s.CommonAt - s.OtherAt) * Math.Sign(Segments[0].To - Segments[0].From) > 0;
+        public bool CommonEndsEarly => ToSquare is { IsSquare: false } s && (s.CommonAt - s.OtherAt) * Math.Sign(Segments[^1].To - Segments[^1].From) < 0;
+    }
 
     // The surface fitted through sections, with its curves and the sections, and the supports it touches
     private sealed record Patch(Fitted Fit, double[] Taus, Section[] Sections, double Error, Support One, Support Two)
@@ -442,16 +455,79 @@ internal static partial class FilletLimits
             return null;
         }
         double allowed = Math.Max(Tolerance, Tool.Tolerance(ends[0]));
-        if (Math.Abs(plane.Distance(section.Centre)) > allowed || Math.Abs(plane.Distance(section.One)) > allowed
-            || Math.Abs(plane.Distance(section.Two)) > allowed || Math.Abs(Math.Abs(plane.Axis.Dot(tangent.Unit)) - 1) > 1e-9)
+        if (Math.Abs(plane.Distance(section.Centre)) <= allowed && Math.Abs(plane.Distance(section.One)) <= allowed
+            && Math.Abs(plane.Distance(section.Two)) <= allowed && Math.Abs(Math.Abs(plane.Axis.Dot(tangent.Unit)) - 1) <= 1e-9)
+        {
+            if (OnEdge(onCommon, at, section.One) is not { } commonT || OnEdge(onOther, at, section.Two) is not { } otherT)
+            {
+                return null;
+            }
+            return new Square(at, plane, onCommon, commonT, onOther, otherT, section, t, section, t);
+        }
+
+        // Slanted: each contact goes on until it meets the plane, on the plane's edge with its face or where that edge's line goes
+        // on past the vertex
+        Section? At(double u)
+        {
+            curve.D1(u, out Point3D p, out Vector3D d);
+            V along = V.Of(d);
+            return along.Length < 1e-14 ? null : Solve(common, run.Other, side, radius, V.Of(p), along.Unit);
+        }
+        double? Meets(Func<Section, V> contact)
+        {
+            double h = 1e-7 * Math.Abs(last - first), u = t;
+            for (int iteration = 0; iteration < 50; iteration++)
+            {
+                if (At(u) is not { } here || At(u + h) is not { } ahead)
+                {
+                    return null;
+                }
+                double g = plane.Distance(contact(here)), dg = (plane.Distance(contact(ahead)) - g) / h;
+                if (Math.Abs(g) <= 1e-13 * Math.Max(1, radius))
+                {
+                    return u;
+                }
+                if (Math.Abs(dg) < 1e-12)
+                {
+                    return null;
+                }
+                u -= g / dg;
+                if (Math.Abs(u - t) > 0.5 * (last - first))
+                {
+                    return null;
+                }
+            }
+            return null;
+        }
+        if (Meets(s => s.One) is not { } commonAt || Meets(s => s.Two) is not { } otherAt || At(commonAt) is not { } meetsCommon
+            || At(otherAt) is not { } meetsOther)
         {
             return null;
         }
-        if (OnEdge(onCommon, at, section.One) is not { } commonT || OnEdge(onOther, at, section.Two) is not { } otherT)
+        if ((OnEdge(onCommon, at, meetsCommon.One) ?? Beyond(onCommon, at, meetsCommon.One)) is not { } onCommonT
+            || (OnEdge(onOther, at, meetsOther.Two) ?? Beyond(onOther, at, meetsOther.Two)) is not { } onOtherT)
         {
             return null;
         }
-        return new Square(at, plane, onCommon, commonT, onOther, otherT, section);
+        return new Square(at, plane, onCommon, onCommonT, onOther, onOtherT, meetsCommon, commonAt, meetsOther, otherAt);
+    }
+
+    // The parameter of a point on a straight edge's line past its end at the vertex given, as the edge carried on to it
+    private static double? Beyond(Edge edge, Vertex from, V point)
+    {
+        var curve = new EdgeCurveAdaptor(edge);
+        if (curve.GetType() != CurveKind.Line)
+        {
+            return null;
+        }
+        Tool.Range(edge, out double first, out double last);
+        Exploration.Vertices(edge, out Vertex a, out _);
+        curve.D1(first, out Point3D origin, out Vector3D d);
+        V along = V.Of(d);
+        double t = first + (point - V.Of(origin)).Dot(along) / along.Dot(along);
+        double allowed = Math.Max(Tolerance, Tool.Tolerance(edge));
+        bool past = a.IsSame(from) ? t < first : t > last;
+        return past && (V.Of(curve.Value(t)) - point).Length <= allowed ? t : null;
     }
 
     // The stretch's sections run over its edges' parameters, from where the plane square to the edge holds the ball at one end to
@@ -475,9 +551,17 @@ internal static partial class FilletLimits
             segments[0] = (segments[0].Edge, t, segments[0].To);
             first = new Section(V.Of(new EdgeCurveAdaptor(run.Edges[0]).Value(t)), from.Centre, from.Foot, from.Out);
         }
+        else if (fromSquare!.IsSquare)
+        {
+            first = fromSquare.Common;
+        }
         else
         {
-            first = fromSquare!.Section;
+            // Slanted: from where the first contact meets the plane, a segment to where the other does
+            bool commonFirst = (fromSquare.CommonAt - fromSquare.OtherAt) * Math.Sign(segments[0].To - segments[0].From) < 0;
+            (double start, double split) = commonFirst ? (fromSquare.CommonAt, fromSquare.OtherAt) : (fromSquare.OtherAt, fromSquare.CommonAt);
+            first = commonFirst ? fromSquare.Common : fromSquare.Other;
+            segments = [(segments[0].Edge, start, split), (segments[0].Edge, split, segments[0].To), .. segments[1..]];
         }
         if (to is not null)
         {
@@ -488,9 +572,17 @@ internal static partial class FilletLimits
             segments[^1] = (segments[^1].Edge, segments[^1].From, t);
             last = new Section(V.Of(new EdgeCurveAdaptor(run.Edges[^1]).Value(t)), to.Centre, to.Foot, to.In);
         }
+        else if (toSquare!.IsSquare)
+        {
+            last = toSquare.Common;
+        }
         else
         {
-            last = toSquare!.Section;
+            // Slanted: to where the last contact meets the plane, a segment from where the other does
+            bool commonLast = (toSquare.CommonAt - toSquare.OtherAt) * Math.Sign(segments[^1].To - segments[^1].From) > 0;
+            (double split, double end) = commonLast ? (toSquare.OtherAt, toSquare.CommonAt) : (toSquare.CommonAt, toSquare.OtherAt);
+            last = commonLast ? toSquare.Common : toSquare.Other;
+            segments = [.. segments[..^1], (segments[^1].Edge, segments[^1].From, split), (segments[^1].Edge, split, end)];
         }
 
         // Each segment must still run the way the contour does
@@ -501,7 +593,7 @@ internal static partial class FilletLimits
                 return null;
             }
         }
-        if (segments.Select((s, i) => Math.Sign(s.To - s.From) == (run.Forward[i] ? 1 : -1)).Any(ok => !ok))
+        if (segments.Any(s => Math.Sign(s.To - s.From) != (run.Forward[Array.FindIndex(run.Edges, e => e.IsSame(s.Edge))] ? 1 : -1)))
         {
             return null;
         }
