@@ -767,7 +767,7 @@ internal class DirectPolynomialRoots
         // taken from the product there, as the stable quadratic formula does, and isn't cleaned to zero below, as it has
         // its digits. The linear terms, sqrt(a^2/4 - b + y0), are then a difference of terms near y0 too, noise as large as
         // the square root of their rounding where they're 0 (0.017 in that case); where so, they're taken from the cubic's
-        // term, a*y0/2 - c = 2*p0*q0, which q0, near y0/2, doesn't amplify (decision 30701). Only for the trigonometric
+        // term, a*y0/2 - c = 2*p0*q0, which q0, near y0/2, doesn't amplify (decision 2197). Only for the trigonometric
         // equations: everywhere, the constant moved a 2D offset and a bisector against native.
         bool keepsConstants = false;
         if (keepsSmallFactor && q0 > 0.0)

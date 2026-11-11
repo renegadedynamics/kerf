@@ -418,7 +418,7 @@ public class BooleanVolumeTests
     // Radius 5000 at the end plane, 2e-11 and 1e-10 off: the end circle's two crossings of the tool, 4.5e-4 and 1e-3 either side
     // of the touch, came back one right and one at the touch, from a quartic whose factors' linear terms were noise, or both at
     // the touch where the small constant kept from the factors' product was cleaned to zero; the cut and the fuse were invalid
-    // (Bad orientation, Unorientable), each a failure (decision 30701)
+    // (Bad orientation, Unorientable), each a failure (decision 2197)
     [Theory]
     [InlineData(-2e-11)]
     [InlineData(-1e-10)]

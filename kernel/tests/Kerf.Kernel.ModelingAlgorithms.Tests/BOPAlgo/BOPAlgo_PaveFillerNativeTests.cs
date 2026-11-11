@@ -132,7 +132,7 @@ public class BOPAlgo_PaveFillerNativeTests(ITestOutputHelper output)
 
     // Cases whose records differ from native's by rounding where Kerf's answer is the right one, with the most each number may
     // move. bopfuse_simple/ZN2: one of the cones' apexes lies on the other, and the trigonometric quartic there,
-    // 256 x^4 + 192 x^2 - 1.4e-14, has roots +/-8.6e-9; native finds 8.6e-9 and 0, Kerf both (decision 30701), which moves the
+    // 256 x^4 + 192 x^2 - 1.4e-14, has roots +/-8.6e-9; native finds 8.6e-9 and 0, Kerf both (decision 2197), which moves the
     // two section curves' points and p-curves by 3e-13 at most, as far from the cones as native's.
     private static readonly Dictionary<int, double> s_roundedAway = new() { [389] = 1e-12 };
 

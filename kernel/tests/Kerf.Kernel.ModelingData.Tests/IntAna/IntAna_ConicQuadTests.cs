@@ -210,7 +210,7 @@ public class IntAna_ConicQuadTests
         // A circle of radius 500 and a cylinder of the same radius whose axis lies in the circle's plane, d inside its
         // centre: they cross sqrt(2 R d) either side of where they'd touch. The quartic's small roots were lost to
         // cancellation, so both points came back at the touch (decision 2127); then one of the two was still wrong, from
-        // the factors' linear terms, noise there (decision 30701). Both are found now.
+        // the factors' linear terms, noise there (decision 2197). Both are found now.
         const double R = 500;
         foreach (double d in new[] { 1e-10, 2e-10, 3e-10, 5e-10, 7e-10, 1e-9, 1e-8 })
         {

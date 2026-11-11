@@ -459,7 +459,7 @@ public class math_DirectPolynomialRootsTest
     // of two cones (bopfuse_simple/ZN2) solved them. Ferrari's factors lost a small constant to cancellation, and the linear
     // terms beside it were noise: one root of each pair was right and the other wrong (5.5e-6 came back as -1.5e-8, or 0), or
     // both came back as 0 where the constant, kept from the factors' product, was cleaned to zero. The roots are those of the
-    // quartics as given, found in exact rationals (decision 30701).
+    // quartics as given, found in exact rationals (decision 2197).
     [Theory]
     [InlineData(-2.9999995604157448e-05, 0.0, -1e6, 0.0, 2.9999995604157448e-05, 5.4772251737679586e-06)]
     [InlineData(-1.00000761449337e-06, 0.0, -1e6, 0.0, 1.00000761449337e-06, 1.0000038072394375e-06)]
