@@ -148,7 +148,7 @@ public class IntTools_EdgeIntersectorTests
     }
 
     // An edge beside a long, narrow strip of a cubic B-spline surface, askew to the axes, without touching it (unit 15Y,
-    // decision 30302). The localisation's boxes overlap down to the size of the gap, so it listed a pair of samples for every
+    // decision 2183). The localisation's boxes overlap down to the size of the gap, so it listed a pair of samples for every
     // one: 55,746 pairs at a gap of 0.007 beside a strip 0.1 wide (1.5 GB allocated, 8 s) and 491,684 at 0.002 beside one 0.02
     // wide (11.8 GB, 72 s), each pair an extremum that found nothing. Past 2,000 pairs it's now given up for the exact
     // intersection, which finds the same: nothing beside the strip, and the crossing of an edge that goes through it

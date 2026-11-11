@@ -132,7 +132,7 @@ public class ChamferMeetTests
     // each top vertex the rim's two arcs are tangent and so are the side faces: ChFi3d's corner of three chamfers fails, and
     // its side stripes are off the length where they meet their faces at a narrow angle. Unit 15V's bands of Kerf's own (the
     // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths, without crossings
-    // and of the volume the sections give, and the public chamfer returns it (decision 30121)
+    // and of the volume the sections give, and the public chamfer returns it (decision 2179)
     [Theory]
     [InlineData(0.05, 18)]
     [InlineData(0.2, 18)]
@@ -156,7 +156,7 @@ public class ChamferMeetTests
         Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
     }
 
-    // Near 0.01 the loft's fuse ran 36 to 82 s and its pieces still weren't a chamfer (unit 15Y, decisions 30301 and 30302).
+    // Near 0.01 the loft's fuse ran 36 to 82 s and its pieces still weren't a chamfer (unit 15Y, decisions 2182 and 2183).
     // The time was each side edge against its own chamfer's band, 0.007 away along its whole length: the edge/face
     // intersection's localisation listed up to 99,873 pairs of samples, now given up at 2,000. The pieces were ChFi3d's bands
     // carried on across by a length, their parameter across running 0 to 10 over a width of 0.02: the fuse's curves on them were

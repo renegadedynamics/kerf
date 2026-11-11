@@ -138,7 +138,7 @@ public static class FilletOperations
 
     /// <summary>
     /// ChFi3d couldn't build the chamfer, and Kerf's own construction, which carries the chamfer faces on until they meet,
-    /// didn't finish within its limit of 20 s (the owner, decision 30121): <c>fillet.time-limit</c>. ChFi3d's own failure
+    /// didn't finish within its limit of 20 s (the owner, decision 2179): <c>fillet.time-limit</c>. ChFi3d's own failure
     /// follows it among the diagnostics.
     /// </summary>
     public static DiagnosticCode TimeLimit { get; } = new("fillet.time-limit");

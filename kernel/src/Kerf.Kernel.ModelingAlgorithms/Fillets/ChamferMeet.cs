@@ -50,7 +50,7 @@ namespace Kerf.Fillets;
 /// corner whose edges are all chamfered where its chamfers are all convex; every chamfer face one of ChFi3d's B-spline
 /// stripes, its contacts its u-isos, or one of Kerf's own (unit 15V: <c>ChamferMeet.Chains.cs</c>) where stripes run on
 /// through a vertex or ChFi3d's stripe is off the chamfer's length. A solid is built only when asked, proved by its volume
-/// against an integral apart from the fuse (<c>ChamferMeet.Volume.cs</c>); the operation doesn't ask yet (decision 30113).
+/// against an integral apart from the fuse (<c>ChamferMeet.Volume.cs</c>); the operation doesn't ask yet (decision 2177).
 /// What doesn't fit gives null, and ChFi3d's failure stands.
 /// </para>
 /// <para>
@@ -165,7 +165,7 @@ internal static partial class ChamferMeet
 
     private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands);
 
-    /// <summary>How long the construction may take, the caller's own cancellation aside (the owner, decision 30121).</summary>
+    /// <summary>How long the construction may take, the caller's own cancellation aside (the owner, decision 2179).</summary>
     public static TimeSpan Limit { get; } = TimeSpan.FromSeconds(20);
 
     /// <summary>
@@ -611,7 +611,7 @@ internal static partial class ChamferMeet
             // ChFi3d's u runs from 0 to the stripe's length along its edge whatever the band's width: across a band 0.02 wide
             // and 10 long the surface moves 0.002 for each unit of u. Carried on across by a length, which adds that length
             // in u, its speed jumps 500-fold where the extension starts, and the fuse's curves on such a surface came out up
-            // to 0.5 off it (unit 15Y, decision 30301). So u by the band's width, the surface the same
+            // to 0.5 off it (unit 15Y, decision 2182). So u by the band's width, the surface the same
             double width = surface.EvalD0(0, (a1.Y + b1.Y) / 2).DistanceTo(surface.EvalD0(umax, (a2.Y + b2.Y) / 2));
             if (width > Precision.Confusion() && !surface.IsUPeriodic)
             {
