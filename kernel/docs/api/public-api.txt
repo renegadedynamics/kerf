@@ -1551,6 +1551,7 @@ public static class Kerf.Booleans.BooleanOperations
   public static DiagnosticCode BuiltOtherWayRound { get; }
   public static DiagnosticCode BuiltWithFuzzyValue { get; }
   public static DiagnosticCode EmptyResult { get; }
+  public static DiagnosticCode FacesOpen { get; }
   public static DiagnosticCode Failed { get; }
   public static Result<Built<Shape>> Common(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<Built<Shape>> Common<TShape, TOther>(this TShape a, TOther b, BooleanOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)

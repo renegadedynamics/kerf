@@ -80,6 +80,10 @@ public static class BooleanOperations
     /// names: <c>boolean.fuzzy-value</c>.</summary>
     public static DiagnosticCode BuiltWithFuzzyValue { get; } = new("boolean.fuzzy-value");
 
+    /// <summary>A warning: the result's faces don't close, so its volume isn't known to better than the message says, and making it
+    /// again didn't close them: <c>boolean.faces-open</c> (<see cref="BooleanVolumes.Check"/>).</summary>
+    public static DiagnosticCode FacesOpen { get; } = new("boolean.faces-open");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(OperationDiagnostics.BooleanFailed, "The Boolean operation failed.");
 
     extension<TShape>(TShape a) where TShape : struct, IShape<TShape>
@@ -185,7 +189,9 @@ public static class BooleanOperations
         if (options is not { CheckResult: false } && result.TryGetValue(out built) && RuleOf(operation) is { } rule
             && BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is { } wrong)
         {
-            return Again(rule, arguments, tools, options, cancellationToken) ?? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
+            // Faces that don't close are made again as a wrong result is, but kept, with the warning, if nothing closes them
+            return Again(rule, arguments, tools, options, cancellationToken)
+                   ?? (wrong.IsError ? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics) : Result<Built<Shape>>.Success(built, [.. result.Diagnostics, wrong]));
         }
         return result;
     }

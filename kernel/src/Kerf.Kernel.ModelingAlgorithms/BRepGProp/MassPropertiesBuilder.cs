@@ -89,6 +89,18 @@ internal static class MassPropertiesBuilder
         return props.Mass();
     }
 
+    /// <summary>
+    /// The volume the faces of <paramref name="s"/> bound, taken about <paramref name="reference"/> and integrated to the relative
+    /// error <paramref name="eps"/> of each face's contribution, as the mass-only path of VolumeProperties does. Faces that close
+    /// give the same volume about any point; faces that don't, a volume that depends on it (unit 15AH).
+    /// </summary>
+    internal static double VolumeAbout(in Shape s, in Point3D reference, double eps)
+    {
+        var props = new Properties(reference);
+        VolumePropertiesFaces(s, props, reference, eps, skipShared: false, useTriangulation: false, massOnly: true);
+        return props.Mass();
+    }
+
     /// <summary>The area of the faces of <paramref name="s"/>, as <see cref="VolumeOfFaces"/> takes them: planar faces in closed
     /// form, any other by fixed Gauss points.</summary>
     internal static double AreaOfFaces(in Shape s)

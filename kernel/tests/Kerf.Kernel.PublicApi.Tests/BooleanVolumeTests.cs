@@ -452,6 +452,26 @@ public class BooleanVolumeTests
         Assert.Equal(1, fused.Value.Shape.IntegrateVolume() / 2.022861157e12, 1e-6);
     }
 
+    // Radius 5000 at the end plane, 3e-3 off, as Kerf.Modeling builds it (centred cylinders): the Boolean's common is 1.4e-4 short,
+    // valid and inside the rules, and no point shows it, as every point is within the tolerance of right. One edge's curve on the
+    // main cylinder starts 1.73 from its vertex, which its tolerance of 1.732 covers, so the face's boundary in its parameters is
+    // open, and the volume integrated from it depends on where it's taken from (unit 15AH). Its faces open, the common is made
+    // again, and with a fuzzy value comes out right and closed; since decision 2204 the first common is right. The result as made
+    // is a fixture (Fixtures/cylinders-open-common-*.brep), so the check is held to it
+    [Fact]
+    public void A_common_whose_faces_dont_close_is_made_again_and_right()
+    {
+        Shape cylinder = Fixtures.Named("cylinders-open-common-a"), tool = Fixtures.Named("cylinders-open-common-b");
+        Diagnostic? open = Check(BooleanVolumeRule.Common, cylinder, tool, Fixtures.Named("cylinders-open-common-result"));
+        Assert.NotNull(open);
+        Assert.Equal(BooleanOperations.FacesOpen, open.Code);
+        Assert.False(open.IsError);
+        Assert.Contains("The common's faces don't close", open.Message, StringComparison.Ordinal);
+        Shape both = cylinder.Common(tool).Value.Shape;
+        // The common part from the geometry, 333333333332.6
+        Assert.Equal(1, both.IntegrateVolume(new MassOptions { Tolerance = 1e-6 }) / 333333333332.6, 1e-6);
+    }
+
     // A cylinder of the radius, standing on the origin's plane by half its height, and one twice as long across it with its axis at
     // height * radius and offset from the first's, with their common part from the geometry
     private static (Shape Cylinder, Shape Tool, double Common) Crossing(double radius, double offset, double height)
