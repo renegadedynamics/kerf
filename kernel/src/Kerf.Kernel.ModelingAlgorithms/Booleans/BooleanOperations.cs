@@ -80,10 +80,6 @@ public static class BooleanOperations
     /// names: <c>boolean.fuzzy-value</c>.</summary>
     public static DiagnosticCode BuiltWithFuzzyValue { get; } = new("boolean.fuzzy-value");
 
-    /// <summary>A warning: the result's faces don't close, so its volume isn't known to better than the message says, and making it
-    /// again didn't close them: <c>boolean.faces-open</c> (<see cref="BooleanVolumes.Check"/>).</summary>
-    public static DiagnosticCode FacesOpen { get; } = new("boolean.faces-open");
-
     private static readonly Diagnostic Failure = Diagnostic.Error(OperationDiagnostics.BooleanFailed, "The Boolean operation failed.");
 
     extension<TShape>(TShape a) where TShape : struct, IShape<TShape>
@@ -189,9 +185,7 @@ public static class BooleanOperations
         if (options is not { CheckResult: false } && result.TryGetValue(out built) && RuleOf(operation) is { } rule
             && BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is { } wrong)
         {
-            // Faces that don't close are made again as a wrong result is, but kept, with the warning, if nothing closes them
-            return Again(rule, arguments, tools, options, cancellationToken)
-                   ?? (wrong.IsError ? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics) : Result<Built<Shape>>.Success(built, [.. result.Diagnostics, wrong]));
+            return Again(rule, arguments, tools, options, cancellationToken) ?? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
         }
         return result;
     }
@@ -200,9 +194,9 @@ public static class BooleanOperations
     /// A common, cut or fuse whose result <see cref="BooleanVolumes.Check"/> proved wrong, made again as the checked Booleans
     /// do: with its two inputs the other way round (<c>boolean.other-way-round</c>), then with a fuzzy value of ten times their
     /// largest tolerance and of a thousand times it (<c>boolean.fuzzy-value</c>), the second only up to a hundred-thousandth of
-    /// the largest input's size. The first that passes the same check, with the warning; a failure, <c>boolean.failed</c>, if
-    /// none does. For a caller that leaves out <see cref="BooleanOptions.CheckResult"/> and checks
-    /// a later step of its own (Kerf.Modeling, after its clean).
+    /// the largest input's size. The first that passes the same check, at the fuzzy value asked for, with the warning; a
+    /// failure, <c>boolean.failed</c>, if none does. For a caller that leaves out <see cref="BooleanOptions.CheckResult"/> and
+    /// checks a later step of its own (Kerf.Modeling, after its clean).
     /// </summary>
     public static Result<Built<Shape>> Retry(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
                                              BooleanOptions? options = null, CancellationToken cancellationToken = default)
@@ -300,7 +294,10 @@ public static class BooleanOperations
             };
             again.SetTools(List(tools, nameof(tools)));
             Result<Built<Shape>> result = Run((BuilderAlgo)again, arguments, options with { FuzzyValue = fuzzy }, null, cancellationToken);
-            if (!result.TryGetValue(out Built<Shape>? built) || BooleanVolumes.Check(rule, arguments, tools, built.Shape, fuzzy) is not null)
+            // Checked at the fuzzy value asked for, not the one it was made with: that one is how it's made, not a wider idea of right,
+            // and it would let through what the first attempt was proved wrong for (gdml_public/A5's cut, which removes nothing at
+            // 0.0112 as at 0; unit 15AH)
+            if (!result.TryGetValue(out Built<Shape>? built) || BooleanVolumes.Check(rule, arguments, tools, built.Shape, options.FuzzyValue) is not null)
             {
                 continue;
             }

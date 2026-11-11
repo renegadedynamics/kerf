@@ -104,9 +104,9 @@ public static class BooleanVolumes
 
     /// <summary>
     /// The error if <paramref name="result"/> can't be what <paramref name="rule"/> makes of <paramref name="arguments"/> and
-    /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures. A warning,
-    /// <see cref="BooleanOperations.FacesOpen"/>, if its faces don't close, so its volume can't be known to better than the
-    /// figures it names, though no point shows it wrong. Null if it may be right, or if no rule applies to these shapes.
+    /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures, or saying that its faces don't close,
+    /// though no point shows it wrong, so the solid they bound isn't the one asked for. Null if it may be right, or if no rule
+    /// applies to these shapes.
     /// </summary>
     /// <param name="rule">The operation.</param>
     /// <param name="arguments">Its objects.</param>
@@ -670,8 +670,10 @@ public static class BooleanVolumes
             BooleanVolumeRule.Cut => "cut",
             _ => "fuse",
         };
-        return Diagnostic.Warning(BooleanOperations.FacesOpen,
-            $"The {name}'s faces don't close: the volume they bound is {Figure(aboutLow)} taken about one corner of its box and {Figure(aboutHigh)} about the other, so an edge's curve on a face is off its curve in space, and its volume isn't known to better than that.");
+        // A failure, not a warning (the owner, 14 November 2026): a Boolean of two closed solids that gives faces which don't close
+        // has made something other than a solid, whatever its points say
+        return Diagnostic.Error(DiagnosticCode.InvalidResult,
+            $"The {name}'s result is wrong: its faces don't close, as the volume they bound is {Figure(aboutLow)} taken about one corner of its box and {Figure(aboutHigh)} about the other, so an edge's curve on a face is off its curve in space.");
     }
 
     // Decision 1937's proof for a common and a cut (unit 15AH): a common's boundary is each input's faces where they're inside the

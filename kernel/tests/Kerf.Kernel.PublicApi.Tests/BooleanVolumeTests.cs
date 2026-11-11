@@ -372,13 +372,26 @@ public class BooleanVolumeTests
     // spline by the clean, and the pcurve projected from it missed half the curve: 0.8% out, valid and a success (decision 1922)
     [Theory]
     [InlineData(0.5, -5e-11, 0.0)]
-    [InlineData(0.1, -2e-7, 0.5)]
     [InlineData(10, -5e-6, 0.5)]
     public void A_cut_of_equal_radius_nearly_crossing_keeps_its_corner(double radius, double offset, double height)
     {
         (Shape cylinder, Shape tool, double common) = Crossing(radius, offset, height);
         Shape result = cylinder.Cut(tool).Value.Shape;
         Assert.Equal(Math.PI * radius * radius * 2 * radius - common, result.IntegrateVolume(), 2e-4 * common);
+    }
+
+    // The same at radius 0.1, 2e-7 off: the cut keeps its corner, but its faces don't close, 0.0020694 about one corner of its box
+    // and 0.0020677 about the other (8e-4 of it), and made again the other way round and with fuzzy values they still don't. So
+    // it fails, carrying what it made, where unit 15AH's first form returned it with a warning (the owner, 14 November 2026)
+    [Fact]
+    public void A_cut_of_equal_radius_nearly_crossing_whose_faces_dont_close_fails_carrying_it()
+    {
+        (Shape cylinder, Shape tool, double common) = Crossing(0.1, -2e-7, 0.5);
+        Result<Built<Shape>> cut = cylinder.Cut(tool);
+        Assert.False(cut.IsSuccess);
+        Assert.Contains(cut.Diagnostics, static d => d.Code == DiagnosticCode.InvalidResult && d.Message.Contains("its faces don't close", StringComparison.Ordinal));
+        Assert.True(cut.TryGetInvalid(out Built<Shape>? made));
+        Assert.Equal(Math.PI * 0.1 * 0.1 * 0.2 - common, made.Shape.IntegrateVolume(), 2e-3 * common);
     }
 
     // The clean wasn't at fault in these: an edge grazing a face got new vertices either side of the one already touching, once the
@@ -473,21 +486,48 @@ public class BooleanVolumeTests
     // Radius 5000 at the end plane, 3e-3 off, as Kerf.Modeling builds it (centred cylinders): the Boolean's common is 1.4e-4 short,
     // valid and inside the rules, and no point shows it, as every point is within the tolerance of right. One edge's curve on the
     // main cylinder starts 1.73 from its vertex, which its tolerance of 1.732 covers, so the face's boundary in its parameters is
-    // open, and the volume integrated from it depends on where it's taken from (unit 15AH). Its faces open, the common is made
-    // again, and with a fuzzy value comes out right and closed; since decision 2204 the first common is right. The result as made
-    // is a fixture (Fixtures/cylinders-open-common-*.brep), so the check is held to it
+    // open, and the volume integrated from it depends on where it's taken from (unit 15AH). Faces that don't close are a wrong
+    // result, which fails where nothing made again closes them (the owner, 14 November 2026); this common, made again with a
+    // fuzzy value, came out right and closed, and since decision 2204 the first common is right. The result as made is a fixture
+    // (Fixtures/cylinders-open-common-*.brep), so the check is held to it
     [Fact]
-    public void A_common_whose_faces_dont_close_is_made_again_and_right()
+    public void A_common_whose_faces_dont_close_is_proved_wrong_and_now_made_right()
     {
         Shape cylinder = Fixtures.Named("cylinders-open-common-a"), tool = Fixtures.Named("cylinders-open-common-b");
-        Diagnostic? open = Check(BooleanVolumeRule.Common, cylinder, tool, Fixtures.Named("cylinders-open-common-result"));
-        Assert.NotNull(open);
-        Assert.Equal(BooleanOperations.FacesOpen, open.Code);
-        Assert.False(open.IsError);
-        Assert.Contains("The common's faces don't close", open.Message, StringComparison.Ordinal);
+        Fires(Check(BooleanVolumeRule.Common, cylinder, tool, Fixtures.Named("cylinders-open-common-result")), "The common's result is wrong", "its faces don't close");
         Shape both = cylinder.Common(tool).Value.Shape;
         // The common part from the geometry, 333333333332.6
         Assert.Equal(1, both.IntegrateVolume(new MassOptions { Tolerance = 1e-6 }) / 333333333332.6, 1e-6);
+    }
+
+    // The corpus's boolean/bopfuse_complex/J6, its fuse's inputs: the fuse's faces don't close, 69.1415 about one corner of its box
+    // and 69.1626 about the other, and made the other way round and with fuzzy values they still don't (`Unable to orient the
+    // shape`). So the fuse fails, carrying what it made, where unit 15AH's first form returned it with a warning (the owner,
+    // 14 November 2026)
+    [Fact]
+    public void A_fuse_whose_faces_dont_close_whatever_is_tried_fails_carrying_it()
+    {
+        Result<Built<Shape>> fused = Fixtures.Named("fuse-open-faces-a").Fuse(Fixtures.Named("fuse-open-faces-b"));
+        Assert.False(fused.IsSuccess);
+        Assert.Contains(fused.Diagnostics, static d => d.Code == DiagnosticCode.InvalidResult && d.Message.Contains("its faces don't close", StringComparison.Ordinal));
+        Assert.True(fused.TryGetInvalid(out Built<Shape>? made));
+        Assert.Equal(11, made.Shape.AllFaces().Length);
+    }
+
+    // The corpus's boolean/gdml_public/A5, its last cut's inputs: a cylinder of radius 2.9 partly inside a solid of revolution
+    // (18 of 224 points of a grid inside the tool are inside the object too), and the cut removes nothing, its volume the
+    // object's; the tool's face inside the object isn't on the result's boundary. Made again with a fuzzy value of 0.0112 it's the
+    // same, which passed the check only as the check was taken at that fuzzy value, ten of it widening the depth; a result made
+    // again is now checked at the fuzzy value asked for, so the cut fails, carrying it (unit 15AH)
+    [Fact]
+    public void A_cut_that_removes_nothing_of_a_tool_partly_inside_fails_carrying_it()
+    {
+        Shape solid = Fixtures.Named("cone-cut-nothing-a"), tool = Fixtures.Named("cone-cut-nothing-b");
+        Result<Built<Shape>> cut = solid.Cut(tool);
+        Assert.False(cut.IsSuccess);
+        Assert.Contains(cut.Diagnostics, static d => d.Code == DiagnosticCode.InvalidResult && d.Message.Contains("on the tool's face inside the object, aren't on its boundary", StringComparison.Ordinal));
+        Assert.True(cut.TryGetInvalid(out Built<Shape>? made));
+        Assert.Equal(1, made.Shape.IntegrateVolume() / solid.IntegrateVolume(), 1e-9);
     }
 
     // A cylinder of the radius, standing on the origin's plane by half its height, and one twice as long across it with its axis at

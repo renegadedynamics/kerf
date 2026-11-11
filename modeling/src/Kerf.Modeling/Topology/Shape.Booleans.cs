@@ -103,19 +103,13 @@ public static partial class ShapeExtensions
             // Made again as the kernel's checked Booleans are, the other way round and then with a fuzzy value (decisions
             // 1937 and 2103), its warning passed on; what that makes is cleaned and checked as the first was
             var retried = BooleanOperations.Retry(RuleOf(operation)!.Value, arg, tool, (options ?? BooleanOptions.Default) with { Simplify = false, CheckResult = true });
-            if (retried.TryGetValue(out var again))
-            {
-                foreach (var diagnostic in retried.Diagnostics)
-                    if (!diagnostic.IsError)
-                        Warnings.Warn(diagnostic);
-                (result, history, _) = Finish(operation, arg, tool, options, TopoUtil.Downcast(again.Shape),
-                                              ModelHistory.FromHistory(again.History, arg, tool), made, proved: true);
-            }
-            // Faces that don't close, which making it again didn't mend, are kept with the warning (unit 15AH)
-            else if (wrong.IsError)
+            if (!retried.TryGetValue(out var again))
                 throw Failures.Wrong(result, wrong);
-            else
-                Warnings.Warn(wrong);
+            foreach (var diagnostic in retried.Diagnostics)
+                if (!diagnostic.IsError)
+                    Warnings.Warn(diagnostic);
+            (result, history, _) = Finish(operation, arg, tool, options, TopoUtil.Downcast(again.Shape),
+                                          ModelHistory.FromHistory(again.History, arg, tool), made, proved: true);
         }
 
         // Remove an unnecessary compound around a single shape
