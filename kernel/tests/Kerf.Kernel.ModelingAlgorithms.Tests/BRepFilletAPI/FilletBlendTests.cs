@@ -2,6 +2,7 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -72,6 +73,30 @@ public class FilletBlendTests
             Assert.Single(made.History.Generated(edge), s => s.Type == ShapeType.Face);
             Assert.True(made.History.IsRemoved(edge));
         }
+    }
+
+    // The tee mirrored in z = 0, the same solid, holds its cylinders' faces reversed in its shell. The new faces go in beside the
+    // chain's first face as the shell holds it; before decision 31301 they came out turned the wrong way there, and the result was
+    // refused (decision 2170)
+    [Theory]
+    [InlineData(0.02)]
+    [InlineData(0.5)]
+    public void Beside_a_face_reversed_in_its_shell_the_new_faces_are_turned_as_it_is(double radius)
+    {
+        Shape tee = new Transform(Tee(), new Transform3D().WithMirror(new Frame3D(new Point3D(0, 0, 0), Direction3D.D.Z)), true).Shape();
+        Assert.True(tee.Validate().IsValid);
+        Edge[] edges = Meeting(tee);
+        Assert.Equal(6, edges.Length);
+        Assert.Contains(tee.AllFaces(), f => f.Orientation == Orientation.Reversed && new FaceSurfaceAdaptor(f).GetType() == SurfaceKind.Cylinder);
+
+        EngineOutcome? outcome = FilletLimits.AfterAlgorithm(tee, [.. edges.Select(e => new FilletSpec(e, radius))], FilletOptions.Default);
+        Assert.NotNull(outcome);
+        Shape shape = outcome.Value.Shape();
+        Assert.True(shape.Validate().IsValid);
+        Assert.Empty(EdgeCrossings.All(tee, shape));
+        Assert.Equal(12, shape.AllFaces().Length);
+        AddsTheRegion(tee, shape, radius);
+        BallTouchesBoth(shape, radius);
     }
 
     [Theory]

@@ -411,6 +411,13 @@ internal static partial class FilletLimits
 
         var reshape = new ReShape();
         var replaced = new List<(Face Old, Face New)>();
+
+        // The new faces go in beside a face replaced as the shell holds it, so they're turned as it is (decision 2170)
+        var held = new Dictionary<Shape, Orientation>(ShapeHasher.Instance);
+        for (var explorer = new Explorer(shape, ShapeType.Face); explorer.More(); explorer.Next())
+        {
+            held.TryAdd(explorer.Current(), explorer.Current().Orientation);
+        }
         foreach ((Shape key, List<(Chain Chain, Edge Contact)> those) in contacts)
         {
             Face face = ShapeCasts.Face(key.Oriented(Orientation.Forward));
@@ -455,9 +462,10 @@ internal static partial class FilletLimits
                 var compound = new Compound();
                 builder.MakeCompound(ref compound);
                 builder.Add(compound, copy);
+                bool turned = held.GetValueOrDefault(key, Orientation.Forward) == Orientation.Reversed;
                 foreach (Face f in added)
                 {
-                    builder.Add(compound, f);
+                    builder.Add(compound, turned ? f.Reversed() : f);
                 }
                 reshape.Replace(face, compound);
             }
