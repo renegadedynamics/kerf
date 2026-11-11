@@ -209,8 +209,8 @@ public class IntAna_ConicQuadTests
     {
         // A circle of radius 500 and a cylinder of the same radius whose axis lies in the circle's plane, d inside its
         // centre: they cross sqrt(2 R d) either side of where they'd touch. The quartic's small roots were lost to
-        // cancellation, so both points came back at the touch (decision 2127). One of the two can still be wrong, from
-        // the factors' linear terms (left, by that decision): this asks that a crossing is found, not only the touch.
+        // cancellation, so both points came back at the touch (decision 2127); then one of the two was still wrong, from
+        // the factors' linear terms, noise there (decision 2197). Both are found now.
         const double R = 500;
         foreach (double d in new[] { 1e-10, 2e-10, 3e-10, 5e-10, 7e-10, 1e-9, 1e-8 })
         {
@@ -221,7 +221,8 @@ public class IntAna_ConicQuadTests
             Assert.Equal(2, anInt.PointCount);
             double aY = Math.Sqrt(2 * R * d);
             double[] aYs = [anInt.Point(1).Y, anInt.Point(2).Y];
-            Assert.True(aYs.Any(y => Math.Abs(Math.Abs(y) - aY) < 1e-3 * aY), $"d {d}: {aYs[0]:R} and {aYs[1]:R} for +/-{aY:R}");
+            Assert.True(aYs.All(y => Math.Abs(Math.Abs(y) - aY) < 1e-3 * aY) && aYs[0] * aYs[1] < 0,
+                        $"d {d}: {aYs[0]:R} and {aYs[1]:R} for +/-{aY:R}");
         }
     }
 
