@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A 2D offset whose medial axis loops fails over at once** (kernel decisions 31501 to 31503): `Offset` of a wire or
+  face inwards past its curves' bends could spend seconds and gigabytes in the kernel before giving the same result (7.4
+  s and 22.4 GB for a wire of 36 B-splines, now 0.05 s and 46 MB). Results are unchanged.
 - **`Chamfer`'s time limit is set per call: `ChamferOptions.TimeLimit`** (kernel decisions 2185, 2186): the time the
   kernel's own construction may take where OCCT's chamfer fails, a `TimeSpan`, 20 s by default as before; any positive
   time up to 49 days raises or lowers it, and `Timeout.InfiniteTimeSpan` turns it off. Zero, a negative time or one over
