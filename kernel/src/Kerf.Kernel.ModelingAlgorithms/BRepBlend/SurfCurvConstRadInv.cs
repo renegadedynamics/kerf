@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1997-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Fillets.BlendFunctions;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Numerics;
 
@@ -64,177 +65,77 @@ internal class SurfCurvConstRadInv : SurfCurvFuncInv
         return 3;
     }
 
-    public override bool Value(math_Vector x, math_Vector f)
+    // Kerf (decision 2158): the rolling ball's equations, as SurfRstConstRad's: the centre at the radius from the
+    // surface's point along its own unit normal, square to the curve at its point and as far from it as the radius; the
+    // guide's plane through the two points' midpoint.
+    private void Ball(math_Vector x, int order, math_Vector f, Matrix? d)
     {
         Point3D ptgui;
-        Vector3D d1gui;
-        _guide.D1(x[1], out ptgui, out d1gui);
-        Vector3D nplan = d1gui.Normalized();
+        Vector3D d1gui, d2gui;
+        _guide.D2(x[1], out ptgui, out d1gui, out d2gui);
+        double normd1gui = d1gui.Magnitude;
+        Vector3D nplan = d1gui / normd1gui;
         double theD = -(nplan.XYZ().Dot(ptgui.XYZ()));
-        Point3D ptcur = _curv.Value(x[2]);
-        f[1] = nplan.XYZ().Dot(ptcur.XYZ()) + theD;
-        Point2D p2drst = _rst!.Value(x[3]);
-        Point3D pts;
-        Vector3D du, dv;
-        _surf.D1(p2drst.X, p2drst.Y, out pts, out du, out dv);
-        f[2] = nplan.XYZ().Dot(pts.XYZ()) + theD;
-        Vector3D ns = du.Crossed(dv);
-        double norm = nplan.Crossed(ns).Magnitude;
-        double unsurnorm = 1.0 / norm;
-        ns = Vector3D.LinearForm(nplan.Dot(ns), nplan, -1.0, ns);
-        ns = ns.Multiplied(unsurnorm);
-        Vector3D @ref = new(ptcur, pts);
-        @ref = Vector3D.LinearForm(_ray, ns, @ref);
-        f[3] = @ref.SquareMagnitude - _ray * _ray;
+
+        _curv.D2(x[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
+        double invnormcur = ConstRad.InverseNorm(d1cur);
+        Vector3D tcur = invnormcur * d1cur;
+
+        _rst!.D1(x[3], out Point2D p2drst, out Vector2D d1rst);
+        _surf.D2(p2drst.X, p2drst.Y, out Point3D pts, out Vector3D d1u, out Vector3D d1v, out Vector3D d2u, out Vector3D d2v,
+                 out Vector3D duv);
+        Vector3D nsurf = d1u.Crossed(d1v);
+        double invnorm = ConstRad.InverseNorm(nsurf);
+        Vector3D nn = invnorm * nsurf;
+        Point3D center = pts.Translated(-_ray * nn);
+        Vector3D corde = new(ptcur, center);
+
+        f[1] = (nplan.XYZ().Dot(pts.XYZ()) + nplan.XYZ().Dot(ptcur.XYZ())) / 2 + theD;
+        f[2] = corde.Dot(tcur);
+        f[3] = corde.SquareMagnitude - _ray * _ray;
+        if (order == 0 || d is null)
+        {
+            return;
+        }
+
+        Vector3D dnplan = (d2gui - nplan.Dot(d2gui) * nplan) / normd1gui;
+        Vector3D mid = new((pts.XYZ() + ptcur.XYZ()) / 2 - ptgui.XYZ());
+
+        // In the guide's parameter: only the plane moves.
+        d[1, 1] = dnplan.Dot(mid) - normd1gui;
+        d[2, 1] = 0.0;
+        d[3, 1] = 0.0;
+
+        // In the curve's parameter.
+        d[1, 2] = nplan.Dot(d1cur) / 2;
+        d[2, 2] = corde.Dot(ConstRad.UnitNormalD1(tcur, invnormcur, d2cur)) - d1cur.Dot(tcur);
+        d[3, 2] = -2 * corde.Dot(d1cur);
+
+        // In the arc's parameter: the surface's point and its reversed unit normal along the arc.
+        Vector3D dwrstpts = Vector3D.LinearForm(d1rst.X, d1u, d1rst.Y, d1v);
+        Vector3D dwrstnsurf = Vector3D.LinearForm(d1rst.X, d2u.Crossed(d1v).Added(d1u.Crossed(duv)), d1rst.Y,
+                                                  d1u.Crossed(d2v).Added(duv.Crossed(d1v)));
+        Vector3D dcenter = dwrstpts - _ray * ConstRad.UnitNormalD1(nn, invnorm, dwrstnsurf);
+        d[1, 3] = nplan.Dot(dwrstpts) / 2;
+        d[2, 3] = dcenter.Dot(tcur);
+        d[3, 3] = 2 * corde.Dot(dcenter);
+    }
+
+    public override bool Value(math_Vector x, math_Vector f)
+    {
+        Ball(x, 0, f, null);
         return true;
     }
 
     public override bool Derivatives(math_Vector x, Matrix d)
     {
-        Point3D ptgui;
-        Vector3D d1gui, d2gui;
-        _guide.D2(x[1], out ptgui, out d1gui, out d2gui);
-        double normd1gui = d1gui.Magnitude;
-        double unsurnormd1gui = 1.0 / normd1gui;
-        Vector3D nplan = d1gui.Multiplied(unsurnormd1gui);
-        Vector3D dnplan = new();
-        dnplan = Vector3D.LinearForm(-nplan.Dot(d2gui), nplan, d2gui);
-        dnplan = dnplan.Multiplied(unsurnormd1gui);
-        double dtheD = -nplan.XYZ().Dot(d1gui.XYZ()) - dnplan.XYZ().Dot(ptgui.XYZ());
-        Point3D ptcur;
-        Vector3D d1cur;
-        _curv.D1(x[2], out ptcur, out d1cur);
-        d[1, 1] = dnplan.XYZ().Dot(ptcur.XYZ()) + dtheD;
-        d[1, 2] = nplan.XYZ().Dot(d1cur.XYZ());
-        d[1, 3] = 0.0;
-
-        Point2D p2drst;
-        Vector2D d1rst;
-        _rst!.D1(x[3], out p2drst, out d1rst);
-        Point3D pts;
-        Vector3D d1u, d1v, d2u, d2v, duv;
-        _surf.D2(p2drst.X, p2drst.Y, out pts, out d1u, out d1v, out d2u, out d2v, out duv);
-        d[2, 1] = dnplan.XYZ().Dot(pts.XYZ()) + dtheD;
-        d[2, 2] = 0.0;
-        Vector3D dwrstpts = new();
-        dwrstpts = Vector3D.LinearForm(d1rst.X, d1u, d1rst.Y, d1v);
-        d[2, 3] = nplan.XYZ().Dot(dwrstpts.XYZ());
-
-        Vector3D nsurf = d1u.Crossed(d1v);
-        Vector3D dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
-        Vector3D dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
-        Vector3D dwrstnsurf = new();
-        dwrstnsurf = Vector3D.LinearForm(d1rst.X, dunsurf, d1rst.Y, dvnsurf);
-
-        Vector3D nplancrosnsurf = nplan.Crossed(nsurf);
-        Vector3D dwguinplancrosnsurf = dnplan.Crossed(nsurf);
-        Vector3D dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
-
-        double norm2 = nplancrosnsurf.SquareMagnitude;
-        double norm = Math.Sqrt(norm2);
-        double unsurnorm = 1.0 / norm;
-        double raysurnorm = _ray * unsurnorm;
-        double unsurnorm2 = unsurnorm * unsurnorm;
-        double raysurnorm2 = _ray * unsurnorm2;
-        double dwguinorm = unsurnorm * nplancrosnsurf.Dot(dwguinplancrosnsurf);
-        double dwrstnorm = unsurnorm * nplancrosnsurf.Dot(dwrstnplancrosnsurf);
-
-        double nplandotnsurf = nplan.Dot(nsurf);
-        double dwguinplandotnsurf = dnplan.Dot(nsurf);
-        double dwrstnplandotnsurf = nplan.Dot(dwrstnsurf);
-
-        Vector3D temp = new(), dwguitemp = new(), dwrsttemp = new();
-        temp = Vector3D.LinearForm(nplandotnsurf, nplan, -1.0, nsurf);
-        dwguitemp = Vector3D.LinearForm(nplandotnsurf, dnplan, dwguinplandotnsurf, nplan);
-        dwrsttemp = Vector3D.LinearForm(dwrstnplandotnsurf, nplan, -1.0, dwrstnsurf);
-
-        Vector3D corde = new(ptcur, pts);
-        Vector3D @ref = new(), dwguiref = new(), dwrstref = new();
-        @ref = Vector3D.LinearForm(raysurnorm, temp, corde);
-        dwguiref = Vector3D.LinearForm(raysurnorm, dwguitemp, -raysurnorm2 * dwguinorm, temp);
-        dwrstref = Vector3D.LinearForm(raysurnorm, dwrsttemp, -raysurnorm2 * dwrstnorm, temp, dwrstpts);
-
-        @ref = @ref.Added(@ref);
-        d[3, 1] = @ref.Dot(dwguiref);
-        d[3, 2] = -@ref.Dot(d1cur);
-        d[3, 3] = @ref.Dot(dwrstref);
-
+        Ball(x, 1, new math_Vector(1, 3), d);
         return true;
     }
 
     public override bool Values(math_Vector x, math_Vector f, Matrix d)
     {
-        Point3D ptgui;
-        Vector3D d1gui, d2gui;
-        _guide.D2(x[1], out ptgui, out d1gui, out d2gui);
-        double normd1gui = d1gui.Magnitude;
-        double unsurnormd1gui = 1.0 / normd1gui;
-        Vector3D nplan = d1gui.Multiplied(unsurnormd1gui);
-        double theD = -(nplan.XYZ().Dot(ptgui.XYZ()));
-        Vector3D dnplan = new();
-        dnplan = Vector3D.LinearForm(-nplan.Dot(d2gui), nplan, d2gui);
-        dnplan = dnplan.Multiplied(unsurnormd1gui);
-        double dtheD = -nplan.XYZ().Dot(d1gui.XYZ()) - dnplan.XYZ().Dot(ptgui.XYZ());
-        Point3D ptcur;
-        Vector3D d1cur;
-        _curv.D1(x[2], out ptcur, out d1cur);
-        f[1] = nplan.XYZ().Dot(ptcur.XYZ()) + theD;
-        d[1, 1] = dnplan.XYZ().Dot(ptcur.XYZ()) + dtheD;
-        d[1, 2] = nplan.XYZ().Dot(d1cur.XYZ());
-        d[1, 3] = 0.0;
-
-        Point2D p2drst;
-        Vector2D d1rst;
-        _rst!.D1(x[3], out p2drst, out d1rst);
-        Point3D pts;
-        Vector3D d1u, d1v, d2u, d2v, duv;
-        _surf.D2(p2drst.X, p2drst.Y, out pts, out d1u, out d1v, out d2u, out d2v, out duv);
-        f[2] = nplan.XYZ().Dot(pts.XYZ()) + theD;
-        d[2, 1] = dnplan.XYZ().Dot(pts.XYZ()) + dtheD;
-        d[2, 2] = 0.0;
-        Vector3D dwrstpts = new();
-        dwrstpts = Vector3D.LinearForm(d1rst.X, d1u, d1rst.Y, d1v);
-        d[2, 3] = nplan.XYZ().Dot(dwrstpts.XYZ());
-
-        Vector3D nsurf = d1u.Crossed(d1v);
-        Vector3D dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
-        Vector3D dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
-        Vector3D dwrstnsurf = new();
-        dwrstnsurf = Vector3D.LinearForm(d1rst.X, dunsurf, d1rst.Y, dvnsurf);
-
-        Vector3D nplancrosnsurf = nplan.Crossed(nsurf);
-        Vector3D dwguinplancrosnsurf = dnplan.Crossed(nsurf);
-        Vector3D dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
-
-        double norm2 = nplancrosnsurf.SquareMagnitude;
-        double norm = Math.Sqrt(norm2);
-        double unsurnorm = 1.0 / norm;
-        double raysurnorm = _ray * unsurnorm;
-        double unsurnorm2 = unsurnorm * unsurnorm;
-        double raysurnorm2 = _ray * unsurnorm2;
-        double dwguinorm = unsurnorm * nplancrosnsurf.Dot(dwguinplancrosnsurf);
-        double dwrstnorm = unsurnorm * nplancrosnsurf.Dot(dwrstnplancrosnsurf);
-
-        double nplandotnsurf = nplan.Dot(nsurf);
-        double dwguinplandotnsurf = dnplan.Dot(nsurf);
-        double dwrstnplandotnsurf = nplan.Dot(dwrstnsurf);
-
-        Vector3D temp = new(), dwguitemp = new(), dwrsttemp = new();
-        temp = Vector3D.LinearForm(nplandotnsurf, nplan, -1.0, nsurf);
-        dwguitemp = Vector3D.LinearForm(nplandotnsurf, dnplan, dwguinplandotnsurf, nplan);
-        dwrsttemp = Vector3D.LinearForm(dwrstnplandotnsurf, nplan, -1.0, dwrstnsurf);
-
-        Vector3D corde = new(ptcur, pts);
-        Vector3D @ref = new(), dwguiref = new(), dwrstref = new();
-        @ref = Vector3D.LinearForm(raysurnorm, temp, corde);
-        f[3] = @ref.SquareMagnitude - _ray * _ray;
-        dwguiref = Vector3D.LinearForm(raysurnorm, dwguitemp, -raysurnorm2 * dwguinorm, temp);
-        dwrstref = Vector3D.LinearForm(raysurnorm, dwrsttemp, -raysurnorm2 * dwrstnorm, temp, dwrstpts);
-
-        @ref = @ref.Added(@ref);
-        d[3, 1] = @ref.Dot(dwguiref);
-        d[3, 2] = -@ref.Dot(d1cur);
-        d[3, 3] = @ref.Dot(dwrstref);
+        Ball(x, 1, f, d);
         return true;
     }
 
