@@ -1120,6 +1120,11 @@ internal class SurfRstLineBuilder
             // Kerf (decision 2158): the ball at the restriction's end is square to its tangent there.
             ballP.SetTangent(Vector3D.LinearForm(d2drst.X, d1urst, d2drst.Y, d1vrst));
         }
+        else if (finvP is SurfPointEvolRadInv ballE)
+        {
+            // Kerf (decision 31204): likewise for the evolving radius.
+            ballE.SetTangent(Vector3D.LinearForm(d2drst.X, d1urst, d2drst.Y, d1vrst));
+        }
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);
         finvP.GetTolerance(toler, _tolpoint3d);
         finvP.GetBounds(infb, supb);

@@ -1062,9 +1062,9 @@ internal partial class FilBuilder : FilletBuilderBase
             }
 
             finv1.Set(ch11);
-            finvp1.Set(choix);
+            finvp1.Set(fsp.Law(hGuide), choix, true);
             finv2.Set(ch22);
-            finvp2.Set(choix);
+            finvp2.Set(fsp.Law(hGuide), choix, false);
             func.Set(choix);
             func.Set(_shape);
 
@@ -1517,9 +1517,9 @@ internal partial class FilBuilder : FilletBuilderBase
             }
 
             finv1.Set(ch1);
-            finvp1.Set(choix);
+            finvp1.Set(fsp.Law(hGuide), choix, true);
             finv2.Set(ch2);
-            finvp2.Set(choix);
+            finvp2.Set(fsp.Law(hGuide), choix, false);
             func.Set(choix);
             func.Set(_shape);
 

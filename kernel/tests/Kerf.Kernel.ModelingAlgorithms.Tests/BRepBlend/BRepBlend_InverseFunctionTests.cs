@@ -368,4 +368,90 @@ public class BRepBlend_InverseFunctionTests
         Assert.Equal(0, new Vector3D(aC, aP1).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
         Assert.Equal(0, new Vector3D(aC, aP2).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
     }
+
+    // The evolving radius between the two edges (decision 31204): 1.5 + w / 10 along the guide, 1.9 at w = 4
+    private static LawsFunction AlongTheGuide()
+    {
+        var aLaw = new Linear();
+        aLaw.Set(0, 1.5, 10, 2.5);
+        return aLaw;
+    }
+
+    private static RstRstEvolRad BetweenEdgesEvolving(int theChoice, double theParam)
+    {
+        var aF = new RstRstEvolRad(Plane(), Edge1(), PlaneY(), Edge2(), AlongX(), AlongTheGuide());
+        aF.Set(Plane(), Edge1(), PlaneY(), Edge2());
+        aF.Set(theChoice);
+        aF.Set(theParam);
+        return aF;
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void RstRstEvolRad_DerivativesAreThoseOfItsValues(int theChoice)
+    {
+        AssertDerivatives2(BetweenEdgesEvolving(theChoice, 4), Vec(4.2, 3.7));
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(3, true)]
+    [InlineData(2, false)]
+    [InlineData(4, false)]
+    public void CurvPointRadInv_DerivativesAreThoseOfItsValues_WithAnEvolvingRadius(int theChoice, bool thePointOnFirst)
+    {
+        var aF = new CurvPointRadInv(Guide(), new CurveOnSurface(Edge2(), PlaneY()));
+        aF.Set(Evolving(), theChoice, thePointOnFirst);
+        aF.Set(new Point3D(7.5, 1.2, 0.4));
+        aF.SetTangent(new Vector3D(1, 0.3, 0)); // edge 1's
+        AssertDerivatives2(aF, Vec(0.4, 7.2));
+    }
+
+    // Solved, the section is the ball's of the law's radius there: the centre at that radius from both edges' points, its
+    // chord to each square to that edge; and the walk's tangent, which takes the radius's change, is the solutions' own
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void RstRstEvolRad_HasTheBallOfTheLawsRadiusBetweenTheEdgesForItsSolution(int theChoice)
+    {
+        (math_Vector Sol, Point3D P1, Point3D P2) Solve(RstRstEvolRad theF)
+        {
+            var aTol = new math_Vector(1, 2);
+            var aInf = new math_Vector(1, 2);
+            var aSup = new math_Vector(1, 2);
+            theF.GetTolerance(aTol, 1e-12);
+            theF.GetBounds(aInf, aSup);
+            var aRoot = new FunctionSetRoot(theF, aTol, 50);
+            aRoot.Perform(theF, Vec(4, 4), aInf, aSup);
+            Assert.True(aRoot.IsDone);
+            var aSol = new math_Vector(1, 2);
+            aRoot.Root(aSol);
+            Assert.True(theF.IsSolution(aSol, 1e-9));
+            return (aSol, theF.PointOnRst1(), theF.PointOnRst2());
+        }
+
+        RstRstEvolRad aF = BetweenEdgesEvolving(theChoice, 4);
+        (math_Vector aSol, Point3D aP1, Point3D aP2) = Solve(aF);
+        var aCircle = new Circle3D();
+        aF.Section(4, aSol[1], aSol[2], out _, out _, ref aCircle);
+        Point3D aC = aCircle.Location;
+        Assert.Equal(1.9, aCircle.Radius, 12);
+        Assert.Equal(1.9, aC.DistanceTo(aP1), 9);
+        Assert.Equal(1.9, aC.DistanceTo(aP2), 9);
+        Assert.Equal(0, new Vector3D(aP1, aC).Dot(new Vector3D(1, 0.3, 0).Normalized()), 9);
+        Assert.Equal(0, new Vector3D(aP2, aC).Dot(new Vector3D(1, 0, 0.2).Normalized()), 9);
+        Vector3D aTangent1 = aF.TangentOnRst1(), aTangent2 = aF.TangentOnRst2();
+
+        const double H = 1e-5;
+        (_, Point3D aP1p, Point3D aP2p) = Solve(BetweenEdgesEvolving(theChoice, 4 + H));
+        (_, Point3D aP1m, Point3D aP2m) = Solve(BetweenEdgesEvolving(theChoice, 4 - H));
+        Vector3D aFd1 = new Vector3D(aP1m, aP1p) / (2 * H), aFd2 = new Vector3D(aP2m, aP2p) / (2 * H);
+        Assert.True((aFd1 - aTangent1).Magnitude < 1e-5 * (1 + aFd1.Magnitude), $"first: {aTangent1} against {aFd1}");
+        Assert.True((aFd2 - aTangent2).Magnitude < 1e-5 * (1 + aFd2.Magnitude), $"second: {aTangent2} against {aFd2}");
+    }
 }

@@ -160,125 +160,96 @@ internal class SurfRstEvolRad : SurfRstFunction
         return 3;
     }
 
+    // Kerf (decision 31204): the rolling ball's equations, as SurfRstConstRad's (decision 2158), of the radius the law
+    // gives where the section crosses the guide. The centre is at the radius from the surface's contact along its own
+    // unit normal (OCCT projects the normal into the plane square to the guide and puts both contacts in that plane);
+    // the ball touches the restriction where the centre's foot on it is, so the centre minus that point is square to
+    // the restriction's tangent and as long as the radius; the guide's plane only places the section, through the
+    // contacts' midpoint, as EvolRad's does, so the two functions meet where one hands over to the other.
+    //   f1 = nplan . (pts + ptrst) / 2 + d
+    //   f2 = (centre - ptrst) . t, t the restriction's unit tangent
+    //   f3 = |centre - ptrst|^2 - ray^2
+    // Scratch of the last evaluation, read by IsSolution and the sections.
+    private Vector3D _nn, _dnu, _dnv, _drst, _d2rst, _trst, _dtrst;
+    private double _invnorm, _invnormrst;
+    private Point3D _center;
+
+    // Evaluates the surface (to the second order) and the restriction at x, the centre, and the derivatives of the
+    // reversed unit normal -nn in u and v (_dnu, _dnv) and of the restriction's unit tangent in w (_dtrst).
+    private void Ball(math_Vector x, out Vector3D d1u1, out Vector3D d1v1)
+    {
+        _surf.D2(x[1], x[2], out _pts, out d1u1, out d1v1, out Vector3D d2u1, out Vector3D d2v1, out Vector3D d2uv1);
+        _cons.D2(x[3], out _ptrst, out _drst, out _d2rst);
+
+        Vector3D ns = d1u1.Crossed(d1v1);
+        _invnorm = ConstRad.InverseNorm(ns);
+        _nn = _invnorm * ns;
+        _center = _pts.Translated(-_ray * _nn);
+        _dnu = -ConstRad.UnitNormalD1(_nn, _invnorm, d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1)));
+        _dnv = -ConstRad.UnitNormalD1(_nn, _invnorm, d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1)));
+
+        _invnormrst = ConstRad.InverseNorm(_drst);
+        _trst = _invnormrst * _drst;
+        _dtrst = ConstRad.UnitNormalD1(_trst, _invnormrst, _d2rst);
+    }
+
+    private void BallValues(math_Vector f)
+    {
+        Vector3D corde = new(_ptrst, _center);
+        f[1] = (_nplan.XYZ().Dot(_pts.XYZ()) + _nplan.XYZ().Dot(_ptrst.XYZ())) / 2 + _d;
+        f[2] = corde.Dot(_trst);
+        f[3] = corde.SquareMagnitude - _ray * _ray;
+    }
+
+    private void BallDerivatives(Matrix d, in Vector3D d1u1, in Vector3D d1v1)
+    {
+        Vector3D corde = new(_ptrst, _center);
+        Vector3D dcu = d1u1 + _ray * _dnu, dcv = d1v1 + _ray * _dnv;
+
+        d[1, 1] = _nplan.Dot(d1u1) / 2;
+        d[1, 2] = _nplan.Dot(d1v1) / 2;
+        d[1, 3] = _nplan.Dot(_drst) / 2;
+
+        d[2, 1] = dcu.Dot(_trst);
+        d[2, 2] = dcv.Dot(_trst);
+        d[2, 3] = corde.Dot(_dtrst) - _drst.Dot(_trst);
+
+        d[3, 1] = 2 * corde.Dot(dcu);
+        d[3, 2] = 2 * corde.Dot(dcv);
+        d[3, 3] = -2 * corde.Dot(_drst);
+    }
+
     public override bool Value(math_Vector x, math_Vector f)
     {
-        Vector3D d1u1, d1v1, ns, vref = new();
-        double norm;
-
-        _surf.D1(x[1], x[2], out _pts, out d1u1, out d1v1);
-        _ptrst = _cons.Value(x[3]);
-
-        f[1] = _nplan.XYZ().Dot(_pts.XYZ()) + _d;
-        f[2] = _nplan.XYZ().Dot(_ptrst.XYZ()) + _d;
-
-        ns = d1u1.Crossed(d1v1);
-        norm = _nplan.Crossed(ns).Magnitude;
-        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
-        vref = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptrst, _pts));
-        f[3] = vref.SquareMagnitude - _ray * _ray;
+        Ball(x, out _, out _);
+        BallValues(f);
         return true;
     }
 
     public override bool Derivatives(math_Vector x, Matrix d)
     {
-        Vector3D d1u1, d1v1, d2u1, d2v1, d2uv1, d1;
-        Vector3D ns, ncrossns, resul = new(), temp, vref = new();
-
-        double norm, ndotns, grosterme;
-
-        _surf.D2(x[1], x[2], out _pts, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-        _cons.D1(x[3], out _ptrst, out d1);
-
-        d[1, 1] = _nplan.Dot(d1u1);
-        d[1, 2] = _nplan.Dot(d1v1);
-        d[1, 3] = 0.0;
-
-        d[2, 1] = 0.0;
-        d[2, 2] = 0.0;
-        d[2, 3] = _nplan.Dot(d1);
-
-        ns = d1u1.Crossed(d1v1);
-        ncrossns = _nplan.Crossed(ns);
-        norm = ncrossns.Magnitude;
-        ndotns = _nplan.Dot(ns);
-
-        vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
-        vref = vref.Divided(norm);
-        vref = Vector3D.LinearForm(_ray, vref, new Vector3D(_ptrst, _pts));
-
-        // Derivative by u1
-        temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
-        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
-                            -_ray / norm, temp, d1u1);
-
-        d[3, 1] = 2.0 * (resul.Dot(vref));
-
-        // Derivative by v1
-        temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
-        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
-                            -_ray / norm, temp, d1v1);
-
-        d[3, 2] = 2.0 * (resul.Dot(vref));
-
-        d[3, 3] = -2.0 * (d1.Dot(vref));
-
+        Ball(x, out Vector3D d1u1, out Vector3D d1v1);
+        BallDerivatives(d, d1u1, d1v1);
         return true;
     }
 
     public override bool Values(math_Vector x, math_Vector f, Matrix d)
     {
-        Vector3D d1u1, d1v1, d1;
-        Vector3D d2u1, d2v1, d2uv1;
-        Vector3D ns, ncrossns, resul = new(), temp, vref = new();
-
-        double norm, ndotns, grosterme;
-
-        _surf.D2(x[1], x[2], out _pts, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-        _cons.D1(x[3], out _ptrst, out d1);
-
-        f[1] = _nplan.XYZ().Dot(_pts.XYZ()) + _d;
-        f[2] = _nplan.XYZ().Dot(_ptrst.XYZ()) + _d;
-
-        d[1, 1] = _nplan.Dot(d1u1);
-        d[1, 2] = _nplan.Dot(d1v1);
-        d[1, 3] = 0.0;
-
-        d[2, 1] = 0.0;
-        d[2, 2] = 0.0;
-        d[2, 3] = _nplan.Dot(d1);
-
-        ns = d1u1.Crossed(d1v1);
-        ncrossns = _nplan.Crossed(ns);
-        norm = ncrossns.Magnitude;
-        ndotns = _nplan.Dot(ns);
-
-        vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
-        vref = vref.Divided(norm);
-        vref = Vector3D.LinearForm(_ray, vref, new Vector3D(_ptrst, _pts));
-
-        f[3] = vref.SquareMagnitude - _ray * _ray;
-
-        // Derivative by u1
-        temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
-        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
-                            -_ray / norm, temp, d1u1);
-
-        d[3, 1] = 2.0 * (resul.Dot(vref));
-
-        // Derivative by v1
-        temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
-        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
-                            -_ray / norm, temp, d1v1);
-
-        d[3, 2] = 2.0 * (resul.Dot(vref));
-
-        d[3, 3] = -2.0 * (d1.Dot(vref));
-
+        Ball(x, out Vector3D d1u1, out Vector3D d1v1);
+        BallValues(f);
+        BallDerivatives(d, d1u1, d1v1);
         return true;
+    }
+
+    // The guide's term of the equations' derivative along the walk, with the sign the solvers take it (-df/dt): f1
+    // moves with the guide's plane, f2 and f3 with the radius, the centre moving by -dray along the unit normal.
+    private void GuideSecondMember(math_Vector secmember, in Vector3D dnplan)
+    {
+        Vector3D temp = new((_pts.XYZ() + _ptrst.XYZ()) / 2 - _ptgui.XYZ());
+        Vector3D corde = new(_ptrst, _center);
+        secmember[1] = _normtg - dnplan.Dot(temp);
+        secmember[2] = _dray * _nn.Dot(_trst);
+        secmember[3] = 2 * _dray * corde.Dot(_nn) + 2 * _ray * _dray;
     }
 
     /// <summary>The reference surface and restriction <see cref="Decroch"/> tests against.</summary>
@@ -349,12 +320,13 @@ internal class SurfRstEvolRad : SurfRstFunction
         math_Vector valsol = new(1, 3), secmember = new(1, 3);
         Matrix gradsol = new(1, 3, 1, 3);
 
-        Vector3D dnplan = new(), d1u1, d1v1, d1urst, d1vrst, d1, temp = new(), ns, ns2, ncrossns, resul = new();
+        Vector3D dnplan, d1u1, d1v1, d1urst, d1vrst, d1, ns, ns2, resul;
         Point3D bid;
-        double norm, ndotns, grosterme;
         double cosa, sina, angle;
 
-        Values(sol, valsol, gradsol);
+        Ball(sol, out d1u1, out d1v1);
+        BallValues(valsol);
+        BallDerivatives(gradsol, d1u1, d1v1);
         if (Math.Abs(valsol[1]) <= tol && Math.Abs(valsol[2]) <= tol && Math.Abs(valsol[3]) <= 2 * tol * Math.Abs(_ray))
         {
             // Calculation of tangents
@@ -362,30 +334,13 @@ internal class SurfRstEvolRad : SurfRstFunction
             _pt2ds = new Point2D(sol[1], sol[2]);
             _prmrst = sol[3];
             _pt2drst = _rst.Value(_prmrst);
-            _surf.D1(sol[1], sol[2], out _pts, out d1u1, out d1v1);
-            _cons.D1(sol[3], out _ptrst, out d1);
+            d1 = _drst;
             dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+            GuideSecondMember(secmember, dnplan);
 
-            temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
-            secmember[1] = _normtg - dnplan.Dot(temp);
-
-            temp = temp.WithXYZ(_ptrst.XYZ() - _ptgui.XYZ());
-            secmember[2] = _normtg - dnplan.Dot(temp);
-
-            ns = d1u1.Crossed(d1v1);
-            ncrossns = _nplan.Crossed(ns);
-            ndotns = _nplan.Dot(ns);
-            norm = ncrossns.Magnitude;
-
-            grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-            Vector3D dnw = new();
-            dnw = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
-                              grosterme / norm, ns);
-
-            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-            resul = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptrst, _pts));
-
-            secmember[3] = -2.0 * _ray * (dnw.Dot(resul)) - 2.0 * _dray * (ns.Dot(resul)) + 2.0 * _ray * _dray;
+            // The ball's (decision 2158): the reversed unit normal, and the centre's chord to the restriction.
+            ns = -_nn;
+            resul = new Vector3D(_ptrst, _center);
 
             Gauss resol = new(gradsol);
             if (resol.IsDone)
@@ -418,11 +373,6 @@ internal class SurfRstEvolRad : SurfRstFunction
                 double a, b;
                 T3dto2d(out a, out b, _tgrst, d1urst, d1vrst);
                 _tg2drst = _tg2drst.WithCoord(a, b);
-                _istangent = false;
-            }
-            else
-            {
-                _istangent = true;
             }
 
             // update of maxang
@@ -517,24 +467,24 @@ internal class SurfRstEvolRad : SurfRstFunction
     /// <summary>True if the section at <paramref name="sol"/> leaves the reference surface (see <see cref="Set(SurfaceAdaptorBase, Curve2DAdaptorBase)"/>).</summary>
     public override bool Decroch(math_Vector sol, out Vector3D ns, out Vector3D tgS)
     {
-        Vector3D tgRst, nRst, nRstInPlane, nsInPlane;
+        Vector3D tgRst, nRst, nRstInPlane, nsInPlane, np;
         Point3D bid, center = new();
         Vector3D d1u, d1v;
-        double norm, unsurnorm;
+        double norm;
 
         _surf.D1(sol[1], sol[2], out bid, out d1u, out d1v);
-        ns = nsInPlane = d1u.Crossed(d1v);
+        ns = d1u.Crossed(d1v);
 
-        norm = _nplan.Crossed(ns).Magnitude;
-        unsurnorm = 1.0 / norm;
-        nsInPlane = Vector3D.LinearForm(_nplan.Dot(ns) * unsurnorm, _nplan, -unsurnorm, ns);
-
+        // The ball's (decision 2158): the centre along the surface's own normal, the section in the plane square to
+        // that normal and to the centre's chord to the restriction, the reference surface's normal projected into it.
+        nsInPlane = -ConstRad.InverseNorm(ns) * ns;
         center = center.WithXYZ(bid.XYZ() + _ray * nsInPlane.XYZ());
+        np = ConstRad.SectionNormal(ns, new Vector3D(center, _cons.Value(sol[3])), _nplan);
         if (_choix > 2)
         {
             nsInPlane = nsInPlane.Reversed();
         }
-        tgS = _nplan.Crossed(new Vector3D(center, bid));
+        tgS = np.Crossed(new Vector3D(center, bid));
         if (_choix % 2 == 1)
         {
             tgS = tgS.Reversed();
@@ -543,16 +493,19 @@ internal class SurfRstEvolRad : SurfRstFunction
         _rstref!.Value(sol[3]).Coord(out u, out v);
         _surfref!.D1(u, v, out bid, out d1u, out d1v);
         nRst = d1u.Crossed(d1v);
-        norm = _nplan.Crossed(nRst).Magnitude;
-        unsurnorm = 1.0 / norm;
-        nRstInPlane = new Vector3D();
-        nRstInPlane = Vector3D.LinearForm(_nplan.Dot(nRst) * unsurnorm, _nplan, -unsurnorm, nRst);
+        nRstInPlane = nRst - np.Dot(nRst) * np;
+        norm = nRstInPlane.Magnitude;
+        if (norm < Eps)
+        {
+            return false; // Singularity or Incoherence.
+        }
+        nRstInPlane /= norm;
         Vector3D centptrst = new(center, bid);
         if (centptrst.Dot(nRstInPlane) < 0.0)
         {
             nRstInPlane = nRstInPlane.Reversed();
         }
-        tgRst = _nplan.Crossed(centptrst);
+        tgRst = np.Crossed(centptrst);
         if (_choix % 2 == 1)
         {
             tgRst = tgRst.Reversed();
@@ -601,7 +554,6 @@ internal class SurfRstEvolRad : SurfRstFunction
     {
         Vector3D d1u1, d1v1;
         Vector3D ns, np;
-        double norm;
         Point3D center = new();
 
         _tguide.D1(param, out _ptgui, out _d1gui);
@@ -611,11 +563,11 @@ internal class SurfRstEvolRad : SurfRstFunction
         _surf.D1(u, v, out _pts, out d1u1, out d1v1);
         _ptrst = _cons.Value(w);
 
+        // The ball's circle (decision 2158): the surface's own normal, the plane square to it and to the chord.
         ns = d1u1.Crossed(d1v1);
-
-        norm = _nplan.Crossed(ns).Magnitude;
-        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        ns = -ConstRad.InverseNorm(ns) * ns;
         center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        np = ConstRad.SectionNormal(ns, new Vector3D(center, _ptrst), np);
         c = c.WithRadius(Math.Abs(_ray));
 
         if (_ray > 0)
@@ -747,16 +699,15 @@ internal class SurfRstEvolRad : SurfRstFunction
         Vector3D ns, ns2;
         Point3D center = new();
 
-        double norm, u1, v1, w;
+        double u1, v1, w;
 
         double prm = p.Parameter();
         int low = poles.Lower();
         int upp = poles.Upper();
 
         _tguide.D1(prm, out _ptgui, out _d1gui);
-        _ray = _tevol.Value(prm);
-        _ray = _sg1 * _ray;
         _nplan = _d1gui.Normalized();
+        _ray = _sg1 * _tevol.Value(prm);
 
         p.ParametersOnS(out u1, out v1);
         w = p.ParameterOnC(); // jlr : point on curve not on surface
@@ -779,10 +730,9 @@ internal class SurfRstEvolRad : SurfRstFunction
             return;
         }
 
+        // The ball's circle (decision 2158): the surface's own normal, the plane square to it and to the chord.
         ns = d1u1.Crossed(d1v1);
-        norm = _nplan.Crossed(ns).Magnitude;
-
-        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        ns = -ConstRad.InverseNorm(ns) * ns;
 
         center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
 
@@ -796,34 +746,34 @@ internal class SurfRstEvolRad : SurfRstFunction
             _nplan = _nplan.Reversed();
         }
 
-        global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _pts, _ptrst, Math.Abs(_ray), center, poles, weights);
+        global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, ConstRad.SectionNormal(ns, ns2, _nplan), _pts, _ptrst,
+                                                                    Math.Abs(_ray), center, poles, weights);
     }
 
     public override bool Section(in BlendPoint p, NCollection_Array1<Point3D> poles, NCollection_Array1<Vector3D> dPoles,
                                  NCollection_Array1<Point2D> poles2d, NCollection_Array1<Vector2D> dPoles2d,
                                  NCollection_Array1<double> weights, NCollection_Array1<double> dWeights)
     {
-        Vector3D d1u1, d1v1, d2u1, d2v1, d2uv1, d1;
-        Vector3D ns, ns2, dnplan = new(), dnw = new(), dn2w = new();
-        Vector3D ncrossns;
-        Vector3D resulu = new(), resulv = new(), temp = new(), tgct = new(), resul = new();
+        Vector3D d1u1, d1v1, d1;
+        Vector3D ns, ns2, dnplan, dnw = new(), dn2w = new();
+        Vector3D tgct = new(), resul;
         Vector3D d1urst, d1vrst;
-        Point3D center = new(), bid;
+        Point3D center, bid;
 
-        double norm, ndotns, grosterme, dray;
+        double norm;
 
-        math_Vector sol = new(1, 3), valsol = new(1, 3), secmember = new(1, 3);
+        math_Vector sol = new(1, 3), secmember = new(1, 3);
         Matrix gradsol = new(1, 3, 1, 3);
 
-        double prm = p.Parameter(), rayprim;
+        double prm = p.Parameter();
         int low = poles.Lower();
         int upp = poles.Upper();
         bool istgt;
 
         _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
-        _tevol.D1(prm, out _ray, out dray);
+        _tevol.D1(prm, out _ray, out _dray);
         _ray = _sg1 * _ray;
-        dray = _sg1 * dray;
+        _dray = _sg1 * _dray;
         _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
@@ -832,43 +782,20 @@ internal class SurfRstEvolRad : SurfRstFunction
         sol[3] = _prmrst = p.ParameterOnC();
         _pt2drst = _rst.Value(_prmrst);
 
-        Values(sol, valsol, gradsol);
+        // The ball's (decision 31204): the centre along the surface's own normal, moving with the radius.
+        Ball(sol, out d1u1, out d1v1);
+        BallDerivatives(gradsol, d1u1, d1v1);
+        d1 = _drst;
+        GuideSecondMember(secmember, dnplan);
+        center = _center;
+        resul = new Vector3D(_ptrst, _center);
 
-        _surf.D2(sol[1], sol[2], out _pts, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-        _cons.D1(sol[3], out _ptrst, out d1);
-
-        temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
-        secmember[1] = _normtg - dnplan.Dot(temp);
-
-        temp = temp.WithXYZ(_ptrst.XYZ() - _ptgui.XYZ());
-        secmember[2] = _normtg - dnplan.Dot(temp);
-
-        ns = d1u1.Crossed(d1v1);
-        ncrossns = _nplan.Crossed(ns);
-        ndotns = _nplan.Dot(ns);
-        norm = ncrossns.Magnitude;
-        if (norm < Eps)
-        {
-            norm = 1; // Not enough, but it is not necessary to stop
-            // OCCT_DEBUG trace left out.
-        }
-
-        // Derivative of n1 corresponding to w
-
-        grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-        dnw = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
-                          grosterme / norm, ns);
-
-        temp = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-        resul = Vector3D.LinearForm(_ray, temp, new Vector3D(_ptrst, _pts));
-        // secmember(3) = -2.*ray*(dnw.Dot(resul)); // jag 950105 il manquait ray
-        secmember[3] = -2.0 * _ray * (dnw.Dot(resul)) - 2.0 * dray * (temp.Dot(resul)) + 2.0 * _ray * dray;
-        Gauss resol = new(gradsol);
+        Gauss resol = new(gradsol, 1.0e-9);
 
         if (resol.IsDone)
         {
-            resol.Solve(secmember);
             istgt = false;
+            resol.Solve(secmember);
         }
         else
         {
@@ -886,40 +813,20 @@ internal class SurfRstEvolRad : SurfRstFunction
             }
         }
 
+        ns = -_nn;
+        ns2 = -resul.Normalized();
         if (!istgt)
         {
             _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
             _tgrst = secmember[3] * d1;
 
-            // Derivative of n1 corresponding to u1
-            temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
-            grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulu = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
-                                 -1.0 / norm, temp);
-
-            // Derivative of n1 corresponding to v1
-            temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
-            grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulv = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
-                                 -1.0 / norm, temp);
-
-            dnw = Vector3D.LinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
-            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-
+            // The normal's derivative along the walk, then the unit chord's.
+            dnw = Vector3D.LinearForm(secmember[1], _dnu, secmember[2], _dnv);
             dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgrst, _tgs);
-            dn2w = Vector3D.LinearForm(dray, ns, dn2w);
+            dn2w = Vector3D.LinearForm(_dray, ns, dn2w);
             norm = resul.Magnitude;
             dn2w = dn2w.Divided(norm);
-            ns2 = -resul.Normalized();
             dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
-
-            istgt = false;
-        }
-        else
-        {
-            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-            ns2 = -resul.Normalized();
-            istgt = true;
         }
 
         // Tops 2D
@@ -953,10 +860,9 @@ internal class SurfRstEvolRad : SurfRstFunction
         }
 
         // Case of the circle
-        center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
         if (!istgt)
         {
-            tgct = Vector3D.LinearForm(_ray, dnw, dray, ns, _tgs);
+            tgct = Vector3D.LinearForm(_ray, dnw, _dray, ns, _tgs);
         }
 
         if (_ray > 0.0)
@@ -967,28 +873,26 @@ internal class SurfRstEvolRad : SurfRstFunction
                 dnw = dnw.Reversed();
             }
         }
+        Vector3D np = _nplan;
         if (_choix % 2 != 0)
         {
-            _nplan = _nplan.Reversed();
+            np = np.Reversed();
             dnplan = dnplan.Reversed();
         }
+
+        // The plane of the ball's circle, square to the normal and the chord, on the guide plane's side.
+        Vector3D zero = new();
+        ConstRad.SectionNormal(ns, ns2, dnw, dn2w, zero, zero, np, dnplan, zero, out Vector3D npBall, out Vector3D dnpBall, out _);
         if (!istgt)
         {
-            if (_ray < 0.0)
-            { // to avoid std::abs(dray) some lines below
-                rayprim = -dray;
-            }
-            else
-            {
-                rayprim = dray;
-            }
-
-            return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, dnw, dn2w, _nplan, dnplan, _pts, _ptrst, _tgs, _tgrst,
+            // As OCCT: the radius's derivative with the sign of its absolute value
+            double rayprim = _ray < 0.0 ? -_dray : _dray;
+            return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, dnw, dn2w, npBall, dnpBall, _pts, _ptrst, _tgs, _tgrst,
                                       Math.Abs(_ray), rayprim, center, tgct, poles, dPoles, weights, dWeights);
         }
         else
         {
-            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _pts, _ptrst, Math.Abs(_ray), center, poles, weights);
+            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, npBall, _pts, _ptrst, Math.Abs(_ray), center, poles, weights);
             return false;
         }
     }

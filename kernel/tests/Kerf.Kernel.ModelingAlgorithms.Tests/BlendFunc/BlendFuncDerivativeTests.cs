@@ -218,24 +218,53 @@ public class BlendFuncDerivativeTests
         }
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
-    public void ConstRad_SectionIsTheRollingBallsCircle(int thePair)
+    // ConstRad of radius 1, or EvolRad from 0.8 to 1.4 along the guide, and the radius at w
+    private static BlendFunction RollingBall(string theName, SurfaceAdaptorBase S1, SurfaceAdaptorBase S2, CurveAdaptorBase G,
+                                             int theChoix, double theW, out double theRadius)
     {
-        // Decision 2156: at a solution the centre is at the radius from each contact along that surface's own normal,
-        // and the section's circle lies in the plane through the centre square to both normals; OCCT projected the
-        // normals into the plane square to the guide.
+        if (theName == "constrad")
+        {
+            ConstRad aConstRad = new(S1, S2, G);
+            aConstRad.Set(1.0, theChoix);
+            theRadius = 1.0;
+            return aConstRad;
+        }
+
+        Linear aLaw = new();
+        aLaw.Set(G.FirstParameter(), 0.8, G.LastParameter(), 1.4);
+        EvolRad anEvolRad = new(S1, S2, G, aLaw);
+        anEvolRad.Set(theChoix);
+        theRadius = aLaw.Value(theW);
+        return anEvolRad;
+    }
+
+    public static TheoryData<string, int> BallPairs()
+    {
+        TheoryData<string, int> aData = [];
+        foreach (string aName in new[] { "constrad", "evolrad" })
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                aData.Add(aName, i);
+            }
+        }
+
+        return aData;
+    }
+
+    [Theory]
+    [MemberData(nameof(BallPairs))]
+    public void ConstRad_and_EvolRad_sections_are_the_rolling_balls_circle(string theName, int thePair)
+    {
+        // Decisions 2156 and 31203: at a solution the centre is at the radius from each contact along that surface's own
+        // normal (EvolRad's radius the law's where the section crosses the guide), and the section's circle lies in the
+        // plane through the centre square to both normals; OCCT projected the normals into the plane square to the guide.
         PairCase C = THE_PAIRS[thePair];
         SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
         CurveAdaptorBase G = Guide(C.G);
         foreach (int aChoix in new[] { 1, 2, 3, 4, 5, 6, 7, 8 })
         {
-            ConstRad F = new(S1, S2, G);
-            F.Set(1.0, aChoix);
+            BlendFunction F = RollingBall(theName, S1, S2, G, aChoix, C.W, out double aRadius);
             F.Set(G.FirstParameter(), G.LastParameter());
             F.Set(C.W);
             math_Vector X0 = new(1, 4), Tol = new(1, 4), Inf = new(1, 4), Sup = new(1, 4);
@@ -265,10 +294,10 @@ public class BlendFuncDerivativeTests
             {
                 foreach (double s2 in new[] { 1.0, -1.0 })
                 {
-                    Vector3D aD = (aC1 + s1 * aN1) - (aC2 + s2 * aN2);
+                    Vector3D aD = (aC1 + s1 * aRadius * aN1) - (aC2 + s2 * aRadius * aN2);
                     if (aD.Magnitude < 1.0e-9)
                     {
-                        aCentre = new Point3D((aC1 + s1 * aN1).XYZ());
+                        aCentre = new Point3D((aC1 + s1 * aRadius * aN1).XYZ());
                         aFound = true;
                     }
                 }
@@ -322,19 +351,22 @@ public class BlendFuncDerivativeTests
     }
 
     [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
-    public void ConstRad_SecondOrderSectionMatchesFiniteDifferencesOfTheFirst(int thePair)
+    [InlineData("constrad", 1)]
+    [InlineData("constrad", 2)]
+    [InlineData("constrad", 3)]
+    [InlineData("constrad", 4)]
+    [InlineData("evolrad", 1)]
+    [InlineData("evolrad", 2)]
+    [InlineData("evolrad", 3)]
+    [InlineData("evolrad", 4)]
+    public void ConstRad_and_EvolRad_second_order_sections_match_finite_differences_of_the_first(string theName, int thePair)
     {
         // The derivative of the poles (Section with D2Poles) against finite differences of the first-order section
         // along the guide, on the plane/cylinder, cylinder/cylinder, cone/plane and B-spline pairs.
         PairCase C = THE_PAIRS[thePair];
         SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
         CurveAdaptorBase G = Guide(C.G);
-        ConstRad F = new(S1, S2, G);
-        F.Set(1.0, 1);
+        BlendFunction F = RollingBall(theName, S1, S2, G, 1, C.W, out _);
         F.Set(G.FirstParameter(), G.LastParameter());
 
         math_Vector X0 = new(1, 4), Tol = new(1, 4), Inf = new(1, 4), Sup = new(1, 4);

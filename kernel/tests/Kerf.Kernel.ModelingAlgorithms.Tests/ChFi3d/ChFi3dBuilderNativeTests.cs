@@ -250,6 +250,9 @@ public class ChFi3dBuilderNativeTests
     /// </summary>
     private static readonly Dictionary<string, double> BallSections = new()
     {
+        // The evolving radius on a box's edge (decision 31204): between planes, so the ball's sections are OCCT's but for
+        // the last few bits of the walk's knots and the tolerances
+        ["box_edge_evolving"] = 1.0e-9,
         ["pyramid_apex_four_edges"] = -1,
         ["D1_partial_cone_apex"] = -2,
         ["F1_partial_torus"] = -1,

@@ -220,26 +220,10 @@ internal class EvolRadInv : FuncInv
             }
         }
 
-        Vector3D ncrossns1 = nplan.Crossed(ns1);
-        Vector3D ncrossns2 = nplan.Crossed(ns2);
-        double norm1 = ncrossns1.Magnitude;
-        double norm2 = ncrossns2.Magnitude;
-
-        if (norm1 < Eps)
-        {
-            norm1 = 1.0;
-        }
-
-        if (norm2 < Eps)
-        {
-            norm2 = 1.0;
-        }
-
-        Vector3D resul = new Vector3D();
-        double ndotns1 = nplan.Dot(ns1);
-        double ndotns2 = nplan.Dot(ns2);
-        ns1 = Vector3D.LinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
-        ns2 = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
+        // The surfaces' own normals, as BlendFunc_EvolRad's (decision 31203).
+        Vector3D resul;
+        ns1 = -ConstRad.InverseNorm(ns1) * ns1;
+        ns2 = -ConstRad.InverseNorm(ns2) * ns2;
         resul = Vector3D.LinearForm(_sg1 * ray, ns1, -1.0, new Vector3D(pts2.XYZ()), -_sg2 * ray, ns2, new Vector3D(pts1.XYZ()));
         f[2] = resul.X;
         f[3] = resul.Y;
@@ -328,45 +312,25 @@ internal class EvolRadInv : FuncInv
             }
         }
 
-        Vector3D ncrossns1 = nplan.Crossed(ns1);
-        Vector3D ncrossns2 = nplan.Crossed(ns2);
-        double norm1 = ncrossns1.Magnitude;
-        double norm2 = ncrossns2.Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1.0;
-        }
+        // The surfaces' own normals, as BlendFunc_EvolRad's (decision 31203): the centre is
+        // pts1 - sg1 * ray * nn1 = pts2 - sg2 * ray * nn2, the nn the unit normals, which don't move with the guide.
+        double invnorm1 = ConstRad.InverseNorm(ns1);
+        double invnorm2 = ConstRad.InverseNorm(ns2);
+        Vector3D nn1 = invnorm1 * ns1, nn2 = invnorm2 * ns2;
+        Vector3D resul1, resul2;
 
-        if (norm2 < Eps)
-        {
-            norm2 = 1.0;
-        }
-
-        Vector3D resul1 = new Vector3D(), resul2 = new Vector3D();
-        double grosterme;
-        double ndotns1 = nplan.Dot(ns1);
-        double ndotns2 = nplan.Dot(ns2);
-
-        temp = Vector3D.LinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
-        resul1 = Vector3D.LinearForm(_sg1 * ray, temp, new Vector3D(pts2, pts1));
-        temp = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
-        resul1 = resul1.Subtracted(_sg2 * ray * temp);
+        resul1 = Vector3D.LinearForm(-_sg1 * ray, nn1, new Vector3D(pts2, pts1));
+        resul1 = resul1.Added(_sg2 * ray * nn2);
 
         f[2] = resul1.X;
         f[3] = resul1.Y;
         f[4] = resul1.Z;
 
         // Derivee par rapport a u1
-        temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
-        grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul1 = Vector3D.LinearForm(-_sg1 * ray / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
-                             _sg1 * ray * grosterme / norm1, ns1, -_sg1 * ray / norm1, temp, d1u1);
+        resul1 = d1u1 - _sg1 * ray * ConstRad.UnitNormalD1(nn1, invnorm1, d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1)));
 
         // Derivee par rapport a v1
-        temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
-        grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul2 = Vector3D.LinearForm(-_sg1 * ray / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
-                             _sg1 * ray * grosterme / norm1, ns1, -_sg1 * ray / norm1, temp, d1v1);
+        resul2 = d1v1 - _sg1 * ray * ConstRad.UnitNormalD1(nn1, invnorm1, d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1)));
 
         if (_first)
         {
@@ -384,39 +348,17 @@ internal class EvolRadInv : FuncInv
             d[4, 4] = resul2.Z;
         }
 
-        // derivee par rapport a w (parametre sur ligne guide)
-        grosterme = ncrossns1.Dot(dnplan.Crossed(ns1)) / norm1 / norm1;
-        resul1 = Vector3D.LinearForm(-_sg1 / norm1 * (grosterme * ndotns1 - dnplan.Dot(ns1)), nplan, _sg1 * ndotns1 / norm1,
-                             dnplan, _sg1 * grosterme / norm1, ns1);
-
-        grosterme = ncrossns2.Dot(dnplan.Crossed(ns2)) / norm2 / norm2;
-        resul2 = Vector3D.LinearForm(_sg2 / norm2 * (grosterme * ndotns2 - dnplan.Dot(ns2)), nplan, -_sg2 * ndotns2 / norm2,
-                             dnplan, -_sg2 * grosterme / norm2, ns2);
-
-        d[2, 2] = ray * (resul1.X + resul2.X);
-        d[3, 2] = ray * (resul1.Y + resul2.Y);
-        d[4, 2] = ray * (resul1.Z + resul2.Z);
-
-        temp = Vector3D.LinearForm(_sg1 * ndotns1 / norm1 - _sg2 * ndotns2 / norm2, nplan, -_sg1 / norm1, ns1, _sg2 / norm2,
-                           ns2);
-
-        d[2, 2] += dray * temp.X;
-        d[3, 2] += dray * temp.Y;
-        d[4, 2] += dray * temp.Z;
+        // derivee par rapport a w (parametre sur ligne guide): only the radius moves with it
+        temp = Vector3D.LinearForm(-_sg1, nn1, _sg2, nn2);
+        d[2, 2] = dray * temp.X;
+        d[3, 2] = dray * temp.Y;
+        d[4, 2] = dray * temp.Z;
 
         // Derivee par rapport a u2
-        temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
-        grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul1 = Vector3D.LinearForm(_sg2 * ray / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
-                             -_sg2 * ray * grosterme / norm2, ns2, _sg2 * ray / norm2, temp);
-        resul1 = resul1.Subtracted(d1u2);
+        resul1 = _sg2 * ray * ConstRad.UnitNormalD1(nn2, invnorm2, d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2))) - d1u2;
 
         // Derivee par rapport a v2
-        temp = d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2));
-        grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul2 = Vector3D.LinearForm(_sg2 * ray / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
-                             -_sg2 * ray * grosterme / norm2, ns2, _sg2 * ray / norm2, temp);
-        resul2 = resul2.Subtracted(d1v2);
+        resul2 = _sg2 * ray * ConstRad.UnitNormalD1(nn2, invnorm2, d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2))) - d1v2;
 
         if (!_first)
         {
