@@ -133,7 +133,7 @@ public class ChamferMeetTests
     // its side stripes are off the length where they meet their faces at a narrow angle. Unit 15V's bands of Kerf's own (the
     // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths, without crossings
     // and of the volume the sections give, and the public chamfer returns it (decision 2179). Its 11 to 14 s can pass the
-    // default 20 on a loaded machine, so the limit is raised (decision 30401)
+    // default 20 on a loaded machine, so the limit is raised (decision 2185)
     [Theory]
     [InlineData(0.05, 18)]
     [InlineData(0.2, 18)]
@@ -190,7 +190,7 @@ public class ChamferMeetTests
     }
 
     // A chamfer whose construction runs past the caller's limit stops there: the operation fails with fillet.time-limit, whose
-    // message names the limit and how to change it, and ChFi3d's own failure after it (decisions 2180, 30401). No chamfer
+    // message names the limit and how to change it, and ChFi3d's own failure after it (decisions 2180, 2185). No chamfer
     // known takes the default 20 s any more (the loft's near 0.01 did, before unit 15Y), so the limit is set short here
     [Fact]
     public void A_chamfer_past_its_time_limit_stops_there_and_says_so()

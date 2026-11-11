@@ -168,7 +168,7 @@ internal static partial class ChamferMeet
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply, what it builds isn't proved, or it took longer
-    /// than the options' <see cref="ChamferOptions.TimeLimit"/> (<paramref name="late"/>; the owner, decisions 2179 and 30401).
+    /// than the options' <see cref="ChamferOptions.TimeLimit"/> (<paramref name="late"/>; the owner, decisions 2179 and 2185).
     /// A solid is proved by its volume too (unit 15V).
     /// </summary>
     /// <exception cref="OperationCanceledException">The caller's own token, or the one in force, was cancelled.</exception>

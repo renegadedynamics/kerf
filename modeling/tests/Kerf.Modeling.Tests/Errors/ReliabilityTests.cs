@@ -43,7 +43,7 @@ public class ReliabilityTests
 
     // reliability.md's island 3: a loft from a square to a circle, every edge chamfered. OCCT fails at its top corners, where
     // the side faces turn tangent; Kerf's own construction builds it, proved (kernel decision 2179). Its 11 to 14 s can pass
-    // the default limit of 20 s on a loaded machine, so the option raises it, and the layer passes it on (kernel decision 30401)
+    // the default limit of 20 s on a loaded machine, so the option raises it, and the layer passes it on (kernel decision 2185)
     [Fact]
     public void A_lofts_chamfer_that_OCCT_cant_build_is_built()
     {

@@ -5,7 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
-- **`Chamfer`'s time limit is set per call: `ChamferOptions.TimeLimit`** (kernel decisions 30401, 30402): the time the
+- **`Chamfer`'s time limit is set per call: `ChamferOptions.TimeLimit`** (kernel decisions 2185, 2186): the time the
   kernel's own construction may take where OCCT's chamfer fails, a `TimeSpan`, 20 s by default as before; any positive
   time up to 49 days raises or lowers it, and `Timeout.InfiniteTimeSpan` turns it off. Zero, a negative time or one over
   49 days is refused (`ArgumentOutOfRangeException`). It's wall-clock time, so the same chamfer can build on a quiet

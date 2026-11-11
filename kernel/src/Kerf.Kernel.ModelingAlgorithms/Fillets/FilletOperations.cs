@@ -118,7 +118,7 @@ public sealed record ChamferOptions
 
     /// <summary>
     /// How long Kerf's own construction may take, where ChFi3d fails or makes something invalid and the chamfer's faces are
-    /// carried on until they meet instead (decisions 2179, 30401): 20 s by default; any positive time up to 49 days, or
+    /// carried on until they meet instead (decisions 2179, 2185): 20 s by default; any positive time up to 49 days, or
     /// <see cref="Timeout.InfiniteTimeSpan"/> for no limit. Past it the chamfer fails with <c>fillet.time-limit</c>. It's
     /// wall-clock time, so a chamfer close to it can build on a quiet machine and fail on a busy one. The caller's own
     /// cancellation stops the construction first, as a cancellation. Zero, a negative time or one over 49 days is refused.
