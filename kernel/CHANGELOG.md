@@ -45,6 +45,24 @@ version may break the API.
   its deflection without the warning. Only meshes that were over change; a mesh within its deflection is the same
   (decision 2102).
 
+## 0.5.1
+
+- **3MF meshes of closed solids are closed** (decision 2191). `ThreeMf.Write` wrote each face's triangles with its own
+  copies of the vertices on the face's edges, sharing none with the neighbouring faces; where a face had been placed by a
+  move and a turn (a pocket cut by a moved, turned shape, say), some copies differed from the neighbour's in the last
+  digits, about 1e-14 mm. Slicers join only identical vertices, so they read the mesh as open along those edges, and
+  Bambu Studio and PrusaSlicer sliced it with stray fill, though the part was valid. Now each node of a part's mesh is
+  one vertex: faces meeting at an edge share the edge's nodes, taken from the mesher's one discretisation of the edge, so
+  every edge of a closed solid's mesh is used by two triangles, once each way. A seam's two sides, a cone's apex and a
+  sphere's poles are one vertex each, and the triangles of no area there are left out; otherwise the triangles are the
+  same, and the files smaller (a plate with a lettered pocket, 12,009 vertices to 9,217).
+- **glTF:** `Gltf.Write` gives a node one position in every face it is in, so its copies at a crease are the same
+  floats, and shares it within a primitive where the faces' normals agree (seams, smooth edges); a crease still has a
+  vertex per face, for its normals.
+- **STL:** `Stl.Write`, which has no indices, writes a node's copies as one point where the faces are placed apart, so
+  they can't round to different floats: native OCCT's STL of its own `CrankArm.brep` has a
+  node whose copies rounded apart, leaving it open there.
+
 ## 0.5.0
 
 - **Text and drawing sheets:** a managed font reader (TrueType, OpenType, collections) with Liberation Sans shipped, text
