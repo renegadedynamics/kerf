@@ -31,6 +31,12 @@ internal class ApiWriter
         _asciiMode = true;
     }
 
+    /// <summary>
+    /// Whether a node's copies on faces placed apart are written as one point (Kerf, decision 30801; the default), or
+    /// each as its face places it, as native OCCT writes them.
+    /// </summary>
+    public bool WeldsNodes { get; init; } = true;
+
     /// <summary>True (the default) to write ASCII, false to write binary.</summary>
     public bool ASCIIMode() => _asciiMode;
 
@@ -82,6 +88,8 @@ internal class ApiWriter
         // fill temporary triangulation
         int nodeOffset = 0;
         int triangleOffet = 0;
+        Placement? firstPlacement = null;
+        bool isPlacedApart = false;
         for (var expSF = new Explorer(shape, ShapeType.Face); expSF.More(); expSF.Next())
         {
             Shape face = expSF.Current();
@@ -91,6 +99,9 @@ internal class ApiWriter
                 ++nbFacesNoTri;
                 continue;
             }
+
+            firstPlacement ??= loc;
+            isPlacedApart |= loc != firstPlacement.Value;
 
             // copy nodes
             Transform3D trsf = loc.Transformation;
@@ -127,6 +138,11 @@ internal class ApiWriter
             triangleOffet += triangulation.TriangleCount;
         }
 
+        if (isPlacedApart && WeldsNodes)
+        {
+            Weld(mesh);
+        }
+
         bool isDone = _asciiMode ? global::Kerf.Engine.Exchange.Stl.RWStl.WriteAscii(mesh, stream, progress)
                                   : global::Kerf.Engine.Exchange.Stl.RWStl.WriteBinary(mesh, stream, progress);
 
@@ -140,5 +156,57 @@ internal class ApiWriter
         }
 
         return isDone;
+    }
+
+    // Kerf (decision 30801): faces at different placements hold their own copies of their edges' nodes, each placed by its
+    // face's location, so a node's copies can differ in the last digits and, rarely, round to different floats, leaving
+    // the STL open there for a reader joining identical vertices. STL has no indices, and the faces' triangulations (all
+    // a mesh keeps) have no edges to name the copies, so the nodes within a tolerance far below any mesh's size (1e-9 of
+    // the model's extent from the origin, or 1e-9) are written as the first of them: each node is moved by no more than
+    // that, never to another node of the mesh.
+    private static void Weld(Triangulation mesh)
+    {
+        int nbNodes = mesh.NodeCount;
+        double extent = 1.0;
+        for (int i = 1; i <= nbNodes; i++)
+        {
+            Point3D p = mesh.Node(i);
+            extent = Math.Max(extent, Math.Max(Math.Abs(p.X), Math.Max(Math.Abs(p.Y), Math.Abs(p.Z))));
+        }
+
+        double tolerance = 1e-9 * extent;
+        var cells = new Dictionary<(long, long, long), int>(nbNodes);
+        for (int i = 1; i <= nbNodes; i++)
+        {
+            Point3D p = mesh.Node(i);
+            (long X, long Y, long Z) cell = ((long)Math.Floor(p.X / tolerance), (long)Math.Floor(p.Y / tolerance), (long)Math.Floor(p.Z / tolerance));
+            int found = 0;
+            for (long dx = -1; dx <= 1 && found == 0; dx++)
+            {
+                for (long dy = -1; dy <= 1 && found == 0; dy++)
+                {
+                    for (long dz = -1; dz <= 1 && found == 0; dz++)
+                    {
+                        if (cells.TryGetValue((cell.X + dx, cell.Y + dy, cell.Z + dz), out int other))
+                        {
+                            Point3D q = mesh.Node(other);
+                            if (Math.Abs(p.X - q.X) <= tolerance && Math.Abs(p.Y - q.Y) <= tolerance && Math.Abs(p.Z - q.Z) <= tolerance)
+                            {
+                                found = other;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (found != 0)
+            {
+                mesh.SetNode(i, mesh.Node(found));
+            }
+            else
+            {
+                cells.TryAdd(cell, i);
+            }
+        }
     }
 }

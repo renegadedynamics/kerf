@@ -284,17 +284,18 @@ public class RWStlNativeTests(ITestOutputHelper output)
                 BrepTools.Read(out Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", aWords[1]));
                 Shape aMeshed = new IncrementalMesh(aShape, 0.1, true, 0.5, false).Shape();
                 byte[] anAscii = [], aBinary = [];
+                // native's copies of a node, unwelded (decision 30801): the welding is checked below
                 aLines.Add(Line("ASCII", () =>
                 {
                     var aStream = new MemoryStream();
-                    new ApiWriter().Write(aMeshed, aStream);
+                    new ApiWriter { WeldsNodes = false }.Write(aMeshed, aStream);
                     anAscii = aStream.ToArray();
                     return Bytes(anAscii);
                 }));
                 aLines.Add(Line("BINARY", () =>
                 {
                     var aStream = new MemoryStream();
-                    var aWriter = new ApiWriter();
+                    var aWriter = new ApiWriter { WeldsNodes = false };
                     aWriter.SetASCIIMode(false);
                     aWriter.Write(aMeshed, aStream);
                     aBinary = aStream.ToArray();
@@ -410,6 +411,43 @@ public class RWStlNativeTests(ITestOutputHelper output)
         BrepTools.Read(out Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", theFile));
         return MeshExtraction.Faces(aShape).Any(f => new Kerf.Engine.Topology.Adaptors.FaceSurfaceAdaptor(Kerf.Engine.Topology.ShapeCasts.Face(f)).GetType()
                                                          is SurfaceKind.Sphere or SurfaceKind.Torus);
+    }
+
+    // Decision 30801: CrankArm's faces are placed apart, and native's copies of one node round to different floats, so
+    // its STL read back has a node too many, open there; welded, the copies are one point: a node fewer, the same
+    // triangles. A shape whose copies are the same points is written as native writes it
+    [Fact]
+    public void The_writer_writes_a_nodes_copies_on_faces_placed_apart_as_one_point()
+    {
+        BrepTools.Read(out Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", "CrankArm.brep"));
+        Shape aMeshed = new IncrementalMesh(aShape, 0.1, true, 0.5, false).Shape();
+        Triangulation Back(bool theWelds, bool theAscii)
+        {
+            var aStream = new MemoryStream();
+            var aWriter = new ApiWriter { WeldsNodes = theWelds };
+            aWriter.SetASCIIMode(theAscii);
+            Assert.True(aWriter.Write(aMeshed, aStream));
+            return global::Kerf.Engine.Exchange.Stl.RWStl.ReadStream(new MemoryStream(aStream.ToArray()))!;
+        }
+        foreach (bool anAscii in new[] { true, false })
+        {
+            Triangulation aNative = Back(false, anAscii), aWelded = Back(true, anAscii);
+            Assert.Equal(aNative.TriangleCount, aWelded.TriangleCount);
+            Assert.Equal(aNative.NodeCount - 1, aWelded.NodeCount);
+        }
+
+        foreach (string aName in new[] { "bottle.brep", "hammer.brep" })
+        {
+            BrepTools.Read(out Shape anOther, Path.Combine(OcctSourceDir, "data", "occ", aName));
+            Shape anOtherMeshed = new IncrementalMesh(anOther, 0.1, true, 0.5, false).Shape();
+            byte[] Written(bool theWelds)
+            {
+                var aStream = new MemoryStream();
+                new ApiWriter { WeldsNodes = theWelds }.Write(anOtherMeshed, aStream);
+                return aStream.ToArray();
+            }
+            Assert.Equal(Written(false), Written(true));
+        }
     }
 
     [Fact]

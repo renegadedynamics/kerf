@@ -31,7 +31,11 @@ internal sealed class ProductMesh
         public readonly List<double> Positions = []; // x, y, z per node
         public readonly List<float> Normals = [];    // x, y, z per node, if every face has normals
         public readonly List<int> Indices = [];      // three per triangle, from 0
+        public readonly List<int> NodeIds = [];      // per node, if shared: the part's mesh node (0 up), or one face's (below 0)
         public bool HasNormals = true;
+
+        // Sharing: the group's node of each part node (and normal, a crease giving a node a normal per face)
+        public Dictionary<(int Id, float X, float Y, float Z), int>? ByNode;
 
         public int NbNodes => Positions.Count / 3;
 
@@ -53,8 +57,19 @@ internal sealed class ProductMesh
     /// <paramref name="toMergeFaces"/> is false: then each face is a group of its own (unit 8G1, OCCT's glTF writer
     /// without <c>-mergeFaces</c>).
     /// </summary>
-    public static ProductMesh Make(DocumentProduct part, bool toComputeNormals, bool toMergeFaces = true)
+    /// <remarks>
+    /// With <paramref name="toShareNodes"/>, faces meeting at an edge share that edge's nodes (Kerf, decision 30801):
+    /// the mesher discretises each edge once, and each face's triangulation holds the edge's polygon as indices into
+    /// its own nodes, so a node of an edge (or a vertex) is one node of the part, taken from the first face meeting it,
+    /// and every face's copy of it is that node, not a copy placed by the face's own location (which can differ in the
+    /// last digits, so that a slicer, joining only identical vertices, reads the mesh as open there). A seam's two sides
+    /// and a degenerate edge's nodes (a cone's apex, a sphere's pole) become one node each; triangles left with two
+    /// corners the same (zero area, at a degenerate edge) are dropped. A group holds a part node once per normal, and
+    /// <see cref="Group.NodeIds"/> names the part node of each of its nodes, for a writer sharing nodes across groups.
+    /// </remarks>
+    public static ProductMesh Make(DocumentProduct part, bool toComputeNormals, bool toMergeFaces = true, bool toShareNodes = false)
     {
+        NodeSharing? sharing = toShareNodes ? new NodeSharing() : null;
         Dictionary<Shape, Style> faceStyles = FaceStyles(part);
         var groups = new List<Group>();
         var byColor = new Dictionary<ColorWithAlpha, Group>();
@@ -102,7 +117,7 @@ internal sealed class ProductMesh
                 }
                 aGroup = inherited;
             }
-            AddFace(aGroup, face, tri, loc, toComputeNormals);
+            AddFace(aGroup, face, tri, loc, toComputeNormals, sharing);
         }
         foreach (Group aGroup in groups)
         {
@@ -110,6 +125,7 @@ internal sealed class ProductMesh
             {
                 aGroup.Normals.Clear();
             }
+            aGroup.ByNode = null;
         }
         return new ProductMesh(groups);
     }
@@ -145,7 +161,105 @@ internal sealed class ProductMesh
         return result;
     }
 
-    private static void AddFace(Group theGroup, in Face face, Triangulation tri, in Placement loc, bool toComputeNormals)
+    // The part's mesh nodes met so far, when faces share their edges' nodes: a node per vertex and per inner node of an
+    // edge's polygon, and each node's position (from the first face meeting it); and the count of nodes of one face
+    // alone, whose ids are below zero
+    private sealed class NodeSharing
+    {
+        public readonly Dictionary<Shape, int> Vertices = new(ShapeHasher.Instance);
+        public readonly Dictionary<Shape, int[]> Edges = new(ShapeHasher.Instance);
+        public readonly List<Point3D> Positions = [];
+        public int FaceNodes;
+
+    }
+
+    // The part node of each node of the face's triangulation (from 1; -1 for a node of the face alone), from its edges'
+    // polygons on the triangulation; new part nodes are left -2, for AddFace to make from the face's own positions
+    private static int[] SharedNodes(NodeSharing sharing, in Face face, Triangulation tri, in Placement loc)
+    {
+        int nbNodes = tri.NodeCount;
+        int[] ids = new int[nbNodes + 1];
+        Array.Fill(ids, -1);
+        var pending = new List<(int Node, Shape Key, int Index)>();
+        for (var exp = new Explorer(face, ShapeType.Edge); exp.More(); exp.Next())
+        {
+            Edge edge = ShapeCasts.Edge(exp.Current());
+            PolygonOnTriangulation? polygon = Tool.PolygonOnTriangulation(edge, tri, loc);
+            if (polygon is null || polygon.NodeCount < 2)
+            {
+                continue; // no polygon: the edge's nodes stay the face's own
+            }
+            int n = polygon.NodeCount;
+            bool isDegenerated = Tool.Degenerated(edge);
+            Exploration.Vertices(edge, out Vertex v1, out Vertex v2);
+            if (!sharing.Edges.TryGetValue(edge, out int[]? inner))
+            {
+                inner = new int[n];
+                Array.Fill(inner, -2);
+                sharing.Edges.Add(edge, inner);
+            }
+            bool sameCount = inner.Length == n; // the same edge has one polygon for all its faces; if not, keep it apart
+            for (int k = 1; k <= n; k++)
+            {
+                int node = polygon.Node(k);
+                if (node < 1 || node > nbNodes || ids[node] != -1)
+                {
+                    continue;
+                }
+                Shape vertex = isDegenerated ? v1 : k == 1 ? v1 : k == n ? v2 : default;
+                if (!vertex.IsNull)
+                {
+                    pending.Add((node, vertex, -1));
+                }
+                else if (sameCount && !isDegenerated)
+                {
+                    pending.Add((node, edge, k - 1));
+                }
+                else
+                {
+                    continue;
+                }
+                ids[node] = -2;
+            }
+        }
+        foreach ((int node, Shape key, int index) in pending)
+        {
+            int id;
+            if (index < 0)
+            {
+                if (!sharing.Vertices.TryGetValue(key, out id))
+                {
+                    id = NewNode(sharing, tri, loc, node);
+                    sharing.Vertices.Add(key, id);
+                }
+            }
+            else
+            {
+                int[] inner = sharing.Edges[key];
+                id = inner[index];
+                if (id < 0)
+                {
+                    id = NewNode(sharing, tri, loc, node);
+                    inner[index] = id;
+                }
+            }
+            ids[node] = id;
+        }
+        return ids;
+    }
+
+    private static int NewNode(NodeSharing sharing, Triangulation tri, in Placement loc, int node)
+    {
+        Point3D p = tri.Node(node);
+        if (!loc.IsIdentity)
+        {
+            p = p.Transformed(loc.Transformation);
+        }
+        sharing.Positions.Add(p);
+        return sharing.Positions.Count - 1;
+    }
+
+    private static void AddFace(Group theGroup, in Face face, Triangulation tri, in Placement loc, bool toComputeNormals, NodeSharing? sharing)
     {
         Transform3D trsf = loc.Transformation;
         bool isIdentity = loc.IsIdentity;
@@ -162,16 +276,31 @@ internal sealed class ProductMesh
 
         int aBase = theGroup.NbNodes;
         int nbNodes = tri.NodeCount;
+        int[]? shared = sharing is null ? null : SharedNodes(sharing, face, tri, loc);
+        int[]? groupNodes = shared is null ? null : new int[nbNodes + 1];
         for (int i = 1; i <= nbNodes; i++)
         {
-            Point3D p = tri.Node(i);
-            if (!isIdentity)
+            Point3D p;
+            int id = -1;
+            if (shared is not null && shared[i] >= 0)
             {
-                p = p.Transformed(trsf);
+                id = shared[i];
+                p = sharing!.Positions[id];
             }
-            theGroup.Positions.Add(p.X);
-            theGroup.Positions.Add(p.Y);
-            theGroup.Positions.Add(p.Z);
+            else
+            {
+                p = tri.Node(i);
+                if (!isIdentity)
+                {
+                    p = p.Transformed(trsf);
+                }
+                if (sharing is not null)
+                {
+                    id = -++sharing.FaceNodes; // a node of this face alone: an id of its own, below zero
+                }
+            }
+
+            float nx = 0, ny = 0, nz = 0;
             if (theGroup.HasNormals)
             {
                 Direction3D n = normalsTri!.Normal(i);
@@ -183,9 +312,32 @@ internal sealed class ProductMesh
                 {
                     n = n.Transformed(trsf);
                 }
-                theGroup.Normals.Add((float)n.X);
-                theGroup.Normals.Add((float)n.Y);
-                theGroup.Normals.Add((float)n.Z);
+                (nx, ny, nz) = ((float)n.X, (float)n.Y, (float)n.Z);
+            }
+
+            if (groupNodes is not null)
+            {
+                if (id >= 0)
+                {
+                    theGroup.ByNode ??= [];
+                    if (theGroup.ByNode.TryGetValue((id, nx, ny, nz), out int known))
+                    {
+                        groupNodes[i] = known;
+                        continue;
+                    }
+                    theGroup.ByNode.Add((id, nx, ny, nz), theGroup.NbNodes);
+                }
+                groupNodes[i] = theGroup.NbNodes;
+                theGroup.NodeIds.Add(id);
+            }
+            theGroup.Positions.Add(p.X);
+            theGroup.Positions.Add(p.Y);
+            theGroup.Positions.Add(p.Z);
+            if (theGroup.HasNormals)
+            {
+                theGroup.Normals.Add(nx);
+                theGroup.Normals.Add(ny);
+                theGroup.Normals.Add(nz);
             }
         }
 
@@ -201,6 +353,18 @@ internal sealed class ProductMesh
             if (toSwap)
             {
                 (n2, n3) = (n3, n2);
+            }
+            if (groupNodes is not null)
+            {
+                int s1 = shared![n1], s2 = shared[n2], s3 = shared[n3];
+                if (s1 >= 0 && (s1 == s2 || s1 == s3) || s2 >= 0 && s2 == s3)
+                {
+                    continue; // two corners one node: a triangle of no area, at a degenerate edge
+                }
+                theGroup.Indices.Add(groupNodes[n1]);
+                theGroup.Indices.Add(groupNodes[n2]);
+                theGroup.Indices.Add(groupNodes[n3]);
+                continue;
             }
             theGroup.Indices.Add(aBase + n1 - 1);
             theGroup.Indices.Add(aBase + n2 - 1);
