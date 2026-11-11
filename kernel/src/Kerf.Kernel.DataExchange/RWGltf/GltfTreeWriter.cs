@@ -421,7 +421,7 @@ internal sealed class GltfTreeWriter
                 return null;
             }
             partsPS.Next();
-            ProductMesh mesh = ProductMesh.Make(part, Options.WriteNormals, Options.MergeFaces);
+            ProductMesh mesh = ProductMesh.Make(part, Options.WriteNormals, Options.MergeFaces, toShareNodes: true);
             var groups = new List<(int, int, int)>();
             foreach (ProductMesh.Group aGroup in mesh.Groups)
             {
