@@ -12,7 +12,7 @@ using Kerf.Modeling;
 
 /// <summary>
 /// A closed solid's 3MF mesh is closed: one vertex per mesh node, faces meeting at an edge sharing its nodes, every edge
-/// used once in each direction (decision 30801). The report: a plate with a pocket cut by a moved and turned shape
+/// used once in each direction (decision 2191). The report: a plate with a pocket cut by a moved and turned shape
 /// came out open along the pocket's edges, its faces' copies of a node differing in the last digits.
 /// </summary>
 public class ClosedMeshTests
