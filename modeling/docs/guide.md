@@ -219,6 +219,12 @@ other where two fillets' ends meet: OCCT #1570's part at 5.5), is a failure with
 narrows to a point between them (its line just reaching a notch, or its edge's faces tangent at a point), the fillet
 is built, its face in two meeting at that point.
 
+**A chamfer OCCT can't build** at a corner of B-spline faces, as on a loft from a square to a circle, where its side
+faces turn tangent at the top, is built Kerf's own way and checked by its volume, in seconds rather than OCCT's fraction of
+one (about 14 s for that loft with every edge chamfered). It has a limit of 20 s: past it the chamfer fails with
+`modeling.chamfer-failed`, saying it couldn't be built within its time limit, and the kernel's `fillet.time-limit`
+among the diagnostics, followed by OCCT's own failure. A token or `Cancellation.Use` still stops it sooner.
+
 ## 6. Results, failures and warnings
 
 An operation that can fail gives a `Result<T>`:
