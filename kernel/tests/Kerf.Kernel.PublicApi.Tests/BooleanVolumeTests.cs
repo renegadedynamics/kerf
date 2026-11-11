@@ -437,7 +437,7 @@ public class BooleanVolumeTests
     // Radius 5000 at the end plane, 3e-3 and 5e-3 off: where the section leaves the end plane the walk's first point was put on the
     // end's bound from a root to 1e-9 in angle, 2e-6 from it at this radius, so the line began with a step back, its p-curve on the
     // cylinder 1.73 off and the edge's tolerance grown to cover it; one half of the cylinder's face then came out 2.7e4 short in
-    // area, and the common 1.4e-4 short, valid and a success (decision 31101)
+    // area, and the common 1.4e-4 short, valid and a success (decision 2204)
     [Theory]
     [InlineData(3e-3)]
     [InlineData(5e-3)]

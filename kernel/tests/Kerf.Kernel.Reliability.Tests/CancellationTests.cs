@@ -91,7 +91,7 @@ public class CancellationTests
 
     // The fillet reports no progress, so the cancel comes on a timer: after a quarter of a first run's time, and if the run finished
     // first (a first run slowed by a loaded machine, or a second one quicker), again after half that, down to a few milliseconds,
-    // each finished run the same as the first. Only a cancel that fell while the fillet ran ends it (decision 31103)
+    // each finished run the same as the first. Only a cancel that fell while the fillet ran ends it (decision 2206)
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -650,7 +650,7 @@ internal sealed partial class ImpImpIntersection
             }
             if (func.Value(res.Root.Value, out double fAt) && Math.Abs(fAt) > _tol3D)
             {
-                // Kerf (decision 31101): a parametric tolerance is a distance only on a unit radius. V changes by
+                // Kerf (decision 2204): a parametric tolerance is a distance only on a unit radius. V changes by
                 // up to R per radian, so at R = 5000 a root to 1e-9 can leave the point 2e-6 off the bound it is
                 // then given, past the 3D tolerance; resolve it to the precision of V instead.
                 cfg.XTolerance = 0.0;
