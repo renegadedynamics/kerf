@@ -58,7 +58,7 @@ internal sealed class ProductMesh
     /// without <c>-mergeFaces</c>).
     /// </summary>
     /// <remarks>
-    /// With <paramref name="toShareNodes"/>, faces meeting at an edge share that edge's nodes (Kerf, decision 30801):
+    /// With <paramref name="toShareNodes"/>, faces meeting at an edge share that edge's nodes (Kerf, decision 2191):
     /// the mesher discretises each edge once, and each face's triangulation holds the edge's polygon as indices into
     /// its own nodes, so a node of an edge (or a vertex) is one node of the part, taken from the first face meeting it,
     /// and every face's copy of it is that node, not a copy placed by the face's own location (which can differ in the

@@ -402,7 +402,7 @@ internal sealed class TreeWriter
         w.WriteStartElement("mesh", CoreNamespace);
         w.WriteStartElement("vertices", CoreNamespace);
         // A vertex per node of the part's mesh: faces meeting at an edge share its nodes, across groups too, so that the
-        // mesh of a closed solid is closed (decision 30801)
+        // mesh of a closed solid is closed (decision 2191)
         var vertexOf = new Dictionary<int, int>();
         int nbVertices = 0;
         var groupVertices = new List<int[]>(mesh.Groups.Count);

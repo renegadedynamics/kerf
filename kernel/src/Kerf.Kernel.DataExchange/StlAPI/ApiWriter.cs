@@ -32,7 +32,7 @@ internal class ApiWriter
     }
 
     /// <summary>
-    /// Whether a node's copies on faces placed apart are written as one point (Kerf, decision 30801; the default), or
+    /// Whether a node's copies on faces placed apart are written as one point (Kerf, decision 2191; the default), or
     /// each as its face places it, as native OCCT writes them.
     /// </summary>
     public bool WeldsNodes { get; init; } = true;
@@ -158,7 +158,7 @@ internal class ApiWriter
         return isDone;
     }
 
-    // Kerf (decision 30801): faces at different placements hold their own copies of their edges' nodes, each placed by its
+    // Kerf (decision 2191): faces at different placements hold their own copies of their edges' nodes, each placed by its
     // face's location, so a node's copies can differ in the last digits and, rarely, round to different floats, leaving
     // the STL open there for a reader joining identical vertices. STL has no indices, and the faces' triangulations (all
     // a mesh keeps) have no edges to name the copies, so the nodes within a tolerance far below any mesh's size (1e-9 of

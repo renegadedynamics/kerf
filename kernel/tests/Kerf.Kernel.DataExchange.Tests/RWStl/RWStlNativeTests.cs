@@ -284,7 +284,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
                 BrepTools.Read(out Shape aShape, Path.Combine(OcctSourceDir, "data", "occ", aWords[1]));
                 Shape aMeshed = new IncrementalMesh(aShape, 0.1, true, 0.5, false).Shape();
                 byte[] anAscii = [], aBinary = [];
-                // native's copies of a node, unwelded (decision 30801): the welding is checked below
+                // native's copies of a node, unwelded (decision 2191): the welding is checked below
                 aLines.Add(Line("ASCII", () =>
                 {
                     var aStream = new MemoryStream();
@@ -413,7 +413,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
                                                          is SurfaceKind.Sphere or SurfaceKind.Torus);
     }
 
-    // Decision 30801: CrankArm's faces are placed apart, and native's copies of one node round to different floats, so
+    // Decision 2191: CrankArm's faces are placed apart, and native's copies of one node round to different floats, so
     // its STL read back has a node too many, open there; welded, the copies are one point: a node fewer, the same
     // triangles. A shape whose copies are the same points is written as native writes it
     [Fact]

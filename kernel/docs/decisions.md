@@ -17095,7 +17095,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 
 ## 0.5.1: closed 3MF meshes (a user's agent's report)
 
-30801. **A part's mesh written as 3MF has a vertex per node of the part's mesh, faces meeting at an edge sharing its nodes; glTF
+2191. **A part's mesh written as 3MF has a vertex per node of the part's mesh, faces meeting at an edge sharing its nodes; glTF
        shares them where the normals agree, and STL welds within 1e-9 of the extent** (the report of 12 November 2026, from the
        agent building Renegade's enclosure on Kerf.Modeling 0.5.0). `ThreeMf.Write` wrote each face's triangulation with its own
        nodes, so no vertex was shared between faces, and where a face sat at a placement of its own (a pocket cut by a shape moved
@@ -17127,7 +17127,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        and the files smaller (the plate's 3MF 282 to 252 kB). `ClosedMeshTests` checks the six through `Export3mf`, a part of two
        solids, a cylinder, a cone, a sphere and a torus, each closed, consistently oriented and with the STL writer's triangles and
        volume, and the plates through STL and glTF closed by their positions.
-30802. **Kerf 0.5.1 is 0.5.0 with decision 30801's fix** (the owner, 12 November 2026: "I want this to be applied to 0.5.0 - we'll
+2192. **Kerf 0.5.1 is 0.5.0 with decision 2191's fix** (the owner, 12 November 2026: "I want this to be applied to 0.5.0 - we'll
        release 0.5.1 as soon as possible with the fix applied, then merge the fix into the latest version"). Made on
        `fix/3mf-shared-vertices` from the `v0.5.0` tag, not `main`: the versions (both `Directory.Build.props`, `pack-nuget.ps1`),
        the README's release line and both CHANGELOGs' `## 0.5.1`; the fix is carried to `main` separately. Decision 2088's per-call

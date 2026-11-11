@@ -7,7 +7,7 @@ version may break the API.
 
 ## 0.5.1
 
-- **3MF meshes of closed solids are closed** (decision 30801). `ThreeMf.Write` wrote each face's triangles with its own
+- **3MF meshes of closed solids are closed** (decision 2191). `ThreeMf.Write` wrote each face's triangles with its own
   copies of the vertices on the face's edges, sharing none with the neighbouring faces; where a face had been placed by a
   move and a turn (a pocket cut by a moved, turned shape, say), some copies differed from the neighbour's in the last
   digits, about 1e-14 mm. Slicers join only identical vertices, so they read the mesh as open along those edges, and

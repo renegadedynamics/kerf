@@ -7,7 +7,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## 0.5.1
 
-- **`Export3mf` writes closed meshes** (kernel decision 30801). In 0.5.0 a part whose faces had been placed by a move
+- **`Export3mf` writes closed meshes** (kernel decision 2191). In 0.5.0 a part whose faces had been placed by a move
   and a turn, such as a plate with a pocket cut by a moved and turned box, cylinder or text, came out with its mesh open
   along those faces' edges in slicers: each face had its own copies of its edges' vertices, some differing from the
   neighbouring face's in the last digits, and Bambu Studio and PrusaSlicer sliced it with stray fill. Faces now share
