@@ -78,7 +78,10 @@ public sealed record GltfWriteOptions { public bool Binary { get; init; } = true
   (with which limit), `exchange.unsupported-schema`; skipped entities are warnings (`exchange.entity-skipped`) with
   their STEP ids in the message. Assemblies nest at most `ModelNode.MaxNesting`, 64 levels, in a file or in code (decision 1854).
 - **Writers take the mesh or tree they write.** STL takes a `ShapeMesh` (meshing.md) rather than meshing a shape in
-  place; glTF and 3MF mesh with `options.Mesh` themselves.
+  place; glTF and 3MF mesh with `options.Mesh` themselves. A closed solid's mesh is written closed (0.5.1, decision
+  30801): 3MF writes a vertex per node of the part's mesh, faces meeting at an edge sharing its nodes; glTF shares a
+  node within a primitive where its faces' normals agree, and gives its copies one position; STL writes a node's copies
+  as one point.
 - **Units** in the API are explicit (`LengthUnit`): shapes are in millimetres unless a reader's options say otherwise.
 
 ## Async reading and writing
