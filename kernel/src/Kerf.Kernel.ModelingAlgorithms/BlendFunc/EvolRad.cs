@@ -306,14 +306,19 @@ internal class EvolRad : BlendFunction
                     }
                 case 2:
                     {
-                        // OCCT: unlike BlendFunc_ConstRad, order 2 does not update dns1u1, dns1v1, dns1u2 and
-                        // dns1v2, which keep the values of the last order-1 positioning (decision 1039).
+                        // Kerf (decision 2215): the derivatives of the normals at this point, as BlendFunc_ConstRad's
+                        // order 2; OCCT kept those of the last order-1 positioning here (decision 1039), which the unit
+                        // normals' second derivatives can't take.
                         _surf1.D3(x[1], x[2], out _pts1, out _d1u1, out _d1v1, out _d2u1, out _d2v1, out _d2uv1, out _d3u1,
                                  out _d3v1, out _d3uuv1, out _d3uvv1);
                         _nsurf1 = _d1u1.Crossed(_d1v1);
+                        _dns1u1 = _d2u1.Crossed(_d1v1).Added(_d1u1.Crossed(_d2uv1));
+                        _dns1v1 = _d2uv1.Crossed(_d1v1).Added(_d1u1.Crossed(_d2v1));
                         _surf2.D3(x[3], x[4], out _pts2, out _d1u2, out _d1v2, out _d2u2, out _d2v2, out _d2uv2, out _d3u2,
                                  out _d3v2, out _d3uuv2, out _d3uvv2);
                         _nsurf2 = _d1u2.Crossed(_d1v2);
+                        _dns1u2 = _d2u2.Crossed(_d1v2).Added(_d1u2.Crossed(_d2uv2));
+                        _dns1v2 = _d2uv2.Crossed(_d1v2).Added(_d1u2.Crossed(_d2v2));
                         break;
                     }
                 default:
@@ -349,10 +354,14 @@ internal class EvolRad : BlendFunction
         }
 
         // -------------------- Positioning of order 0 ---------------------
-        double invnorm1, invnorm2, ndotns1, ndotns2, theD;
+        // Kerf (decision 2215): as BlendFunc_ConstRad's (decision 2156), the centre is at the radius from each contact
+        // along that surface's own unit normal, so each section is the rolling ball's, of the radius the law gives where
+        // the section crosses the guide. OCCT projects the normals into the plane square to the guide. The guide's plane
+        // only places the section, through the contacts' midpoint; the normals don't depend on the guide, the radius does.
+        double invnorm1, invnorm2, theD;
         double ray1 = _sg1 * _ray;
         double ray2 = _sg2 * _ray;
-        Vector3D ncrossns1, ncrossns2, resul = new Vector3D(), temp = new Vector3D(), n1 = new Vector3D(), n2 = new Vector3D();
+        Vector3D nn1, nn2, resul, n1, n2;
 
         theD = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
 
@@ -361,40 +370,15 @@ internal class EvolRad : BlendFunction
                  / 2
                + theD;
 
-        ncrossns1 = _nplan.Crossed(_nsurf1);
-        ncrossns2 = _nplan.Crossed(_nsurf2);
+        invnorm1 = ConstRad.InverseNorm(_nsurf1);
+        invnorm2 = ConstRad.InverseNorm(_nsurf2);
+        nn1 = invnorm1 * _nsurf1;
+        nn2 = invnorm2 * _nsurf2;
+        // OCCT's n1 and n2 are the projected normals reversed: here the unit normals reversed.
+        n1 = -nn1;
+        n2 = -nn2;
 
-        invnorm1 = ncrossns1.Magnitude;
-        invnorm2 = ncrossns2.Magnitude;
-
-        if (invnorm1 > Eps)
-        {
-            invnorm1 = ((double)1) / invnorm1;
-        }
-        else
-        {
-            invnorm1 = 1; // Unsatisfactory, but it is not necessary to crash
-            // OCCT_DEBUG trace left out.
-        }
-
-        if (invnorm2 > Eps)
-        {
-            invnorm2 = ((double)1) / invnorm2;
-        }
-        else
-        {
-            invnorm2 = 1; //  Unsatisfactory, but it is not necessary to crash
-            // OCCT_DEBUG trace left out.
-        }
-
-        ndotns1 = _nplan.Dot(_nsurf1);
-        ndotns2 = _nplan.Dot(_nsurf2);
-
-        n1 = Vector3D.LinearForm(ndotns1, _nplan, -1.0, _nsurf1);
-        n1 = n1.Multiplied(invnorm1);
-        n2 = Vector3D.LinearForm(ndotns2, _nplan, -1.0, _nsurf2);
-        n2 = n2.Multiplied(invnorm2);
-
+        // The centre is pts1 + ray1 * n1 = pts2 + ray2 * n2.
         resul = Vector3D.LinearForm(ray1, n1, -ray2, n2, new Vector3D(_pts2, _pts1));
 
         _e[2] = resul.X;
@@ -404,51 +388,31 @@ internal class EvolRad : BlendFunction
         // -------------------- Positioning of order 1 ---------------------
         if (order >= 1)
         {
-            double grosterme, cube, carre;
-
             _dedx[1, 1] = _nplan.Dot(_d1u1) / 2;
             _dedx[1, 2] = _nplan.Dot(_d1v1) / 2;
             _dedx[1, 3] = _nplan.Dot(_d1u2) / 2;
             _dedx[1, 4] = _nplan.Dot(_d1v2) / 2;
 
-            cube = invnorm1 * invnorm1 * invnorm1;
-            // Derived in relation to u1
-            grosterme = -ncrossns1.Dot(_nplan.Crossed(_dns1u1)) * cube;
-            _dndu1 = Vector3D.LinearForm(grosterme * ndotns1 + invnorm1 * _nplan.Dot(_dns1u1), _nplan, -grosterme, _nsurf1,
-                                -invnorm1, _dns1u1);
-
+            // The derivatives of n1 and n2, the reversed unit normals, as OCCT's projected ones were.
+            _dndu1 = -ConstRad.UnitNormalD1(nn1, invnorm1, _dns1u1);
             resul = Vector3D.LinearForm(ray1, _dndu1, _d1u1);
             _dedx[2, 1] = resul.X;
             _dedx[3, 1] = resul.Y;
             _dedx[4, 1] = resul.Z;
 
-            // Derived in relation to v1
-
-            grosterme = -ncrossns1.Dot(_nplan.Crossed(_dns1v1)) * cube;
-            _dndv1 = Vector3D.LinearForm(grosterme * ndotns1 + invnorm1 * _nplan.Dot(_dns1v1), _nplan, -grosterme, _nsurf1,
-                                -invnorm1, _dns1v1);
-
+            _dndv1 = -ConstRad.UnitNormalD1(nn1, invnorm1, _dns1v1);
             resul = Vector3D.LinearForm(ray1, _dndv1, _d1v1);
             _dedx[2, 2] = resul.X;
             _dedx[3, 2] = resul.Y;
             _dedx[4, 2] = resul.Z;
 
-            cube = invnorm2 * invnorm2 * invnorm2;
-            // Derived in relation to u2
-            grosterme = -ncrossns2.Dot(_nplan.Crossed(_dns1u2)) * cube;
-            _dndu2 = Vector3D.LinearForm(grosterme * ndotns2 + invnorm2 * _nplan.Dot(_dns1u2), _nplan, -grosterme, _nsurf2,
-                                -invnorm2, _dns1u2);
-
+            _dndu2 = -ConstRad.UnitNormalD1(nn2, invnorm2, _dns1u2);
             resul = Vector3D.LinearForm(-ray2, _dndu2, -1, _d1u2);
             _dedx[2, 3] = resul.X;
             _dedx[3, 3] = resul.Y;
             _dedx[4, 3] = resul.Z;
 
-            // Derived in relation to v2
-            grosterme = -ncrossns2.Dot(_nplan.Crossed(_dns1v2)) * cube;
-            _dndv2 = Vector3D.LinearForm(grosterme * ndotns2 + invnorm2 * _nplan.Dot(_dns1v2), _nplan, -grosterme, _nsurf2,
-                                -invnorm2, _dns1v2);
-
+            _dndv2 = -ConstRad.UnitNormalD1(nn2, invnorm2, _dns1v2);
             resul = Vector3D.LinearForm(-ray2, _dndv2, -1, _d1v2);
             _dedx[2, 4] = resul.X;
             _dedx[3, 4] = resul.Y;
@@ -456,20 +420,13 @@ internal class EvolRad : BlendFunction
 
             if (byParam)
             {
-                temp = temp.WithXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
-                // Derived from n1 in relation to w
-                grosterme = ncrossns1.Dot(_dnplan.Crossed(_nsurf1)) * invnorm1 * invnorm1;
-                _dn1w = Vector3D.LinearForm((_dnplan.Dot(_nsurf1) - grosterme * ndotns1) * invnorm1, _nplan,
-                                   ndotns1 * invnorm1, _dnplan, grosterme * invnorm1, _nsurf1);
-
-                // Derivee from n2 in relation to w
-                grosterme = ncrossns2.Dot(_dnplan.Crossed(_nsurf2)) * invnorm2 * invnorm2;
-                _dn2w = Vector3D.LinearForm((_dnplan.Dot(_nsurf2) - grosterme * ndotns2) * invnorm2, _nplan,
-                                   ndotns2 * invnorm2, _dnplan, grosterme * invnorm2, _nsurf2);
+                // The normals don't move with the guide: the plane's equation and the radius do.
+                Vector3D temp = new Vector3D((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
+                _dn1w = new Vector3D();
+                _dn2w = new Vector3D();
 
                 _dedt[1] = _dnplan.Dot(temp) - 1.0 / _invnormtg;
-                temp = Vector3D.LinearForm(ray2, _dn2w, _sg2 * _dray, n2);
-                resul = Vector3D.LinearForm(ray1, _dn1w, _sg1 * _dray, n1, -1, temp);
+                resul = Vector3D.LinearForm(_sg1 * _dray, n1, -_sg2 * _dray, n2);
                 _dedt[2] = resul.X;
                 _dedt[3] = resul.Y;
                 _dedt[4] = resul.Z;
@@ -478,10 +435,7 @@ internal class EvolRad : BlendFunction
             // ------   Positioning of order 2  -----------------------------
             if (order == 2)
             {
-                Vector3D d2ns1u1 = new Vector3D(), d2ns1u2 = new Vector3D(), d2ns1v1 = new Vector3D(),
-                       d2ns1v2 = new Vector3D(), d2ns1uv1, d2ns1uv2;
-                double uterm, vterm, smallterm, p1, p2, p12;
-                double dPrim, dSecn;
+                Vector3D d2ns1u1, d2ns1u2, d2ns1v1, d2ns1v2, d2ns1uv1, d2ns1uv2;
                 _d2EDX2.Init(0);
 
                 _d2EDX2[1, 1, 1] = _nplan.Dot(_d2u1) / 2;
@@ -494,272 +448,94 @@ internal class EvolRad : BlendFunction
                 // ================
                 // ==  Surface 1 ==
                 // ================
-                carre = invnorm1 * invnorm1;
-                cube = carre * invnorm1;
-                // Derived double compared to u1
-                // Derived from the norm
+                // The second derivatives of the surface's normal d1u ^ d1v
                 d2ns1u1 = Vector3D.LinearForm(1, _d3u1.Crossed(_d1v1), 2, _d2u1.Crossed(_d2uv1), 1, _d1u1.Crossed(_d3uuv1));
-                dPrim = ncrossns1.Dot(_nplan.Crossed(_dns1u1));
-                smallterm = -2 * dPrim * cube;
-                dSecn = ncrossns1.Dot(_nplan.Crossed(d2ns1u1)) + (_nplan.Crossed(_dns1u1)).SquareMagnitude;
-                grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
+                d2ns1uv1 = (_d3uuv1.Crossed(_d1v1)) + (_d2u1.Crossed(_d2v1)) + (_d1u1.Crossed(_d3uvv1));
+                d2ns1v1 = Vector3D.LinearForm(1, _d1u1.Crossed(_d3v1), 2, _d2uv1.Crossed(_d2v1), 1, _d3uvv1.Crossed(_d1v1));
 
-                temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
-                p1 = _nplan.Dot(_dns1u1);
-                p2 = _nplan.Dot(d2ns1u1);
-                _d2ndu1 = Vector3D.LinearForm(invnorm1 * p2 + smallterm * p1, _nplan, -smallterm, _dns1u1, -invnorm1, d2ns1u1);
-                _d2ndu1 += temp;
+                _d2ndu1 = -ConstRad.UnitNormalD2(nn1, invnorm1, _dns1u1, _dns1u1, d2ns1u1);
                 resul = Vector3D.LinearForm(ray1, _d2ndu1, _d2u1);
                 _d2EDX2[2, 1, 1] = resul.X;
                 _d2EDX2[3, 1, 1] = resul.Y;
                 _d2EDX2[4, 1, 1] = resul.Z;
 
-                // Derived double compared to u1, v1
-                // Derived from the norm
-                d2ns1uv1 = (_d3uuv1.Crossed(_d1v1)) + (_d2u1.Crossed(_d2v1)) + (_d1u1.Crossed(_d3uvv1));
-                uterm = ncrossns1.Dot(_nplan.Crossed(_dns1u1));
-                vterm = ncrossns1.Dot(_nplan.Crossed(_dns1v1));
-                dSecn = (_nplan.Crossed(_dns1v1)).Dot(_nplan.Crossed(_dns1u1)) + ncrossns1.Dot(_nplan.Crossed(d2ns1uv1));
-                grosterme = (3 * uterm * vterm * carre - dSecn) * cube;
-                uterm *= -cube; // and only now
-                vterm *= -cube;
-
-                p1 = _nplan.Dot(_dns1u1);
-                p2 = _nplan.Dot(_dns1v1);
-                temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1, -invnorm1, d2ns1uv1);
-                _d2nduv1 = Vector3D.LinearForm(invnorm1 * _nplan.Dot(d2ns1uv1) + uterm * p2 + vterm * p1, _nplan, -uterm,
-                                      _dns1v1, -vterm, _dns1u1);
-
-                _d2nduv1 += temp;
+                _d2nduv1 = -ConstRad.UnitNormalD2(nn1, invnorm1, _dns1u1, _dns1v1, d2ns1uv1);
                 resul = Vector3D.LinearForm(ray1, _d2nduv1, _d2uv1);
-
                 _d2EDX2[2, 2, 1] = _d2EDX2[2, 1, 2] = resul.X;
                 _d2EDX2[3, 2, 1] = _d2EDX2[3, 1, 2] = resul.Y;
                 _d2EDX2[4, 2, 1] = _d2EDX2[4, 1, 2] = resul.Z;
 
-                // Derived double compared to v1
-                // Derived from the norm
-                d2ns1v1 = Vector3D.LinearForm(1, _d1u1.Crossed(_d3v1), 2, _d2uv1.Crossed(_d2v1), 1, _d3uvv1.Crossed(_d1v1));
-                dPrim = ncrossns1.Dot(_nplan.Crossed(_dns1v1));
-                smallterm = -2 * dPrim * cube;
-                dSecn = ncrossns1.Dot(_nplan.Crossed(d2ns1v1)) + (_nplan.Crossed(_dns1v1)).SquareMagnitude;
-                grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
-
-                p1 = _nplan.Dot(_dns1v1);
-                p2 = _nplan.Dot(d2ns1v1);
-                temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
-                _d2ndv1 = Vector3D.LinearForm(invnorm1 * p2 + smallterm * p1, _nplan, -smallterm, _dns1v1, -invnorm1, d2ns1v1);
-                _d2ndv1 += temp;
+                _d2ndv1 = -ConstRad.UnitNormalD2(nn1, invnorm1, _dns1v1, _dns1v1, d2ns1v1);
                 resul = Vector3D.LinearForm(ray1, _d2ndv1, _d2v1);
-
                 _d2EDX2[2, 2, 2] = resul.X;
                 _d2EDX2[3, 2, 2] = resul.Y;
                 _d2EDX2[4, 2, 2] = resul.Z;
                 // ================
                 // ==  Surface 2 ==
                 // ================
-                carre = invnorm2 * invnorm2;
-                cube = carre * invnorm2;
-                // Derived double compared to u2
-                // Derived from the norm
                 d2ns1u2 = Vector3D.LinearForm(1, _d3u2.Crossed(_d1v2), 2, _d2u2.Crossed(_d2uv2), 1, _d1u2.Crossed(_d3uuv2));
-                dPrim = ncrossns2.Dot(_nplan.Crossed(_dns1u2));
-                smallterm = -2 * dPrim * cube;
-                dSecn = ncrossns2.Dot(_nplan.Crossed(d2ns1u2)) + (_nplan.Crossed(_dns1u2)).SquareMagnitude;
-                grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
+                d2ns1uv2 = (_d3uuv2.Crossed(_d1v2)) + (_d2u2.Crossed(_d2v2)) + (_d1u2.Crossed(_d3uvv2));
+                d2ns1v2 = Vector3D.LinearForm(1, _d1u2.Crossed(_d3v2), 2, _d2uv2.Crossed(_d2v2), 1, _d3uvv2.Crossed(_d1v2));
 
-                temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
-                p1 = _nplan.Dot(_dns1u2);
-                p2 = _nplan.Dot(d2ns1u2);
-                _d2ndu2 = Vector3D.LinearForm(invnorm2 * p2 + smallterm * p1, _nplan, -smallterm, _dns1u2, -invnorm2, d2ns1u2);
-                _d2ndu2 += temp;
+                _d2ndu2 = -ConstRad.UnitNormalD2(nn2, invnorm2, _dns1u2, _dns1u2, d2ns1u2);
                 resul = Vector3D.LinearForm(-ray2, _d2ndu2, -1, _d2u2);
                 _d2EDX2[2, 3, 3] = resul.X;
                 _d2EDX2[3, 3, 3] = resul.Y;
                 _d2EDX2[4, 3, 3] = resul.Z;
 
-                // Derived double compared to u2, v2
-                // Derived from the norm
-                d2ns1uv2 = (_d3uuv2.Crossed(_d1v2)) + (_d2u2.Crossed(_d2v2)) + (_d1u2.Crossed(_d3uvv2));
-                uterm = ncrossns2.Dot(_nplan.Crossed(_dns1u2));
-                vterm = ncrossns2.Dot(_nplan.Crossed(_dns1v2));
-                dSecn = (_nplan.Crossed(_dns1v2)).Dot(_nplan.Crossed(_dns1u2)) + ncrossns2.Dot(_nplan.Crossed(d2ns1uv2));
-                grosterme = (3 * uterm * vterm * carre - dSecn) * cube;
-                uterm *= -cube; // and only now
-                vterm *= -cube;
-
-                p1 = _nplan.Dot(_dns1u2);
-                p2 = _nplan.Dot(_dns1v2);
-                temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2, -invnorm2, d2ns1uv2);
-                _d2nduv2 = Vector3D.LinearForm(invnorm2 * _nplan.Dot(d2ns1uv2) + uterm * p2 + vterm * p1, _nplan, -uterm,
-                                      _dns1v2, -vterm, _dns1u2);
-
-                _d2nduv2 += temp;
+                _d2nduv2 = -ConstRad.UnitNormalD2(nn2, invnorm2, _dns1u2, _dns1v2, d2ns1uv2);
                 resul = Vector3D.LinearForm(-ray2, _d2nduv2, -1, _d2uv2);
-
                 _d2EDX2[2, 4, 3] = _d2EDX2[2, 3, 4] = resul.X;
                 _d2EDX2[3, 4, 3] = _d2EDX2[3, 3, 4] = resul.Y;
                 _d2EDX2[4, 4, 3] = _d2EDX2[4, 3, 4] = resul.Z;
 
-                // Derived double compared to v2
-                // Derived from the norm
-                d2ns1v2 = Vector3D.LinearForm(1, _d1u2.Crossed(_d3v2), 2, _d2uv2.Crossed(_d2v2), 1, _d3uvv2.Crossed(_d1v2));
-                dPrim = ncrossns2.Dot(_nplan.Crossed(_dns1v2));
-                smallterm = -2 * dPrim * cube;
-                dSecn = ncrossns2.Dot(_nplan.Crossed(d2ns1v2)) + (_nplan.Crossed(_dns1v2)).SquareMagnitude;
-                grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
-
-                p1 = _nplan.Dot(_dns1v2);
-                p2 = _nplan.Dot(d2ns1v2);
-                temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
-                _d2ndv2 = Vector3D.LinearForm(invnorm2 * p2 + smallterm * p1, _nplan, -smallterm, _dns1v2, -invnorm2, d2ns1v2);
-                _d2ndv2 += temp;
+                _d2ndv2 = -ConstRad.UnitNormalD2(nn2, invnorm2, _dns1v2, _dns1v2, d2ns1v2);
                 resul = Vector3D.LinearForm(-ray2, _d2ndv2, -1, _d2v2);
-
                 _d2EDX2[2, 4, 4] = resul.X;
                 _d2EDX2[3, 4, 4] = resul.Y;
                 _d2EDX2[4, 4, 4] = resul.Z;
 
                 if (byParam)
                 {
-                    double tterm;
                     //  ---------- Derivation double in t, X --------------------------
+                    // The normals don't move with the guide; the radius does.
+                    _d2EDXDT.Init(0);
                     _d2EDXDT[1, 1] = _dnplan.Dot(_d1u1) / 2;
                     _d2EDXDT[1, 2] = _dnplan.Dot(_d1v1) / 2;
                     _d2EDXDT[1, 3] = _dnplan.Dot(_d1u2) / 2;
                     _d2EDXDT[1, 4] = _dnplan.Dot(_d1v2) / 2;
+                    _d2ndtu1 = new Vector3D();
+                    _d2ndtv1 = new Vector3D();
+                    _d2ndtu2 = new Vector3D();
+                    _d2ndtv2 = new Vector3D();
 
-                    carre = invnorm1 * invnorm1;
-                    cube = carre * invnorm1;
-                    //--> Derived compared to u1 and t
-                    tterm = ncrossns1.Dot(_dnplan.Crossed(_nsurf1));
-                    smallterm = -tterm * cube;
-                    // Derived from the norm
-                    uterm = ncrossns1.Dot(_nplan.Crossed(_dns1u1));
-                    dSecn = (_nplan.Crossed(_dns1u1)).Dot(_dnplan.Crossed(_nsurf1))
-                            + ncrossns1.Dot(_dnplan.Crossed(_dns1u1));
-                    grosterme = (3 * uterm * tterm * carre - dSecn) * cube;
-                    uterm *= -cube;
-
-                    p1 = _dnplan.Dot(_nsurf1);
-                    p2 = _nplan.Dot(_dns1u1);
-                    p12 = _dnplan.Dot(_dns1u1);
-
-                    _d2ndtu1 = Vector3D.LinearForm(invnorm1 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns1, _nplan,
-                                          invnorm1 * p2 + uterm * ndotns1, _dnplan, -smallterm, _dns1u1);
-                    _d2ndtu1 -= grosterme * _nsurf1;
-
-                    resul = Vector3D.LinearForm(ray1, _d2ndtu1, _sg1 * _dray, _dndu1);
+                    resul = _sg1 * _dray * _dndu1;
                     _d2EDXDT[2, 1] = resul.X;
                     _d2EDXDT[3, 1] = resul.Y;
                     _d2EDXDT[4, 1] = resul.Z;
 
-                    //--> Derived compared to v1 and t
-                    // Derived from the norm
-                    uterm = ncrossns1.Dot(_nplan.Crossed(_dns1v1));
-                    dSecn = (_nplan.Crossed(_dns1v1)).Dot(_dnplan.Crossed(_nsurf1))
-                            + ncrossns1.Dot(_dnplan.Crossed(_dns1v1));
-                    grosterme = (3 * uterm * tterm * carre - dSecn) * cube;
-                    uterm *= -cube;
-
-                    p1 = _dnplan.Dot(_nsurf1);
-                    p2 = _nplan.Dot(_dns1v1);
-                    p12 = _dnplan.Dot(_dns1v1);
-                    _d2ndtv1 = Vector3D.LinearForm(invnorm1 * p12 + uterm * p1 + smallterm * p2 + grosterme * ndotns1, _nplan,
-                                          invnorm1 * p2 + uterm * ndotns1, _dnplan, -smallterm, _dns1v1);
-                    _d2ndtv1 -= grosterme * _nsurf1;
-
-                    resul = Vector3D.LinearForm(ray1, _d2ndtv1, _sg1 * _dray, _dndv1);
+                    resul = _sg1 * _dray * _dndv1;
                     _d2EDXDT[2, 2] = resul.X;
                     _d2EDXDT[3, 2] = resul.Y;
                     _d2EDXDT[4, 2] = resul.Z;
 
-                    carre = invnorm2 * invnorm2;
-                    cube = carre * invnorm2;
-                    //--> Derived compared to u2 and t
-                    tterm = ncrossns2.Dot(_dnplan.Crossed(_nsurf2));
-                    smallterm = -tterm * cube;
-                    // Derived from the norm
-                    uterm = ncrossns2.Dot(_nplan.Crossed(_dns1u2));
-                    dSecn = (_nplan.Crossed(_dns1u2)).Dot(_dnplan.Crossed(_nsurf2))
-                            + ncrossns2.Dot(_dnplan.Crossed(_dns1u2));
-                    grosterme = (3 * uterm * tterm * carre - dSecn) * cube;
-                    uterm *= -cube;
-
-                    p1 = _dnplan.Dot(_nsurf2);
-                    p2 = _nplan.Dot(_dns1u2);
-                    p12 = _dnplan.Dot(_dns1u2);
-
-                    _d2ndtu2 = Vector3D.LinearForm(invnorm2 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns2, _nplan,
-                                          invnorm2 * p2 + uterm * ndotns2, _dnplan, -smallterm, _dns1u2);
-                    _d2ndtu2 -= grosterme * _nsurf2;
-
-                    resul = Vector3D.LinearForm(-ray2, _d2ndtu2, -_sg2 * _dray, _dndu2);
+                    resul = -_sg2 * _dray * _dndu2;
                     _d2EDXDT[2, 3] = resul.X;
                     _d2EDXDT[3, 3] = resul.Y;
                     _d2EDXDT[4, 3] = resul.Z;
 
-                    //--> Derived compared to v2 and t
-                    // Derived from the norm
-                    uterm = ncrossns2.Dot(_nplan.Crossed(_dns1v2));
-                    dSecn = (_nplan.Crossed(_dns1v2)).Dot(_dnplan.Crossed(_nsurf2))
-                            + ncrossns2.Dot(_dnplan.Crossed(_dns1v2));
-                    grosterme = (3 * uterm * tterm * carre - dSecn) * cube;
-                    uterm *= -cube;
-
-                    p1 = _dnplan.Dot(_nsurf2);
-                    p2 = _nplan.Dot(_dns1v2);
-                    p12 = _dnplan.Dot(_dns1v2);
-
-                    _d2ndtv2 = Vector3D.LinearForm(invnorm2 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns2, _nplan,
-                                          invnorm2 * p2 + uterm * ndotns2, _dnplan, -smallterm, _dns1v2);
-                    _d2ndtv2 -= grosterme * _nsurf2;
-
-                    resul = Vector3D.LinearForm(-ray2, _d2ndtv2, -_sg2 * _dray, _dndv2);
+                    resul = -_sg2 * _dray * _dndv2;
                     _d2EDXDT[2, 4] = resul.X;
                     _d2EDXDT[3, 4] = resul.Y;
                     _d2EDXDT[4, 4] = resul.Z;
 
                     //  ---------- Derivation double in t -----------------------------
-                    // Derived from n1 compared to w
-                    carre = invnorm1 * invnorm1;
-                    cube = carre * invnorm1;
-                    // Derived from the norm
-                    dPrim = ncrossns1.Dot(_dnplan.Crossed(_nsurf1));
-                    smallterm = -2 * dPrim * cube;
-                    dSecn = (_dnplan.Crossed(_nsurf1)).SquareMagnitude + ncrossns1.Dot(_d2nplan.Crossed(_nsurf1));
-                    grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
+                    _d2n1w = new Vector3D();
+                    _d2n2w = new Vector3D();
 
-                    p1 = _dnplan.Dot(_nsurf1);
-                    p2 = _d2nplan.Dot(_nsurf1);
-
-                    temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
-                    _d2n1w = Vector3D.LinearForm(smallterm * p1 + invnorm1 * p2, _nplan, smallterm * ndotns1 + 2 * invnorm1 * p1,
-                                        _dnplan, ndotns1 * invnorm1, _d2nplan);
-                    _d2n1w += temp;
-
-                    // Derived from n2 compared to w
-                    carre = invnorm2 * invnorm2;
-                    cube = carre * invnorm2;
-                    // Derived from the norm
-                    dPrim = ncrossns2.Dot(_dnplan.Crossed(_nsurf2));
-                    smallterm = -2 * dPrim * cube;
-                    dSecn = (_dnplan.Crossed(_nsurf2)).SquareMagnitude + ncrossns2.Dot(_d2nplan.Crossed(_nsurf2));
-                    grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
-
-                    p1 = _dnplan.Dot(_nsurf2);
-                    p2 = _d2nplan.Dot(_nsurf2);
-
-                    temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
-                    _d2n2w = Vector3D.LinearForm(smallterm * p1 + invnorm2 * p2, _nplan, smallterm * ndotns2 + 2 * invnorm2 * p1,
-                                        _dnplan, ndotns2 * invnorm2, _d2nplan);
-                    _d2n2w += temp;
-
-                    temp = temp.WithXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
+                    Vector3D temp = new Vector3D((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
                     _d2EDT2[1] = _d2nplan.Dot(temp) - 2 * _dnplan.Dot(_d1gui) - _nplan.Dot(_d2gui);
-                    resul = Vector3D.LinearForm(ray1, _d2n1w, 2 * _sg1 * _dray, _dn1w, _sg1 * _d2ray, n1);
-                    temp = Vector3D.LinearForm(ray2, _d2n2w, 2 * _sg2 * _dray, _dn2w, _sg2 * _d2ray, n2);
-                    resul -= temp;
+                    resul = Vector3D.LinearForm(_sg1 * _d2ray, n1, -_sg2 * _d2ray, n2);
                     _d2EDT2[2] = resul.X;
                     _d2EDT2[3] = resul.Y;
                     _d2EDT2[4] = resul.Z;
@@ -818,7 +594,7 @@ internal class EvolRad : BlendFunction
 
     public override bool IsSolution(math_Vector sol, double tol)
     {
-        double norm, cosa, sina, angle;
+        double cosa, sina, angle;
         bool ok = true;
 
         ok = ComputeValues(sol, 1, true, _param);
@@ -831,21 +607,9 @@ internal class EvolRad : BlendFunction
             ns2 = _nsurf2;
             np = _nplan;
 
-            norm = _nplan.Crossed(ns1).Magnitude;
-            if (norm < Eps)
-            {
-                norm = 1; // Unsatisfactory, but it is not necessary to stop
-            }
-
-            ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm, _nplan, -1.0 / norm, ns1);
-
-            norm = _nplan.Crossed(ns2).Magnitude;
-            if (norm < Eps)
-            {
-                norm = 1; // Unsatisfactory, but it is not necessary to stop
-            }
-
-            ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm, _nplan, -1.0 / norm, ns2);
+            // The surfaces' own normals, reversed (decision 2215).
+            ns1 = -ConstRad.InverseNorm(ns1) * ns1;
+            ns2 = -ConstRad.InverseNorm(ns2) * ns2;
 
             double maxpiv = 1.0e-14;
             Gauss resol = new(_dedx, maxpiv);
@@ -1050,21 +814,14 @@ internal class EvolRad : BlendFunction
             nmL = _nsurf2;
         }
 
-        invnorm1 = _nplan.Crossed(ns1).Magnitude;
-        if (invnorm1 < Eps)
-        {
-            invnorm1 = 1;
-        }
-        else
-        {
-            invnorm1 = 1.0 / invnorm1;
-        }
-
-        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) * invnorm1, _nplan, -invnorm1, ns1);
+        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 2215).
+        invnorm1 = ConstRad.InverseNorm(ns1);
+        ns1 = -invnorm1 * ns1;
         center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
+        Vector3D np = ConstRad.SectionNormal(nmF, nmL, _nplan);
 
-        tgF = _nplan.Crossed(new Vector3D(center, _pts1));
-        tgL = _nplan.Crossed(new Vector3D(center, _pts2));
+        tgF = np.Crossed(new Vector3D(center, _pts1));
+        tgL = np.Crossed(new Vector3D(center, _pts2));
         if (_choix % 2 == 1)
         {
             tgF = tgF.Reversed();
@@ -1111,17 +868,9 @@ internal class EvolRad : BlendFunction
 
         ComputeValues(x, 0, true, prm);
 
-        ns1 = _nsurf1;
-        np = _nplan;
-
-        double norm1;
-        norm1 = _nplan.Crossed(ns1).Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
+        // The ball's circle: the surface's own normal, and the plane square to both normals (decision 2215).
+        ns1 = -ConstRad.InverseNorm(_nsurf1) * _nsurf1;
+        np = ConstRad.SectionNormal(_nsurf1, _nsurf2, _nplan);
         center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
 
         // ns1 is oriented from the center to pts1
@@ -1346,21 +1095,10 @@ internal class EvolRad : BlendFunction
             return;
         }
 
-        double norm1, norm2;
-        norm1 = _nplan.Crossed(ns1).Magnitude;
-        norm2 = _nplan.Crossed(ns2).Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        if (norm2 < Eps)
-        {
-            norm2 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
+        // The ball's circle: the surfaces' own normals, and the plane square to both (decision 2215).
+        np = ConstRad.SectionNormal(ns1, ns2, _nplan);
+        ns1 = -ConstRad.InverseNorm(ns1) * ns1;
+        ns2 = -ConstRad.InverseNorm(ns2) * ns2;
 
         center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
 
@@ -1390,7 +1128,7 @@ internal class EvolRad : BlendFunction
                                  NCollection_Array1<double> weights, NCollection_Array1<double> dWeights)
     {
         Vector3D ns1, ns2, np, dnp, dnorm1w = new Vector3D(), dnorm2w = new Vector3D(), tgc = new Vector3D();
-        double norm1, norm2, rayprim;
+        double rayprim;
 
         Point3D center = new Point3D();
         math_Vector sol = new(1, 4), secmember = new(1, 4);
@@ -1474,20 +1212,9 @@ internal class EvolRad : BlendFunction
         }
 
         // Case of the circle
-        norm1 = _nplan.Crossed(ns1).Magnitude;
-        norm2 = _nplan.Crossed(ns2).Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        if (norm2 < Eps)
-        {
-            norm2 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
+        // The surfaces' own normals (decision 2215); the plane, square to both, is set below.
+        ns1 = -ConstRad.InverseNorm(ns1) * ns1;
+        ns2 = -ConstRad.InverseNorm(ns2) * ns2;
 
         center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
         if (!istgt)
@@ -1522,6 +1249,12 @@ internal class EvolRad : BlendFunction
             dnp = dnp.Reversed();
         }
 
+        // The plane of the ball's circle, square to both normals, on the guide plane's side.
+        Vector3D zero = new Vector3D();
+        ConstRad.SectionNormal(ns1, ns2, dnorm1w, dnorm2w, zero, zero, np, dnp, zero, out Vector3D npBall, out Vector3D dnpBall, out _);
+        np = npBall;
+        dnp = dnpBall;
+
         if (_ray < 0.0)
         { // to avoid std::abs(dray) some lines below
             rayprim = -rayprim;
@@ -1549,7 +1282,7 @@ internal class EvolRad : BlendFunction
                d2norm2w = new Vector3D();
         Vector3D tgc = new Vector3D(), dtgc = new Vector3D(), dtg1 = new Vector3D(), dtg2 = new Vector3D(),
                temp = new Vector3D(), tempbis = new Vector3D();
-        double norm1, norm2, rayprim, raysecn;
+        double rayprim, raysecn;
 
         Point3D center = new Point3D();
         math_Vector x = new(1, 4), sol = new(1, 4), secmember = new(1, 4);
@@ -1668,20 +1401,9 @@ internal class EvolRad : BlendFunction
         }
 
         // Case of circle
-        norm1 = _nplan.Crossed(ns1).Magnitude;
-        norm2 = _nplan.Crossed(ns2).Magnitude;
-        if (norm1 < Eps)
-        {
-            norm1 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        if (norm2 < Eps)
-        {
-            norm2 = 1; // Unsatisfactory, but it is not necessary to stop
-        }
-
-        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
+        // The surfaces' own normals (decision 2215); the plane, square to both, is set below.
+        ns1 = -ConstRad.InverseNorm(ns1) * ns1;
+        ns2 = -ConstRad.InverseNorm(ns2) * ns2;
 
         center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
         if (!istgt)
@@ -1721,6 +1443,13 @@ internal class EvolRad : BlendFunction
             d2np = d2np.Reversed();
         }
 
+        // The plane of the ball's circle, square to both normals, on the guide plane's side.
+        ConstRad.SectionNormal(ns1, ns2, dnorm1w, dnorm2w, d2norm1w, d2norm2w, np, dnp, d2np, out Vector3D npBall,
+                               out Vector3D dnpBall, out Vector3D d2npBall);
+        np = npBall;
+        dnp = dnpBall;
+        d2np = d2npBall;
+
         if (_ray < 0.0)
         { // to avoid std::abs(dray) several lines below
             rayprim = -rayprim;
@@ -1735,7 +1464,8 @@ internal class EvolRad : BlendFunction
         }
         else
         {
-            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns1, ns2, _nplan, _pts1, _pts2, Math.Abs(_ray), center, poles, weights);
+            // OCCT passes the guide's plane unreversed here.
+            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns1, ns2, ConstRad.SectionNormal(ns1, ns2, _nplan), _pts1, _pts2, Math.Abs(_ray), center, poles, weights);
             return false;
         }
     }
