@@ -95,6 +95,12 @@ time in a quiet window; anything that slows another case past the bar waits for 
 |---|---|---|
 | **15X** The sphere's piece | 15W found that where a cylinder has exactly the fillet's radius (the corpus's `blend/complex/C1`, `C5`, `F1`, `F2`), the ball can sit in one place only, so the right fillet there is a piece of a sphere, which ChFi3d can't build; with 15W those fail honestly, where main's results were off the ball by up to 1.7. The owner: "I'm not in a rush for 0.6.0 - schedule the sphere piece for C1, C5, F1 and F2." Built behind ChFi3d, proved by the ball test. | The four build, on the ball, valid, their volumes against an independent integral; nothing else in the corpus moves. **Done** (decisions 2166 to 2171): stage 4c, behind ChFi3d: on each pinned run a piece of the sphere, 4a's sections either side from one ball's centre to the next, ends square or slanted to the contour (C1's cut by a plane carried on past a concave corner). All four build through `Fillet`, valid, on the ball, their volumes against the exact sections and the faces' boundaries; closed forms and rays from the ball's centre in the tests. The corpus's statuses can't move (Draw's `blend` calls the engine) and don't; the users' cases unchanged. Found: 4a's volume check had a wrong Gauss weight (fixed, 2169), and 4a turns its faces wrongly beside a reversed face (for the owner, 2170). |
 
+## 10. The point check for commons and cuts (the owner, 13 November 2026)
+
+| Unit | What | Done when |
+|---|---|---|
+| **15AH** The point check for commons and cuts | The owner: "Extend the check to commons and cuts, starting with the investigation to find out why the near-touch point check didn't catch the failure earlier." 15E6's R = 5000 common, 1.4e-4 short, valid and a success (decision 2204). | **Done** (decisions 31401 to 31405): decision 2066's check ran on it and was right to pass it at every point, as the result is within its tolerance of right everywhere; what's wrong is a face whose boundary in its parameters is open by 1.73, which the volume reads as missing. Decision 1937's proof is extended to commons and cuts, and a result whose faces don't close is made again, and kept with a warning if nothing closes it: the R = 5000 commons are made again right. One corpus cut newly caught (`gdml_public/A5`), no false failure; the cost, where the check runs, for the owner (decision 31405). |
+
 ## Not in this phase
 
 - SVG and DXF import.
