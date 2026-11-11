@@ -319,13 +319,17 @@ if (args.Length > 0 && args[0] == "measures")
 
 int passes = args.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 9;
 var times = new double[examples.Length][];
-var bytes = new long[examples.Length];
+var passBytes = new long[examples.Length][];
 for (int i = 0; i < examples.Length; i++)
 {
     times[i] = new double[passes];
+    passBytes[i] = new long[passes];
 }
 
 string[] results = new string[examples.Length];
+// KERF_BENTO_PASSES=1 prints each pass of each example to the error stream: its bytes on every thread and on this one, and
+// the collections so far
+bool printEachPass = Environment.GetEnvironmentVariable("KERF_BENTO_PASSES") == "1";
 using var pauseLog = new PauseLog();
 var total = Stopwatch.StartNew();
 var passCpu = new double[passes];
@@ -334,7 +338,7 @@ for (int pass = 0; pass < passes; pass++)
     TimeSpan passCpuBefore = Process.GetCurrentProcess().TotalProcessorTime;
     for (int i = 0; i < examples.Length; i++)
     {
-        long before = GC.GetTotalAllocatedBytes(true);
+        long before = GC.GetTotalAllocatedBytes(true), beforeHere = GC.GetAllocatedBytesForCurrentThread();
         Marks.Log?.Mark(pass == 0 ? examples[i].Name : $"pass {pass + 1}: {examples[i].Name}");
         var clock = Stopwatch.StartNew();
         Shape shape = examples[i].Build();
@@ -342,9 +346,11 @@ for (int pass = 0; pass < passes; pass++)
         results[i] = string.Create(CultureInfo.InvariantCulture,
             $"volume {shape.Volume:F3}, {shape.Faces().Count} faces, {mesh.TriangleCount} triangles");
         times[i][pass] = clock.Elapsed.TotalMilliseconds;
-        if (pass == passes - 1)
+        passBytes[i][pass] = GC.GetTotalAllocatedBytes(true) - before;
+        if (printEachPass)
         {
-            bytes[i] = GC.GetTotalAllocatedBytes(true) - before;
+            Console.Error.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"pass\t{pass + 1}\t{examples[i].Name}\t{passBytes[i][pass]}\t{GC.GetAllocatedBytesForCurrentThread() - beforeHere}\t{GC.CollectionCount(0)}\t{GC.CollectionCount(1)}\t{GC.CollectionCount(2)}"));
         }
     }
     passCpu[pass] = (Process.GetCurrentProcess().TotalProcessorTime - passCpuBefore).TotalMilliseconds;
@@ -370,12 +376,17 @@ for (int i = 0; i < examples.Length; i++)
     // Passes 2 to 9, as native's frozen figures were taken
     double[] recalculations = times[i][1..Math.Min(passes, 9)];
     double median = recalculations.Length > 0 ? recalculations.Order().ElementAt(recalculations.Length / 2) : first;
+    // The bytes of the same passes, and their median as for the time (unit 15F's second slice): one pass's depend on whether a
+    // generation 2 collection fell since the mesher last grew its large lists, which it holds only weakly (decision 1762), and
+    // the last pass alone read 4.35 or 5.27 MB for the same example by that
+    long[] recalculationBytes = passBytes[i][1..Math.Min(passes, 9)];
+    long exampleBytes = recalculationBytes.Length > 0 ? recalculationBytes.Order().ElementAt(recalculationBytes.Length / 2) : passBytes[i][0];
     firstSum += first;
     medianSum += median;
-    bytesSum += bytes[i];
+    bytesSum += exampleBytes;
     BenchRows.Add("bento", examples[i].Name, "first ms", first);
     BenchRows.Add("bento", examples[i].Name, "recalc ms", median);
-    BenchRows.Add("bento", examples[i].Name, "alloc MB", bytes[i] / 1048576.0);
+    BenchRows.Add("bento", examples[i].Name, "alloc MB", exampleBytes / 1048576.0);
     BenchRows.Add("bento", examples[i].Name, "result", results[i]);
     if (passes >= 12)
     {
@@ -384,7 +395,7 @@ for (int i = 0; i < examples.Length; i++)
         BenchRows.Add("bento", examples[i].Name, "settled ms", settled);
     }
     Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-        $"{examples[i].Name,-24} {first,10:F1} {median,10:F1} {bytes[i] / 1048576.0,10:F1}  {results[i]}"));
+        $"{examples[i].Name,-24} {first,10:F1} {median,10:F1} {exampleBytes / 1048576.0,10:F1}  {results[i]}"));
 }
 
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{"total",-24} {firstSum,10:F1} {medianSum,10:F1} {bytesSum / 1048576.0,10:F1}"));
@@ -474,7 +485,7 @@ BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial p
 BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 0 count", GC.CollectionCount(0));
 BenchRows.Add("process", copies > 0 ? "with the parallel rounds" : "the serial passes", "generation 2 count", GC.CollectionCount(2));
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
-    $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms, longest {pauseLog.LongestMilliseconds:F1} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
+    $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms, longest {pauseLog.LongestMilliseconds:F1} ms, promoted {pauseLog.Promoted.Gen0 / 1048576.0:F1} MB from generation 0 and {pauseLog.Promoted.Gen1 / 1048576.0:F1} MB from 1; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
 Marks.Log?.Mark("end");
 return 0;
 
@@ -556,6 +567,7 @@ internal sealed class PauseLog : System.Diagnostics.Tracing.EventListener
 {
     private DateTime _suspended;
     private double _longest;
+    private long _promoted0, _promoted1;
 
     public double LongestMilliseconds => Volatile.Read(ref _longest);
 
@@ -583,5 +595,14 @@ internal sealed class PauseLog : System.Diagnostics.Tracing.EventListener
             Volatile.Write(ref _longest, Math.Max(_longest, (e.TimeStamp - _suspended).TotalMilliseconds));
             _suspended = default;
         }
+        else if (e.EventName.StartsWith("GCHeapStats", StringComparison.Ordinal) && e.PayloadNames is { } names)
+        {
+            int p0 = names.IndexOf("TotalPromotedSize0"), p1 = names.IndexOf("TotalPromotedSize1");
+            Interlocked.Add(ref _promoted0, Convert.ToInt64(e.Payload![p0], CultureInfo.InvariantCulture));
+            Interlocked.Add(ref _promoted1, Convert.ToInt64(e.Payload![p1], CultureInfo.InvariantCulture));
+        }
     }
+
+    /// <summary>What the collections promoted out of generations 0 and 1, in all: the survivors a collection has to copy.</summary>
+    public (long Gen0, long Gen1) Promoted => (Volatile.Read(ref _promoted0), Volatile.Read(ref _promoted1));
 }
