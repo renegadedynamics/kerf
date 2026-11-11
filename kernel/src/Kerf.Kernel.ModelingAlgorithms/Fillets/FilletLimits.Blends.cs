@@ -90,19 +90,27 @@ internal static partial class FilletLimits
         return new EngineOutcome(true, () => built, history, Valid: true);
     }
 
-    // A plane or a cylinder, with the side the solid lies on: distances are signed along the face's outward normal
+    // A plane, a cylinder or (for unit 15X) a surface extruded from a curve, with the side the solid lies on: distances are signed
+    // along the face's outward normal
     private sealed class Support
     {
         public required Face Face { get; init; }
         public required bool IsCylinder { get; init; }
         public required V Origin { get; init; }
-        public required V Axis { get; init; } // a cylinder's axis, a plane's normal
+        public required V Axis { get; init; } // a cylinder's axis, a plane's normal, an extrusion's direction
         public required V X { get; init; }
         public required V Y { get; init; }
         public required double Rho { get; init; }
         public double Sign { get; set; } = 1;
 
-        public static Support? Of(Face face)
+        // An extrusion's curve, and points of it seen along the direction, to start finding the nearest from
+        public Curve3D? Profile { get; init; }
+        private double[] _samples = [];
+        private V[] _sampled = [];
+
+        public bool IsExtrusion => Profile is not null;
+
+        public static Support? Of(Face face, bool extrusions = false)
         {
             Surface? surface = Tool.Surface(face, out Placement placement);
             if (surface is null)
@@ -112,6 +120,10 @@ internal static partial class FilletLimits
             if (!placement.IsIdentity)
             {
                 surface = (Surface)surface.Transformed(placement.Transformation);
+            }
+            if (extrusions && surface is ExtrusionSurface extrusion)
+            {
+                return Extruded(face, extrusion);
             }
             (bool cylinder, double rho, CoordinateSystem frame) = surface switch
             {
@@ -130,6 +142,69 @@ internal static partial class FilletLimits
             };
         }
 
+        private static Support? Extruded(Face face, ExtrusionSurface surface)
+        {
+            Curve3D profile = surface.BasisCurve;
+            double first = profile.FirstParameter, last = profile.LastParameter;
+            if (double.IsInfinity(first) || double.IsInfinity(last) || profile.IsPeriodic || last <= first)
+            {
+                return null;
+            }
+            V axis = V.Of(surface.Direction);
+            const int count = 128;
+            var samples = new double[count + 1];
+            var sampled = new V[count + 1];
+            for (int i = 0; i <= count; i++)
+            {
+                samples[i] = first + (last - first) * i / count;
+                V c = V.Of(profile.EvalD0(samples[i]));
+                sampled[i] = c - axis * c.Dot(axis);
+            }
+            return new Support
+            {
+                Face = face, IsCylinder = false, Rho = 0, Origin = default, Axis = axis, X = default, Y = default, Profile = profile,
+                _samples = samples, _sampled = sampled,
+            };
+        }
+
+        // An extrusion's nearest point of its curve, seen along the direction: the curve's parameter, point and tangent there
+        private (double U, V Point, V Tangent) Nearest(V p)
+        {
+            V flat = p - Axis * p.Dot(Axis);
+            int best = 0;
+            double nearest = double.MaxValue;
+            for (int i = 0; i < _sampled.Length; i++)
+            {
+                double d = (_sampled[i] - flat).Dot(_sampled[i] - flat);
+                if (d < nearest)
+                {
+                    (best, nearest) = (i, d);
+                }
+            }
+            double u = _samples[best];
+            double first = _samples[0], last = _samples[^1], step = (last - first) / (_samples.Length - 1);
+            for (int iteration = 0; iteration < 40; iteration++)
+            {
+                Curve3D.ResD2 d2 = Profile!.EvalD2(u);
+                V c = V.Of(d2.Point), c1 = V.Of(d2.D1), c2 = V.Of(d2.D2);
+                V gap = c - Axis * c.Dot(Axis) - flat;
+                V t1 = c1 - Axis * c1.Dot(Axis), t2 = c2 - Axis * c2.Dot(Axis);
+                double g = gap.Dot(t1), dg = t1.Dot(t1) + gap.Dot(t2);
+                if (dg <= 0)
+                {
+                    break;
+                }
+                double du = Math.Clamp(g / dg, -step, step);
+                u -= du;
+                if (Math.Abs(du) <= 1e-15 * Math.Max(1, Math.Abs(u)))
+                {
+                    break;
+                }
+            }
+            Curve3D.ResD1 d1 = Profile!.EvalD1(u);
+            return (u, V.Of(d1.Point), V.Of(d1.D1));
+        }
+
         private V Radial(V p)
         {
             V d = p - Origin;
@@ -138,24 +213,66 @@ internal static partial class FilletLimits
 
         public double Distance(V p)
         {
+            if (IsExtrusion)
+            {
+                (_, V c, V t) = Nearest(p);
+                return Sign * (p - c).Dot(t.Cross(Axis).Unit);
+            }
             V d = p - Origin;
             return Sign * (IsCylinder ? (d - Axis * d.Dot(Axis)).Length - Rho : d.Dot(Axis));
         }
 
         // The outward normal of the surface through p at the same distance
-        public V Normal(V p) => (IsCylinder ? Radial(p) : Axis) * Sign;
+        public V Normal(V p)
+        {
+            if (IsExtrusion)
+            {
+                return Nearest(p).Tangent.Cross(Axis).Unit * Sign;
+            }
+            return (IsCylinder ? Radial(p) : Axis) * Sign;
+        }
 
         public V Foot(V p)
         {
+            if (IsExtrusion)
+            {
+                (_, V c, _) = Nearest(p);
+                return c + Axis * (p - c).Dot(Axis);
+            }
             V d = p - Origin;
             return IsCylinder ? Origin + Axis * d.Dot(Axis) + Radial(p) * Rho : p - Axis * d.Dot(Axis);
         }
 
         public (double U, double V) Parameters(V p)
         {
+            if (IsExtrusion)
+            {
+                (double u, V c, _) = Nearest(p);
+                return (u, (p - c).Dot(Axis));
+            }
             V d = p - Origin;
             return IsCylinder ? (Math.Atan2(d.Dot(Y), d.Dot(X)), d.Dot(Axis)) : (d.Dot(X), d.Dot(Y));
         }
+
+        // The point at parameters, and its derivative in u; the derivative in v is Along
+        public V At(double u, double v, out V du)
+        {
+            if (IsExtrusion)
+            {
+                Curve3D.ResD1 d1 = Profile!.EvalD1(u);
+                du = V.Of(d1.D1);
+                return V.Of(d1.Point) + Axis * v;
+            }
+            if (IsCylinder)
+            {
+                du = (Y * Math.Cos(u) - X * Math.Sin(u)) * Rho;
+                return Origin + (X * Math.Cos(u) + Y * Math.Sin(u)) * Rho + Axis * v;
+            }
+            du = X;
+            return Origin + X * u + Y * v;
+        }
+
+        public V Along => IsCylinder || IsExtrusion ? Axis : Y;
     }
 
     // Edges in order between two vertices where the faces are tangent; Forward[i] when edge i's parameter runs along the chain

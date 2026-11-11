@@ -2363,6 +2363,12 @@ Found by unit 12J:
 |---|---|---|---|
 | ChFi3d (`ChFi3d_Builder::PerformMoreThreeCorner`), a corner with one stripe | A stripe's common point on an arc is taken as the corner's point on its sharp edge, at its parameter on its own arc, and the connection on the face marked a point with no curve, whatever arc it lies on. Where the stripe ran onto another edge of its face before the corner, the corner's point is at the wrong place and the face's side of the corner is missing: two faces with open wires | Six chamfer sequences on `8_J1.draw` and `4_L1.draw` at step 2, natively invalid (OCCT's TODOs), and `equal_dist_sequence/B4` step 3 | fixed in the port where the point is at a vertex of the sharp edge (decision 2143); the other five fail, for unit 15U (decision 2144) |
 
+## Found by unit 15X
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| ChFi3d, a fillet across a cylinder of exactly its radius with the ball inside it | No piece of a sphere where the ball can't move: with OCCT's sections in the guide's plane the walk lets the contact wander and builds a surface off the ball, by up to 1.7 at a radius of 10; on the ball's own equations (Kerf since 15W) it can't pass, as the fillet's edge on the common face is a point. Native builds the first | `blend/complex/C1`, `C5`, `F1`, `F2` | worked round: stage 4c builds it where ChFi3d fails (decision 2166) |
+| ChFi3d, a fillet ended by a face slanted to it beyond a concave corner | Built, but its volume is off the closed form by 1.2e-6 and 4.1e-6 of the region the fillet takes, where stage 4c's is within 5e-8 | An end face's foot filleted at 1.5 to a face slanted 30 and 55 degrees, `FilletSphereTests` (the corner's axis square to the face, so ChFi3d builds it) | touch |
 ## Found by unit 15Y
 
 | Where | What | Seen | State |
