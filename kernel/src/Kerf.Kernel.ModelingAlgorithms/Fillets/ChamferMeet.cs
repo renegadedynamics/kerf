@@ -984,6 +984,14 @@ internal static partial class ChamferMeet
         Face[] faces = result.AllFaces().ToArray();
         var context = new IntersectionContext();
 
+        // A point inside each input face, for faces carried on past their edges (unit 15U2)
+        Point3D?[] inside = [.. inputFaces.Select(f =>
+        {
+            Point3D q = default;
+            Point2D quv = default;
+            return AlgoTools3D.PointInFace(f, ref q, ref quv, context) == 0 ? q : (Point3D?)null;
+        })];
+
         // Each face of the result: the input face it lies on, or none (a chamfer's)
         var origin = new Dictionary<Shape, int>(ShapeHasher.Instance);
         foreach (Face face in faces)
@@ -995,25 +1003,20 @@ internal static partial class ChamferMeet
                 return false;
             }
             origin[face] = OnInputFace(p);
-            // A face carried on past its edges (unit 15U2) may have that point beyond its input face: then a point beside the
-            // middle of one of its edges, inside it, on one
-            foreach (Edge edge in face.Explore<Edge>(ShapeType.Edge))
+            // A face carried on past its edges (unit 15U2) may have that point beyond its input face: then the input face whose
+            // point inside lies on its surface (a chamfer's surface crosses the input's faces only along curves)
+            if (origin[face] < 0 && Tool.Surface(face) is { } own)
             {
-                if (origin[face] >= 0)
+                own.ParameterBounds(out double u0, out double u1, out double v0, out double v1);
+                origin[face] = Array.FindIndex(inside, q =>
                 {
-                    break;
-                }
-                if (Tool.Degenerated(edge) || edge.Orientation is not (Orientation.Forward or Orientation.Reversed))
-                {
-                    continue;
-                }
-                Tool.Range(edge, out double a, out double b);
-                Point2D near = default;
-                Point3D beside = default;
-                if (AlgoTools3D.PointNearEdge(edge, face, 0.5 * (a + b), 1e-4, ref near, ref beside, context) == 0)
-                {
-                    origin[face] = OnInputFace(beside);
-                }
+                    if (q is not { } at)
+                    {
+                        return false;
+                    }
+                    var onIt = double.IsInfinity(u0) || double.IsInfinity(v0) ? new ProjectPointOnSurface(at, own) : new ProjectPointOnSurface(at, own, u0, u1, v0, v1);
+                    return onIt.NbPoints() > 0 && onIt.LowerDistance() < Precision.Confusion();
+                });
             }
         }
 
