@@ -146,7 +146,11 @@ public class ChamferMeetTests
         native.Build();
         Assert.True(!native.IsDone || !native.Shape().Validate().IsValid);
 
-        Result<Built<Shape>> chamfered = loft.Chamfer(edges, length);
+        Result<Built<Shape>> chamfered;
+        using (ChamferMeet.LimitScope()) // without the wall clock, which a loaded machine can push past the limit
+        {
+            chamfered = loft.Chamfer(edges, length);
+        }
         Assert.True(chamfered.IsSuccess, chamfered.Error?.ToString());
         Shape made = chamfered.Value.Shape;
         Assert.Equal(ShapeType.Solid, made.Type);

@@ -48,7 +48,11 @@ public class ReliabilityTests
     {
         Part loft = Ops.Loft([(Kerf.Topology.Shape)(Plane.XY * new Rectangle(10, 10)), (Kerf.Topology.Shape)(Plane.XY.Offset(10) * new Circle(4))]).Value;
         Kerf.Topology.Shape shape = loft;
-        var made = Ops.Chamfer(shape, shape.Edges(), 0.05);
+        Kerf.Result<Part> made;
+        using (Kerf.Fillets.ChamferMeet.LimitScope()) // without the wall clock, which a loaded machine can push past the limit
+        {
+            made = Ops.Chamfer(shape, shape.Edges(), 0.05);
+        }
         Assert.True(made.IsSuccess, made.Error?.ToString());
         Kerf.Topology.Shape chamfered = (Kerf.Topology.Shape)made.Value!;
         Assert.True(Kerf.Healing.HealingOperations.Validate(chamfered).IsValid);

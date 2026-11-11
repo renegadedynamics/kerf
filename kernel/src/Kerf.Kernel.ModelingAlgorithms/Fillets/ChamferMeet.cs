@@ -168,10 +168,30 @@ internal static partial class ChamferMeet
     /// <summary>How long the construction may take, the caller's own cancellation aside (the owner, decision 2179).</summary>
     public static TimeSpan Limit { get; } = TimeSpan.FromSeconds(20);
 
+    // The limit for this flow where a scope set one, for the tests that check a build: on a loaded machine its 11 to 14 s
+    // can pass 20, so they run it without the wall clock
+    private static readonly AsyncLocal<TimeSpan?> LimitHere = new();
+
+    /// <summary>
+    /// The construction's limit in this flow until the scope is disposed: <paramref name="limit"/>, or none at all
+    /// (<see cref="Timeout.InfiniteTimeSpan"/>, the default); the caller's own cancellation still stops it.
+    /// </summary>
+    internal static IDisposable LimitScope(TimeSpan? limit = null)
+    {
+        TimeSpan? previous = LimitHere.Value;
+        LimitHere.Value = limit ?? Timeout.InfiniteTimeSpan;
+        return new LimitRestore(previous);
+    }
+
+    private sealed class LimitRestore(TimeSpan? previous) : IDisposable
+    {
+        public void Dispose() => LimitHere.Value = previous;
+    }
+
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply, what it builds isn't proved, or it took longer
-    /// than <see cref="Limit"/>, or than <paramref name="limit"/> where a test gives one (<paramref name="late"/>). A solid is
+    /// than <see cref="Limit"/>, or than <paramref name="limit"/> or a <see cref="LimitScope"/>'s where a test gives one (<paramref name="late"/>). A solid is
     /// proved by its volume too (unit 15V).
     /// </summary>
     /// <exception cref="OperationCanceledException">The caller's own token, or the one in force, was cancelled.</exception>
@@ -187,7 +207,11 @@ internal static partial class ChamferMeet
         // The limit is a deadline joined to the token in force, so a caller's own cancellation still stops it, and as itself
         CancellationToken caller = Cancellation.Current;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(caller);
-        deadline.CancelAfter(limit ?? Limit);
+        TimeSpan allowed = limit ?? LimitHere.Value ?? Limit;
+        if (allowed != Timeout.InfiniteTimeSpan)
+        {
+            deadline.CancelAfter(allowed);
+        }
         try
         {
             using (Cancellation.Use(deadline.Token))
