@@ -5,7 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
-- **A chamfer OCCT can't build on B-spline faces is now built, in about 14 s, with a limit of 20 s** (kernel decisions 30111 to 30121): the loft from a square to a circle with every edge chamfered, which failed at most lengths below 0.8, now builds at its failing lengths from 0.05 to 0.3. Past the limit `Chamfer` fails with `modeling.chamfer-failed`, saying it couldn't be built within its time limit, with the kernel's `fillet.time-limit` and OCCT's own failure among its diagnostics. Chamfers that worked are unchanged.
+- **A chamfer OCCT can't build on B-spline faces is now built, in about 14 s, with a limit of 20 s** (kernel decisions 30111 to 30121): the loft from a square to a circle with every edge chamfered, now builds at 544 of the 1,006 lengths it failed at, in 12 s on average; 227 (all those below about 0.016 among them) stop at the limit. Past the limit `Chamfer` fails with `modeling.chamfer-failed`, saying it couldn't be built within its time limit, with the kernel's `fillet.time-limit` and OCCT's own failure among its diagnostics. Chamfers that worked are unchanged.
 - **`Fillet` of constant radius now lies on the true rolling-ball surface** (kernel decisions 2156, 2158, 2162):
   OCCT's sections put it off by up to 2.4% of the radius, so volumes and areas move slightly (most by under 1e-4,
   fillets on a cone's sector by about 1.4%). A fillet along a cylinder of exactly its own radius, or one no ball of its
