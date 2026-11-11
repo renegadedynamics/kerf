@@ -11,6 +11,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   49 days is refused (`ArgumentOutOfRangeException`). It's wall-clock time, so the same chamfer can build on a quiet
   machine and fail at the limit on a busy one; the failure now says the limit used and how to change it (the guide's
   section 5).
+- **`Fillet` of every edge of two crossing cylinders now builds** (kernel decisions 2193 to 2195): where a cylinder's rim is cut into arcs by a branch, OCCT fails at the four corners; Kerf rounds the rim first and then the branch's edges, which run on over the rim's rounding, and checks the result by the ball, failing it if that doesn't hold. 401 of 401 branch radii from 0.5 to 4.9 build, where none did.
 - **`Chamfer` at a corner of convex and concave edges, where a chamfer along a wall's foot runs on past the walls' convex edge, now builds** (kernel decisions 2198, 2199): the chamfer ends against the other wall and the chamfer made before at its foot; OCCT fails there.
 - **`Fillet` across a cylinder of exactly its radius, as a block's rounded corners with its foot filleted at their
   radius, now builds** (kernel decisions 2166 to 2168): the ball can't roll there, so the fillet is a piece of a
@@ -48,6 +49,16 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
   or more that aren't flat, with the same results to the bit; `Cut`, `Fuse`, `Intersect` and `ComputeVolume` take
   `parallelVolumes` for one call. Off by default: for one large part on an idle processor, not for parts built side by
   side (guide, section 9).
+
+## 0.5.1
+
+- **`Export3mf` writes closed meshes** (kernel decision 2191). In 0.5.0 a part whose faces had been placed by a move
+  and a turn, such as a plate with a pocket cut by a moved and turned box, cylinder or text, came out with its mesh open
+  along those faces' edges in slicers: each face had its own copies of its edges' vertices, some differing from the
+  neighbouring face's in the last digits, and Bambu Studio and PrusaSlicer sliced it with stray fill. Faces now share
+  their edges' vertices, so a closed part's 3MF is a closed mesh, with the same triangles and fewer vertices.
+- **`ExportGltf` and `ExportStl`:** a vertex shared by faces has the same coordinates in each, so readers that join
+  identical vertices join them; glTF also shares the vertex itself where the faces' normals agree.
 
 ## 0.5.0
 
