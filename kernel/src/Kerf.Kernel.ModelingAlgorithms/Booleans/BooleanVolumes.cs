@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Kerf.Engine.Classification;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -89,9 +90,22 @@ public static class BooleanVolumes
     // The points tried in each direction, in the inputs' whole box, where a result's tolerance is that large
     private const int PointsGrid = 4;
 
+    // How far apart, for the sum of the faces' parts, a result's volume about two points may be, past what its inputs' own gaps
+    // explain (unit 15AH): fifty times the precision each face's part is integrated to. R = 5000's commons are 8.7e-5 and 1.2e-4;
+    // below this the corpus has results between 1.5e-5 and 4.7e-5 whose volumes OCCT's own figures don't tell from right
+    private const double OpenFaces = 5e-5;
+
+    // Further than this from the origin, for their box's diagonal, an input's faces aren't asked at points (unit 15AH)
+    private const double FarFromOrigin = 1e4;
+
+    // The points tried in each direction on each face of the inputs of a common or a cut (unit 15AH): fewer than the fuse's proof,
+    // as both inputs' faces are asked, and a corpus cut of complex faces took 11.6 s more at 9 by 9
+    private const int OffBoundaryGrid = 5;
+
     /// <summary>
     /// The error if <paramref name="result"/> can't be what <paramref name="rule"/> makes of <paramref name="arguments"/> and
-    /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures. Null if it may be right, or if no rule
+    /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures, or saying that its faces don't close,
+    /// though no point shows it wrong, so the solid they bound isn't the one asked for. Null if it may be right, or if no rule
     /// applies to these shapes.
     /// </summary>
     /// <param name="rule">The operation.</param>
@@ -446,31 +460,10 @@ public static class BooleanVolumes
         }
 
         // A point can prove something only if it's well outside the result, so a point on the result's boundary is passed over
-        // before it's classified (unit 13A): a face of the smaller input that's one of the result's lies on it all over, and a
-        // point inside a face of the result on the same surface, placed the same, is on it too, as is one within a tolerance of
-        // a plane of the result and inside its face. A small part fused onto a large one keeps most of its faces, or pieces of
-        // them, or lies on the large one's, and they were most of what this classified: a bump of 1.5 by 0.5 on a door 1,688
+        // before it's classified (unit 13A; ResultBoundary). A small part fused onto a large one keeps most of its faces, or pieces
+        // of them, or lies on the large one's, and they were most of what this classified: a bump of 1.5 by 0.5 on a door 1,688
         // classifications and distances, 311 MB, after a Boolean of 8 MB
-        var resultFaces = new HashSet<Shape>(ShapeHasher.Instance);
-        var onSurface = new Dictionary<Surface, List<(Placement Placement, InFace Classifier)>>(ReferenceEqualityComparer.Instance);
-        var planes = new List<ResultPlane>();
-        foreach (Face face in result.AllFaces())
-        {
-            resultFaces.Add(face);
-            if (Tool.Surface(face, out Placement placement) is { } surface)
-            {
-                if (!onSurface.TryGetValue(surface, out var faces))
-                {
-                    onSurface[surface] = faces = [];
-                }
-                var classifier = new InFace(face);
-                faces.Add((placement, classifier));
-                if (surface is PlaneSurface plane)
-                {
-                    planes.Add(new ResultPlane(new FaceSurfaceAdaptor(face).Plane(), plane.Plane, placement, classifier, Math.Max(Tool.Tolerance(face), Tolerances.Confusion)));
-                }
-            }
-        }
+        ResultBoundary boundary = shared.Boundary;
 
         // The classifiers are made when a point needs them: a classifier's first point fills its trees, about 3 ms on the door,
         // and a boss inside the door never asks the door's
@@ -481,7 +474,7 @@ public static class BooleanVolumes
         foreach (Face face in smaller.AllFaces())
         {
             // Its own bounds, from its wires; a face with none, such as an infinite plane, has nothing to sample
-            if (resultFaces.Contains(face)
+            if (boundary.Has(face)
                 || (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace))))
             {
                 continue;
@@ -495,34 +488,20 @@ public static class BooleanVolumes
             }
 
             var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
-            List<(Placement Placement, InFace Classifier)> resultFacesHere = [];
-            List<ResultPlane> planesHere = [];
-            if (Tool.Surface(face, out Placement here) is { } own)
-            {
-                if (onSurface.TryGetValue(own, out var sharing))
-                {
-                    resultFacesHere.AddRange(sharing.Where(s => s.Placement.IsEqual(here)));
-                }
-                if (own is PlaneSurface)
-                {
-                    Direction3D normal = surface.Plane().Axis.Direction;
-                    planesHere.AddRange(planes.Where(p => p.World.Axis.Direction.IsParallel(normal, 1e-9)));
-                }
-            }
-
+            ResultBoundary.Here onIt = boundary.Near(face, surface);
             for (int i = 1; i <= FaceGrid; i++)
             {
                 for (int j = 1; j <= FaceGrid; j++)
                 {
                     double u = fromU + (toU - fromU) * i / (FaceGrid + 1), v = fromV + (toV - fromV) * j / (FaceGrid + 1);
                     var uv = new Point2D(u, v);
-                    if (inFace.Perform(uv) != Containment.In || resultFacesHere.Any(s => s.Classifier.Holds(uv)))
+                    if (inFace.Perform(uv) != Containment.In || onIt.HoldsInFace(uv))
                     {
                         continue;
                     }
 
                     Point3D point = surface.Value(u, v);
-                    if (planesHere.Any(p => p.Holds(point)))
+                    if (onIt.HoldsOnPlane(point))
                     {
                         continue;
                     }
@@ -649,7 +628,254 @@ public static class BooleanVolumes
                 }
             }
         }
+        return (rule == BooleanVolumeRule.Fuse ? null : ProvedOffBoundary(rule, shared, fuzzyValue, smallerVolume)) ?? ProvedOpen(rule, shared);
+    }
+
+    // A result's faces must close: the volume they bound is then the same about any point. Where an edge's curve on a face is off
+    // its curve in space, as R = 5000's common's starts 1.73 from its vertex, which the edge's tolerance of 1.732 covers, the face's
+    // boundary in its parameters is open there, and the volume, which is integrated from it, misses what the gap leaves out: 1.4e-4
+    // of the common, valid and inside every rule (unit 15AH). Every point is within the tolerance of right, so no point can show it.
+    // Each face's part of the volume is integrated about two corners of the result's box; closed faces give the same sum to the
+    // integration's 1e-6 of each part, and faces that don't, sums apart by what the gap misses times the corners' distance
+    private static Diagnostic? ProvedOpen(BooleanVolumeRule rule, Shared shared)
+    {
+        BoundingBox box = shared.Result.Box;
+        if (box.IsEmpty || !shared.Trustworthy)
+        {
+            return null;
+        }
+        Point3D low = box.Min, high = box.Max;
+        (double aboutLow, double aboutHigh, double parts) = VolumesAbout(shared.Result.Shape, low, high);
+        if (!double.IsFinite(aboutLow + aboutHigh + parts) || !(Math.Abs(aboutLow - aboutHigh) > OpenFaces * parts))
+        {
+            return null;
+        }
+
+        // A result can't close better than the faces it was cut from: an input whose own faces don't close, as bug227's with a
+        // vertex of tolerance 0.6, passes its gap on, which isn't the Boolean's. So only what's open past the inputs' gaps, taken
+        // about the same two points, counts
+        double inherited = 0;
+        foreach (Shape input in new[] { shared.Argument.Shape, shared.Tool.Shape })
+        {
+            (double inputLow, double inputHigh, _) = VolumesAbout(input, low, high);
+            inherited += Math.Abs(inputLow - inputHigh);
+        }
+        if (!(Math.Abs(aboutLow - aboutHigh) - inherited > OpenFaces * parts))
+        {
+            return null;
+        }
+        string name = rule switch
+        {
+            BooleanVolumeRule.Common => "common",
+            BooleanVolumeRule.Cut => "cut",
+            _ => "fuse",
+        };
+        // A failure, not a warning (the owner, 14 November 2026): a Boolean of two closed solids that gives faces which don't close
+        // has made something other than a solid, whatever its points say
+        return Diagnostic.Error(DiagnosticCode.InvalidResult,
+            $"The {name}'s result is wrong: its faces don't close, as the volume they bound is {Figure(aboutLow)} taken about one corner of its box and {Figure(aboutHigh)} about the other, so an edge's curve on a face is off its curve in space.");
+    }
+
+    // Decision 1937's proof for a common and a cut (unit 15AH): a common's boundary is each input's faces where they're inside the
+    // other, and a cut's is the object's faces outside the tool and the tool's inside the object. So a point on such a face, deep
+    // on its side of the other input and deep off the result, proves the result wrong; two are asked for, as a classifier can be
+    // wrong about one. A point already on the result's boundary is passed over first, as the fuse's proof does (unit 13A), and
+    // each shape's box answers before its classifier (unit 13K). Asked where decision 1924's points are, with what they keep
+    private static Diagnostic? ProvedOffBoundary(BooleanVolumeRule rule, Shared shared, double fuzzyValue, double smallerVolume)
+    {
+        // Far from the origin for their size, the classifiers and distances can't be trusted at a face: bug29843_2's cut, a part of
+        // 3,000 placed 6e8 away, had points of its object's faces 20 outside the tool and 21 to 58 from the result, and the same
+        // shapes moved to the origin pass, as the cut is right (its volume and area are OCCT's)
+        BoundingBox both = shared.Argument.Box.Union(shared.Tool.Box);
+        if (both.IsEmpty || !(Math.Max(both.Min.DistanceTo(Point3D.Origin), both.Max.DistanceTo(Point3D.Origin)) <= FarFromOrigin * both.Min.DistanceTo(both.Max)))
+        {
+            return null;
+        }
+
+        ResultBoundary boundary = shared.Boundary;
+        Classified result = shared.Result;
+        double depth = -1;
+        int found = 0;
+        Point3D first = default;
+        bool firstOnTool = false;
+        foreach ((Classified own, Classified other, bool inside) in new[] { (shared.Argument, shared.Tool, rule == BooleanVolumeRule.Common), (shared.Tool, shared.Argument, true) })
+        {
+            bool onTool = ReferenceEquals(own, shared.Tool);
+            BoundingBox otherBox = other.Box;
+            foreach (Face face in own.Shape.AllFaces())
+            {
+                // Its own bounds, from its wires; a face with none, such as an infinite plane, has nothing to sample. A face
+                // wholly outside the other's box has no point inside it
+                if (boundary.Has(face)
+                    || (face.BoundingBox() is var faceBox && (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace)
+                                                              || (inside && !faceBox.Intersects(otherBox)))))
+                {
+                    continue;
+                }
+
+                var surface = new FaceSurfaceAdaptor(face);
+                BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+                if (!double.IsFinite(fromU + toU + fromV + toV))
+                {
+                    continue;
+                }
+
+                var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
+                ResultBoundary.Here onIt = boundary.Near(face, surface);
+                for (int i = 1; i <= OffBoundaryGrid; i++)
+                {
+                    for (int j = 1; j <= OffBoundaryGrid; j++)
+                    {
+                        double u = fromU + (toU - fromU) * i / (OffBoundaryGrid + 1), v = fromV + (toV - fromV) * j / (OffBoundaryGrid + 1);
+                        var uv = new Point2D(u, v);
+                        if (inFace.Perform(uv) != Containment.In || onIt.HoldsInFace(uv))
+                        {
+                            continue;
+                        }
+
+                        Point3D point = surface.Value(u, v);
+                        // On the boundary only on the side asked of the other input; a point on the other's boundary, or on the
+                        // result's, is within a tolerance of it, so can't be deep
+                        if (onIt.HoldsOnPlane(point) || other.Quick(point) != (inside ? Containment.In : Containment.Out)
+                            || result.Quick(point) == Containment.On)
+                        {
+                            continue;
+                        }
+                        // And on its own input as its classifier sees it, or the point proves nothing
+                        if (own.Quick(point) != Containment.On)
+                        {
+                            continue;
+                        }
+
+                        if (depth < 0)
+                        {
+                            if (!shared.Trustworthy)
+                            {
+                                return null;
+                            }
+                            depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
+                        }
+                        if (!result.Deep(point, depth) || !other.Deep(point, depth))
+                        {
+                            continue;
+                        }
+
+                        if (found++ == 0)
+                        {
+                            (first, firstOnTool) = (point, onTool);
+                        }
+                        if (found >= 2)
+                        {
+                            string at = $"({Figure(first.X)}, {Figure(first.Y)}, {Figure(first.Z)})";
+                            return Diagnostic.Error(DiagnosticCode.InvalidResult, rule == BooleanVolumeRule.Common
+                                ? $"The common's result is wrong: the point {at} and others, on an input's face inside the other input, aren't on its boundary."
+                                : firstOnTool
+                                    ? $"The cut's result is wrong: the point {at} and others, on the tool's face inside the object, aren't on its boundary."
+                                    : $"The cut's result is wrong: the point {at} and others, on the object's face outside the tool, aren't on its boundary.");
+                        }
+                    }
+                }
+            }
+        }
         return null;
+    }
+
+    // What's surely on a result's boundary, without classifying in 3D (unit 13A): a face of an input that's one of the result's
+    // lies on it all over, a point inside a face of the result on the same surface, placed the same, is on it too, as is one within
+    // a tolerance of a plane of the result and inside its face. Made when a check first asks it, and kept for the check's questions
+    private sealed class ResultBoundary
+    {
+        private readonly HashSet<Shape> _faces = new(ShapeHasher.Instance);
+        private readonly Dictionary<Surface, List<(Placement Placement, InFace Classifier)>> _onSurface = new(ReferenceEqualityComparer.Instance);
+        private readonly List<ResultPlane> _planes = [];
+
+        public ResultBoundary(Shape result)
+        {
+            foreach (Face face in result.AllFaces())
+            {
+                _faces.Add(face);
+                if (Tool.Surface(face, out Placement placement) is { } surface)
+                {
+                    if (!_onSurface.TryGetValue(surface, out var faces))
+                    {
+                        _onSurface[surface] = faces = [];
+                    }
+                    var classifier = new InFace(face);
+                    faces.Add((placement, classifier));
+                    if (surface is PlaneSurface plane)
+                    {
+                        _planes.Add(new ResultPlane(new FaceSurfaceAdaptor(face).Plane(), plane.Plane, placement, classifier, Math.Max(Tool.Tolerance(face), Tolerances.Confusion)));
+                    }
+                }
+            }
+        }
+
+        // The face is one of the result's, so on its boundary all over
+        public bool Has(Face face) => _faces.Contains(face);
+
+        // The result's faces that can hold a point of this face of an input without a classification in 3D
+        public Here Near(Face face, FaceSurfaceAdaptor surface)
+        {
+            List<(Placement Placement, InFace Classifier)> faces = [];
+            List<ResultPlane> planes = [];
+            if (Tool.Surface(face, out Placement here) is { } own)
+            {
+                if (_onSurface.TryGetValue(own, out var sharing))
+                {
+                    faces.AddRange(sharing.Where(s => s.Placement.IsEqual(here)));
+                }
+                if (own is PlaneSurface)
+                {
+                    Direction3D normal = surface.Plane().Axis.Direction;
+                    planes.AddRange(_planes.Where(p => p.World.Axis.Direction.IsParallel(normal, 1e-9)));
+                }
+            }
+            return new Here(faces, planes);
+        }
+
+        public readonly struct Here(List<(Placement Placement, InFace Classifier)> faces, List<ResultPlane> planes)
+        {
+            // A point of the input's face, by its parameters, inside a face of the result on the same surface
+            public bool HoldsInFace(in Point2D uv)
+            {
+                foreach ((Placement _, InFace classifier) in faces)
+                {
+                    if (classifier.Holds(uv))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // A point of the input's planar face within a tolerance of a parallel plane of the result, inside its face
+            public bool HoldsOnPlane(in Point3D point)
+            {
+                foreach (ResultPlane plane in planes)
+                {
+                    if (plane.Holds(point))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+    }
+
+    // The volume a shape's faces bound about two points, and the sum of the faces' parts about both, each face integrated to the
+    // precision of Measured
+    internal static (double AboutLow, double AboutHigh, double Parts) VolumesAbout(Shape shape, in Point3D low, in Point3D high)
+    {
+        double aboutLow = 0, aboutHigh = 0, parts = 0;
+        foreach (Face face in shape.AllFaces())
+        {
+            double fromLow = MassPropertiesBuilder.VolumeAbout(face, low, Measured.Tolerance), fromHigh = MassPropertiesBuilder.VolumeAbout(face, high, Measured.Tolerance);
+            aboutLow += fromLow;
+            aboutHigh += fromHigh;
+            parts += Math.Abs(fromLow) + Math.Abs(fromHigh);
+        }
+        return (aboutLow, aboutHigh, parts);
     }
 
     // A planar face of a result: a point within its tolerance of the plane, and inside the face, is on the result's boundary
@@ -681,6 +907,7 @@ public static class BooleanVolumes
     private sealed class Shared(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result)
     {
         private Classified? _argument, _tool, _result;
+        private ResultBoundary? _boundary;
         private double _resultTolerance = -1, _largestTolerance = -1;
         private bool? _trustworthy;
 
@@ -692,6 +919,8 @@ public static class BooleanVolumes
         public Classified Tool => _tool ??= new Classified(tools[0]);
 
         public Classified Result => _result ??= new Classified(result);
+
+        public ResultBoundary Boundary => _boundary ??= new ResultBoundary(result);
 
         public double ResultTolerance => _resultTolerance >= 0 ? _resultTolerance : _resultTolerance = new ShapeToleranceAnalysis().Tolerance(result, 1);
 

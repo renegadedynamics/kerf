@@ -194,9 +194,9 @@ public static class BooleanOperations
     /// A common, cut or fuse whose result <see cref="BooleanVolumes.Check"/> proved wrong, made again as the checked Booleans
     /// do: with its two inputs the other way round (<c>boolean.other-way-round</c>), then with a fuzzy value of ten times their
     /// largest tolerance and of a thousand times it (<c>boolean.fuzzy-value</c>), the second only up to a hundred-thousandth of
-    /// the largest input's size. The first that passes the same check, with the warning; a failure, <c>boolean.failed</c>, if
-    /// none does. For a caller that leaves out <see cref="BooleanOptions.CheckResult"/> and checks
-    /// a later step of its own (Kerf.Modeling, after its clean).
+    /// the largest input's size. The first that passes the same check, at the fuzzy value asked for, with the warning; a
+    /// failure, <c>boolean.failed</c>, if none does. For a caller that leaves out <see cref="BooleanOptions.CheckResult"/> and
+    /// checks a later step of its own (Kerf.Modeling, after its clean).
     /// </summary>
     public static Result<Built<Shape>> Retry(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
                                              BooleanOptions? options = null, CancellationToken cancellationToken = default)
@@ -294,7 +294,10 @@ public static class BooleanOperations
             };
             again.SetTools(List(tools, nameof(tools)));
             Result<Built<Shape>> result = Run((BuilderAlgo)again, arguments, options with { FuzzyValue = fuzzy }, null, cancellationToken);
-            if (!result.TryGetValue(out Built<Shape>? built) || BooleanVolumes.Check(rule, arguments, tools, built.Shape, fuzzy) is not null)
+            // Checked at the fuzzy value asked for, not the one it was made with: that one is how it's made, not a wider idea of right,
+            // and it would let through what the first attempt was proved wrong for (gdml_public/A5's cut, which removes nothing at
+            // 0.0112 as at 0; unit 15AH)
+            if (!result.TryGetValue(out Built<Shape>? built) || BooleanVolumes.Check(rule, arguments, tools, built.Shape, options.FuzzyValue) is not null)
             {
                 continue;
             }
