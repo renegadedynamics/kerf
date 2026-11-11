@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Fillet` of every edge of two crossing cylinders now builds** (kernel decisions 30501 to 30503): where a cylinder's rim is cut into arcs by a branch, OCCT fails at the four corners; Kerf rounds the rim first and then the branch's edges, which run on over the rim's rounding, and checks the result by the ball, failing it if that doesn't hold. 401 of 401 branch radii from 0.5 to 4.9 build, where none did.
 - **`Fillet` across a cylinder of exactly its radius, as a block's rounded corners with its foot filleted at their
   radius, now builds** (kernel decisions 2166 to 2168): the ball can't roll there, so the fillet is a piece of a
   sphere, which OCCT can't build; Kerf builds it and checks it by the ball and its volume, failing it if they don't hold.
