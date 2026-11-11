@@ -36,7 +36,8 @@ public static partial class Shape3DExtensions
         /// asymmetric chamfer), measured on <paramref name="face"/> if given (which the edges must belong to), and past tight
         /// corners as <paramref name="options"/> say.
         /// </summary>
-        /// <exception cref="ArgumentException">An edge isn't on the face.</exception>
+        /// <exception cref="ArgumentException">An edge isn't on the face, or the options' time limit isn't positive (other than
+        /// <see cref="Timeout.InfiniteTimeSpan"/>) or is over 49 days.</exception>
         /// <exception cref="InvalidOperationException">
         /// The chamfer can't be made: the shorthand's failure; <see cref="Operations.Chamfer(IEnumerable{Edge},
         /// double, double?, double?, Face?, Operations.ChamferOptions?)"/> returns it as a result, with the code <see cref="ModelingDiagnostics.ChamferFailed"/>.
@@ -44,6 +45,9 @@ public static partial class Shape3DExtensions
         public Shape Chamfer(double length, double? length2, IEnumerable<Edge> edgeList, Face? face = null, Operations.ChamferOptions? options = null)
         {
             var edges = edgeList.ToList();
+            if (options?.TimeLimit is { } timeLimit && timeLimit != Timeout.InfiniteTimeSpan
+                && (timeLimit <= TimeSpan.Zero || timeLimit > TimeSpan.FromMilliseconds(uint.MaxValue - 1.0)))
+                throw new ArgumentOutOfRangeException(nameof(options), timeLimit, "A chamfer's time limit must be positive and at most 49 days, or Timeout.InfiniteTimeSpan for none.");
             if (face is { } onFace)
             {
                 var faceEdges = onFace.Edges();
@@ -63,14 +67,18 @@ public static partial class Shape3DExtensions
                 // BRepFilletAPI_MakeChamfer's Add of two distances on the face
                 specs.Add(new ChamferSpec(edge, length, distance2, ReferenceFace: topoFace));
             }
-            var kernelOptions = options?.TightCorners == TightCorners.Collapse ? new ChamferOptions { TightCorners = Kerf.Fillets.TightCorners.Collapse } : null;
+            var kernelOptions = options is null ? null : new ChamferOptions
+            {
+                TightCorners = options.TightCorners == TightCorners.Collapse ? Kerf.Fillets.TightCorners.Collapse : Kerf.Fillets.TightCorners.Refuse,
+                TimeLimit = options.TimeLimit,
+            };
             var chamfered = self.AsShape().Chamfer(specs, kernelOptions);
             // A broken result's error already says the chamfer couldn't be built at its length (decision 1985)
             if (!chamfered.TryGetValue(out var built))
                 throw Failures.Expected(ModelingDiagnostics.ChamferFailed,
                                         Shape3DExtensions.TooLargeMessage(chamfered.Diagnostics)
                                         ?? (chamfered.Diagnostics.Any(d => d.Code == FilletOperations.TimeLimit)
-                                            ? $"The chamfer with a length of {Formatting.Number(length)} couldn't be built within its time limit; try another length."
+                                            ? $"The chamfer with a length of {Formatting.Number(length)} couldn't be built within its time limit of {Formatting.Number((options ?? Operations.ChamferOptions.Default).TimeLimit.TotalSeconds)} s; try another length, or a longer limit (ChamferOptions.TimeLimit; Timeout.InfiniteTimeSpan for none)."
                                             : chamfered.TryGetInvalid(out _) ? "" : $"The chamfer with a length of {Formatting.Number(length)} failed; try a smaller length."),
                                         chamfered);
             var result = Shape3DExtensions.Make3DResult(built.Shape);

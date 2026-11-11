@@ -18,6 +18,10 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepFilletAPI;
 /// </summary>
 public class ChamferMeetTests
 {
+    // The tests of what the path builds run without the wall-clock limit, so a loaded machine (the gate's suites side by
+    // side) can't turn a build into fillet.time-limit; the limit's own tests set theirs
+    private static readonly ChamferOptions NoLimit = new() { TimeLimit = Timeout.InfiniteTimeSpan };
+
     private static Shape Read(string name)
     {
         using Stream stream = typeof(ChamferMeetTests).Assembly.GetManifestResourceStream($"BRepFilletAPI.Issues.{name}.brep")
@@ -75,7 +79,7 @@ public class ChamferMeetTests
         Assert.False(native.IsDone, corpusCase);
         Assert.Equal(1, native.InternalBuilder().FaultyVertexCount);
 
-        Shape made = shell.Chamfer(specs).Value.Shape;
+        Shape made = shell.Chamfer(specs, NoLimit).Value.Shape;
         Assert.Equal(ShapeType.Shell, made.Type);
         Assert.True(made.Validate().IsValid, corpusCase);
         Assert.Equal(5, made.AllFaces().Length); // the three faces cut back, and the two chamfers
@@ -96,7 +100,7 @@ public class ChamferMeetTests
         native.Build();
         Assert.False(native.IsDone);
 
-        Shape made = shape.Chamfer(specs).Value.Shape;
+        Shape made = shape.Chamfer(specs, NoLimit).Value.Shape;
         Assert.True(made.Validate().IsValid);
         Assert.Equal(6, made.AllFaces().Length);
         Face first = shape.AllFaces().First(f => f.AllEdges().Any(e => e.IsSame(edge)));
@@ -112,7 +116,7 @@ public class ChamferMeetTests
         Shape shape = Read("chamfer-B5-step2");
         Edge edge = EdgeBetween(shape, new Point3D(-0.606778, 0.0116437, 0.226719), Corner);
         Face floor = shape.AllFaces().Single(f => f.AllVertices().Any(v => v.Point.DistanceTo(new Point3D(0.473048, 0.5374, 0.308257)) < 1e-5));
-        Result<Built<Shape>> made = shape.Chamfer([new ChamferSpec(edge, 0.2, 0.21, ReferenceFace: floor)]);
+        Result<Built<Shape>> made = shape.Chamfer([new ChamferSpec(edge, 0.2, 0.21, ReferenceFace: floor)], NoLimit);
         Assert.False(made.IsSuccess);
         Assert.Equal(FilletOperations.Failed, made.Error!.Code);
     }
@@ -132,7 +136,8 @@ public class ChamferMeetTests
     // each top vertex the rim's two arcs are tangent and so are the side faces: ChFi3d's corner of three chamfers fails, and
     // its side stripes are off the length where they meet their faces at a narrow angle. Unit 15V's bands of Kerf's own (the
     // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths, without crossings
-    // and of the volume the sections give, and the public chamfer returns it (decision 2179)
+    // and of the volume the sections give, and the public chamfer returns it (decision 2179). Its 11 to 14 s can pass the
+    // default 20 on a loaded machine, so the limit is raised (decision 2185)
     [Theory]
     [InlineData(0.05, 18)]
     [InlineData(0.2, 18)]
@@ -146,11 +151,7 @@ public class ChamferMeetTests
         native.Build();
         Assert.True(!native.IsDone || !native.Shape().Validate().IsValid);
 
-        Result<Built<Shape>> chamfered;
-        using (ChamferMeet.LimitScope()) // without the wall clock, which a loaded machine can push past the limit
-        {
-            chamfered = loft.Chamfer(edges, length);
-        }
+        Result<Built<Shape>> chamfered = loft.Chamfer(edges, length, new ChamferOptions { TimeLimit = TimeSpan.FromMinutes(10) });
         Assert.True(chamfered.IsSuccess, chamfered.Error?.ToString());
         Shape made = chamfered.Value.Shape;
         Assert.Equal(ShapeType.Solid, made.Type);
@@ -166,7 +167,7 @@ public class ChamferMeetTests
     // carried on across by a length, their parameter across running 0 to 10 over a width of 0.02: the fuse's curves on them were
     // up to 0.5 off their surfaces. With that parameter by the band's width they're within 1e-5, and the loft builds as at
     // 0.05; at 0.01, where ChFi3d can't walk one stripe, that stripe takes a band of Kerf's own. Asked of the construction
-    // itself with a long limit, so that a loaded machine can't fail it
+    // itself with no limit (Timeout.InfiniteTimeSpan), so that a loaded machine can't fail it
     [Theory]
     [InlineData(0.01, 17, 740.964618)]
     [InlineData(0.0122, 18, 740.962334)]
@@ -180,7 +181,7 @@ public class ChamferMeetTests
         native.Build();
         Assert.True(!native.IsDone || !native.Shape().Validate().IsValid);
 
-        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, ChamferOptions.Default, out bool late, TimeSpan.FromMinutes(10));
+        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, new ChamferOptions { TimeLimit = Timeout.InfiniteTimeSpan }, out bool late);
         Assert.False(late);
         Assert.NotNull(met);
         Shape made = met.Value.Shape();
@@ -192,28 +193,54 @@ public class ChamferMeetTests
         Assert.Equal(volume, Kerf.Measurement.MeasureOperations.IntegrateVolume(made, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 }), 1e-5);
     }
 
-    // A construction that runs past its limit stops there and says it was late, and the operation's failure for that names
-    // the limit. No chamfer known takes the 20 s any more (the loft's near 0.01 did, before unit 15Y), so the limit is set
-    // short here
+    // A chamfer whose construction runs past the caller's limit stops there: the operation fails with fillet.time-limit, whose
+    // message names the limit and how to change it, and ChFi3d's own failure after it (decisions 2180, 2185). No chamfer
+    // known takes the default 20 s any more (the loft's near 0.01 did, before unit 15Y), so the limit is set short here
     [Fact]
-    public void A_construction_that_runs_past_its_limit_stops_there_and_says_so()
+    public void A_chamfer_past_its_time_limit_stops_there_and_says_so()
     {
         Shape loft = Loft();
-        Edge[] edges = [.. loft.AllEdges()];
-        ChamferSpec[] specs = [.. edges.Select(e => new ChamferSpec(e, 0.05))];
-        Face[] references = [.. edges.Select(e => loft.AllFaces().First(f => f.AllEdges().Any(x => x.IsSame(e))))];
-        MakeChamfer native = Native(loft, specs);
-        native.Build();
+        TimeSpan limit = TimeSpan.FromSeconds(1);
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, ChamferOptions.Default, out bool late, TimeSpan.FromSeconds(1));
+        Result<Built<Shape>> chamfered = loft.Chamfer(loft.AllEdges(), 0.05, new ChamferOptions { TimeLimit = limit });
         watch.Stop();
-        Assert.Null(met);
-        Assert.True(late);
-        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(11), $"{watch.Elapsed}");
+        Assert.False(chamfered.IsSuccess);
+        Assert.Equal(FilletOperations.TimeLimit, chamfered.Error!.Code);
+        Assert.Contains("limit of 1 s (ChamferOptions.TimeLimit; Timeout.InfiniteTimeSpan for none)", chamfered.Error.Message, StringComparison.Ordinal);
+        Assert.True(chamfered.Diagnostics.Length > 1); // ChFi3d's own failure, or its invalid result's, after it
+        Assert.True(watch.Elapsed < limit + Margin, $"{watch.Elapsed}");
+    }
 
-        Diagnostic failure = FilletOperations.LateFailure();
-        Assert.Equal(FilletOperations.TimeLimit, failure.Code);
-        Assert.Contains("20 s", failure.Message, StringComparison.Ordinal);
+    // ChFi3d's part of the loft's chamfer, and the construction's slowest step between two looks at its token, with room for
+    // a loaded machine
+    private static readonly TimeSpan Margin = TimeSpan.FromSeconds(5);
+
+    // The default is the owner's 20 s (decision 2179), named in the message; a short limit is given to the millisecond
+    [Fact]
+    public void The_time_limit_is_20_s_by_default_and_named_in_its_failure()
+    {
+        Assert.Equal(TimeSpan.FromSeconds(20), ChamferOptions.Default.TimeLimit);
+        Assert.Contains("limit of 20 s ", FilletOperations.LateFailure(ChamferOptions.Default.TimeLimit).Message, StringComparison.Ordinal);
+        Assert.Contains("limit of 0.25 s ", FilletOperations.LateFailure(TimeSpan.FromMilliseconds(250)).Message, StringComparison.Ordinal);
+    }
+
+    // A limit that isn't positive, other than Timeout.InfiniteTimeSpan, or that a deadline can't hold, is refused as an argument
+    public static TheoryData<TimeSpan> BadLimits => new()
+    {
+        TimeSpan.Zero,
+        TimeSpan.FromMilliseconds(-2),
+        TimeSpan.FromSeconds(-1),
+        TimeSpan.MinValue,
+        TimeSpan.FromDays(50),
+        TimeSpan.MaxValue,
+    };
+
+    [Theory]
+    [MemberData(nameof(BadLimits))]
+    public void A_time_limit_that_isnt_positive_or_off_is_refused(TimeSpan limit)
+    {
+        Shape box = new MakeBox(10.0, 10.0, 10.0).Shape();
+        KernelAssert.Throws<ArgumentOutOfRangeException>(() => box.Chamfer(box.AllEdges(), 1, new ChamferOptions { TimeLimit = limit }));
     }
 
     // The caller's own cancellation still stops the construction, and as a cancellation, not the limit
@@ -224,7 +251,7 @@ public class ChamferMeetTests
         using var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(3));
         var watch = System.Diagnostics.Stopwatch.StartNew();
         Assert.ThrowsAny<OperationCanceledException>(() => loft.Chamfer(loft.AllEdges(), 0.0105, cancellationToken: cancel.Token));
-        Assert.True(watch.Elapsed < ChamferMeet.Limit, $"{watch.Elapsed}");
+        Assert.True(watch.Elapsed < ChamferOptions.Default.TimeLimit, $"{watch.Elapsed}");
     }
 
     // The volume proof's sections along an edge (unit 15V) against Pappus: a cylinder's top rim chamfered by d takes off a

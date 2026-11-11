@@ -153,6 +153,7 @@ Members are PascalCase: `Align.MIN` → `Align.Min`, `Unit.MM` → `Unit.Millime
 | A union return (`Part \| Sketch \| Curve \| Compound`) | Typed for a Part, Sketch or Curve given (`Mirror(part)` is a `Part`); `Compound` for a mix, a `Part`, `Sketch` or `Curve` at run time by Python's dimension rule |
 | `chamfer`/`fillet` of edges, of vertices | `Part`, and `ModelShape` (a `Sketch` or `Curve`) |
 | (none: a Kerf addition) | `Chamfer(…, options: new ChamferOptions { TightCorners = TightCorners.Collapse })`: a chamfer past corners tighter than its length, collapsing them to points (the kernel's `docs/chamfer-corners.md`) |
+| (none: a Kerf addition) | `Chamfer(…, options: new ChamferOptions { TimeLimit = TimeSpan.FromMinutes(2) })`: the time Kerf's own construction may take where OCCT's chamfer fails (20 s by default; `Timeout.InfiniteTimeSpan` for none; the guide's section 5) |
 | `project(points, workplane)` | `ProjectPoints(points, workplane)`, returning the points |
 | `full_round` (scipy's Voronoi) | `FullRound`, over a small Delaunay triangulation of its own |
 | `insert`, `add`, `make_brake_formed`, sheet-metal `thicken` | Not yet ported (builder mode; sheet metal in phase 7) |
