@@ -6,6 +6,7 @@ version may break the API.
 ## Unreleased
 
 - **A chamfer's time limit is set per call: `ChamferOptions.TimeLimit`** (decisions 2185, 2186): the time Kerf's own construction may take where ChFi3d fails or is invalid, a `TimeSpan`, 20 s by default as before; any positive time up to 49 days raises or lowers it, and `Timeout.InfiniteTimeSpan` turns it off, leaving only the caller's token. Zero, a negative time or one over 49 days is refused (`ArgumentOutOfRangeException`). The limit is wall-clock time, so the same chamfer can build on a quiet machine and fail at the limit on a busy one; `fillet.time-limit`'s message now names the limit used and says how to change it. The caller's own cancellation still stops the chamfer first, as a cancellation.
+- **A fillet on a rim whose arcs end where a branch's concave edges meet it, as on two crossing cylinders with every edge rounded, is built where it failed** (decisions 2193 to 2195): where ChFi3d's one step fails at those corners, the rim is rounded all round, leaving the branch whole, and ChFi3d asked for the rest, whose concave blend then runs on over the rim's torus, as ChFi3d's own corner does on planes. The result is returned only if the ball on each face ChFi3d made touches the faces it was built on and enters none, and each such face is tangent to its neighbours. reliability.md's crossing cylinders, which failed at 401 of 401 branch radii, now build at all of them.
 - **Very large cylinders crossing just inside a touch fail less often:** two of radius 5000, the tool 2e-11 to 2e-10 inside the other's end, failed 9 of the sweep's 339 cuts, commons and fuses there, invalid or an empty common, as the trigonometric solver's quartic found one of the end circle's two crossings and put the other at the touch, or both there. Both are found now, and every root right in the 190 such quartics measured; 8 failures are left at that radius, all loud. Results nearby can move by up to 1.3e-7 of their volume, as they now carry crossings that were taken for the touch (decision 2197).
 - **A fillet that crosses a cylinder of exactly its radius, the ball inside it, is built with a piece of a sphere there** (decisions 2166 to 2168): a block's rounded corner with its foot or top filleted at the corner's radius, a pocket's, or a rounded edge with the end face beside it filleted at its radius. The ball can't roll there, so the right fillet is a piece of the ball itself, which ChFi3d can't build (these failed since the fillets went on to the ball, and before were off it by up to a sixth of the radius). Kerf builds it, with its own rolling-ball sections either side, out to ends square to the fillet or slanted to it, and checks each result by the ball and its volume apart from how it's built, failing it if they don't hold. The corpus's `blend/complex/C1`, `C5`, `F1` and `F2` now build. Only where ChFi3d has failed, so nothing that worked changes; where the corner's axis is square to the face, ChFi3d builds the sphere itself, as it did.
 - **Chamfers OCCT can't build on B-spline faces are now built, in about 14 s, with a limit of 20 s** (decisions 2175 to 2179): where ChFi3d fails at a corner, or makes something invalid, the chamfer faces are built Kerf's own way (decision 2172), carried on until they meet, and a solid returned only once its volume matches the input's less the chamfers' exact sections and their corners'. reliability.md's loft, every edge chamfered, now builds at 544 of the 1,006 lengths it failed at (12.3 s on average); 227, all those below about 0.016 among them, stop at the limit. Past 20 s the chamfer fails with the new `fillet.time-limit`, ChFi3d's failure after it among the diagnostics; a caller's own cancellation still stops it, as a cancellation. Only chamfers ChFi3d fails on, with the check on, reach it; what ChFi3d builds is unchanged.
@@ -45,6 +46,24 @@ version may break the API.
   face over there is refined within it, or named by `meshing.deflection-exceeded` where it can't be, so no face is over
   its deflection without the warning. Only meshes that were over change; a mesh within its deflection is the same
   (decision 2102).
+
+## 0.5.1
+
+- **3MF meshes of closed solids are closed** (decision 2191). `ThreeMf.Write` wrote each face's triangles with its own
+  copies of the vertices on the face's edges, sharing none with the neighbouring faces; where a face had been placed by a
+  move and a turn (a pocket cut by a moved, turned shape, say), some copies differed from the neighbour's in the last
+  digits, about 1e-14 mm. Slicers join only identical vertices, so they read the mesh as open along those edges, and
+  Bambu Studio and PrusaSlicer sliced it with stray fill, though the part was valid. Now each node of a part's mesh is
+  one vertex: faces meeting at an edge share the edge's nodes, taken from the mesher's one discretisation of the edge, so
+  every edge of a closed solid's mesh is used by two triangles, once each way. A seam's two sides, a cone's apex and a
+  sphere's poles are one vertex each, and the triangles of no area there are left out; otherwise the triangles are the
+  same, and the files smaller (a plate with a lettered pocket, 12,009 vertices to 9,217).
+- **glTF:** `Gltf.Write` gives a node one position in every face it is in, so its copies at a crease are the same
+  floats, and shares it within a primitive where the faces' normals agree (seams, smooth edges); a crease still has a
+  vertex per face, for its normals.
+- **STL:** `Stl.Write`, which has no indices, writes a node's copies as one point where the faces are placed apart, so
+  they can't round to different floats: native OCCT's STL of its own `CrankArm.brep` has a
+  node whose copies rounded apart, leaving it open there.
 
 ## 0.5.0
 

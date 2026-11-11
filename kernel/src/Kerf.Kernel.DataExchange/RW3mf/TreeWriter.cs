@@ -40,7 +40,8 @@ internal sealed record WriteOptions
 /// </summary>
 /// <remarks>
 /// <para>
-/// Each part becomes a mesh object (its faces' triangulations, in the part's coordinates), each assembly an object of
+/// Each part becomes a mesh object (its faces' triangulations, in the part's coordinates, with a vertex per node of the
+/// part's mesh: faces meeting at an edge share its nodes, so a closed solid's mesh is closed), each assembly an object of
 /// components with their transforms, each root a build item; objects are written before the objects using them, as
 /// the specification requires. Colours are core base materials (sRGB with alpha): an object's default material is its
 /// instance's colour, and triangles of faces with a sub-shape colour name theirs. A product placed with different
@@ -259,7 +260,7 @@ internal sealed class TreeWriter
                         return null;
                     }
                     ps.Next();
-                    mesh = ProductMesh.Make(product, false);
+                    mesh = ProductMesh.Make(product, false, toShareNodes: true);
                     meshes.Add(product, mesh);
                 }
                 if (mesh.NbTriangles == 0)
@@ -400,35 +401,54 @@ internal sealed class TreeWriter
     {
         w.WriteStartElement("mesh", CoreNamespace);
         w.WriteStartElement("vertices", CoreNamespace);
+        // A vertex per node of the part's mesh: faces meeting at an edge share its nodes, across groups too, so that the
+        // mesh of a closed solid is closed (decision 2191)
+        var vertexOf = new Dictionary<int, int>();
+        int nbVertices = 0;
+        var groupVertices = new List<int[]>(mesh.Groups.Count);
         foreach (ProductMesh.Group aGroup in mesh.Groups)
         {
+            int[] vertices = new int[aGroup.NbNodes];
             for (int i = 0; i < aGroup.NbNodes; i++)
             {
+                int id = aGroup.NodeIds[i];
+                if (id >= 0 && vertexOf.TryGetValue(id, out int known))
+                {
+                    vertices[i] = known;
+                    continue;
+                }
+                vertices[i] = nbVertices;
+                if (id >= 0)
+                {
+                    vertexOf.Add(id, nbVertices); // a node of an edge, which other faces share; the others are one face's
+                }
+                nbVertices++;
                 w.WriteStartElement("vertex", CoreNamespace);
                 w.WriteAttributeString("x", Number(aGroup.Positions[3 * i] * scale));
                 w.WriteAttributeString("y", Number(aGroup.Positions[3 * i + 1] * scale));
                 w.WriteAttributeString("z", Number(aGroup.Positions[3 * i + 2] * scale));
                 w.WriteEndElement();
             }
+            groupVertices.Add(vertices);
         }
         w.WriteEndElement();
         w.WriteStartElement("triangles", CoreNamespace);
-        int aBase = 0;
         for (int g = 0; g < mesh.Groups.Count; g++)
         {
             ProductMesh.Group aGroup = mesh.Groups[g];
+            int[] vertices = groupVertices[g];
             int material = theObject.GroupMaterials is null ? -1 : theObject.GroupMaterials[g];
             for (int t = 0; t < aGroup.NbTriangles; t++)
             {
-                int a = aGroup.Indices[3 * t], b = aGroup.Indices[3 * t + 1], c = aGroup.Indices[3 * t + 2];
+                int a = vertices[aGroup.Indices[3 * t]], b = vertices[aGroup.Indices[3 * t + 1]], c = vertices[aGroup.Indices[3 * t + 2]];
                 if (a == b || b == c || a == c)
                 {
                     continue; // 3MF: a triangle's three vertices must differ
                 }
                 w.WriteStartElement("triangle", CoreNamespace);
-                w.WriteAttributeString("v1", (aBase + a).ToString(CultureInfo.InvariantCulture));
-                w.WriteAttributeString("v2", (aBase + b).ToString(CultureInfo.InvariantCulture));
-                w.WriteAttributeString("v3", (aBase + c).ToString(CultureInfo.InvariantCulture));
+                w.WriteAttributeString("v1", a.ToString(CultureInfo.InvariantCulture));
+                w.WriteAttributeString("v2", b.ToString(CultureInfo.InvariantCulture));
+                w.WriteAttributeString("v3", c.ToString(CultureInfo.InvariantCulture));
                 if (material >= 0 && material != theObject.DefaultMaterial)
                 {
                     w.WriteAttributeString("pid", "1");
@@ -436,7 +456,6 @@ internal sealed class TreeWriter
                 }
                 w.WriteEndElement();
             }
-            aBase += aGroup.NbNodes;
         }
         w.WriteEndElement();
         w.WriteEndElement();

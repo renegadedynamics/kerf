@@ -326,6 +326,9 @@ Result<ModelShape> step = Importers.ImportStep("part.step");     // assemblies, 
 Result<Shape> brep = Importers.ImportBrep("part.brep");
 ```
 
+A closed part's mesh is written closed: in 3MF the faces share their edges' vertices, so a slicer reads it as one
+watertight mesh; in glTF and STL a vertex shared by faces has the same coordinates in each (since 0.5.1).
+
 Every exporter and importer returns a `Result`. A missing folder or file is `DirectoryNotFoundException` or
 `FileNotFoundException`, as everywhere in .NET; a file past `ImportLimits` (size, nesting) is
 `InvalidDataException`.
