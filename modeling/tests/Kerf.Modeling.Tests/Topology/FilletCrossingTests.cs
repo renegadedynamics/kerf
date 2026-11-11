@@ -7,7 +7,8 @@ namespace Kerf.Modeling.Tests.Topology;
 
 /// <summary>
 /// A fillet whose edges cross fails, carrying the result (kernel decision 2123; OCCT #1570): the kernel's error passes
-/// through, with its code <c>fillet.self-intersecting</c> and the edges, as a chamfer's does.
+/// through, with its code <c>fillet.self-intersecting</c> and the edges, as a chamfer's does; OCCT #1570's fillet, on the
+/// ball since kernel decision 30013, fails for an edge's tolerance instead.
 /// </summary>
 public class FilletCrossingTests
 {
@@ -25,17 +26,15 @@ public class FilletCrossingTests
         var edges = part.Edges();
         Result<Part> crossed = Fillet(part, [edges[0], edges[7]], 5.5);
         Assert.True(crossed.IsFailure);
-        Assert.Equal(FilletOperations.SelfIntersecting, crossed.Error!.Code);
-        Assert.Equal("The fillet's result isn't reliable: two of its edges run along each other. Try a smaller radius, or MaxFillet to find the largest that works.",
-                     crossed.Error.Message);
-        Assert.Equal(2, crossed.Error.Shapes.Length);
+        // On the ball (kernel decision 30013) one of the two slivers where the fillets' ends meet is gone and the other's
+        // edge is made with a tolerance of 2.4e10: the kernel's FilletIssueTests hold the same
+        Assert.Equal(DiagnosticCode.InvalidResult, crossed.Error!.Code);
         Assert.True(crossed.TryGetInvalid(out Part? invalid));
         Assert.True(invalid!.IsValid);
-        Assert.Equal(10, invalid.Faces().Count);
 
         // The shorthand throws the same, and the result carries the shape
         var thrown = Assert.Throws<ModelingException>(() => part.Fillet(5.5, [edges[0], edges[7]]));
-        Assert.Equal(FilletOperations.SelfIntersecting, thrown.Diagnostics[0].Code);
+        Assert.Equal(DiagnosticCode.InvalidResult, thrown.Diagnostics[0].Code);
         Assert.True(ModelingDiagnostics.TryGetInvalid(thrown, out _));
 
         // Below it the fillet is clean
