@@ -434,6 +434,24 @@ public class BooleanVolumeTests
         Assert.Equal(3 * one - common, fused.IntegrateVolume(), 1e-6 * one);
     }
 
+    // Radius 5000 at the end plane, 3e-3 and 5e-3 off: where the section leaves the end plane the walk's first point was put on the
+    // end's bound from a root to 1e-9 in angle, 2e-6 from it at this radius, so the line began with a step back, its p-curve on the
+    // cylinder 1.73 off and the edge's tolerance grown to cover it; one half of the cylinder's face then came out 2.7e4 short in
+    // area, and the common 1.4e-4 short, valid and a success (decision 2204)
+    [Theory]
+    [InlineData(3e-3)]
+    [InlineData(5e-3)]
+    public void Very_large_equal_cylinders_crossing_past_a_touch_have_their_whole_common(double offset)
+    {
+        (Shape cylinder, Shape tool, double common) = Crossing(5000, offset, 1.0);
+        double one = Math.PI * 5000 * 5000 * 10000;
+        Shape both = cylinder.Common(tool).Value.Shape;
+        Assert.Equal(common, both.IntegrateVolume(), 1e-6 * one);
+        Assert.All(both.AllEdges(), static edge => Assert.True(edge.Tolerance < 0.1, $"an edge's tolerance {edge.Tolerance}"));
+        Shape cut = cylinder.Cut(tool).Value.Shape;
+        Assert.Equal(one - common, cut.IntegrateVolume(), 1e-6 * one);
+    }
+
     // Radius 5000 at the end plane, 3e-10 off: the Boolean fuses the cylinders without their common part, valid, 16.5% out and
     // inside the rules of volume, with or without decision 1923's fix; 0.4.0 called it a success. Its tolerance, 1.7e-3, says
     // surfaces nearly touched, so points through the inputs' box are asked, and two deep in both and outside the result prove it
