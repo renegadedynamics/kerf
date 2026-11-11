@@ -1,6 +1,6 @@
 # Fillets: where they stop, and what could replace them
 
-*7 November 2026; section 9 is what units 12K to 12M built, section 10 what unit 15Q found of faces that narrow to a point, section 11 stage 4a, built by unit 15N, section 12 what unit 15T found of stage 4b's corners, and section 13 what unit 15R found of why ChFi3d's own fillets are off the ball. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
+*7 November 2026; section 9 is what units 12K to 12M built, section 10 what unit 15Q found of faces that narrow to a point, section 11 stage 4a, built by unit 15N, section 12 what unit 15T found of stage 4b's corners, section 13 what unit 15R found of why ChFi3d's own fillets are off the ball, and section 14 stage 4c, built by unit 15X, the piece of a sphere where the ball can't move. A study for the owner's decision, who asked on 6 November: "if I have a 10mm cube, I can't apply a 10mm fillet to a single edge - but a 9.999mm fillet is fine... If a rewrite would fix that then that's another reason to consider bringing this work forwards." Decisions 1847 to 1852. No new algorithm is written here. The owner has since agreed its recommendations (decision 1892); [section 8](#8-limits-as-built-unit-12c) has what unit 12C built from them.*
 
 **In short.** The 10 mm case is fixed, without a rewrite (decision 1847). That class of failure is not one failure of ChFi3d's mathematics: ChFi3d computes the right surface and then can't remove a face. **A rewrite of ChFi3d isn't justified yet, but a rolling-ball path that runs only where ChFi3d has failed is,** one analytic stage at a time. Its next stage is circular edges, the largest group among the corpus's fillet failures (8 of 23, 3 of them exactly this limit). Don't port `f713b1305f`.
 
@@ -347,6 +347,40 @@ Decisions 2141 and 2142. **Native OCCT 8.0.1 does the same,** to the digits: it'
 | Upright cylinder on a plane (`ChFiKPart`'s torus) | 1e-15 |
 
 The miss grows about as the cube of the radius: on the tee 2.1e-6 at 0.1, 3.9e-5 at 0.3, 2.9e-4 at 0.6. **A fix** gives the functions the curve of the ball's centres as their guide, from a first walk, and walks again; it reaches the ends' sections and the corners, and moves every walked fillet's surface. Not done here: for the owner, beside decision 2134's cheaper choices (2142).
+
+## 14. Stage 4c: the ball that can't move (unit 15X)
+
+Decisions 30202 to 30207. Timings are from a loaded machine.
+
+**Where the ball stands still.** Where a fillet's contour crosses a cylinder of exactly its radius, with the ball on the cylinder's inside (a block's rounded corner with its foot filleted at the corner's radius, or a pocket's), the ball's centre has to be on the cylinder's axis and at the radius from the face the contour runs along: one point. Over that stretch the ball doesn't roll; it touches the common face at one point and the cylinder round a circle, and the fillet there is a piece of the sphere, as a ball-end mill leaves in a pocket's corner. Since 15W ChFi3d's walk finds exactly that, and fails, as the fillet's edge on the common face is a point (decision 2159).
+
+**What's built, and where it's tried.** `FilletLimits.BuildSpheres`, last in `AfterAlgorithm`, so only where ChFi3d has failed or made something invalid. It reads ChFi3d's own contours, so one edge brings its tangent chain as in ChFi3d. A contour is taken if its edges share one face (a plane, a cylinder or a face extruded from a curve) and the faces beside it come in runs, one face each, a pinned run between two stretches; an open contour ends in stretches on plane faces. Anything else, and the stage isn't asked.
+
+| Piece | How |
+|---|---|
+| Pin | The centre on the axis at the radius from the common face, which must be at the radius from the faces either side; the contacts its foot on the common face, its feet on the faces either side (on their edges with the cylinder) and the circle round the axis between them |
+| Sphere's piece | Sections the great arcs from the foot to points of that circle, through stage 4a's cubic; a degenerate edge at the foot; its end arcs exactly the stretches' end sections |
+| Stretch | 4a's sections, each solved in the plane square to the edge, from the plane through one pin's centre to the next one's, past or short of the edge's vertex |
+| Square end | The section at the vertex lies in the end face, and is the end (C5) |
+| Slanted end | Each contact runs on to the plane; the fillet is cut by the plane between those two sections, and the plane's edges are cut where the contacts meet them, or carried on past the vertex where the corner is concave (C1) |
+| Faces beside | The contour's edges give way to the contact edges, meeting at each pin's foot on the common face; the edges between a pinned cylinder and its neighbours are cut where the ball touches them. No Boolean |
+
+**The proof, apart from how it's built.** As 4a's: the ball put back on every new face touches both supports, along its rails the face lies on them and is tangent to them, the ball at each stretch's middle and each pin's centre reaches nothing nearer than the radius, the shape is valid, and the volume is the input's plus a third of the flux of X − O through what changed: the new faces from their exact sections, the faces beside by Green's theorem round their boundaries, each support being c(u) + v d, the new edges taken along their exact contacts. A result that fails any is a failure. Then the operation's checks, 15L's crossings among them.
+
+**The four, through the public `Fillet`.** Before, each failed honestly (15W); on main before 15W they were off the ball by 0.9 to 1.7 at radius 10, and 1.0 at 2.
+
+| Case | Faces | Volume | Area | OCCT's area |
+|---|---:|---:|---:|---:|
+| `blend/complex/C1` (a pin of radius 2, its end at 2; a slanted end beyond a concave corner) | 14 | 75,808.3450 | 19,652.3265 | 19,652.4 |
+| `C5` (two contours, a wall extruded from a B-spline, square ends, four pins) | 17 | 4,876,176.7540 | 180,859.1874 | 180,881 |
+| `F1` (a block's top, a cylinder of 455, its drafted walls' corners of 10) | 18 | 796,640.4254 | 50,534.2309 | 50,544.3 |
+| `F2` (the same block's foot) | 18 | 791,489.1380 | 49,421.8940 | 49,413.3 |
+
+Draw's `blend` calls the engine alone, so the corpus's statuses don't move: the filtered corpus (561 cases) is main's.
+
+**Against closed forms** (`FilletSphereTests`): a block's foot with corners of its radius, at three sizes from 0.3 to 300; a pocket's floor, concave; an end face square at both ends; an end face slanted beyond a concave corner at 30 and 55 degrees; each to 1e-6 of the region taken (in fact 5e-8 or better), and a foot on a slope of 5 and 12 degrees, where ChFi3d fails, against the spandrels and each corner's region by rays from the ball's centre, to 1e-5. Where the cylinder's axis is square to the common face ChFi3d builds the same thing itself, an analytic sphere, and agrees with the closed form to 1e-9.
+
+**What it doesn't do.** A contour where two stretches meet without a pin (a corner larger than the radius beside one of it), a pin at a contour's end, an end on anything but a plane, a slanted end whose plane's edge is curved and must be carried on, a cylinder of the radius with the ball outside it (the ball rolls there), and no ball that fits (`blend/simple/Y6`, rightly a failure).
 
 ## Sources
 
