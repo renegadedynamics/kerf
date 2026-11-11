@@ -109,7 +109,7 @@ The 23 fillets, sorted by the surfaces beside the first step's edges. **Measured
 | **Cylinder and plane, a circular edge, at a limit** | B2 (r 15, side 15 high), Q3 (1, 1), W7 (10, 10) | Fails | **Yes: stage 3,** as for straight edges |
 | Cylinder and plane, circular, past a limit | U7 (r 3, ledge 2 wide), Y7 (r 12, side 10 high), bug602 (r 20, ledge 4.45) | Fails | Only as a *cliff edge*, a ball running on the edge. Otherwise failing is right, and stage 1 says why |
 | Cylinder and plane, circular, another cause | H4, bug32930 | Fails | Unknown |
-| Mixed, with corners | bug26655 | Fails | Perhaps: stage 4 |
+| Mixed, with corners | bug26655 | Fails | Perhaps: stage 4. **Built since 15T3:** its corners lie on the seams; moved, ChFi3d builds it (section 16) |
 | Bezier or B-spline | A1, A7, G8 | A1 invalid; A7 fails; G8 is the edge-order gap | Stage 5 at best; G8 no |
 | Evolved radius | K2 | Not tried | Only if it does variable radii |
 | Tori, a fuse | bug28119_1, bug_gh501, bug23902 | Not tried | Unknown |
@@ -405,6 +405,29 @@ Decisions 2193 to 2196. Timings are from a loaded machine.
 **The crossing cylinders, before and after** (reliability.md's island 6, 15N's probe through `Kerf.Modeling`, every edge at 0.3, branch radius 0.5 to 4.9 in 401 steps): **401 of 401 failed; 401 of 401 build,** all by this stage, none refused by its ball test, all valid; 22 faces, or 16 from a radius of about 4.4, where the rim takes all of the branch's lines on the top. Each took 0.53 s on average, 1.8 s at most, where ChFi3d's failure took about 0.12 s.
 
 **What it doesn't do.** The ends of a blend where it has width, and a support that changes along 4a's sections (15T's part one), aren't built: the second step is ChFi3d's walk. Arcs whose ends meet a plane, or a cylinder holding the material outside it (a hole through a rim), or another kind of face; a rim on a cone; the arcs without their concave edges, which ask for something the convention doesn't say. Where ChFi3d's second step fails, so does this.
+
+## 16. Stage 4a beside a reversed face, and stage 4b's second slice: seams in the way (unit 15T3)
+
+Decisions 2208 to 2212. Timings are from a loaded machine.
+
+**Stage 4a beside a reversed face** (decision 2170). `Assemble` replaced the chain's first face by a compound of its copy and the new fillets, and `ReShape` turned the whole compound as the shell holds that face, so beside a face reversed in its shell the fillets came out the wrong way round and the result was refused. They're now turned back there, as 4c's are. The case is the equal tee mirrored in z = 0, the same solid with its cylinders' faces held reversed: through `Kerf.Modeling` at r = 0.02 to 3 by 2%, 67 of 254 radii failed before, each refused by 4a; now none fails, those 67 built by 4a, on the ball and the slices' volume (`FilletBlendTests`). The equal tee itself (65 of those radii by 4a) and the crossing cylinders (401 of 401 by slice 1) are built as before. Nothing built before changes: the turn applies only beside a reversed face, where everything was refused.
+
+**The corpus's corner isn't 15T2's kind.** bug26655 is a tube (radii 10 and 20, 30 high) with a window through its wall, all twelve of the window's edges rounded at 1: each corner is two convex rims and the window's concave corner, the reverse of the crossing cylinders'. And that isn't why ChFi3d fails: the window's sides on y = 0 lie on both cylinders' seams, so four of its corners are seam vertices (OCCT #26655: "fails if some input edges connect with seam edges"). **Measured:** the same tube made with its seams at 45, 135 or 180 degrees builds in ChFi3d's one step, valid, on the ball, and to the same volume, 25,898.25466, to 1e-9; with them at 0, as bug26655, it fails; and a concave corner on the seam asked alone is built invalid, four faces. Splitting the closed faces in two builds, but off the ball (25,898.58195), as the old seam is then an edge at every corner; unifying them puts the seam back where it was.
+
+**What's built, and where it's tried.** `FilletLimits.BuildReseamed`, last in `AfterAlgorithm`, so only where ChFi3d has failed or made something invalid. One constant radius; each face on a cylinder or a cone whose seam ends at a vertex of an edge asked for, and which is bounded by two whole circles whose vertices are the seam's alone, is remade with its seam moved, and ChFi3d is asked again on the shape so remade. Anything else, and the stage isn't asked.
+
+| Step | How |
+|---|---|
+| Where | The middle of the widest run of angle that no other edge of the face reaches |
+| The face | On its surface turned about its axis by that angle, so the parameters wrap there: the same surface, parametrised from the new seam |
+| Its edges | The circles' vertices moved to the new seam; every edge given its curve on the new face (shifted by the angle, and a turn where it lay before the seam); a new seam, the line along the surface between the circles. The wires chained again by vertex and by where each edge's curve ends on the face: the window, joined to the outer loop through the old seam, becomes a hole |
+| Then | ChFi3d on the edges as the remade shape holds them; the history is the remaking's and then ChFi3d's |
+
+**Turning the surface matters.** Keeping the surface and letting the face's parameters run from the new seam, past the surface's own period, gave a valid shape that ChFi3d built valid but off the ball beside the old seam (25,898.31555): ChFi3d doesn't take a face whose parameters start elsewhere than the surface's own period. Not looked into further, nor tried natively (occt-issues.md).
+
+**The proof, apart from how it's built.** As 15T2's (section 15): on each face ChFi3d made, at points inside it, the ball put back on one side or the other is at the radius from the faces of the remade shape (`BRepExtrema`), to ChFi3d's approximation (1e-4); across each of the face's edges the face is tangent to the next, to ChFi3d's angle; the result is valid. A result that fails any is a failure, counted in `s_reseamRefused`; then the operation's checks, 15L's crossings among them. The remade shape is valid and the same solid (its volume to 1e-9). **Apart from the path,** `FilletReseamTests`: bug26655 itself, and the tube with its seams at 0 at radii 0.5, 1 and 2, through the public `Fillet`: ChFi3d alone fails; the result is valid, without crossings, with twenty new faces, twelve along the edges and a corner filling at each corner; the ball on every new face touches two of the tube's faces in closed form (the cylinders, the window's planes and the concave corners' blends) within 1e-4; tangency across every edge within 1e-3; the volume ChFi3d's own on the tube made with its seams clear of the window, to what the approximation moves the new faces by over their area.
+
+**What it doesn't do.** The volume isn't checked against an independent integral of the convention for this corner kind (the opening of the closing, in the window's corners): it's checked against ChFi3d's one step on the same solid with its seams elsewhere, which shows the seam's move changes nothing, not that ChFi3d's corner is right. 15T2's next slice for `BuildConvexFirst`, arcs ending on planes, holes or cones, isn't built: the corpus has no failing corner of that kind (of its failing multi-edge fillets, bug26655 is this, `blend/complex/H4` is built by stage 3, A1 is BÃ©zier faces of an open shell, and bug27711_3's first step builds), and the unit's time went to bug26655. A seam on a face that isn't a band between two circles (a cone to its apex, a cylinder with a slot through its end), on a sphere or a torus, and a seam that some edge asked for runs along, aren't moved.
 
 ## Sources
 
