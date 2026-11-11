@@ -166,38 +166,15 @@ internal static partial class ChamferMeet
     // How a corner's chamfers combine: all or any (a corner of one kind), or by the formula of its faces (unit 15U2)
     private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands, Term? Mixed = null);
 
-    /// <summary>How long the construction may take, the caller's own cancellation aside (the owner, decision 2179).</summary>
-    public static TimeSpan Limit { get; } = TimeSpan.FromSeconds(20);
-
-    // The limit for this flow where a scope set one, for the tests that check a build: on a loaded machine its 11 to 14 s
-    // can pass 20, so they run it without the wall clock
-    private static readonly AsyncLocal<TimeSpan?> LimitHere = new();
-
-    /// <summary>
-    /// The construction's limit in this flow until the scope is disposed: <paramref name="limit"/>, or none at all
-    /// (<see cref="Timeout.InfiniteTimeSpan"/>, the default); the caller's own cancellation still stops it.
-    /// </summary>
-    internal static IDisposable LimitScope(TimeSpan? limit = null)
-    {
-        TimeSpan? previous = LimitHere.Value;
-        LimitHere.Value = limit ?? Timeout.InfiniteTimeSpan;
-        return new LimitRestore(previous);
-    }
-
-    private sealed class LimitRestore(TimeSpan? previous) : IDisposable
-    {
-        public void Dispose() => LimitHere.Value = previous;
-    }
-
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply, what it builds isn't proved, or it took longer
-    /// than <see cref="Limit"/>, or than <paramref name="limit"/> or a <see cref="LimitScope"/>'s where a test gives one (<paramref name="late"/>). A solid is
-    /// proved by its volume too (unit 15V).
+    /// than the options' <see cref="ChamferOptions.TimeLimit"/> (<paramref name="late"/>; the owner, decisions 2179 and 2185).
+    /// A solid is proved by its volume too (unit 15V).
     /// </summary>
     /// <exception cref="OperationCanceledException">The caller's own token, or the one in force, was cancelled.</exception>
     public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
-                                       out bool late, TimeSpan? limit = null)
+                                       out bool late)
     {
         late = false;
         if (options.Mode != ChamferMode.Classic || shape.AllSolids().Length > 1 || shape.AllFaces().Length == 0)
@@ -208,10 +185,9 @@ internal static partial class ChamferMeet
         // The limit is a deadline joined to the token in force, so a caller's own cancellation still stops it, and as itself
         CancellationToken caller = Cancellation.Current;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(caller);
-        TimeSpan allowed = limit ?? LimitHere.Value ?? Limit;
-        if (allowed != Timeout.InfiniteTimeSpan)
+        if (options.TimeLimit != Timeout.InfiniteTimeSpan)
         {
-            deadline.CancelAfter(allowed);
+            deadline.CancelAfter(options.TimeLimit);
         }
         try
         {
