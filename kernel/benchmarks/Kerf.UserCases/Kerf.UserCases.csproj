@@ -27,6 +27,11 @@
     <KerfHasEnclosure>true</KerfHasEnclosure>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(KerfPackageVersion)' == '' or $([MSBuild]::VersionGreaterThanOrEquals('$(KerfVersionCore)', '0.5.0'))">
+    <DefineConstants>$(DefineConstants);KERF_0_5_OR_LATER</DefineConstants>
+    <KerfHasShaftGauge>true</KerfHasShaftGauge>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(KerfPackageVersion)' == ''">
     <ProjectReference Include="$(KerfModelingRoot)src/Kerf.Modeling/Kerf.Modeling.csproj" />
   </ItemGroup>
@@ -36,6 +41,8 @@
 
   <ItemGroup>
     <Compile Remove="enclosure/**" Condition="'$(KerfHasEnclosure)' != 'true'" />
+    <!-- The shaft gauges (unit 15D) engrave text, which came in 0.5.0 -->
+    <Compile Remove="shaft-gauge/**" Condition="'$(KerfHasShaftGauge)' != 'true'" />
     <None Include="data/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

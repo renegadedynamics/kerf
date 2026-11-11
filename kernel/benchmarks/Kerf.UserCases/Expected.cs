@@ -132,6 +132,15 @@ internal static class Expected
             new("component housing_nut3", 76.51473997560902, true, 9),
             new("component housing_plug3", 533.2266097377285, true, 8),
         ], null),
+        "shaft-gauge" => new(
+        [
+            new("blank 35", 20435.735694836112, true, 146),
+            new("gauge 35", 20320.72543340831, true, 665),
+            new("blank 50", 31216.59779025912, true, 146),
+            new("gauge 50", 31099.43607456657, true, 617),
+            new("blank 58", 41881.089840264816, true, 146),
+            new("gauge 58", 41760.788386454406, true, 689),
+        ], null),
         _ => CaseResult.Absent,
     };
 }

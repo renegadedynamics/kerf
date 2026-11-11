@@ -14,6 +14,7 @@ which the rig had no part shaped like.
 | `collapse-housing` | the same edges chamfered 3 with `TightCorners.Collapse` | the same report: 428 ms against 7 ms |
 | `enclosure` | the blade bumper's enclosure built whole: 13 printed parts, a print aid and 34 placed components, 48 shapes | `enclosure/`, with the owner's permission (decision 2008) |
 | `enclosure-v0.16` | the same enclosure at v0.16 (9 November 2026), laid out for three shaft sizes, built whole for a 35 mm shaft: 48 shapes | `enclosure-v0.16/`, the same permission (unit 14D) |
+| `shaft-gauge` | Renegade's rowing blade shaft gauges, all three sizes: a rounded hexagon with six U-shaped cutouts, their mouths filleted, every rim chamfered (96 edges), the sizes engraved one Boolean each; each size's blank and gauge, 6 shapes, all fillet results | `shaft-gauge/`, the owner's permission (decision 2145, unit 15D) |
 
 Each case's result is every shape's volume (to 1e-6 relative), validity and face count, or the failure it returned;
 `Expected.cs` holds them, written by the program's `expected` mode. A change that moves one is a bug, or a fix with a
@@ -38,7 +39,8 @@ and native OCCT through build123d.
 The same source builds against this tree (by default) or a released version's packages (`-p:KerfPackageVersion=0.3.0`).
 A case that uses a later API is compiled only from the version that has it, by the symbols the project file defines
 (`KERF_0_4_OR_LATER`): before 0.4.0 the collapsing chamfers run without `TightCorners`, which those versions refuse, and
-neither enclosure is built (the release check says it has no baseline). The v0.16 enclosure is a library of its own
+neither enclosure is built (the release check says it has no baseline); before 0.5.0, which
+brought text, the shaft gauges aren't either (`KERF_0_5_OR_LATER`). The v0.16 enclosure is a library of its own
 (`enclosure-v0.16/Kerf.UserCases.EnclosureV016.csproj`), referred to by the alias `v016`, as its types have the v0.11
 model's names; it builds against the same Kerf as the cases. When a release changes an API the cases use, the
 change goes in the same way, with a symbol for the new version, so the cases still build against the last release.

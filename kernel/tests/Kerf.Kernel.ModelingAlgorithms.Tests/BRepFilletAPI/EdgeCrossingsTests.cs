@@ -12,7 +12,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepFilletAPI;
 
 /// <summary>
 /// The check that a fillet's or chamfer's edges don't cross (decision 2123; OCCT #1570), and what it costs: the pairs it
-/// asks of the intersector are counted (<c>EdgeCrossings.s_intersections</c>), as the Booleans' point checks are.
+/// asks of the intersector are counted (<c>EdgeCrossings.Counting</c>), on the test's own thread, so the counts are its own.
 /// </summary>
 public class EdgeCrossingsTests
 {
@@ -24,11 +24,11 @@ public class EdgeCrossingsTests
         return shape;
     }
 
+    // What the checks made by act asked, counted on this thread alone, so the counts are the test's own however the tests are run
     private static (int Checks, int Pairs, int Settled, int Intersections) Counting(Action act)
     {
-        int checks = EdgeCrossings.s_checks, pairs = EdgeCrossings.s_boxPairs, settled = EdgeCrossings.s_settled, intersections = EdgeCrossings.s_intersections;
-        act();
-        return (EdgeCrossings.s_checks - checks, EdgeCrossings.s_boxPairs - pairs, EdgeCrossings.s_settled - settled, EdgeCrossings.s_intersections - intersections);
+        EdgeCrossings.Counts counts = EdgeCrossings.Counting(act);
+        return (counts.Checks, counts.BoxPairs, counts.Settled, counts.Intersections);
     }
 
     [Fact]

@@ -356,7 +356,9 @@ internal class SClassifier
                             double addW = Max(10 * tol, 0.01 * par);
                             double AddW = addW;
 
-                            Box boxF = intersector3d.Bounding();
+                            // Kerf (unit 15D): not the polyhedron's box, building the polyhedron, where the line is surely clear of
+                            // it: Perform then finds nothing over any part of the line, so how far it's prolonged doesn't matter
+                            Box boxF = intersector3d.SurelyMissesPolyhedron(l) ? new Box() : intersector3d.Bounding();
 
                             // The box must be finite in order to correctly prolong the segment to its bounds.
                             if (!boxF.IsVoid && !boxF.IsWhole)
