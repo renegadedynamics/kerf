@@ -454,4 +454,24 @@ public class math_DirectPolynomialRootsTest
         Assert.Equal(2.0, aRoot1, 1.0e-10);
         Assert.Equal(-2.0, aRoot2, 1.0e-10);
     }
+
+    // Quartics of the trigonometric equations (keepsSmallFactor), logged where a cut of two cylinders of radius 500 and a fuse
+    // of two cones (bopfuse_simple/ZN2) solved them. Ferrari's factors lost a small constant to cancellation, and the linear
+    // terms beside it were noise: one root of each pair was right and the other wrong (5.5e-6 came back as -1.5e-8, or 0), or
+    // both came back as 0 where the constant, kept from the factors' product, was cleaned to zero. The roots are those of the
+    // quartics as given, found in exact rationals (decision 2197).
+    [Theory]
+    [InlineData(-2.9999995604157448e-05, 0.0, -1e6, 0.0, 2.9999995604157448e-05, 5.4772251737679586e-06)]
+    [InlineData(-1.00000761449337e-06, 0.0, -1e6, 0.0, 1.00000761449337e-06, 1.0000038072394375e-06)]
+    [InlineData(-2.0081643015146255e-09, 0.0, -1e6, 0.0, 2.0081643015146255e-09, 4.4812546251185344e-08)]
+    [InlineData(255.9999999999999, -0.0, 191.9999999999999, 0.0, -1.4210854715202004e-14, 8.6031894265059524e-09)]
+    public void A_pair_of_small_roots_beside_large_coefficients_is_found_both_ways(double a, double b, double c, double d, double e,
+                                                                                   double root)
+    {
+        DirectPolynomialRoots aRoots = new(a, b, c, d, e, true);
+        Assert.True(aRoots.IsDone);
+        double[] aFound = [.. Enumerable.Range(1, aRoots.SolutionCount).Select(aRoots.Value)];
+        Assert.Contains(aFound, x => Math.Abs(x - root) <= 1e-12 * root);
+        Assert.Contains(aFound, x => Math.Abs(x + root) <= 1e-12 * root);
+    }
 }
