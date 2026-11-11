@@ -3,6 +3,7 @@
 using Kerf.Engine;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Classification;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Fillets.Api;
@@ -45,9 +46,12 @@ namespace Kerf.Fillets;
 /// </para>
 /// <para>
 /// <b>What's built:</b> open shells and faces, with every corner of one kind (its other edges all convex or all concave),
-/// the chamfers there all convex or all concave, a corner with one chamfer only where it and the corner are convex; every
-/// chamfer face one of ChFi3d's B-spline stripes, its contacts its u-isos. A solid isn't: its proof would need its volume
-/// against an independent integral, which isn't built. What doesn't fit gives null, and ChFi3d's failure stands.
+/// the chamfers there all convex or all concave, a corner with one chamfer only where it and the corner are convex, and a
+/// corner whose edges are all chamfered where its chamfers are all convex; every chamfer face one of ChFi3d's B-spline
+/// stripes, its contacts its u-isos, or one of Kerf's own (unit 15V: <c>ChamferMeet.Chains.cs</c>) where stripes run on
+/// through a vertex or ChFi3d's stripe is off the chamfer's length. A solid is built only when asked, for measuring: its
+/// proof needs its volume against an independent integral, which isn't built yet, so the operation doesn't ask. What doesn't
+/// fit gives null, and ChFi3d's failure stands.
 /// </para>
 /// <para>
 /// <b>The proof</b> (<see cref="Proved"/>), of the result alone and the chamfer's specs, not of how it was made: every free
@@ -57,7 +61,7 @@ namespace Kerf.Fillets;
 /// (decision 2125) as for any result. Everything is local to the call, on frozen shapes.
 /// </para>
 /// </remarks>
-internal static class ChamferMeet
+internal static partial class ChamferMeet
 {
     // How far past a corner a chamfer's surface is carried, and how far across its contacts, in the widest chamfer's widths
     private const double Past = 2;
@@ -66,6 +70,9 @@ internal static class ChamferMeet
 
     // Within this many widths of a corner, the corner's rule holds; a chamfer counts beside its edge out to this many widths
     private const double Near = 2;
+
+    // How much farther than that where Kerf's own bands are among them (unit 15V)
+    private const double OwnReach = 3;
 
     // The fewest contact points checked on each chamfer
     private const int FewestChecked = 5;
@@ -96,6 +103,10 @@ internal static class ChamferMeet
 
         public required Edge[] Edges { get; init; }
 
+        public Face Face1 { get; init; }   // the faces its contacts lie on, u = 0 and u = UMax, where it's ChFi3d's
+
+        public Face Face2 { get; init; }
+
         public BSplineSurface Surface { get; set; } = null!; // extended
 
         public double EU0 { get; set; }
@@ -120,31 +131,79 @@ internal static class ChamferMeet
         public double Hi(double u) => !LastCorner.IsNull ? EV1 : B1.Y + ((B2.Y - B1.Y) * u / UMax);
 
         public bool EndsAt(Vertex corner) => FirstCorner.IsSame(corner) || LastCorner.IsSame(corner);
+
+        // A parameter along a closed band taken on to its period from lo, where the band's half runs past the surface's end
+        public double Within(double v, double lo)
+        {
+            if (!Original.IsVPeriodic)
+            {
+                return v;
+            }
+            double period = Original.VPeriod;
+            return v < lo ? v + (period * Math.Ceiling((lo - v) / period)) : v;
+        }
+
+        public bool Own { get; init; }   // Kerf's own band through a chain (unit 15V), not one of ChFi3d's stripes
+
+        // An own band runs on through the vertex: one of its edges ends there, and the vertex's section is inside its span
+        public bool Passes(Vertex corner)
+        {
+            if (!Edges.Any(e => e.AllVertices().Any(v => v.IsSame(corner))))
+            {
+                return false;
+            }
+            var projection = new ProjectPointOnSurface(corner.Point, Original);
+            if (projection.NbPoints() == 0)
+            {
+                return false;
+            }
+            projection.LowerDistanceParameters(out _, out double v);
+            v = Within(v, VLo);
+            return v > VLo && v < VHi;
+        }
     }
 
     private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands);
 
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
-    /// stripes and failed at a corner, and proved; null where this doesn't apply or what it builds isn't proved.
+    /// stripes and failed at a corner, and proved; null where this doesn't apply or what it builds isn't proved. A solid is built
+    /// only where <paramref name="solid"/> is asked, which the operation doesn't ask yet: its volume isn't proved (unit 15V), so
+    /// it's for measuring the construction, not a result.
     /// </summary>
-    public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options)
+    public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
+                                       bool solid = false)
     {
-        if (options.Mode != ChamferMode.Classic || shape.AllSolids().Length != 0 || shape.AllFaces().Length == 0)
+        int solids = shape.AllSolids().Length;
+        if (options.Mode != ChamferMode.Classic || solids > (solid ? 1 : 0) || shape.AllFaces().Length == 0)
         {
             return null;
         }
-        try
+
+        // Kerf's own bands for ChFi3d's stripes that are off the chamfer's distance first, and if that isn't built, ChFi3d's
+        // (unless a chain through a vertex needs Kerf's own anyway, whose corners ChFi3d's stripes beside it don't make)
+        bool anyOff = false;
+        foreach (bool own in (ReadOnlySpan<bool>)[true, false])
         {
-            return Built(shape, chamfer, specs, referenceFaces);
+            try
+            {
+                if (Built(shape, chamfer, specs, referenceFaces, own, ref anyOff) is { } built)
+                {
+                    return built;
+                }
+            }
+            catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
+            {
+            }
+            if (!anyOff)
+            {
+                break;
+            }
         }
-        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
-        {
-            return null;
-        }
+        return null;
     }
 
-    private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
+    private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, bool ownWhereOff, ref bool anyOff)
     {
         ChBuilder builder = chamfer.InternalBuilder();
         if (builder._listStripe.IsEmpty() || builder._badstripes.Extent() != 0)
@@ -152,13 +211,16 @@ internal static class ChamferMeet
             return null;
         }
 
+        // The stripes along edges; those without a spine are corners ChFi3d built, which are built again here
+        Stripe[] stripes = [.. builder._listStripe.Where(static s => s.Spine() is { EdgeCount: > 0 })];
+
         // The corners: where ChFi3d failed, and every end of a stripe that isn't at the edge of the shape
         var corners = new List<Vertex>();
         foreach (Shape v in builder._badvertices)
         {
             corners.Add(ShapeCasts.Vertex(v));
         }
-        foreach (Stripe stripe in builder._listStripe)
+        foreach (Stripe stripe in stripes)
         {
             Spine spine = stripe.Spine()!;
             if (spine.FirstStatus() != State.FreeBoundary && !corners.Any(v => v.IsSame(spine.FirstVertex())))
@@ -178,12 +240,29 @@ internal static class ChamferMeet
         Face[] faces = shape.AllFaces().ToArray();
         var chamfered = new List<Edge>();
         var bands = new List<Band>();
-        foreach (Stripe stripe in builder._listStripe)
+
+        // Chains that run on through a vertex, as one band of Kerf's own (unit 15V); a vertex inside one is a corner only
+        // where another chamfer ends
+        List<Chain> chains = Chains(faces, stripes, corners);
+        bool chained = chains.Count > 0;
+        var off = new List<Stripe>();
+        foreach (Stripe stripe in stripes)
         {
             Cancellation.ThrowIfRequested();
+            if (chains.Any(c => c.Stripes.Contains(stripe)))
+            {
+                continue;
+            }
             if (Bands(faces, builder, stripe, corners) is not { } own)
             {
                 return null;
+            }
+            // ChFi3d's stripe off the chamfer's distance (as on a loft's sides): Kerf's own instead
+            if (ownWhereOff && EqualDistance(specs, own[0].Edges) is { } distance && own.Any(b => !OnSpec(b, distance, builder._tolapp3d)))
+            {
+                anyOff = !chained;
+                off.Add(stripe);
+                continue;
             }
             bands.AddRange(own);
             Spine spine = stripe.Spine()!;
@@ -193,14 +272,32 @@ internal static class ChamferMeet
             }
         }
 
+        chains.AddRange(Chains(faces, [.. off], corners, alone: true));
+        foreach (Chain chain in chains)
+        {
+            if (EqualDistance(specs, [.. chain.Edges.Select(static x => x.Edge)]) is not { } distance
+                || chain.Edges.Select(x => IsConvex(faces, x.Edge)).Distinct().ToArray() is not [{ } convex]
+                || ChainBands(faces, chain, distance, convex) is not { } chainBands)
+            {
+                return null;
+            }
+            bands.AddRange(chainBands);
+            chamfered.AddRange(chain.Edges.Select(static x => x.Edge));
+        }
+
         // How the chamfers combine at each corner
         var cornerRules = new List<Corner>();
         Edge[] edges = shape.AllEdges().ToArray();
         foreach (Vertex corner in corners)
         {
             Edge[] others = [.. edges.Where(e => !chamfered.Any(c => c.IsSame(e)) && e.AllVertices().Any(v => v.IsSame(corner)))];
-            bool?[] kinds = [.. others.Select(e => IsConvex(faces, e)).Distinct()];
-            Band[] at = [.. bands.Where(b => b.EndsAt(corner))];
+            Band[] ending = [.. bands.Where(b => b.EndsAt(corner))];
+            if (ending.Length == 0)
+            {
+                continue; // inside a chain, which runs on through it
+            }
+            Band[] at = [.. ending, .. bands.Where(b => b.Own && !b.EndsAt(corner) && b.Passes(corner))];
+            bool?[] kinds = others.Length == 0 && at.Length > 1 && at.All(static b => b.Convex) ? [true] : [.. others.Select(e => IsConvex(faces, e)).Distinct()];
             if (kinds.Length != 1 || kinds[0] is not { } all || at.Length == 0 || at.Any(b => b.Convex != at[0].Convex)
                 || (at.Length == 1 && !(at[0].Convex && all)))
             {
@@ -210,10 +307,12 @@ internal static class ChamferMeet
         }
 
         // Each surface carried past its corners and across its contacts, its parameters kept, and made a face
-        double width = bands.Max(static b => b.Width);
+        // How far the surfaces are carried, in the widest chamfer's widths, and where the corner's rule holds: three times as far
+        // where Kerf's own bands are among them, as the loft's corners need (2 widths left its bottom corners' faces uncut)
+        double width = bands.Max(static b => b.Width) * (bands.Any(static b => b.Own) ? OwnReach : 1);
         foreach (Band band in bands)
         {
-            BoundedSurface extended = band.Original;
+            BoundedSurface extended = band.Own ? Across1(band.Original, Across * width / band.Width) : band.Original;
             if (!band.LastCorner.IsNull)
             {
                 GeomLib.ExtendSurfByLength(ref extended, Past * width, 1, false, true);
@@ -222,8 +321,11 @@ internal static class ChamferMeet
             {
                 GeomLib.ExtendSurfByLength(ref extended, Past * width, 1, false, false);
             }
-            GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, true);
-            GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, false);
+            if (!band.Own)
+            {
+                GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, true);
+                GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, false);
+            }
             if (extended is not BSplineSurface surface)
             {
                 return null;
@@ -257,7 +359,17 @@ internal static class ChamferMeet
             return null;
         }
         int material = signs[0];
-        bool Material(Point3D x) => Math.Sign(near.Side(x)) == material;
+        // In a solid, its classifier says (the nearest face is ambiguous outside it beside an edge)
+        SolidClassifier? classifier = shape.AllSolids().Length == 1 ? new SolidClassifier(shape.AllSolids()[0]) : null;
+        bool Material(Point3D x)
+        {
+            if (classifier is null)
+            {
+                return Math.Sign(near.Side(x)) == material;
+            }
+            classifier.Perform(x, Precision.Confusion());
+            return classifier.State() == Containment.In;
+        }
 
         // The band's side of a point: true on the chamfered shape's material side; null where it says nothing
         bool? SideOf(Band band, Point3D x, bool nearCorner)
@@ -271,7 +383,8 @@ internal static class ChamferMeet
             {
                 double lo = band.FirstCorner.IsNull ? band.Lo(foot.U) : band.VLo, hi = band.LastCorner.IsNull ? band.Hi(foot.U) : band.VHi;
                 double distance = x.DistanceTo(foot.Point);
-                if (foot.V < lo || foot.V > hi || distance > Near * width || Math.Abs(along) < 0.99 * distance)
+                double v = band.Within(foot.V, lo);
+                if (v < lo || v > hi || distance > Near * width || Math.Abs(along) < 0.99 * distance)
                 {
                     return null;
                 }
@@ -334,7 +447,7 @@ internal static class ChamferMeet
             Cancellation.ThrowIfRequested();
             Point3D p = default;
             Point2D uv = default;
-            if (AlgoTools3D.PointInFace(piece, ref p, ref uv, context) != 0 || Tool.Surface(piece) is not { } surface)
+            if (!InFace(piece, ref p, ref uv, context) || Tool.Surface(piece) is not { } surface)
             {
                 return null;
             }
@@ -362,7 +475,15 @@ internal static class ChamferMeet
         unifier.AllowInternalEdges(false);
         unifier.Build();
         Shape built = unifier.InternalShape();
-        if (built.Type != ShapeType.Shell || Proved(shape, built, specs, referenceFaces, chamfer, builder._tolapp3d) is not true)
+        if (shape.AllSolids().Length == 1 && built.Type == ShapeType.Shell)
+        {
+            var solidBuilder = new BrepBuilder();
+            Solid solid = default;
+            solidBuilder.MakeSolid(ref solid);
+            solidBuilder.Add(solid, built);
+            built = solid;
+        }
+        if (built.Type != (shape.AllSolids().Length == 1 ? ShapeType.Solid : ShapeType.Shell) || Proved(shape, built, specs, referenceFaces, chamfer, builder._tolapp3d) is not true)
         {
             return null;
         }
@@ -473,9 +594,19 @@ internal static class ChamferMeet
                 LastCorner = k == set.Length() ? last : default,
                 EdgePoint = edgePoint,
                 Edges = own,
+                Face1 = ShapeCasts.Face(s1),
+                Face2 = ShapeCasts.Face(s2),
             });
         }
         return bands;
+    }
+
+    // The one length of an equal-distance chamfer on all these edges, or null
+    private static double? EqualDistance(ChamferSpec[] specs, Edge[] edges)
+    {
+        ChamferSpec[] own = [.. specs.Where(s => edges.Any(e => e.IsSame(s.Edge)))];
+        return own.Length == 0 || own.Any(s => s.Angle is not null || (s.Distance2 is { } d2 && d2 != s.Distance) || s.Distance != own[0].Distance)
+            ? null : own[0].Distance;
     }
 
     private static bool OnFace(Edge edge, Shape face) => face.AllEdges().Any(e => e.IsSame(edge));
@@ -493,6 +624,10 @@ internal static class ChamferMeet
         Point3D at = curve.EvalD0(t);
         Edge inFirst = two[0].AllEdges().First(e => e.IsSame(edge)), inSecond = two[1].AllEdges().First(e => e.IsSame(edge));
         AlgoTools3D.GetNormalToFaceOnEdge(inSecond, two[1], t, out Direction3D normal, null);
+        if (two[1].Orientation == Orientation.Reversed)
+        {
+            normal = normal.Reversed();
+        }
         Point2D uv = default;
         Point3D into = default;
         if (AlgoTools3D.PointNearEdge(inFirst, two[0], t, 1e-3, ref uv, ref into, new IntersectionContext()) != 0)
@@ -621,6 +756,32 @@ internal static class ChamferMeet
         return face;
     }
 
+    // A point inside the face: PointInFace's, or else one beside the middle of one of its edges, as PointInFace's hatching can
+    // miss a narrow piece
+    private static bool InFace(Face face, ref Point3D p, ref Point2D uv, IntersectionContext context)
+    {
+        if (AlgoTools3D.PointInFace(face, ref p, ref uv, context) == 0)
+        {
+            return true;
+        }
+        foreach (Edge edge in face.Explore<Edge>(ShapeType.Edge))
+        {
+            if (Tool.Degenerated(edge) || edge.Orientation is not (Orientation.Forward or Orientation.Reversed))
+            {
+                continue;
+            }
+            Tool.Range(edge, out double a, out double b);
+            foreach (double step in (ReadOnlySpan<double>)[1e-4, 1e-6])
+            {
+                if (AlgoTools3D.PointNearEdge(edge, face, 0.5 * (a + b), step, ref uv, ref p) == 0 && context.IsPointInFace(face, uv))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     // The face without the cuts that end inside it, which the fuse leaves as internal edges
     private static Face WithoutInternal(Face face)
     {
@@ -699,44 +860,52 @@ internal static class ChamferMeet
             lines.Add((own, specs[at], referenceFaces[at]));
         }
 
-        // Each chamfer face's contacts: first which contour it's of (most of its contact points nearest that contour's edges
-        // inside them), then each such point at its distance and angle
+        // Contours that run on into each other through a vertex, their edges tangent there, are one chamfer face (unit 15V)
+        int[] group = [.. Enumerable.Range(0, lines.Count)];
+        int Root(int i) => group[i] == i ? i : group[i] = Root(group[i]);
+        for (int i = 0; i < lines.Count; i++)
+        {
+            for (int j = i + 1; j < lines.Count; j++)
+            {
+                if (RunOn(lines[i].Edges, lines[j].Edges))
+                {
+                    group[Root(j)] = Root(i);
+                }
+            }
+        }
+
+        // Each chamfer face's contacts: first which contours it's of (most of its contact points nearest their edges inside
+        // them), then each such point at its distance and angle from its nearest edge of those
         var checkedOn = new int[lines.Count];
         foreach (Face chamferFace in faces.Where(f => origin[f] < 0))
         {
-            var contacts = new List<(Point3D Point, Face Face)>();
-            foreach (Edge edge in chamferFace.AllEdges())
-            {
-                Face other = faces.FirstOrDefault(f => !f.IsSame(chamferFace) && f.AllEdges().Any(e => e.IsSame(edge)));
-                if (other.IsNull || origin[other] < 0 || Tool.Curve(edge, out double a, out double b) is not { } curve)
-                {
-                    continue;
-                }
-                for (int k = 1; k < 20; k++)
-                {
-                    contacts.Add((curve.EvalD0(a + ((b - a) * k / 20)), inputFaces[origin[other]]));
-                }
-            }
+            List<(Point3D Point, Face Face)> contacts = Contacts(chamferFace, 20);
             var votes = new int[lines.Count];
             foreach ((Point3D x, Face face) in contacts)
             {
-                if (OnEdge(x, face, lines, -1) is { } foot)
+                if (OnEdge(x, face, lines, _ => true) is { } foot)
                 {
-                    votes[foot.Line]++;
+                    votes[Root(foot.Line)]++;
                 }
             }
             if (votes.Max() == 0)
             {
                 return false;
             }
-            int line = Array.IndexOf(votes, votes.Max());
-            ChamferSpec spec = lines[line].Spec;
+            int chosen = Array.IndexOf(votes, votes.Max());
+            int size = Enumerable.Range(0, lines.Count).Count(i => Root(i) == chosen);
+            if (size > 1)
+            {
+                contacts = Contacts(chamferFace, 20 * size);
+            }
             foreach ((Point3D x, Face face) in contacts)
             {
-                if (OnEdge(x, face, lines, line) is not { } foot)
+                if (OnEdge(x, face, lines, i => Root(i) == chosen) is not { } foot)
                 {
                     continue;
                 }
+                int line = foot.Line;
+                ChamferSpec spec = lines[line].Spec;
                 bool onReference = lines[line].Reference.IsSame(face);
                 double allowed = tolerance + foot.Tolerance;
                 double? distance = spec.Angle is not null ? (onReference ? spec.Distance : null) : onReference ? spec.Distance : spec.Distance2 ?? spec.Distance;
@@ -757,19 +926,58 @@ internal static class ChamferMeet
                 checkedOn[line]++;
             }
         }
+
+        // The contact points of a chamfer face: along each edge it shares with a face on one of the input's, with that face
+        List<(Point3D Point, Face Face)> Contacts(Face chamferFace, int count)
+        {
+            var contacts = new List<(Point3D Point, Face Face)>();
+            foreach (Edge edge in chamferFace.AllEdges())
+            {
+                Face other = faces.FirstOrDefault(f => !f.IsSame(chamferFace) && f.AllEdges().Any(e => e.IsSame(edge)));
+                if (other.IsNull || origin[other] < 0 || Tool.Curve(edge, out double a, out double b) is not { } curve)
+                {
+                    continue;
+                }
+                for (int k = 1; k < count; k++)
+                {
+                    contacts.Add((curve.EvalD0(a + ((b - a) * k / count)), inputFaces[origin[other]]));
+                }
+            }
+            return contacts;
+        }
         return checkedOn.All(static n => n >= FewestChecked);
+    }
+
+    // Two contours run on into each other: an edge of each ends at the same vertex, their tangents there in line
+    private static bool RunOn(Edge[] one, Edge[] two)
+    {
+        foreach (Edge a in one)
+        {
+            foreach (Edge b in two)
+            {
+                foreach (Vertex v in a.AllVertices())
+                {
+                    if (b.AllVertices().Any(w => w.IsSame(v)) && TangentAt(a, v) is { } ta && TangentAt(b, v) is { } tb
+                        && Math.Abs(Math.Abs(ta.Dot(tb)) - 1) < Tangent)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private readonly record struct EdgeFoot(int Line, Point3D Point, Vector3D Tangent, double Tolerance);
 
-    // The nearest point of a chamfered edge of the face, inside the edge, on the contour line (or any, at -1)
-    private static EdgeFoot? OnEdge(Point3D x, Face face, List<(Edge[] Edges, ChamferSpec Spec, Face Reference)> lines, int line)
+    // The nearest point of a chamfered edge of the face, inside the edge, on one of the contour lines asked
+    private static EdgeFoot? OnEdge(Point3D x, Face face, List<(Edge[] Edges, ChamferSpec Spec, Face Reference)> lines, Func<int, bool> among)
     {
         EdgeFoot? found = null;
         double best = double.MaxValue;
         for (int i = 0; i < lines.Count; i++)
         {
-            if (line >= 0 && i != line)
+            if (!among(i))
             {
                 continue;
             }

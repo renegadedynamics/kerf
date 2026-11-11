@@ -1,6 +1,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Fillets;
@@ -124,6 +126,47 @@ public class ChamferMeetTests
                                                    new ChamferSpec(across, 0.06, Angle: Math.PI / 3, ReferenceFace: floor)],
                                                   new ChamferOptions { CheckResult = false });
         Assert.False(made.IsSuccess);
+    }
+
+    // A loft from a 10 by 10 square to a circle of radius 4, 10 above (reliability.md's island 3), every edge chamfered. At
+    // each top vertex the rim's two arcs are tangent and so are the side faces: ChFi3d's corner of three chamfers fails, and
+    // its side stripes are off the length where they meet their faces at a narrow angle. Unit 15V's bands of Kerf's own (the
+    // rim one band through its vertices, the sides solved where they lie) build it, valid, at the lengths and without
+    // crossings; it isn't returned yet, as its volume isn't proved, so the public chamfer still fails
+    [Theory]
+    [InlineData(0.05, 18)]
+    [InlineData(0.2, 18)]
+    public void A_loft_whose_side_faces_turn_tangent_at_its_top_corners_is_built_with_kerfs_own_bands(double length, int faces)
+    {
+        Shape loft = Loft();
+        Edge[] edges = [.. loft.AllEdges()];
+        ChamferSpec[] specs = [.. edges.Select(e => new ChamferSpec(e, length))];
+        Face[] references = [.. edges.Select(e => loft.AllFaces().First(f => f.AllEdges().Any(x => x.IsSame(e))))];
+        MakeChamfer native = Native(loft, specs);
+        native.Build();
+        Assert.True(!native.IsDone || !native.Shape().Validate().IsValid);
+
+        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, ChamferOptions.Default, solid: true);
+        Assert.NotNull(met);
+        Shape made = met.Value.Shape();
+        Assert.Equal(ShapeType.Solid, made.Type);
+        Assert.True(made.Validate().IsValid);
+        Assert.Equal(faces, made.AllFaces().Length);
+        Assert.True(ChamferMeet.Proved(loft, made, specs, references, native, 1e-4));
+        Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
+        Assert.False(loft.Chamfer(edges, length).IsSuccess);
+    }
+
+    private static Shape Loft()
+    {
+        var square = new MakePolygon(new Point3D(-5, -5, 0), new Point3D(5, -5, 0), new Point3D(5, 5, 0), new Point3D(-5, 5, 0), true);
+        var circle = new MakeWire();
+        circle.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 10), new Direction3D(0, 0, 1)), 4)).Edge());
+        var loft = new ThruSections(true, false);
+        loft.AddWire(square.Wire());
+        loft.AddWire(circle.Wire());
+        loft.Build();
+        return loft.Shape();
     }
 
     private static ChamferSpec Spec(Edge edge, double distance, double? second, double? degrees, Face reference) =>
