@@ -1,6 +1,12 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Measurement.Distance;
+using Kerf.Engine.Topology.Adaptors;
+using Kerf.Geometry;
 using Kerf.Kernel.DrawLite;
+using Kerf.Topology;
 using Xunit.Abstractions;
 
 namespace Kerf.Kernel.DrawLite.Tests;
@@ -161,6 +167,76 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
     }
 
     /// <summary>
+    /// blend/complex/A6 (decision 31201): where the face the fillet's edge bounds narrows to nothing, the ball rests on that face's
+    /// edge and the other face, and their contacts meet; on the ball's equations that section is singular, and the walk stopped
+    /// there at scale 1 (decision 2163). It now keeps that section and goes on beyond it, so the case passes at its five scales,
+    /// valid, with OCCT's area; at 1 and 1000 the fillet's faces are on the ball (its centre at the radius from the input).
+    /// </summary>
+    [Fact]
+    public void A_fillet_walks_on_through_the_point_where_it_narrows_to_nothing()
+    {
+        var aCorpus = new DrawCorpus(TestsDirectory);
+        DrawTestCase aCase = aCorpus.Cases().Single(c => c.Id == "blend/complex/A6");
+        DrawCaseRun aRun = aCorpus.RunAndCheck(aCase, DrawResourcesTests.ResourcesDirectory, DrawCorpusTests.DataPath, TimeSpan.FromSeconds(120));
+        Assert.Equal("OK", aRun.Status);
+
+        string aData = Path.Combine(DrawResourcesTests.OcctTestDataDirectory, "brep", "CCH_blendhdp.rle").Replace(Path.DirectorySeparatorChar, '/');
+        foreach (double aScale in new[] { 1.0, 1000.0 })
+        {
+            DrawInterpreter aDI = NewInterpreter();
+            aDI.Eval($"brestore {aData} s");
+            aDI.Eval($"tscale s 0 0 0 {aScale}");
+            aDI.Eval("explode s e");
+            double aRadius = 0.005 * aScale;
+            aDI.Eval($"blend result s {aRadius} s_6");
+            Assert.Contains("seems to be valid", aDI.Eval("checkshape result"), StringComparison.Ordinal);
+            double aMiss = BallMiss(aDI.GetShape("s"), aDI.GetShape("result"), aRadius);
+            Assert.True(aMiss < 2e-4 * aRadius, $"at scale {aScale} the ball misses by {aMiss}");
+        }
+    }
+
+    // The most the ball misses by at 19 by 5 points of each B-spline face of the result that isn't the input's (the walked
+    // fillet's): its centre, along the face's normal on either side, at the radius from the input
+    private static double BallMiss(Shape theInput, Shape theResult, double theRadius)
+    {
+        List<Face> anInputFaces = [.. theInput.AllFaces()];
+        double aWorst = 0;
+        foreach (Face aFace in theResult.AllFaces())
+        {
+            var aSurface = new FaceSurfaceAdaptor(aFace);
+            if (anInputFaces.Any(f => f.IsSame(aFace)) || aSurface.GetType() != SurfaceKind.BSplineSurface)
+            {
+                continue;
+            }
+            for (int a = 1; a < 20; a++)
+            {
+                for (int b = 1; b < 6; b++)
+                {
+                    double u = aSurface.FirstUParameter() + (aSurface.LastUParameter() - aSurface.FirstUParameter()) * a / 20;
+                    double v = aSurface.FirstVParameter() + (aSurface.LastVParameter() - aSurface.FirstVParameter()) * b / 6;
+                    if (new FaceClassifier(aFace, new Point2D(u, v), 1e-7).State() != Containment.In)
+                    {
+                        continue;
+                    }
+                    aSurface.D1(u, v, out Point3D p, out Vector3D du, out Vector3D dv);
+                    Vector3D n = du.Crossed(dv);
+                    n = n.Divided(n.Magnitude).Multiplied(theRadius);
+                    double aMiss = double.MaxValue;
+                    foreach (double aSide in new[] { 1.0, -1.0 })
+                    {
+                        Point3D c = new(p.X + aSide * n.X, p.Y + aSide * n.Y, p.Z + aSide * n.Z);
+                        var aDistance = new DistanceShapeShape(theInput, new MakeVertex(c).Vertex());
+                        Assert.True(aDistance.IsDone);
+                        aMiss = Math.Min(aMiss, Math.Abs(aDistance.Value() - theRadius));
+                    }
+                    aWorst = Math.Max(aWorst, aMiss);
+                }
+            }
+        }
+        return aWorst;
+    }
+
+    /// <summary>
     /// blend/complex/G8 and bug27711_3 name edges by explode number in an earlier result, and the reconstruction's edges
     /// come in another order than OCCT's HBuilder's (decision 1738). Given native's edges by position the port gets
     /// native's area, so the geometry is right and only the numbers differ.
@@ -278,11 +354,11 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         // K3, bug28828_4 pass). Its points at edge ends, overflowing sections and hole-like fillet loops (11203-11206):
         // OK 736, IMPROVEMENT 10, BAD 33, FAILED 20. Every failure is attributed (KnownFailures). Unit 8F's STEP commands:
         // 884 runnable, OK 737. Unit 15W's fillets on the ball (decisions 2157 to 2164): OK 735, as C1, C5, F1, F2, Y6, C8, D1
-        // and A6 fail, each attributed.
+        // and A6 fail, each attributed. Unit 15W2's walk through the point A6's fillet narrows to (decision 31201): OK 736.
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(884, aNew.Count);
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 735, $"{aRuns.Count(r => r.Status == "OK")}");
+        Assert.True(aRuns.Count(r => r.Status == "OK") >= 736, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, Check);
     }
@@ -308,7 +384,6 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         ["blend/simple/Y6"] = "no ball of radius 10 fits the concave cylinder of radius 5 the second fillet runs round; OCCT's folds through its axis (decision 2159)",
         ["blend/simple/C8"] = "the fillet on the ball (0.11 off it before, 2.1e-6 now): its area 9781.91, OCCT's script holds its off-ball 9640.68 (decisions 2157, 2160)",
         ["blend/simple/D1"] = "the fillet on the ball, as C8's: its area 10080.1, OCCT's script holds its off-ball 9940.87 (decisions 2157, 2160)",
-        ["blend/complex/A6"] = "at scale 1 the ball's walk on an edge stops where a face crosses it and the fillet narrows to nothing; open (decision 2163)",
         ["blend/complex/A7"] = "its second fillet, which OCCT fails (its TODO), now builds, valid, its walked faces on the ball; the script expects an area of 0 (decision 2164)",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails (decision 1738)",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
