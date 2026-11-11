@@ -648,6 +648,19 @@ internal sealed partial class ImpImpIntersection
             {
                 return false;
             }
+            if (func.Value(res.Root.Value, out double fAt) && Math.Abs(fAt) > _tol3D)
+            {
+                // Kerf (decision 2204): a parametric tolerance is a distance only on a unit radius. V changes by
+                // up to R per radian, so at R = 5000 a root to 1e-9 can leave the point 2e-6 off the bound it is
+                // then given, past the 3D tolerance; resolve it to the precision of V instead.
+                cfg.XTolerance = 0.0;
+                global::Kerf.Engine.Numerics.Utilities.MathUtils.ScalarResult fine = global::Kerf.Engine.Numerics.Roots.MathRoot.Brent(func, uLo, uHi, cfg);
+                if (fine.Status == global::Kerf.Engine.Numerics.Utilities.MathUtils.Status.OK && fine.Root.HasValue
+                    && func.Value(fine.Root.Value, out double fFine) && Math.Abs(fFine) < Math.Abs(fAt))
+                {
+                    res = fine;
+                }
+            }
             u1Star = res.Root.Value;
             return true;
         }

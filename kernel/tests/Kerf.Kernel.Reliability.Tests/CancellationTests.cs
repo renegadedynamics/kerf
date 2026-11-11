@@ -89,6 +89,9 @@ public class CancellationTests
         Assert.False(Cancellation.Current.CanBeCanceled);
     }
 
+    // The fillet reports no progress, so the cancel comes on a timer: after a quarter of a first run's time, and if the run finished
+    // first (a first run slowed by a loaded machine, or a second one quicker), again after half that, down to a few milliseconds,
+    // each finished run the same as the first. Only a cancel that fell while the fillet ran ends it (decision 2206)
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -98,24 +101,35 @@ public class CancellationTests
         Edge[] edges = [.. plate.AllEdges()];
         var clock = Stopwatch.StartNew();
         double whole = plate.Fillet(edges, 0.1).Value.Shape.IntegrateVolume();
-        TimeSpan took = clock.Elapsed;
+        TimeSpan delay = clock.Elapsed / 4;
 
-        using var source = new CancellationTokenSource();
-        source.CancelAfter(took / 4);
-        Assert.ThrowsAny<OperationCanceledException>(() =>
+        bool stopped = false;
+        for (int attempt = 0; !stopped && attempt < 12; attempt++, delay /= 2)
         {
-            if (byScope)
+            using var source = new CancellationTokenSource(delay);
+            try
             {
-                using (Cancellation.Use(source.Token))
+                Result<Built<Shape>> done;
+                if (byScope)
                 {
-                    plate.Fillet(edges, 0.1);
+                    using (Cancellation.Use(source.Token))
+                    {
+                        done = plate.Fillet(edges, 0.1);
+                    }
                 }
+                else
+                {
+                    done = plate.Fillet(edges, 0.1, cancellationToken: source.Token);
+                }
+                Assert.Equal(whole, done.Value.Shape.IntegrateVolume());
             }
-            else
+            catch (OperationCanceledException)
             {
-                plate.Fillet(edges, 0.1, cancellationToken: source.Token);
+                stopped = true;
             }
-        });
+        }
+
+        Assert.True(stopped, "no cancel fell while the fillet ran");
         Assert.Equal(whole, plate.Fillet(edges, 0.1).Value.Shape.IntegrateVolume());
     }
 

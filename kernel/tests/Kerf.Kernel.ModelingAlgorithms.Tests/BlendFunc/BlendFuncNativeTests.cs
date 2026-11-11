@@ -76,9 +76,11 @@ public class BlendFuncNativeTests
 
     private static bool IsSpine(string theKey) => theKey.Contains("spine", StringComparison.Ordinal);
 
-    // BlendFunc_ConstRad and its inverse, which Kerf changed (decision 2156).
-    private static bool IsConstRad(string theKey) => theKey.StartsWith("case constrad ", StringComparison.Ordinal)
-                                                     || theKey.StartsWith("case constradinv ", StringComparison.Ordinal);
+    // BlendFunc_ConstRad and EvolRad and their inverses, which Kerf changed (decisions 2156, 2215).
+    private static bool IsOnTheBall(string theKey) => theKey.StartsWith("case constrad ", StringComparison.Ordinal)
+                                                      || theKey.StartsWith("case constradinv ", StringComparison.Ordinal)
+                                                      || theKey.StartsWith("case evolrad ", StringComparison.Ordinal)
+                                                      || theKey.StartsWith("case evolradinv ", StringComparison.Ordinal);
 
     // The walking's cases (unit 7K, BRepBlendNativeTests).
     internal static bool IsWalk(string theKey) => theKey.StartsWith("case walk ", StringComparison.Ordinal);
@@ -120,15 +122,16 @@ public class BlendFuncNativeTests
         BlendRecorder aRec = new();
         aRec.RecordFunctions();
         // 5 pairs x (16 ConstRad and EvolRad + 10 chamfers and ruled), 4 restrictions x 3 x 7 inverses, 16 CS; less
-        // ConstRad's 5 x 8 and ConstRadInv's 4 x 3, which take the surfaces' own normals where OCCT projects them into
-        // the plane square to the guide (decision 2156; BlendFuncDerivativeTests checks them)
+        // ConstRad's and EvolRad's 5 x 8 each and their inverses' 4 x 3 each, which take the surfaces' own normals where
+        // OCCT projects them into the plane square to the guide (decisions 2156, 2215; BlendFuncDerivativeTests checks
+        // them)
         Dictionary<string, List<string>> aPort = Split(aRec.Text);
-        foreach (string aKey in aPort.Keys.Where(IsConstRad).ToList())
+        foreach (string aKey in aPort.Keys.Where(IsOnTheBall).ToList())
         {
             aPort.Remove(aKey);
         }
 
-        Compare(aPort, k => !IsWalk(k) && !IsSpine(k) && !IsConstRad(k), 5 * 26 + 4 * 3 * 7 + 16 - 5 * 8 - 4 * 3);
+        Compare(aPort, k => !IsWalk(k) && !IsSpine(k) && !IsOnTheBall(k), 5 * 26 + 4 * 3 * 7 + 16 - 2 * 5 * 8 - 2 * 4 * 3);
     }
 
     [Fact]

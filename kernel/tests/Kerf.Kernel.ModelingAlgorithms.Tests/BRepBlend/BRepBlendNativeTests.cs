@@ -34,7 +34,7 @@ public class BRepBlendNativeTests
 
     // The constant-radius walks whose faces' normals at the contacts leave the plane square to the guide: since
     // decision 2156 their sections are the rolling ball's, where OCCT's are the 2D fillet in that plane, so they
-    // differ from native (planes, whose normals stay in it, and every evolving radius still match bit for bit).
+    // differ from native (planes, whose normals stay in it, still match bit for bit).
     private static readonly string[] THE_BALL_SECTIONS =
     [
         "case walk planecyl 1", "case walk planecyl 2", "case walk planecyl 7", "case walk planecyl 8",
@@ -43,6 +43,8 @@ public class BRepBlendNativeTests
         "case walk firstsection 3", "case walk firstsection 4",
         // SurfRstConstRad's (decision 2158): the same walk to the last few bits
         "case walk surfrst 1 1", "case walk surfrst 1 3", "case walk surfrst 1 5", "case walk surfrst 1 7",
+        // The evolving radius's (decision 2216): the same walks to the last few bits
+        "case walk surfrstevol 1 7", "case walk rstrstevol 1", "case walk rstrstevol 3",
     ];
 
     private static bool IsBallSection(string theKey) => THE_BALL_SECTIONS.Contains(theKey);
@@ -96,13 +98,13 @@ public class BRepBlendNativeTests
     [Fact]
     public void SurfRstLineBuilder_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 4);
+        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 5);
     }
 
     [Fact]
     public void RstRstLineBuilder_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_RSTRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_RSTRSTS.Length * 4);
+        Compare(k => BlendRecorder.THE_RSTRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_RSTRSTS.Length * 4 - 2);
     }
 
     [Fact]
