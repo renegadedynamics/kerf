@@ -47,6 +47,7 @@ internal static partial class ChamferMeet
         private readonly Point3D _origin;
         private readonly Vector3D _normal;
         private double _u, _v;
+        private double _atX = double.NaN, _atY, _atZ, _atRest, _atU, _atV;
 
         public Signed(Surface surface, double u0, double u1, double v0, double v1, double sign, Point3D near, bool carriedOn = false)
         {
@@ -75,6 +76,20 @@ internal static partial class ChamferMeet
         // onto a far part of itself and stay there along a line
         public bool FromCorner { get; init; }
 
+        // Another of the same surface and patch, also from the corner's: the nearest point one has just found for a point
+        // is the other's too
+        public Signed? Shares { get; set; }
+
+        private bool Found(Point3D x, double rest, ref double u, ref double v)
+        {
+            if (_atX != x.X || _atY != x.Y || _atZ != x.Z || _atRest > rest)
+            {
+                return false;
+            }
+            (u, v) = (_atU, _atV);
+            return true;
+        }
+
         // The value at the point; from the corner's, the nearest point may be left once it moves no more than rest
         public double At(Point3D x, double rest = 0)
         {
@@ -85,7 +100,8 @@ internal static partial class ChamferMeet
             double u = _u, v = _v;
             Point3D foot = default;
             Vector3D su = default, sv = default;
-            for (int iteration = 0; iteration < 20; iteration++)
+            bool found = FromCorner && Shares is { } other && other.Found(x, rest, ref u, ref v);
+            for (int iteration = 0; iteration < 20 && !found; iteration++)
             {
                 _surface.D1(u, v, out foot, out su, out sv);
                 var r = new Vector3D(x, foot);
@@ -113,6 +129,10 @@ internal static partial class ChamferMeet
             {
                 (_u, _v) = (u, v);
             }
+            else
+            {
+                (_atX, _atY, _atZ, _atRest, _atU, _atV) = (x.X, x.Y, x.Z, rest, u, v);
+            }
             if (!double.IsNaN(_within))
             {
                 return _within - foot.DistanceTo(x);
@@ -127,7 +147,7 @@ internal static partial class ChamferMeet
     // down to the room the corner has, unit 15U4) a chamfer takes off only what is within its depth of its surface's patch, so
     // that the patch's side carried on without end, which on faces that bend within the box comes back into the input far
     // from the edge, counts for nothing; every nearest point is found from the corner's, so that a point's value doesn't hang
-    // on the points before it; the lines are sampled at a third of the shallowest chamfer's depth, and only where the excess
+    // on the points before it; the lines are sampled at half the shallowest chamfer's depth, and only where the excess
     // can be other than nothing; and it has to be nothing on the box's sides (81 points on each), or the box didn't hold it.
     // The box is as small as that allows, from three of the deepest chamfer's depths up to the room
     private static (double Excess, double Error) CornerExcess(Corner corner, Face[] faces, Edge[] edges, List<Band> bands, double reach, bool tight = false)
@@ -184,7 +204,8 @@ internal static partial class ChamferMeet
                 }
                 shallowest = Math.Min(shallowest, depth);
                 deepest = Math.Max(deepest, depth);
-                within.Add(new Signed(band.Surface, band.EU0, band.EU1, band.EV0, band.EV1, o, (1.05 * depth) + 1e-7) { FromCorner = true });
+                within.Add(new Signed(band.Surface, band.EU0, band.EU1, band.EV0, band.EV1, o, (1.05 * depth) + 1e-7) { FromCorner = true, Shares = past[^1] });
+                past[^1].Shares = within[^1];
             }
             beyond.Add(new Signed(o, Ends(edge).First.IsSame(corner.Vertex) ? t : -t)); // the tangent out of the corner along the edge
         }
@@ -274,7 +295,7 @@ internal static partial class ChamferMeet
         // (two sections), not beyond that edge's plane at the corner (past the chamfer, in no section), or outside a face
         // of the corner that isn't the edge's (a section outside the input). The greatest over the chamfers of the least of
         // those is positive wherever the excess isn't nothing, and each is a distance, so it falls no faster than length
-        int samples = Math.Clamp((int)Math.Ceiling(6 * reach / shallowest), LineSamples, 8 * LineSamples);
+        int samples = Math.Clamp((int)Math.Ceiling(4 * reach / shallowest), LineSamples, 8 * LineSamples);
         double rest = 0.01 * 2 * reach / samples; // a hundredth of a sample: the gate is asked how far, not where
         double Gate(Point3D x)
         {
@@ -313,7 +334,7 @@ internal static partial class ChamferMeet
             }
             return most;
         }
-        return Integrated(o, reach, all, x => Excess(x) - Sections(x), samples, Gate);
+        return Integrated(o, reach, all, x => Excess(x) - Sections(x), samples, Gate, finer: 3);
     }
 
     // The excess at a corner of convex and concave edges (unit 15U3): what its formula holds without its chamfers and not
@@ -392,7 +413,7 @@ internal static partial class ChamferMeet
     // a line: a line is then followed only where it is within a sample of positive, stepping over half of what it lacks
     // elsewhere, and its sign changes are found to 1e-9 of the box
     private static (double Excess, double Error) Integrated(Point3D o, double reach, Signed[] all, Func<Point3D, double> count, int samples = LineSamples,
-                                                            Func<Point3D, double>? gate = null)
+                                                            Func<Point3D, double>? gate = null, int finer = 4)
     {
         // Along the line through (a, b) square to the box's face: the length where the excess is, between its sign changes
         double Line(double a, double b)
@@ -528,7 +549,7 @@ internal static partial class ChamferMeet
             return sum;
         }
 
-        double coarse = Quadrature(2), fine = Quadrature(4);
+        double coarse = Quadrature(2), fine = Quadrature(finer);
         return double.IsNaN(coarse) || double.IsNaN(fine) ? (double.NaN, double.NaN) : (fine, Math.Abs(fine - coarse));
     }
 }
