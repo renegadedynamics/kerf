@@ -41,7 +41,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-mkoffset-").FullName;
     private int myFileNumber;
     private readonly List<string> myDifferences = [];
-    private int myCases, myPerforms, myIdentical, myFreeMasked, myCanonical, myNotDone, myEmpty, myHistory, myHistoryOrder;
+    private int myCases, myPerforms, myIdentical, myFreeMasked, myCanonical, myNotDone, myEmpty, myHistory, myHistoryOrder, myRefused;
 
     public void Dispose()
     {
@@ -208,7 +208,11 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 return;
             }
             bool isDone = aN.IsDone();
-            if (isDone != aP.IsDone)
+            // A deliberate difference (Kerf decision 32601): native gives, done, a parallel that comes nearer the spine
+            // than 0.95 of the offset, and the port refuses it. Native's calls are made as recorded; its parallel is put
+            // to the port's check, and nothing of the port's is compared
+            bool isRefused = isDone && !aP.IsDone && !theSpine.IsOpenResult;
+            if (isDone != aP.IsDone && !isRefused)
             {
                 myDifferences.Add($"{aWhat}: IsDone native {isDone}, port {aP.IsDone}");
                 return;
@@ -220,10 +224,25 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             }
 
             N.TopoDS_Shape aNRes = aN.Shape();
-            Shape aPRes = aP.Shape();
-            string aNT = NativeText(aNRes), aPT = PortText(aPRes);
-            BRepTextDiff aDiff = BRepTextComparison.Compare(aNT, aPT);
-            if (aDiff.IsIdentical)
+            Shape aPRes = isRefused ? new Shape() : aP.Shape();
+            string aNT = NativeText(aNRes), aPT = isRefused ? "" : PortText(aPRes);
+            BRepTextDiff aDiff = isRefused ? default! : BRepTextComparison.Compare(aNT, aPT);
+            if (isRefused)
+            {
+                string aTextFile = NewFile();
+                File.WriteAllText(aTextFile, aNT);
+                Assert.True(BrepTools.Read(out Shape aNP, aTextFile));
+                File.Delete(aTextFile);
+                if (global::Kerf.Engine.Construction.Filling.OffsetWire.ComesNearer(aPIn, aNP, anOffset, theAlt))
+                {
+                    myRefused++;
+                }
+                else
+                {
+                    myDifferences.Add($"{aWhat}: the port refuses a parallel of native's that keeps its distance");
+                }
+            }
+            else if (aDiff.IsIdentical)
             {
                 myIdentical++;
             }
@@ -254,7 +273,10 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             var aNResMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(aNRes, aNResMap);
             IndexedSet<Shape> aPResMap = new(ShapeHasher.Instance);
-            Exploration.MapShapes(aPRes, aPResMap);
+            if (!isRefused)
+            {
+                Exploration.MapShapes(aPRes, aPResMap);
+            }
             if (aNResMap.Extent() <= 1)
             {
                 myEmpty++;
@@ -273,14 +295,20 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     continue;
                 }
                 aNH.Add($"{i}:" + string.Join(",", aN.Generated(aNS).Select(s => aNResMap.FindIndex(s))));
-                aPH.Add($"{i}:" + string.Join(",", aP.Generated(aPInMap[i - 1]).Select(s => (aPResMap.IndexOf(s) + 1))));
+                if (!isRefused)
+                {
+                    aPH.Add($"{i}:" + string.Join(",", aP.Generated(aPInMap[i - 1]).Select(s => (aPResMap.IndexOf(s) + 1))));
+                }
             }
             static string Sorted(string theEntry)
             {
                 string[] aParts = theEntry.Split(':');
                 return aParts[0] + ":" + string.Join(",", aParts[1].Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).Order());
             }
-            if (aNH.SequenceEqual(aPH))
+            if (isRefused)
+            {
+            }
+            else if (aNH.SequenceEqual(aPH))
             {
                 myHistory++;
             }
@@ -307,7 +335,8 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         output.WriteLine($"{myCases} cases, {myPerforms} offsets; {myNotDone} not done on both sides; "
                          + $"results: {myIdentical} identical BRep text ({myFreeMasked} with the Free column masked), "
                          + $"{myCanonical} canonically identical, {myEmpty} empty; Generated identical: {myHistory} "
-                         + $"({myHistoryOrder} in another order); differences: {myDifferences.Count}");
+                         + $"({myHistoryOrder} in another order); refused by the port, native's coming nearer the spine "
+                         + $"than 0.95 of the offset: {myRefused}; differences: {myDifferences.Count}");
         foreach (string aDiff in myDifferences.Take(30))
         {
             output.WriteLine("  " + aDiff);

@@ -403,6 +403,46 @@ public class BRepFill_OffsetWireTests
     }
 
     [Theory]
+    [InlineData("case_3_wire2.brep", 0.025)]
+    [InlineData("offset_wire_034.brep", 0.025)]
+    [InlineData("offset_wire_021.brep", -0.005)]
+    public void An_offset_that_comes_nearer_the_wire_than_its_distance_is_refused(string theFile, double thePart)
+    {
+        // tests/offset/wire_unclosed_outside_0_025/B4 and B3 and wire_closed_inside_0_005/B7: each offset was a success
+        // with edges across the wire's own offset, as near as 2.35 and 10.08 to the wire for 11.24, and 0.10 for 0.93 (two
+        // are OCCT's known problems, a face on the result faulty; B3 passed OCCT's script). A parallel with a point nearer
+        // the spine than 0.95 of the offset is no success, whatever went wrong in making it (decisions 1742, 32601)
+        string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                                        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", theFile);
+        if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
+        {
+            return;
+        }
+        MakeWireOffset anOffset = new();
+        anOffset.Init(global::Kerf.Geometry.JoinKind.Arc);
+        anOffset.AddWire(ShapeCasts.Wire(aShape));
+        anOffset.Perform(thePart * Length(aShape));
+        Assert.False(anOffset.IsDone);
+    }
+
+    [Theory]
+    [InlineData(global::Kerf.Geometry.JoinKind.Arc, -2.0, 0.0, 24.0)]
+    [InlineData(global::Kerf.Geometry.JoinKind.Arc, -2.0, 7.0, 24.0)]
+    [InlineData(global::Kerf.Geometry.JoinKind.Arc, 2.0, 7.0, 40.0 + 4.0 * Math.PI)]
+    [InlineData(global::Kerf.Geometry.JoinKind.Intersection, 2.0, 0.0, 56.0)]
+    [InlineData(global::Kerf.Geometry.JoinKind.Intersection, 2.0, -3.0, 56.0)]
+    public void An_offset_at_its_distance_is_not_refused_at_an_altitude_or_with_sharp_corners(global::Kerf.Geometry.JoinKind theJoin, double theOffset,
+        double theAltitude, double theLength)
+    {
+        // The check of decision 32601 measures in space: a parallel at an altitude is that much further from the spine,
+        // and a sharp corner is further than the offset, never nearer
+        MakeWireOffset anOffset = new(Square(), theJoin);
+        anOffset.Perform(theOffset, theAltitude);
+        Assert.True(anOffset.IsDone);
+        Assert.Equal(theLength, Length(anOffset.Shape()), 1.0e-9);
+    }
+
+    [Theory]
     [InlineData(1, 1)]
     [InlineData(3, 9)]
     [InlineData(5, 25)]

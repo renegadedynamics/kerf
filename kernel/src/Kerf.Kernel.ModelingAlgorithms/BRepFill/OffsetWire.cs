@@ -424,6 +424,8 @@ internal sealed class OffsetWire
     /// <exception cref="ConstructionErrorException">A closed result is expected and a parallel wire isn't closed.</exception>
     public void Perform(double offset, double alt = 0.0)
     {
+        // Kerf: whether the parallel has been put to ComesNearer already (the finer polyline's, when it stands)
+        bool keptItsDistance = false;
         try
         {
             _callGen = false;
@@ -452,13 +454,15 @@ internal sealed class OffsetWire
                 bool done;
                 try
                 {
-                    done = PerformOnPolylines(badEdges, offset, alt, .001) && (_isOpenResult || AllWiresClosed(_shape));
+                    done = PerformOnPolylines(badEdges, offset, alt, .001)
+                           && (_isOpenResult || (AllWiresClosed(_shape) && !ComesNearer(_spine, _shape, offset, alt)));
                 }
                 catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
                                                     && exception is not ImmutableObjectException)
                 {
                     done = false;
                 }
+                keptItsDistance = done;
                 if (!done)
                 {
                     _mapSpine = mapSpine;
@@ -498,6 +502,99 @@ internal sealed class OffsetWire
                 }
             }
         }
+
+        // Kerf: a parallel that comes nearer the spine than its distance is wrong, whatever the medial axis did to
+        // give it, and is no success (decisions 1742, 32601). An open result is one side of an open wire only, and may
+        // pass nearer the other side of another part of it: it isn't put to the check
+        if (!keptItsDistance && !_isOpenResult && !_shape.IsNull && ComesNearer(_spine, _shape, offset, alt))
+        {
+            _shape.Nullify();
+            _isDone = false;
+            throw new ConstructionErrorException("Offset wire comes nearer the spine than the offset.");
+        }
+    }
+
+    // Kerf's (OCCT has no such check). The least a point of a parallel may be from the spine, as a part of the offset:
+    // a polyline standing in for a curve (CheckBadEdges) is up to 1% of the offset inside it by design, 1.3% measured,
+    // so 5% short is no polyline's doing
+    private const double LeastOfTheOffset = 0.95;
+
+    // Whether a point of the parallel is nearer the spine than LeastOfTheOffset of the offset: three points inside each
+    // of its edges (the quarter points), against each edge of the spine whose box is that near. Independent of the
+    // medial axis and of the trimming: a distance from a point to a curve
+    internal static bool ComesNearer(in Shape spine, in Shape parallel, double offset, double alt)
+    {
+        double least = LeastOfTheOffset * Math.Abs(offset);
+        if (parallel.IsNull || !(least > global::Kerf.Engine.Foundation.Precision.Confusion()))
+        {
+            return false;
+        }
+        // The parallel is at the altitude alt above the spine's plane
+        double leastSquare = least * least + alt * alt;
+        least = Math.Sqrt(leastSquare);
+
+        List<(Kerf.Engine.Extrema.CurvePointExtrema Extrema, Kerf.Engine.Geometry.Bounds.Box Box)> spineEdges = [];
+        for (Explorer exp = new(spine, ShapeType.Edge); exp.More(); exp.Next())
+        {
+            Edge edge = ShapeCasts.Edge(exp.Current());
+            if (!Tool.IsGeometric(edge))
+            {
+                continue;
+            }
+            EdgeCurveAdaptor curve = new(edge);
+            Tool.Range(edge, out double first, out double last);
+            Kerf.Engine.Extrema.CurvePointExtrema extrema = new();
+            extrema.Initialize(curve, first, last, Math.Max(curve.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
+                global::Kerf.Engine.Foundation.Precision.PConfusion()));
+            Kerf.Engine.Geometry.Bounds.Box box = new();
+            Kerf.Engine.Measurement.Bounds.Add(edge, ref box);
+            if (!box.IsVoid)
+            {
+                spineEdges.Add((extrema, box));
+            }
+        }
+
+        for (Explorer exp = new(parallel, ShapeType.Edge); exp.More(); exp.Next())
+        {
+            Edge edge = ShapeCasts.Edge(exp.Current());
+            if (!Tool.IsGeometric(edge))
+            {
+                continue;
+            }
+            EdgeCurveAdaptor curve = new(edge);
+            Tool.Range(edge, out double first, out double last);
+            for (int i = 1; i <= 3; i++)
+            {
+                Point3D point = curve.Value(first + (last - first) * i / 4.0);
+                foreach ((Kerf.Engine.Extrema.CurvePointExtrema extrema, Kerf.Engine.Geometry.Bounds.Box box) in spineEdges)
+                {
+                    box.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
+                    double dx = Math.Max(0.0, Math.Max(xmin - point.X, point.X - xmax));
+                    double dy = Math.Max(0.0, Math.Max(ymin - point.Y, point.Y - ymax));
+                    double dz = Math.Max(0.0, Math.Max(zmin - point.Z, point.Z - zmax));
+                    if (dx * dx + dy * dy + dz * dz >= leastSquare)
+                    {
+                        continue;
+                    }
+                    extrema.Perform(point);
+                    if (!extrema.IsDone)
+                    {
+                        continue;
+                    }
+                    extrema.TrimmedSquareDistances(out double atFirst, out double atLast, out _, out _);
+                    double square = Math.Min(atFirst, atLast);
+                    for (int n = 1; n <= extrema.ExtCount; n++)
+                    {
+                        square = Math.Min(square, extrema.SquareDistance(n));
+                    }
+                    if (square < leastSquare)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     // The parallel of the spine with the bad edges replaced by polylines of a deflection of `deflection` times the offset;
