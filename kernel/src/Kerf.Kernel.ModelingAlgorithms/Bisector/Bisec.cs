@@ -59,11 +59,11 @@ internal sealed class Bisec
 
         if (type1 == typeof(TrimmedCurve2D))
         {
-            type1 = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve().GetType();
+            type1 = ((TrimmedCurve2D)afirstcurve).BasisCurveToRead().GetType();
         }
         if (type2 == typeof(TrimmedCurve2D))
         {
-            type2 = ((TrimmedCurve2D)asecondcurve).ChangeBasisCurve().GetType();
+            type2 = ((TrimmedCurve2D)asecondcurve).BasisCurveToRead().GetType();
         }
 
         Curve2D afirstcurve1 = afirstcurve;
@@ -74,7 +74,7 @@ internal sealed class Bisec
             BSplineCurve2D bs;
             if (afirstcurve.GetType() == typeof(TrimmedCurve2D))
             {
-                bs = (BSplineCurve2D)((TrimmedCurve2D)afirstcurve).ChangeBasisCurve();
+                bs = (BSplineCurve2D)((TrimmedCurve2D)afirstcurve).BasisCurveToRead();
             }
             else
             {
@@ -95,7 +95,7 @@ internal sealed class Bisec
             BSplineCurve2D bs;
             if (asecondcurve.GetType() == typeof(TrimmedCurve2D))
             {
-                bs = (BSplineCurve2D)((TrimmedCurve2D)asecondcurve).ChangeBasisCurve();
+                bs = (BSplineCurve2D)((TrimmedCurve2D)asecondcurve).BasisCurveToRead();
             }
             else
             {
@@ -241,7 +241,7 @@ internal sealed class Bisec
 
         if (type1 == typeof(TrimmedCurve2D))
         {
-            type1 = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve().GetType();
+            type1 = ((TrimmedCurve2D)afirstcurve).BasisCurveToRead().GetType();
         }
 
         if (type1 == typeof(CircleCurve2D) || type1 == typeof(LineCurve2D))
@@ -371,7 +371,7 @@ internal sealed class Bisec
 
         if (type1 == typeof(TrimmedCurve2D))
         {
-            type1 = ((TrimmedCurve2D)asecondcurve).ChangeBasisCurve().GetType();
+            type1 = ((TrimmedCurve2D)asecondcurve).BasisCurveToRead().GetType();
         }
 
         if (type1 == typeof(CircleCurve2D) || type1 == typeof(LineCurve2D))
