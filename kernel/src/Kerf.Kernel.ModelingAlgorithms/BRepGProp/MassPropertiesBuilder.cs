@@ -93,7 +93,7 @@ internal static class MassPropertiesBuilder
     /// The volume the faces of <paramref name="s"/> bound, taken about <paramref name="reference"/> and integrated to the relative
     /// error <paramref name="eps"/> of each face's contribution, as the mass-only path of VolumeProperties does. Faces that close
     /// give the same volume about any point; faces that don't, a volume that depends on it (unit 15AH). A gap inside a vertex's
-    /// tolerance is closed first, as the public measurements close it (<see cref="GapClosures"/>, decision 31802), so what's
+    /// tolerance is closed first, as the public measurements close it (<see cref="GapClosures"/>, decision 2258), so what's
     /// left is a boundary open where no vertex covers it, or a face missing.
     /// </summary>
     internal static double VolumeAbout(in Shape s, in Point3D reference, double eps)
@@ -323,7 +323,7 @@ internal static class MassPropertiesBuilder
     /// <param name="skipShared">Count a face met again (IsSame) once.</param>
     /// <param name="useTriangulation">Measure faces with a triangulation on the triangulation.</param>
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
-    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
+    /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
     public static void SurfaceProperties(in Shape s,
                                          Properties sProps,
                                          bool skipShared = false,
@@ -356,7 +356,7 @@ internal static class MassPropertiesBuilder
     /// <param name="massOnly">Only the area is wanted, so <see cref="Properties.Mass"/> is all that means anything afterwards,
     /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
-    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
+    /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double SurfaceProperties(in Shape s, Properties sProps, double eps, bool skipShared = false, bool massOnly = false,
                                            bool closeGaps = false)
@@ -813,7 +813,7 @@ internal static class MassPropertiesBuilder
     /// <param name="skipShared">Count a face met again (IsSame, with the same orientation) or a shell met again once.</param>
     /// <param name="useTriangulation">Measure faces with a triangulation on the triangulation.</param>
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
-    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
+    /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
     public static void VolumeProperties(in Shape s,
                                         Properties vProps,
                                         bool onlyClosed = false,
@@ -872,7 +872,7 @@ internal static class MassPropertiesBuilder
     /// <param name="massOnly">Only the volume is wanted, so <see cref="Properties.Mass"/> is all that means anything afterwards,
     /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
-    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
+    /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double VolumeProperties(in Shape s,
                                           Properties vProps,

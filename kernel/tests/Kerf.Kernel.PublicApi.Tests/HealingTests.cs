@@ -126,7 +126,7 @@ public class HealingTests
     // other from the same sphere turned about its axis. OCCT's unify leaves the turned half's pole edge without a curve on the
     // first's surface and the merged face is invalid; decision 1816 then left the faces apart, three of them, or four where the
     // turned sphere's seam falls inside its half and the Boolean has split it there (123, 180, 200). The pole edge's curve is
-    // now moved with the others and each curve brought into the surface's one period, so the cap is one face (decision 31806)
+    // now moved with the others and each curve brought into the surface's one period, so the cap is one face (decision 2262)
     [Theory]
     [InlineData(0)]
     [InlineData(10)]

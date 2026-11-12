@@ -10,7 +10,7 @@ using static Kerf.Topology.Orientation;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>
-/// The arcs that close a face's boundary in its parameters where it's open inside a vertex's tolerance (decision 31801).
+/// The arcs that close a face's boundary in its parameters where it's open inside a vertex's tolerance (decision 2257).
 /// </summary>
 /// <remarks>
 /// A vertex whose tolerance has grown covers the ends of the edges that meet at it, which is all validity asks; their curves

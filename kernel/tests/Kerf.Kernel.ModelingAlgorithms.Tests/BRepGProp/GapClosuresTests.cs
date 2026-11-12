@@ -14,7 +14,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// A face whose boundary is open in its parameters inside a vertex's tolerance is closed there, straight, where the public
-/// measurements read it (<see cref="GapClosures"/>, decision 31801); OCCT's own reading, which the corpus and the oracle
+/// measurements read it (<see cref="GapClosures"/>, decision 2257); OCCT's own reading, which the corpus and the oracle
 /// compare, is left as it is.
 /// </summary>
 public class GapClosuresTests

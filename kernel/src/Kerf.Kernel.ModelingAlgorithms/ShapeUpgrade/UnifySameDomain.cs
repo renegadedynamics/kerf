@@ -745,7 +745,7 @@ internal partial class UnifySameDomain : Transient
                 }
                 seamFound = useamFound || vseamFound;
 
-                // Kerf (decision 31806): the edge has two curves on its own face's surface, which is the reference surface placed
+                // Kerf (decision 2262): the edge has two curves on its own face's surface, which is the reference surface placed
                 // differently. If that surface's seam was turned off the reference surface's, the edge has one curve there, and
                 // what follows, which reads the two to tell a U seam from a V seam, took their sameness for a V seam and
                 // approximated a sphere by a B-spline periodic in V. Only an edge with two curves on the reference face is asked.

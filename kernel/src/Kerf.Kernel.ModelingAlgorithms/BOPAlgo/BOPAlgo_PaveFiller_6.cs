@@ -2296,7 +2296,7 @@ internal partial class PaveFiller
     // grown over the first (decision 1923) then stops short of the curve's end, which got a vertex of its own a tolerance
     // away, a stub of the curve between them, and two faces thinner than the tolerance: invalid. Not OCCT's: a curve that ends
     // within twice the tolerance of the last vertex put on it, and within the stretch over which the edge that vertex was grown
-    // for touches the face, ends at that vertex, which grows to cover the end (decision 31804). Any other end is left to
+    // for touches the face, ends at that vertex, which grows to cover the end (decision 2260). Any other end is left to
     // OCCT's steps, which give it a vertex of its own.
     private const double EndWithinTolerances = 2.0;
 

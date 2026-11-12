@@ -383,7 +383,7 @@ public class BooleanVolumeTests
     // The same at radius 0.1, 2e-7 off: the cut keeps its corner, and its faces' boundaries are open in their parameters, by
     // 0.0020694 about one corner of its box and 0.0020677 about the other (8e-4 of it) as OCCT reads them, which since unit 15AH's
     // second slice was a failure. The gaps are inside a vertex's tolerance, and read closed there the cut is right, so it's a
-    // success again and its volume the geometry's (decision 31802)
+    // success again and its volume the geometry's (decision 2258)
     [Fact]
     public void A_cut_of_equal_radius_nearly_crossing_is_right_read_through_the_vertex_that_covers_its_gaps()
     {
@@ -469,7 +469,7 @@ public class BooleanVolumeTests
     // of where it would touch, and one vertex covers both, its tolerance grown to reach them (decision 1923). The faces' curves
     // end at the crossings, so each face's boundary in its parameters has a gap there as long as the vertex is wide, which the
     // volume read as part of the face missing: 1e-5 of the cut at radius 500 and 2e-4 at radius 5, valid and a success. The
-    // gap is closed where the volume is read, straight in the parameters, as the mesher has it (decision 31801). The tool is
+    // gap is closed where the volume is read, straight in the parameters, as the mesher has it (decision 2257). The tool is
     // turned the other way from Crossing's, so that its face inside the cylinder ends at its seam and the gap there is half a turn
     // from where the face's integrals start; turned Crossing's way the gap is where they start and leaves nothing out
     [Theory]
@@ -494,7 +494,7 @@ public class BooleanVolumeTests
     // and the face and 4.6e-4 by the section's walk. The seam vertex grown over the first stopped 8e-5 short of the curve's
     // end, which got a vertex of its own, with a stub of the curve and two faces thinner than a tolerance between them:
     // `Unorientable shape`, the cut, the common and the fuse each a failure. A curve that ends within twice the tolerance of the
-    // last vertex put on it now ends at that vertex (decision 31804)
+    // last vertex put on it now ends at that vertex (decision 2260)
     [Fact]
     public void Very_large_equal_cylinders_a_few_units_in_the_last_place_inside_a_touch_cut_common_and_fuse()
     {
@@ -531,7 +531,7 @@ public class BooleanVolumeTests
     // result, which fails where nothing made again closes them (the owner, 14 November 2026); this common, made again with a
     // fuzzy value, came out right and closed, and since decision 2204 the first common is right. The result as made is a fixture
     // (Fixtures/cylinders-open-common-*.brep), so the check is held to it
-    // Since decision 31802 the fixture is no longer wrong: the gap is inside the tolerance of the vertex it starts from, 1.732, and
+    // Since decision 2258 the fixture is no longer wrong: the gap is inside the tolerance of the vertex it starts from, 1.732, and
     // closed there, straight in the face's parameters, the common as made is 8e-9 from the geometry's, so the check passes it
     [Fact]
     public void A_common_whose_faces_were_open_inside_a_vertex_is_right_read_through_it_and_now_made_closed()
@@ -549,7 +549,7 @@ public class BooleanVolumeTests
     // one corner of its box and 69.1626 about the other, and made the other way round and with fuzzy values they still don't
     // (`Unable to orient the shape`), so since unit 15AH's second slice the fuse failed. Its gaps are inside its vertices'
     // tolerances too: read closed there it is 1.8e-7 from its inputs' volumes less their common part, and 1.3e-8 from the two
-    // cuts and the common, so it's a success (decision 31802)
+    // cuts and the common, so it's a success (decision 2258)
     [Fact]
     public void A_fuse_whose_faces_are_open_inside_its_vertices_is_right_read_through_them()
     {

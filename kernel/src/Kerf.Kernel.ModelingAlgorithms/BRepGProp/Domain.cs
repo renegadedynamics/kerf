@@ -15,7 +15,7 @@ namespace Kerf.Engine.Measurement;
 /// the first, in an undigested order.
 /// </summary>
 /// <remarks>
-/// A working object, as OCCT's (an explorer): its iteration methods change it. Kerf (decision 31801): a domain made to
+/// A working object, as OCCT's (an explorer): its iteration methods change it. Kerf (decision 2257): a domain made to
 /// close gaps gives, after the face's edges, an arc across each gap its boundary has inside a vertex's tolerance
 /// (<see cref="GapClosures"/>); OCCT's has none, and neither has one made without.
 /// </remarks>

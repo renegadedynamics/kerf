@@ -1027,7 +1027,7 @@ internal partial class UnifySameDomain
             }
         }
 
-        // Kerf (decision 31806): where the faces to unify hold the reference surface's own seam, nothing of the merged face
+        // Kerf (decision 2262): where the faces to unify hold the reference surface's own seam, nothing of the merged face
         // can lie across it, so each moved curve is brought into the surface's one period; OCCT 8.0.1 leaves it wherever the
         // turn put it, a period away from its neighbours' (OCCT #1573 at 180 degrees). uInside is the U of one edge of this
         // face clear of the seam, which says on which side of the seam an edge along it belongs.
@@ -1067,7 +1067,7 @@ internal partial class UnifySameDomain
             Edge edge = ShapeCasts.Edge(explo.Current());
             // OCCT 8.0.1 leaves out every degenerated edge of a face whose surface is placed differently, so a sphere's pole
             // edge has no curve on the reference surface and the merged face is invalid (OCCT #1573). About the same axis the
-            // pole is the reference surface's pole too, and its edge's curve moves as the others do (decision 31806).
+            // pole is the reference surface's pole too, and its edge's curve moves as the others do (decision 2262).
             if (Tool.Degenerated(edge) && toModify && !(sameAxis && movePoles))
             {
                 continue;

@@ -475,7 +475,7 @@ internal partial class PaveFiller
                                         UpdateVertex(nV[j], distPP);
                                         _vertsToAvoidExtension.Add(nV[j]);
                                         // What the touch spans is how far a section's curve may end from this vertex and
-                                        // still end at it (decision 31804)
+                                        // still end at it (decision 2260)
                                         if (!_touchSpans.TryGetValue(nV[j], out double widest) || span > widest)
                                         {
                                             _touchSpans[nV[j]] = span;
