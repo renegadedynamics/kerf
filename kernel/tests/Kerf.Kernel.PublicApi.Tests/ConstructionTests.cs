@@ -272,6 +272,40 @@ public class ConstructionTests
         KernelAssert.Throws<ArgumentException>(() => Sweeps.Sweep(profile, spine, new SweepOptions { Frame = SweepFrame.Binormal }));
     }
 
+    // OCCT #304 and #302 (decision 34006): FreeCAD wrote the profile's vertex with a tolerance of 2e8; the sweep made
+    // its two ends one vertex and threw from BuildEdge, saying nothing of why. It now refuses the profile and says so,
+    // and the same profile with a sane tolerance sweeps into the solid it should
+    [Fact]
+    public void A_sweep_refuses_a_profile_whose_tolerance_is_past_its_size()
+    {
+        Point3D[] poles =
+        [
+            new(229.056446632, 196.610742917, 211.513), new(199.755909066, 166.946766054, 211.513),
+            new(150.934005737, 117.519287109, 211.513000488), new(167.296920776, 120.491096497, 215.253005981),
+            new(109.373835318, 98.0903250257, 215.253), new(57.488822937, 78.0246734619, 215.253005981),
+        ];
+        Wire spine = Wire.FromEdges([Edge.FromCurve(new BezierCurve3D(poles)).Value]).Value;
+        var frame = new Frame3D(poles[0], new Direction3D(new Vector3D(poles[0], poles[1])));
+        Wire profile = Wire.FromEdges([Edge.Circle(new Circle3D(frame, 7.275)).Value]).Value;
+        Built<Shape> tube = Sweeps.Sweep(profile, spine).Value;
+        Assert.Equal(ShapeType.Solid, tube.Shape.Type);
+        double volume = Kerf.Measurement.MeasureOperations.IntegrateVolume(tube.Shape);
+        Assert.True(volume > 0.99 * Math.PI * 7.275 * 7.275 * 211.5, $"volume {volume}");
+
+        // the profile as FreeCAD wrote it: the same circle, its vertex's tolerance 198472167.324529
+        using var stream = new MemoryStream();
+        Assert.True(Kerf.Exchange.Brep.Write(profile, stream).IsSuccess);
+        string text = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+        int vertex = text.IndexOf("\nVe\n", StringComparison.Ordinal);
+        int line = text.IndexOf('\n', vertex + 4);
+        text = text[..(vertex + 4)] + "198472167.324529" + text[line..];
+        Shape faulty = Kerf.Exchange.Brep.Read(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(text))).Value;
+        Result<Built<Shape>> refused = Sweeps.Sweep(faulty, spine);
+        Assert.False(refused.IsSuccess);
+        Assert.Equal(DiagnosticCode.InvalidInput, refused.Error!.Code);
+        Assert.Contains("tolerance of 1.98E+08", refused.Error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_loft_through_sections_and_its_failure()
     {
