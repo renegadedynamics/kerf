@@ -2896,7 +2896,7 @@ internal sealed class Evolved
         Curve2D c2d = Tool.CurveOnSurface(e, F, out double f, out double l)!;
         ct2d = new TrimmedCurve2D(c2d, f, l);
 
-        if (ct2d.ChangeBasisCurve() is CircleCurve2D && Tool.IsClosed(e))
+        if (ct2d.BasisCurveToRead() is CircleCurve2D && Tool.IsClosed(e))
         {
             //---------------------------
             // Cut closed circle.

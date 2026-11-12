@@ -45,7 +45,33 @@ public class BRepBlendNativeTests
         "case walk surfrst 1 1", "case walk surfrst 1 3", "case walk surfrst 1 5", "case walk surfrst 1 7",
         // The evolving radius's (decision 2216): the same walks to the last few bits
         "case walk surfrstevol 1 7", "case walk rstrstevol 1", "case walk rstrstevol 3",
+        // The evolving radius between two planes (unit 15AK): the same walk bit for bit, its sections the envelope's
+        // circles, square to the path of the ball's centre, where OCCT's are in the plane square to the guide
+        "case walk planeplaneevol 1", "case walk planeplaneevol 2",
+        "case walk surfrstevol 1 1", "case walk surfrstevol 1 3", "case walk surfrstevol 1 5",
     ];
+
+    private static readonly string[] THE_ENVELOPES =
+    [
+        "case walk planeplaneevol 1", "case walk planeplaneevol 2",
+        "case walk surfrstevol 1 1", "case walk surfrstevol 1 3", "case walk surfrstevol 1 5",
+    ];
+
+    [Fact]
+    public void Walking_TheEnvelopesContactsAreNativesBitForBit()
+    {
+        // Unit 15AK: the envelope's circle goes through the ball's contacts, so the walk (its points, its ends and their
+        // transitions) is native's to the bit; the sections' size and the approximated surface are the envelope's.
+        Dictionary<string, List<string>> aNative = BlendFuncNativeTests.Recording;
+        foreach (string aKey in THE_ENVELOPES)
+        {
+            List<string> aN = aNative[aKey], aP = thePort.Value[aKey];
+            int aState = aN.FindIndex(l => l.StartsWith("funcstate ", StringComparison.Ordinal));
+            Assert.True(aState >= 12, aKey);
+            Assert.Equal(aN.Take(aState), aP.Take(aState));
+            Assert.NotEqual(aN[aState], aP[aState]);
+        }
+    }
 
     private static bool IsBallSection(string theKey) => THE_BALL_SECTIONS.Contains(theKey);
 
@@ -80,7 +106,7 @@ public class BRepBlendNativeTests
     [Fact]
     public void Walking_SurfSurf_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_WALKS.Any(w => Is(k, w.Name)), BlendRecorder.THE_WALKS.Length * 8 - 12);
+        Compare(k => BlendRecorder.THE_WALKS.Any(w => Is(k, w.Name)), BlendRecorder.THE_WALKS.Length * 8 - 14);
     }
 
     [Fact]
@@ -98,7 +124,7 @@ public class BRepBlendNativeTests
     [Fact]
     public void SurfRstLineBuilder_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 5);
+        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 8);
     }
 
     [Fact]

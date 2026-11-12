@@ -248,7 +248,7 @@ internal sealed class BisecAna : BisectorCurve
 
         if (type1 == typeof(TrimmedCurve2D))
         {
-            curveF = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve();
+            curveF = ((TrimmedCurve2D)afirstcurve).BasisCurveToRead();
         }
         else
         {
@@ -257,7 +257,7 @@ internal sealed class BisecAna : BisectorCurve
 
         if (type2 == typeof(TrimmedCurve2D))
         {
-            curveE = ((TrimmedCurve2D)asecondcurve).ChangeBasisCurve();
+            curveE = ((TrimmedCurve2D)asecondcurve).BasisCurveToRead();
         }
         else
         {
@@ -877,7 +877,7 @@ internal sealed class BisecAna : BisectorCurve
 
         if (firstCurveType == typeof(TrimmedCurve2D))
         {
-            curve = ((TrimmedCurve2D)afirstcurve).ChangeBasisCurve();
+            curve = ((TrimmedCurve2D)afirstcurve).BasisCurveToRead();
         }
         else
         {

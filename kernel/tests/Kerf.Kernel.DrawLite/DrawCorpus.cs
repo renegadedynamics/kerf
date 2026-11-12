@@ -376,6 +376,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
     private static readonly string[] FinerOffsetPolylineCases =
     [
         "offset/wire_closed_inside_0_025/D2", "offset/wire_closed_inside_0_075/C5", "offset/wire_closed_inside_0_075/C6",
+        "offset/wire_closed_inside_0_075/C8",
         "offset/wire_closed_outside_0_005/I8", "offset/wire_closed_outside_0_075/A4", "offset/wire_closed_outside_0_075/A5",
         "offset/wire_unclosed_outside_0_005/B6", "offset/wire_unclosed_outside_0_025/A2", "offset/wire_unclosed_outside_0_025/A3",
         "offset/wire_unclosed_outside_0_025/B2", "offset/wire_unclosed_outside_0_025/B3", "offset/wire_unclosed_outside_0_025/B6",
@@ -413,6 +414,34 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                                             theLog => theLog.Contains("is equal to the second argument", StringComparison.Ordinal)
                                                                       && theLog.Contains("The length tan1_2 is 376.991118543385", StringComparison.Ordinal)
                                                                       && !theLog.Contains("circle: tan1_3", StringComparison.Ordinal)),
+            // OCCT's script holds the figures of OCCT's own result, which crosses itself (its TODO OCC24255) and comes
+            // within 5.96 of the wire it's 9.73 from: the finer polyline's medial axis now ends (decision 2265), and its
+            // offset is valid, shorter and of 18 edges. The length and the counts are the only errors, and nothing is faulty
+            // (the script's own TODO line has the word)
+            ["offset/wire_closed_inside_0_025/G4"] = ("the offset is right where OCCT's crosses itself (TODO OCC24255): 281.771 and 18 edges for the script's 291.991 and 20 (decision 2265)",
+                                                      theLog =>
+                                                      {
+                                                          string[] anErrors = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("Error", StringComparison.Ordinal))];
+                                                          return anErrors.Length == 3 && anErrors.Count(l => OffsetCountError.IsMatch(l)) == 2
+                                                                 && anErrors.Contains("Error : The length of result shape is 281.771, expected 291.991")
+                                                                 && theLog.Contains("This shape seems to be valid", StringComparison.Ordinal)
+                                                                 && !theLog.Split('\n').Any(l => l.StartsWith("Faulty", StringComparison.Ordinal))
+                                                                 && !theLog.Contains("has self-intersection", StringComparison.Ordinal);
+                                                      }),
+            // OCCT can't build it (its TODO OCC23748) and its script's figures, 428.734 in two wires, are longer than the
+            // wire offset inwards: the medial axis now ends (decision 2265), and the offset is one valid wire, 29.18 from
+            // the wire all along and all of it there. The length and the three counts are the only errors
+            ["offset/wire_closed_inside_0_075/G4"] = ("built, and right, where OCCT fails (TODO OCC23748): 125.03 in one wire of 15 edges for the script's 428.734 in two of 18 (decision 2265)",
+                                                      theLog =>
+                                                      {
+                                                          string[] anErrors = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("Error", StringComparison.Ordinal))];
+                                                          return anErrors.Length == 4 && anErrors.Count(l => OffsetCountError.IsMatch(l)) == 2
+                                                                 && anErrors.Contains("Error : The length of result shape is 125.03, expected 428.734")
+                                                                 && anErrors.Contains("Error : The resulting shape is WRONG because it must contain 2 wires instead of 1")
+                                                                 && theLog.Contains("This shape seems to be valid", StringComparison.Ordinal)
+                                                                 && !theLog.Split('\n').Any(l => l.StartsWith("Faulty", StringComparison.Ordinal))
+                                                                 && !theLog.Contains("has self-intersection", StringComparison.Ordinal);
+                                                      }),
             // OCCT's script holds the 1.5e-7 of a walked tangency (it's about big tolerances): a sphere of a pipe's minor
             // radius is analytic now, and its curve exact (decision 1818)
             ["lowalgos/intss/bug26684_1"] = ("a sphere touching a torus along a circle is analytic (decision 1818)",
