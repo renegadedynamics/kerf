@@ -11,9 +11,8 @@ internal static class MassReferenceCases
 {
     public static readonly IReadOnlyDictionary<string, string[]> Figures = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
-        // B4, F1 and F4 at Kerf's figures since its evolving fillets are the envelopes of their balls (unit 15AK: 11734.1, which
-        // is OCCT's, 76962 and 49499.6 before, on the balls' great circles, decision 2217; 76963.4 and 49513.7 before that)
-        ["blend/buildevol/B4"] = ["The area of result shape is 11859.9"],
+        // F1 and F4 at Kerf's figures since its evolving fillets are the envelopes of their balls (unit 15AK: 76962 and
+        // 49499.6 before, on the balls' great circles, decision 2217; 76963.4 and 49513.7 before that)
         ["blend/buildevol/F1"] = ["The area of result shape is 76963.2"],
         ["blend/buildevol/F4"] = ["The area of result shape is 49558.1"],
         // J6 and J8 at Kerf's figures since its fillets are on the rolling ball (decision 2157: 77933.5 and 51088.7 before)

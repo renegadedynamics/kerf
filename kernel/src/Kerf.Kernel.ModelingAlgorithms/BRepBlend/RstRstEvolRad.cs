@@ -19,7 +19,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// variables are the parameters on the two restrictions.
 /// </summary>
 /// <remarks>A working object (decision 21): it caches its last solution, which the walkers read.</remarks>
-internal class RstRstEvolRad : RstRstFunction
+internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
 {
     private readonly SurfaceAdaptorBase _surf1;
     private readonly SurfaceAdaptorBase _surf2;
@@ -405,6 +405,107 @@ internal class RstRstEvolRad : RstRstFunction
 
         d2c = Vector3D.LinearForm(-3, dc, 4, a, -1, b) / (2 * h);
         return true;
+    }
+
+    public bool SectionGap(in BlendPoint near, double prm, double before, double after, out double gap, out double radius)
+    {
+        math_Vector x = new(1, 2);
+        x[1] = near.ParameterOnC1();
+        x[2] = near.ParameterOnC2();
+        CurveAdaptorBase tguide = _tguide;
+        LawsFunction tevol = _tevol;
+        double first = _first, last = _last;
+        gap = 0.0;
+        Point3D m2 = new Point3D();
+        bool ok = ArcMiddle(x, prm, before, prm, out Point3D m1) && ArcMiddle(x, prm, prm, after, out m2);
+        if (ok)
+        {
+            gap = m1.DistanceTo(m2);
+        }
+
+        radius = Math.Abs(_ray);
+        _tguide = tguide;
+        _tevol = tevol;
+        _first = first;
+        _last = last;
+        return ok;
+    }
+
+    public bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius)
+    {
+        math_Vector y = new(1, 2), dx = new(1, 2);
+        y[1] = at.ParameterOnC1();
+        y[2] = at.ParameterOnC2();
+        double prm = at.Parameter();
+        middle = new Point3D();
+        Position(prm);
+        bool ok = SolveAt(y) && WalkCentre(prm, y, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e) && e.ArcMiddle(out middle);
+        radius = Math.Abs(_ray);
+        return ok;
+    }
+
+    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
+    {
+        math_Vector y = new(1, 2), dx = new(1, 2);
+        y[1] = near.ParameterOnC1();
+        y[2] = near.ParameterOnC2();
+        advance = 0.0;
+        Position(prm);
+        if (!SolveAt(y) || !WalkCentreD2(prm, y, out Vector3D d2c) || !WalkCentre(prm, y, dx, out Vector3D dc)
+            || !Envelope(dc, out EnvelopeCircle e))
+        {
+            return false;
+        }
+
+        _tevol.D2(prm, out _, out _, out double d2ray);
+        advance = e.LeastAdvance(_center, dc, d2c, _ray, _dray, d2ray);
+        return true;
+    }
+
+    // The walk's solution at the parameter the function is positioned at, by Newton's method from y, which it replaces.
+    private bool SolveAt(math_Vector y)
+    {
+        math_Vector f = new(1, 2), step = new(1, 2);
+        Matrix grad = new(1, 2, 1, 2);
+        bool small = false;
+        for (int iter = 0; iter < 12 && !small; iter++)
+        {
+            Ball(y, _nplan);
+            if (!_isBall)
+            {
+                return false;
+            }
+
+            BallValues(f);
+            BallDerivatives(grad);
+            Gauss resol = new(grad, 1.0e-14);
+            if (!resol.IsDone)
+            {
+                return false;
+            }
+
+            resol.Solve(-f, step);
+            small = true;
+            for (int i = 1; i <= 2; i++)
+            {
+                y[i] += step[i];
+                small &= Math.Abs(step[i]) <= 1.0e-12 * (1.0 + Math.Abs(y[i]));
+            }
+        }
+
+        return small;
+    }
+
+    // The middle of the arc of the envelope's circle at prm, on the walk's solution there (Newton's method from x),
+    // with the guide and the law as they are between first and last.
+    private bool ArcMiddle(math_Vector x, double prm, double first, double last, out Point3D middle)
+    {
+        math_Vector y = new(1, 2), dx = new(1, 2);
+        middle = new Point3D();
+        Set(first, last);
+        Position(prm);
+        y.Initialized(x);
+        return SolveAt(y) && WalkCentre(prm, y, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e) && e.ArcMiddle(out middle);
     }
 
     // The side of its plane the great circle's normal is on, as the sections orient it, at the last positioning.

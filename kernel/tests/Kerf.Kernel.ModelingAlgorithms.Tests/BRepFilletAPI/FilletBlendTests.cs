@@ -381,6 +381,186 @@ public class FilletBlendTests
         Assert.InRange(greatest, 95, 105);
     }
 
+    // Unit 15AK (decision 32306): where the ball passes from one face to the next while its radius is changing and the faces'
+    // curvatures differ (a plane to the cylinder tangent to it, round a contour's arc), the path of its centre has a corner:
+    // the centre's speed along the guide changes with the contacts' own. The surface the balls sweep has a piece of the ball
+    // there, between the last circle of one face's fillet and the first of the next's, which the walked faces, each carried on
+    // until they meet, leave by about the square of the gap between those circles over twice the radius. Within the
+    // approximation's tolerance of that the fillet is built, and is on the boundary of the union of its balls to that
+    // tolerance (2.3e-6, 2.6e-5 and 9.1e-5 as the radius's end goes from 1.5 to 3); past it, it fails, saying why, where it
+    // built 7.2e-4 off before (at 4).
+    [Theory]
+    [InlineData(1.5, true)]
+    [InlineData(2.5, true)]
+    [InlineData(3.0, true)]
+    [InlineData(3.5, false)]
+    [InlineData(4.0, false)]
+    public void An_evolving_fillet_round_a_contours_arc_is_built_only_within_tolerance_of_its_balls(double end, bool built)
+    {
+        MakeFillet chfi3d = RoundedBoxTop(end, out Distance side);
+        chfi3d.Build();
+        Assert.Equal(built, chfi3d.IsDone);
+        if (!built)
+        {
+            Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, chfi3d.StripeStatus(1));
+            Assert.Contains("fillet.radius-changes-at-a-corner", Kerf.Engine.Foundation.StatusDiagnostics.ToDiagnostic(chfi3d.StripeStatus(1))!.Code.ToString());
+            return;
+        }
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        (double worst, double inner, _) = UnionMiss(chfi3d, side);
+        Assert.True(worst < Approximation, $"to {end}: off the union of the balls by {worst}");
+        Assert.True(inner < 0.1 * Approximation, $"to {end}: off the union of the balls by {inner} away from the arc's ends");
+    }
+
+    // A radius that bends hard enough along the edge (0.2 to 2 and back along a box's edge of 4) that the circles of
+    // neighbouring balls cross between the contacts: the swept surface folds back on itself, the larger balls covering the
+    // smaller ones' circles, and the fillet fails, saying why. The same law to 1 folds nowhere and is built, on the envelope.
+    [Theory]
+    [InlineData(1.0, true)]
+    [InlineData(2.0, false)]
+    public void An_evolving_fillet_whose_swept_surface_would_fold_fails(double top, bool built)
+    {
+        (Func<Shape> make, Distance first, Distance second) = Pair("short box's edge");
+        Shape shape = make();
+        Edge edge = shape.AllEdges().Single(e =>
+        {
+            var curve = new EdgeCurveAdaptor(e);
+            Point3D p = curve.Value(0.37 * curve.FirstParameter() + 0.63 * curve.LastParameter());
+            return first(p) < 1e-6 && second(p) < 1e-6;
+        });
+        var chfi3d = new MakeFillet(shape);
+        NCollection_Array1<Point2D> law = new(1, 3);
+        law.SetValue(1, new Point2D(0.0, 0.2));
+        law.SetValue(2, new Point2D(0.5, top));
+        law.SetValue(3, new Point2D(1.0, 0.2));
+        chfi3d.Add(law, edge);
+        chfi3d.Build();
+        Assert.Equal(built, chfi3d.IsDone);
+        if (!built)
+        {
+            Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, chfi3d.StripeStatus(1));
+            return;
+        }
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        (double miss, _, _, _, _) = EnvelopeMiss(chfi3d, first, second, 0.05, 2);
+        Assert.True(miss < Approximation, $"the envelope's balls miss by {miss}");
+    }
+
+    // A box of 20 by 20 by 10 with its upright edge at the origin rounded at 5, and the fillet of the top's edge along x = 0,
+    // which runs on, tangent, round the arc and along y = 0: a guide whose curvature jumps where the line meets the arc. The
+    // radius goes evenly from 1 to the end's along the three edges, so it is changing at both jumps.
+    private static MakeFillet RoundedBoxTop(double end, out Distance side)
+    {
+        Shape box = Solid.Box(20, 20, 10, new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))).Value.Shape;
+        Edge upright = box.AllEdges().Single(e =>
+        {
+            var curve = new EdgeCurveAdaptor(e);
+            Point3D p = curve.Value(0.37 * curve.FirstParameter() + 0.63 * curve.LastParameter());
+            return Math.Abs(p.X) < 1e-6 && Math.Abs(p.Y) < 1e-6;
+        });
+        var round = new MakeFillet(box);
+        round.Add(5.0, upright);
+        round.Build();
+        Shape rounded = round.Shape();
+        Edge top = rounded.AllEdges().Single(e =>
+        {
+            var curve = new EdgeCurveAdaptor(e);
+            Point3D p = curve.Value(0.37 * curve.FirstParameter() + 0.63 * curve.LastParameter());
+            return Math.Abs(p.X) < 1e-6 && Math.Abs(p.Z - 10) < 1e-6;
+        });
+        side = p => p.X < 5 && p.Y < 5 ? Math.Abs(Math.Sqrt((p.X - 5) * (p.X - 5) + (p.Y - 5) * (p.Y - 5)) - 5)
+                    : p.Y >= 5 && p.X < 5 ? Math.Abs(p.X) : p.X >= 5 && p.Y < 5 ? Math.Abs(p.Y) : Math.Min(Math.Abs(p.X), Math.Abs(p.Y));
+        var chfi3d = new MakeFillet(rounded);
+        chfi3d.Add(top);
+        Kerf.Engine.Construction.Laws.Linear law = new();
+        law.Set(0.0, 1.0, chfi3d.Length(1), end);
+        chfi3d.SetRadius(law, 1, 1);
+        return chfi3d;
+    }
+
+    // The fillet of RoundedBoxTop against the union of its balls, apart from the law and the guide: each point of a face's
+    // contact with the top (z = 10) is above the centre of the ball that touches there, whose radius is that point's distance
+    // from the side (30,001 of them along each face); a point of the fillet is on the surface the balls sweep if it is on the
+    // boundary of their union. The most a point of the new faces is inside the union or outside it (47 by 47 points of each,
+    // crowded towards its ends), and the most among those more than 1 from both jumps.
+    private static (double Worst, double Inner, Point3D At) UnionMiss(MakeFillet fillet, Distance side)
+    {
+        List<(Point3D C, double R)> balls = [];
+        List<(FaceSurfaceAdaptor Surface, Face Face)> faces = [];
+        for (int i = 1; i <= fillet.SurfaceCount; i++)
+        {
+            foreach (Shape face in fillet.NewFaces(i))
+            {
+                var surface = new FaceSurfaceAdaptor((Face)face);
+                faces.Add((surface, (Face)face));
+                double u0 = surface.FirstUParameter(), u1 = surface.LastUParameter(), v0 = surface.FirstVParameter(), v1 = surface.LastVParameter();
+                Point3D mid = surface.Value((u0 + u1) / 2, (v0 + v1) / 2);
+                int region = mid.X < 5 && mid.Y < 5 ? 1 : mid.Y >= 5 ? 0 : 2;
+                foreach ((bool alongV, double fix) in new[] { (true, u0), (true, u1), (false, v0), (false, v1) })
+                {
+                    Point3D On(double t) => alongV ? surface.Value(fix, v0 + (v1 - v0) * t) : surface.Value(u0 + (u1 - u0) * t, fix);
+                    if (Enumerable.Range(0, 21).Any(k => Math.Abs(On(k / 20.0).Z - 10) > 1e-4))
+                    {
+                        continue;
+                    }
+                    for (int k = 0; k <= 30000; k++)
+                    {
+                        Point3D q = On(k / 30000.0);
+                        int at = q.X < 5 && q.Y < 5 ? 1 : q.Y >= 5 ? 0 : 2;
+                        if (at != region || q.X > 19.5 || q.Y > 19.5)
+                        {
+                            continue;
+                        }
+                        double r = side(q);
+                        balls.Add((new Point3D(q.X, q.Y, 10 - r), r));
+                    }
+                }
+            }
+        }
+        double worst = 0, inner = 0;
+        Point3D where = default;
+        double[] near = [1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 2e-3, 4e-3, 7e-3, 0.012, 0.02, 0.03];
+        double[] ts = [.. Enumerable.Range(0, 25).Select(k => k / 24.0), .. near, .. near.Select(x => 1 - x)];
+        foreach ((FaceSurfaceAdaptor surface, Face face) in faces)
+        {
+            double u0 = surface.FirstUParameter(), u1 = surface.LastUParameter(), v0 = surface.FirstVParameter(), v1 = surface.LastVParameter();
+            foreach (double ta in ts)
+            {
+                foreach (double tb in ts)
+                {
+                    double u = u0 + (u1 - u0) * ta, v = v0 + (v1 - v0) * tb;
+                    if (new Kerf.Engine.Classification.FaceClassifier(face, new Point2D(u, v), 1e-7).State() != Containment.In)
+                    {
+                        continue;
+                    }
+                    Point3D p = surface.Value(u, v);
+                    if (p.X > 19 || p.Y > 19)
+                    {
+                        continue;
+                    }
+                    double depth = double.MinValue;
+                    foreach ((Point3D c, double r) in balls)
+                    {
+                        double dx = p.X - c.X, dy = p.Y - c.Y, dz = p.Z - c.Z;
+                        depth = Math.Max(depth, r - Math.Sqrt(dx * dx + dy * dy + dz * dz));
+                    }
+                    depth = Math.Abs(depth);
+                    if (depth > worst)
+                    {
+                        worst = depth;
+                        where = p;
+                    }
+                    bool nearJump = (Math.Abs(p.Y - 5) < 1 && p.X < 5) || (Math.Abs(p.X - 5) < 1 && p.Y < 5);
+                    if (!nearJump)
+                    {
+                        inner = Math.Max(inner, depth);
+                    }
+                }
+            }
+        }
+        return (worst, inner, where);
+    }
+
     // The envelope's test, the ball test's kin for a radius that changes. At 39 by 9 points of each new face, its boundaries
     // among them, the ball centred on the surface's normal that best touches both surfaces (its radius between the bounds given):
     // the most such a ball misses either surface by, and the least and greatest of the radii. And the most the points of the

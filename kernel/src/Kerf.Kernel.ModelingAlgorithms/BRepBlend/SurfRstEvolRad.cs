@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// on the restriction.
 /// </summary>
 /// <remarks>A working object (decision 21): it caches its last solution, which the walkers read.</remarks>
-internal class SurfRstEvolRad : SurfRstFunction
+internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
 {
     private const double Eps = 1.0e-15;
 
@@ -409,6 +409,102 @@ internal class SurfRstEvolRad : SurfRstFunction
 
         d2c = Vector3D.LinearForm(-3, dc, 4, a, -1, b) / (2 * h);
         return true;
+    }
+
+    public bool SectionGap(in BlendPoint near, double prm, double before, double after, out double gap, out double radius)
+    {
+        math_Vector x = new(1, 3);
+        near.ParametersOnS(out x[1], out x[2]);
+        x[3] = near.ParameterOnC();
+        CurveAdaptorBase tguide = _tguide;
+        LawsFunction tevol = _tevol;
+        double first = _first, last = _last;
+        gap = 0.0;
+        Point3D m2 = new Point3D();
+        bool ok = ArcMiddle(x, prm, before, prm, out Point3D m1) && ArcMiddle(x, prm, prm, after, out m2);
+        if (ok)
+        {
+            gap = m1.DistanceTo(m2);
+        }
+
+        radius = Math.Abs(_ray);
+        _tguide = tguide;
+        _tevol = tevol;
+        _first = first;
+        _last = last;
+        return ok;
+    }
+
+    public bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius)
+    {
+        math_Vector y = new(1, 3), dx = new(1, 3);
+        at.ParametersOnS(out y[1], out y[2]);
+        y[3] = at.ParameterOnC();
+        double prm = at.Parameter();
+        middle = new Point3D();
+        Position(prm);
+        bool ok = SolveAt(y) && WalkCentre(prm, y, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e) && e.ArcMiddle(out middle);
+        radius = Math.Abs(_ray);
+        return ok;
+    }
+
+    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
+    {
+        math_Vector y = new(1, 3), dx = new(1, 3);
+        near.ParametersOnS(out y[1], out y[2]);
+        y[3] = near.ParameterOnC();
+        advance = 0.0;
+        Position(prm);
+        if (!SolveAt(y) || !WalkCentreD2(prm, y, out Vector3D d2c) || !WalkCentre(prm, y, dx, out Vector3D dc)
+            || !Envelope(dc, out EnvelopeCircle e))
+        {
+            return false;
+        }
+
+        _tevol.D2(prm, out _, out _, out double d2ray);
+        advance = e.LeastAdvance(_center, dc, d2c, _ray, _dray, _sg1 * d2ray);
+        return true;
+    }
+
+    // The walk's solution at the parameter the function is positioned at, by Newton's method from y, which it replaces.
+    private bool SolveAt(math_Vector y)
+    {
+        math_Vector f = new(1, 3), step = new(1, 3);
+        Matrix grad = new(1, 3, 1, 3);
+        bool small = false;
+        for (int iter = 0; iter < 12 && !small; iter++)
+        {
+            Ball(y, out Vector3D d1u1, out Vector3D d1v1);
+            BallValues(f);
+            BallDerivatives(grad, d1u1, d1v1);
+            Gauss resol = new(grad, 1.0e-14);
+            if (!resol.IsDone)
+            {
+                return false;
+            }
+
+            resol.Solve(-f, step);
+            small = true;
+            for (int i = 1; i <= 3; i++)
+            {
+                y[i] += step[i];
+                small &= Math.Abs(step[i]) <= 1.0e-12 * (1.0 + Math.Abs(y[i]));
+            }
+        }
+
+        return small;
+    }
+
+    // The middle of the arc of the envelope's circle at prm, on the walk's solution there (Newton's method from x),
+    // with the guide and the law as they are between first and last.
+    private bool ArcMiddle(math_Vector x, double prm, double first, double last, out Point3D middle)
+    {
+        math_Vector y = new(1, 3), dx = new(1, 3);
+        middle = new Point3D();
+        Set(first, last);
+        Position(prm);
+        y.Initialized(x);
+        return SolveAt(y) && WalkCentre(prm, y, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e) && e.ArcMiddle(out middle);
     }
 
     // The side of its plane the great circle's normal is on, as the sections orient it, at the last positioning.

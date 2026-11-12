@@ -113,6 +113,52 @@ internal struct EnvelopeCircle
     }
 
     /// <summary>
+    /// The least, over the arc between the contacts, of how fast the envelope's point there moves on along the path of
+    /// the ball's centre, as a share of the centre's own speed. With F(x, w) = |x - c|^2 - r^2, the envelope is where F
+    /// and its derivative in w vanish, and it is a surface there only while the second derivative,
+    /// 2 (|c'|^2 - (x - c) . c'' - r'^2 - r r''), keeps its sign: where it reaches nothing the circles of neighbouring
+    /// balls cross, the swept surface folds back on itself, and what bounds the balls there is no longer this surface.
+    /// At a contact it is the contact's own advance, p' . c'. It is linear in x, and taken at nine points of the arc.
+    /// Where the radius isn't changing it is 1: a ball of constant radius on a path that turns more tightly than its
+    /// radius folds its surface too, as ChFi3d's constant fillets do, and that is not this unit's to refuse.
+    /// </summary>
+    public readonly double LeastAdvance(in Point3D c, in Vector3D dc, in Vector3D d2c, double r, double dr, double d2r)
+    {
+        double g = dc.SquareMagnitude;
+        if (dr * dr <= 1.0e-18 * g && Math.Abs(r * d2r) <= 1.0e-18 * g)
+        {
+            return 1.0;
+        }
+
+        double level = g - dr * dr - r * d2r;
+        Vector3D across = Plane.Crossed(N1);
+        double angle = Angle(), least = double.MaxValue;
+        for (int i = 0; i <= 8; i++)
+        {
+            double at = angle * i / 8;
+            Point3D x = Centre.Translated(Radius * (Math.Cos(at) * N1 + Math.Sin(at) * across));
+            least = Math.Min(least, (level - new Vector3D(c, x).Dot(d2c)) / g);
+        }
+
+        return least;
+    }
+
+    /// <summary>The middle of the arc between the contacts; false where they're opposite or the circle is a point.</summary>
+    public readonly bool ArcMiddle(out Point3D middle)
+    {
+        Vector3D towards = N1 + N2;
+        double norm = towards.Magnitude;
+        middle = Centre;
+        if (norm < 1.0e-9)
+        {
+            return false;
+        }
+
+        middle = Centre.Translated(Radius / norm * towards);
+        return true;
+    }
+
+    /// <summary>
     /// The angle of the arc from the first contact to the second about <see cref="Plane"/>, in ]-pi/2, 3pi/2] as
     /// GeomFill's circles take it.
     /// </summary>

@@ -23,7 +23,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// the cached points and tangents. OCCT's <c>thread_local</c> scratch values of ComputeValues are read across calls
 /// (when the cache skips a positioning), so they are the instance's (decision 1037 had them per thread).
 /// </remarks>
-internal class EvolRad : BlendFunction
+internal class EvolRad : BlendFunction, IEnvelopeSections
 {
     private const double Eps = 1.0e-15;
 
@@ -567,6 +567,9 @@ internal class EvolRad : BlendFunction
         _tevol = _fevol.Trim(first, last, 1.0e-12);
         _first = first;
         _last = last;
+        // Kerf (unit 15AK): the positioning kept is the other interval's, whose derivatives at a shared end differ.
+        _tval = -9.876e100;
+        _tOrder = -1;
     }
 
     public override void GetTolerance(math_Vector tolerance, double tol)
@@ -1250,6 +1253,108 @@ internal class EvolRad : BlendFunction
         }
 
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns1, ns2, np, _pts1, _pts2, Math.Abs(_ray), center, poles, weights);
+    }
+
+    public bool SectionGap(in BlendPoint near, double prm, double before, double after, out double gap, out double radius)
+    {
+        math_Vector x = new(1, 4);
+        near.ParametersOnS1(out x[1], out x[2]);
+        near.ParametersOnS2(out x[3], out x[4]);
+        CurveAdaptorBase tcurv = _tcurv;
+        LawsFunction tevol = _tevol;
+        double first = _first, last = _last;
+        gap = 0.0;
+        Point3D m2 = new Point3D();
+        bool ok = ArcMiddle(x, prm, before, prm, out Point3D m1) && ArcMiddle(x, prm, prm, after, out m2);
+        if (ok)
+        {
+            gap = m1.DistanceTo(m2);
+        }
+
+        radius = Math.Abs(_ray);
+        _tcurv = tcurv;
+        _tevol = tevol;
+        _first = first;
+        _last = last;
+        _tval = -9.876e100;
+        _tOrder = -1;
+        return ok;
+    }
+
+    public bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius)
+    {
+        math_Vector y = new(1, 4), dx = new(1, 4);
+        at.ParametersOnS1(out y[1], out y[2]);
+        at.ParametersOnS2(out y[3], out y[4]);
+        double prm = at.Parameter();
+        middle = new Point3D();
+        Vector3D none = new Vector3D();
+        bool ok = SolveAt(y, prm) && ComputeValues(y, 1, true, prm) && Ball(1, dx, dx, out Vector3D dcentre, out _, out _, out _)
+                  && Envelope(0, dcentre, none, none, 0.0, out EnvelopeCircle circle) && circle.ArcMiddle(out middle);
+        radius = Math.Abs(_ray);
+        return ok;
+    }
+
+    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
+    {
+        math_Vector y = new(1, 4), dx = new(1, 4), d2x = new(1, 4);
+        near.ParametersOnS1(out y[1], out y[2]);
+        near.ParametersOnS2(out y[3], out y[4]);
+        advance = 0.0;
+        Vector3D zero = new Vector3D();
+        if (!SolveAt(y, prm) || !ComputeValues(y, 2, true, prm) || !Ball(2, dx, d2x, out Vector3D dc, out Vector3D d2c, out _, out _)
+            || !Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e))
+        {
+            return false;
+        }
+
+        Vector3D ns1 = -ConstRad.InverseNorm(_nsurf1) * _nsurf1;
+        Point3D center = new Point3D(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
+        advance = e.LeastAdvance(center, dc, d2c, _ray, _dray, _d2ray);
+        return true;
+    }
+
+    // The walk's solution at prm, by Newton's method from y, which it replaces.
+    private bool SolveAt(math_Vector y, double prm)
+    {
+        math_Vector step = new(1, 4);
+        bool small = false;
+        for (int iter = 0; iter < 12 && !small; iter++)
+        {
+            if (!ComputeValues(y, 1, true, prm))
+            {
+                return false;
+            }
+
+            Gauss resol = new(_dedx, 1.0e-14);
+            if (!resol.IsDone)
+            {
+                return false;
+            }
+
+            resol.Solve(-_e, step);
+            small = true;
+            for (int i = 1; i <= 4; i++)
+            {
+                y[i] += step[i];
+                small &= Math.Abs(step[i]) <= 1.0e-12 * (1.0 + Math.Abs(y[i]));
+            }
+        }
+
+        return small;
+    }
+
+    // The middle of the arc of the envelope's circle at prm, on the walk's solution there (Newton's method from x),
+    // with the guide and the law as they are between first and last.
+    private bool ArcMiddle(math_Vector x, double prm, double first, double last, out Point3D middle)
+    {
+        math_Vector y = new(1, 4), dx = new(1, 4);
+        middle = new Point3D();
+        Set(first, last);
+        y.Initialized(x);
+        Vector3D none = new Vector3D();
+        return SolveAt(y, prm) && ComputeValues(y, 1, true, prm) && Ball(1, dx, dx, out Vector3D dcentre, out _, out _, out _)
+               && Envelope(0, dcentre, none, none, 0.0, out EnvelopeCircle circle) && circle.ArcMiddle(out middle);
     }
 
     // The second derivatives of the centre and of the radius on the walk's solution at prm + dt, found by Newton's

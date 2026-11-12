@@ -1205,6 +1205,7 @@ internal partial class FilBuilder : FilletBuilderBase
             }
 
 
+            RefuseEnvelopeCorner(func, lin, spine);
             _done = CompleteData(data, func, lin, s1, s2, or, gd1, gd2, gf1, gf2);
 
 
@@ -1219,6 +1220,105 @@ internal partial class FilBuilder : FilletBuilderBase
             SplitSurf(seqData, lin);
         }
         return true;
+    }
+
+    // Kerf (unit 15AK, decision 32306): a fillet of evolving radius is the envelope of its balls, whose sections are
+    // circles square to the path of the ball's centre. Where the derivative of that path jumps, the true envelope has a
+    // piece of the ball between the circles of the two sides, and the walked surfaces, each carried on past its own last
+    // circle until they meet, leave it by about the square of the gap between the circles over twice the radius (each is
+    // tangent to the ball along its circle and goes half the gap beyond it; twice that for the surface's own curvature
+    // across the circle; measured on a box's rounded corner, 7.2e-4 for 8.7e-4 and 2.6e-5 for 7.6e-5). Past the
+    // approximation's tolerance the stripe is refused, with a status that says why (decision 1742). The path's
+    // derivative jumps
+    //  - where the ball passes from one face to the next while the radius is changing and the faces' curvatures differ
+    //    (a plane to a cylinder tangent to it, round a contour's arc): the centre's speed along the guide changes with
+    //    the contacts' own, whatever the guide; so each surface's end circles are kept, and those of the same ball
+    //    compared, between two faces (where the ball comes to rest on an edge the same holds, but the measure isn't
+    //    proved there, and nothing is refused: decision 32306);
+    //  - where the law's slope jumps, or the guide's curvature while the radius is changing (the function's C0
+    //    intervals).
+    // And where the radius's change itself bends hard enough for the circles of neighbouring balls to cross between the
+    // contacts, the swept surface folds back on itself (EnvelopeCircle.LeastAdvance, at the walk's points).
+    private readonly List<(Spine Spine, bool Faces, Point3D A, Point3D B, Point3D Middle, double Radius)> _envelopeEnds = [];
+
+    private void RefuseEnvelopeCorner(IEnvelopeSections func, global::Kerf.Engine.Fillets.Blend.Line? lin, Spine? spine)
+    {
+        if (lin is null || spine is null || lin.NbPoints() < 1)
+        {
+            return;
+        }
+
+        int count = lin.NbPoints();
+        for (int k = 1; k <= count; k++)
+        {
+            BlendPoint point = lin.Point(k);
+            if (func.LeastAdvance(point, point.Parameter(), out double advance) && advance <= 0.0)
+            {
+                spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
+                throw new FailureException("PerformSurf : the surface the ball sweeps folds where the radius changes");
+            }
+        }
+
+        foreach (int k in count > 1 ? new[] { 1, count } : [1])
+        {
+            BlendPoint point = lin.Point(k);
+            if (!func.SectionMiddle(point, out Point3D middle, out double radius))
+            {
+                continue;
+            }
+
+            Point3D a = point.PointOnS1(), b = point.PointOnS2();
+            double same = 1.0e-3 * radius;
+            bool faces = func is EvolRad;
+            foreach ((Spine other, bool ofaces, Point3D oa, Point3D ob, Point3D omiddle, double oradius) in _envelopeEnds)
+            {
+                bool sameBall = faces && ofaces && ReferenceEquals(other, spine) && Math.Abs(oradius - radius) < same
+                                && ((a.DistanceTo(oa) < same && b.DistanceTo(ob) < same) || (a.DistanceTo(ob) < same && b.DistanceTo(oa) < same));
+                double gap = middle.DistanceTo(omiddle);
+                if (sameBall && radius > 0.0 && gap * gap > 2.0 * radius * _tolapp3d)
+                {
+                    spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
+                    throw new FailureException("PerformSurf : the radius changes where the ball passes between faces of different curvature");
+                }
+            }
+
+            _envelopeEnds.Add((spine, faces, a, b, middle, radius));
+        }
+
+        int n = func.NbIntervals(Continuity.C0);
+        if (n < 2)
+        {
+            return;
+        }
+
+        NCollection_Array1<double> t = new(1, n + 1);
+        func.Intervals(t, Continuity.C0);
+        double first = lin.Point(1).Parameter(), last = lin.Point(count).Parameter();
+        double lo = Math.Min(first, last) - _tolesp, hi = Math.Max(first, last) + _tolesp;
+        for (int i = 2; i <= n; i++)
+        {
+            double at = t[i];
+            if (at < lo || at > hi)
+            {
+                continue;
+            }
+
+            int nearest = 1;
+            for (int k = 2; k <= count; k++)
+            {
+                if (Math.Abs(lin.Point(k).Parameter() - at) < Math.Abs(lin.Point(nearest).Parameter() - at))
+                {
+                    nearest = k;
+                }
+            }
+
+            if (func.SectionGap(lin.Point(nearest), at, t[i - 1], t[i + 1], out double gap, out double radius) && radius > 0.0
+                && gap * gap > 2.0 * radius * _tolapp3d)
+            {
+                spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
+                throw new FailureException("PerformSurf : the radius changes where the centre's path has a corner");
+            }
+        }
     }
 
     //=================================================================================================
@@ -1309,6 +1409,7 @@ internal partial class FilBuilder : FilletBuilderBase
                 throw new FailureException("PerformSurf : Failed processing!");
             }
             Orientation or = hs2.Face().Orientation;
+            RefuseEnvelopeCorner(func, lin, spine);
             _done = CompleteData(data, func, lin, hs1, hs2, or, true);
             if (!_done)
             {
@@ -1411,6 +1512,7 @@ internal partial class FilBuilder : FilletBuilderBase
                 throw new FailureException("PerformSurf : Failed processing!");
             }
             Orientation or = hs1.Face().Orientation;
+            RefuseEnvelopeCorner(func, lin, spine);
             _done = CompleteData(data, func, lin, hs1, hs2, or, false);
             if (!_done)
             {
@@ -1533,6 +1635,7 @@ internal partial class FilBuilder : FilletBuilderBase
                 throw new FailureException("PerformSurf : Failed processing!");
             }
             Orientation or = hs1.Face().Orientation;
+            RefuseEnvelopeCorner(func, lin, spine);
             _done = CompleteData(data, func, lin, hs1, hs2, or);
             if (!_done)
             {
