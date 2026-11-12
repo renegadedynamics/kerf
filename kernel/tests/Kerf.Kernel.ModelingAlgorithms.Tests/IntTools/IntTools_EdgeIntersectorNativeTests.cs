@@ -25,7 +25,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
     /// </summary>
     private static readonly Dictionary<(string Case, int Edge, int Face), string> Pinned = new()
     {
-        // Unit 15Y2, decision 32801: the samples of this line beside the B-spline face are told apart along their own
+        // Unit 15Y2, decision 2282: the samples of this line beside the B-spline face are told apart along their own
         // directions, so the extremum that finds the crossing is given a smaller sample of the face than the boxes left
         // it, and ends 11 to 13 units in the last place from native's (under 2e-15 of the parameter)
         [("mat-probes", 28, 1)] = "1 0 7fefffffffffffff 1 | 7 1 401dabddc4d2c26c 401dabde0138a448 0 401dabdde305b35a 0000000000000000 0 "

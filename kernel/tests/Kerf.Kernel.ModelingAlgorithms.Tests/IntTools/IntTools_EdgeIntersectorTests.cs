@@ -151,7 +151,7 @@ public class IntTools_EdgeIntersectorTests
     // decision 2183). The localisation's boxes overlap down to the size of the gap, so it listed a pair of samples for every
     // one: 55,746 pairs at a gap of 0.007 beside a strip 0.1 wide (1.5 GB allocated, 8 s) and 491,684 at 0.002 beside one 0.02
     // wide (11.8 GB, 72 s), each pair an extremum that found nothing. The pieces are now told apart along their own
-    // directions (unit 15Y2, decision 32801): no pair is listed beside the strip, and one for an edge that goes through it,
+    // directions (unit 15Y2, decision 2282): no pair is listed beside the strip, and one for an edge that goes through it,
     // found where it crosses. On a rational strip, which that bound doesn't speak for, the localisation is given up past
     // 2,000 pairs for the exact intersection, as it was for both before, which finds the same
     [Theory]
@@ -208,7 +208,7 @@ public class IntTools_EdgeIntersectorTests
     // less the 1e-9 of its parameter a pave filler takes off an end (the corpus's bopfuse_complex/K9 and its kin). Every
     // sample of the surface along that side holds the apex, so the localisation lists all 729 against the edge's last
     // sample, and each took an extremum to find the apex again. Once it's found, a pair whose sample of the surface is
-    // proved apart from the rest of the edge's sample is passed over (unit 15Y2, decision 32802): one extremum, and the same
+    // proved apart from the rest of the edge's sample is passed over (unit 15Y2, decision 2283): one extremum, and the same
     // part found
     [Fact]
     public void BeanFace_EdgeEndingAtAPatchsApex_FindsTheApexOnce()

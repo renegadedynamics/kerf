@@ -7,7 +7,7 @@ namespace Kerf.Engine.Intersection.Tools;
 
 /// <summary>
 /// Tells a piece of a curve that lies beside a piece of a surface from one that may touch it, for the edge/face
-/// intersector's localisation (Kerf's own: unit 15Y2, decision 32801).
+/// intersector's localisation (Kerf's own: unit 15Y2, decision 2282).
 /// </summary>
 /// <remarks>
 /// <para>

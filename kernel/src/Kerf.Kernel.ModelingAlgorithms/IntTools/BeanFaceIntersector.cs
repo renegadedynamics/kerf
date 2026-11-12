@@ -34,8 +34,8 @@ namespace Kerf.Engine.Intersection.Tools;
 /// enlarged by its own tolerance, and its result depended on what the context computed before. The port keys the
 /// cached boxes by everything they are computed from and checks a box cached by an earlier run as a fresh one is
 /// checked, so every run gives the result a fresh context gives (decision 753; occt-issues.md, unit 6C). Kerf adds to
-/// the boxes a bound along the samples' own directions (<see cref="SampleSeparation"/>, decision 32801), and passes a
-/// pair over once its sample of the curve has a touch and the rest of it is proved apart (decision 32802).
+/// the boxes a bound along the samples' own directions (<see cref="SampleSeparation"/>, decision 2282), and passes a
+/// pair over once its sample of the curve has a touch and the rest of it is proved apart (decision 2283).
 /// </para>
 /// <para>
 /// The adaptors given to <see cref="Init(EdgeCurveAdaptor, FaceSurfaceAdaptor, double, double)"/> are shared, not
@@ -1258,7 +1258,7 @@ internal class BeanFaceIntersector
     // 0.2 ms, and an edge that runs beside a narrow B-spline face without touching it, askew to the axes, lists a pair for
     // every sample down to the size of the gap: 99,873 pairs and 16 s for one edge 0.007 from a band 10 long, where giving
     // up takes 0.1 to 0.3 s and finds the same (occt-issues.md, unit 15Y). Since unit 15Y2 such an edge lists no pairs
-    // where the samples can be told apart along their own directions (decision 32801), and the corpus's Booleans reach 729,
+    // where the samples can be told apart along their own directions (decision 2282), and the corpus's Booleans reach 729,
     // at the apex of a patch; the limit is for what that bound doesn't speak for, a rational or an offset surface.
     private const int MostLocalizedPairs = 2000;
 
@@ -1553,7 +1553,7 @@ internal class BeanFaceIntersector
                         continue;
                     }
 
-                    // Kerf (unit 15Y2, decision 32801): boxes along the axes overlap for an edge that runs beside a face
+                    // Kerf (unit 15Y2, decision 2282): boxes along the axes overlap for an edge that runs beside a face
                     // askew to them, down to samples the size of the gap. The two pieces bounded along their own
                     // directions are told apart at once; the boxes' two enlargements by the criteria are kept
                     if (_separation!.Apart(prevPar, curPar, prevParU, curParU, prevParV, curParV, 2.0 * _criteria))
@@ -1852,7 +1852,7 @@ internal class BeanFaceIntersector
 
             GenExtCS extremaGen = new();
 
-            // Kerf (unit 15Y2, decision 32802): where each sample of the curve has been found to touch the surface so far,
+            // Kerf (unit 15Y2, decision 2283): where each sample of the curve has been found to touch the surface so far,
             // and how many pairs running it couldn't be passed over for
             Dictionary<CurveRangeSample, (double First, double Last, int Missed)> touched = new();
 
@@ -1936,7 +1936,7 @@ internal class BeanFaceIntersector
                 double parUF = rangeU.First(), parUL = rangeU.Last();
                 double parVF = rangeV.First(), parVL = rangeV.Last();
 
-                // Kerf (unit 15Y2, decision 32802): OCCT passes a pair over when an end of its sample of the curve is in a
+                // Kerf (unit 15Y2, decision 2283): OCCT passes a pair over when an end of its sample of the curve is in a
                 // part already found. A touch inside the sample, or at an end with no length, isn't seen by that, and where
                 // many samples of the surface meet at the point touched (the apex of a patch one of whose sides is a point
                 // has 729 of them) each took an extremum to find it again. A pair is passed over too when the sample of the
@@ -2076,7 +2076,7 @@ internal class BeanFaceIntersector
         return true;
     }
 
-    // Kerf (unit 15Y2, decision 32802): true if the curve from first to last, less the part found (from foundFirst to
+    // Kerf (unit 15Y2, decision 2283): true if the curve from first to last, less the part found (from foundFirst to
     // foundLast) and a margin about it, is proved apart from the surface over the ranges given. The margin is what's given
     // up: a second touch of the same sample within eight resolutions of one found (eight times the curve's parameter
     // for the criteria) isn't looked for
