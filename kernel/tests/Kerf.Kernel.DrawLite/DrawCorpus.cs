@@ -370,9 +370,9 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // OCCT can't build it (TODO OCC23748); the finer polyline does, shorter than the script's figure
             ["offset/wire_unclosed_outside_0_075/A1"] = ("built where OCCT fails (TODO OCC23748), 10.60 for the script's 11.69 (decision 1980)",
                                                          "The length of result shape is 10.6026, expected 11.6898"),
-            // Each offset came nearer the wire than its distance, by 5% or more, and was a success; it is refused now
-            // (decision 32601). The first and third are OCCT's known problems (a face on the result is faulty); the other two
-            // passed OCCT's script, which checks a length and counts
+            // Each offset came nearer the wire than its distance, by more than 2%, and was a success; it is refused now
+            // (decisions 32601, 32603). The first, third and fifth are OCCT's known problems (a face on the result is
+            // faulty); the other two passed OCCT's script, which checks a length and counts
             ["offset/wire_closed_inside_0_005/B7"] = ("refused: the offset came within 0.10 of the wire for 0.93 (OCCT's TODO OCC23068; decision 32601)",
                                                       " Error: Offset is not done."),
             ["offset/wire_unclosed_outside_0_025/B3"] = ("refused: the offset came within 10.08 of the wire for 11.24 (decision 32601)",
@@ -381,6 +381,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                                          " Error: Offset is not done."),
             ["bugs/modalg_6/bug6768"] = ("refused: the third wire's offset came within 0.003 of the wire for 1 (decision 32601)",
                                          " Error: Offset is not done."),
+            ["offset/wire_unclosed_outside_0_075/A9"] = ("refused: the offset came within 2,299 of the wire for 2,357, and a part of it was missing (OCCT's TODO OCC23748; decision 32603)",
+                                                         " Error: Offset is not done."),
         };
 
     // Before IntendedDifferences, which reads them as it's initialised

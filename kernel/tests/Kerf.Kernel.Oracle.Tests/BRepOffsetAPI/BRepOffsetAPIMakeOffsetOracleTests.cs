@@ -208,10 +208,11 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 return;
             }
             bool isDone = aN.IsDone();
-            // A deliberate difference (Kerf decision 32601): native gives, done, a parallel that comes nearer the spine
-            // than 0.95 of the offset, and the port refuses it. Native's calls are made as recorded; its parallel is put
-            // to the port's check, and nothing of the port's is compared
-            bool isRefused = isDone && !aP.IsDone && !theSpine.IsOpenResult;
+            // A deliberate difference (Kerf decisions 32601, 32603): native gives, done, a parallel that isn't at the
+            // offset from the spine (more than 2% nearer; or further, with round corners), and the port refuses it.
+            // Native's calls are made as recorded; its parallel is put to the port's check, and nothing of the port's
+            // is compared
+            bool isRefused = isDone && !aP.IsDone;
             if (isDone != aP.IsDone && !isRefused)
             {
                 myDifferences.Add($"{aWhat}: IsDone native {isDone}, port {aP.IsDone}");
@@ -233,7 +234,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 File.WriteAllText(aTextFile, aNT);
                 Assert.True(BrepTools.Read(out Shape aNP, aTextFile));
                 File.Delete(aTextFile);
-                if (global::Kerf.Engine.Construction.Filling.OffsetWire.ComesNearer(aPIn, aNP, anOffset, theAlt))
+                if (!global::Kerf.Engine.Construction.Filling.OffsetWire.KeepsItsDistance(aPIn, aNP, anOffset, theAlt, theSpine.Join, theSpine.IsOpenResult))
                 {
                     myRefused++;
                 }
@@ -335,8 +336,8 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         output.WriteLine($"{myCases} cases, {myPerforms} offsets; {myNotDone} not done on both sides; "
                          + $"results: {myIdentical} identical BRep text ({myFreeMasked} with the Free column masked), "
                          + $"{myCanonical} canonically identical, {myEmpty} empty; Generated identical: {myHistory} "
-                         + $"({myHistoryOrder} in another order); refused by the port, native's coming nearer the spine "
-                         + $"than 0.95 of the offset: {myRefused}; differences: {myDifferences.Count}");
+                         + $"({myHistoryOrder} in another order); refused by the port, native's not being at the offset "
+                         + $"from the spine: {myRefused}; differences: {myDifferences.Count}");
         foreach (string aDiff in myDifferences.Take(30))
         {
             output.WriteLine("  " + aDiff);
