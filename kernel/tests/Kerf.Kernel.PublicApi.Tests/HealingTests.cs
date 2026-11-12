@@ -124,20 +124,20 @@ public class HealingTests
 
     // OCCT #1573, from its numbers: the cap of a sphere of radius 10 above z = 5, one half from the sphere as it stands and the
     // other from the same sphere turned about its axis. OCCT's unify leaves the turned half's pole edge without a curve on the
-    // first's surface and the merged face is invalid; decision 1816 then left the faces apart. The pole edge's curve is now
-    // moved with the others, and each curve brought into the surface's one period, so the cap is one face wherever the turned
-    // sphere's seam doesn't fall inside its half (decision 31806)
+    // first's surface and the merged face is invalid; decision 1816 then left the faces apart, three of them, or four where the
+    // turned sphere's seam falls inside its half and the Boolean has split it there (123, 180, 200). The pole edge's curve is
+    // now moved with the others and each curve brought into the surface's one period, so the cap is one face (decision 31806)
     [Theory]
-    [InlineData(0, 1)]
-    [InlineData(10, 1)]
-    [InlineData(37, 1)]
-    [InlineData(90, 1)]
-    [InlineData(270, 1)]
-    [InlineData(359, 1)]
-    // The turned sphere's seam inside its half, which the Boolean splits there: still left apart, and valid
-    [InlineData(123, 4)]
-    [InlineData(180, 4)]
-    public void Halves_of_a_cap_from_a_sphere_and_the_same_sphere_turned_unify(double degrees, int sphericalFaces)
+    [InlineData(0)]
+    [InlineData(10)]
+    [InlineData(37)]
+    [InlineData(90)]
+    [InlineData(123)]
+    [InlineData(180)]
+    [InlineData(200)]
+    [InlineData(270)]
+    [InlineData(359)]
+    public void Halves_of_a_cap_from_a_sphere_and_the_same_sphere_turned_unify(double degrees)
     {
         double turn = degrees * Math.PI / 180;
         Shape first = Solid.Sphere(10).Value.Shape;
@@ -152,14 +152,10 @@ public class HealingTests
         Assert.True(unified.IsSuccess);
         Shape cap = unified.Value.Shape;
         Assert.True(cap.Validate().IsValid);
-        Assert.Equal(sphericalFaces, cap.AllFaces().Count(static f => f.TryGetSurface(out Surface? surface) && surface is SphericalSurface));
         // The cap of height 5: pi h^2 (3 r - h) / 3, and its curved face 2 pi r h
         Assert.Equal(Math.PI * 25 * 25 / 3, cap.IntegrateVolume(), 1e-6);
-        if (sphericalFaces == 1)
-        {
-            Assert.Equal(2, cap.AllFaces().Length);
-            Assert.Equal(2 * Math.PI * 10 * 5, cap.AllFaces().Single(static f => f.TryGetSurface(out Surface? surface) && surface is SphericalSurface).AsShape().IntegrateArea(), 1e-6);
-        }
+        Assert.Equal(2, cap.AllFaces().Length);
+        Assert.Equal(2 * Math.PI * 10 * 5, cap.AllFaces().Single(static f => f.TryGetSurface(out Surface? surface) && surface is SphericalSurface).AsShape().IntegrateArea(), 1e-6);
     }
 
     [Fact]
