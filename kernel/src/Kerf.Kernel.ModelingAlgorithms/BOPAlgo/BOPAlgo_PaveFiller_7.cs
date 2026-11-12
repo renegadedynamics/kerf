@@ -862,4 +862,269 @@ internal partial class PaveFiller
         //
         return gp is not null;
     }
+
+    /// <summary>
+    /// Kerf (decision 2285): each section edge's curves end at its vertices. A section's curve is put on a vertex it passes
+    /// within the tolerances of, so the edge's curve in space and its curves on the two faces can end short of the vertex or
+    /// past it, by what the walk was out by there; near a touch that's far more than a tolerance, as the surfaces lie within
+    /// one of each other over a band. Each face's boundary is then open in its parameters at that vertex. Here the edge
+    /// takes its own piece of each B-spline, with its end pole moved to the vertex: the vertex's point in space, and the
+    /// point of the face's parameters nearest it.
+    /// </summary>
+    protected void SectionsEndAtTheirVertices()
+    {
+        // Where each vertex is on a face's own edges: the point of the edge at the vertex's parameter. An edge given as a
+        // line or a circle can't be moved to the vertex, so the sections' curves go to where it ends. A vertex that one
+        // face's edges end at in different places is left out, and the curves go to its own point
+        Dictionary<Pair, Point3D> onEdges = new();
+        HashSet<Pair> apart = new();
+        HashSet<Pair> seen = new();
+        for (int nF = 0; nF < _ds!.SourceShapeCount; ++nF)
+        {
+            if (_ds.ShapeInfo(nF).ShapeType() != ShapeType.Face)
+            {
+                continue;
+            }
+
+            for (Explorer edges = new(_ds.Shape(nF), ShapeType.Edge); edges.More(); edges.Next())
+            {
+                int nE = _ds.Index(edges.Current());
+                if (nE < 0 || !seen.Add(new Pair(nE, nF)) || !_ds.HasPaveBlocks(nE))
+                {
+                    continue;
+                }
+
+                Edge edge = ShapeCasts.Edge(_ds.Shape(nE));
+                if (Tool.Degenerated(edge))
+                {
+                    continue;
+                }
+
+                EdgeCurveAdaptor curve = new(edge);
+                for (NCollection_List<PaveBlock>.Iterator blocks = new(_ds.PaveBlocks(nE)); blocks.More(); blocks.Next())
+                {
+                    for (int end = 0; end < 2; ++end)
+                    {
+                        Pave pave = end == 0 ? blocks.Value().Pave1() : blocks.Value().Pave2();
+                        Pair key = new(SameDomain(pave.Index()), nF);
+                        Point3D point = curve.Value(pave.Parameter());
+                        if (!onEdges.TryAdd(key, point) && onEdges[key].DistanceTo(point) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                        {
+                            apart.Add(key);
+                        }
+                    }
+                }
+            }
+        }
+        foreach (Pair key in apart)
+        {
+            onEdges.Remove(key);
+        }
+
+        HashSet<int> done = new();
+        foreach (InterfFF ff in _ds.InterfFF())
+        {
+            ff.Indices(out int nF1, out int nF2);
+            foreach (SectionCurve section in ff.Curves())
+            {
+                for (NCollection_List<PaveBlock>.Iterator blocks = new(section.PaveBlocks()); blocks.More(); blocks.Next())
+                {
+                    int nE = blocks.Value().Edge();
+                    if (nE >= 0 && _ds.IsNewShape(nE) && done.Add(nE))
+                    {
+                        EndAtItsVertices(nE, nF1, nF2, onEdges);
+                    }
+                }
+            }
+        }
+    }
+
+    private int SameDomain(int nV)
+    {
+        int same = nV;
+        return nV >= 0 && _ds!.HasShapeSD(nV, ref same) ? same : nV;
+    }
+
+    // Where a curve on this face that ends at a vertex ends: on the face's edge the vertex is on, or else at its own point
+    private Point3D EndAt(in Vertex vertex, int nF, Dictionary<Pair, Point3D> onEdges)
+    {
+        Point3D point = Tool.Pnt(vertex);
+        int nV = _ds!.Index(vertex);
+        return nV >= 0 && onEdges.TryGetValue(new Pair(SameDomain(nV), nF), out Point3D onEdge)
+               && onEdge.DistanceTo(point) <= Tool.Tolerance(vertex) + global::Kerf.Engine.Foundation.Precision.Confusion()
+            ? onEdge
+            : point;
+    }
+
+    private void EndAtItsVertices(int nE, int nF1, int nF2, Dictionary<Pair, Point3D> onEdges)
+    {
+        Edge edge = ShapeCasts.Edge(_ds!.Shape(nE));
+        edge.Orient(Forward);
+        if (Tool.Degenerated(edge))
+        {
+            return;
+        }
+
+        Exploration.Vertices(edge, out Vertex first, out Vertex last);
+        if (first.IsNull || last.IsNull || first.IsSame(last))
+        {
+            return;
+        }
+
+        Curve3D? curve = Tool.Curve(edge, out Placement curvePlacement, out double from, out double to);
+        if (curve is null || !curvePlacement.IsIdentity || !(to > from))
+        {
+            return;
+        }
+
+        // A curve in space that isn't a B-spline, as the ellipse two cylinders are taken to meet in, stays where it is, and
+        // only the curves on the faces move
+        BSplineCurve3D? spline = curve as BSplineCurve3D;
+        double confusion = global::Kerf.Engine.Foundation.Precision.Confusion();
+        // In space the curve goes to where the first face's edges end, which the vertex covers as it does the second's
+        Point3D a = EndAt(first, nF1, onEdges), b = EndAt(last, nF1, onEdges);
+        if (a.IsEqual(Tool.Pnt(first), 0.0))
+        {
+            a = EndAt(first, nF2, onEdges);
+        }
+        if (b.IsEqual(Tool.Pnt(last), 0.0))
+        {
+            b = EndAt(last, nF2, onEdges);
+        }
+        bool open = spline is not null && (spline.Value(from).DistanceTo(a) > confusion || spline.Value(to).DistanceTo(b) > confusion);
+
+        // Each face's curve, where it's a B-spline over the edge's range, with where its ends should be
+        Span<int> faces = [nF1, nF2];
+        Face[] onFaces = new Face[2];
+        BSplineCurve2D?[] onSurfaces = new BSplineCurve2D?[2];
+        Span<Point2D> ends = stackalloc Point2D[4];
+        for (int side = 0; side < 2; ++side)
+        {
+            Face face = ShapeCasts.Face(_ds.Shape(faces[side]));
+            face.Orient(Forward);
+            onFaces[side] = face;
+            Surface? surface = Tool.Surface(face, out Placement placement);
+            if (surface is null || (side == 1 && nF2 == nF1) || Tool.IsClosed(edge, face)
+                || Tool.CurveOnSurface(edge, face, out double from2, out double to2) is not BSplineCurve2D onSurface || from2 != from || to2 != to)
+            {
+                continue;
+            }
+
+            Point3D aOn = EndAt(first, faces[side], onEdges), bOn = EndAt(last, faces[side], onEdges);
+            if (!placement.IsIdentity)
+            {
+                aOn = aOn.Transformed(placement.Inverted().Transformation);
+                bOn = bOn.Transformed(placement.Inverted().Transformation);
+            }
+            Point2D start = onSurface.Value(from), end = onSurface.Value(to);
+            open |= surface.Value(start.X, start.Y).DistanceTo(aOn) > confusion || surface.Value(end.X, end.Y).DistanceTo(bOn) > confusion;
+            onSurfaces[side] = onSurface;
+            ends[2 * side] = Nearest(surface, start, aOn);
+            ends[2 * side + 1] = Nearest(surface, end, bOn);
+        }
+
+        if (!open)
+        {
+            return;
+        }
+
+        // The edge's own piece of each curve. Cutting one to a range within a parametric confusion of a knot ends it at the
+        // knot, so the edge's range is taken from the cut curve, and every curve has to agree on it
+        try
+        {
+            double ownFrom = from, ownTo = to;
+            BSplineCurve3D? own = null;
+            if (spline is not null)
+            {
+                own = (BSplineCurve3D)spline.Copy();
+                own.Segment(from, to);
+                ownFrom = own.FirstParameter;
+                ownTo = own.LastParameter;
+                double near = 2.0 * global::Kerf.Engine.Foundation.Precision.PConfusion();
+                if (Math.Abs(ownFrom - from) > near || Math.Abs(ownTo - to) > near)
+                {
+                    return;
+                }
+
+                own.SetPole(1, a);
+                own.SetPole(own.PoleCount, b);
+            }
+
+            BSplineCurve2D?[] owns = new BSplineCurve2D?[2];
+            for (int side = 0; side < 2; ++side)
+            {
+                if (onSurfaces[side] is not { } onSurface)
+                {
+                    continue;
+                }
+
+                BSplineCurve2D own2 = (BSplineCurve2D)onSurface.Copy();
+                own2.Segment(from, to);
+                if (own2.FirstParameter != ownFrom || own2.LastParameter != ownTo)
+                {
+                    return;
+                }
+
+                own2.SetPole(1, ends[2 * side]);
+                own2.SetPole(own2.PoleCount, ends[2 * side + 1]);
+                owns[side] = own2;
+            }
+
+            BrepBuilder builder = new();
+            double tolerance = Tool.Tolerance(edge);
+            if (own is not null)
+            {
+                builder.UpdateEdge(edge, own, tolerance);
+            }
+            for (int side = 0; side < 2; ++side)
+            {
+                if (owns[side] is { } own2)
+                {
+                    builder.UpdateEdge(edge, own2, onFaces[side], tolerance);
+                }
+            }
+            if (own is not null)
+            {
+                builder.Range(edge, ownFrom, ownTo);
+            }
+        }
+        catch (Exception caught) when (Refusal.IsFailure(caught))
+        {
+            return;
+        }
+
+        double worst = Tool.Tolerance(edge);
+        for (int side = 0; side < 2; ++side)
+        {
+            if (onSurfaces[side] is not null && AlgoTools.ComputeTolerance(onFaces[side], edge, out double off, out _))
+            {
+                worst = Max(worst, off);
+            }
+        }
+        if (worst > Tool.Tolerance(edge))
+        {
+            UpdateEdgeTolerance(nE, worst);
+        }
+    }
+
+    // The point of the surface's parameters nearest a point in space, from one near it
+    private static Point2D Nearest(Surface surface, in Point2D from, in Point3D to)
+    {
+        double u = from.X, v = from.Y;
+        for (int i = 0; i < 4; ++i)
+        {
+            surface.D1(u, v, out Point3D at, out Vector3D du, out Vector3D dv);
+            Vector3D off = new(at, to);
+            double uu = du.Dot(du), uv = du.Dot(dv), vv = dv.Dot(dv), determinant = uu * vv - uv * uv;
+            if (!(determinant > 1e-12 * uu * vv))
+            {
+                break;
+            }
+
+            double pu = off.Dot(du), pv = off.Dot(dv);
+            u += (pu * vv - pv * uv) / determinant;
+            v += (pv * uu - pu * uv) / determinant;
+        }
+        return new Point2D(u, v);
+    }
 }

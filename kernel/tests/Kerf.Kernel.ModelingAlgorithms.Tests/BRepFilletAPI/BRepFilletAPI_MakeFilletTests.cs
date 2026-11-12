@@ -464,8 +464,8 @@ public class BRepFilletAPI_MakeFilletTests
 
     /// <summary>
     /// blend/tolblend_buildvol/A9 at a small size (decision 1720): a cone's closed top edge filleted with no radius at
-    /// its one vertex. The new loop on the top face replaces the edge, so the face isn't kept whole as well. The figures
-    /// are native OCCT 8.0.1's.
+    /// its one vertex. The new loop on the top face replaces the edge, so the face isn't kept whole as well. The area was
+    /// native OCCT 8.0.1's, 1358.38537, until the fillet became the envelope of its balls (unit 15AK), and is Kerf's.
     /// </summary>
     [Fact]
     public void A_closed_edge_with_no_radius_at_its_vertex_leaves_only_the_new_loop()
@@ -496,7 +496,7 @@ public class BRepFilletAPI_MakeFilletTests
             aFaces++;
         }
         Assert.Equal(4, aFaces);
-        Assert.Equal(1358.38537, Area(aResult), 1e-3);
+        Assert.Equal(1358.39413, Area(aResult), 1e-3);
     }
 
     /// <summary>

@@ -147,6 +147,14 @@ internal sealed class TangentZone
 
     // Mutators (internal: see the remarks)
 
+    /// <summary>Empties the zone, as a new one (Kerf: for a zone reused as working space).</summary>
+    internal void Clear()
+    {
+        _result.Clear();
+        _paramOnFirstMin = _paramOnSecondMin = RealLast();
+        _paramOnFirstMax = _paramOnSecondMax = RealFirst();
+    }
+
     /// <summary>Adds a section point to the tangent zone.</summary>
     internal void Append(in SectionPoint pi)
     {
@@ -291,6 +299,12 @@ internal sealed class TangentZone
         }
 
         public int Length() => _front.Count + _back.Count;
+
+        public void Clear()
+        {
+            _front.Clear();
+            _back.Clear();
+        }
 
         public SectionPoint this[int index]
         {

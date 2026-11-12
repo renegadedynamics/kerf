@@ -12,4 +12,10 @@ internal enum ErrorStatus
     WalkingFailure,
     StartsolFailure,
     TwistedSurface,
+
+    /// <summary>
+    /// Kerf (unit 15AK): the radius is changing where the guide's curvature jumps, or its rate of change jumps, so the
+    /// surface the ball sweeps has a piece of the ball there that the fillet's sections can't follow.
+    /// </summary>
+    EnvelopeCorner,
 }

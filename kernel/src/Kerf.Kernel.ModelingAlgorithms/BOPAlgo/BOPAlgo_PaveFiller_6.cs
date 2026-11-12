@@ -760,7 +760,7 @@ internal partial class PaveFiller
                 {
                     lbv.Clear();
                     //
-                    PutBoundPaveOnCurve(f1, f2, nc, lbv);
+                    PutBoundPaveOnCurve(f1, f2, nc, lbv, nF1, nF2);
                     //
                     if (!lbv.IsEmpty())
                     {
@@ -1131,6 +1131,7 @@ internal partial class PaveFiller
         PaveFiller pf = new();
         pf.SetIsPrimary(false);
         pf.SetNonDestructive(_nonDestructive);
+        pf.SetCrossingsApart(_crossingsApart, _touchesApart);
         //
         List<InterfFF> fFs = _ds!.InterfFF();
         int nbFF = fFs.Count;
@@ -2226,7 +2227,7 @@ internal partial class PaveFiller
 
     //=================================================================================================
 
-    protected void PutBoundPaveOnCurve(in Face aF1, in Face aF2, SectionCurve aNC, NCollection_List<int> aLVB)
+    protected void PutBoundPaveOnCurve(in Face aF1, in Face aF2, SectionCurve aNC, NCollection_List<int> aLVB, int nF1 = -1, int nF2 = -1)
     {
         IntersectionCurve ic = aNC.Curve();
         Span<double> t = stackalloc double[2];
@@ -2253,6 +2254,16 @@ internal partial class PaveFiller
                 if (j != 0 && isClosed)
                 {
                     // if curve is closed, process only one bound
+                    continue;
+                }
+                if (_crossingsApart > 0 && EndsAtACrossing(aF1, aF2, aNC, j, nF1, nF2))
+                {
+                    ic = aNC.Curve();
+                    ic.Bounds(ref t[0], ref t[1], ref p[0], ref p[1]);
+                    continue;
+                }
+                if (EndsAtItsLastVertex(aNC, j, p[j]))
+                {
                     continue;
                 }
                 bool bVF = _context!.IsValidPointForFaces(p[j], aF1, aF2, tolR3D);
@@ -2282,6 +2293,177 @@ internal partial class PaveFiller
                 aLVB.Append(nVn);
             }
         }
+    }
+
+    //=================================================================================================
+
+    // Where two surfaces touch within a tolerance over a stretch, as equal cylinders 1e-11 short of crossing at radius 5000 do
+    // over 0.03, the points where an edge crosses a face and where the section's curve ends are each found to no better than a
+    // good part of the distance between them: 3.2e-4 from the touch by the edge and the face, 4.6e-4 by the walk. The vertex
+    // grown over the first (decision 1923) then stops short of the curve's end, which got a vertex of its own a tolerance
+    // away, a stub of the curve between them, and two faces thinner than the tolerance: invalid. Not OCCT's: a curve that ends
+    // within twice the tolerance of the last vertex put on it, and within the stretch over which the edge that vertex was grown
+    // for touches the face, ends at that vertex, which grows to cover the end (decision 2260). Any other end is left to
+    // OCCT's steps, which give it a vertex of its own.
+    private const double EndWithinTolerances = 2.0;
+
+    private bool EndsAtItsLastVertex(SectionCurve curve, int end, in Point3D at)
+    {
+        int nV = -1;
+        double extreme = 0.0;
+        for (NCollection_List<Pave>.Iterator paves = new(curve.PaveBlocks().First().ExtPaves()); paves.More(); paves.Next())
+        {
+            paves.Value().Contents(out int index, out double parameter);
+            if (nV < 0 || (end == 0 ? parameter < extreme : parameter > extreme))
+            {
+                (nV, extreme) = (index, parameter);
+            }
+        }
+
+        if (nV < 0 || !_touchSpans.TryGetValue(nV, out double span))
+        {
+            return false;
+        }
+
+        Vertex vertex = ShapeCasts.Vertex(_ds!.Shape(nV));
+        double distance = Tool.Pnt(vertex).DistanceTo(at);
+        if (distance > span || distance > EndWithinTolerances * Tool.Tolerance(vertex))
+        {
+            return false;
+        }
+
+        UpdateVertex(nV, distance + AlgoTools.DTolerance());
+        return true;
+    }
+
+    //=================================================================================================
+
+    /// <summary>
+    /// Kerf (decision 2287): a section's curve that stops short of the boundary it was walking to, within the stretch an edge
+    /// of one face touches the other face over, is carried on to where that edge crosses the face. Where two surfaces lie
+    /// within a tolerance of each other over a band, the walk can stop anywhere in it; the curve can only end on a boundary,
+    /// and the edge and face step has found where the boundary crosses. The end pole of the curve, in space and on each
+    /// face, moves to the crossing's vertex, which takes the end with no change to its tolerance. Only with crossings
+    /// apart: OCCT's one grown vertex covers the band whole.
+    /// </summary>
+    private bool EndsAtACrossing(in Face f1, in Face f2, SectionCurve curve, int end, int nF1, int nF2)
+    {
+        IntersectionCurve ic = curve.Curve();
+        if (nF1 < 0 || ic.Curve() is not BSplineCurve3D spline || spline.IsPeriodic
+            || ic.FirstCurve2d() is not BSplineCurve2D on1 || ic.SecondCurve2d() is not BSplineCurve2D on2)
+        {
+            return false;
+        }
+
+        double t0 = 0.0, t1 = 0.0;
+        Point3D p0 = new(), p1 = new();
+        ic.Bounds(ref t0, ref t1, ref p0, ref p1);
+        if (t0 != spline.FirstParameter || t1 != spline.LastParameter || on1.FirstParameter != t0 || on1.LastParameter != t1
+            || on2.FirstParameter != t0 || on2.LastParameter != t1)
+        {
+            return false;
+        }
+
+        Point3D at = end == 0 ? p0 : p1;
+        int nearest = -1;
+        double least = double.MaxValue;
+        for (int i = 0; i < _touchCrossings.Count; ++i)
+        {
+            (int nE, int nF, Point3D crossing, double span) = _touchCrossings[i];
+            double distance = crossing.DistanceTo(at);
+            if ((nF == nF1 || nF == nF2) && distance <= span && distance < least)
+            {
+                (nearest, least) = (i, distance);
+            }
+        }
+        if (nearest < 0)
+        {
+            return false;
+        }
+
+        // The vertex made at the crossing: one of its edge's
+        (int edge, _, Point3D where, _) = _touchCrossings[nearest];
+        if (!_ds!.HasPaveBlocks(edge))
+        {
+            return false;
+        }
+
+        int nV = -1;
+        double off = double.MaxValue;
+        void Try(int n)
+        {
+            int sd = n;
+            if (n >= 0 && _ds.HasShapeSD(n, ref sd))
+            {
+                n = sd;
+            }
+
+            if (n >= 0)
+            {
+                Vertex candidate = ShapeCasts.Vertex(_ds.Shape(n));
+                double d = Tool.Pnt(candidate).DistanceTo(where);
+                if (d <= Tool.Tolerance(candidate) + global::Kerf.Engine.Foundation.Precision.Confusion() && d < off)
+                {
+                    (nV, off) = (n, d);
+                }
+            }
+        }
+        for (NCollection_List<PaveBlock>.Iterator blocks = new(_ds.PaveBlocks(edge)); blocks.More(); blocks.Next())
+        {
+            blocks.Value().Indices(out int n1, out int n2);
+            Try(n1);
+            Try(n2);
+            for (NCollection_List<Pave>.Iterator paves = new(blocks.Value().ExtPaves()); paves.More(); paves.Next())
+            {
+                Try(paves.Value().Index());
+            }
+        }
+        if (nV < 0)
+        {
+            return false;
+        }
+
+        // Not a vertex the curve has already
+        PaveBlock block = curve.PaveBlocks().First();
+        for (NCollection_List<Pave>.Iterator paves = new(block.ExtPaves()); paves.More(); paves.Next())
+        {
+            if (paves.Value().Index() == nV)
+            {
+                return false;
+            }
+        }
+
+        Vertex vertex = ShapeCasts.Vertex(_ds.Shape(nV));
+        Point3D point = Tool.Pnt(vertex);
+        try
+        {
+            BSplineCurve3D moved = (BSplineCurve3D)spline.Copy();
+            BSplineCurve2D moved1 = (BSplineCurve2D)on1.Copy(), moved2 = (BSplineCurve2D)on2.Copy();
+            moved.SetPole(end == 0 ? 1 : moved.PoleCount, point);
+            for (int side = 0; side < 2; ++side)
+            {
+                Surface? surface = Tool.Surface(side == 0 ? f1 : f2, out Placement placement);
+                if (surface is null)
+                {
+                    return false;
+                }
+
+                BSplineCurve2D on = side == 0 ? moved1 : moved2;
+                Point3D local = placement.IsIdentity ? point : point.Transformed(placement.Inverted().Transformation);
+                on.SetPole(end == 0 ? 1 : on.PoleCount, Nearest(surface, on.Value(end == 0 ? t0 : t1), local));
+            }
+            curve.SetCurve(ic.WithCurves(moved, moved1, moved2));
+        }
+        catch (Exception caught) when (Refusal.IsFailure(caught))
+        {
+            return false;
+        }
+
+        Pave pave = new();
+        pave.SetIndex(nV);
+        pave.SetParameter(end == 0 ? t0 : t1);
+        block.AppendExtPave(pave);
+        return true;
     }
 
     //=================================================================================================
@@ -2812,6 +2994,12 @@ internal partial class PaveFiller
                     //
                     // The intersection curve aIC is vanishing curve (the crease)
                     d = Math.Sqrt(d2);
+                    // A curve's end far from the vertex doesn't end at it (decision 2285): OCCT takes any shared vertex within
+                    // 4.5e-4 of the end of a curve between tangent faces, whatever the tolerances
+                    if (IsApart(nV, pc[m], Max(nc.Tolerance(), nc.TangentialTolerance())))
+                    {
+                        continue;
+                    }
                     //
                     PutPaveOnCurve(nV, d, nc, aMI, aMVTol, aDMVLV);
                 }
@@ -2991,6 +3179,8 @@ internal partial class PaveFiller
                     Point3D pOnC = new();
                     ic.D0(t, ref pOnC);
                     tolV = pOnC.DistanceTo(Tool.Pnt(v));
+                    // A curve passing far from the vertex doesn't pass through it (decision 2276)
+                    bIsVertexOnLine = !IsApart(nV, pOnC, aTolR3D);
                 }
             }
         }
@@ -4409,5 +4599,106 @@ internal partial class PaveFiller
             }
         }
         RemovePaveBlocks(microEdges);
+        if (_crossingsApart > 0)
+        {
+            PiecesRunOnThroughTheirVertices();
+        }
+    }
+
+    /// <summary>
+    /// Kerf (decision 2289): where a piece of an edge that lay inside one vertex was dropped as having no range, the piece
+    /// next to it, which ends at that vertex too, runs on to the dropped piece's far end. OCCT drops such a piece at several
+    /// steps and leaves its neighbours where they were, so the edge stops at one point of the vertex and starts again at
+    /// another, and each face it bounds is open there in its parameters by the dropped piece's length. Only with crossings
+    /// apart, and never a piece that a common block shares with another edge.
+    /// </summary>
+    private void PiecesRunOnThroughTheirVertices()
+    {
+        BrepBuilder builder = new();
+        List<PaveBlock> ordered = new();
+        for (int nE = 0; nE < _ds!.SourceShapeCount; ++nE)
+        {
+            ShapeInfo info = _ds.ShapeInfo(nE);
+            if (info.ShapeType() != ShapeType.Edge || info.HasFlag() || !_ds.HasPaveBlocks(nE))
+            {
+                continue;
+            }
+
+            Edge edge = ShapeCasts.Edge(_ds.Shape(nE));
+            edge.Orient(Orientation.Forward);
+            if (Tool.Degenerated(edge))
+            {
+                continue;
+            }
+
+            ordered.Clear();
+            for (NCollection_List<PaveBlock>.Iterator blocks = new(_ds.PaveBlocks(nE)); blocks.More(); blocks.Next())
+            {
+                ordered.Add(blocks.Value());
+            }
+            if (ordered.Count == 0 || (ordered.Count == 1 && ordered[0].Edge() == nE))
+            {
+                continue;
+            }
+            ordered.Sort(static (x, y) => x.Pave1().Parameter().CompareTo(y.Pave1().Parameter()));
+
+            Exploration.Vertices(edge, out Vertex first, out Vertex last);
+            Tool.Range(edge, out double from, out double to);
+            int vertex = first.IsNull ? -1 : SameDomainOf(_ds.Index(first)), end = last.IsNull ? -1 : SameDomainOf(_ds.Index(last));
+            double reached = from, least = global::Kerf.Engine.Foundation.Precision.PConfusion();
+            PaveBlock? before = null;
+            for (int i = 0; i <= ordered.Count; ++i)
+            {
+                PaveBlock? block = i < ordered.Count ? ordered[i] : null;
+                double starts = block is null ? to : block.Pave1().Parameter();
+                int at = block is null ? end : SameDomainOf(block.Pave1().Index());
+                if (starts > reached + least && at == vertex && vertex >= 0)
+                {
+                    // A piece is missing between two ends at one vertex: the piece before runs on, or else the one after
+                    // starts sooner
+                    if (before is not null && OwnPiece(before, nE))
+                    {
+                        Pave pave = before.Pave2();
+                        pave.SetParameter(starts);
+                        before.SetPave2(pave);
+                        RunOn(before, builder);
+                    }
+                    else if (block is not null && OwnPiece(block, nE))
+                    {
+                        Pave pave = block.Pave1();
+                        pave.SetParameter(reached);
+                        block.SetPave1(pave);
+                        RunOn(block, builder);
+                    }
+                }
+
+                if (block is not null)
+                {
+                    reached = block.Pave2().Parameter();
+                    vertex = SameDomainOf(block.Pave2().Index());
+                    before = block;
+                }
+            }
+        }
+    }
+
+    private int SameDomainOf(int nV)
+    {
+        int same = nV;
+        return nV >= 0 && _ds!.HasShapeSD(nV, ref same) ? same : nV;
+    }
+
+    // A piece of this edge alone, with an edge of its own made for it
+    private bool OwnPiece(PaveBlock block, int nE)
+        => block.HasEdge(out int nSplit) && nSplit != nE && _ds!.IsNewShape(nSplit) && _ds.CommonBlock(block) is null;
+
+    private void RunOn(PaveBlock block, BrepBuilder builder)
+    {
+        block.Range(out double t1, out double t2);
+        Edge split = ShapeCasts.Edge(_ds!.Shape(block.Edge()));
+        builder.Range(split, t1, t2);
+        ref Box box = ref _ds.ChangeShapeInfo(block.Edge()).ChangeBox();
+        Bounds.Add(split, ref box);
+        FillShrunkData(block);
     }
 }

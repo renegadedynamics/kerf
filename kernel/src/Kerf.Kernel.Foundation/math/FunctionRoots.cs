@@ -262,7 +262,8 @@ internal class FunctionRoots
             double x = X0;
             bool ok;
             double dx = (xn - X0) / n;
-            NCollection_Array1<double> ptrval = new(0, n);
+            // Kerf: on the stack when there are few, as nearly always (every search for an intersection or an extremum does this)
+            Span<double> ptrval = n < 256 ? stackalloc double[n + 1] : new double[n + 1];
             int nvalid = -1;
             double aux = 0;
             for (i = 0; i <= n; i++, x += dx)

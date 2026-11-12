@@ -29,7 +29,12 @@ internal class BrentMinimum
     private bool _f;
 
     /// <summary>Prepares the algorithm; <see cref="Perform"/> does the job.</summary>
-    public BrentMinimum(double tolX, int nbIterations = 100, double zeps = 1.0e-12)
+    public BrentMinimum(double tolX, int nbIterations = 100, double zeps = 1.0e-12) => Reset(tolX, nbIterations, zeps);
+
+    /// <summary>
+    /// Kerf (unit 15AL): this object as the constructor of the same arguments makes it, for one that is used again.
+    /// </summary>
+    internal void Reset(double tolX, int nbIterations = 100, double zeps = 1.0e-12)
     {
         _a = 0.0;
         _b = 0.0;
