@@ -455,7 +455,8 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
         y[3] = near.ParameterOnC();
         advance = 0.0;
         Position(prm);
-        if (!SolveAt(y) || !WalkCentreD2(prm, y, out Vector3D d2c) || !WalkCentre(prm, y, dx, out Vector3D dc)
+        // A point of the walk is its own solution: Newton's method only between the walk's points.
+        if ((prm != near.Parameter() && !SolveAt(y)) || !WalkCentreD2(prm, y, out Vector3D d2c) || !WalkCentre(prm, y, dx, out Vector3D dc)
             || !Envelope(dc, out EnvelopeCircle e))
         {
             return false;

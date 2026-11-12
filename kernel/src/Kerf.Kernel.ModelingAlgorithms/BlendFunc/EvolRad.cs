@@ -1302,7 +1302,9 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
         near.ParametersOnS2(out y[3], out y[4]);
         advance = 0.0;
         Vector3D zero = new Vector3D();
-        if (!SolveAt(y, prm) || !ComputeValues(y, 2, true, prm) || !Ball(2, dx, d2x, out Vector3D dc, out Vector3D d2c, out _, out _)
+        // A point of the walk is its own solution: Newton's method only between the walk's points.
+        if ((prm != near.Parameter() && !SolveAt(y, prm)) || !ComputeValues(y, 2, true, prm)
+            || !Ball(2, dx, d2x, out Vector3D dc, out Vector3D d2c, out _, out _)
             || !Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e))
         {
             return false;
