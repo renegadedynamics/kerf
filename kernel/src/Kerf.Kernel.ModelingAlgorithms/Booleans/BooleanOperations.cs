@@ -150,7 +150,57 @@ public static class BooleanOperations
         section.Approximation(options.ApproximateSection);
         section.ComputePCurveOn1(options.SectionCurvesOnFaces);
         section.ComputePCurveOn2(options.SectionCurvesOnFaces);
-        return Run(section, arguments, tools, options with { Simplify = false }, progress, cancellationToken);
+        Result<Built<Shape>> result = Run(section, arguments, tools, options with { Simplify = false }, progress, cancellationToken);
+        if (options.CheckResult && result.TryGetValue(out Built<Shape>? built)
+            && SectionStopsShort(arguments, tools, built.Shape, options.FuzzyValue) is { } wrong)
+        {
+            return Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
+        }
+        return result;
+    }
+
+    // A section's curve ends only where it leaves a face, and goes on over the next face unless that edge is one a single
+    // face has. So an end of the section that nothing else uses, and that isn't on such an edge of an input, is a curve with a
+    // piece missing: OCCT #1124's disc and cylinders, sections of 0.96 to 16.8 for curves of 38 to 43 where they aren't
+    // approximated, each a success before (decision 2301). Each end costs a distance to the inputs' free edges.
+    private static Diagnostic? SectionStopsShort(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape section, double fuzzyValue)
+    {
+        List<Shape> ends = FreeEndVertices(section);
+        if (ends.Count == 0)
+        {
+            return null;
+        }
+
+        var free = new List<Shape>();
+        foreach (Shape input in arguments.Concat(tools))
+        {
+            var faces = new Engine.Collections.IndexedMap<Shape, global::Kerf.Engine.NCollection_List<Shape>>(Engine.Topology.ShapeHasher.Instance);
+            Engine.Topology.Exploration.MapShapesAndAncestors(input, ShapeType.Edge, ShapeType.Face, faces);
+            for (int i = 0; i < faces.Count; i++)
+            {
+                if (faces.ValueAt(i).Extent() < 2)
+                {
+                    free.Add(faces.KeyAt(i));
+                }
+            }
+        }
+
+        Compound border = Compound.Create(free);
+        int short_ = 0;
+        foreach (Shape end in ends)
+        {
+            double reach = 10 * Math.Max(Math.Max(Engine.Topology.Brep.Tool.Tolerance(Engine.Topology.ShapeCasts.Vertex(end)), fuzzyValue), global::Kerf.Geometry.Tolerances.Confusion);
+            if (free.Count == 0 || !(end.Distance(border) is { IsSuccess: true } distance && distance.Value.Value <= reach))
+            {
+                short_++;
+            }
+        }
+
+        return short_ == 0
+            ? null
+            : Diagnostic.Error(DiagnosticCode.InvalidResult,
+                $"The section stops inside the faces it crosses at {short_} of its ends, where a curve between two faces can't end: a piece of it is missing."
+                + " If ApproximateSection is off, a section made with it on may be whole.");
     }
 
     /// <summary><paramref name="arguments"/> split by <paramref name="tools"/>: the arguments' pieces, without the tools'.</summary>
@@ -166,8 +216,71 @@ public static class BooleanOperations
     /// <summary>All of <paramref name="shapes"/> split by each other (OCCT's General Fuse): every piece, shared where
     /// they meet.</summary>
     public static Result<Built<Shape>> Partition(IReadOnlyList<Shape> shapes, BooleanOptions? options = null,
-                                                 IProgress<double>? progress = null, CancellationToken cancellationToken = default) =>
-        Run(new BuilderAlgo(), shapes, options, progress, cancellationToken);
+                                                 IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    {
+        Result<Built<Shape>> result = Run(new BuilderAlgo(), shapes, options, progress, cancellationToken);
+        if (options is { CheckResult: false } || !result.TryGetValue(out Built<Shape>? built))
+        {
+            return result;
+        }
+
+        // Every piece of every shape is in a partition, so where two faces cross, the edge between them ends on an edge of one
+        // of them or on another crossing, at a vertex other edges use. A result with more ends of edges that go nowhere than
+        // its shapes had has a crossing that stopped short, and faces it should have split left whole: OCCT #905's sheets
+        // through a disc, one solid for two and a success, where one crossing ends 3.1e-5 from the next with vertices of 5e-6
+        // (decision 2300). Made again with a fuzzy value as a Boolean proved wrong is, and a failure if that has them too.
+        int ends = shapes.Sum(FreeEnds);
+        if (FreeEnds(built.Shape) <= ends)
+        {
+            return result;
+        }
+
+        options ??= BooleanOptions.Default;
+        var analysis = new ShapeToleranceAnalysis();
+        double tolerance = shapes.Max(s => analysis.Tolerance(s, 1));
+        double size = shapes.Max(static s => s.BoundingBox() is { IsEmpty: false } box ? box.Min.DistanceTo(box.Max) : 0);
+        foreach (double times in FuzzyOfTolerance)
+        {
+            double fuzzy = times * tolerance;
+            if (!(fuzzy > options.FuzzyValue) || (times > FuzzyOfTolerance[0] && !(fuzzy <= FuzzyOfSize * size)))
+            {
+                continue;
+            }
+
+            Result<Built<Shape>> again = Run(new BuilderAlgo(), shapes, options with { FuzzyValue = fuzzy }, null, cancellationToken);
+            if (again.TryGetValue(out Built<Shape>? other) && FreeEnds(other.Shape) <= ends)
+            {
+                string value = fuzzy.ToString("G3", System.Globalization.CultureInfo.InvariantCulture);
+                return Result<Built<Shape>>.Success(other, [.. again.Diagnostics,
+                    Diagnostic.Warning(BuiltWithFuzzyValue, $"The first attempt at this partition left a crossing of two faces short of where it should end, and this one was made with a fuzzy value of {value}.")]);
+            }
+        }
+
+        return Result<Built<Shape>>.Invalid(built, Diagnostic.Error(DiagnosticCode.InvalidResult,
+            "The partition has an edge where two faces cross that stops short of the edge it should end on, so faces it should have split are whole; a fuzzy value didn't mend it."),
+            result.Diagnostics);
+    }
+
+    // The vertices of a shape that one edge alone uses, and once: the ends of edges that go nowhere
+    private static int FreeEnds(Shape shape) => FreeEndVertices(shape).Count;
+
+    private static List<Shape> FreeEndVertices(Shape shape)
+    {
+        var uses = new Dictionary<Shape, int>(Engine.Topology.ShapeHasher.Instance);
+        var edges = new HashSet<Shape>(Engine.Topology.ShapeHasher.Instance);
+        for (var edge = new Engine.Topology.Explorer(shape, ShapeType.Edge); edge.More(); edge.Next())
+        {
+            if (!edges.Add(edge.Current()))
+            {
+                continue;
+            }
+            for (var vertex = new Engine.Topology.Explorer(edge.Current(), ShapeType.Vertex); vertex.More(); vertex.Next())
+            {
+                uses[vertex.Current()] = uses.GetValueOrDefault(vertex.Current()) + 1;
+            }
+        }
+        return [.. uses.Where(static use => use.Value == 1).Select(static use => use.Key)];
+    }
 
     private static Result<Built<Shape>> Run(BooleanOperation operation, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
                                             BooleanOptions? options, IProgress<double>? progress, CancellationToken cancellationToken)
