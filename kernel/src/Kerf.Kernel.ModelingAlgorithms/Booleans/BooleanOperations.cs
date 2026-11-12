@@ -205,7 +205,7 @@ public static class BooleanOperations
     /// <summary>
     /// A result whose faces are open in their parameters inside a vertex's tolerance, where its inputs' aren't, is made again
     /// with each crossing as a vertex of its own (<see cref="Engine.Booleans.PaveFiller.SetCrossingsApart"/>), and that one is
-    /// kept if it has fewer gaps, is valid, passes the check of volumes and has the first one's volume; otherwise the first is,
+    /// kept if it has fewer gaps, is valid, passes the check of volumes and has the first one's volume and area; otherwise the first is,
     /// which the public measurements read across the gaps (decisions 2257, 2276 and 32904). OCCT grows one vertex over crossings near it and
     /// drops the pieces between, which leaves each face's boundary open there: valid, and read as area missing by anything
     /// that integrates round the boundary as OCCT's own <c>BRepGProp</c> does.
