@@ -317,93 +317,79 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         return true;
     }
 
-    // The same on the walk's solution at prm + dt, found by Newton's method from x and its derivative dx at prm.
-    private bool WalkCentreNear(double prm, math_Vector x, math_Vector dx, double dt, out Vector3D dc)
-    {
-        math_Vector y = new(1, 2), f = new(1, 2), step = new(1, 2), dy = new(1, 2);
-        Matrix grad = new(1, 2, 1, 2);
-        dc = new Vector3D();
-        for (int i = 1; i <= 2; i++)
-        {
-            y[i] = x[i] + dt * dx[i];
-        }
-
-        Position(prm + dt);
-        for (int iter = 0; iter < 8; iter++)
-        {
-            Ball(y, _nplan);
-            if (!_isBall)
-            {
-                return false;
-            }
-
-            BallValues(f);
-            BallDerivatives(grad);
-            Gauss resol = new(grad, 1.0e-14);
-            if (!resol.IsDone)
-            {
-                return false;
-            }
-
-            resol.Solve(-f, step);
-            bool small = true;
-            for (int i = 1; i <= 2; i++)
-            {
-                y[i] += step[i];
-                small &= Math.Abs(step[i]) <= 1.0e-13 * (1.0 + Math.Abs(y[i]));
-            }
-
-            if (small)
-            {
-                break;
-            }
-        }
-
-        return WalkCentre(prm + dt, y, dy, out dc);
-    }
-
-    // The second derivative of the centre along the walk at prm and x: the equations give the first, so its difference
-    // between the walk's solutions a ten-thousandth of the radius either side, or on one side at an end of the interval
-    // the function is set on. It moves the function about the point.
+    // The second derivative of the centre along the walk at prm and x, from the second order of the ball's equations
+    // (unit 15AK2, decision 33305), taken with the centre c among the unknowns, so that nothing of how BallCentre
+    // builds it is differentiated: with k1 = c - ptrst1 and k2 = c - ptrst2,
+    //   g1 = |k1|^2 - ray^2, g2 = |k2|^2 - ray^2, g3 = k1 . t1, g4 = nplan . (ptrst1 + ptrst2) / 2 + d, g5 = k2 . t2
+    // in z = (c, the two edges' parameters). With G z' = s the first order (s the guide's and the law's term),
+    // G z'' = s' - G' z', each term's derivative along the walk, from the edges' third derivatives (their unit
+    // tangents' second), the guide's third (its plane's normal's second) and the law's second. The function is left
+    // positioned at prm and x. False where there's no ball, or the centre and the two points are in line.
     private bool WalkCentreD2(double prm, math_Vector x, out Vector3D d2c)
     {
-        math_Vector dx = new(1, 2);
+        math_Vector first = new(1, 5), second = new(1, 5);
+        Matrix g = new(1, 5, 1, 5, 0.0);
         d2c = new Vector3D();
-        if (!WalkCentre(prm, x, dx, out Vector3D dc))
+        Vector3D dnplan = Position(prm);
+        Ball(x, _nplan);
+        if (!_isBall)
         {
             return false;
         }
 
-        double speed = dc.Magnitude;
-        if (speed <= 0.0 || _last <= _first)
+        _cons1.D3(x[1], out _, out _, out Vector3D d2rst1, out Vector3D d3rst1);
+        _cons2.D3(x[2], out _, out _, out Vector3D d2rst2, out Vector3D d3rst2);
+        _tguide.D3(prm, out _, out _, out _, out Vector3D d3gui);
+        _tevol.D2(prm, out _, out _, out double d2ray);
+        double inv1 = ConstRad.InverseNorm(_d11), inv2 = ConstRad.InverseNorm(_d21);
+        Vector3D d2t1 = ConstRad.UnitNormalD2(_t1, inv1, d2rst1, d2rst1, d3rst1);
+        Vector3D d2t2 = ConstRad.UnitNormalD2(_t2, inv2, d2rst2, d2rst2, d3rst2);
+        Vector3D d2nplan = ConstRad.UnitNormalD2(_nplan, 1.0 / _normtg, _d2gui, _d2gui, d3gui);
+        Vector3D k1 = new(_ptrst1, _center), k2 = new(_ptrst2, _center);
+        Vector3D temp = new((_ptrst1.XYZ() + _ptrst2.XYZ()) / 2 - _ptgui.XYZ());
+
+        void Row(int i, in Vector3D c, double a, double b)
+        {
+            g[i, 1] = c.X;
+            g[i, 2] = c.Y;
+            g[i, 3] = c.Z;
+            g[i, 4] = a;
+            g[i, 5] = b;
+        }
+
+        Row(1, 2 * k1, -2 * k1.Dot(_d11), 0.0);
+        Row(2, 2 * k2, 0.0, -2 * k2.Dot(_d21));
+        Row(3, _t1, k1.Dot(_dt1) - _d11.Dot(_t1), 0.0);
+        Row(4, new Vector3D(), _nplan.Dot(_d11) / 2, _nplan.Dot(_d21) / 2);
+        Row(5, _t2, 0.0, k2.Dot(_dt2) - _d21.Dot(_t2));
+        Gauss resol = new(g, 1.0e-12);
+        if (!resol.IsDone)
         {
             return false;
         }
 
-        double h = Math.Min(1.0e-4 * Math.Abs(_ray) / speed, (_last - _first) / 4);
-        Vector3D a, b;
-        if (prm - h >= _first && prm + h <= _last)
-        {
-            if (!WalkCentreNear(prm, x, dx, h, out a) || !WalkCentreNear(prm, x, dx, -h, out b))
-            {
-                return false;
-            }
+        first[1] = 2 * _ray * _dray;
+        first[2] = 2 * _ray * _dray;
+        first[3] = 0.0;
+        first[4] = _normtg - dnplan.Dot(temp);
+        first[5] = 0.0;
+        resol.Solve(first);
+        Vector3D dc = new(first[1], first[2], first[3]);
+        double ap = first[4], bp = first[5];
 
-            d2c = (a - b) / (2 * h);
-            return true;
-        }
-
-        if (prm + h > _last)
-        {
-            h = -h;
-        }
-
-        if (!WalkCentreNear(prm, x, dx, h, out a) || !WalkCentreNear(prm, x, dx, 2 * h, out b))
-        {
-            return false;
-        }
-
-        d2c = Vector3D.LinearForm(-3, dc, 4, a, -1, b) / (2 * h);
+        // Each quantity's derivative along the walk
+        Vector3D wk1 = dc - ap * _d11, wk2 = dc - bp * _d21;
+        Vector3D wd11 = ap * d2rst1, wd21 = bp * d2rst2, wt1 = ap * _dt1, wt2 = bp * _dt2, wdt1 = ap * d2t1, wdt2 = bp * d2t2;
+        Vector3D wtemp = (ap * _d11 + bp * _d21) / 2 - _d1gui;
+        double law = 2 * (_dray * _dray + _ray * d2ray);
+        second[1] = law - (2 * wk1.Dot(dc) - 2 * (wk1.Dot(_d11) + k1.Dot(wd11)) * ap);
+        second[2] = law - (2 * wk2.Dot(dc) - 2 * (wk2.Dot(_d21) + k2.Dot(wd21)) * bp);
+        second[3] = -(wt1.Dot(dc) + (wk1.Dot(_dt1) + k1.Dot(wdt1) - wd11.Dot(_t1) - _d11.Dot(wt1)) * ap);
+        second[4] = _nplan.Dot(_d2gui) - d2nplan.Dot(temp) - dnplan.Dot(wtemp)
+                    - ((dnplan.Dot(_d11) + _nplan.Dot(wd11)) * ap + (dnplan.Dot(_d21) + _nplan.Dot(wd21)) * bp) / 2;
+        second[5] = -(wt2.Dot(dc) + (wk2.Dot(_dt2) + k2.Dot(wdt2) - wd21.Dot(_t2) - _d21.Dot(wt2)) * bp);
+        resol.Solve(second);
+        d2c = new Vector3D(second[1], second[2], second[3]);
         return true;
     }
 
@@ -1100,7 +1086,7 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         bool istgt;
 
         // Kerf (unit 15AK): the centre's second derivative along the walk, which the derivative of the envelope's circle
-        // takes; found first, as finding it moves the function about this point.
+        // takes; found first, as finding it positions the function afresh.
         Vector3D d2c = new();
         bool second = false;
         if (_sShape != SectionShape.Linear)
