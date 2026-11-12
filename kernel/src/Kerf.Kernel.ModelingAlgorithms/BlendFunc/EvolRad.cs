@@ -905,7 +905,7 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
         ComputeValues(x, 1, true, prm);
         math_Vector dx = new(1, 4);
         Vector3D zero = new Vector3D();
-        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e))
+        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e, prm))
         {
             Vector3D plane = e.Plane;
             c = c.WithRadius(e.Radius);
@@ -1206,8 +1206,16 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
 
     // The envelope's circle on the ball at the last positioning and the last Ball (Kerf, unit 15AK), to the order asked:
     // the centre's derivatives to one more. False where the envelope has no circle.
-    private bool Envelope(int order, in Vector3D dc, in Vector3D d2c, in Vector3D d3c, double d3ray, out EnvelopeCircle circle)
+    // Kerf (unit 15AK2): the tilt of the sections beside the walk's ends (EnvelopeTilt), set once the walk is done.
+    private readonly EnvelopeTilt _tilt = new();
+
+    public void TiltEnd(double at, double strength, double length) => _tilt.Add(at, strength, length);
+
+    // at: the parameter of a section of the surface, tilted as the surface's are; none for the envelope's own circle.
+    private bool Envelope(int order, in Vector3D dc, in Vector3D d2c, in Vector3D d3c, double d3ray, out EnvelopeCircle circle,
+                          double at = double.NaN)
     {
+        _tilt.At(at, out double tilt, out double dtilt, out double d2tilt);
         Vector3D ns1 = -ConstRad.InverseNorm(_nsurf1) * _nsurf1;
         Vector3D ns2 = -ConstRad.InverseNorm(_nsurf2) * _nsurf2;
         Point3D center = new Point3D(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
@@ -1223,7 +1231,8 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
         Vector3D zero = new Vector3D();
         return EnvelopeCircle.Make(order, center, dc, d2c, d3c, _ray, _dray, order >= 1 ? _d2ray : 0.0, d3ray, f1 * ns1,
                                    order >= 1 ? f1 * _dnorm1w : zero, order >= 2 ? f1 * _d2norm1w : zero, f2 * ns2,
-                                   order >= 1 ? f2 * _dnorm2w : zero, order >= 2 ? f2 * _d2norm2w : zero, np, out circle);
+                                   order >= 1 ? f2 * _dnorm2w : zero, order >= 2 ? f2 * _d2norm2w : zero, np, out circle, tilt, dtilt,
+                                   d2tilt);
     }
 
     // The ball's great circle through the contacts (decision 2215), where the envelope's can't be had: the surfaces' own
@@ -1479,7 +1488,7 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
 
         // The envelope's circle (unit 15AK); the ball's great circle where the walk has no derivative.
         Vector3D zero = new Vector3D();
-        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e))
+        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e, prm))
         {
             global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.Plane, _pts1, _pts2, e.Radius, e.Centre, poles, weights);
             return;
@@ -1539,7 +1548,7 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
 
         // Case of the circle: the envelope's (unit 15AK), with its derivative along the walk.
         Vector3D zero = new Vector3D();
-        if (!istgt && Envelope(1, dc, d2c, zero, 0.0, out EnvelopeCircle e))
+        if (!istgt && Envelope(1, dc, d2c, zero, 0.0, out EnvelopeCircle e, prm))
         {
             return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.Plane, e.DPlane, _pts1, _pts2, _tg1, _tg2,
                                       e.Radius, e.DRadius, e.Centre, e.DCentre, poles, dPoles, weights, dWeights);
@@ -1620,7 +1629,7 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
         }
 
         // Case of circle: the envelope's (unit 15AK), with its first and second derivatives along the walk.
-        if (!istgt && third && Envelope(2, dc, d2c, d3c, d3ray, out EnvelopeCircle e))
+        if (!istgt && third && Envelope(2, dc, d2c, d3c, d3ray, out EnvelopeCircle e, prm))
         {
             return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.D2N1, e.D2N2, e.Plane, e.DPlane, e.D2Plane, _pts1,
                                       _pts2, _tg1, _tg2, dtg1, dtg2, e.Radius, e.DRadius, e.D2Radius, e.Centre, e.DCentre,

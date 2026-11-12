@@ -514,12 +514,19 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
     }
 
     // The envelope's circle at the last positioning, from the centre's derivative along the walk.
-    private bool Envelope(in Vector3D dc, out EnvelopeCircle circle)
+    // Kerf (unit 15AK2): the tilt of the sections beside the walk's ends (EnvelopeTilt), set once the walk is done.
+    private readonly EnvelopeTilt _tilt = new();
+
+    public void TiltEnd(double at, double strength, double length) => _tilt.Add(at, strength, length);
+
+    // at: the parameter of a section of the surface, tilted as the surface's are; none for the envelope's own circle.
+    private bool Envelope(in Vector3D dc, out EnvelopeCircle circle, double at = double.NaN)
     {
+        _tilt.At(at, out double tilt, out _, out _);
         Vector3D zero = new Vector3D();
         Directions(out Vector3D u1, out Vector3D u2);
         return EnvelopeCircle.Make(0, _center, dc, zero, zero, _ray, _dray, 0.0, 0.0, u1, zero, zero, u2, zero, zero, Side(),
-                                   out circle);
+                                   out circle, tilt);
     }
 
     public override void GetTolerance(math_Vector tolerance, double tol)
@@ -820,7 +827,7 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
         x[1] = u;
         x[2] = v;
         x[3] = w;
-        if (WalkCentre(param, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e))
+        if (WalkCentre(param, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e, param))
         {
             Vector3D plane = e.Plane;
             c = c.WithRadius(e.Radius);
@@ -1021,7 +1028,7 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
         x[1] = u1;
         x[2] = v1;
         x[3] = w;
-        if (WalkCentre(prm, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e))
+        if (WalkCentre(prm, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e, prm))
         {
             global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.Plane, _pts, _ptrst, e.Radius, e.Centre, poles, weights);
             return;
@@ -1171,8 +1178,9 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
             tgct = Vector3D.LinearForm(_ray, dnw, _dray, ns, _tgs);
             _tevol.D2(prm, out _, out _, out double d2ray);
             double f1 = _ray > 0.0 ? -1.0 : 1.0;
+            _tilt.At(prm, out double tilt, out double dtilt, out _);
             if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, _sg1 * d2ray, 0.0, f1 * ns, f1 * dnw, zero, ns2, dn2w, zero,
-                                    Side(), out EnvelopeCircle e))
+                                    Side(), out EnvelopeCircle e, tilt, dtilt))
             {
                 return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.Plane, e.DPlane, _pts, _ptrst, _tgs, _tgrst,
                                           e.Radius, e.DRadius, e.Centre, e.DCentre, poles, dPoles, weights, dWeights);

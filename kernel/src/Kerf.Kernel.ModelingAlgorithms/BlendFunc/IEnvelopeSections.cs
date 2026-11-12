@@ -34,6 +34,14 @@ internal interface IEnvelopeSections
     bool SectionEnd(in BlendPoint at, out EnvelopeEnd end);
 
     /// <summary>
+    /// Tilts the sections beside the parameter <paramref name="at"/>, an end of the walk, by the strength given there,
+    /// falling to nothing over <paramref name="length"/> (<see cref="EnvelopeTilt"/>). The sections given for the
+    /// surface from then on are the tilted ones; <see cref="SectionEnd"/> and <see cref="LeastAdvance"/> stay the
+    /// envelope's.
+    /// </summary>
+    void TiltEnd(double at, double strength, double length);
+
+    /// <summary>
     /// <see cref="EnvelopeCircle.LeastAdvance"/> of the section at <paramref name="prm"/>, on the walk's solution there
     /// (found from the point <paramref name="near"/> it). False where the solution or the circle can't be had.
     /// </summary>

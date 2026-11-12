@@ -499,12 +499,19 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
     }
 
     // The envelope's circle at the last positioning, from the centre's derivative along the walk.
-    private bool Envelope(in Vector3D dc, out EnvelopeCircle circle)
+    // Kerf (unit 15AK2): the tilt of the sections beside the walk's ends (EnvelopeTilt), set once the walk is done.
+    private readonly EnvelopeTilt _tilt = new();
+
+    public void TiltEnd(double at, double strength, double length) => _tilt.Add(at, strength, length);
+
+    // at: the parameter of a section of the surface, tilted as the surface's are; none for the envelope's own circle.
+    private bool Envelope(in Vector3D dc, out EnvelopeCircle circle, double at = double.NaN)
     {
+        _tilt.At(at, out double tilt, out _, out _);
         Vector3D zero = new Vector3D();
         Vector3D u1 = new(_center, _ptrst1), u2 = new(_center, _ptrst2);
         return EnvelopeCircle.Make(0, _center, dc, zero, zero, _ray, _dray, 0.0, 0.0, ConstRad.InverseNorm(u1) * u1, zero, zero,
-                                   ConstRad.InverseNorm(u2) * u2, zero, zero, Side(), out circle);
+                                   ConstRad.InverseNorm(u2) * u2, zero, zero, Side(), out circle, tilt);
     }
 
     public override void GetTolerance(math_Vector tolerance, double tol)
@@ -857,7 +864,7 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         math_Vector x = new(1, 2), dx = new(1, 2);
         x[1] = u;
         x[2] = v;
-        if (WalkCentre(param, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e))
+        if (WalkCentre(param, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e, param))
         {
             Vector3D plane = e.Plane;
             c = c.WithRadius(e.Radius);
@@ -1048,7 +1055,7 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
 
         // Kerf (unit 15AK): the envelope's circle; the ball's great circle where the walk has no derivative.
         math_Vector dx = new(1, 2);
-        if (WalkCentre(prm, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e))
+        if (WalkCentre(prm, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e, prm))
         {
             global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.Plane, _ptrst1, _ptrst2, e.Radius, e.Centre, poles, weights);
             return;
@@ -1199,8 +1206,9 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         {
             Vector3D zero = new();
             _tevol.D2(prm, out _, out _, out double d2ray);
+            _tilt.At(prm, out double tilt, out double dtilt, out _);
             if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, d2ray, 0.0, n1, d1n1, zero, n2, d1n2, zero,
-                                    Side(), out EnvelopeCircle e))
+                                    Side(), out EnvelopeCircle e, tilt, dtilt))
             {
                 return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.Plane, e.DPlane, _ptrst1, _ptrst2, _tgrst1, _tgrst2,
                                           e.Radius, e.DRadius, e.Centre, e.DCentre, poles, dPoles, weights, dWeights);
