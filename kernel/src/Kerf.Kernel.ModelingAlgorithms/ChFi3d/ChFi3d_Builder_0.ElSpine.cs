@@ -38,8 +38,9 @@ internal static partial class Builder_0
     /// writes into an edge only when the edge has no 3D curve (decision 1087). The curves made here are this
     /// function's own; the concatenation's result is taken unfrozen, as OCCT changes it in place.
     /// </remarks>
-    internal static void ChFi3d_PerformElSpine(ElSpine hes, Spine spine, Continuity continuity,
-                                               double tol, bool isOffset = false)
+    /// <returns>How many of the edges' curves were smoothed to C2 (Kerf's own, unit 15U4).</returns>
+    internal static int ChFi3d_PerformElSpine(ElSpine hes, Spine spine, Continuity continuity,
+                                              double tol, bool isOffset = false, double guideTolerance = GuideTolerance)
     {
         bool periodic, bof, checkdeb, cepadur, bIsSmooth;
         int iEdge, IF, il, nbed, iToApproxByC2;
@@ -211,7 +212,7 @@ internal static partial class Builder_0
                 l = new LineCurve3D(olin, d);
                 es.SetCurve(l);
             }
-            return; // =>
+            return 0; // =>
         }
         //
         tc = new TrimmedCurve3D(cv, first, last);
@@ -225,7 +226,7 @@ internal static partial class Builder_0
         if (aContinuity < C2 && !bIsSmooth)
         {
             ++iToApproxByC2;
-            bs = ChFi3d_ApproxByC2(tc);
+            bs = ChFi3d_ApproxByC2(tc, guideTolerance);
             tc = bs;
         }
         //
@@ -309,7 +310,7 @@ internal static partial class Builder_0
             if (aContinuity < C2 && !bIsSmooth)
             {
                 ++iToApproxByC2;
-                bs = ChFi3d_ApproxByC2(tc);
+                bs = ChFi3d_ApproxByC2(tc, guideTolerance);
                 tc = bs;
             }
             //
@@ -562,12 +563,17 @@ internal static partial class Builder_0
         // gp_Pnt ptgui;
         // gp_Vec d1gui;
         //( HES->Curve() ).D1(HES->FirstParameter(),ptgui,d1gui);
+        return iToApproxByC2;
     }
 
     //=================================================================================================
 
-    /// <summary>A C2 B-spline through 101 points of <paramref name="c"/>.</summary>
-    internal static BSplineCurve3D ChFi3d_ApproxByC2(Curve3D c)
+    /// <summary>OCCT's tolerance of the C2 curve through the 101 points, a length whatever the shape's size.</summary>
+    internal const double GuideTolerance = 1.000001e-3;
+
+    /// <summary>A C2 B-spline through 101 points of <paramref name="c"/>, to <paramref name="tolerance"/> (OCCT's
+    /// 1.000001e-3 unless a caller asks a nearer one, unit 15U4).</summary>
+    internal static BSplineCurve3D ChFi3d_ApproxByC2(Curve3D c, double tolerance = GuideTolerance)
     {
         double first = c.FirstParameter, last = c.LastParameter;
         int nbPoints = 101;
@@ -580,7 +586,7 @@ internal static partial class Builder_0
         }
         points[nbPoints] = c.Value(last);
 
-        PointsToBSpline approx = new(points, ChordLength, 3, 8, C2, 1.000001e-3);
+        PointsToBSpline approx = new(points, ChordLength, 3, 8, C2, tolerance);
         BSplineCurve3D bs = approx.Curve();
         return bs;
     }

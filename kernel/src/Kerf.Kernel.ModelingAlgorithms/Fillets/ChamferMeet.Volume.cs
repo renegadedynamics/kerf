@@ -62,13 +62,10 @@ internal static partial class ChamferMeet
         double removed = 0, area = 0;
         foreach (Edge edge in chamfered.DistinctBy(static e => (Shape)e, ShapeHasher.Instance))
         {
-            // The edge's cut is its own spec's, or its contour's where the spec names another of its edges; at a corner of
-            // convex and concave edges the corner's integral counts the sections behind the edge's own two faces carried on,
-            // so they're solved on those alone
+            // The edge's cut is its own spec's, or its contour's where the spec names another of its edges
             Edge[] contour = bands.FirstOrDefault(b => b.Edges.Any(e => e.IsSame(edge)))?.Edges ?? [edge];
-            bool ownFaces = corners.Any(c => c.Mixed is not null && contour.Any(e => e.AllVertices().Any(v => v.IsSame(c.Vertex))));
             if ((CutOf(specs, referenceFaces, [edge]) ?? CutOf(specs, referenceFaces, contour)) is not { } cut
-                || Swept(faces, edge, cut.Cut, cut.References, ownFaces, context) is not { } swept)
+                || Swept(faces, edge, cut.Cut, cut.References, context) is not { } swept)
             {
                 return null;
             }
@@ -78,15 +75,20 @@ internal static partial class ChamferMeet
 
         // Each corner: what's past any chamfer less what's in each edge's sections, in a box about it
         double cornersRemoved = 0, cornersError = 0;
+        Vertex[] vertices = [.. input.AllVertices().DistinctBy(static v => (Shape)v, ShapeHasher.Instance)];
         foreach (Corner corner in corners)
         {
             Edge[] at = [.. chamfered.Where(e => e.AllVertices().Any(v => v.IsSame(corner.Vertex))).DistinctBy(static e => (Shape)e, ShapeHasher.Instance)];
             // A convex corner's box is three of its widest chamfer's widths; one of convex and concave edges has its box inside
             // the reach where its formula says what's built (unit 15U3)
+            // On a solid small beside its chamfers that box would reach the next corner's faces, where this corner's say
+            // nothing of the input: there the box stays inside the sphere half-way to the nearest other vertex (unit 15U4)
             double reach = CornerReach * corner.Bands.Max(static b => b.Width);
+            double room = vertices.Where(v => !v.IsSame(corner.Vertex)).Select(v => v.Point.DistanceTo(corner.Point)).DefaultIfEmpty(double.MaxValue).Min()
+                          / (2 * Math.Sqrt(3));
             (double excess, double error) = corner.Mixed is { } formula
                 ? MixedExcess(corner, formula, at, carried, near / Math.Sqrt(3))
-                : CornerExcess(corner, faces, at, bands, reach);
+                : CornerExcess(corner, faces, at, bands, Math.Min(reach, room), tight: room < reach);
             if (double.IsNaN(excess) || double.IsNaN(error))
             {
                 return null;
@@ -101,13 +103,13 @@ internal static partial class ChamferMeet
     private static double MeasuredVolume(Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 });
 
     internal static double? SweptVolume(Face[] faces, Edge edge, double distance) =>
-        Swept(faces, edge, new Cut(distance, null, null), [], false, new IntersectionContext())?.Volume;
+        Swept(faces, edge, new Cut(distance, null, null), [], new IntersectionContext())?.Volume;
 
     internal static double? SweptVolume(Face[] faces, Edge edge, double distance, double? second, double? angle, Face reference) =>
-        Swept(faces, edge, new Cut(distance, second, angle), [reference], false, new IntersectionContext())?.Volume;
+        Swept(faces, edge, new Cut(distance, second, angle), [reference], new IntersectionContext())?.Volume;
 
     // The region the chamfer takes off along the edge, between the planes square to it at its ends, and the chamfer's area there
-    private static (double Volume, double Width)? Swept(Face[] faces, Edge edge, Cut cut, Face[] references, bool ownFaces, IntersectionContext context)
+    private static (double Volume, double Width)? Swept(Face[] faces, Edge edge, Cut cut, Face[] references, IntersectionContext context)
     {
         Face[] two = [.. faces.Where(f => OnFace(edge, f))];
         if (two.Length != 2 || Tool.Curve(edge, out double a, out double b) is not { } curve || IsReference(cut, references, two[0]) is not { } firstIsReference
@@ -115,10 +117,12 @@ internal static partial class ChamferMeet
         {
             return null;
         }
-        Face[] ordered1 = ownFaces ? [two[0]] : [two[0], .. faces.Where(f => !f.IsSame(two[0]))];
-        Face[] ordered2 = ownFaces ? [two[1]] : [two[1], .. faces.Where(f => !f.IsSame(two[1]))];
-        var side1 = new Side { Start = two[0], Candidates = ordered1, InStart = two[0].AllEdges().First(e => e.IsSame(edge)) };
-        var side2 = new Side { Start = two[1], Candidates = ordered2, InStart = two[1].AllEdges().First(e => e.IsSame(edge)) };
+        // Each side's contact on its own face, carried on where the section leaves it at a corner, as the corners' integrals
+        // count the sections: behind the edge's own two faces. Taken on whichever face held it (unit 15V), a side whose section
+        // left its face found a point at its distance on the other side's face, and the section between two points of one
+        // face is nothing (unit 15U4)
+        var side1 = new Side { Start = two[0], Candidates = [two[0]], InStart = two[0].AllEdges().First(e => e.IsSame(edge)), FromLast = true };
+        var side2 = new Side { Start = two[1], Candidates = [two[1]], InStart = two[1].AllEdges().First(e => e.IsSame(edge)), FromLast = true };
         double volume = 0, width = 0;
         for (int panel = 0; panel < VolumePanels; panel++)
         {
