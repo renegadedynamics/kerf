@@ -154,6 +154,24 @@ public class BooleanVolumeTests
     }
 
     [Fact]
+    public void A_results_own_tolerance_cant_excuse_a_fuse_of_a_fraction_of_its_inputs()
+    {
+        // OCCT #344's fuse with a fuzzy value of 1e-3 (decision 33107): rubbish of volume 0.45 for inputs of 55,931 and
+        // 51,101, with vertices of tolerance 7.2, which widened the margin past everything. Here a box of 10 for two of
+        // 30 by 30 by 30, its vertices' tolerances 7 in place of 1e-7
+        using var written = new MemoryStream();
+        Assert.True(Brep.Write(Box(10), written).IsSuccess);
+        string text = System.Text.Encoding.UTF8.GetString(written.ToArray());
+        string looser = System.Text.RegularExpressions.Regex.Replace(text, @"(?m)^Ve\s+1e-07", "Ve\n7");
+        Assert.NotEqual(text, looser);
+        using var reading = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(looser));
+        Shape rubbish = Brep.Read(reading).Value;
+        Fires(Check(BooleanVolumeRule.Fuse, Box(30, 30, 30), Box(30, 30, 30, at: 15), rubbish), "a fuse can't be smaller than its largest input");
+        // and a tolerance still widens the margin as far as half the larger input
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(30, 30, 30), Box(30, 30, 30, at: 15), Compound(rubbish, Box(30, 16, 30, at: 100))));
+    }
+
+    [Fact]
     public void Inputs_that_are_not_solids_have_no_rule_of_volume()
     {
         Shape face = Box(10).Explore<Face>().First();

@@ -64,6 +64,12 @@ public static class BooleanVolumes
     // the corpus's worst good result is 0.67 of a fuzzy value on that measure
     private const double MarginOfTolerance = 10;
 
+    // The most a tolerance may widen the margin, for the size of the inputs (decision 33107). The margin grows with the
+    // largest tolerance, the result's among them, and a result that is rubbish has tolerances to match: OCCT #344's fuse
+    // with a fuzzy value of 1e-3, two solids of 0.45 for inputs of 55,931 and 51,101, has vertices of 7.2, which by that
+    // measure excused a volume of 105,000, and it passed. No tolerance explains a fuse of half its larger input
+    private const double MostOfSize = 0.5;
+
     // Volume is a cube, so anything this small for the shape's box is integration's noise (a half-space's, or two shells' that cancel)
     private const double SmallestOfBox = 1e-9;
 
@@ -172,7 +178,7 @@ public static class BooleanVolumes
         }
 
         // Past a rule, which is rare, so this is when the dearer questions are worth asking: is it proved?
-        margin += size * MarginOfTolerance * (shared.LargestTolerance + fuzzyValue) / Math.Cbrt(size);
+        margin = Math.Min(margin + size * MarginOfTolerance * (shared.LargestTolerance + fuzzyValue) / Math.Cbrt(size), size * MostOfSize);
         negative = outcome.Count > 0 && outcome.Smallest < -margin;
         if ((r >= least - margin && r <= most + margin && !negative) || !shared.Trustworthy)
         {
