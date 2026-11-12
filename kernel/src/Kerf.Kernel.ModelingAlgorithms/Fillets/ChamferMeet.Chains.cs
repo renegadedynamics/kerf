@@ -300,10 +300,11 @@ internal static partial class ChamferMeet
     // ChFi3d's band at the chamfer's distance from its edge along both contacts, to its approximation's tolerance and the edge's
     private static bool OnSpec(Band band, double distance, double tolerance) => OnSpec(band, distance, distance, tolerance);
 
-    // The same with a distance for each contact, the first face's and the second's; a contact without one isn't looked at
-    private static bool OnSpec(Band band, double? first, double? second, double tolerance)
+    // The same with a distance for each contact, the first face's and the second's; a contact without one isn't looked at.
+    // Without its ends, the band's first and last sections are left out: a stripe ChFi3d built runs on past its edge's ends
+    private static bool OnSpec(Band band, double? first, double? second, double tolerance, bool ends = true)
     {
-        for (int k = 0; k <= 8; k++)
+        for (int k = ends ? 0 : 1; k <= (ends ? 8 : 7); k++)
         {
             double v = band.VLo + ((band.VHi - band.VLo) * k / 8);
             foreach ((double u, Face face, double? asked) in new[] { (0.0, band.Face1, first), (band.UMax, band.Face2, second) })

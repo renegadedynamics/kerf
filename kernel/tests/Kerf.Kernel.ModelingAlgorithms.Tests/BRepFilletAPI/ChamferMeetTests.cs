@@ -267,6 +267,31 @@ public class ChamferMeetTests
         Assert.Equal(removed, MeasureOperations.IntegrateVolume(shape, exact) - MeasureOperations.IntegrateVolume(result, exact), 2e-9);
     }
 
+    // The same solid's long top edge chamfered alone, 0.01 on the top and 0.006 on the side: ChFi3d builds it, valid, with its
+    // contact on the top 0.0104 to 0.0147 from the edge, as native OCCT does, along the guide it smoothed. That was returned
+    // as a success. The public chamfer now sees the stripe off its distance and has ChFi3d build it along the edge itself
+    [Fact]
+    public void A_chamfer_ChFi3d_builds_off_its_distance_along_a_smoothed_guide_is_built_along_its_edge()
+    {
+        Shape shape = Read("chamfer-C1");
+        Edge edge = EdgeBetween(shape, new Point3D(-0.118375, -0.14323, 0.127352), new Point3D(0.168673, 0, 0.127371));
+        Face top = shape.AllFaces().Single(f => f.AllEdges().Any(e => e.IsSame(edge)) && f.AllVertices().Any(v => v.Point.DistanceTo(new Point3D(0.0750001, 0, 0.161)) < 1e-5));
+        ChamferSpec[] specs = [new ChamferSpec(edge, 0.01, 0.006, ReferenceFace: top)];
+        MakeChamfer native = Native(shape, specs);
+        native.Build();
+        Assert.True(native.IsDone);
+        Assert.True(native.Shape().Validate().IsValid);
+        Assert.True(ChamferMeet.OffItsEdges(shape, native, specs, [top]));
+        Assert.False(ChamferMeet.Proved(shape, native.Shape(), specs, [top], native, 1e-4)); // OCCT's own, off its distance
+
+        Result<Built<Shape>> made = shape.Chamfer(specs, NoLimit);
+        Assert.True(made.IsSuccess, made.Error?.ToString());
+        Shape result = made.Value.Shape;
+        Assert.True(result.Validate().IsValid);
+        Assert.Equal(7, result.AllFaces().Length);
+        Assert.True(ChamferMeet.Proved(shape, result, specs, [top], native, 1e-4));
+    }
+
     // chamfer/dist_dist_sequence/B8, its third step: the foot of a wall chamfered by 0.2 where the wall meets the first step's
     // bevel of the walls' corner, 15 degrees from the wall. The corner's formula bounds a region with no contact on the floor
     // at 0.2 (decision 2238), which isn't the chamfer asked, so nothing is returned: the owner's ruling for 0.6.0 is that it

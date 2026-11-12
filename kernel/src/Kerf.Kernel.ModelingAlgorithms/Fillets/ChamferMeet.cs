@@ -262,7 +262,7 @@ internal static partial class ChamferMeet
     private const double GuideOnEdge = 1e-3;
 
     // ChFi3d's chamfer of the same specs, its guides kept to their edges; its stripes are what's wanted, built or not
-    private static MakeChamfer AlongItsEdges(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
+    internal static MakeChamfer AlongItsEdges(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
     {
         var nearer = new MakeChamfer(shape);
         ChBuilder builder = nearer.InternalBuilder();
@@ -288,9 +288,46 @@ internal static partial class ChamferMeet
     }
 
     // A band of ChFi3d's off its cut's distance on a contact by more than twice what the proof allows there
-    private static bool OffItsCut(Band band, Cut cut, Face[] references, double tolerance) =>
-        IsReference(cut, references, band.Face1) is { } firstIsReference
-        && !OnSpec(band, firstIsReference ? cut.Distance : cut.Second, firstIsReference ? cut.Second : cut.Distance, 2 * tolerance);
+    private static bool OffItsCut(Band band, Cut cut, Face[] references, double tolerance, bool ends = true)
+    {
+        double? other = cut.Equal ? cut.Distance : cut.Second;
+        return IsReference(cut, references, band.Face1) is { } firstIsReference
+               && !OnSpec(band, firstIsReference ? cut.Distance : other, firstIsReference ? other : cut.Distance, 2 * tolerance, ends);
+    }
+
+    /// <summary>
+    /// True if ChFi3d smoothed a guide of <paramref name="chamfer"/> and one of its stripes is off its spec's distance on a
+    /// contact by more than twice the approximation's tolerance and its edge's (unit 15U4): what it built there, if it built,
+    /// isn't the chamfer asked. Nothing is looked at unless a guide was smoothed.
+    /// </summary>
+    internal static bool OffItsEdges(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
+    {
+        ChBuilder builder = chamfer.InternalBuilder();
+        if (builder._guidesSmoothed == 0)
+        {
+            return false;
+        }
+        try
+        {
+            Face[] faces = shape.AllFaces().ToArray();
+            foreach (Stripe stripe in builder._listStripe)
+            {
+                if (stripe.Spine() is not { EdgeCount: > 0 } || builder._badstripes.Any(b => ReferenceEquals(b, stripe))
+                    || Bands(faces, builder, stripe, []) is not { Count: > 0 } own)
+                {
+                    continue;
+                }
+                if (CutOf(specs, referenceFaces, own[0].Edges) is { } asked && own.Any(b => OffItsCut(b, asked.Cut, asked.References, builder._tolapp3d, ends: false)))
+                {
+                    return true;
+                }
+            }
+        }
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
+        {
+        }
+        return false;
+    }
 
     private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, bool ownWhereOff, ref bool anyOff,
                                         ref bool offGuide)
