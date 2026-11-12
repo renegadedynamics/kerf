@@ -163,10 +163,38 @@ public class FilletReseamTests
         Assert.True(reference.IsDone);
         double area = blends.Sum(f => ((Shape)f).IntegrateArea(Precise));
         Assert.Equal(reference.Shape().IntegrateVolume(Precise), shape.IntegrateVolume(Precise), Approximation * area);
+
+        // And the convention's own volume, which owes nothing to ChFi3d (unit 15T4): to a tenth of that
+        Assert.Equal(Expected(radius), shape.IntegrateVolume(Precise), 0.1 * Approximation * area);
         foreach (Edge edge in edges)
         {
             Assert.True(made.History.IsRemoved(edge));
         }
+    }
+
+    // The volume of the shape the convention defines at these corners, where two convex rims meet one concave edge: the concave
+    // edges rounded first, then the rims over them (the tube closed by the ball, then opened; decision 2210). In closed form the
+    // tube less its window, 8250 pi; with each concave edge's spandrel through the wall, one integral; less what rounding each
+    // opening's rim takes away, the rim then a smooth loop round a window whose corners are rounded, by FilletJunctionIntegral with
+    // the material and the space outside it changed over: the ball's centre a radius inside the wall's cylinder and a radius from
+    // the rounded window, which is its box shrunk by the radius and grown again
+    private static double Expected(double radius)
+    {
+        double spandrel = FilletJunctionIntegral.Gauss(
+            x => (Math.Sqrt(400 - x * x) - Math.Sqrt(100 - x * x)) * (radius - Math.Sqrt(radius * radius - (x - radius) * (x - radius))), 0, radius, 64);
+        double FromShrunk(FilletJunctionIntegral.V p)
+        {
+            double dx = Math.Max(radius - p.X, 0), dy = Math.Max(p.Y + radius, 0), dz = Math.Max(Math.Max(10 + radius - p.Z, p.Z - (20 - radius)), 0);
+            return Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        }
+        double rims = 0;
+        foreach ((double wall, double sign) in new[] { (10.0, 1.0), (20.0, -1.0) })
+        {
+            double rho = wall + sign * radius, half = Math.Sqrt(0.5);
+            rims += FilletJunctionIntegral.Added(FromShrunk, p => sign * (Math.Sqrt(p.X * p.X + p.Y * p.Y) - wall), radius,
+                                                 new FilletJunctionIntegral.V(rho * half, -rho * half, 10 - radius), radius / 40);
+        }
+        return 8250 * Math.PI + 4 * spandrel - rims;
     }
 
     // How far a ball's centre is from touching each of the tube's faces where the ball can touch them, as surfaces: the two cylinders, the window's
