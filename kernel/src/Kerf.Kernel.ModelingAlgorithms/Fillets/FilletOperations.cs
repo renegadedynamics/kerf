@@ -155,6 +155,10 @@ public static class FilletOperations
 
     private static readonly Diagnostic Failure = Diagnostic.Error(Failed, "The fillet couldn't be built.");
 
+    private const string OnSeam = "The fillet couldn't be built: an edge to round ends on a seam, the line where a cylinder's, a cone's, a "
+                                  + "sphere's or a torus's face closes on itself, which the fillet's algorithm can't start from, and moving the seam clear "
+                                  + "of the edges couldn't be done, or its result proved. Making the body with its seam turned away from them builds it.";
+
     internal static Diagnostic LateFailure(TimeSpan limit) =>
         Diagnostic.Error(TimeLimit, "The chamfer couldn't be built: ChFi3d failed, and building its faces until they meet took longer than its limit of "
                                     + limit.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)
@@ -259,6 +263,12 @@ public static class FilletOperations
                 if (fit is { } known && FilletLimits.TooLarge(known, specs) is { } tooLarge)
                 {
                     faulty = [tooLarge, .. faulty];
+                }
+
+                // The reason, where it's known: an edge that ends on a seam (OCCT #26655), which couldn't be moved or the result proved (unit 15T4)
+                if (FilletLimits.EndsOnSeam(solid, specs))
+                {
+                    faulty = [Diagnostic.Error(Failed, OnSeam), .. faulty];
                 }
                 return outcome with { Failure = faulty[0], MoreFailures = faulty[1..] };
             }, Failure, progress, cancellationToken, options.CheckResult ? "The fillet's result" : null, Check);

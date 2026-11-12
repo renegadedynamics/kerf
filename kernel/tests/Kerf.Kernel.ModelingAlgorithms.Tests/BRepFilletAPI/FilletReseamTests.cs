@@ -112,6 +112,173 @@ public class FilletReseamTests
         }
     }
 
+    // Unit 15T4's bodies, each with its seams at the angle given, through the cut where it's 0: a hollow cone to its apexes with a
+    // window through its wall; a hollow sphere with one; and bug26655's tube with a quarter cut out of its top end
+    private static Shape Other(string kind, double seam)
+    {
+        var frame = new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(Math.Cos(seam), Math.Sin(seam), 0));
+        return kind switch
+        {
+            "cone" => Solid.Cone(10, 0, 20, frame).Value.Shape.Cut(Solid.Cone(7, 0, 14, frame).Value.Shape).Value.Shape
+                           .Cut(Solid.Box(new Point3D(0, -25, 5), new Point3D(25, 0, 10)).Value.Shape).Value.Shape,
+            "sphere" => Solid.Sphere(10, frame).Value.Shape.Cut(Solid.Sphere(7, frame).Value.Shape).Value.Shape
+                             .Cut(Solid.Box(new Point3D(0, -25, -3), new Point3D(25, 0, 3)).Value.Shape).Value.Shape,
+            _ => Solid.Cylinder(20, 30, frame).Value.Shape.Cut(Solid.Cylinder(10, 30, frame).Value.Shape).Value.Shape
+                      .Cut(Solid.Box(new Point3D(0, -25, 20), new Point3D(25, 0, 31)).Value.Shape).Value.Shape,
+        };
+    }
+
+    private static Point3D Middle(Edge e)
+    {
+        var curve = new EdgeCurveAdaptor(e);
+        return curve.Value(0.5 * (curve.FirstParameter() + curve.LastParameter()));
+    }
+
+    // The edges asked for: the window's twelve, or every edge of the cut end from its floor up (the cut's eight and the top's four);
+    // "ends" is the cut's eight alone, four of which end on the top
+    private static Edge[] Asked(string kind, Shape shape)
+    {
+        (double low, double high) = kind == "cone" ? (5, 10) : (-3, 3);
+        return [.. shape.AllEdges().Distinct().Where(e =>
+        {
+            Point3D p = Middle(e);
+            if (kind is "slot" or "ends")
+            {
+                return p.Z > 20 - 1e-6 && (kind == "slot" || p.Z < 30 - 1e-6) && !Tool.Degenerated(e);
+            }
+            bool onLevel = Math.Abs(p.Z - low) < 1e-6 || Math.Abs(p.Z - high) < 1e-6, onSide = Math.Abs(p.X) < 1e-6 || Math.Abs(p.Y) < 1e-6;
+            return p.Z > low - 1e-6 && p.Z < high + 1e-6 && p.X > -1e-6 && p.Y < 1e-6 && (onLevel || onSide);
+        })];
+    }
+
+    // How far a ball's centre is from touching each of a body's faces, as surfaces, and its concave edges' blends
+    private static IEnumerable<double> OtherMisses(string kind, double x, double y, double z, double radius)
+    {
+        double rho = Math.Sqrt(x * x + y * y);
+        double[] levels;
+        switch (kind)
+        {
+            case "cone":
+                double cos = 1 / Math.Sqrt(1.25);
+                yield return Math.Abs(Math.Abs(rho - (10 - z / 2)) * cos - radius);
+                yield return Math.Abs(Math.Abs(rho - (7 - z / 2)) * cos - radius);
+                yield return Math.Abs(Math.Abs(z - 5) - radius);
+                yield return Math.Abs(Math.Abs(z - 10) - radius);
+                levels = [5 + radius, 10 - radius];
+                break;
+            case "sphere":
+                double r = Math.Sqrt(x * x + y * y + z * z);
+                yield return Math.Abs(Math.Abs(r - 10) - radius);
+                yield return Math.Abs(Math.Abs(r - 7) - radius);
+                yield return Math.Abs(Math.Abs(z + 3) - radius);
+                yield return Math.Abs(Math.Abs(z - 3) - radius);
+                levels = [-3 + radius, 3 - radius];
+                break;
+            default:
+                yield return Math.Abs(Math.Abs(rho - 10) - radius);
+                yield return Math.Abs(Math.Abs(rho - 20) - radius);
+                yield return Math.Abs(Math.Abs(z - 20) - radius);
+                yield return Math.Abs(Math.Abs(z - 30) - radius);
+                levels = [20 + radius];
+                break;
+        }
+        yield return Math.Abs(Math.Abs(x) - radius);
+        yield return Math.Abs(Math.Abs(y) - radius);
+        foreach (double level in levels)
+        {
+            yield return Math.Abs(Math.Sqrt((x - radius) * (x - radius) + (z - level) * (z - level)) - 2 * radius);
+            yield return Math.Abs(Math.Sqrt((y + radius) * (y + radius) + (z - level) * (z - level)) - 2 * radius);
+        }
+    }
+
+    // Unit 15T4: a seam on a face that isn't a band between two whole circles. To a cone's apex and on a sphere the seam ends at a
+    // point where the surface closes; on the cut end of a tube it ends on an arc, which the new seam cuts in two
+    [Theory]
+    [InlineData("cone", 0.5)]
+    [InlineData("sphere", 0.5)]
+    [InlineData("slot", 1)]
+    public void A_seam_to_an_apex_on_a_sphere_or_to_a_cut_end_is_moved(string kind, double radius)
+    {
+        Shape input = Other(kind, 0);
+        Edge[] edges = Asked(kind, input);
+        Assert.Equal(12, edges.Length);
+
+        // The same solid, remade
+        Shape remade = FilletLimits.ReseamedForTests(input, [.. edges.Select(e => new FilletSpec(e, radius))])!.Value;
+        Assert.True(remade.Validate().IsValid);
+        Assert.Equal(input.IntegrateVolume(Precise), remade.IntegrateVolume(Precise), 1e-9);
+        Assert.Equal(input.AllFaces().Length, remade.AllFaces().Length);
+
+        // ChFi3d alone fails here
+        var chfi3d = new MakeFillet(input);
+        foreach (Edge edge in edges)
+        {
+            chfi3d.Add(radius, edge);
+        }
+        chfi3d.Build();
+        Assert.False(chfi3d.IsDone && chfi3d.Shape().Validate().IsValid);
+
+        long before = FilletLimits.s_reseamBuilt;
+        Built<Shape> made = input.Fillet(edges, radius).Value;
+        Assert.True(FilletLimits.s_reseamBuilt > before);
+        Shape shape = made.Shape;
+        Assert.True(shape.Validate().IsValid);
+        Assert.Empty(EdgeCrossings.All(input, shape));
+
+        // The new faces: every face but the planes and the body's own cylinders, cones or spheres
+        Face[] blends = [.. shape.AllFaces().Where(f =>
+        {
+            var surface = new FaceSurfaceAdaptor(f);
+            return surface.GetType() switch
+            {
+                SurfaceKind.Plane or SurfaceKind.Cone => false,
+                SurfaceKind.Cylinder => Math.Abs(surface.Cylinder().Radius - radius) < 1e-9,
+                SurfaceKind.Sphere => Math.Abs(surface.Sphere().Radius - radius) < 1e-9,
+                _ => true,
+            };
+        })];
+        Assert.True(blends.Length >= 20);
+        double miss = BallMiss(blends, radius, (x, y, z) => OtherMisses(kind, x, y, z, radius));
+        Assert.True(miss < Approximation, $"the ball misses by {miss}");
+        double turn = WorstTurn(shape, blends);
+        Assert.True(turn < 1e-3, $"a new face turns by {turn} across an edge");
+
+        // The volume: ChFi3d's own on the same solid made with its seams clear of the edges
+        Shape clear = Other(kind, 3 * Math.PI / 4);
+        var reference = new MakeFillet(clear);
+        foreach (Edge edge in Asked(kind, clear))
+        {
+            reference.Add(radius, edge);
+        }
+        reference.Build();
+        Assert.True(reference.IsDone);
+        double area = blends.Sum(f => ((Shape)f).IntegrateArea(Precise));
+        Assert.Equal(reference.Shape().IntegrateVolume(Precise), shape.IntegrateVolume(Precise), 0.1 * Approximation * area);
+        foreach (Edge edge in edges)
+        {
+            Assert.True(made.History.IsRemoved(edge));
+        }
+    }
+
+    [Fact]
+    public void Where_the_result_with_the_seam_moved_cant_be_proved_the_failure_says_why()
+    {
+        // The cut end's eight edges alone: four of them end on the top, where a fillet's end isn't tangent to the face it ends on,
+        // which the stage's proof doesn't allow for. So it's refused, and the failure names the seam
+        Shape input = Other("ends", 0);
+        Edge[] edges = Asked("ends", input);
+        Assert.Equal(8, edges.Length);
+        long refused = FilletLimits.s_reseamRefused;
+        Result<Built<Shape>> made = input.Fillet(edges, 1);
+        Assert.False(made.IsSuccess);
+        Assert.True(FilletLimits.s_reseamRefused > refused);
+        Assert.Contains("seam", made.Error!.Message);
+
+        // With the seam elsewhere ChFi3d builds it
+        Shape clear = Other("ends", 3 * Math.PI / 4);
+        Assert.True(clear.Fillet(Asked("ends", clear), 1).IsSuccess);
+    }
+
     private static void Proved(Shape input, Edge[] edges, double radius)
     {
         // ChFi3d alone fails here
@@ -146,7 +313,7 @@ public class FilletReseamTests
         // The twelve along the edges, cylinders and tori, are on the ball; the eight at the corners are ChFi3d's corner fillings,
         // B-splines tangent to the blends round them but not the ball's (decision 2210), as in ChFi3d's one step on the same solid
         Face[] along = blends;
-        double miss = BallMiss(along, radius);
+        double miss = BallMiss(along, radius, (x, y, z) => Misses(x, y, z, radius));
         Assert.True(miss < Approximation, $"the ball misses by {miss}");
         double turn = WorstTurn(shape, blends);
         Assert.True(turn < 1e-3, $"a new face turns by {turn} across an edge");
@@ -218,7 +385,7 @@ public class FilletReseamTests
 
     // The most a ball on either side of a new face misses touching two of the tube's faces, at points inside each: a concave corner's
     // ball touches its two planes, a rim's the cylinder and a plane, or the cylinder and a concave corner's blend
-    private static double BallMiss(Face[] faces, double radius)
+    private static double BallMiss(Face[] faces, double radius, Func<double, double, double, IEnumerable<double>> all)
     {
         double worst = 0;
         foreach (Face face in faces)
@@ -241,7 +408,7 @@ public class FilletReseamTests
                     double best = double.MaxValue;
                     foreach (double sign in (ReadOnlySpan<double>)[1, -1])
                     {
-                        double[] misses = [.. Misses(p.X + sign * n.X, p.Y + sign * n.Y, p.Z + sign * n.Z, radius).Order()];
+                        double[] misses = [.. all(p.X + sign * n.X, p.Y + sign * n.Y, p.Z + sign * n.Z).Order()];
                         best = Math.Min(best, misses[1]);
                     }
                     worst = Math.Max(worst, best);
