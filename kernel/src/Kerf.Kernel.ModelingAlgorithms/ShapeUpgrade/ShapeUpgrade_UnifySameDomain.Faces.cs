@@ -1400,7 +1400,7 @@ internal partial class UnifySameDomain
     // curvature. Twice the distance between the points times the larger of the surfaces' curvatures there, for the
     // rounding of both; 0 where the points are further apart than the tolerance allows, or a curvature isn't defined.
     // OCCT compares the normals at the angular tolerance alone, 1e-12 by default, and so leaves apart two faces of one
-    // cone whose shared edge has curves 2e-6 apart under a tolerance of 2.7e-4 (#666, decision 33001).
+    // cone whose shared edge has curves 2e-6 apart under a tolerance of 2.7e-4 (#666, decision 2292).
     private static double NormalSlack(in Face face, in Face checkedFace, in Edge edge, double p)
     {
         if (!PointAndCurvature(face, edge, p, out Point3D point1, out double curvature1)

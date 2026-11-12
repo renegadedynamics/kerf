@@ -71,7 +71,7 @@ public class BooleanTests
     {
         // OCCT #905: a turned disc and two sheets that leave its axis and pass out through its rim, which cut a sector from
         // it. One crossing of a sheet and the disc ends 3.1e-5 short of the next, with vertices of 5e-6, so neither sheet
-        // is split and the disc stays one solid: a success, before decision 33009
+        // is split and the disc stays one solid: a success, before decision 2300
         IReadOnlyList<Shape> parts = [.. Fixtures.Named("sheets-through-disc").Children];
         Assert.Equal(3, parts.Count);
 
@@ -100,7 +100,7 @@ public class BooleanTests
     {
         // OCCT #1124: a disc of two cones and a torus, and a cylinder of radius 6 through it at each of the issue's five
         // places. Approximated, each section is the whole curve round the cylinder. Not approximated, or without its curves
-        // on the faces, some keep a fraction of it, each a success before decision 33010
+        // on the faces, some keep a fraction of it, each a success before decision 2301
         Shape disc = Fixtures.Named("section-disc");
         Shape cylinder = Primitives.Cylinder(6, 100, new Frame3D(new Point3D(x, y, -50), Direction3D.UnitZ)).Value.Shape;
         double whole = Kerf.Measurement.MeasureOperations.IntegrateLength(disc.Section(cylinder).Value.Shape);

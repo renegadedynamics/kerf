@@ -5,7 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
-- **`Clean` merges faces of one curved surface whose shared edge has curves on them a little apart, inside its tolerance** (the kernel's decision 33001): three faces of one cone that stayed three, and merged after a STEP round trip, are now one.
+- **`Clean` merges faces of one curved surface whose shared edge has curves on them a little apart, inside its tolerance** (the kernel's decision 2292): three faces of one cone that stayed three, and merged after a STEP round trip, are now one.
 - **A 2D offset whose medial axis loops fails over at once** (kernel decisions 2220 to 2222): `Offset` of a wire or
   face inwards past its curves' bends could spend seconds and gigabytes in the kernel before giving the same result (7.4
   s and 22.4 GB for a wire of 36 B-splines, now 0.05 s and 46 MB). Results are unchanged.

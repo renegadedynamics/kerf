@@ -201,7 +201,7 @@ internal class SurfaceAnalysis : Transient
     /// <summary>Returns the point of parameters p2d.</summary>
     public Point3D Value(in Point2D p2d) => _adSur!.Value(p2d.X, p2d.Y);
 
-    // Kerf: whether the surface has a value at each point ComputeSingularities asks of its bounds (decision 33002)
+    // Kerf: whether the surface has a value at each point ComputeSingularities asks of its bounds (decision 2293)
     private bool HasValuesAtBounds(double su1, double su2, double sv1, double sv2)
     {
         try
@@ -292,7 +292,7 @@ internal class SurfaceAnalysis : Transient
             // Kerf: a surface with no bound on a side has no boundary there to shrink to a point, but OCCT evaluates it
             // at the bound all the same, 2e100. Where the surface can't be evaluated there, as an offset of a line's
             // surface of revolution, which has no normal, OCCT throws from here and fixshape ends with it (#1365,
-            // decision 33002): such a surface has no singular bound. One that can be evaluated there is read as OCCT
+            // decision 2293): such a surface has no singular bound. One that can be evaluated there is read as OCCT
             // reads it, whatever that's worth, as the recordings from native have it.
             if ((global::Kerf.Engine.Foundation.Precision.IsInfinite(su1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(su2)
                  || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv2))

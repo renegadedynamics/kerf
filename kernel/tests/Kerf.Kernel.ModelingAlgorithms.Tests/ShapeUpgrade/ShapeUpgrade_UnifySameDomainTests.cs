@@ -125,7 +125,7 @@ public class ShapeUpgrade_UnifySameDomainTests
     {
         // #666: two faces of one cone share an edge whose curve on one of them is 2e-7 along U, 2.4e-6 in space, from
         // its curve on the other, under a tolerance of 2.7e-4. The normals taken through the two curves are then 1.4e-7
-        // apart, and OCCT's test at the angular tolerance left the faces apart (decision 33001).
+        // apart, and OCCT's test at the angular tolerance left the faces apart (decision 2292).
         // a surface each, as the issue's faces have
         static ConicalSurface Cone() => new(new CoordinateSystem(), Math.PI / 4, 12);
         var aSewing = new global::Kerf.Engine.Healing.Sewing(1.0e-6);

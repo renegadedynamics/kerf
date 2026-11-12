@@ -72,7 +72,7 @@ public class ShapeAnalysis_SurfaceTests
     public void A_surface_with_no_bound_along_V_has_no_singular_bound_and_isnt_evaluated_there()
     {
         // #1365: a line turned about an axis it doesn't meet, and that surface offset: V runs to 2e100 each way. OCCT
-        // evaluates the bounds' ends there, where the offset surface has no normal, and fixshape threw (decision 33002).
+        // evaluates the bounds' ends there, where the offset surface has no normal, and fixshape threw (decision 2293).
         var aRevolution = new RevolutionSurface(new LineCurve3D(new Point3D(4000, 0, 0), new Direction3D(0.6, -0.8, 0)),
                                                 new Axis3D(new Point3D(-10000, 0, 0), new Direction3D(0, 1, 0)));
         var aSAS = new SurfaceAnalysis(new OffsetSurface(aRevolution, 10));

@@ -159,7 +159,7 @@ public static class BooleanOperations
     // A section's curve ends only where it leaves a face, and goes on over the next face unless that edge is one a single
     // face has. So an end of the section that nothing else uses, and that isn't on such an edge of an input, is a curve with a
     // piece missing: OCCT #1124's disc and cylinders, sections of 0.96 to 16.8 for curves of 38 to 43 where they aren't
-    // approximated, each a success before (decision 33010). Each end costs a distance to the inputs' free edges.
+    // approximated, each a success before (decision 2301). Each end costs a distance to the inputs' free edges.
     private static Diagnostic? SectionStopsShort(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape section, double fuzzyValue)
     {
         List<Shape> ends = FreeEndVertices(section);
@@ -225,7 +225,7 @@ public static class BooleanOperations
         // of them or on another crossing, at a vertex other edges use. A result with more ends of edges that go nowhere than
         // its shapes had has a crossing that stopped short, and faces it should have split left whole: OCCT #905's sheets
         // through a disc, one solid for two and a success, where one crossing ends 3.1e-5 from the next with vertices of 5e-6
-        // (decision 33009). Made again with a fuzzy value as a Boolean proved wrong is, and a failure if that has them too.
+        // (decision 2300). Made again with a fuzzy value as a Boolean proved wrong is, and a failure if that has them too.
         int ends = shapes.Sum(FreeEnds);
         if (FreeEnds(built.Shape) <= ends)
         {
