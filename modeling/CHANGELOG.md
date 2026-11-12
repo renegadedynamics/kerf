@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Importers.ImportStep` says when it had to leave entities out** (the kernel's decision 33104): a STEP file with a reference to something that isn't in it, or an entity that couldn't be translated, imported as a success with those parts missing and nothing said. The result's `Diagnostics` now carry the kernel's warning `exchange.entity-skipped`, with the entities' identifiers, from `ImportStep` and `ImportStepAsync`.
+- **STEP imports that came back with invalid faces read right** (kernel decisions 33101, 33102, 33105): a cylinder's or cone's face whose bound has a step in it (two invalid faces for one), a strip 0.001 wide between two lines that share their vertices (a face of no area), and tessellated faces given as triangle strips or fans (wound inside out).
+- **A Boolean whose result is scraps fails even where the scraps have large tolerances** (kernel decision 33107): the kernel's check of a result's volume let its own tolerances widen the margin without limit.
 - **`Clean` merges faces of one curved surface whose shared edge has curves on them a little apart, inside its tolerance** (the kernel's decision 2292): three faces of one cone that stayed three, and merged after a STEP round trip, are now one.
 - **A 2D offset whose medial axis loops fails over at once** (kernel decisions 2220 to 2222): `Offset` of a wire or
   face inwards past its curves' bends could spend seconds and gigabytes in the kernel before giving the same result (7.4
