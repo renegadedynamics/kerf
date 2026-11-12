@@ -28,10 +28,10 @@ internal interface IEnvelopeSections
     bool SectionGap(in BlendPoint near, double prm, double before, double after, out double gap, out double radius);
 
     /// <summary>
-    /// The middle of the arc of the section at the walk's point <paramref name="at"/>, and the ball's radius there.
-    /// False where the circle can't be had.
+    /// The section at the walk's point <paramref name="at"/>, with the path of the ball's centre there. False where
+    /// the circle can't be had.
     /// </summary>
-    bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius);
+    bool SectionEnd(in BlendPoint at, out EnvelopeEnd end);
 
     /// <summary>
     /// <see cref="EnvelopeCircle.LeastAdvance"/> of the section at <paramref name="prm"/>, on the walk's solution there

@@ -143,6 +143,23 @@ internal struct EnvelopeCircle
         return least;
     }
 
+    /// <summary>
+    /// How fast the envelope moves on at the point <paramref name="x"/> of the ball, as a share of the centre's speed:
+    /// <see cref="LeastAdvance"/>'s quantity at one point, whatever the radius is doing.
+    /// </summary>
+    public static double Advance(in Point3D c, in Vector3D dc, in Vector3D d2c, double r, double dr, double d2r, in Point3D x)
+    {
+        double g = dc.SquareMagnitude;
+        return (g - dr * dr - r * d2r - new Vector3D(c, x).Dot(d2c)) / g;
+    }
+
+    /// <summary>The point of the arc the share given of the way from the first contact to the second.</summary>
+    public readonly Point3D ArcPoint(double share)
+    {
+        double at = Angle() * share;
+        return Centre.Translated(Radius * (Math.Cos(at) * N1 + Math.Sin(at) * Plane.Crossed(N1)));
+    }
+
     /// <summary>The middle of the arc between the contacts; false where they're opposite or the circle is a point.</summary>
     public readonly bool ArcMiddle(out Point3D middle)
     {
@@ -173,5 +190,56 @@ internal struct EnvelopeCircle
         }
 
         return angle;
+    }
+}
+
+/// <summary>
+/// The section at an end of a walked surface, with what the path of the ball's centre is doing there (Kerf, unit
+/// 15AK2): what it takes to say how far the surfaces either side of a corner of that path leave the swept surface.
+/// </summary>
+internal readonly struct EnvelopeEnd(in EnvelopeCircle circle, in Point3D ball, in Vector3D dc, in Vector3D d2c, double r, double dr, double d2r)
+{
+    private readonly Point3D _ball = ball;
+    private readonly Vector3D _dc = dc, _d2c = d2c;
+    private readonly double _r = r, _dr = dr, _d2r = d2r;
+
+    /// <summary>The envelope's circle on the ball.</summary>
+    public EnvelopeCircle Circle { get; } = circle;
+
+    /// <summary>The ball's radius, as a length.</summary>
+    public double Radius => Math.Abs(_r);
+
+    /// <summary><see cref="EnvelopeCircle.LeastAdvance"/> of this section.</summary>
+    public double LeastAdvance() => Circle.LeastAdvance(_ball, _dc, _d2c, _r, _dr, _d2r);
+
+    /// <summary>
+    /// The most the points of <paramref name="other"/>'s arc, a circle of the same ball, are inside this end's balls
+    /// (or the surface this end's balls sweep, carried on, is outside the ball there), to the second order. With
+    /// F(x, w) = |x - c(w)|^2 - r(w)^2, a point x of the ball has F = 0, F' = -2 |c'| h, h its distance from this
+    /// circle's plane, and F'' = 2 |c'|^2 a, a the advance there (<see cref="EnvelopeCircle.Advance"/>), so the least
+    /// of F along this side's balls is -h^2 / a, and x is h^2 / (2 r a) inside them. Taken at nine points of the arc.
+    /// </summary>
+    public double Depth(in EnvelopeEnd other)
+    {
+        double worst = 0.0;
+        for (int i = 0; i <= 8; i++)
+        {
+            Point3D x = other.Circle.ArcPoint(i / 8.0);
+            double h = new Vector3D(Circle.Centre, x).Dot(Circle.Plane);
+            double advance = EnvelopeCircle.Advance(_ball, _dc, _d2c, _r, _dr, _d2r, x);
+            if (h * h <= 1.0e-24 * _r * _r)
+            {
+                continue;
+            }
+
+            if (advance <= 0.0)
+            {
+                return double.MaxValue;
+            }
+
+            worst = Math.Max(worst, h * h / (2.0 * Radius * advance));
+        }
+
+        return worst;
     }
 }

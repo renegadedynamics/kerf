@@ -1281,26 +1281,21 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
         return ok;
     }
 
-    public bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius)
+    public bool SectionEnd(in BlendPoint at, out EnvelopeEnd end) => End(at, at.Parameter(), out end);
+
+    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
     {
-        math_Vector y = new(1, 4), dx = new(1, 4);
-        at.ParametersOnS1(out y[1], out y[2]);
-        at.ParametersOnS2(out y[3], out y[4]);
-        double prm = at.Parameter();
-        middle = new Point3D();
-        Vector3D none = new Vector3D();
-        bool ok = SolveAt(y, prm) && ComputeValues(y, 1, true, prm) && Ball(1, dx, dx, out Vector3D dcentre, out _, out _, out _)
-                  && Envelope(0, dcentre, none, none, 0.0, out EnvelopeCircle circle) && circle.ArcMiddle(out middle);
-        radius = Math.Abs(_ray);
+        bool ok = End(near, prm, out EnvelopeEnd end);
+        advance = ok ? end.LeastAdvance() : 0.0;
         return ok;
     }
 
-    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
+    private bool End(in BlendPoint near, double prm, out EnvelopeEnd end)
     {
         math_Vector y = new(1, 4), dx = new(1, 4), d2x = new(1, 4);
         near.ParametersOnS1(out y[1], out y[2]);
         near.ParametersOnS2(out y[3], out y[4]);
-        advance = 0.0;
+        end = default;
         Vector3D zero = new Vector3D();
         // A point of the walk is its own solution: Newton's method only between the walk's points.
         if ((prm != near.Parameter() && !SolveAt(y, prm)) || !ComputeValues(y, 2, true, prm)
@@ -1312,7 +1307,7 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
 
         Vector3D ns1 = -ConstRad.InverseNorm(_nsurf1) * _nsurf1;
         Point3D center = new Point3D(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
-        advance = e.LeastAdvance(center, dc, d2c, _ray, _dray, _d2ray);
+        end = new EnvelopeEnd(e, center, dc, d2c, _ray, _dray, _d2ray);
         return true;
     }
 

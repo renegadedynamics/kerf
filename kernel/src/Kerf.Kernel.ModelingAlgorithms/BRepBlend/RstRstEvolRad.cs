@@ -431,25 +431,21 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         return ok;
     }
 
-    public bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius)
+    public bool SectionEnd(in BlendPoint at, out EnvelopeEnd end) => End(at, at.Parameter(), out end);
+
+    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
     {
-        math_Vector y = new(1, 2), dx = new(1, 2);
-        y[1] = at.ParameterOnC1();
-        y[2] = at.ParameterOnC2();
-        double prm = at.Parameter();
-        middle = new Point3D();
-        Position(prm);
-        bool ok = SolveAt(y) && WalkCentre(prm, y, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e) && e.ArcMiddle(out middle);
-        radius = Math.Abs(_ray);
+        bool ok = End(near, prm, out EnvelopeEnd end);
+        advance = ok ? end.LeastAdvance() : 0.0;
         return ok;
     }
 
-    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
+    private bool End(in BlendPoint near, double prm, out EnvelopeEnd end)
     {
         math_Vector y = new(1, 2), dx = new(1, 2);
         y[1] = near.ParameterOnC1();
         y[2] = near.ParameterOnC2();
-        advance = 0.0;
+        end = default;
         Position(prm);
         // A point of the walk is its own solution: Newton's method only between the walk's points.
         if ((prm != near.Parameter() && !SolveAt(y)) || !WalkCentreD2(prm, y, out Vector3D d2c) || !WalkCentre(prm, y, dx, out Vector3D dc)
@@ -459,7 +455,7 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         }
 
         _tevol.D2(prm, out _, out _, out double d2ray);
-        advance = e.LeastAdvance(_center, dc, d2c, _ray, _dray, d2ray);
+        end = new EnvelopeEnd(e, _center, dc, d2c, _ray, _dray, d2ray);
         return true;
     }
 

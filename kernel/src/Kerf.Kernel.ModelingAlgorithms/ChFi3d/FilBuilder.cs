@@ -1222,24 +1222,44 @@ internal partial class FilBuilder : FilletBuilderBase
         return true;
     }
 
-    // Kerf (unit 15AK, decision 2273): a fillet of evolving radius is the envelope of its balls, whose sections are
-    // circles square to the path of the ball's centre. Where the derivative of that path jumps, the true envelope has a
-    // piece of the ball between the circles of the two sides, and the walked surfaces, each carried on past its own last
-    // circle until they meet, leave it by about the square of the gap between the circles over twice the radius (each is
-    // tangent to the ball along its circle and goes half the gap beyond it; twice that for the surface's own curvature
-    // across the circle; measured on a box's rounded corner, 7.2e-4 for 8.7e-4 and 2.6e-5 for 7.6e-5). Past the
-    // approximation's tolerance the stripe is refused, with a status that says why (decision 1742). The path's
-    // derivative jumps
+    // Kerf (units 15AK and 15AK2, decisions 2273 and 33301): a fillet of evolving radius is the envelope of its balls,
+    // whose sections are circles square to the path of the ball's centre. Where the derivative of that path jumps, the
+    // one ball there has two circles, one for each side, through the same two contacts, and the surface the balls sweep
+    // has the piece of the ball between them. The walked surfaces each end on their own circle. Where the circles
+    // overlap, each surface's end is inside the other side's balls; where they leave a gap, the edge between the
+    // surfaces is given the gap as its tolerance, and either surface carried on across it is outside the ball. Both by
+    // the same amount, to the second order: h^2 / (2 r a), h a point of one circle's distance from the other's plane
+    // and a the share of the centre's speed at which the other side's surface moves on there (EnvelopeEnd.Depth).
+    // Measured against the boundary of the union of the balls, on a box's rounded corner (between faces) and on a
+    // cylinder's rim (onto an edge), it is what the surfaces are off by to a few parts in a hundred (7.41e-4 for 7.24e-4
+    // measured, 2.17e-4 for 2.19e-4). Past the approximation's tolerance the stripe is refused, with a status that
+    // says why (decision 1742). The path's derivative jumps
     //  - where the ball passes from one face to the next while the radius is changing and the faces' curvatures differ
     //    (a plane to a cylinder tangent to it, round a contour's arc): the centre's speed along the guide changes with
-    //    the contacts' own, whatever the guide; so each surface's end circles are kept, and those of the same ball
-    //    compared, between two faces (where the ball comes to rest on an edge the same holds, but the measure isn't
-    //    proved there, and nothing is refused: decision 2273);
+    //    the contacts' own, whatever the guide;
+    //  - where the ball comes to rest on an edge, or leaves it, or passes from one edge to the next, while the radius
+    //    is changing: the contact that ran across the face now runs along the edge, and unless the edge lies along the
+    //    way the contact was going the centre's speed along the guide changes as it does between faces;
+    //    so each surface's end circles are kept, and those of the same ball compared;
     //  - where the law's slope jumps, or the guide's curvature while the radius is changing (the function's C0
     //    intervals).
     // And where the radius's change itself bends hard enough for the circles of neighbouring balls to cross between the
     // contacts, the swept surface folds back on itself (EnvelopeCircle.LeastAdvance, at the walk's points).
-    private readonly List<(Spine Spine, bool Faces, Point3D A, Point3D B, Point3D Middle, double Radius)> _envelopeEnds = [];
+    private readonly List<(Spine Spine, Point3D A, Point3D B, EnvelopeEnd End)> _envelopeEnds = [];
+
+    /// <summary>
+    /// The tests': false builds the fillets <see cref="RefuseEnvelopeCorner"/> would refuse, so that each refusal can be
+    /// shown right against the union of the balls.
+    /// </summary>
+    internal bool EnvelopeCornersRefused { get; set; } = true;
+
+    /// <summary>The most the surfaces either side of a corner of the centre's path are off the swept surface by.</summary>
+    internal double EnvelopeCornerWorst { get; private set; }
+
+    private readonly List<(Point3D At, double Off)> _envelopeCorners = [];
+
+    /// <summary>Each corner of the centre's path met: the middle of one of its two arcs, and what it is off by.</summary>
+    internal IReadOnlyList<(Point3D At, double Off)> EnvelopeCorners => _envelopeCorners;
 
     private void RefuseEnvelopeCorner(IEnvelopeSections func, global::Kerf.Engine.Fillets.Blend.Line? lin, Spine? spine)
     {
@@ -1262,27 +1282,34 @@ internal partial class FilBuilder : FilletBuilderBase
         foreach (int k in count > 1 ? new[] { 1, count } : [1])
         {
             BlendPoint point = lin.Point(k);
-            if (!func.SectionMiddle(point, out Point3D middle, out double radius))
+            if (!func.SectionEnd(point, out EnvelopeEnd end) || !end.Circle.ArcMiddle(out _))
             {
                 continue;
             }
 
             Point3D a = point.PointOnS1(), b = point.PointOnS2();
-            double same = 1.0e-3 * radius;
-            bool faces = func is EvolRad;
-            foreach ((Spine other, bool ofaces, Point3D oa, Point3D ob, Point3D omiddle, double oradius) in _envelopeEnds)
+            double radius = end.Radius, same = 1.0e-3 * radius;
+            foreach ((Spine other, Point3D oa, Point3D ob, EnvelopeEnd oend) in _envelopeEnds)
             {
-                bool sameBall = faces && ofaces && ReferenceEquals(other, spine) && Math.Abs(oradius - radius) < same
+                bool sameBall = ReferenceEquals(other, spine) && Math.Abs(oend.Radius - radius) < same
                                 && ((a.DistanceTo(oa) < same && b.DistanceTo(ob) < same) || (a.DistanceTo(ob) < same && b.DistanceTo(oa) < same));
-                double gap = middle.DistanceTo(omiddle);
-                if (sameBall && radius > 0.0 && gap * gap > 2.0 * radius * _tolapp3d)
+                if (!sameBall || radius <= 0.0)
+                {
+                    continue;
+                }
+
+                double off = Math.Max(end.Depth(oend), oend.Depth(end));
+                EnvelopeCornerWorst = Math.Max(EnvelopeCornerWorst, off);
+                end.Circle.ArcMiddle(out Point3D middle);
+                _envelopeCorners.Add((middle, off));
+                if (EnvelopeCornersRefused && off > _tolapp3d)
                 {
                     spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
-                    throw new FailureException("PerformSurf : the radius changes where the ball passes between faces of different curvature");
+                    throw new FailureException("PerformSurf : the radius changes where the path of the ball's centre has a corner");
                 }
             }
 
-            _envelopeEnds.Add((spine, faces, a, b, middle, radius));
+            _envelopeEnds.Add((spine, a, b, end));
         }
 
         int n = func.NbIntervals(Continuity.C0);
