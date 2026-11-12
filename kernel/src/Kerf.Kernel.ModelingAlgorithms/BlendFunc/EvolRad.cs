@@ -1129,7 +1129,7 @@ internal class EvolRad : BlendFunction
     private bool Ball(int order, math_Vector dx, math_Vector d2x, out Vector3D dc, out Vector3D d2c, out Vector3D dtg1,
                       out Vector3D dtg2)
     {
-        Matrix d2DXdSdt = new(1, 4, 1, 4);
+        Matrix? d2DXdSdt = order == 2 ? new(1, 4, 1, 4) : null;
         bool istgt = true;
         dc = d2c = dtg1 = dtg2 = _dnorm1w = _dnorm2w = _d2norm1w = _d2norm2w = new Vector3D();
 
@@ -1141,8 +1141,8 @@ internal class EvolRad : BlendFunction
                 resol.Solve(-_dedt, dx);
                 if (order == 2)
                 {
-                    _d2EDX2.Multiply(dx, d2DXdSdt);
-                    d2x.Initialized(-(_d2EDT2 + (2 * _d2EDXDT + d2DXdSdt) * dx));
+                    _d2EDX2.Multiply(dx, d2DXdSdt!);
+                    d2x.Initialized(-(_d2EDT2 + (2 * _d2EDXDT + d2DXdSdt!) * dx));
                     resol.Solve(d2x);
                 }
 
@@ -1159,8 +1159,8 @@ internal class EvolRad : BlendFunction
                 if (order == 2)
                 {
                     math_Vector vbis = new(1, 4);
-                    _d2EDX2.Multiply(dx, d2DXdSdt);
-                    vbis.Initialized(-(_d2EDT2 + (2 * _d2EDXDT + d2DXdSdt) * dx));
+                    _d2EDX2.Multiply(dx, d2DXdSdt!);
+                    vbis.Initialized(-(_d2EDT2 + (2 * _d2EDXDT + d2DXdSdt!) * dx));
                     singRS.Solve(vbis, d2x, 1.0e-6);
                 }
 

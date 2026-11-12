@@ -373,9 +373,10 @@ public class FilletBlendTests
         chfi3d.Build();
         Assert.True(chfi3d.IsDone);
         Assert.True(chfi3d.Shape().Validate().IsValid);
-        (double miss, _, double offContact, _, double greatest) = EnvelopeMiss(chfi3d, p => Math.Abs(p.X), p => Math.Abs(p.Y), 1e-3, 150);
-        Assert.True(miss < 100 * Approximation, $"the envelope's balls miss by {miss}");
-        Assert.True(offContact < 100 * Approximation, $"the contacts are off their surfaces by {offContact}");
+        (double miss, _, double offContact, _, double greatest) = EnvelopeMiss(chfi3d, p => Math.Abs(p.X), p => Math.Abs(p.Y), 1e-9, 150);
+        // 1.2e-4 at radii up to 100
+        Assert.True(miss < 5 * Approximation, $"the envelope's balls miss by {miss}");
+        Assert.True(offContact < Approximation, $"the contacts are off their surfaces by {offContact}");
         // The law's cubic, through unlike rises, goes a little past 100 beside its middle point (to 101.6)
         Assert.InRange(greatest, 95, 105);
     }
