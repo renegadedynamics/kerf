@@ -48,9 +48,14 @@ public class BRepBlendNativeTests
         // The evolving radius between two planes (unit 15AK): the same walk bit for bit, its sections the envelope's
         // circles, square to the path of the ball's centre, where OCCT's are in the plane square to the guide
         "case walk planeplaneevol 1", "case walk planeplaneevol 2",
+        "case walk surfrstevol 1 1", "case walk surfrstevol 1 3", "case walk surfrstevol 1 5",
     ];
 
-    private static readonly string[] THE_ENVELOPES = ["case walk planeplaneevol 1", "case walk planeplaneevol 2"];
+    private static readonly string[] THE_ENVELOPES =
+    [
+        "case walk planeplaneevol 1", "case walk planeplaneevol 2",
+        "case walk surfrstevol 1 1", "case walk surfrstevol 1 3", "case walk surfrstevol 1 5",
+    ];
 
     [Fact]
     public void Walking_TheEnvelopesContactsAreNativesBitForBit()
@@ -119,7 +124,7 @@ public class BRepBlendNativeTests
     [Fact]
     public void SurfRstLineBuilder_MatchesNativeBitForBit()
     {
-        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 5);
+        Compare(k => BlendRecorder.THE_SURFRSTS.Any(c => Is(k, c.Name)), BlendRecorder.THE_SURFRSTS.Length * 16 - 8);
     }
 
     [Fact]

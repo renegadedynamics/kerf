@@ -410,8 +410,10 @@ public class BRepBlend_InverseFunctionTests
         AssertDerivatives2(aF, Vec(0.4, 7.2));
     }
 
-    // Solved, the section is the ball's of the law's radius there: the centre at that radius from both edges' points, its
-    // chord to each square to that edge; and the walk's tangent, which takes the radius's change, is the solutions' own
+    // Solved, the section is on the ball of the law's radius there: the centre at that radius from both edges' points, its
+    // chord to each square to that edge; and the walk's tangent, which takes the radius's change, is the solutions' own.
+    // The section's circle is the envelope's (unit 15AK): smaller than the ball's great circle as the radius changes,
+    // through both points, the ball's centre on its axis
     [Theory]
     [InlineData(1)]
     [InlineData(2)]
@@ -439,12 +441,19 @@ public class BRepBlend_InverseFunctionTests
         (math_Vector aSol, Point3D aP1, Point3D aP2) = Solve(aF);
         var aCircle = new Circle3D();
         aF.Section(4, aSol[1], aSol[2], out _, out _, ref aCircle);
-        Point3D aC = aCircle.Location;
-        Assert.Equal(1.9, aCircle.Radius, 12);
-        Assert.Equal(1.9, aC.DistanceTo(aP1), 9);
-        Assert.Equal(1.9, aC.DistanceTo(aP2), 9);
-        Assert.Equal(0, new Vector3D(aP1, aC).Dot(new Vector3D(1, 0.3, 0).Normalized()), 9);
-        Assert.Equal(0, new Vector3D(aP2, aC).Dot(new Vector3D(1, 0, 0.2).Normalized()), 9);
+        Assert.InRange(aCircle.Radius, 1.8, 1.9 - 1e-6);
+        Assert.Equal(aCircle.Radius, aCircle.Location.DistanceTo(aP1), 9);
+        Assert.Equal(aCircle.Radius, aCircle.Location.DistanceTo(aP2), 9);
+        Assert.Equal(0, new Vector3D(aCircle.Location, aP1).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
+        Assert.Equal(0, new Vector3D(aCircle.Location, aP2).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
+        // The ball's centre, on the circle's axis on one side or the other
+        double aOff = Math.Sqrt(1.9 * 1.9 - aCircle.Radius * aCircle.Radius);
+        Assert.Contains(new[] { 1.0, -1.0 }, s =>
+        {
+            Point3D aC = aCircle.Location.Translated(s * aOff * new Vector3D(aCircle.Axis.Direction));
+            return Math.Abs(new Vector3D(aP1, aC).Dot(new Vector3D(1, 0.3, 0).Normalized())) < 1e-9
+                   && Math.Abs(new Vector3D(aP2, aC).Dot(new Vector3D(1, 0, 0.2).Normalized())) < 1e-9;
+        });
         Vector3D aTangent1 = aF.TangentOnRst1(), aTangent2 = aF.TangentOnRst2();
 
         const double H = 1e-5;
