@@ -39,6 +39,11 @@ internal sealed class Tool2d
     private readonly Dictionary<int, Vector2D> _geomVecs = new();
     private readonly NCollection_Sequence<int> _linesLength = new();
 
+    // Kerf: which bisector the last IntersectBisector found its point at the start of, and so refused it: 1, 2, or 0
+    // for neither; and the point (Mat2d's nodes that pieces reach one after another)
+    private int _refusedAtStartOf;
+    private Point2D _refusedPoint;
+
     public Tool2d()
     {
         _direction = 1.0;
@@ -610,6 +615,7 @@ internal sealed class Tool2d
     /// </summary>
     public double IntersectBisector(MedialBisector bisectorOne, MedialBisector bisectorTwo, ref int intPnt)
     {
+        _refusedAtStartOf = 0;
         double tolerance = MAT2d_TOLCONF;
         double param1, param2;
         double parama, paramb;
@@ -813,10 +819,14 @@ internal sealed class Tool2d
         {
             if (bisector1.StartPoint.DistanceTo(pointSolution) < tolerance)
             {
+                _refusedAtStartOf = 1;
+                _refusedPoint = pointSolution;
                 return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
             if (bisector2.StartPoint.DistanceTo(pointSolution) < tolerance)
             {
+                _refusedAtStartOf = 2;
+                _refusedPoint = pointSolution;
                 return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
         }
@@ -877,6 +887,42 @@ internal sealed class Tool2d
     public Vector2D GeomVec(int index) => _geomVecs.GetValue(index);
 
     public Circuit Circuit() => _circuit!;
+
+    /// <summary>Kerf: 1 or 2 if the last <see cref="IntersectBisector"/> found the two bisectors meeting within the
+    /// tolerance of where its first or second one starts, which it does not count as meeting; 0 otherwise.</summary>
+    internal int RefusedAtStartOf => _refusedAtStartOf;
+
+    /// <summary>Kerf: the point the last <see cref="IntersectBisector"/> refused, when <see cref="RefusedAtStartOf"/>
+    /// isn't 0.</summary>
+    internal Point2D RefusedPoint => _refusedPoint;
+
+    /// <summary>
+    /// Kerf: true if <paramref name="point"/> is within <paramref name="tolerance"/> of the tangents to both bisectors
+    /// at the point of index <paramref name="crossing"/>, where they cross: it is where they cross as far as the two
+    /// can tell, however shallow the angle between them (two that cross at 5 degrees place their crossing ten times
+    /// less surely along them than across), and it isn't if they cross somewhere else as well (decision 2265).
+    /// </summary>
+    internal bool CrossAt(MedialBisector one, MedialBisector two, int crossing, in Point2D point, double tolerance)
+    {
+        Point2D at = GeomPnt(crossing);
+        return OffTangent(one, at, point) <= tolerance && OffTangent(two, at, point) <= tolerance;
+    }
+
+    // How far `point` is from the tangent to the bisector at `at`, a point of it
+    private double OffTangent(MedialBisector bisector, in Point2D at, in Point2D point)
+    {
+        TrimmedCurve2D curve = GeomBis(bisector.BisectorNumber()).Value();
+        double parameter = ((BisectorCurve)curve.BasisCurveToRead()).Parameter(at);
+        if (!(Math.Abs(parameter) < global::Kerf.Engine.Foundation.Precision.Infinite()))
+        {
+            return at.DistanceTo(point);
+        }
+        Vector2D tangent = curve.DN(parameter, 1);
+        double length = tangent.Magnitude;
+        return length > 0.0
+            ? Math.Abs((point.X - at.X) * tangent.Y - (point.Y - at.Y) * tangent.X) / length
+            : at.DistanceTo(point);
+    }
 
     // Kerf: the point, the vector and the trimmed curve of an index that may have none, for MatCycle
 
