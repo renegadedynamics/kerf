@@ -72,11 +72,9 @@ internal sealed class GeometryBuilderHelix : BuilderHelixGen
         else
         {
             // Case: helix spans multiple full turns - process in segments
-            bool bIsCylindrical;
-            double tolAngle;
-
-            tolAngle = 1.0e-4;
-            bIsCylindrical = Math.Abs(_taperAngle) < tolAngle;
+            // Kerf: only a helix of no taper repeats its first coil, as OCCT does since 3f3d32d9f3 (decision 34002);
+            // 8.0.1 repeated it for a taper under 1e-4 radians, whose coils widen
+            bool bIsCylindrical = _taperAngle == 0.0;
             t1x = _t1;
             t2x = _t1 + twoPI;
             for (i = 1; i <= n; ++i)

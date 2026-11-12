@@ -233,6 +233,32 @@ public class ConstructionTests
         KernelAssert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 2, 10, new HelixOptions { EndRadius = -1 }));
     }
 
+    // Upstream 3f3d32d9f3 (decision 34002): a taper under 1e-4 radians was taken for none, so the helix ended at its
+    // start radius; every point of a conical helix is at the radius its height gives
+    [Theory]
+    [InlineData(10.0, 10.005)]
+    [InlineData(10.0, 10.0 - 0.002)]
+    [InlineData(5.0, 2.0)]
+    [InlineData(2.0, 6.0)]
+    public void A_conical_helix_is_at_the_radius_its_height_gives(double radius, double endRadius)
+    {
+        const double height = 100, pitch = 10;
+        Wire helix = Sweeps.Helix(radius, pitch, height, new HelixOptions { EndRadius = endRadius }).Value;
+        Assert.Contains(helix.AllVertices(), v => v.Point.DistanceTo(new Point3D(endRadius, 0, height)) < 1e-6);
+        double worst = 0;
+        foreach (Edge edge in helix.AllEdges())
+        {
+            EdgeCurve curve = edge.ToCurve();
+            for (int i = 0; i <= 50; i++)
+            {
+                Point3D p = curve.Evaluate(curve.Range.Min + (curve.Range.Max - curve.Range.Min) * i / 50);
+                double expected = radius + (endRadius - radius) * p.Z / height;
+                worst = Math.Max(worst, Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - expected));
+            }
+        }
+        Assert.True(worst < 1e-4, $"{worst} from the cone");
+    }
+
     [Fact]
     public void A_sweep_follows_its_spine()
     {
