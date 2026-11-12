@@ -59,8 +59,14 @@ namespace Kerf.Fillets;
 /// <b>The proof</b> (<see cref="Proved"/>), of the result alone and the chamfer's specs, not of how it was made: every free
 /// edge runs along one of the input's, or is a chamfer face's end between two; and where a chamfer face meets one of its edge's
 /// faces beside the edge, the contact is at the chamfer's distance on that face, and on the reference face at the chamfer's
-/// angle (ChFi3d's: in the plane square to the edge). The operation then checks validity, tolerances and the crossings
-/// (decision 2125) as for any result. Everything is local to the call, on frozen shapes.
+/// angle (ChFi3d's: in the plane square to the edge), at five points or more on each side of each chamfered contour, so that
+/// a chamfer that has lost one whole contact isn't taken for the one asked (unit 15U4). The operation then checks validity,
+/// tolerances and the crossings (decision 2125) as for any result. Everything is local to the call, on frozen shapes.
+/// </para>
+/// <para>
+/// <b>Guides off their edges.</b> ChFi3d walks along a guide it smooths to C2 where the edge isn't, kept to 1e-3 whatever the
+/// shape's size, and keeps the chamfer's distance from that. Where that leaves a stripe of two distances, or of a distance and
+/// an angle, off its distance, the stripes are asked of ChFi3d again with the guides kept to their edges (unit 15U4).
 /// </para>
 /// </remarks>
 internal static partial class ChamferMeet

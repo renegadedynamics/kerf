@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Chamfer` with two distances, or a distance and an angle, round a small solid with curved edges now builds where it failed, given time** (kernel decisions 33201 to 33206): OCCT keeps such a chamfer's distance from a smoothed copy of the edge that can be far off on a small part, and fails where the chamfers meet. The kernel's own construction now builds it at the distances asked and proves it by volume. It takes about 30 s, more than the default limit of 20 s, so pass a longer `ChamferOptions.TimeLimit`; without one the failure names the limit. A chamfer in which the chamfers have taken one of each other's contacts away is now always a failure.
 - **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
 - **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
   cone's apex, on a sphere or on a cylinder cut through its end, now builds where it failed or was wrong** (kernel
