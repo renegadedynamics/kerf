@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
 - **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
   cone's apex, on a sphere or on a cylinder cut through its end, now builds where it failed or was wrong** (kernel
   decisions 2243 to 2248); a fillet that still fails on a seam says so.

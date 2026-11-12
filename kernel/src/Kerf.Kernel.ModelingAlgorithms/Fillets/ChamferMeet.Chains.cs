@@ -179,6 +179,120 @@ internal static partial class ChamferMeet
         return found;
     }
 
+    // A chamfer's cut as its spec has it: the distance on the reference face, and on the other face the second distance (the
+    // same where there's none), or the angle its section makes there with the reference face's (ChFi3d's BlendFunc_ChAsym)
+    private readonly record struct Cut(double Distance, double? Second, double? Angle)
+    {
+        public bool Equal => Second is null && Angle is null;
+    }
+
+    // The one cut of the specs on these edges, with their reference faces; null where there's none or they differ
+    private static (Cut Cut, Face[] References)? CutOf(ChamferSpec[] specs, Face[] referenceFaces, Edge[] edges)
+    {
+        int[] own = [.. Enumerable.Range(0, specs.Length).Where(i => edges.Any(e => e.IsSame(specs[i].Edge)))];
+        if (own.Length == 0)
+        {
+            return null;
+        }
+        static Cut Of(ChamferSpec s) => new(s.Distance, s.Angle is null && s.Distance2 is { } d2 && d2 != s.Distance ? d2 : null, s.Angle);
+        Cut cut = Of(specs[own[0]]);
+        return own.Any(i => Of(specs[i]) != cut) ? null : (cut, [.. own.Select(i => referenceFaces[i])]);
+    }
+
+    // Whether the face is the cut's reference face: any, for one length on both; null where the specs' reference faces don't agree
+    private static bool? IsReference(Cut cut, Face[] references, Face face)
+    {
+        if (cut.Equal)
+        {
+            return true;
+        }
+        int same = references.Count(r => !r.IsNull && r.IsSame(face));
+        return same == references.Length && same > 0 ? true : same == 0 && references.All(static r => !r.IsNull) ? false : null;
+    }
+
+    // One side of an edge along which sections are solved: the face to start on, those that may hold the contact, and where
+    // the last one was found
+    private sealed class Side
+    {
+        public Face Start { get; set; }
+
+        public Face[] Candidates { get; set; } = [];
+
+        public Edge InStart { get; set; }
+
+        public Point2D? Last;
+
+        public Face Face;
+
+        public Point3D? At(double t, Point3D c, Vector3D tangent, double distance, IntersectionContext context) =>
+            Contact(Start, Candidates, InStart, t, c, tangent, distance, ref Last, ref Face, context);
+    }
+
+    // An angle's contact is solved to this, in radians; where the secant stalls on the contacts' own rounding, this is taken
+    private const double AngleSolved = 1e-11;
+
+    private const double AngleStalled = 1e-5;
+
+    // A section's two contacts: the reference side's at the cut's distance, and the other's at its own, or where the line
+    // between them makes the cut's angle with the reference face's section at its contact (the secant method on the distance)
+    private static (Point3D Reference, Point3D Other)? Contacts(Cut cut, Side reference, Side other, double t, Point3D c, Vector3D tangent, IntersectionContext context)
+    {
+        if (reference.At(t, c, tangent, cut.Distance, context) is not { } p)
+        {
+            return null;
+        }
+        if (cut.Angle is not { } angle)
+        {
+            return other.At(t, c, tangent, cut.Second ?? cut.Distance, context) is { } q ? (p, q) : null;
+        }
+        if (reference.Last is not { } uv || reference.Face.IsNull)
+        {
+            return null;
+        }
+        // The reference face's section at its contact, towards the edge
+        Vector3D along = Normal(Tool.Surface(reference.Face)!, uv.X, uv.Y).Crossed(tangent);
+        if (along.Dot(new Vector3D(p, c)) < 0)
+        {
+            along = -along;
+        }
+        double? Off(double d, out Point3D q)
+        {
+            q = default;
+            if (other.At(t, c, tangent, d, context) is not { } found)
+            {
+                return null;
+            }
+            q = found;
+            var chord = new Vector3D(p, q);
+            return Math.Atan2(chord.Crossed(along).Magnitude, chord.Dot(along)) - angle;
+        }
+        double d0 = cut.Distance * Math.Tan(angle), d1 = 1.05 * d0;
+        if (Off(d0, out Point3D q0) is not { } f0)
+        {
+            return null;
+        }
+        (double Off, Point3D Point) best = (Math.Abs(f0), q0);
+        for (int iteration = 0; iteration < 40 && best.Off >= AngleSolved; iteration++)
+        {
+            if (Off(d1, out Point3D q1) is not { } f1)
+            {
+                return null;
+            }
+            if (Math.Abs(f1) < best.Off)
+            {
+                best = (Math.Abs(f1), q1);
+            }
+            if (f1 == f0)
+            {
+                break;
+            }
+            double next = d1 - (f1 * (d1 - d0) / (f1 - f0));
+            (d0, f0) = (d1, f1);
+            d1 = next > 0 ? next : 0.5 * d1;
+        }
+        return best.Off < AngleStalled ? (p, best.Point) : null;
+    }
+
     // ChFi3d's band at the chamfer's distance from its edge along both contacts, to its approximation's tolerance and the edge's
     private static bool OnSpec(Band band, double distance, double tolerance)
     {
@@ -246,13 +360,14 @@ internal static partial class ChamferMeet
     // The band of a chain: sections solved on the input's faces, a cubic through each side's contacts, the ruled surface between
     private static List<Band>? ChainBands(Face[] faces, Chain chain, double distance, bool convex)
     {
+        var cut = new Cut(distance, null, null);
         var context = new IntersectionContext();
         Face[] other = [.. chain.Edges.Select(x => faces.First(f => !f.IsSame(chain.Common) && OnFace(x.Edge, f))).Distinct()];
         var onCommon = new List<Point3D>();
         var onOther = new List<Point3D>();
         var spine = new List<Point3D>();
-        Point2D? lastCommon = null, lastOther = null;
-        Face otherFace = default, commonFace = default;
+        var commonSide = new Side { Start = chain.Common, Candidates = [chain.Common] };
+        var otherSide = new Side();
         for (int i = 0; i < chain.Edges.Length; i++)
         {
             (Edge edge, bool reversed) = chain.Edges[i];
@@ -276,9 +391,9 @@ internal static partial class ChamferMeet
                 double t = reversed ? b - (s * (b - a)) : a + (s * (b - a));
                 curve.D1(t, out Point3D c, out Vector3D d1);
                 Vector3D tangent = (reversed ? -d1 : d1) / d1.Magnitude;
-                Edge inCommon = chain.Common.AllEdges().First(e => e.IsSame(edge)), inOwn = own.AllEdges().First(e => e.IsSame(edge));
-                if (Contact(chain.Common, [chain.Common], inCommon, t, c, tangent, distance, ref lastCommon, ref commonFace, context) is not { } p
-                    || Contact(own, [own, .. other.Where(f => !f.IsSame(own))], inOwn, t, c, tangent, distance, ref lastOther, ref otherFace, context) is not { } q)
+                commonSide.InStart = chain.Common.AllEdges().First(e => e.IsSame(edge));
+                (otherSide.Start, otherSide.Candidates, otherSide.InStart) = (own, [own, .. other.Where(f => !f.IsSame(own))], own.AllEdges().First(e => e.IsSame(edge)));
+                if (Contacts(cut, commonSide, otherSide, t, c, tangent, context) is not var (p, q))
                 {
                     return null;
                 }
@@ -291,9 +406,9 @@ internal static partial class ChamferMeet
                 double t = reversed ? a : b;
                 curve.D1(t, out Point3D c, out Vector3D d1);
                 Vector3D tangent = (reversed ? -d1 : d1) / d1.Magnitude;
-                Edge inCommon = chain.Common.AllEdges().First(e => e.IsSame(edge)), inOwn = own.AllEdges().First(e => e.IsSame(edge));
-                if (Contact(chain.Common, [chain.Common], inCommon, t, c, tangent, distance, ref lastCommon, ref commonFace, context) is not { } p
-                    || Contact(own, [own, .. other.Where(f => !f.IsSame(own))], inOwn, t, c, tangent, distance, ref lastOther, ref otherFace, context) is not { } q)
+                commonSide.InStart = chain.Common.AllEdges().First(e => e.IsSame(edge));
+                (otherSide.Start, otherSide.Candidates, otherSide.InStart) = (own, [own, .. other.Where(f => !f.IsSame(own))], own.AllEdges().First(e => e.IsSame(edge)));
+                if (Contacts(cut, commonSide, otherSide, t, c, tangent, context) is not var (p, q))
                 {
                     return null;
                 }
