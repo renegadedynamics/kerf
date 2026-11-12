@@ -5,7 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
-- **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 31901 to 31903): OCCT fails at that corner; the result is checked at its distances and by its volume.
+- **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
 - **A 2D offset whose medial axis loops fails over at once** (kernel decisions 2220 to 2222): `Offset` of a wire or
   face inwards past its curves' bends could spend seconds and gigabytes in the kernel before giving the same result (7.4
   s and 22.4 GB for a wire of 36 B-splines, now 0.05 s and 46 MB). Results are unchanged.
