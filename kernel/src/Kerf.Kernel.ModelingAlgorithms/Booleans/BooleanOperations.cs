@@ -239,7 +239,7 @@ public static class BooleanOperations
         // bring each edge's pieces and each section's curves to one point of them. The one with the fewest gaps is kept,
         // the first of them to have none the inputs didn't
         Result<Built<Shape>> best = first;
-        double before = double.NaN;
+        double before = double.NaN, areaBefore = double.NaN;
         foreach ((double apart, bool touches) in (ReadOnlySpan<(double, bool)>)[(CrossingsApart, true), (CrossingsApart, false), (double.PositiveInfinity, false)])
         {
             BooleanOperation again = rule switch
@@ -267,8 +267,20 @@ public static class BooleanOperations
             {
                 before = built.Shape.IntegrateVolume(SameVolumeMeasured);
             }
+            // The check alone isn't enough: over the sweep five results made again were valid and passed it, 14% to 42% out
+            // (decision 32907). The volume doesn't depend on a tolerance, and nor does the area, asked as well
             double after = closed.Shape.IntegrateVolume(SameVolumeMeasured);
-            if (Math.Abs(after - before) <= SameVolume * Math.Max(Math.Abs(before), Math.Abs(after)))
+            if (Math.Abs(after - before) > SameVolume * Math.Max(Math.Abs(before), Math.Abs(after)))
+            {
+                continue;
+            }
+
+            if (double.IsNaN(areaBefore))
+            {
+                areaBefore = built.Shape.IntegrateArea(SameVolumeMeasured);
+            }
+            double areaAfter = closed.Shape.IntegrateArea(SameVolumeMeasured);
+            if (Math.Abs(areaAfter - areaBefore) <= SameVolume * Math.Max(Math.Abs(areaBefore), Math.Abs(areaAfter)))
             {
                 (best, open) = (result, left);
                 if (left <= given)
