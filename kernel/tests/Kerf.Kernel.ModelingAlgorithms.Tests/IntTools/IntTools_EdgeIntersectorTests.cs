@@ -150,12 +150,15 @@ public class IntTools_EdgeIntersectorTests
     // An edge beside a long, narrow strip of a cubic B-spline surface, askew to the axes, without touching it (unit 15Y,
     // decision 2183). The localisation's boxes overlap down to the size of the gap, so it listed a pair of samples for every
     // one: 55,746 pairs at a gap of 0.007 beside a strip 0.1 wide (1.5 GB allocated, 8 s) and 491,684 at 0.002 beside one 0.02
-    // wide (11.8 GB, 72 s), each pair an extremum that found nothing. Past 2,000 pairs it's now given up for the exact
-    // intersection, which finds the same: nothing beside the strip, and the crossing of an edge that goes through it
+    // wide (11.8 GB, 72 s), each pair an extremum that found nothing. The pieces are now told apart along their own
+    // directions (unit 15Y2, decision 32801): no pair is listed beside the strip, and one for an edge that goes through it,
+    // found where it crosses. On a rational strip, which that bound doesn't speak for, the localisation is given up past
+    // 2,000 pairs for the exact intersection, as it was for both before, which finds the same
     [Theory]
-    [InlineData(0.007, 0.1)]
-    [InlineData(0.002, 0.02)]
-    public void BeanFace_EdgeBesideANarrowSplineStrip_GivesUpItsLocalisation(double theGap, double theWidth)
+    [InlineData(0.007, 0.1, false)]
+    [InlineData(0.002, 0.02, false)]
+    [InlineData(0.007, 0.1, true)]
+    public void BeanFace_EdgeBesideANarrowSplineStrip_IsToldApart_OrGivesUpItsLocalisation(double theGap, double theWidth, bool isRational)
     {
         Vector3D anAlong = new(0.6, 0.5, Math.Sqrt(0.39)), anAcross = new Vector3D(0.5, -0.6, 0).Normalized();
         Vector3D aNormal = anAlong.Crossed(anAcross).Normalized();
@@ -165,14 +168,18 @@ public class IntTools_EdgeIntersectorTests
             return new Point3D(aP.X, aP.Y, aP.Z);
         }
         Point3D[] aPoles = new Point3D[36];
+        double[] aWeights = new double[36];
         for (int i = 0; i < 6; i++)
         {
             for (int j = 0; j < 6; j++)
             {
                 aPoles[(i * 6) + j] = At(2.0 * j, theWidth * i / 5, 0.002 * Math.Sin(1.3 * i) * Math.Cos(0.7 * j));
+                aWeights[(i * 6) + j] = i == 0 && j == 0 ? 2.0 : 1.0;
             }
         }
-        BSplineSurface aSurface = new(new Grid<Point3D>(aPoles, 6, 6), [0.0, 1, 2, 3], [0.0, 1, 2, 3], [4, 1, 1, 4], [4, 1, 1, 4], 3, 3);
+        BSplineSurface aSurface = new(new Grid<Point3D>(aPoles, 6, 6), [0.0, 1, 2, 3], [0.0, 1, 2, 3], [4, 1, 1, 4], [4, 1, 1, 4], 3, 3,
+                                      false, false, isRational ? new Grid<double>(aWeights, 6, 6) : default);
+        Assert.Equal(isRational, aSurface.IsURational || aSurface.IsVRational);
         global::Kerf.Topology.Face aStrip = new MakeFace(aSurface, 1e-7).Face();
 
         // Beside it all the way, then ending on its other side
@@ -192,7 +199,8 @@ public class IntTools_EdgeIntersectorTests
                 Assert.InRange(aBF.Result().Value(1).First(), 4.5, 4.9); // the middle, moved a little by the strip's waves
                 Assert.InRange(aBF.Result().Value(1).Last() - aBF.Result().Value(1).First(), 0, 0.01);
             }
-            Assert.True(aBytes < 200L << 20, $"{aBytes >> 20} MB at {anEnd}"); // 44 MB and 5 MB measured
+            // told apart: 0.6 MB and 0.4 MB measured; given up: 44 MB and 5 MB
+            Assert.True(aBytes < (isRational ? 200L << 20 : 5L << 20), $"{aBytes >> 10} KB at {anEnd}");
         }
     }
 

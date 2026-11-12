@@ -61,6 +61,7 @@ internal class BeanFaceIntersector
     private readonly NCollection_Sequence<ParameterRange> _results = new();
     private bool _isDone;
     private double _minSqDistance;
+    private SampleSeparation? _separation;
 
     /// <summary>An empty algorithm.</summary>
     public BeanFaceIntersector()
@@ -1547,6 +1548,16 @@ internal class BeanFaceIntersector
                         bHasOutC = true;
                         continue;
                     }
+
+                    // Kerf (unit 15Y2, decision 32801): boxes along the axes overlap for an edge that runs beside a face
+                    // askew to them, down to samples the size of the gap. The two pieces bounded along their own
+                    // directions are told apart at once; the boxes' two enlargements by the criteria are kept
+                    if (_separation!.Apart(prevPar, curPar, prevParU, curParU, prevParV, curParV, 2.0 * _criteria))
+                    {
+                        bHasOutV = true;
+                        bHasOutC = true;
+                        continue;
+                    }
                     //
 
                     listOfIndex.Append(tIt);
@@ -1811,6 +1822,7 @@ internal class BeanFaceIntersector
             CurveRangeLocalizeData curveData = new(nbSampleC, dMinC);
 
             curveData.AddBox(curveRange, eBox);
+            _separation = new SampleSeparation(_curve, _surface);
 
             if (!LocalizeSolutions(curveRange,
                                    eBox,
