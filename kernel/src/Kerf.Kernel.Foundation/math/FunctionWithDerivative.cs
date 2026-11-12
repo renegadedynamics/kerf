@@ -6,11 +6,21 @@
 namespace Kerf.Engine.Numerics;
 
 /// <summary>A function of a single variable whose first derivative is available.</summary>
-internal abstract class FunctionWithDerivative : Function
+internal abstract class FunctionWithDerivative : Function, IFunctionValues
 {
     /// <summary>Computes the derivative <paramref name="d"/> at <paramref name="x"/>; false if it could not be computed.</summary>
     public abstract bool Derivative(double x, out double d);
 
     /// <summary>Computes the value <paramref name="f"/> and the derivative <paramref name="d"/> at <paramref name="x"/>.</summary>
     public abstract bool Values(double x, out double f, out double d);
+}
+
+/// <summary>
+/// A function's value and derivative, as <see cref="FunctionWithDerivative.Values"/> (Kerf): what <see cref="BissecNewton"/>
+/// reads, so that a struct can be its function.
+/// </summary>
+internal interface IFunctionValues
+{
+    /// <summary>Computes the value <paramref name="f"/> and the derivative <paramref name="d"/> at <paramref name="x"/>.</summary>
+    bool Values(double x, out double f, out double d);
 }

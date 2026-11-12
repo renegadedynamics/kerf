@@ -996,7 +996,7 @@ internal sealed class Tool2d
 
         if (type == typeof(TrimmedCurve2D))
         {
-            curve = ((TrimmedCurve2D)aGeom).ChangeBasisCurve();
+            curve = ((TrimmedCurve2D)aGeom).BasisCurveToRead();
             type = curve.GetType();
         }
         return type;

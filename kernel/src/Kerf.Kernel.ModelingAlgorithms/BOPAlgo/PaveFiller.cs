@@ -100,6 +100,8 @@ internal partial class PaveFiller : BooleanAlgorithm
     protected NCollection_IntMap _increasedSS = new();
     //! Vertices located close to E/E or E/F intersection points
     protected NCollection_IntMap _vertsToAvoidExtension = new();
+    //! Kerf: vertices grown over an edge's crossing of a face, each with the widest stretch such an edge touches the face over
+    protected Dictionary<int, double> _touchSpans = new();
     //! Map to store minimal distances between shapes
     protected Dictionary<Pair, NCollection_List<EdgeRangeDistance>> _distances = new();
 
@@ -168,6 +170,7 @@ internal partial class PaveFiller : BooleanAlgorithm
         _iterator = null;
         _ds = null;
         _increasedSS.Clear();
+        _touchSpans.Clear();
     }
 
     /// <summary>OCCT's initialisation: the checks, the data structure, the context, the iterator and the mode.</summary>
