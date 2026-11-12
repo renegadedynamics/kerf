@@ -2371,3 +2371,31 @@ At 9 by 9 points a face, as the fuse's proof samples, `bug24758_2`'s cut took 13
 **For a quiet window:** `quiet-15ah.ps1` runs the users' cases and the rig's Booleans suite, both sides alternating.
 
 **The owner's answer** (14 November 2026, decision 2230): the cost is accepted for safety; optimising it is later work.
+
+## A pipe shell with corners (unit 15AL)
+
+*November 2026, decisions 2263 and 2264. A loaded machine: the verdicts rest on bytes, counts and processor time.
+Wall-clock figures are for a quiet window: `quiet-15al.ps1` in the scratchpad's `p15al` folder.*
+
+OCCT's `bugs/modalg_7/bug32444` sweeps six profiles along a spine divided at its corners (`buildsweep -C -S`). All of it
+is the corners' trimming: one pave filler for each corner's two shells. Traced on main at 7c4486dfe, the second pass in
+one process: of the case thread's samples, edge/face about 60% (the root finder from the polyhedron's start points,
+97,516 searches and 1.73 million iterations) and face/face about 27%; of the bytes, face/face 38% and edge/face 34%.
+
+| Site (share of the case's bytes before) | Change |
+|---|---|
+| `IntPolyh_Intersection`'s 10,000 tangent zones and 1,000 section lines, made for each pair of surfaces (9.4%) | Blocks and section lines made when first reached |
+| `GenExtPS`'s grid sets for a 44 by 44 sampling, lost from a weak reference and made again (9.1%) | Held, as 32 by 32 was |
+| `Extrema_ExtElC` objects for each segment against each triangle's edge (3.9%) | The lines' extremum without the object |
+| `math_FunctionSetRoot`'s Brent minimizer (3.7%) and vector temporaries (about 8%) | One minimizer reset; sums in place |
+
+| | Before | After |
+|---|---:|---:|
+| `bug32444` (three rounds a side, bytes) | 2,318 MB | 1,589 MB (-31%) |
+| `pipe/`, 160 cases with data | 2,251 MB | 2,200 MB |
+| `boolean/`, 3,305 cases with data | 51,655 MB | 50,503 MB (-2.2%) |
+| `bugs/modalg_*`, 1,125 cases with data | 63,993 MB | 61,103 MB (-4.5%) |
+| The rig's Booleans, MB a Boolean (simple, complex) | 4.01, 5.77 | 4.01, 5.62 |
+
+Every log the same but for addresses and times; `bug32444`'s with a dump of its result the same to the byte. The time
+left is computing the intersections (decision 2264).

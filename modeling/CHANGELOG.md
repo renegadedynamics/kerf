@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
+- **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
+  cone's apex, on a sphere or on a cylinder cut through its end, now builds where it failed or was wrong** (kernel
+  decisions 2243 to 2248); a fillet that still fails on a seam says so.
 - **Booleans of solids that nearly touch come out with closed faces far more often** (kernel decisions 2285 to 2290): see the kernel's CHANGELOG; nothing to change in a caller. A few that failed as invalid, a few parts in 1e11 of a large cylinder's radius past a touch, now succeed.
 - **A clean can't make a wrong Boolean pass** (kernel decision 2277): the check of a Boolean's volume measures against the result's own tolerance, and the clean could raise it (to 236 on a cylinder of radius 50000) until nothing could be proved, so a cut that removed nothing was returned as a success, 74% out. Where the clean at least doubles the tolerance, the result as made is checked too.
 - **Booleans of solids that nearly touch come out with closed faces more often** (kernel decision 2276): see the kernel's CHANGELOG; nothing to change in a caller.

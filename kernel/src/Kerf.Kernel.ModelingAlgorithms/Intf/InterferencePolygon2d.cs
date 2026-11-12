@@ -21,6 +21,8 @@ internal class InterferencePolygon2d : PolygonInterference
     private bool _tClos;
     private int _nbso;
     private NCollection_Sequence<SectionPoint>? _sectionWork; // Intersect's, as most pairs of segments it's asked about give no point
+    // Intersect's tangent zone of a pair of segments, as most join a zone already found: kept as a zone of its own only if not
+    private TangentZone? _zoneWork;
 
     /// <summary>Constructs an empty interference of polygons.</summary>
     public InterferencePolygon2d()
@@ -752,7 +754,8 @@ internal class InterferencePolygon2d : PolygonInterference
         }
         else if (nbpi >= 2)
         {
-            TangentZone theTZ = new();
+            TangentZone theTZ = _zoneWork ??= new();
+            theTZ.Clear();
             if (nbpi == 2)
             {
                 theTZ.PolygonInsert(thePi[1]);
@@ -831,7 +834,7 @@ internal class InterferencePolygon2d : PolygonInterference
             //--
             if (lIndex.IsEmpty())
             {
-                _tZones.Append(theTZ);
+                _tZones.Append(new TangentZone(theTZ));
             }
             else
             {

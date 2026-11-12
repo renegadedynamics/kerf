@@ -47,7 +47,7 @@ public sealed record ChamferOptions
 ```
 
 - **Diagnostics** from `ChFiDS_ErrorStatus` and the stripe errors: `fillet.walking-failure`, `fillet.start-failure`,
-  `fillet.twisted-surface`, `fillet.radius-too-large`, `fillet.no-result`, each with the edges (`Shapes`) whose
+  `fillet.twisted-surface`, `fillet.radius-changes-at-a-corner`, `fillet.radius-too-large`, `fillet.no-result`, each with the edges (`Shapes`) whose
   contour failed. Today the modelling layer reads `NbFaultyContours`, `FaultyContour`, `StripeStatus` to say which
   edges failed; that becomes the diagnostics' shapes.
 - **At a limit** (decision 1847): straight edges between planes, where a face just disappears, are built after ChFi3d fails; `FilletLimit(edges)` gives the largest radius they can take, and a size that doesn't fit fails with `fillet.too-large`, saying what does. A radius within the shape's tolerance of that is that, and one above it fails at once, without trying (decision 1898), unless the next face is within what ChFi3d calls tangent, where there's no limit (1899).

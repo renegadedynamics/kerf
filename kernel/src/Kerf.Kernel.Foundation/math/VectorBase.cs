@@ -231,6 +231,43 @@ internal class VectorBase<TheItemType>
         return Math.Sqrt((sum1 + sum2) + (sum3 + sum4));
     }
 
+    /// <summary>
+    /// Kerf (unit 15AL): the Euclidean norm of this vector minus <paramref name="right"/>, as
+    /// <c>Subtracted(right).Norm()</c> computes it, without the vector.
+    /// </summary>
+    public double NormOfDifference(VectorBase<TheItemType> right)
+    {
+        Standard_DimensionError_Raise_if(Length() != right.Length(),
+                                         "math_VectorBase::Subtracted() - input vector has wrong dimensions");
+
+        int len = Length();
+        ReadOnlySpan<TheItemType> ptr = _array.AsSpan();
+        ReadOnlySpan<TheItemType> rightPtr = right._array.AsSpan();
+        double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4 = 0.0;
+        int i = 0;
+        int len4 = len - 3;
+
+        for (; i < len4; i += 4)
+        {
+            double val0 = double.CreateTruncating(ptr[i] - rightPtr[i]);
+            double val1 = double.CreateTruncating(ptr[i + 1] - rightPtr[i + 1]);
+            double val2 = double.CreateTruncating(ptr[i + 2] - rightPtr[i + 2]);
+            double val3 = double.CreateTruncating(ptr[i + 3] - rightPtr[i + 3]);
+            sum1 += val0 * val0;
+            sum2 += val1 * val1;
+            sum3 += val2 * val2;
+            sum4 += val3 * val3;
+        }
+
+        for (; i < len; ++i)
+        {
+            double val = double.CreateTruncating(ptr[i] - rightPtr[i]);
+            sum1 += val * val;
+        }
+
+        return Math.Sqrt((sum1 + sum2) + (sum3 + sum4));
+    }
+
     /// <summary>The square of the Euclidean norm.</summary>
     public double Norm2()
     {

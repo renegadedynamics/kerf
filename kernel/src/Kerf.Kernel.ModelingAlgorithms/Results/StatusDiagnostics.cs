@@ -90,6 +90,7 @@ internal static class StatusDiagnostics
         ErrorStatus.WalkingFailure => Error("fillet.walking-failed", "The fillet's surface couldn't be followed along the edges."),
         ErrorStatus.StartsolFailure => Error("fillet.no-starting-solution", "No starting point was found for the fillet's surface."),
         ErrorStatus.TwistedSurface => Error("fillet.twisted-surface", "The fillet's surface would be twisted."),
+        ErrorStatus.EnvelopeCorner => Error("fillet.radius-changes-at-a-corner", "The fillet's radius is changing where its edges' curvature jumps, or its rate of change jumps: the rolling ball's surface has a corner there that can't be built."),
         _ => Unknown(status),
     };
 
