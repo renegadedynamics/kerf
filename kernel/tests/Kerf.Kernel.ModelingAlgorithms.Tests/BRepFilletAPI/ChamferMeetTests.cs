@@ -216,6 +216,104 @@ public class ChamferMeetTests
         Assert.Equal(5.01745e-4, removed, 1e-8);
     }
 
+    // chamfer/dist_angle_complex/C1 and dist_dist_complex/C1: OCCT's CCH_001_qhff.rle, a solid of six faces about 0.3 across and
+    // 0.1 high, its top and bottom B-spline faces, the four edges of each chamfered by 0.008 to 0.015. Every edge is convex,
+    // and ChFi3d fails at a corner. Its stripes along the long curved edges are off their distances too (0.0104 to 0.0147
+    // where 0.01 is asked, in native OCCT as here): ChFi3d walks along a guide it has smoothed to C2 through 101 points to
+    // 1e-3, whatever the solid's size. Unit 15U4 asks the stripes again along guides kept to their edges, carries them on
+    // until they meet, and proves the solid by its volume, its eight corners' boxes cut down to the room they have
+    [Theory]
+    [InlineData(false, 5.6464939e-5)]
+    [InlineData(true, 7.8351674e-5)]
+    public void A_small_solid_whose_guides_ChFi3d_smooths_off_their_edges_is_built_and_proved_by_volume(bool angles, double removed)
+    {
+        Shape shape = Read("chamfer-C1");
+        Point3D a0 = new(-0.118375, -0.14323, 0.0273519), a1 = new(-0.118375, -0.14323, 0.127352), b0 = new(0.168673, 0, 0.0273711), b1 = new(0.168673, 0, 0.127371);
+        Point3D c0 = new(-0.0361931, -0.0437927, 0.0609999), c1 = new(-0.0361931, -0.0437927, 0.161), d0 = new(0.0750001, 0, 0.061), d1 = new(0.0750001, 0, 0.161);
+        Face With(params Point3D[] points) =>
+            shape.AllFaces().Single(f => points.All(p => f.AllVertices().Any(v => v.Point.DistanceTo(p) < 1e-5)));
+        Face top = With(a1, b1, c1, d1), bottom = With(a0, b0, c0, d0);
+        Face Side(Edge edge) => shape.AllFaces().Single(f => !f.IsSame(top) && !f.IsSame(bottom) && f.AllEdges().Any(e => e.IsSame(edge)));
+
+        // The top's four edges from the top, then the bottom's from their side faces: a distance and 30 or 60 degrees, or two
+        // distances
+        (Point3D From, Point3D To, bool Top, double Distance, double Second, double Degrees)[] asked =
+        [
+            (a1, b1, true, 0.01, 0.006, 30), (a1, c1, true, 0.008, 0.006, 30), (c1, d1, true, 0.01, 0.012, 60), (b1, d1, true, 0.015, 0.012, 60),
+            (a0, b0, false, 0.01, 0.006, 30), (a0, c0, false, 0.008, 0.006, 30), (c0, d0, false, 0.01, 0.012, 60), (b0, d0, false, 0.008, 0.012, 60),
+        ];
+        ChamferSpec[] specs = [.. asked.Select(x =>
+        {
+            Edge edge = EdgeBetween(shape, x.From, x.To);
+            return Spec(edge, x.Distance, angles ? null : x.Second, angles ? x.Degrees : null, x.Top ? top : Side(edge));
+        })];
+        Face[] references = [.. specs.Select(static s => s.ReferenceFace!.Value)];
+        MakeChamfer native = Native(shape, specs);
+        native.Build();
+        Assert.False(native.IsDone);
+
+        Result<Built<Shape>> made = shape.Chamfer(specs, NoLimit);
+        Assert.True(made.IsSuccess, made.Error?.ToString());
+        Shape result = made.Value.Shape;
+        Assert.Equal(ShapeType.Solid, result.AllSolids().Single().Type);
+        Assert.True(result.Validate().IsValid);
+        Assert.Equal(14, result.AllFaces().Length); // the six faces and the eight chamfers
+        // each chamfer's contacts on both of its edge's faces, at the specs
+        int[,] contacts = ChamferMeet.CheckedContacts(shape, result, specs, references, native, 1e-4)!;
+        Assert.Equal(8, contacts.GetLength(0));
+        Assert.All(contacts.Cast<int>(), static n => Assert.InRange(n, 15, 19));
+        Assert.Null(EdgeCrossings.Problem(shape, result, "The chamfer's result", FilletOperations.SelfIntersecting));
+        var exact = new MassOptions { Tolerance = 1e-8 };
+        Assert.Equal(removed, MeasureOperations.IntegrateVolume(shape, exact) - MeasureOperations.IntegrateVolume(result, exact), 2e-9);
+    }
+
+    // The same solid's long top edge chamfered alone, 0.01 on the top and 0.006 on the side: ChFi3d builds it, valid, with its
+    // contact on the top 0.0104 to 0.0147 from the edge, as native OCCT does, along the guide it smoothed. That was returned
+    // as a success. The public chamfer now sees the stripe off its distance and has ChFi3d build it along the edge itself
+    [Fact]
+    public void A_chamfer_ChFi3d_builds_off_its_distance_along_a_smoothed_guide_is_built_along_its_edge()
+    {
+        Shape shape = Read("chamfer-C1");
+        Edge edge = EdgeBetween(shape, new Point3D(-0.118375, -0.14323, 0.127352), new Point3D(0.168673, 0, 0.127371));
+        Face top = shape.AllFaces().Single(f => f.AllEdges().Any(e => e.IsSame(edge)) && f.AllVertices().Any(v => v.Point.DistanceTo(new Point3D(0.0750001, 0, 0.161)) < 1e-5));
+        ChamferSpec[] specs = [new ChamferSpec(edge, 0.01, 0.006, ReferenceFace: top)];
+        MakeChamfer native = Native(shape, specs);
+        native.Build();
+        Assert.True(native.IsDone);
+        Assert.True(native.Shape().Validate().IsValid);
+        Assert.True(ChamferMeet.OffItsEdges(shape, native, specs, [top]));
+        Assert.False(ChamferMeet.Proved(shape, native.Shape(), specs, [top], native, 1e-4)); // OCCT's own, off its distance
+
+        Result<Built<Shape>> made = shape.Chamfer(specs, NoLimit);
+        Assert.True(made.IsSuccess, made.Error?.ToString());
+        Shape result = made.Value.Shape;
+        Assert.True(result.Validate().IsValid);
+        Assert.Equal(7, result.AllFaces().Length);
+        Assert.True(ChamferMeet.Proved(shape, result, specs, [top], native, 1e-4));
+    }
+
+    // chamfer/dist_dist_sequence/B8, its third step: the foot of a wall chamfered by 0.2 where the wall meets the first step's
+    // bevel of the walls' corner, 15 degrees from the wall. The corner's formula bounds a region with no contact on the floor
+    // at 0.2 (decision 2238), which isn't the chamfer asked, so nothing is returned: the owner's ruling for 0.6.0 is that it
+    // fails, as ChFi3d does, and says so
+    [Fact]
+    public void A_chamfer_that_ends_where_its_wall_turns_away_by_less_than_a_right_angle_fails_and_says_so()
+    {
+        Shape shape = Read("chamfer-B8-step3");
+        Edge edge = EdgeBetween(shape, new Point3D(-0.606778, 0.0116437, 0.226719), new Point3D(-0.271909, -0.02926, 0.288136));
+        Face floor = shape.AllFaces().Single(f => f.AllVertices().Any(v => v.Point.DistanceTo(new Point3D(0.473048, 0.5374, 0.308257)) < 1e-5));
+        ChamferSpec[] specs = [new ChamferSpec(edge, 0.2, 0.2, ReferenceFace: floor)];
+        MakeChamfer native = Native(shape, specs);
+        native.Build();
+        Assert.False(native.IsDone);
+
+        Result<Built<Shape>> made = shape.Chamfer(specs, NoLimit);
+        Assert.False(made.IsSuccess);
+        Assert.False(made.TryGetInvalid(out _));
+        Assert.Equal(FilletOperations.Failed, made.Error!.Code);
+        Assert.Contains("couldn't be built", made.Error.Message, StringComparison.Ordinal);
+    }
+
     // A cube's top chamfered on its four edges by more than half its width: each plane takes the others' contacts on the top
     // away. What the fuse would bound, a pyramid on a block, isn't the chamfer asked, and the path isn't taken (unit 15U3)
     [Theory]
@@ -227,6 +325,36 @@ public class ChamferMeetTests
         ChamferSpec[] specs = [.. cube.AllEdges().Where(e => e.AllVertices().All(v => Math.Abs(v.Point.Z - 10) < 1e-9)).Select(e => new ChamferSpec(e, length))];
         Assert.Equal(4, specs.Length);
         Assert.False(cube.Chamfer(specs, NoLimit).IsSuccess);
+    }
+
+    // The proof itself refuses that pyramid (unit 15U4; decision 2240): a block of 4 with a pyramid of 5 on it is what the four
+    // planes of a chamfer of 6 bound, each plane's contact on the cube's side at its 6 and none of them with a contact on
+    // the top, which is gone. The proof counted contacts on either of an edge's faces and passed it; it asks five on each
+    // side of a contour now. The same cube chamfered by 2, which ChFi3d builds, has both and passes
+    [Fact]
+    public void The_proof_refuses_a_chamfer_that_has_lost_one_whole_contact()
+    {
+        Shape cube = new MakeBox(10, 10, 10).Shape();
+        ChamferSpec[] Top(double length) =>
+            [.. cube.AllEdges().Where(e => e.AllVertices().All(v => Math.Abs(v.Point.Z - 10) < 1e-9)).Select(e => new ChamferSpec(e, length))];
+        Face[] References(ChamferSpec[] specs) => [.. specs.Select(s => cube.AllFaces().First(f => f.AllEdges().Any(e => e.IsSame(s.Edge))))];
+
+        var pyramid = new ThruSections(true, true);
+        pyramid.AddWire(new MakePolygon(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0), true).Wire());
+        pyramid.AddWire(new MakePolygon(new Point3D(0, 0, 4), new Point3D(10, 0, 4), new Point3D(10, 10, 4), new Point3D(0, 10, 4), true).Wire());
+        pyramid.AddVertex(new MakeVertex(new Point3D(5, 5, 9)).Vertex());
+        pyramid.Build();
+        Shape lost = pyramid.Shape();
+        Assert.True(lost.Validate().IsValid);
+        Assert.Equal(400 + (500.0 / 3), MeasureOperations.IntegrateVolume(lost, new MassOptions { Tolerance = 1e-8 }), 1e-6);
+        ChamferSpec[] six = Top(6);
+        Assert.False(ChamferMeet.Proved(cube, lost, six, References(six), Native(cube, six), 1e-4));
+
+        ChamferSpec[] two = Top(2);
+        MakeChamfer native = Native(cube, two);
+        native.Build();
+        Assert.True(native.IsDone);
+        Assert.True(ChamferMeet.Proved(cube, native.Shape(), two, References(two), native, 1e-4));
     }
 
     // The volume proof's sections for a chamfer of two distances, and of a distance and an angle (unit 15U3), on a box's edge:

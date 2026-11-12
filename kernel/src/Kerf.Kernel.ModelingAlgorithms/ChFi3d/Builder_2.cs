@@ -1822,14 +1822,14 @@ internal partial class FilletBuilderBase
         NCollection_List<ElSpine>.Iterator iles = new(ll);
         for (; iles.More(); iles.Next())
         {
-            ChFi3d_PerformElSpine(iles.ChangeValue(), spine, _conti, _tolesp);
+            _guidesSmoothed += ChFi3d_PerformElSpine(iles.ChangeValue(), spine, _conti, _tolesp, guideTolerance: _guideTolerance);
         }
         if (spine.Mode() == ChamfMode.ConstThroatWithPenetrationChamfer)
         {
             NCollection_List<ElSpine> offsetll = spine.ChangeOffsetElSpines();
             for (iles.Initialize(offsetll); iles.More(); iles.Next())
             {
-                ChFi3d_PerformElSpine(iles.ChangeValue(), spine, _conti, _tolesp, true);
+                _guidesSmoothed += ChFi3d_PerformElSpine(iles.ChangeValue(), spine, _conti, _tolesp, true, _guideTolerance);
             }
         }
         spine.SplitDone(true);
