@@ -2374,7 +2374,7 @@ At 9 by 9 points a face, as the fuse's proof samples, `bug24758_2`'s cut took 13
 
 ## A pipe shell with corners (unit 15AL)
 
-*November 2026, decisions 32401 and 32402. A loaded machine: the verdicts rest on bytes, counts and processor time.
+*November 2026, decisions 2263 and 2264. A loaded machine: the verdicts rest on bytes, counts and processor time.
 Wall-clock figures are for a quiet window: `quiet-15al.ps1` in the scratchpad's `p15al` folder.*
 
 OCCT's `bugs/modalg_7/bug32444` sweeps six profiles along a spine divided at its corners (`buildsweep -C -S`). All of it
@@ -2398,4 +2398,4 @@ one process: of the case thread's samples, edge/face about 60% (the root finder 
 | The rig's Booleans, MB a Boolean (simple, complex) | 4.01, 5.77 | 4.01, 5.62 |
 
 Every log the same but for addresses and times; `bug32444`'s with a dump of its result the same to the byte. The time
-left is computing the intersections (decision 32402).
+left is computing the intersections (decision 2264).
