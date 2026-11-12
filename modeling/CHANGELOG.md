@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A Boolean that lost part of an input, valid and inside every rule of volume, is caught and made again** (kernel decisions 33402 to 33405): see the kernel's CHANGELOG; nothing to change in a caller. A fuse like OCCT #344's, which returned a part 6% short, now returns the right one with the warning `boolean.other-way-round`.
 - **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
 - **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
   cone's apex, on a sphere or on a cylinder cut through its end, now builds where it failed or was wrong** (kernel
