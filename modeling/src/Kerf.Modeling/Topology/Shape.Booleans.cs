@@ -174,7 +174,38 @@ public static partial class ShapeExtensions
             Warnings.Warn("Boolean operation unable to clean: that would change its result's volume");
             return (uncleaned, uncleanedHistory, null);
         }
+
+        // The check measures against the result's own tolerance, so a clean that raises it can pass what the result as made
+        // wouldn't: equal cylinders of radius 50000, 2e-8 short of crossing, whose cut removed nothing and was wrong by the
+        // check, cleaned into the whole cylinder with a vertex of tolerance 236, which passed, 74% out (decision 32702). A clean
+        // is only tidying and can't make a wrong result right, so where it at least doubles the tolerance the result as made is
+        // what's checked; and one the kernel proved right keeps its clean only if its volume is the same
+        if (made && !result.IsSame(uncleaned) && RuleOf(operation) is { } asMade && LargestTolerance(result) > 2 * LargestTolerance(uncleaned))
+        {
+            if (!proved)
+            {
+                if (BooleanVolumes.Check(asMade, arg, tool, uncleaned, options?.FuzzyValue ?? 0) is { } wrongAsMade)
+                    return (uncleaned, uncleanedHistory, wrongAsMade);
+            }
+            else
+            {
+                double cleanedVolume = result.IntegrateVolume(), asMadeVolume = uncleaned.IntegrateVolume();
+                if (Math.Abs(cleanedVolume - asMadeVolume) > 1e-6 * Math.Max(Math.Abs(cleanedVolume), Math.Abs(asMadeVolume)))
+                {
+                    Warnings.Warn("Boolean operation unable to clean: that would change its result's volume");
+                    return (uncleaned, uncleanedHistory, null);
+                }
+            }
+        }
         return (result, history, null);
+    }
+
+    private static double LargestTolerance(Shape shape)
+    {
+        double largest = 0;
+        foreach (var vertex in shape.AllVertices())
+            largest = Math.Max(largest, vertex.Tolerance);
+        return largest;
     }
 
     private static BooleanVolumeRule? RuleOf(BooleanKind operation) => operation switch
