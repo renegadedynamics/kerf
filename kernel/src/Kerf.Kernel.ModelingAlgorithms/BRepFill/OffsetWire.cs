@@ -505,7 +505,7 @@ internal sealed class OffsetWire
         }
 
         // Kerf: a parallel is at its distance from the spine, every point of it, or it is wrong, whatever the medial axis
-        // did to give it, and is no success (decisions 1742, 32601, 32603)
+        // did to give it, and is no success (decisions 1742, 2279, 2281)
         if (!keptItsDistance && !_shape.IsNull && !KeepsItsDistance(_spine, _shape, offset, alt, _joinType, _isOpenResult))
         {
             _shape.Nullify();
@@ -517,7 +517,7 @@ internal sealed class OffsetWire
     // Kerf's (OCCT has no such check). How far, as parts of the offset, a point of a parallel may be nearer the spine or
     // further from it than the offset. A polyline standing in for a curve (CheckBadEdges) is out by 1% of the offset by
     // design and 1.3% as measured, on either side; every parallel of the corpus that is right is within that, and the
-    // nearest wrong one is 2.4% out (decision 32603)
+    // nearest wrong one is 2.4% out (decision 2281)
     private const double LeastOfTheOffset = 0.98;
     private const double MostOfTheOffset = 1.02;
 

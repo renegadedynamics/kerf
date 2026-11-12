@@ -208,7 +208,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 return;
             }
             bool isDone = aN.IsDone();
-            // A deliberate difference (Kerf decisions 32601, 32603): native gives, done, a parallel that isn't at the
+            // A deliberate difference (Kerf decisions 2279, 2281): native gives, done, a parallel that isn't at the
             // offset from the spine (more than 2% nearer; or further, with round corners), and the port refuses it.
             // Native's calls are made as recorded; its parallel is put to the port's check, and nothing of the port's
             // is compared

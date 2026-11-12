@@ -413,7 +413,7 @@ public class BRepFill_OffsetWireTests
         // each offset was a success with edges inside the wire's own offset, as near as 2.35 and 10.08 to the wire for
         // 11.24, 0.02 for 0.93, and 2,299 for 2,357 (three are OCCT's known problems, a face on the result faulty; B3
         // passed OCCT's script). A parallel with a point more than 2% nearer the spine than the offset, or further with
-        // round corners, is no success, whatever went wrong in making it (decisions 1742, 32601, 32603)
+        // round corners, is no success, whatever went wrong in making it (decisions 1742, 2279, 2281)
         string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
                                         .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", theFile);
         if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
@@ -436,7 +436,7 @@ public class BRepFill_OffsetWireTests
     public void An_offset_at_its_distance_is_not_refused_at_an_altitude_or_with_sharp_corners(global::Kerf.Geometry.JoinKind theJoin, double theOffset,
         double theAltitude, double theLength)
     {
-        // The check of decisions 32601 and 32603 measures in the spine's plane, whatever the parallel's altitude, and a
+        // The check of decisions 2279 and 2281 measures in the spine's plane, whatever the parallel's altitude, and a
         // sharp corner is further than the offset, and right
         MakeWireOffset anOffset = new(Square(), theJoin);
         anOffset.Perform(theOffset, theAltitude);
