@@ -67,6 +67,72 @@ public class BooleanTests
     }
 
     [Fact]
+    public void A_partition_whose_crossing_stops_short_is_made_again_and_is_right()
+    {
+        // OCCT #905: a turned disc and two sheets that leave its axis and pass out through its rim, which cut a sector from
+        // it. One crossing of a sheet and the disc ends 3.1e-5 short of the next, with vertices of 5e-6, so neither sheet
+        // is split and the disc stays one solid: a success, before decision 33009
+        IReadOnlyList<Shape> parts = [.. Fixtures.Named("sheets-through-disc").Children];
+        Assert.Equal(3, parts.Count);
+
+        Result<Built<Shape>> partition = BooleanOperations.Partition(parts);
+        Assert.True(partition.IsSuccess);
+        Assert.Contains(partition.Diagnostics, d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        var solids = partition.Value.Shape.AllSolids();
+        Assert.Equal(2, solids.Length);
+        Assert.True(Kerf.Healing.HealingOperations.Validate(partition.Value.Shape).IsValid);
+        double[] volumes = [.. solids.Select(s => Kerf.Measurement.MeasureOperations.IntegrateVolume(s)).Order()];
+        Assert.Equal(319.32425, volumes[0], 1e-4);
+        Assert.Equal(3173.54846, volumes[1], 1e-4);
+        Assert.Equal(Kerf.Measurement.MeasureOperations.IntegrateVolume(parts[2]), volumes.Sum(), 1e-4);
+
+        // unchecked, it's as OCCT has it
+        Assert.Single(BooleanOperations.Partition(parts, new BooleanOptions { CheckResult = false }).Value.Shape.AllSolids());
+    }
+
+    [Theory]
+    [InlineData(7.539994956368779, -67.98510139717416)]
+    [InlineData(31.408469470395012, -29.006276572539274)]
+    [InlineData(31.261914556282857, -48.49488543234123)]
+    [InlineData(-11.749784258838382, 25.638988751484614)]
+    [InlineData(27.747314915394483, -17.810983395051622)]
+    public void A_section_with_a_piece_missing_is_not_a_success(double x, double y)
+    {
+        // OCCT #1124: a disc of two cones and a torus, and a cylinder of radius 6 through it at each of the issue's five
+        // places. Approximated, each section is the whole curve round the cylinder. Not approximated, or without its curves
+        // on the faces, some keep a fraction of it, each a success before decision 33010
+        Shape disc = Fixtures.Named("section-disc");
+        Shape cylinder = Primitives.Cylinder(6, 100, new Frame3D(new Point3D(x, y, -50), Direction3D.UnitZ)).Value.Shape;
+        double whole = Kerf.Measurement.MeasureOperations.IntegrateLength(disc.Section(cylinder).Value.Shape);
+        Assert.InRange(whole, 38, 43);
+
+        int failures = 0;
+        foreach (BooleanOptions options in new BooleanOptions[]
+                 {
+                     new() { ApproximateSection = false },
+                     new() { ApproximateSection = false, SectionCurvesOnFaces = false },
+                     new() { SectionCurvesOnFaces = false },
+                 })
+        {
+            Result<Built<Shape>> section = disc.Section(cylinder, options);
+            if (section.IsSuccess)
+            {
+                Assert.Equal(whole, Kerf.Measurement.MeasureOperations.IntegrateLength(section.Value.Shape), 2e-3);
+            }
+            else
+            {
+                failures++;
+                Assert.Contains(section.Diagnostics, d => d.Code == DiagnosticCode.InvalidResult);
+                Assert.True(section.TryGetInvalid(out _));
+            }
+        }
+
+        // each place loses a piece one way or another: the fifth has 0.004 of its 40.53 not approximated, the others
+        // 0.96 to 16.8 without their curves on the faces
+        Assert.True(failures > 0);
+    }
+
+    [Fact]
     public void A_boolean_is_cancelled_by_its_token()
     {
         using var source = new CancellationTokenSource();
