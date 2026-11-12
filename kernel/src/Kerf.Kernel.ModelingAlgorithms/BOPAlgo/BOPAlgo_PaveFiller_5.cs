@@ -452,6 +452,7 @@ internal partial class PaveFiller
 
                             // Real intersection is present.
                             // Update the existing vertex to cover the intersection point.
+                            bool apart = false;
                             for (j = 0; j < 2; ++j)
                             {
                                 if (bIsOnPave[j])
@@ -459,6 +460,12 @@ internal partial class PaveFiller
                                     Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
                                     Point3D p = Tool.Pnt(v);
                                     double distPP = p.DistanceTo(pnew0);
+                                    // A crossing far from the vertex is a crossing of its own, with its own vertex (decision 2276)
+                                    if (IsApart(nV[j], pnew0, tolE + tolF))
+                                    {
+                                        apart = true;
+                                        continue;
+                                    }
                                     double tol = Tool.Tolerance(v);
                                     double maxDist = 1.0e4 * tol;
                                     // An edge grazing a face stays within tolerance over sqrt(2 R tol), so the reach is what the touch
@@ -483,7 +490,10 @@ internal partial class PaveFiller
                                     }
                                 }
                             }
-                            continue;
+                            if (!apart)
+                            {
+                                continue;
+                            }
                         }
 
                         if (CheckFacePaves(vnew, mifOn))

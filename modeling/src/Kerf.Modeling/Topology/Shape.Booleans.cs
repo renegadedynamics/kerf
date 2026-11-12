@@ -164,6 +164,16 @@ public static partial class ShapeExtensions
         else if (made)
             result = Failures.Valid(result, what);
 
+        return Checked(operation, arg, tool, options, result, history, uncleaned, uncleanedHistory, made, proved);
+    }
+
+    /// <summary>
+    /// The check of a Boolean's result after its clean: <paramref name="result"/> as cleaned and <paramref name="uncleaned"/> as
+    /// made (the same shape where the clean was left out).
+    /// </summary>
+    internal static (Shape Result, ModelHistory History, Diagnostic? Wrong) Checked(BooleanKind operation, List<Shape> arg, List<Shape> tool,
+        BooleanOptions? options, Shape result, ModelHistory history, Shape uncleaned, ModelHistory uncleanedHistory, bool made, bool proved)
+    {
         // A valid shape can still be the wrong one, and its volume can prove it (decision 1860). As above, a clean that spoils
         // a good result is left out. One the kernel proved right isn't checked again unless the clean changed it
         if (made && !(proved && result.IsSame(uncleaned)) && RuleOf(operation) is { } rule
@@ -174,7 +184,38 @@ public static partial class ShapeExtensions
             Warnings.Warn("Boolean operation unable to clean: that would change its result's volume");
             return (uncleaned, uncleanedHistory, null);
         }
+
+        // The check measures against the result's own tolerance, so a clean that raises it can pass what the result as made
+        // wouldn't: equal cylinders of radius 50000, 2e-8 short of crossing, whose cut removed nothing and was wrong by the
+        // check, cleaned into the whole cylinder with a vertex of tolerance 236, which passed, 74% out (decision 2277). A clean
+        // is only tidying and can't make a wrong result right, so where it at least doubles the tolerance the result as made is
+        // what's checked; and one the kernel proved right keeps its clean only if its volume is the same
+        if (made && !result.IsSame(uncleaned) && RuleOf(operation) is { } asMade && LargestTolerance(result) > 2 * LargestTolerance(uncleaned))
+        {
+            if (!proved)
+            {
+                if (BooleanVolumes.Check(asMade, arg, tool, uncleaned, options?.FuzzyValue ?? 0) is { } wrongAsMade)
+                    return (uncleaned, uncleanedHistory, wrongAsMade);
+            }
+            else
+            {
+                double cleanedVolume = result.IntegrateVolume(), asMadeVolume = uncleaned.IntegrateVolume();
+                if (Math.Abs(cleanedVolume - asMadeVolume) > 1e-6 * Math.Max(Math.Abs(cleanedVolume), Math.Abs(asMadeVolume)))
+                {
+                    Warnings.Warn("Boolean operation unable to clean: that would change its result's volume");
+                    return (uncleaned, uncleanedHistory, null);
+                }
+            }
+        }
         return (result, history, null);
+    }
+
+    private static double LargestTolerance(Shape shape)
+    {
+        double largest = 0;
+        foreach (var vertex in shape.AllVertices())
+            largest = Math.Max(largest, vertex.Tolerance);
+        return largest;
     }
 
     private static BooleanVolumeRule? RuleOf(BooleanKind operation) => operation switch
