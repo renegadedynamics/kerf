@@ -75,6 +75,8 @@ public sealed record Kerf.Exchange.ReadLimits : IEquatable<ReadLimits>
   public long MaxTriangles { get; init; }
   public static ReadLimits Default { get; }
 public static class Kerf.Exchange.Step
+  public static DiagnosticCode EntitySkipped { get; }
+  public static DiagnosticCode InvalidFace { get; }
   public static Result Write(ModelNode model, Stream stream, StepWriteOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result Write(Shape shape, Stream stream, StepWriteOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)
   public static Result<ModelNode> Read(Stream stream, StepReadOptions? options = default, IProgress<double>? progress = default, CancellationToken cancellationToken = default)

@@ -341,7 +341,19 @@ Every exporter and importer returns a `Result`. A missing folder or file is `Dir
 `FileNotFoundException`, as everywhere in .NET; a file past `ImportLimits` (size, nesting) is
 `InvalidDataException`. A STEP import that had to leave entities out, a
 reference to something that isn't in the file say, succeeds with a warning in its `Diagnostics`
-(`exchange.entity-skipped`) that names them.
+(`exchange.entity-skipped`) that names them, and says so if nothing else was read.
+
+A STEP import checks the faces it may have read wrongly: those its healing changed (a seam added, a wire reversed, an
+edge fixed) and those with a vertex off its edge's curve. Where one is invalid, the import succeeds with the warning
+`exchange.invalid-face`, which says how many faces and which STEP faces they were read from. The model holds them as
+read. To refuse such a model, test for the code (the kernel's `Step.InvalidFace`); to check every face, which costs
+about a fifth of a read, read the shape's `IsValid`:
+
+```csharp
+Result<ModelShape> step = Importers.ImportStep("part.step");
+if (step.Diagnostics.Any(d => d.Code == Kerf.Exchange.Step.InvalidFace))
+    throw new InvalidDataException(step.Diagnostics.First(d => d.Code == Kerf.Exchange.Step.InvalidFace).Message);
+```
 
 **Async forms.** Every importer and exporter, and `ExportDxf.Write`, has an async form named `…Async`, taking a
 `CancellationToken` and returning a `Task<Result>` or `Task<Result<…>>`; so do the kernel's readers and writers
