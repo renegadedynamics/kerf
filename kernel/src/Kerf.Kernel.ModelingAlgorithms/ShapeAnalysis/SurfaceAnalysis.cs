@@ -201,6 +201,27 @@ internal class SurfaceAnalysis : Transient
     /// <summary>Returns the point of parameters p2d.</summary>
     public Point3D Value(in Point2D p2d) => _adSur!.Value(p2d.X, p2d.Y);
 
+    // Kerf: whether the surface has a value at each point ComputeSingularities asks of its bounds (decision 33002)
+    private bool HasValuesAtBounds(double su1, double su2, double sv1, double sv2)
+    {
+        try
+        {
+            foreach (double u in (ReadOnlySpan<double>)[su1, 0.5 * (su1 + su2), su2])
+            {
+                foreach (double v in (ReadOnlySpan<double>)[sv1, 0.5 * (sv1 + sv2), sv2])
+                {
+                    _adSur!.Value(u, v);
+                }
+            }
+
+            return true;
+        }
+        catch (global::Kerf.Engine.Geometry.Objects.UndefinedValue3DException)
+        {
+            return false;
+        }
+    }
+
     private void ComputeSingularities()
     {
         // rln S4135
@@ -268,11 +289,14 @@ internal class SurfaceAnalysis : Transient
                  || _surf is global::Kerf.Geometry.OffsetSurface)
         { // rln S4135
 
-            // Kerf: a surface with no bound on a side has no boundary there to shrink to a point. OCCT evaluates it at
-            // the bound all the same, 2e100, where an offset surface has no normal and throws: fixshape's exception on
-            // an offset of a line's surface of revolution (#1365, decision 33002).
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(su1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(su2)
-                || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv2))
+            // Kerf: a surface with no bound on a side has no boundary there to shrink to a point, but OCCT evaluates it
+            // at the bound all the same, 2e100. Where the surface can't be evaluated there, as an offset of a line's
+            // surface of revolution, which has no normal, OCCT throws from here and fixshape ends with it (#1365,
+            // decision 33002): such a surface has no singular bound. One that can be evaluated there is read as OCCT
+            // reads it, whatever that's worth, as the recordings from native have it.
+            if ((global::Kerf.Engine.Foundation.Precision.IsInfinite(su1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(su2)
+                 || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv2))
+                && !HasValuesAtBounds(su1, su2, sv1, sv2))
             {
                 return;
             }
