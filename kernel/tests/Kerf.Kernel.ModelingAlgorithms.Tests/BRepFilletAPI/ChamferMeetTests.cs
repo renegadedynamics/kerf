@@ -229,6 +229,36 @@ public class ChamferMeetTests
         Assert.False(cube.Chamfer(specs, NoLimit).IsSuccess);
     }
 
+    // The proof itself refuses that pyramid (unit 15U4; decision 2240): a block of 4 with a pyramid of 5 on it is what the four
+    // planes of a chamfer of 6 bound, each plane's contact on the cube's side at its 6 and none of them with a contact on
+    // the top, which is gone. The proof counted contacts on either of an edge's faces and passed it; it asks five on each
+    // side of a contour now. The same cube chamfered by 2, which ChFi3d builds, has both and passes
+    [Fact]
+    public void The_proof_refuses_a_chamfer_that_has_lost_one_whole_contact()
+    {
+        Shape cube = new MakeBox(10, 10, 10).Shape();
+        ChamferSpec[] Top(double length) =>
+            [.. cube.AllEdges().Where(e => e.AllVertices().All(v => Math.Abs(v.Point.Z - 10) < 1e-9)).Select(e => new ChamferSpec(e, length))];
+        Face[] References(ChamferSpec[] specs) => [.. specs.Select(s => cube.AllFaces().First(f => f.AllEdges().Any(e => e.IsSame(s.Edge))))];
+
+        var pyramid = new ThruSections(true, true);
+        pyramid.AddWire(new MakePolygon(new Point3D(0, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0), new Point3D(0, 10, 0), true).Wire());
+        pyramid.AddWire(new MakePolygon(new Point3D(0, 0, 4), new Point3D(10, 0, 4), new Point3D(10, 10, 4), new Point3D(0, 10, 4), true).Wire());
+        pyramid.AddVertex(new MakeVertex(new Point3D(5, 5, 9)).Vertex());
+        pyramid.Build();
+        Shape lost = pyramid.Shape();
+        Assert.True(lost.Validate().IsValid);
+        Assert.Equal(400 + (500.0 / 3), MeasureOperations.IntegrateVolume(lost, new MassOptions { Tolerance = 1e-8 }), 1e-6);
+        ChamferSpec[] six = Top(6);
+        Assert.False(ChamferMeet.Proved(cube, lost, six, References(six), Native(cube, six), 1e-4));
+
+        ChamferSpec[] two = Top(2);
+        MakeChamfer native = Native(cube, two);
+        native.Build();
+        Assert.True(native.IsDone);
+        Assert.True(ChamferMeet.Proved(cube, native.Shape(), two, References(two), native, 1e-4));
+    }
+
     // The volume proof's sections for a chamfer of two distances, and of a distance and an angle (unit 15U3), on a box's edge:
     // a triangle of the two distances, or of the distance and its tangent's share of it, along the edge
     [Theory]

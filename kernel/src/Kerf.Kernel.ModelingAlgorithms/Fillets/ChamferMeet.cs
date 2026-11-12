@@ -1074,7 +1074,14 @@ internal static partial class ChamferMeet
     /// or a chamfer face's ends between them, and its chamfer faces' contacts beside their edges are at the specs' distances and
     /// angles, within <paramref name="tolerance"/> (ChFi3d's approximation) and the edges' own.
     /// </summary>
-    internal static bool Proved(Shape input, Shape result, ChamferSpec[] specs, Face[] referenceFaces, MakeChamfer contours, double tolerance)
+    internal static bool Proved(Shape input, Shape result, ChamferSpec[] specs, Face[] referenceFaces, MakeChamfer contours, double tolerance) =>
+        // Five or more on each side of each contour: a chamfer that has lost one whole contact isn't the chamfer asked
+        CheckedContacts(input, result, specs, referenceFaces, contours, tolerance) is { } checkedOn
+        && Enumerable.Range(0, checkedOn.GetLength(0)).All(i => checkedOn[i, 0] >= FewestChecked && checkedOn[i, 1] >= FewestChecked);
+
+    // The contact points found at their specs on each side of each contour, [contour, side]; null if a free edge isn't the
+    // input's or a chamfer's end, a contact is off its spec, or a chamfer face is no contour's
+    internal static int[,]? CheckedContacts(Shape input, Shape result, ChamferSpec[] specs, Face[] referenceFaces, MakeChamfer contours, double tolerance)
     {
         Face[] inputFaces = input.AllFaces().ToArray();
         Face[] faces = result.AllFaces().ToArray();
@@ -1096,7 +1103,7 @@ internal static partial class ChamferMeet
             Point2D uv = default;
             if (AlgoTools3D.PointInFace(face, ref p, ref uv, context) != 0)
             {
-                return false;
+                return null;
             }
             origin[face] = OnInputFace(p);
             // A face carried on past its edges (unit 15U2) may have that point beyond its input face: then the input face whose
@@ -1128,7 +1135,7 @@ internal static partial class ChamferMeet
         }
         if (!Closed(input, faces, f => origin[f] >= 0, tolerance))
         {
-            return false;
+            return null;
         }
 
         // The contours, each with its spec and reference face
@@ -1139,7 +1146,7 @@ internal static partial class ChamferMeet
             int at = Array.FindIndex(specs, s => own.Any(e => e.IsSame(s.Edge)));
             if (at < 0)
             {
-                return false;
+                return null;
             }
             lines.Add((own, specs[at], referenceFaces[at]));
         }
@@ -1158,9 +1165,14 @@ internal static partial class ChamferMeet
             }
         }
 
+        // Each contour's two sides (unit 15U4): for each of its edges, its two faces, the first of them on the side of the
+        // first edge's first face. A side is followed from an edge to the next by the face the two share; where they share
+        // none, by the face whose normal at their vertex is nearest the last one's. An edge of one face is on both sides
+        Face[][][] sides = [.. lines.Select(l => SidesAlong(l.Edges, inputFaces))];
+
         // Each chamfer face's contacts: first which contours it's of (most of its contact points nearest their edges inside
-        // them), then each such point at its distance and angle from its nearest edge of those
-        var checkedOn = new int[lines.Count];
+        // them), then each such point at its distance and angle from its nearest edge of those, counted on its contour's side
+        var checkedOn = new int[lines.Count, 2];
         foreach (Face chamferFace in faces.Where(f => origin[f] < 0))
         {
             List<(Point3D Point, Face Face)> contacts = Contacts(chamferFace, 20);
@@ -1174,7 +1186,7 @@ internal static partial class ChamferMeet
             }
             if (votes.Max() == 0)
             {
-                return false;
+                return null;
             }
             int chosen = Array.IndexOf(votes, votes.Max());
             int size = Enumerable.Range(0, lines.Count).Count(i => Root(i) == chosen);
@@ -1195,7 +1207,7 @@ internal static partial class ChamferMeet
                 double? distance = spec.Angle is not null ? (onReference ? spec.Distance : null) : onReference ? spec.Distance : spec.Distance2 ?? spec.Distance;
                 if (distance is { } d && Math.Abs(x.DistanceTo(foot.Point) - d) > allowed)
                 {
-                    return false;
+                    return null;
                 }
                 if (spec.Angle is { } angle && onReference)
                 {
@@ -1204,10 +1216,18 @@ internal static partial class ChamferMeet
                     double between = Math.Acos(Math.Min(1, Math.Abs(onFace.Dot(onChamfer)) / (onFace.Magnitude * onChamfer.Magnitude)));
                     if (Math.Abs(between - angle) > allowed / spec.Distance)
                     {
-                        return false;
+                        return null;
                     }
                 }
-                checkedOn[line]++;
+                Face[] two = sides[line][foot.Edge];
+                if (two[0].IsSame(face))
+                {
+                    checkedOn[line, 0]++;
+                }
+                if (two[1].IsSame(face))
+                {
+                    checkedOn[line, 1]++;
+                }
             }
         }
 
@@ -1229,7 +1249,37 @@ internal static partial class ChamferMeet
             }
             return contacts;
         }
-        return checkedOn.All(static n => n >= FewestChecked);
+        return checkedOn;
+    }
+
+    // The two faces of each edge of a contour, side by side along it: [edge][side]
+    private static Face[][] SidesAlong(Edge[] edges, Face[] inputFaces)
+    {
+        var sides = new Face[edges.Length][];
+        for (int j = 0; j < edges.Length; j++)
+        {
+            Face[] own = [.. inputFaces.Where(f => OnFace(edges[j], f))];
+            Face[] two = own.Length switch { 0 => [default, default], 1 => [own[0], own[0]], _ => [own[0], own[1]] };
+            if (j > 0 && own.Length > 1)
+            {
+                Face[] last = sides[j - 1];
+                bool same = two[0].IsSame(last[0]) || two[1].IsSame(last[1]), crossed = two[0].IsSame(last[1]) || two[1].IsSame(last[0]);
+                if (same == crossed && !last[0].IsNull
+                    && edges[j].AllVertices().FirstOrDefault(v => edges[j - 1].AllVertices().Any(w => w.IsSame(v))) is { IsNull: false } shared)
+                {
+                    Point3D at = shared.Point;
+                    double Along(Face a, Face b) => Math.Abs(NormalAt(a, at).Dot(NormalAt(b, at)));
+                    crossed = Along(two[0], last[1]) + Along(two[1], last[0]) > Along(two[0], last[0]) + Along(two[1], last[1]);
+                    same = !crossed;
+                }
+                if (crossed && !same)
+                {
+                    two = [two[1], two[0]];
+                }
+            }
+            sides[j] = two;
+        }
+        return sides;
     }
 
     // Two contours run on into each other: an edge of each ends at the same vertex, their tangents there in line
@@ -1252,7 +1302,7 @@ internal static partial class ChamferMeet
         return false;
     }
 
-    private readonly record struct EdgeFoot(int Line, Point3D Point, Vector3D Tangent, double Tolerance);
+    private readonly record struct EdgeFoot(int Line, int Edge, Point3D Point, Vector3D Tangent, double Tolerance);
 
     // The nearest point of a chamfered edge of the face, inside the edge, on one of the contour lines asked
     private static EdgeFoot? OnEdge(Point3D x, Face face, List<(Edge[] Edges, ChamferSpec Spec, Face Reference)> lines, Func<int, bool> among)
@@ -1265,8 +1315,9 @@ internal static partial class ChamferMeet
             {
                 continue;
             }
-            foreach (Edge edge in lines[i].Edges)
+            for (int j = 0; j < lines[i].Edges.Length; j++)
             {
+                Edge edge = lines[i].Edges[j];
                 if (!OnFace(edge, face) || Tool.Curve(edge, out double first, out double last) is not { } curve)
                 {
                     continue;
@@ -1280,7 +1331,7 @@ internal static partial class ChamferMeet
                 double t = projection.LowerDistanceParameter();
                 bool inside = t - first > 1e-3 * (last - first) && last - t > 1e-3 * (last - first);
                 curve.D1(t, out _, out Vector3D tangent);
-                found = inside ? new EdgeFoot(i, projection.NearestPoint(), tangent / tangent.Magnitude, Tool.Tolerance(edge)) : null;
+                found = inside ? new EdgeFoot(i, j, projection.NearestPoint(), tangent / tangent.Magnitude, Tool.Tolerance(edge)) : null;
             }
         }
         return found;
