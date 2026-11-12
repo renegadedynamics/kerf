@@ -289,6 +289,42 @@ public class EvolvingFilletOnEdgeTests
         Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, refused.StripeStatus(1));
     }
 
+    // One of the corpus's that is still built, blend/buildevol/H9: a cylinder of radius 8 on a box of 20, and the fillet of
+    // the circle they meet in, 1 to 4 to 3, whose ball comes to rest on the edges of the box's top and leaves them, six times.
+    // Its worst corners' measure is 9.6e-5, and its faces are 9.5e-5 inside the union of their balls there, at both of them:
+    // within the tolerance, and built.
+    [Fact]
+    public void The_corpuss_H9_is_built_within_tolerance_of_the_union_of_its_balls()
+    {
+        if (Corpus("CFI_6_a12fgr.rle") is not { } shape)
+        {
+            return;
+        }
+
+        var chfi3d = new MakeFillet(shape);
+        NCollection_Array1<Point2D> law = new(1, 3);
+        law.SetValue(1, new Point2D(0, 1));
+        law.SetValue(2, new Point2D(1, 4));
+        law.SetValue(3, new Point2D(2, 3));
+        chfi3d.Add(law, shape.AllEdges()[4]);
+        chfi3d.Build();
+        Assert.True(chfi3d.IsDone);
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        double measure = chfi3d.InternalBuilder().EnvelopeCornerWorst;
+        Assert.InRange(measure, 9.0e-5, Approximation);
+
+        // The box's top as a surface, to its edges
+        Distance top = p =>
+        {
+            double dx = Math.Max(Math.Abs(p.X) - 10, 0), dy = Math.Max(Math.Abs(p.Y) - 10, 0), dz = p.Z - 10;
+            return Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        };
+        List<(double Miss, Point3D At)> points = UnionMiss(chfi3d, p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 8),
+                                                           p => new Vector3D(p.X, p.Y, 0).Normalized(), top, 10);
+        double worst = points.Max(p => p.Miss);
+        Assert.True(worst < Approximation && Math.Abs(worst - measure) < 0.05 * measure, $"off the union of the balls by {worst}, the measure {measure}");
+    }
+
     private static Shape? Corpus(string file)
     {
         string path = Path.Combine(typeof(EvolvingFilletOnEdgeTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
