@@ -143,6 +143,12 @@ public class BRepFilletAPITests
         double aRemoved = (1.0 - Math.PI / 4.0) * (27.0 - 1.0) / 0.6;
         Assert.Equal(1000.0 - aRemoved, ReconComparison.Volume(aLinear.Shape()), 0.5);
 
+        // Unit 15AK: the fillet is the envelope of the balls, which for a radius growing evenly along the edge of two
+        // planes is a cone; what it removes is integrated below apart from how it's built (9.17917, where the circles in
+        // the planes normal to the edge remove 9.29941)
+        aRemoved = ConeRemoved(1.0, 0.2, 10.0);
+        Assert.Equal(9.17917, aRemoved, 1.0e-4);
+
         // SetRadius by a law: OCCT's ChFiDS_FilSpine::SetRadius(Law_Function, IinC) built a composite law, dropped it
         // and cleared the radii, so Build threw on the empty radii (occt-issues, unit 7N3); the law now gives the
         // radius (Kerf unit 10K1, decision 1433)
@@ -155,7 +161,7 @@ public class BRepFilletAPITests
         aLaw.Build();
         Assert.True(aLaw.IsDone);
         Assert.True(new Analyzer(aLaw.Shape()).IsValid());
-        Assert.Equal(1000.0 - aRemoved, ReconComparison.Volume(aLaw.Shape()), 1.0e-2);
+        Assert.Equal(1000.0 - aRemoved, ReconComparison.Volume(aLaw.Shape()), 1.0e-3);
 
         // Add(law, edge), the law's range mapped onto the edge's: r = 2 + sin(pi s / 10), from 2 to 3 and back; the
         // removed volume against the integral of r^2, (1 - pi/4) * 10 * (4 + 8/pi + 1/2)
@@ -184,6 +190,89 @@ public class BRepFilletAPITests
         aPairs.Build();
         Assert.True(aPairs.IsDone);
         Assert.True(new Analyzer(aPairs.Shape()).IsValid());
+    }
+
+    // The volume a ball of radius r0 + k w removes rolling along the edge of two planes at a right angle (x = 0 and y = 0;
+    // the ball touches them at z = w, its centre at (r, r, w)) between z = 0 and z = length: a point of the corner is removed
+    // if it's outside every ball, on the edge's side. Gauss in z and in the angle about the edge; along each ray from the
+    // edge, the first point inside some ball (the least over w of |p - c(w)|^2 - r(w)^2 is a quadratic's).
+    private static double ConeRemoved(double r0, double k, double length)
+    {
+        bool Inside(double x, double y, double z)
+        {
+            double a = k * k + 1.0;
+            double b = -2 * k * (x - r0) - 2 * k * (y - r0) - 2 * z - 2 * k * r0;
+            double c = (x - r0) * (x - r0) + (y - r0) * (y - r0) + z * z - r0 * r0;
+            double w = -b / (2 * a);
+            return a * w * w + b * w + c <= 0.0;
+        }
+
+        const int N = 96;
+        double[] nodes = new double[N], weights = new double[N];
+        for (int i = 0; i < N; i++)
+        {
+            double x = Math.Cos(Math.PI * (i + 0.75) / (N + 0.5)), dp = 0;
+            for (int iter = 0; iter < 100; iter++)
+            {
+                double p0 = 1.0, p1 = x;
+                for (int j = 2; j <= N; j++)
+                {
+                    (p0, p1) = (p1, ((2 * j - 1) * x * p1 - (j - 1) * p0) / j);
+                }
+
+                dp = N * (x * p1 - p0) / (x * x - 1);
+                double dx = p1 / dp;
+                x -= dx;
+                if (Math.Abs(dx) < 1e-15)
+                {
+                    break;
+                }
+            }
+
+            nodes[i] = (x + 1) / 2;
+            weights[i] = 1.0 / ((1 - x * x) * dp * dp);
+        }
+
+        double far = 4 * (r0 + Math.Abs(k) * length + 1), total = 0;
+        for (int iz = 0; iz < N; iz++)
+        {
+            double z = nodes[iz] * length, area = 0;
+            for (int it = 0; it < N; it++)
+            {
+                double angle = nodes[it] * Math.PI / 2, cx = Math.Cos(angle), cy = Math.Sin(angle);
+                double lo = 0, hi = 0;
+                for (double t = far / 4000; t <= far; t += far / 4000)
+                {
+                    if (Inside(t * cx, t * cy, z))
+                    {
+                        hi = t;
+                        break;
+                    }
+
+                    lo = t;
+                }
+
+                Assert.True(hi > 0);
+                for (int iter = 0; iter < 60; iter++)
+                {
+                    double mid = (lo + hi) / 2;
+                    if (Inside(mid * cx, mid * cy, z))
+                    {
+                        hi = mid;
+                    }
+                    else
+                    {
+                        lo = mid;
+                    }
+                }
+
+                area += weights[it] * 0.5 * lo * lo;
+            }
+
+            total += weights[iz] * area * Math.PI / 2;
+        }
+
+        return total * length;
     }
 
     [Fact]

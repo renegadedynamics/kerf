@@ -605,7 +605,8 @@ internal sealed class BisecCC : BisectorCurve
         }
         else
         {
-            FunctionH h = new(_curve2, p1, _sign1 * _sign2 * t1);
+            // Kerf: the function and the solver are structs, as this is every point of the bisector
+            FunctionHValues h = new(_curve2, p1, _sign1 * _sign2 * t1);
             h.Value(vInit, out double fInit);
             if (Math.Abs(fInit) < epsH)
             {
@@ -622,7 +623,7 @@ internal sealed class BisecCC : BisectorCurve
                 }
                 else
                 {
-                    FunctionRoot solRoot = new(h, vInit, epsH, vMin - epsH100, vMax + epsH100);
+                    FunctionRoot solRoot = new(new FunctionH(h), vInit, epsH, vMin - epsH100, vMax + epsH100);
 
                     if (solRoot.IsDone)
                     {

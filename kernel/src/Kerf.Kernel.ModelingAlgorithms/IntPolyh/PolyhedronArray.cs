@@ -33,6 +33,12 @@ namespace Kerf.Engine.Intersection.Polyhedra;
 /// <see cref="Init"/> on an array that already holds items keeps them, as OCCT's does (decision 591).
 /// </para>
 /// <para>
+/// Kerf (unit 15AL): a block is made when one of its items is first reached, and a section line when it is first
+/// reached, not when <see cref="Init"/> counts them in. Every item reads as a default one until it's written, as when
+/// all were constructed at once: <c>IntPolyh_Intersection</c> counts in 10,000 tangent zones and 1,000 section lines
+/// and uses a few, which was 1.1 MB for each pair of surfaces intersected.
+/// </para>
+/// <para>
 /// A working object of the intersection (decision 21): its readers are public, its mutators internal.
 /// </para>
 /// </remarks>
@@ -44,7 +50,8 @@ internal sealed class PolyhedronArray<T> where T : new()
     // Value types are constructed once and copied; IntPolyh_SectionLine (a class) is constructed for each item.
     private static readonly T? Prototype = typeof(T).IsValueType ? new T() : default;
 
-    private readonly List<T[]> _blocks = [];
+    // A block not reached yet is null; in a block of a class, an item not reached yet is null
+    private readonly List<T[]?> _blocks = [];
     private int _length; // the items constructed (NCollection_DynamicArray::Length)
 
     private int _nbAllocated;
@@ -81,7 +88,7 @@ internal sealed class PolyhedronArray<T> where T : new()
         Clear();
         for (int i = 0; i < aOther._length; ++i)
         {
-            T item = aOther.ItemAt(i);
+            T item = aOther.ChangeValue(i);
             if (!typeof(T).IsValueType && item is PolyhedronSectionLine sl)
             {
                 item = (T)(object)new PolyhedronSectionLine(sl);
@@ -133,7 +140,14 @@ internal sealed class PolyhedronArray<T> where T : new()
             throw new OutOfRangeException("NCollection_DynamicArray::ChangeValue");
         }
 
-        return ref _blocks[aIndex / THE_BLOCK_SIZE][aIndex % THE_BLOCK_SIZE];
+        T[] block = _blocks[aIndex / THE_BLOCK_SIZE] ?? MakeBlock(aIndex / THE_BLOCK_SIZE);
+        ref T item = ref block[aIndex % THE_BLOCK_SIZE];
+        if (!typeof(T).IsValueType && item is null)
+        {
+            item = new T();
+        }
+
+        return ref item;
     }
 
     /// <summary>C++'s <c>operator[]</c>.</summary>
@@ -156,8 +170,6 @@ internal sealed class PolyhedronArray<T> where T : new()
 
     private static T NewItem() => typeof(T).IsValueType ? Prototype! : new T();
 
-    private T ItemAt(int aIndex) => _blocks[aIndex / THE_BLOCK_SIZE][aIndex % THE_BLOCK_SIZE];
-
     private void Clear()
     {
         _blocks.Clear();
@@ -166,24 +178,43 @@ internal sealed class PolyhedronArray<T> where T : new()
 
     private void AppendItem(T item)
     {
-        if (_length == _blocks.Count * THE_BLOCK_SIZE)
-        {
-            _blocks.Add(new T[THE_BLOCK_SIZE]);
-        }
-
-        _blocks[_length / THE_BLOCK_SIZE][_length % THE_BLOCK_SIZE] = item;
-        _length++;
+        Grow(_length + 1);
+        ChangeValue(_length - 1) = item;
     }
 
-    // NCollection_DynamicArray::SetValue: grows with default items up to the index, then sets it
-    private void SetValue(int aIndex, T value)
+    // The items up to aLength - 1 exist from here, each a default one until it's reached
+    private void Grow(int aLength)
     {
-        while (_length <= aIndex)
+        while (_blocks.Count * THE_BLOCK_SIZE < aLength)
         {
-            AppendItem(NewItem());
+            _blocks.Add(null);
         }
 
-        ChangeValue(aIndex) = value;
+        _length = Math.Max(_length, aLength);
+    }
+
+    // A value type's block is filled with the default item; a class's items are made as they are reached
+    private T[] MakeBlock(int aBlock)
+    {
+        var block = new T[THE_BLOCK_SIZE];
+        if (typeof(T).IsValueType)
+        {
+            Array.Fill(block, Prototype!);
+        }
+
+        _blocks[aBlock] = block;
+        return block;
+    }
+
+    // NCollection_DynamicArray::SetValue: grows with default items up to the index, then sets it. An item not reached
+    // yet is a default one when it is, so it needs no setting to one.
+    private void SetValue(int aIndex, T value)
+    {
+        Grow(aIndex + 1);
+        if (_blocks[aIndex / THE_BLOCK_SIZE] is not null)
+        {
+            ChangeValue(aIndex) = value;
+        }
     }
 }
 

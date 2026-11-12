@@ -16,15 +16,18 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// The trimmed curve keeps its own copy of the basis curve (OCCT copies it in the constructor; a trimmed basis
 /// curve is replaced by its own basis). <see cref="BasisCurve"/> returns that copy frozen, as OCCT returns its
-/// handle; this curve's internal mutators then copy the basis curve again before changing it.
+/// handle; this curve's internal mutators then copy the basis curve again before changing it. A basis curve given
+/// frozen is kept, not copied (Kerf): it can't change, and the mutators copy it in the same way.
 /// </remarks>
 public sealed class TrimmedCurve2D : BoundedCurve2D
 {
     private Curve2D _basisCurve;
+    // Kerf: true while the basis curve is the frozen one the constructor was given, shared rather than copied
+    private bool _basisShared;
     private double _uTrim1;
     private double _uTrim2;
 
-    /// <summary>A new, unfrozen trimmed curve equal to this one (with its own copy of the basis curve).</summary>
+    /// <summary>A new, unfrozen trimmed curve equal to this one (with its own copy of the basis curve, or the same one if it's frozen).</summary>
     public sealed override Geometry2D Copy()
     {
         TrimmedCurve2D tc;
@@ -50,15 +53,11 @@ public sealed class TrimmedCurve2D : BoundedCurve2D
             throw Refusal.Argument(new ConstructionErrorException("Geom2d_TrimmedCurve:: C is null"));
         }
         // kill trimmed basis curves
-        TrimmedCurve2D? t = curve as TrimmedCurve2D;
-        if (t is not null)
-        {
-            _basisCurve = (Curve2D)t._basisCurve.Copy(); // Kerf: the field, so that T's basis curve isn't frozen
-        }
-        else
-        {
-            _basisCurve = (Curve2D)curve.Copy();
-        }
+        // Kerf: T's field, so that T's basis curve isn't frozen. A frozen basis can't change, so it's shared, not copied: the
+        // mutators below copy it first, as they do one that BasisCurve has frozen
+        Curve2D basis = curve is TrimmedCurve2D t ? t._basisCurve : curve;
+        _basisShared = basis.IsFrozen;
+        _basisCurve = _basisShared ? basis : (Curve2D)basis.Copy();
         SetTrim(u1, u2, sense, adjustPeriodic);
     }
 
@@ -68,6 +67,7 @@ public sealed class TrimmedCurve2D : BoundedCurve2D
         if (_basisCurve.IsFrozen)
         {
             _basisCurve = (Curve2D)_basisCurve.Copy();
+            _basisShared = false;
         }
     }
 
@@ -167,9 +167,22 @@ public sealed class TrimmedCurve2D : BoundedCurve2D
 
     /// <summary>
     /// The basis curve, not frozen: for ported code that changes it in place through the trimmed curve, as OCCT does
-    /// (MAT2d's <c>Bisector_BisecAna::SetTrim</c> on a Bisector_Bisec's curve), and for reads that must not freeze it.
+    /// (MAT2d's <c>Bisector_BisecAna::SetTrim</c> on a Bisector_Bisec's curve). A frozen basis shared with the caller of the
+    /// constructor is copied first, so that this curve's own is changed, as when the constructor copied it; not once this curve
+    /// is frozen, as it may then be read by several threads and mustn't change.
     /// </summary>
-    internal Curve2D ChangeBasisCurve() => _basisCurve;
+    internal Curve2D ChangeBasisCurve()
+    {
+        if (_basisShared && !IsFrozen)
+        {
+            OwnBasisCurve();
+        }
+
+        return _basisCurve;
+    }
+
+    /// <summary>The basis curve, neither frozen nor copied: for reads only.</summary>
+    internal Curve2D BasisCurveToRead() => _basisCurve;
 
     /// <summary>The basis curve's continuity.</summary>
     public sealed override Continuity Continuity => _basisCurve.Continuity;
