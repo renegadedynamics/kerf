@@ -256,6 +256,33 @@ public class EvolvingFilletOnEdgeTests
         Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, chfi3d.StripeStatus(1));
     }
 
+    // The corpus's blend/buildevol/K8, built: K7's cylinders with a third of radius 3 standing on the top, and the fillet of
+    // the rim, 1 to 3 to 2, whose ball comes to rest between two edges, the foot of the third cylinder and the curve the
+    // first two meet in (BRepBlend_RstRstEvolRad). Decision 33305: the second derivative of the ball's centre there is the
+    // equations'; taken by differences, it was wrong at 59 of that function's 320 points, beside the corners the walk closes
+    // in on, and the area was 766.9269.
+    [Fact]
+    public void The_corpuss_K8_between_two_edges_is_built_from_the_equations_second_order()
+    {
+        if (Corpus("CFI_6_i56fhi.rle") is not { } shape)
+        {
+            return;
+        }
+
+        var chfi3d = new MakeFillet(shape);
+        NCollection_Array1<Point2D> law = new(1, 3);
+        law.SetValue(1, new Point2D(0, 1));
+        law.SetValue(2, new Point2D(1, 3));
+        law.SetValue(3, new Point2D(2, 2));
+        chfi3d.Add(law, shape.AllEdges()[5]);
+        chfi3d.Build();
+        Assert.True(chfi3d.IsDone);
+        Shape result = chfi3d.Shape();
+        Assert.True(result.Validate().IsValid);
+        Assert.InRange(chfi3d.InternalBuilder().EnvelopeCornerWorst, 4.7e-5, 5.1e-5);
+        Assert.InRange(result.IntegrateArea(new MassOptions { Tolerance = 1e-10 }), 766.9257 - 3e-4, 766.9257 + 3e-4);
+    }
+
     // Decision 1736's case, the corpus's blend/buildevol/J5, which ran through Draw-lite until its fillet was refused (its
     // measure 2.6e-4): where a radius of 4 to 8 to 5 reaches past a circle on the top face the fillet's boundary runs along
     // it, and the edge's part under the boundary goes. Built here with the refusal off, as the fix is to the reconstruction:
