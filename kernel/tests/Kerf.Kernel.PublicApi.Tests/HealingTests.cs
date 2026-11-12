@@ -1,5 +1,8 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Booleans;
+using Kerf.Construction;
+using Kerf.Geometry;
 using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Topology;
@@ -117,6 +120,46 @@ public class HealingTests
         Assert.True(wireframe.IsSuccess);
         Assert.Equal(12, wireframe.Value.Shape.AllEdges().Length);
         KernelAssert.Throws<ArgumentOutOfRangeException>(() => Fixtures.Box().FixWireframe(0));
+    }
+
+    // OCCT #1573, from its numbers: the cap of a sphere of radius 10 above z = 5, one half from the sphere as it stands and the
+    // other from the same sphere turned about its axis. OCCT's unify leaves the turned half's pole edge without a curve on the
+    // first's surface and the merged face is invalid; decision 1816 then left the faces apart. The pole edge's curve is now
+    // moved with the others, and each curve brought into the surface's one period, so the cap is one face wherever the turned
+    // sphere's seam doesn't fall inside its half (decision 31806)
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(10, 1)]
+    [InlineData(37, 1)]
+    [InlineData(90, 1)]
+    [InlineData(270, 1)]
+    [InlineData(359, 1)]
+    // The turned sphere's seam inside its half, which the Boolean splits there: still left apart, and valid
+    [InlineData(123, 4)]
+    [InlineData(180, 4)]
+    public void Halves_of_a_cap_from_a_sphere_and_the_same_sphere_turned_unify(double degrees, int sphericalFaces)
+    {
+        double turn = degrees * Math.PI / 180;
+        Shape first = Solid.Sphere(10).Value.Shape;
+        Shape turned = Solid.Sphere(10, new Frame3D(new Point3D(0, 0, 0), Direction3D.UnitZ,
+                                                                         new Direction3D(Math.Cos(turn), Math.Sin(turn), 0))).Value.Shape;
+        var raw = new BooleanOptions { Simplify = false };
+        Shape right = BooleanOperations.Common(first, Solid.Box(new Point3D(0, -20, 5), new Point3D(20, 20, 20)).Value.Shape, raw).Value.Shape;
+        Shape left = BooleanOperations.Common(turned, Solid.Box(new Point3D(-20, -20, 5), new Point3D(0, 20, 20)).Value.Shape, raw).Value.Shape;
+        Shape fused = BooleanOperations.Fuse(right, left, raw).Value.Shape;
+
+        Result<Built<Shape>> unified = fused.Unify();
+        Assert.True(unified.IsSuccess);
+        Shape cap = unified.Value.Shape;
+        Assert.True(cap.Validate().IsValid);
+        Assert.Equal(sphericalFaces, cap.AllFaces().Count(static f => f.TryGetSurface(out Surface? surface) && surface is SphericalSurface));
+        // The cap of height 5: pi h^2 (3 r - h) / 3, and its curved face 2 pi r h
+        Assert.Equal(Math.PI * 25 * 25 / 3, cap.IntegrateVolume(), 1e-6);
+        if (sphericalFaces == 1)
+        {
+            Assert.Equal(2, cap.AllFaces().Length);
+            Assert.Equal(2 * Math.PI * 10 * 5, cap.AllFaces().Single(static f => f.TryGetSurface(out Surface? surface) && surface is SphericalSurface).AsShape().IntegrateArea(), 1e-6);
+        }
     }
 
     [Fact]
