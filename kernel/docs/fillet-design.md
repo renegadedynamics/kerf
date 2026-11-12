@@ -431,7 +431,7 @@ Decisions 2208 to 2212. Timings are from a loaded machine.
 
 ## 17. Stage 4b, the rest: arcs' ends, bug26655's integral, seams (unit 15T4)
 
-Decisions 32101 to 32108.
+Decisions 2243 to 2250.
 
 **An arc's end on a plane, a hole or a cone.** Section 15's first step read a branch's cylinder at an arc's end and cut the branch's whole cylinder from the rim's tool. It now reads the face there as the solid its surface bounds, and works by the gaps in the rim:
 
@@ -465,7 +465,7 @@ Each result: valid, without crossings, the ball in closed form within 3.1e-5, ta
 
 **Seams.** Section 16's move took a face between two whole circles. It now takes a sphere's face too, and a face bounded where the new seam goes by a whole circle, a point where the surface closes (a cone's apex, a sphere's pole) or an arc about the axis, which the seam cuts in two. Made cases, each failing in ChFi3d with the seam through the cut: a hollow cone to its apexes and a hollow sphere with a window, and a tube with a quarter cut from its end; all built, proved as section 16's. Where the move can't be done or its result proved (the cut end's vertical edges alone, whose fillets end on the top, which the stage's proof doesn't allow for), the failure names the seam.
 
-**What it doesn't do.** Decision 32108.
+**What it doesn't do.** Decision 2250.
 
 ## Sources
 
