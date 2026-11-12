@@ -75,7 +75,7 @@ public class FilletSmoothedGuideTests
     private static Edge TopCurve(Shape prism) =>
         prism.AllEdges().Single(e => Tool.Curve(e, out _, out _) is BSplineCurve3D && e.AllVertices().All(v => Math.Abs(v.Point.Z - 5) < 1e-9));
 
-    // The worst found over 15AO's cases (decision 33801): the quadratic at 2, 1.3e-5 from the ball against the approximation's
+    // The worst found over 15AO's cases (decision 2334): the quadratic at 2, 1.3e-5 from the ball against the approximation's
     // 1e-4, its guide 1.2e-3 off the edge. The others: the cubic with a double knot at 1, 1.9e-6, its guide 8e-4 off; C1's top
     // edge at 0.01, 4.5e-6, its guide 6.0e-3 off on a solid 0.3 across, more than half the radius
     [Theory]
