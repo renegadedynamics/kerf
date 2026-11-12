@@ -27,7 +27,7 @@ public static class Step
     public static DiagnosticCode EntitySkipped => ExchangeTree.EntitySkipped;
 
     /// <summary>
-    /// The warning of a read whose model holds faces that are invalid: <c>exchange.invalid-face</c> (decision 33502). The
+    /// The warning of a read whose model holds faces that are invalid: <c>exchange.invalid-face</c> (decision 2314). The
     /// read checks the faces the healing reported on and those with a vertex off its edge's curve, not every face; a
     /// caller who won't take such a model refuses a result with this warning.
     /// </summary>
@@ -209,7 +209,7 @@ public static class Step
     /// The warning for entities the reader couldn't load or translate, so that what refers to them is missing from the
     /// model (decision 2308): those whose data failed its checks as the file was loaded, a reference to an entity that
     /// isn't in the file among them, and those whose translation recorded a failure. Where nothing is left of the model
-    /// (no vertex in it), the warning says so (decision 33503). Null where there are none.
+    /// (no vertex in it), the warning says so (decision 2315). Null where there are none.
     /// </summary>
     private static Diagnostic? SkippedEntities(CafReader reader, ModelNode read)
     {
@@ -265,7 +265,7 @@ public static class Step
     }
 
     /// <summary>
-    /// The warning for faces the read's check found invalid after healing (decision 33502): how many, and the STEP
+    /// The warning for faces the read's check found invalid after healing (decision 2314): how many, and the STEP
     /// identifiers of the faces they were read from, the first eight. Null where there are none.
     /// </summary>
     private static Diagnostic? InvalidFaces(CafReader reader)

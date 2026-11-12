@@ -33,7 +33,7 @@ internal static class ExchangeTree
     /// <summary>A warning that entities of the data couldn't be read and were left out: <c>exchange.entity-skipped</c>.</summary>
     public static DiagnosticCode EntitySkipped { get; } = new("exchange.entity-skipped");
 
-    /// <summary>A warning that faces of the model read are invalid: <c>exchange.invalid-face</c> (decision 33502).</summary>
+    /// <summary>A warning that faces of the model read are invalid: <c>exchange.invalid-face</c> (decision 2314).</summary>
     public static DiagnosticCode InvalidFace { get; } = new("exchange.invalid-face");
 
     /// <summary>Whether meshing a part for a writer stopped at a limit: the mesh's size, or a face refused (decision 1942).</summary>

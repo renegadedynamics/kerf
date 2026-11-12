@@ -3,7 +3,7 @@
 namespace Kerf.Engine.Healing.Fixes;
 
 /// <summary>
-/// For tests (decision 33502): while a scope is open, the execution flow reads STEP data as it did before two fixes of
+/// For tests (decision 2314): while a scope is open, the execution flow reads STEP data as it did before two fixes of
 /// unit 15E9, so that the reader's check of faces can be tested on the invalid faces they removed: the seam along an
 /// edge whose neighbour starts a little off it (<see cref="ComposeShellFixer"/>, decision 2305) and the two lines
 /// between the same two vertices that were both moved onto them (StepToTopoDS's TranslateEdge, decision 2306). The

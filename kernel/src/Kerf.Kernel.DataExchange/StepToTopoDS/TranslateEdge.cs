@@ -393,7 +393,7 @@ internal sealed class TranslateEdge : ImportRoot
             if (Math.Abs(temp1 - temp2) < preci
                 && Math.Abs(u2 - u1 - pnt1.DistanceTo(pnt2)) < Kerf.Engine.Foundation.Precision.Confusion()
                 && c1 is LineCurve3D
-                && (global::Kerf.Engine.Healing.Fixes.UndoneFixes.AreUndone // for tests (decision 33502)
+                && (global::Kerf.Engine.Healing.Fixes.UndoneFixes.AreUndone // for tests (decision 2314)
                     || !HasParallelTwin(ec, (LineCurve3D)c1, tp, localFactors, preci)))
             {
                 LineCurve3D line = c1 as LineCurve3D;
@@ -410,7 +410,7 @@ internal sealed class TranslateEdge : ImportRoot
         }
 
         // Kerf: a vertex off its curve by more than the file's uncertainty marks the faces holding it for the read's
-        // check after healing (decision 33502)
+        // check after healing (decision 2314)
         if (temp1 > preci)
         {
             tp.OffCurveVertices.Add(v1);

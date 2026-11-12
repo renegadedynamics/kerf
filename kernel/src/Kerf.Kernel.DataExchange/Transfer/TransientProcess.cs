@@ -273,18 +273,18 @@ internal class TransientProcess : ProcessForTransient
     }
 
     /// <summary>
-    /// Kerf (decision 33502): the vertices the STEP reader found further from their edges' curves than the file's
+    /// Kerf (decision 2314): the vertices the STEP reader found further from their edges' curves than the file's
     /// uncertainty as it made the edges. The faces that hold one are checked after healing (HealedFaceCheck).
     /// </summary>
     internal HashSet<Shape> OffCurveVertices { get; } = new(ShapeHasher.Instance);
 
     /// <summary>
-    /// Kerf (decision 33502): the faces the read's check found invalid after healing, each once, in the order found, with
+    /// Kerf (decision 2314): the faces the read's check found invalid after healing, each once, in the order found, with
     /// the file's entity each was read from (null where none is bound to it).
     /// </summary>
     internal IReadOnlyList<(Shape Face, Transient? Entity)> InvalidFaces => _invalidFaces;
 
-    /// <summary>Kerf (decision 33502): records <paramref name="face"/>, read from <paramref name="entity"/>, as invalid, once.</summary>
+    /// <summary>Kerf (decision 2314): records <paramref name="face"/>, read from <paramref name="entity"/>, as invalid, once.</summary>
     internal void AddInvalidFace(Shape face, Transient? entity)
     {
         if (_invalidFaceSet.Add(face))

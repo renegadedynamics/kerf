@@ -10,7 +10,7 @@ using HealingMessages = System.Collections.Generic.Dictionary<Kerf.Topology.Shap
 namespace Kerf.Engine.Exchange.Step;
 
 /// <summary>
-/// Kerf (decisions 2307, 33501, 33502): the STEP reader's check of the faces it may have read wrongly. Checking every face
+/// Kerf (decisions 2307, 2313, 2314): the STEP reader's check of the faces it may have read wrongly. Checking every face
 /// costs a fifth of a read; these are the faces where the reader or the healing already knows something happened: (c) the
 /// faces the healing reported on (a message on the face or anything in it: a seam added, a wire reversed, an edge fixed)
 /// and (d) the faces with a vertex the reader found off its edge's curve by more than the file's uncertainty

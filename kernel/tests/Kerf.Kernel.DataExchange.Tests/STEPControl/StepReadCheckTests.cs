@@ -9,7 +9,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.DataExchange.Tests.STEPControl;
 
 /// <summary>
-/// The STEP read's check of the faces it may have read wrongly (decision 33502; the owner's ruling, decision 33501): the
+/// The STEP read's check of the faces it may have read wrongly (decision 2314; the owner's ruling, decision 2313): the
 /// faces the healing reported on and those with a vertex off its edge's curve are checked, and an invalid one is a
 /// warning, <c>exchange.invalid-face</c>, on a read that still succeeds. The invalid faces are 15E9's, made again by
 /// reading with its two fixes left out (<see cref="UndoneFixes"/>): #382's band of a cylinder, which came back as two

@@ -152,7 +152,7 @@ public class ExchangeTests
         Assert.Equal(Severity.Warning, skipped.Severity);
         Assert.Contains("#11", skipped.Message);
         Assert.Equal(Step.EntitySkipped, skipped.Code);
-        // nothing else is left, and the warning says so (decision 33503)
+        // nothing else is left, and the warning says so (decision 2315)
         Assert.EndsWith("Nothing else was read: the model is empty.", skipped.Message);
         Assert.Empty(read.Value.ToShape().AllFaces());
     }

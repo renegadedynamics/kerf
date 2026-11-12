@@ -228,7 +228,7 @@ public partial class ExchangeTests
         var skipped = Assert.Single(read.Diagnostics);
         Assert.Equal("exchange.entity-skipped", skipped.Code.Value);
         // the solid holding the vertex is left out with it, and with it all the box: the warning says the model is empty
-        // (the kernel's decision 33503)
+        // (the kernel's decision 2315)
         Assert.EndsWith("Nothing else was read: the model is empty.", skipped.Message);
         Assert.Empty(Importers.ImportStep(new MemoryStream(Encoding.ASCII.GetBytes(step))).Diagnostics);
     }
@@ -237,7 +237,7 @@ public partial class ExchangeTests
     public void StepWhoseFacesReadInvalidImportsWithAWarning()
     {
         // OCCT's issue 349's strip, two lines between the same two vertices, read as the kernel read it before its
-        // decision 2306 (a face of no area): the import passes on the read's warning (the kernel's decision 33502)
+        // decision 2306 (a face of no area): the import passes on the read's warning (the kernel's decision 2314)
         string step = string.Join('\n',
             "ISO-10303-21;", "HEADER;", "FILE_DESCRIPTION((''),'2;1');", "FILE_NAME('','',(''),(''),'','','');",
             "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 3 1 1 1 }'));", "ENDSEC;", "DATA;",

@@ -946,7 +946,7 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
             ShapeProcessor.SetParameter("FixShape.NonManifold", "1", true, parameters);
             ShapeProcessor shapeProcessor = new ShapeProcessor(parameters);
             Shape fixedResult = shapeProcessor.InternalProcessShape(comp, GetProcessingFlags().Item1, ps1.Next());
-            HealedFaceCheck.Check(comp, fixedResult, shapeProcessor.GetContext(), tp); // Kerf: decision 33502
+            HealedFaceCheck.Check(comp, fixedResult, shapeProcessor.GetContext(), tp); // Kerf: decision 2314
             shapeProcessor.InternalMergeTransferInfo(tp, nbTPitems);
 
             if (fixedResult.Type == ShapeType.Compound)
@@ -1653,7 +1653,7 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
                 ShapeProcessor shapeProcessor = new ShapeProcessor(parameters);
                 Shape unhealed = mappedShape;
                 mappedShape = shapeProcessor.InternalProcessShape(mappedShape, GetProcessingFlags().Item1, ps.Next());
-                HealedFaceCheck.Check(unhealed, mappedShape, shapeProcessor.GetContext(), tp); // Kerf: decision 33502
+                HealedFaceCheck.Check(unhealed, mappedShape, shapeProcessor.GetContext(), tp); // Kerf: decision 2314
                 shapeProcessor.InternalMergeTransferInfo(tp, nbTPitems);
             }
         }
@@ -1838,7 +1838,7 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
                 ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", _maxTol, true, parameters);
                 ShapeProcessor shapeProcessor = new ShapeProcessor(parameters);
                 Shape shape = shapeProcessor.InternalProcessShape(s, GetProcessingFlags().Item1, progress);
-                HealedFaceCheck.Check(s, shape, shapeProcessor.GetContext(), tp); // Kerf: decision 33502
+                HealedFaceCheck.Check(s, shape, shapeProcessor.GetContext(), tp); // Kerf: decision 2314
                 shapeProcessor.InternalMergeTransferInfo(tp, nbTPitems);
 
                 if (shape != s)
