@@ -306,6 +306,23 @@ public class ConstructionTests
         Assert.Contains("tolerance of 1.98E+08", refused.Error.Message, StringComparison.Ordinal);
     }
 
+    // OCCT #639 (decision 34007): two T-shaped profiles with a stem 0.007 wide along a spine with a corner of 19
+    // degrees, with right or round corners. The sweeps' intersection at the corner merges the stem's sides into one vertex, and
+    // OCCT failed with "command not done" from an edge's maker; Kerf still fails, and now says why. The transformed transition makes it
+    [Fact]
+    public void A_right_corner_too_tight_for_its_profile_fails_saying_why()
+    {
+        Wire spine = Fixtures.Named("issue639-traceline").AllWires()[0];
+        Shape[] profiles = [Fixtures.Named("issue639-profile_1").AllWires()[0], Fixtures.Named("issue639-profile_2").AllWires()[0]];
+        Result<Built<Shape>> right = Sweeps.Sweep(profiles, spine, new SweepOptions { Transition = TransitionMode.RightCorner });
+        Assert.False(right.IsSuccess);
+        Assert.Contains("too thin there for the corner to be trimmed", right.Error!.Message, StringComparison.Ordinal);
+        Result<Built<Shape>> round = Sweeps.Sweep(profiles, spine, new SweepOptions { Transition = TransitionMode.RoundCorner });
+        Assert.Contains("too thin there for the corner to be trimmed", round.Error!.Message, StringComparison.Ordinal);
+        Result<Built<Shape>> transformed = Sweeps.Sweep(profiles, spine);
+        Assert.True(transformed.IsSuccess, transformed.Error?.Message);
+    }
+
     [Fact]
     public void A_loft_through_sections_and_its_failure()
     {
