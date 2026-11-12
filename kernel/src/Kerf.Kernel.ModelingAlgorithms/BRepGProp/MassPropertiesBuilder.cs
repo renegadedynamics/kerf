@@ -20,8 +20,8 @@ namespace Kerf.Engine.Measurement;
 
 /// <summary>
 /// The global properties of a shape: of its edges (length, <see cref="LinearProperties(in Shape, Properties, bool, bool, bool)"/>),
-/// of its faces (area, <see cref="SurfaceProperties(in Shape, Properties, bool, bool)"/>) or of the volume
-/// they bound (<see cref="VolumeProperties(in Shape, Properties, bool, bool, bool)"/>): mass, centre of mass
+/// of its faces (area, <see cref="SurfaceProperties(in Shape, Properties, bool, bool, bool)"/>) or of the volume
+/// they bound (<see cref="VolumeProperties(in Shape, Properties, bool, bool, bool, bool)"/>): mass, centre of mass
 /// and inertia, at density 1.
 /// </summary>
 /// <remarks>
@@ -92,12 +92,14 @@ internal static class MassPropertiesBuilder
     /// <summary>
     /// The volume the faces of <paramref name="s"/> bound, taken about <paramref name="reference"/> and integrated to the relative
     /// error <paramref name="eps"/> of each face's contribution, as the mass-only path of VolumeProperties does. Faces that close
-    /// give the same volume about any point; faces that don't, a volume that depends on it (unit 15AH).
+    /// give the same volume about any point; faces that don't, a volume that depends on it (unit 15AH). A gap inside a vertex's
+    /// tolerance is closed first, as the public measurements close it (<see cref="GapClosures"/>, decision 31802), so what's
+    /// left is a boundary open where no vertex covers it, or a face missing.
     /// </summary>
     internal static double VolumeAbout(in Shape s, in Point3D reference, double eps)
     {
         var props = new Properties(reference);
-        VolumePropertiesFaces(s, props, reference, eps, skipShared: false, useTriangulation: false, massOnly: true);
+        VolumePropertiesFaces(s, props, reference, eps, skipShared: false, useTriangulation: false, massOnly: true, closeGaps: true);
         return props.Mass();
     }
 
@@ -219,7 +221,8 @@ internal static class MassPropertiesBuilder
                                             bool skipShared,
                                             bool useTriangulation,
                                             bool massOnly = false,
-                                            bool exactPlanes = false)
+                                            bool exactPlanes = false,
+                                            bool closeGaps = false)
     {
         int i;
         double errorMax = 0.0, error;
@@ -231,7 +234,7 @@ internal static class MassPropertiesBuilder
         mg.SetLocation(p);
 
         var bf = new FaceIntegrand();
-        var bd = new Domain();
+        var bd = new Domain(closeGaps);
         var fMap = new HashSet<Shape>(ShapeHasher.Instance);
         Placement locDummy;
 
@@ -319,16 +322,19 @@ internal static class MassPropertiesBuilder
     /// <param name="sProps">The system to fill; reset first, its reference point at the shape's location.</param>
     /// <param name="skipShared">Count a face met again (IsSame) once.</param>
     /// <param name="useTriangulation">Measure faces with a triangulation on the triangulation.</param>
+    /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
+    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
     public static void SurfaceProperties(in Shape s,
                                          Properties sProps,
                                          bool skipShared = false,
-                                         bool useTriangulation = false)
+                                         bool useTriangulation = false,
+                                         bool closeGaps = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
         p = p.Transformed(s.Placement.Transformation);
         sProps.Assign(new Properties(p));
-        SurfacePropertiesCore(s, sProps, 1.0, skipShared, useTriangulation);
+        SurfacePropertiesCore(s, sProps, 1.0, skipShared, useTriangulation, closeGaps: closeGaps);
     }
 
     /// <summary>The surface properties of the faces of <paramref name="s"/>, in a new system (see the other form).</summary>
@@ -349,14 +355,17 @@ internal static class MassPropertiesBuilder
     /// <param name="skipShared">Count a face met again (IsSame) once.</param>
     /// <param name="massOnly">Only the area is wanted, so <see cref="Properties.Mass"/> is all that means anything afterwards,
     /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
+    /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
+    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
     /// <returns>The largest relative error reached by a face.</returns>
-    public static double SurfaceProperties(in Shape s, Properties sProps, double eps, bool skipShared = false, bool massOnly = false)
+    public static double SurfaceProperties(in Shape s, Properties sProps, double eps, bool skipShared = false, bool massOnly = false,
+                                           bool closeGaps = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
         p = p.Transformed(s.Placement.Transformation);
         sProps.Assign(new Properties(p));
-        double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false, massOnly);
+        double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false, massOnly, closeGaps: closeGaps);
         return errorMax;
     }
 
@@ -370,10 +379,11 @@ internal static class MassPropertiesBuilder
                                                 bool skipShared,
                                                 bool useTriangulation,
                                                 bool massOnly = false,
-                                                bool exactPlanes = false)
+                                                bool exactPlanes = false,
+                                                bool closeGaps = false)
     {
         if (!useTriangulation && ParallelVolumes.Current && !OsdParallel.IsSerial
-            && TryVolumeFacesInParallel(s, props, refPnt, eps, skipShared, massOnly, exactPlanes, out double inParallel))
+            && TryVolumeFacesInParallel(s, props, refPnt, eps, skipShared, massOnly, exactPlanes, closeGaps, out double inParallel))
         {
             return inParallel;
         }
@@ -387,7 +397,7 @@ internal static class MassPropertiesBuilder
         mg.SetLocation(refPnt);
 
         var bf = new FaceIntegrand();
-        var bd = new Domain();
+        var bd = new Domain(closeGaps);
         var fwdFMap = new HashSet<Shape>(ShapeHasher.Instance);
         var rvsFMap = new HashSet<Shape>(ShapeHasher.Instance);
         Placement locDummy;
@@ -508,10 +518,11 @@ internal static class MassPropertiesBuilder
                                                  bool skipShared,
                                                  bool massOnly,
                                                  bool exactPlanes,
+                                                 bool closeGaps,
                                                  out double errorMax)
     {
         errorMax = 0.0;
-        var bd = new Domain();
+        var bd = new Domain(closeGaps);
         var fwdFMap = new HashSet<Shape>(ShapeHasher.Instance);
         var rvsFMap = new HashSet<Shape>(ShapeHasher.Instance);
         // Each face in the loop's order: an exact planar volume, or a face to integrate
@@ -578,7 +589,7 @@ internal static class MassPropertiesBuilder
             {
                 Face f = faces[k].Face;
                 var bf = new FaceIntegrand();
-                var d = new Domain();
+                var d = new Domain(closeGaps);
                 var g = new global::Kerf.Engine.Measurement.Vinert();
                 g.SetLocation(location);
                 bf.Load(f);
@@ -654,7 +665,8 @@ internal static class MassPropertiesBuilder
                                            double eps,
                                            bool skipShared,
                                            bool useTriangulation,
-                                           bool massOnly = false)
+                                           bool massOnly = false,
+                                           bool closeGaps = false)
     {
         Point3D p = RoughBaryCenter(s);
 
@@ -677,7 +689,7 @@ internal static class MassPropertiesBuilder
         if (!hasSharedSolids)
         {
             // No shared solids: use direct face-level iteration (original path).
-            return VolumePropertiesFaces(s, props, p, eps, skipShared, useTriangulation, massOnly);
+            return VolumePropertiesFaces(s, props, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
         }
 
         // Shared solids detected: iterate at solid level with caching.
@@ -716,7 +728,7 @@ internal static class MassPropertiesBuilder
                 {
                     // Non-rigid relative transform: fall back to direct face-level computation.
                     var solidProps = new Properties(p);
-                    double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly);
+                    double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
                     if (errorMax < error)
                     {
                         errorMax = error;
@@ -743,7 +755,7 @@ internal static class MassPropertiesBuilder
             {
                 // First instance of this TShape: compute via face integration.
                 var solidProps = new Properties(p);
-                double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly);
+                double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
                 if (errorMax < error)
                 {
                     errorMax = error;
@@ -776,7 +788,7 @@ internal static class MassPropertiesBuilder
             if (hasFree)
             {
                 var freeProps = new Properties(p);
-                double freeError = VolumePropertiesFaces(freeComp, freeProps, p, eps, skipShared, useTriangulation, massOnly);
+                double freeError = VolumePropertiesFaces(freeComp, freeProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
                 if (errorMax < freeError)
                 {
                     errorMax = freeError;
@@ -800,11 +812,14 @@ internal static class MassPropertiesBuilder
     /// <param name="onlyClosed">Count only the closed shells (BRep_Tool.IsClosed).</param>
     /// <param name="skipShared">Count a face met again (IsSame, with the same orientation) or a shell met again once.</param>
     /// <param name="useTriangulation">Measure faces with a triangulation on the triangulation.</param>
+    /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
+    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
     public static void VolumeProperties(in Shape s,
                                         Properties vProps,
                                         bool onlyClosed = false,
                                         bool skipShared = false,
-                                        bool useTriangulation = false)
+                                        bool useTriangulation = false,
+                                        bool closeGaps = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
@@ -824,13 +839,13 @@ internal static class MassPropertiesBuilder
 
                 if (Tool.IsClosed(sh))
                 {
-                    VolumePropertiesCore(sh, vProps, 1.0, skipShared, useTriangulation);
+                    VolumePropertiesCore(sh, vProps, 1.0, skipShared, useTriangulation, closeGaps: closeGaps);
                 }
             }
         }
         else
         {
-            VolumePropertiesCore(s, vProps, 1.0, skipShared, useTriangulation);
+            VolumePropertiesCore(s, vProps, 1.0, skipShared, useTriangulation, closeGaps: closeGaps);
         }
     }
 
@@ -856,13 +871,16 @@ internal static class MassPropertiesBuilder
     /// <param name="skipShared">Count a face met again (IsSame, with the same orientation) or a shell met again once.</param>
     /// <param name="massOnly">Only the volume is wanted, so <see cref="Properties.Mass"/> is all that means anything afterwards,
     /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
+    /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
+    /// (<see cref="GapClosures"/>; Kerf, decision 31801). OCCT doesn't.</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double VolumeProperties(in Shape s,
                                           Properties vProps,
                                           double eps,
                                           bool onlyClosed = false,
                                           bool skipShared = false,
-                                          bool massOnly = false)
+                                          bool massOnly = false,
+                                          bool closeGaps = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
@@ -884,7 +902,7 @@ internal static class MassPropertiesBuilder
 
                 if (Tool.IsClosed(sh))
                 {
-                    error = VolumePropertiesCore(sh, vProps, eps, skipShared, false, massOnly);
+                    error = VolumePropertiesCore(sh, vProps, eps, skipShared, false, massOnly, closeGaps);
                     if (errorMax < error)
                     {
                         errorMax = error;
@@ -894,7 +912,7 @@ internal static class MassPropertiesBuilder
         }
         else
         {
-            errorMax = VolumePropertiesCore(s, vProps, eps, skipShared, false, massOnly);
+            errorMax = VolumePropertiesCore(s, vProps, eps, skipShared, false, massOnly, closeGaps);
         }
 
         return errorMax;

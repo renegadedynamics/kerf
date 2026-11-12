@@ -14,32 +14,61 @@ namespace Kerf.Engine.Measurement;
 /// Arc iterator over the boundary of a face: the edges of the face, forward, skipping INTERNAL and EXTERNAL edges after
 /// the first, in an undigested order.
 /// </summary>
-/// <remarks>A working object, as OCCT's (an explorer): its iteration methods change it.</remarks>
+/// <remarks>
+/// A working object, as OCCT's (an explorer): its iteration methods change it. Kerf (decision 31801): a domain made to
+/// close gaps gives, after the face's edges, an arc across each gap its boundary has inside a vertex's tolerance
+/// (<see cref="GapClosures"/>); OCCT's has none, and neither has one made without.
+/// </remarks>
 internal sealed class Domain
 {
     private Explorer _explorer;
+    private readonly bool _closeGaps;
+    private List<Edge>? _closures;
+    private int _closure;
 
     /// <summary>An empty domain.</summary>
     public Domain() => _explorer = new Explorer();
+
+    /// <summary>An empty domain, which closes the gaps of the faces it's given if <paramref name="closeGaps"/> says so.</summary>
+    public Domain(bool closeGaps)
+    {
+        _explorer = new Explorer();
+        _closeGaps = closeGaps;
+    }
 
     /// <summary>The domain of the face.</summary>
     public Domain(in Face f) => _explorer = new Explorer(f.Oriented(Forward), ShapeType.Edge);
 
     /// <summary>Initializes the domain with the face.</summary>
-    public void Init(in Face f) => _explorer.Init(f.Oriented(Forward), ShapeType.Edge);
+    public void Init(in Face f)
+    {
+        _explorer.Init(f.Oriented(Forward), ShapeType.Edge);
+        _closures = _closeGaps ? GapClosures.Of(f) : null;
+        _closure = 0;
+    }
 
     /// <summary>True if there is another arc of curve in the list.</summary>
-    public bool More() => _explorer.More();
+    public bool More() => _explorer.More() || (_closures is not null && _closure < _closures.Count);
 
     /// <summary>Restarts the exploration of the face already set.</summary>
-    public void Init() => _explorer.ReInit();
+    public void Init()
+    {
+        _explorer.ReInit();
+        _closure = 0;
+    }
 
     /// <summary>The current edge.</summary>
-    public Edge Value() => ShapeCasts.Edge(_explorer.Current());
+    public Edge Value() => _explorer.More() ? ShapeCasts.Edge(_explorer.Current()) : _closures![_closure];
 
     /// <summary>Moves to the next FORWARD or REVERSED edge.</summary>
     public void Next()
     {
+        if (!_explorer.More())
+        {
+            _closure++;
+            return;
+        }
+
         // skip INTERNAL and EXTERNAL edges
         _explorer.Next();
         while (_explorer.More())
