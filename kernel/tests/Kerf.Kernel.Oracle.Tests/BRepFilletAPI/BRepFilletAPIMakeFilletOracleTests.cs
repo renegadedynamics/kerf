@@ -948,7 +948,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     // The differences, each attributed (docs/decisions.md, unit 7N3)
 
     // keys: a case's name or the start of its names, before a space
-    internal static readonly Dictionary<string, string> KnownPrimitiveDifferences = new(StringComparer.Ordinal)
+    internal static readonly Dictionary<string, string> KnownPrimitiveDifferences = WithTheBoxsEnvelopes(new(StringComparer.Ordinal)
     {
         // unit 7N3 attributed 33 runs here to the seam band (a face with a seam cut by the fillet kept the band the
         // fillet removes); unit 7R3 fixed it (decision 1155). Left (decision 1156): a radius of 28.9 on the T's
@@ -956,7 +956,25 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         // transitions do not alternate, and native keeps two pieces of zero area of that cylinder; the reconstruction
         // keeps the band round the seam the rim crosses. Not worth a rule.
         ["cylinder T e2 too large"] = "reconstruction (7R3): a radius ten times the cylinder's, transitions that do not alternate on the end circle",
-    };
+    });
+
+    // Unit 15AK: a fillet of evolving radius is the envelope of its balls, whose sections are circles square to the path of
+    // the ball's centre; native's is the sweep of circles of the radius in the planes square to the edge. They touch the
+    // faces along the same lines and differ between them, so on the box, where the two had agreed since the ball's sections
+    // between planes are OCCT's (decision 2216), each edge's two evolving fillets now remove a little less than native's
+    // (19.069 for 19.078 on the first). FilletBlendTests checks the envelope on a box's edge; BRepFilletAPITests the volume.
+    private const string Envelope = "the evolving fillet is the envelope of its balls (unit 15AK), native's the sweep of circles in "
+                                    + "the planes square to the edge";
+
+    private static Dictionary<string, string> WithTheBoxsEnvelopes(Dictionary<string, string> theKnown)
+    {
+        for (int k = 1; k <= 12; k++)
+        {
+            theKnown[$"box 10x20x30 e{k} r1.122-2.244"] = Envelope;
+            theKnown[$"box 10x20x30 e{k} pairs"] = Envelope;
+        }
+        return theKnown;
+    }
 
     internal static readonly Dictionary<string, string> KnownDataOccDifferences = new(StringComparer.Ordinal)
     {
@@ -967,6 +985,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         // OCC1077's third cut and OCC426: the seam band, fixed by unit 7R3 (decision 1155)
         ["OCC426 all edges r1"] = "the walked fillets on the rolling ball (decisions 2156, 2158, 2162), native's off it: the faces the edges "
                                   + "between the rings generate end elsewhere, as their areas show (12.58 for native's 12.5847); the test checks the ball",
+        // 5 to 15 over three tenths of each of two edges of a box of 100, and back: a steep law, so the envelope removes 1.7%
+        // less than native's circles (8506 for 8656), and the constant fillets between end against it elsewhere
+        ["OCC570"] = Envelope,
     };
 
     internal static readonly string[] KnownMaxFilletDifferences = [];

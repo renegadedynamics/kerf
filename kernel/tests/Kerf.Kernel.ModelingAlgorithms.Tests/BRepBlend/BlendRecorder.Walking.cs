@@ -508,6 +508,22 @@ internal sealed partial class BlendRecorder
         new("rstrstevol", [0.0, 10.0, -1.0, 5.0], [0.5, 8.0], [1.0, 9.0], 0.0, true),
     ];
 
+    // Unit 15AK: the "surfrstevol" case's function, positioned at theParam, for a test of its sections.
+    internal static SurfRstEvolRad SurfRstEvolAt(int theChoix, double theParam)
+    {
+        RstCase C = THE_SURFRSTS[2];
+        SurfaceAdaptorBase S1 = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
+        SurfaceAdaptorBase S2 = BSurf(1, 0.0, 10.0, -5.0, 0.0);
+        ElSpine G = ElGuide(WalkGuideCurve(0), 0.0, 10.0);
+        Curve2DAdaptorBase Rst = new CurveAdaptor2D(new LineCurve2D(new Point2D(0.0, -1.0), new Direction2D(1.0, 0.0)),
+                                                        C.R2[0], C.R2[1]);
+        SurfRstEvolRad anEvol = new(S1, S2, Rst, G, EvolLaw(0.0, 10.0));
+        anEvol.Set(S2, Rst);
+        anEvol.Set(theChoix);
+        anEvol.Set(theParam);
+        return anEvol;
+    }
+
     private void RecSurfRstWalk(RstCase C, int choix, int bigchoix)
     {
         SurfaceAdaptorBase S1 = BSurf(0, C.B1[0], C.B1[1], C.B1[2], C.B1[3]);
