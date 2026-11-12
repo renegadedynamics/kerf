@@ -864,7 +864,7 @@ internal partial class PaveFiller
     }
 
     /// <summary>
-    /// Kerf (decision 32901): each section edge's curves end at its vertices. A section's curve is put on a vertex it passes
+    /// Kerf (decision 2285): each section edge's curves end at its vertices. A section's curve is put on a vertex it passes
     /// within the tolerances of, so the edge's curve in space and its curves on the two faces can end short of the vertex or
     /// past it, by what the walk was out by there; near a touch that's far more than a tolerance, as the surfaces lie within
     /// one of each other over a band. Each face's boundary is then open in its parameters at that vertex. Here the edge

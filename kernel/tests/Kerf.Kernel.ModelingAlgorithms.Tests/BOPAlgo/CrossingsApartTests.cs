@@ -16,7 +16,7 @@ namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
 /// The pave filler's steps that close a Boolean's faces in their parameters where OCCT leaves them open inside a vertex
-/// (<c>SetCrossingsApart</c>; decisions 2276 and 32901 to 32905), each on equal cylinders, one's axis in the other's end
+/// (<c>SetCrossingsApart</c>; decisions 2276 and 2285 to 2289), each on equal cylinders, one's axis in the other's end
 /// plane, a little short of crossing its axis or a little past: the family of decision 2257's sweep.
 /// </summary>
 public class CrossingsApartTests
@@ -83,7 +83,7 @@ public class CrossingsApartTests
 
     // 1e-10 short of crossing at radius 500, the end circle crosses the tool 3.2e-4 either side of the touch. OCCT's cut is
     // open there, and reads 2e-7 out. Held apart, each crossing is a vertex, the sections' curves end at them exactly, and the
-    // cut is closed and reads right (decisions 32901 and 32902)
+    // cut is closed and reads right (decisions 2285 and 2286)
     [Theory]
     [InlineData(-1e-10)]
     [InlineData(1e-10)]
@@ -104,7 +104,7 @@ public class CrossingsApartTests
 
     // Past the touch the end circle dips through the tool by less than a tolerance, on the side where it has no vertex. The
     // edge and face step sees one touch and makes one vertex at its middle; given as its two crossings, 1.4e-3 apart at
-    // 5e-10, the circle has a vertex at each, within 1e-6 of where the geometry puts them (decision 32902)
+    // 5e-10, the circle has a vertex at each, within 1e-6 of where the geometry puts them (decision 2286)
     [Fact]
     public void A_touch_that_hides_two_crossings_is_given_as_the_two()
     {
@@ -125,7 +125,7 @@ public class CrossingsApartTests
 
     // There the walk of one branch stops 4e-5 short of the end circle. Left with a vertex of its own, the branch is open, the
     // face isn't split, and the cut removes nothing: 74% out, which the check refuses. Carried on to the crossing, the cut is
-    // closed and right (decision 32903)
+    // closed and right (decision 2287)
     [Fact]
     public void A_curve_that_stops_short_within_a_touch_is_carried_on_to_the_crossing()
     {
@@ -139,7 +139,7 @@ public class CrossingsApartTests
 
     // At radius 5 the walk's own tolerance, 3e-4, is more than the crossings are apart, 1e-4 at 1e-9: one vertex covers them
     // whatever is held apart. The pieces of the end circle inside it, which OCCT drops, are taken into their neighbours, and
-    // the sections' curves end where the circle does: closed, and right as OCCT reads it (decisions 32901 and 32905)
+    // the sections' curves end where the circle does: closed, and right as OCCT reads it (decisions 2285 and 2289)
     [Fact]
     public void A_piece_dropped_inside_a_vertex_is_taken_into_its_neighbour()
     {
@@ -177,7 +177,7 @@ public class CrossingsApartTests
     }
 
     // The public Booleans, which make a result open inside a vertex again these ways and keep the one with the fewest gaps
-    // (decision 32904), over both sides of the touch and three radii: closed, valid, and right as OCCT reads them
+    // (decision 2288), over both sides of the touch and three radii: closed, valid, and right as OCCT reads them
     [Theory]
     [InlineData(500, -1e-10)]
     [InlineData(500, 1e-10)]

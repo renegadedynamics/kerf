@@ -2339,7 +2339,7 @@ internal partial class PaveFiller
     //=================================================================================================
 
     /// <summary>
-    /// Kerf (decision 32903): a section's curve that stops short of the boundary it was walking to, within the stretch an edge
+    /// Kerf (decision 2287): a section's curve that stops short of the boundary it was walking to, within the stretch an edge
     /// of one face touches the other face over, is carried on to where that edge crosses the face. Where two surfaces lie
     /// within a tolerance of each other over a band, the walk can stop anywhere in it; the curve can only end on a boundary,
     /// and the edge and face step has found where the boundary crosses. The end pole of the curve, in space and on each
@@ -2994,7 +2994,7 @@ internal partial class PaveFiller
                     //
                     // The intersection curve aIC is vanishing curve (the crease)
                     d = Math.Sqrt(d2);
-                    // A curve's end far from the vertex doesn't end at it (decision 32901): OCCT takes any shared vertex within
+                    // A curve's end far from the vertex doesn't end at it (decision 2285): OCCT takes any shared vertex within
                     // 4.5e-4 of the end of a curve between tangent faces, whatever the tolerances
                     if (IsApart(nV, pc[m], Max(nc.Tolerance(), nc.TangentialTolerance())))
                     {
@@ -4606,7 +4606,7 @@ internal partial class PaveFiller
     }
 
     /// <summary>
-    /// Kerf (decision 32905): where a piece of an edge that lay inside one vertex was dropped as having no range, the piece
+    /// Kerf (decision 2289): where a piece of an edge that lay inside one vertex was dropped as having no range, the piece
     /// next to it, which ends at that vertex too, runs on to the dropped piece's far end. OCCT drops such a piece at several
     /// steps and leaves its neighbours where they were, so the edge stops at one point of the vertex and starts again at
     /// another, and each face it bounds is open there in its parameters by the dropped piece's length. Only with crossings

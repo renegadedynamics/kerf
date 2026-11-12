@@ -105,10 +105,10 @@ internal partial class PaveFiller : BooleanAlgorithm
     //! Kerf: how many tolerances from a vertex a crossing may be and still be covered by growing it; 0, OCCT's, any
     //! distance the steps allow (decision 2276)
     protected double _crossingsApart;
-    //! Kerf: with crossings apart, whether a touch that hides two crossings is given as the two (decision 32902)
+    //! Kerf: with crossings apart, whether a touch that hides two crossings is given as the two (decision 2286)
     protected bool _touchesApart = true;
     //! Kerf: with crossings apart, each point an edge touches a face at, with the edge, the face and how long the stretch
-    //! they're within a tolerance over is (decision 32903)
+    //! they're within a tolerance over is (decision 2287)
     protected List<(int Edge, int Face, global::Kerf.Geometry.Point3D At, double Span)> _touchCrossings = new();
     //! Map to store minimal distances between shapes
     protected Dictionary<Pair, NCollection_List<EdgeRangeDistance>> _distances = new();
@@ -160,7 +160,7 @@ internal partial class PaveFiller : BooleanAlgorithm
     /// Kerf (decision 2276): a crossing of two edges, of an edge and a face, or of a section's curve and a vertex's edge
     /// further from a vertex than <paramref name="tolerances"/> times the tolerances in play isn't covered by growing that
     /// vertex, as OCCT's steps do, but gets a vertex of its own, and the pieces between such vertices are tested for
-    /// coincidence again once the sections are made. 0, the default, is OCCT's behaviour. With it on (decisions 32901 to
+    /// coincidence again once the sections are made. 0, the default, is OCCT's behaviour. With it on (decisions 2285 to
     /// 32903): a vertex two tangent faces share isn't grown over the end of their curve where that's far from it; an edge's
     /// touch of a face that hides two crossings far apart is given as the two, unless <paramref name="touches"/> is false;
     /// a section's curve that stops short within such a touch is carried on to the crossing; and each section edge's curves

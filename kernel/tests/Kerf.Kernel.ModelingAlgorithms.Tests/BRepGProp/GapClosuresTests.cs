@@ -97,7 +97,7 @@ public class GapClosuresTests
 
     // Where it can't be: within about 1e-15 of the radius of crossing, the cylinders' section is taken to be the ellipses of
     // crossing axes, 1e-5 off the faces' edges at 1e-13 past the touch, and each way of making the cut again is refused. The first is kept,
-    // open inside its vertex, right as the public measurements read it (decisions 32904 and 32906)
+    // open inside its vertex, right as the public measurements read it (decisions 2288 and 2290)
     [Fact]
     public void A_result_that_cant_be_closed_at_the_source_is_kept_as_it_was()
     {

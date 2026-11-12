@@ -206,7 +206,7 @@ public static class BooleanOperations
     /// A result whose faces are open in their parameters inside a vertex's tolerance, where its inputs' aren't, is made again
     /// with each crossing as a vertex of its own (<see cref="Engine.Booleans.PaveFiller.SetCrossingsApart"/>), and that one is
     /// kept if it has fewer gaps, is valid, passes the check of volumes and has the first one's volume and area; otherwise the first is,
-    /// which the public measurements read across the gaps (decisions 2257, 2276 and 32904). OCCT grows one vertex over crossings near it and
+    /// which the public measurements read across the gaps (decisions 2257, 2276 and 2288). OCCT grows one vertex over crossings near it and
     /// drops the pieces between, which leaves each face's boundary open there: valid, and read as area missing by anything
     /// that integrates round the boundary as OCCT's own <c>BRepGProp</c> does.
     /// </summary>
@@ -234,7 +234,7 @@ public static class BooleanOperations
             return first;
         }
 
-        // Three ways, as none closes all the others do (decision 32904): with each touch that hides two crossings given as
+        // Three ways, as none closes all the others do (decision 2288): with each touch that hides two crossings given as
         // the two; with it left as one; and with no crossing held apart at all, OCCT's vertices, closed by the steps that
         // bring each edge's pieces and each section's curves to one point of them. The one with the fewest gaps is kept,
         // the first of them to have none the inputs didn't
@@ -268,7 +268,7 @@ public static class BooleanOperations
                 before = built.Shape.IntegrateVolume(SameVolumeMeasured);
             }
             // The check alone isn't enough: over the sweep five results made again were valid and passed it, 14% to 42% out
-            // (decision 32907). The volume doesn't depend on a tolerance, and nor does the area, asked as well
+            // (decision 2291). The volume doesn't depend on a tolerance, and nor does the area, asked as well
             double after = closed.Shape.IntegrateVolume(SameVolumeMeasured);
             if (Math.Abs(after - before) > SameVolume * Math.Max(Math.Abs(before), Math.Abs(after)))
             {

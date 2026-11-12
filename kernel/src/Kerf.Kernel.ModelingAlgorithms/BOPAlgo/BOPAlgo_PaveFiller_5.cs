@@ -1168,7 +1168,7 @@ internal partial class PaveFiller
     }
 
     /// <summary>
-    /// Kerf (decision 32902): the parts an edge and a face have in common, with each touch that hides two crossings far
+    /// Kerf (decision 2286): the parts an edge and a face have in common, with each touch that hides two crossings far
     /// apart given as two, one at each crossing. Where an edge dips through a face by less than the tolerances, the edge and
     /// face step sees one stretch the two are within a tolerance over and makes one vertex at its middle; the edge truly
     /// crosses the face twice, at points that can be thousands of tolerances apart, and the sections' curves end at those.
