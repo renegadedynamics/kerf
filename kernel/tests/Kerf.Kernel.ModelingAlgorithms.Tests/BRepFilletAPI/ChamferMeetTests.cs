@@ -184,6 +184,72 @@ public class ChamferMeetTests
         return projection.NbPoints() > 0 && projection.LowerDistance() < 1e-6;
     }
 
+    // chamfer/dist_dist_sequence/A5, its failing step: a solid of 39 faces, mostly planes, an edge between two of them chamfered
+    // by 0.03 and 0.06. ChFiKPart makes the chamfer's stripes planes, and at the edge's foot, where an earlier chamfer's face
+    // rises out of one of the two across a concave edge, ChFi3d fails. Unit 15U3 takes the planes as patches over their
+    // contacts, builds the foot from its faces' formula, and proves the solid by its volume, the foot's box by that formula
+    [Fact]
+    public void A_chamfer_whose_stripes_are_planes_is_built_on_a_solid_at_a_corner_of_convex_and_concave_edges()
+    {
+        Shape shape = Read("chamfer-A5-step");
+        Edge edge = EdgeBetween(shape, new Point3D(0.365923, 0.301923, 0.365334), new Point3D(0.365923, 0.301923, -0.185155));
+        Face[] two = [.. shape.AllFaces().Where(f => f.AllEdges().Any(e => e.IsSame(edge)))];
+        Face reference = two.Single(f => f.AllVertices().Any(v => v.Point.Y > 0.32)); // the face the 0.03 is on
+        ChamferSpec[] specs = [new ChamferSpec(edge, 0.03, 0.06, ReferenceFace: reference)];
+        MakeChamfer native = Native(shape, specs);
+        native.Build();
+        Assert.False(native.IsDone);
+
+        Result<Built<Shape>> made = shape.Chamfer(specs, NoLimit);
+        Assert.True(made.IsSuccess, made.Error?.ToString());
+        Shape result = made.Value.Shape;
+        Assert.Equal(ShapeType.Solid, result.AllSolids().Single().Type);
+        Assert.True(result.Validate().IsValid);
+        Assert.Equal(39, result.AllFaces().Length); // the chamfer's face, and one of the input's gone under it
+        Assert.True(ChamferMeet.Proved(shape, result, specs, [reference], native, 1e-4));
+        Assert.Null(EdgeCrossings.Problem(shape, result, "The chamfer's result", FilletOperations.SelfIntersecting));
+
+        // What's taken off is the prism of the two distances along the edge and the one that runs on from it to the foot,
+        // 0.5805 long together (5.2244e-4), less what the earlier chamfer's material keeps of it over the last 0.069 at the foot
+        var exact = new MassOptions { Tolerance = 1e-8 };
+        double removed = MeasureOperations.IntegrateVolume(shape, exact) - MeasureOperations.IntegrateVolume(result, exact);
+        Assert.Equal(5.01745e-4, removed, 1e-8);
+    }
+
+    // A cube's top chamfered on its four edges by more than half its width: each plane takes the others' contacts on the top
+    // away. What the fuse would bound, a pyramid on a block, isn't the chamfer asked, and the path isn't taken (unit 15U3)
+    [Theory]
+    [InlineData(5.0)]
+    [InlineData(6.0)]
+    public void Planes_that_take_each_others_contacts_away_arent_built(double length)
+    {
+        Shape cube = new MakeBox(10, 10, 10).Shape();
+        ChamferSpec[] specs = [.. cube.AllEdges().Where(e => e.AllVertices().All(v => Math.Abs(v.Point.Z - 10) < 1e-9)).Select(e => new ChamferSpec(e, length))];
+        Assert.Equal(4, specs.Length);
+        Assert.False(cube.Chamfer(specs, NoLimit).IsSuccess);
+    }
+
+    // The volume proof's sections for a chamfer of two distances, and of a distance and an angle (unit 15U3), on a box's edge:
+    // a triangle of the two distances, or of the distance and its tangent's share of it, along the edge
+    [Theory]
+    [InlineData(0.3, 0.7, null)]
+    [InlineData(0.7, 0.3, null)]
+    [InlineData(0.4, null, 30.0)]
+    [InlineData(0.4, null, 60.0)]
+    public void The_sections_along_an_edge_take_two_distances_or_a_distance_and_an_angle(double distance, double? second, double? degrees)
+    {
+        Shape box = new MakeBox(10, 10, 10).Shape();
+        Face[] faces = [.. box.AllFaces()];
+        Edge edge = EdgeBetween(box, new Point3D(0, 0, 0), new Point3D(0, 0, 10));
+        Face[] two = [.. faces.Where(f => f.AllEdges().Any(e => e.IsSame(edge)))];
+        double other = second ?? distance * Math.Tan(degrees!.Value * Math.PI / 180);
+        foreach (Face reference in two)
+        {
+            double? swept = ChamferMeet.SweptVolume(faces, edge, distance, second, degrees * Math.PI / 180, reference);
+            Assert.Equal(0.5 * distance * other * 10, swept!.Value, 1e-9);
+        }
+    }
+
     // A caller who leaves the check out asks for what ChFi3d makes, and it made nothing
     [Fact]
     public void Without_the_check_the_path_isnt_taken()
