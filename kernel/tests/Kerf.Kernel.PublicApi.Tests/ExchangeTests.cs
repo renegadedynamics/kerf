@@ -2,6 +2,7 @@
 
 using System.Text;
 using Kerf.Exchange;
+using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Meshing;
 using Kerf.Topology;
@@ -58,6 +59,57 @@ public class ExchangeTests
                 Assert.Equal(6000, read.Value.Shape!.Value.IntegrateVolume(), 1e-6);
             }
         }
+    }
+
+    /// <summary>
+    /// OCCT's issue 382 (decision 33101): a band of a cylinder between a circle and a loop with a step in it, as a STEP
+    /// file gives it, with no seam. The reader puts the seam in along the step's line; where the arc that leaves the
+    /// step begins a few billionths of a radian before that line, the seam was never made and the band came back as two
+    /// invalid faces, a success.
+    /// </summary>
+    [Theory]
+    [InlineData(-3e-9)]
+    [InlineData(-2e-8)]
+    [InlineData(0.0)]
+    public void STEP_band_of_a_cylinder_whose_lower_rim_has_a_step_is_read_as_one_valid_face(double offset)
+    {
+        double a1 = 39 * Math.PI / 180, a2 = 141 * Math.PI / 180;
+        string At(double angle, double z) => FormattableString.Invariant($"({Math.Cos(angle):R},{Math.Sin(angle):R},{z:R})");
+        string step = string.Join('\n',
+            "ISO-10303-21;", "HEADER;", "FILE_DESCRIPTION((''),'2;1');", "FILE_NAME('','',(''),(''),'','','');",
+            "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 3 1 1 1 }'));", "ENDSEC;", "DATA;",
+            $"#1=CARTESIAN_POINT('',{At(a1, 0)});", $"#2=CARTESIAN_POINT('',{At(a1 + offset, 0.2)});",
+            $"#3=CARTESIAN_POINT('',{At(a2, 0.2)});", $"#4=CARTESIAN_POINT('',{At(a2, 0)});", "#5=CARTESIAN_POINT('',(-1.,0.,2.));",
+            "#11=VERTEX_POINT('',#1);", "#12=VERTEX_POINT('',#2);", "#13=VERTEX_POINT('',#3);", "#14=VERTEX_POINT('',#4);", "#15=VERTEX_POINT('',#5);",
+            "#20=DIRECTION('',(0.,0.,1.));", "#21=DIRECTION('',(1.,0.,0.));",
+            "#22=CARTESIAN_POINT('',(0.,0.,0.));", "#23=CARTESIAN_POINT('',(0.,0.,0.2));", "#24=CARTESIAN_POINT('',(0.,0.,2.));",
+            "#25=AXIS2_PLACEMENT_3D('',#22,#20,#21);", "#26=AXIS2_PLACEMENT_3D('',#23,#20,#21);", "#27=AXIS2_PLACEMENT_3D('',#24,#20,#21);",
+            "#30=CIRCLE('',#25,1.);", "#31=CIRCLE('',#26,1.);", "#32=CIRCLE('',#27,1.);",
+            "#33=VECTOR('',#20,1.);", "#34=LINE('',#1,#33);", "#35=LINE('',#4,#33);", "#36=CYLINDRICAL_SURFACE('',#25,1.);",
+            "#40=EDGE_CURVE('',#14,#11,#30,.T.);", "#41=EDGE_CURVE('',#11,#12,#34,.T.);", "#42=EDGE_CURVE('',#12,#13,#31,.T.);",
+            "#43=EDGE_CURVE('',#14,#13,#35,.T.);", "#44=EDGE_CURVE('',#15,#15,#32,.T.);",
+            "#50=ORIENTED_EDGE('',*,*,#40,.T.);", "#51=ORIENTED_EDGE('',*,*,#41,.T.);", "#52=ORIENTED_EDGE('',*,*,#42,.T.);",
+            "#53=ORIENTED_EDGE('',*,*,#43,.F.);", "#54=ORIENTED_EDGE('',*,*,#44,.F.);",
+            "#60=EDGE_LOOP('',(#50,#51,#52,#53));", "#61=EDGE_LOOP('',(#54));", "#62=FACE_BOUND('',#60,.T.);", "#63=FACE_BOUND('',#61,.T.);",
+            "#64=ADVANCED_FACE('',(#62,#63),#36,.T.);", "#65=OPEN_SHELL('',(#64));", "#66=SHELL_BASED_SURFACE_MODEL('',(#65));",
+            "#70=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.));", "#71=(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.));",
+            "#72=(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT());",
+            "#73=UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-07),#70,'distance_accuracy_value','');",
+            "#74=(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#73))GLOBAL_UNIT_ASSIGNED_CONTEXT((#70,#71,#72))REPRESENTATION_CONTEXT('',''));",
+            "#75=MANIFOLD_SURFACE_SHAPE_REPRESENTATION('',(#66),#74);",
+            "#80=APPLICATION_CONTEXT('automotive design');", "#81=PRODUCT_CONTEXT('',#80,'mechanical');", "#82=PRODUCT('band','band','',(#81));",
+            "#83=PRODUCT_DEFINITION_FORMATION('','',#82);", "#84=PRODUCT_DEFINITION_CONTEXT('part definition',#80,'design');",
+            "#85=PRODUCT_DEFINITION('','',#83,#84);", "#86=PRODUCT_DEFINITION_SHAPE('','',#85);", "#87=SHAPE_DEFINITION_REPRESENTATION(#86,#75);",
+            "ENDSEC;", "END-ISO-10303-21;", "");
+
+        Result<ModelNode> read = Step.Read(new MemoryStream(Encoding.ASCII.GetBytes(step)));
+
+        Assert.True(read.IsSuccess, read.Error?.Message);
+        Shape band = read.Value.ToShape();
+        Assert.Single(band.AllFaces());
+        Assert.True(band.Validate().IsValid);
+        // the long arc, 258 degrees, is 2 below the circle, and the short one, 102 degrees, 1.8 below
+        Assert.Equal((258 * 2 + 102 * 1.8) * Math.PI / 180, band.IntegrateArea(), 1e-6);
     }
 
     [Fact]
