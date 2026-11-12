@@ -173,6 +173,83 @@ internal static partial class ChamferMeet
             return sum;
         }
 
+        return Integrated(o, reach, all, x => Excess(x) - Sections(x));
+    }
+
+    // The excess at a corner of convex and concave edges (unit 15U3): what its formula holds without its chamfers and not
+    // with them, less each edge's section region, in a box that lies inside the reach where the formula says what's built
+    private static (double Excess, double Error) MixedExcess(Corner corner, Term formula, Edge[] edges, List<Carried> carried, double reach)
+    {
+        Point3D o = corner.Point;
+        Leaf[] leaves = [.. Leaves(formula)];
+        var inside = new List<Signed>();
+        foreach (Leaf leaf in leaves)
+        {
+            double sign = leaf.Face.Orientation == Orientation.Reversed ? -1 : 1;
+            if (carried.FirstOrDefault(c => c.Input.IsSame(leaf.Face)) is { } c)
+            {
+                inside.Add(new Signed(c.Surface, c.U0, c.U1, c.V0, c.V1, sign, o, carriedOn: true));
+                continue;
+            }
+            BrepTools.UVBounds(leaf.Face, out double u0, out double u1, out double v0, out double v1);
+            inside.Add(new Signed(Tool.Surface(leaf.Face)!, u0, u1, v0, v1, sign, o, carriedOn: true));
+        }
+        var joined = new Dictionary<Band, Signed>(ReferenceEqualityComparer.Instance);
+        foreach (Band band in leaves.SelectMany(static l => l.Joined))
+        {
+            joined[band] = new Signed(band.Surface, band.EU0, band.EU1, band.EV0, band.EV1, band.EdgeSign, o);
+        }
+        var past = new List<Signed>();
+        var beyond = new List<Signed>();
+        var sides = new List<(int One, int Two)>();
+        foreach (Edge edge in edges)
+        {
+            int[] two = [.. Enumerable.Range(0, leaves.Length).Where(k => OnFace(edge, leaves[k].Face))];
+            if (two.Length != 2 || corner.Bands.FirstOrDefault(b => b.Edges.Any(x => x.IsSame(edge))) is not { Convex: true } band
+                || !joined.TryGetValue(band, out Signed? side) || TangentAt(edge, corner.Vertex) is not { } t)
+            {
+                return (double.NaN, double.NaN);
+            }
+            sides.Add((two[0], two[1]));
+            past.Add(side);
+            beyond.Add(new Signed(o, Ends(edge).First.IsSame(corner.Vertex) ? t : -t));
+        }
+        if (inside.Concat(joined.Values).Any(static s => s.Failed) || joined.Count != past.Count)
+        {
+            return (double.NaN, double.NaN);
+        }
+        Signed[] all = [.. inside, .. past, .. beyond];
+
+        bool Behind(Face face, Point3D x) => !(inside[Array.FindIndex(leaves, l => l.Face.IsSame(face))].At(x) > 0);
+
+        // What the chamfers take off: in the formula without them, and not with them
+        double Excess(Point3D x)
+        {
+            bool input = Holds(formula, x, Behind, static (_, _) => null);
+            bool result = Holds(formula, x, Behind, (b, p) => joined[b].At(p) > 0 != b.Convex);
+            return (input ? 1 : 0) - (result ? 1 : 0);
+        }
+
+        // In an edge's section region, as the sections along the edge counted it: behind its own two faces carried on
+        double Sections(Point3D x)
+        {
+            double sum = 0;
+            for (int e = 0; e < past.Count; e++)
+            {
+                if (past[e].At(x) > 0 && beyond[e].At(x) > 0 && !(inside[sides[e].One].At(x) > 0) && !(inside[sides[e].Two].At(x) > 0))
+                {
+                    sum++;
+                }
+            }
+            return sum;
+        }
+
+        return Integrated(o, reach, all, x => Excess(x) - Sections(x));
+    }
+
+    // The integral over the box of half-side reach about o of a count that changes only where one of the functions changes sign
+    private static (double Excess, double Error) Integrated(Point3D o, double reach, Signed[] all, Func<Point3D, double> count)
+    {
         // Along the line through (a, b) square to the box's face: the length where the excess is, between its sign changes
         double Line(double a, double b)
         {
@@ -246,7 +323,7 @@ internal static partial class ChamferMeet
                 if (cuts[i + 1] > cuts[i])
                 {
                     Point3D mid = At(0.5 * (cuts[i] + cuts[i + 1]));
-                    length += (cuts[i + 1] - cuts[i]) * (Excess(mid) - Sections(mid));
+                    length += (cuts[i + 1] - cuts[i]) * count(mid);
                 }
             }
             return length;

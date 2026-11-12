@@ -270,6 +270,10 @@ internal static class SplineHull
     [ThreadStatic]
     internal static int s_extremaAsked;
 
+    // The spans whose poles came within the distance and whose piece of the edge, halved, kept away (unit 15AH3), for the tests
+    [ThreadStatic]
+    internal static int s_halvedAway;
+
     /// <summary>True if every point of <paramref name="e"/>'s spline is further than <paramref name="distance"/> from
     /// <paramref name="origin"/>, or from the line through it along <paramref name="along"/>; false if that isn't shown, or
     /// the edge's curve isn't a spline.</summary>
@@ -282,15 +286,21 @@ internal static class SplineHull
         }
         NCollection_Array1<Point3D> poles;
         int span;
+        Spans? spans = null;
         switch (curve)
         {
             case BSplineCurve3D spline:
                 poles = spline.InternalPoles();
                 span = spline.IsPeriodic ? poles.Length() : spline.Degree + 1;
+                if (!spline.IsPeriodic)
+                {
+                    spans = new Spans(spline.InternalKnotSequence(), spline.IsRational ? spline.InternalWeightsArray() : null, spline.Degree, from, to);
+                }
                 break;
             case BezierCurve3D bezier:
                 poles = bezier.InternalPoles();
                 span = poles.Length();
+                spans = new Spans(bezier.InternalKnotSequence(), bezier.IsRational ? bezier.InternalWeightsArray() : null, bezier.Degree, from, to);
                 break;
             case LineCurve3D line:
                 return Counted(LineKeepsAway(line.Position, from, to, placement, distance + global::Kerf.Engine.Foundation.Precision.Confusion(), origin, along));
@@ -343,12 +353,123 @@ internal static class SplineHull
             }
             if (minX <= reach && maxX >= -reach && minY <= reach && maxY >= -reach && minZ <= reach && maxZ >= -reach)
             {
-                s_extremaAsked++;
-                return false;
+                // The span's own poles don't show it, so its piece of the edge, halved, is asked (unit 15AH3)
+                if (spans is null || !spans.KeepsAway(poles, start, placement, origin, first, second, third, reach))
+                {
+                    s_extremaAsked++;
+                    return false;
+                }
+                s_halvedAway++;
             }
         }
         s_keptAway++;
         return true;
+    }
+
+    // Kerf (unit 15AH3): a span of a spline that isn't periodic, between two of its knots, is a Bezier piece, and so is any part of
+    // it: the poles of its part from a to b are the blossoms f(a, ..., a, b, ..., b) of the span's Degree + 1 poles, each a
+    // weighted mean of them (de Boor's steps with a or b in each), so with positive weights, and the part lies in their hull.
+    // Halving the part shrinks the hulls towards the curve, so a span whose poles' box reaches the line or point though the curve
+    // doesn't is shown clear in a few halvings; only the part of the span on the edge's range is asked, as only that is the
+    // edge's, and the extrema search no further. The box is widened by the rounding of the means
+    private sealed class Spans(NCollection_Array1<double> knots, NCollection_Array1<double>? weights, int degree, double from, double to)
+    {
+        // Halvings of a span's part before the extrema are asked after all: 2^6 pieces at most
+        private const int Halvings = 6;
+
+        public bool KeepsAway(NCollection_Array1<Point3D> poles, int start, in Placement placement, in Point3D origin, Vector3D first, Vector3D second, Vector3D third, double reach)
+        {
+            int lowKnot = knots.Lower(), lowPole = poles.Lower();
+            // The edge's range must lie on the spline, which the spans then cover
+            if (!(from < to) || degree < 1 || from < knots[lowKnot + degree] || to > knots[knots.Upper() - degree]
+                || start + degree >= poles.Length() || lowKnot + start + degree + 1 > knots.Upper())
+            {
+                return false;
+            }
+            double a = Math.Max(knots[lowKnot + start + degree], from), b = Math.Min(knots[lowKnot + start + degree + 1], to);
+            if (!(a < b))
+            {
+                // No part of the edge in this span but its ends, which the spans either side of them hold
+                return a >= b;
+            }
+
+            // The span's poles in homogeneous form, placed, and the rounding allowed for, from their size
+            int n = degree + 1;
+            Span<double> local = stackalloc double[4 * n];
+            bool moved = !placement.IsIdentity;
+            Transform3D move = placement.Transformation;
+            double size = Math.Max(Math.Abs(origin.X), Math.Max(Math.Abs(origin.Y), Math.Abs(origin.Z)));
+            for (int j = 0; j < n; j++)
+            {
+                Point3D pole = poles[lowPole + start + j];
+                if (moved)
+                {
+                    pole = pole.Transformed(move);
+                }
+                double w = weights is null ? 1 : weights[weights.Lower() + start + j];
+                if (!(w > 0) || !double.IsFinite(pole.X + pole.Y + pole.Z))
+                {
+                    return false;
+                }
+                size = Math.Max(size, Math.Max(Math.Abs(pole.X), Math.Max(Math.Abs(pole.Y), Math.Abs(pole.Z))));
+                local[4 * j] = pole.X * w;
+                local[(4 * j) + 1] = pole.Y * w;
+                local[(4 * j) + 2] = pole.Z * w;
+                local[(4 * j) + 3] = w;
+            }
+            double widened = reach + (1e-13 * (size + reach));
+            return PieceKeepsAway(local, start, a, b, 0, origin, first, second, third, widened);
+        }
+
+        private bool PieceKeepsAway(ReadOnlySpan<double> local, int start, double a, double b, int halvings, in Point3D origin, Vector3D first, Vector3D second, Vector3D third, double reach)
+        {
+            int n = degree + 1;
+            Span<double> work = stackalloc double[4 * n];
+            double minX = double.MaxValue, maxX = double.MinValue, minY = double.MaxValue, maxY = double.MinValue;
+            double minZ = double.MaxValue, maxZ = double.MinValue;
+            for (int m = 0; m <= degree; m++)
+            {
+                // The blossom with m arguments b and the rest a: de Boor's steps, the r-th with its own argument
+                local.CopyTo(work);
+                for (int r = 1; r <= degree; r++)
+                {
+                    double x = r <= m ? b : a;
+                    for (int j = degree; j >= r; j--)
+                    {
+                        double low = knots[knots.Lower() + start + j], high = knots[knots.Lower() + start + j + degree + 1 - r];
+                        double alpha = (x - low) / (high - low);
+                        for (int c = 0; c < 4; c++)
+                        {
+                            work[(4 * j) + c] = ((1 - alpha) * work[(4 * (j - 1)) + c]) + (alpha * work[(4 * j) + c]);
+                        }
+                    }
+                }
+                double w = work[(4 * degree) + 3];
+                if (!(w > 0))
+                {
+                    return false;
+                }
+                var offset = new Vector3D((work[4 * degree] / w) - origin.X, (work[(4 * degree) + 1] / w) - origin.Y, (work[(4 * degree) + 2] / w) - origin.Z);
+                double px = offset.Dot(first), py = offset.Dot(second), pz = offset.Dot(third);
+                minX = Math.Min(minX, px);
+                maxX = Math.Max(maxX, px);
+                minY = Math.Min(minY, py);
+                maxY = Math.Max(maxY, py);
+                minZ = Math.Min(minZ, pz);
+                maxZ = Math.Max(maxZ, pz);
+            }
+            if (!(minX <= reach && maxX >= -reach && minY <= reach && maxY >= -reach && minZ <= reach && maxZ >= -reach))
+            {
+                return double.IsFinite(minX + maxX + minY + maxY + minZ + maxZ);
+            }
+            if (halvings == Halvings)
+            {
+                return false;
+            }
+            double middle = (a + b) / 2;
+            return PieceKeepsAway(local, start, a, middle, halvings + 1, origin, first, second, third, reach)
+                && PieceKeepsAway(local, start, middle, b, halvings + 1, origin, first, second, third, reach);
+        }
     }
 
     // The line and circle edges this thread's selectors kept away by their geometry (unit 15C), for the tests

@@ -4,6 +4,7 @@ using Kerf.Engine;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Fillets.Api;
@@ -48,10 +49,11 @@ namespace Kerf.Fillets;
 /// <b>What's built:</b> open shells and faces, with every corner of one kind (its other edges all convex or all concave),
 /// the chamfers there all convex or all concave, a corner with one chamfer only where it and the corner are convex, and a
 /// corner whose edges are all chamfered where its chamfers are all convex; every chamfer face one of ChFi3d's B-spline
-/// stripes, its contacts its u-isos, or one of Kerf's own (unit 15V: <c>ChamferMeet.Chains.cs</c>) where stripes run on
-/// through a vertex or ChFi3d's stripe is off the chamfer's length. A solid is built only when asked, proved by its volume
-/// against an integral apart from the fuse (<c>ChamferMeet.Volume.cs</c>); the operation doesn't ask yet (decision 2177).
-/// What doesn't fit gives null, and ChFi3d's failure stands.
+/// stripes, its contacts its u-isos, one of ChFiKPart's planes between two planes, taken as a patch over its contacts (unit
+/// 15U3), or one of Kerf's own (unit 15V: <c>ChamferMeet.Chains.cs</c>) where stripes run on through a vertex or ChFi3d's
+/// stripe is off the chamfer's length. A corner of convex and concave edges is built from its faces' formula (unit 15U2:
+/// <c>ChamferMeet.Mixed.cs</c>). A solid is proved by its volume against an integral apart from the fuse
+/// (<c>ChamferMeet.Volume.cs</c>). What doesn't fit gives null, and ChFi3d's failure stands.
 /// </para>
 /// <para>
 /// <b>The proof</b> (<see cref="Proved"/>), of the result alone and the chamfer's specs, not of how it was made: every free
@@ -76,6 +78,9 @@ internal static partial class ChamferMeet
 
     // The fewest contact points checked on each chamfer
     private const int FewestChecked = 5;
+
+    // Points along each contact of a plane's stripe, of which the other chamfers have to leave one
+    private const int ContactSamples = 33;
 
     private sealed class Band
     {
@@ -144,6 +149,8 @@ internal static partial class ChamferMeet
         }
 
         public bool Own { get; init; }   // Kerf's own band through a chain (unit 15V), not one of ChFi3d's stripes
+
+        public bool Flat { get; init; }  // a patch of ChFiKPart's plane (unit 15U3), carried on as the plane it is
 
         // An own band runs on through the vertex: one of its edges ends there, and the vertex's section is inside its span
         public bool Passes(Vertex corner)
@@ -283,7 +290,7 @@ internal static partial class ChamferMeet
             if (builder._badstripes.Any(b => ReferenceEquals(b, stripe)))
             {
                 Spine walked = stripe.Spine()!;
-                if (!ownWhereOff || EqualDistance(specs, [.. Enumerable.Range(1, walked.EdgeCount).Select(walked.Edges)]) is null)
+                if (!ownWhereOff || EqualDistance(specs, referenceFaces, [.. Enumerable.Range(1, walked.EdgeCount).Select(walked.Edges)]) is null)
                 {
                     return null;
                 }
@@ -295,7 +302,7 @@ internal static partial class ChamferMeet
                 return null;
             }
             // ChFi3d's stripe off the chamfer's distance (as on a loft's sides): Kerf's own instead
-            if (ownWhereOff && EqualDistance(specs, own[0].Edges) is { } distance && own.Any(b => !OnSpec(b, distance, builder._tolapp3d)))
+            if (ownWhereOff && EqualDistance(specs, referenceFaces, own[0].Edges) is { } distance && own.Any(b => !OnSpec(b, distance, builder._tolapp3d)))
             {
                 anyOff = !chained;
                 off.Add(stripe);
@@ -312,7 +319,7 @@ internal static partial class ChamferMeet
         chains.AddRange(Chains(faces, [.. off], corners, alone: true));
         foreach (Chain chain in chains)
         {
-            if (EqualDistance(specs, [.. chain.Edges.Select(static x => x.Edge)]) is not { } distance
+            if (EqualDistance(specs, referenceFaces, [.. chain.Edges.Select(static x => x.Edge)]) is not { } distance
                 || chain.Edges.Select(x => IsConvex(faces, x.Edge)).Distinct().ToArray() is not [{ } convex]
                 || ChainBands(faces, chain, distance, convex) is not { } chainBands)
             {
@@ -379,18 +386,29 @@ internal static partial class ChamferMeet
         foreach (Band band in bands)
         {
             BoundedSurface extended = band.Own ? Across1(band.Original, Across * width / band.Width) : band.Original;
-            if (!band.LastCorner.IsNull)
+            if (band.Flat)
             {
-                GeomLib.ExtendSurfByLength(ref extended, Past * width, 1, false, true);
+                // A plane's patch runs by length both ways, so it's the same plane on a larger rectangle
+                band.Original.ParameterBounds(out double fu0, out double fu1, out double fv0, out double fv1);
+                band.Original.D1(fu0, fv0, out Point3D corner, out Vector3D du, out Vector3D dv);
+                extended = FlatPatch(corner - (du * fu0) - (dv * fv0), du, dv, fu0 - (Across * width), fu1 + (Across * width),
+                                     fv0 - (band.FirstCorner.IsNull ? 0 : Past * width), fv1 + (band.LastCorner.IsNull ? 0 : Past * width));
             }
-            if (!band.FirstCorner.IsNull)
+            else
             {
-                GeomLib.ExtendSurfByLength(ref extended, Past * width, 1, false, false);
-            }
-            if (!band.Own)
-            {
-                GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, true);
-                GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, false);
+                if (!band.LastCorner.IsNull)
+                {
+                    GeomLib.ExtendSurfByLength(ref extended, Past * width, 1, false, true);
+                }
+                if (!band.FirstCorner.IsNull)
+                {
+                    GeomLib.ExtendSurfByLength(ref extended, Past * width, 1, false, false);
+                }
+                if (!band.Own)
+                {
+                    GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, true);
+                    GeomLib.ExtendSurfByLength(ref extended, Across * width, 1, true, false);
+                }
             }
             if (extended is not BSplineSurface surface)
             {
@@ -413,6 +431,26 @@ internal static partial class ChamferMeet
             if (band.EdgeSign == 0)
             {
                 return null;
+            }
+        }
+
+        // A plane's stripe has to keep some of each of its contacts. Where other chamfers' surfaces take all of one away (the
+        // four edges of a cube's top chamfered by half its width or more), what the fuse bounds is those planes' meeting and
+        // not the chamfer asked, and the proof, which counts contacts on either face, wouldn't see it (unit 15U3)
+        foreach (Band band in bands.Where(static b => b.Flat))
+        {
+            foreach (double u in (ReadOnlySpan<double>)[0, band.UMax])
+            {
+                bool left = false;
+                for (int k = 0; k < ContactSamples && !left; k++)
+                {
+                    Point3D x = band.Original.EvalD0(u, band.VLo + ((band.VHi - band.VLo) * (k + 0.5) / ContactSamples));
+                    left = !bands.Any(other => !ReferenceEquals(other.Edges, band.Edges) && TakesAway(other, x));
+                }
+                if (!left)
+                {
+                    return null;
+                }
             }
         }
 
@@ -515,12 +553,22 @@ internal static partial class ChamferMeet
         {
             arguments.Append(band.Face);
         }
-        var fuse = new BuilderAlgo();
-        fuse.SetArguments(arguments);
-        fuse.SetToFillHistory(true);
-        fuse.SetRunParallel(false);
-        fuse.Build(new ProgressIndicator().Start()); // so the fuse sees the limit or a cancellation between its intersections
-        Cancellation.ThrowIfRequested();
+        BuilderAlgo fuse = Fuse(arguments);
+        // The input is frozen, and where the fuse has to raise the tolerance of one of its vertices that a new edge ends on, it
+        // fails (OCCT writes it in place): then the fuse of copies, made together so that they share what the arguments do
+        // (unit 15U3)
+        Copy? copies = null;
+        if (fuse.HasErrors)
+        {
+            copies = new Copy(Builder.MakeCompound([.. arguments]), false);
+            var copied = new NCollection_List<Shape>();
+            foreach (Shape argument in arguments)
+            {
+                copied.Append(copies.InternalModifiedShape(argument));
+            }
+            fuse = Fuse(copied);
+        }
+        Shape Fused(Shape argument) => copies is null ? argument : copies.InternalModifiedShape(argument);
         if (fuse.HasErrors || !fuse.IsDone || fuse.History() is not { } made)
         {
             return null;
@@ -531,7 +579,7 @@ internal static partial class ChamferMeet
         var ringPieces = new HashSet<Shape>(ShapeHasher.Instance);
         foreach (Carried c in carried)
         {
-            foreach (Shape piece in Images(made, c.Ring))
+            foreach (Shape piece in Images(made, Fused(c.Ring)))
             {
                 ringPieces.Add(piece);
             }
@@ -593,7 +641,7 @@ internal static partial class ChamferMeet
         if (shape.AllSolids().Length == 1)
         {
             double measured = MeasuredVolume(built);
-            (double Expected, double Allowed)? volume = ExpectedVolume(shape, faces, bands, cornerRules, [.. chamfered], specs, builder._tolapp3d);
+            (double Expected, double Allowed)? volume = ExpectedVolume(shape, faces, bands, cornerRules, carried, [.. chamfered], specs, referenceFaces, builder._tolapp3d, Near * width);
             if (volume is not { } v || Math.Abs(measured - v.Expected) > v.Allowed)
             {
                 return null;
@@ -606,7 +654,7 @@ internal static partial class ChamferMeet
         foreach (Face face in faces)
         {
             Shape[] given = carried.FirstOrDefault(x => x.Input.IsSame(face)) is { } c ? [c.Replacement, c.Ring] : [face];
-            Face[] own = [.. given.SelectMany(g => Images(made, g)).Where(kept.ContainsKey).Select(p => kept[p])];
+            Face[] own = [.. given.SelectMany(g => Images(made, Fused(g))).Where(kept.ContainsKey).Select(p => kept[p])];
             if (own.Length == 0)
             {
                 history.Remove(face);
@@ -618,7 +666,7 @@ internal static partial class ChamferMeet
         }
         foreach (Band band in bands)
         {
-            foreach (Shape piece in made.Modified(band.Face).Where(kept.ContainsKey))
+            foreach (Shape piece in made.Modified(Fused(band.Face)).Where(kept.ContainsKey))
             {
                 foreach (Edge edge in band.Edges)
                 {
@@ -628,6 +676,19 @@ internal static partial class ChamferMeet
         }
         history.Merge(unified);
         return new EngineOutcome(true, () => built, history);
+    }
+
+    // The general fuse of the faces, on the caller's thread, with a progress range so that it sees the limit or a cancellation
+    // between its intersections
+    private static BuilderAlgo Fuse(NCollection_List<Shape> arguments)
+    {
+        var fuse = new BuilderAlgo();
+        fuse.SetArguments(arguments);
+        fuse.SetToFillHistory(true);
+        fuse.SetRunParallel(false);
+        fuse.Build(new ProgressIndicator().Start());
+        Cancellation.ThrowIfRequested();
+        return fuse;
     }
 
     // What the fuse made of an argument: its pieces, or the argument itself where it's whole
@@ -657,7 +718,8 @@ internal static partial class ChamferMeet
         for (int k = 1; k <= set.Length(); k++)
         {
             SurfData data = set.Value(k);
-            if (builder._ds.Surface(data.Surf()).Surface() is not BSplineSurface surface)
+            Surface? computed = builder._ds.Surface(data.Surf()).Surface();
+            if (computed is not (BSplineSurface or PlaneSurface))
             {
                 return null;
             }
@@ -673,6 +735,17 @@ internal static partial class ChamferMeet
             }
             Point2D a1 = c1.EvalD0(on1.FirstParameter()), b1 = c1.EvalD0(on1.LastParameter());
             Point2D a2 = c2.EvalD0(on2.FirstParameter()), b2 = c2.EvalD0(on2.LastParameter());
+            // ChFiKPart's plane between two planes along a straight edge: a patch of it over its contacts (unit 15U3)
+            bool flat = computed is PlaneSurface;
+            if (flat)
+            {
+                if (FlatBand(computed, ref a1, ref b1, ref a2, ref b2) is not { } patch)
+                {
+                    return null;
+                }
+                computed = patch;
+            }
+            var surface = (BSplineSurface)computed;
             surface.ParameterBounds(out double u0, out double umax, out _, out _);
             if (Math.Abs(u0) > Precision.PConfusion() || Math.Abs(a1.X) > Precision.PConfusion() || Math.Abs(b1.X) > Precision.PConfusion()
                 || Math.Abs(a2.X - umax) > Precision.PConfusion() || Math.Abs(b2.X - umax) > Precision.PConfusion())
@@ -685,7 +758,7 @@ internal static partial class ChamferMeet
             // in u, its speed jumps 500-fold where the extension starts, and the fuse's curves on such a surface came out up
             // to 0.5 off it (unit 15Y, decision 2182). So u by the band's width, the surface the same
             double width = surface.EvalD0(0, (a1.Y + b1.Y) / 2).DistanceTo(surface.EvalD0(umax, (a2.Y + b2.Y) / 2));
-            if (width > Precision.Confusion() && !surface.IsUPeriodic)
+            if (width > Precision.Confusion() && !surface.IsUPeriodic && !flat)
             {
                 double scale = width / umax;
                 surface = new BSplineSurface(surface.Poles, [.. surface.UKnots.Select(k => k * scale)], [.. surface.VKnots],
@@ -731,18 +804,53 @@ internal static partial class ChamferMeet
                 Edges = own,
                 Face1 = ShapeCasts.Face(s1),
                 Face2 = ShapeCasts.Face(s2),
+                Flat = flat,
             });
         }
         return bands;
     }
 
-    // The one length of an equal-distance chamfer on all these edges, or null
-    private static double? EqualDistance(ChamferSpec[] specs, Edge[] edges)
+    // A plane's stripe as a patch over its contacts, which are lines along the edge: across from the first contact to the
+    // second by the stripe's width, along by length from the first contact's start; the contacts' ends given on it. Null
+    // where the contacts aren't two lines in line with each other
+    private static BSplineSurface? FlatBand(Surface plane, ref Point2D a1, ref Point2D b1, ref Point2D a2, ref Point2D b2)
     {
-        ChamferSpec[] own = [.. specs.Where(s => edges.Any(e => e.IsSame(s.Edge)))];
-        return own.Length == 0 || own.Any(s => s.Angle is not null || (s.Distance2 is { } d2 && d2 != s.Distance) || s.Distance != own[0].Distance)
-            ? null : own[0].Distance;
+        Point3D pa1 = plane.EvalD0(a1.X, a1.Y), pb1 = plane.EvalD0(b1.X, b1.Y), pa2 = plane.EvalD0(a2.X, a2.Y), pb2 = plane.EvalD0(b2.X, b2.Y);
+        // One contact may be a point, where the stripe narrows to nothing on a face that ends
+        Vector3D along = pa1.DistanceTo(pb1) >= pa2.DistanceTo(pb2) ? new Vector3D(pa1, pb1) : new Vector3D(pa2, pb2);
+        if (along.Magnitude <= Precision.Confusion())
+        {
+            return null;
+        }
+        along /= along.Magnitude;
+        var to = new Vector3D(pa1, pa2);
+        Vector3D across = to - (along * to.Dot(along));
+        double width = across.Magnitude;
+        if (width <= Precision.Confusion())
+        {
+            return null;
+        }
+        across /= width;
+        Point2D On(Point3D p) => new(new Vector3D(pa1, p).Dot(across), new Vector3D(pa1, p).Dot(along));
+        (a1, b1, a2, b2) = (On(pa1), On(pb1), On(pa2), On(pb2));
+        double lo = Math.Min(a1.Y, a2.Y), hi = Math.Max(b1.Y, b2.Y);
+        if (Math.Abs(b1.X) > Precision.Confusion() || Math.Abs(b2.X - width) > Precision.Confusion() || b1.Y < a1.Y || b2.Y < a2.Y
+            || hi - lo <= Precision.Confusion())
+        {
+            return null;
+        }
+        (a1, b1, a2, b2) = (new(0, a1.Y), new(0, b1.Y), new(width, a2.Y), new(width, b2.Y));
+        return FlatPatch(pa1, across, along, 0, width, lo, hi);
     }
+
+    // The patch of a plane on [u0, u1] by [v0, v1]: the origin and u along one unit vector, v along the other
+    private static BSplineSurface FlatPatch(Point3D origin, Vector3D u, Vector3D v, double u0, double u1, double v0, double v1) =>
+        new(new Grid<Point3D>(new[] { origin + (u * u0) + (v * v0), origin + (u * u0) + (v * v1), origin + (u * u1) + (v * v0), origin + (u * u1) + (v * v1) }, 2, 2),
+            [u0, u1], [v0, v1], [2, 2], [2, 2], 1, 1, false, false);
+
+    // The one length of an equal-distance chamfer on all these edges, or null: Kerf's own bands are of one length
+    private static double? EqualDistance(ChamferSpec[] specs, Face[] referenceFaces, Edge[] edges) =>
+        CutOf(specs, referenceFaces, edges) is { Cut.Equal: true } asked ? asked.Cut.Distance : null;
 
     private static bool OnFace(Edge edge, Shape face) => face.AllEdges().Any(e => e.IsSame(edge));
 
@@ -791,6 +899,18 @@ internal static partial class ChamferMeet
         var fixer = new ShellFixer();
         fixer.FixFaceOrientation(shell);
         return fixer.Shell().AllFaces().ToArray();
+    }
+
+    // A convex chamfer's surface, carried on, has the point on its edge's side or on it: its nearest point inside the surface
+    private static bool TakesAway(Band band, Point3D x)
+    {
+        if (!band.Convex || Project(band, x) is not { } foot)
+        {
+            return false;
+        }
+        double inU = Precision.PConfusion() * (band.EU1 - band.EU0), inV = Precision.PConfusion() * (band.EV1 - band.EV0);
+        return foot.U > band.EU0 + inU && foot.U < band.EU1 - inU && foot.V > band.EV0 + inV && foot.V < band.EV1 - inV
+               && new Vector3D(foot.Point, x).Dot(foot.Normal) * band.EdgeSign > -Precision.Confusion();
     }
 
     private readonly record struct Foot(double U, double V, Point3D Point, Vector3D Normal);

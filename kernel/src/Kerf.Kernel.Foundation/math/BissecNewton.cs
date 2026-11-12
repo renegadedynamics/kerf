@@ -14,14 +14,19 @@ namespace Kerf.Engine.Numerics;
 /// A combination of the Newton-Raphson and bisection methods to find a root of a function between two bounds.
 /// The derivative is required.
 /// </summary>
-internal class BissecNewton
+/// <remarks>
+/// A struct (Kerf), and <see cref="Perform"/> generic over the function: a curve whose every point is a root found this way
+/// (Bisector_BisecCC) finds them without making an object for each. OCCT's virtual <c>IsSolutionReached</c>, which nothing
+/// overrides, is a private method.
+/// </remarks>
+internal struct BissecNewton
 {
-    protected NumericStatus _theStatus;
-    protected double _xTol;
-    protected double _x;
-    protected double _dx;
-    protected double _f;
-    protected double _df;
+    private NumericStatus _theStatus;
+    private double _xTol;
+    private double _x;
+    private double _dx;
+    private double _f;
+    private double _df;
 
     private bool _done;
 
@@ -41,7 +46,8 @@ internal class BissecNewton
     /// Finds the root of <paramref name="f"/> between <paramref name="bound1"/> and <paramref name="bound2"/>. The
     /// solution is found when abs(Xi - Xi-1) &lt;= TolX and F(Xi) * F(Xi-1) &lt;= 0.
     /// </summary>
-    public void Perform(FunctionWithDerivative f, double bound1, double bound2, int nbIterations = 100)
+    public void Perform<TFunction>(TFunction f, double bound1, double bound2, int nbIterations = 100)
+        where TFunction : IFunctionValues
     {
         bool good;
         int j;
@@ -126,7 +132,7 @@ internal class BissecNewton
                 }
             }
 
-            if (IsSolutionReached(f))
+            if (IsSolutionReached())
             {
                 _theStatus = OK;
                 _done = true;
@@ -161,16 +167,16 @@ internal class BissecNewton
         _done = false;
     }
 
-    /// <summary>
-    /// Called at the end of each iteration to check if the solution is found. A sub-class can redefine it to stop
-    /// the iterations on its own test.
-    /// </summary>
-    public virtual bool IsSolutionReached(FunctionWithDerivative function)
+    /// <summary>Called at the end of each iteration to check if the solution is found.</summary>
+    private readonly bool IsSolutionReached()
     {
         return Math.Abs(_dx) <= _xTol;
     }
 
-    public bool IsDone => _done;
+    public readonly bool IsDone => _done;
+
+    /// <summary>How the last <see cref="Perform"/> ended (Kerf: OCCT's protected field, which its sub-classes read).</summary>
+    public readonly NumericStatus Status => _theStatus;
 
     /// <summary>The root. Throws <see cref="NotDoneException"/> if it was not found.</summary>
     public double Root()

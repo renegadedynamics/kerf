@@ -380,18 +380,18 @@ public class BooleanVolumeTests
         Assert.Equal(Math.PI * radius * radius * 2 * radius - common, result.IntegrateVolume(), 2e-4 * common);
     }
 
-    // The same at radius 0.1, 2e-7 off: the cut keeps its corner, but its faces don't close, 0.0020694 about one corner of its box
-    // and 0.0020677 about the other (8e-4 of it), and made again the other way round and with fuzzy values they still don't. So
-    // it fails, carrying what it made, where unit 15AH's first form returned it with a warning (the owner, 14 November 2026)
+    // The same at radius 0.1, 2e-7 off: the cut keeps its corner, and its faces' boundaries are open in their parameters, by
+    // 0.0020694 about one corner of its box and 0.0020677 about the other (8e-4 of it) as OCCT reads them, which since unit 15AH's
+    // second slice was a failure. The gaps are inside a vertex's tolerance, and read closed there the cut is right, so it's a
+    // success again and its volume the geometry's (decision 2258)
     [Fact]
-    public void A_cut_of_equal_radius_nearly_crossing_whose_faces_dont_close_fails_carrying_it()
+    public void A_cut_of_equal_radius_nearly_crossing_is_right_read_through_the_vertex_that_covers_its_gaps()
     {
         (Shape cylinder, Shape tool, double common) = Crossing(0.1, -2e-7, 0.5);
         Result<Built<Shape>> cut = cylinder.Cut(tool);
-        Assert.False(cut.IsSuccess);
-        Assert.Contains(cut.Diagnostics, static d => d.Code == DiagnosticCode.InvalidResult && d.Message.Contains("its faces don't close", StringComparison.Ordinal));
-        Assert.True(cut.TryGetInvalid(out Built<Shape>? made));
-        Assert.Equal(Math.PI * 0.1 * 0.1 * 0.2 - common, made.Shape.IntegrateVolume(), 2e-3 * common);
+        Assert.True(cut.IsSuccess);
+        double expected = Math.PI * 0.1 * 0.1 * 0.2 - common;
+        Assert.Equal(expected, cut.Value.Shape.IntegrateVolume(new MassOptions { Tolerance = 1e-9 }), 1e-6 * expected);
     }
 
     // The clean wasn't at fault in these: an edge grazing a face got new vertices either side of the one already touching, once the
@@ -465,6 +465,47 @@ public class BooleanVolumeTests
         Assert.Equal(one - common, cut.IntegrateVolume(), 1e-6 * one);
     }
 
+    // Equal cylinders at the end plane, inside the touch: the end circle crosses the tool at two points sqrt(2 R d) either side
+    // of where it would touch, and one vertex covers both, its tolerance grown to reach them (decision 1923). The faces' curves
+    // end at the crossings, so each face's boundary in its parameters has a gap there as long as the vertex is wide, which the
+    // volume read as part of the face missing: 1e-5 of the cut at radius 500 and 2e-4 at radius 5, valid and a success. The
+    // gap is closed where the volume is read, straight in the parameters, as the mesher has it (decision 2257). The tool is
+    // turned the other way from Crossing's, so that its face inside the cylinder ends at its seam and the gap there is half a turn
+    // from where the face's integrals start; turned Crossing's way the gap is where they start and leaves nothing out
+    [Theory]
+    [InlineData(500, -3e-7)]
+    [InlineData(500, 2e-7)]
+    [InlineData(5000, 1e-7)]
+    [InlineData(5, -3e-7)]
+    [InlineData(5, 1e-7)]
+    [InlineData(0.5, -1e-7)]
+    public void Equal_cylinders_inside_a_touch_have_their_volumes_through_the_vertex_that_covers_it(double radius, double offset)
+    {
+        (Shape cylinder, Shape tool, double common) = CrossingTurned(radius, offset);
+        double one = Math.PI * radius * radius * 2 * radius;
+        var precise = new MassOptions { Tolerance = 1e-9 };
+        Assert.Equal(one - common, cylinder.Cut(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+        Assert.Equal(common, cylinder.Common(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+        Assert.Equal(3 * one - common, cylinder.Fuse(tool, new BooleanOptions { FuzzyValue = 1e-6 }).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+    }
+
+    // Radius 5000 at the end plane, 1e-11 inside the touch, which is 11 units in the last place of the radius: the end circle and
+    // the tool are within a tolerance of each other over 0.03, and where they cross is found 3.2e-4 from the touch by the edge
+    // and the face and 4.6e-4 by the section's walk. The seam vertex grown over the first stopped 8e-5 short of the curve's
+    // end, which got a vertex of its own, with a stub of the curve and two faces thinner than a tolerance between them:
+    // `Unorientable shape`, the cut, the common and the fuse each a failure. A curve that ends within twice the tolerance of the
+    // last vertex put on it now ends at that vertex (decision 2260)
+    [Fact]
+    public void Very_large_equal_cylinders_a_few_units_in_the_last_place_inside_a_touch_cut_common_and_fuse()
+    {
+        (Shape cylinder, Shape tool, double common) = CrossingTurned(5000, -1e-11);
+        double one = Math.PI * 5000 * 5000 * 10000;
+        var precise = new MassOptions { Tolerance = 1e-9 };
+        Assert.Equal(one - common, cylinder.Cut(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+        Assert.Equal(common, cylinder.Common(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+        Assert.Equal(3 * one - common, cylinder.Fuse(tool, new BooleanOptions { FuzzyValue = 1e-6 }).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+    }
+
     // Radius 5000 at the end plane, 3e-10 off: the Boolean fuses the cylinders without their common part, valid, 16.5% out and
     // inside the rules of volume, with or without decision 1923's fix; 0.4.0 called it a success. Its tolerance, 1.7e-3, says
     // surfaces nearly touched, so points through the inputs' box are asked, and two deep in both and outside the result prove it
@@ -490,28 +531,35 @@ public class BooleanVolumeTests
     // result, which fails where nothing made again closes them (the owner, 14 November 2026); this common, made again with a
     // fuzzy value, came out right and closed, and since decision 2204 the first common is right. The result as made is a fixture
     // (Fixtures/cylinders-open-common-*.brep), so the check is held to it
+    // Since decision 2258 the fixture is no longer wrong: the gap is inside the tolerance of the vertex it starts from, 1.732, and
+    // closed there, straight in the face's parameters, the common as made is 8e-9 from the geometry's, so the check passes it
     [Fact]
-    public void A_common_whose_faces_dont_close_is_proved_wrong_and_now_made_right()
+    public void A_common_whose_faces_were_open_inside_a_vertex_is_right_read_through_it_and_now_made_closed()
     {
         Shape cylinder = Fixtures.Named("cylinders-open-common-a"), tool = Fixtures.Named("cylinders-open-common-b");
-        Fires(Check(BooleanVolumeRule.Common, cylinder, tool, Fixtures.Named("cylinders-open-common-result")), "The common's result is wrong", "its faces don't close");
+        Shape made = Fixtures.Named("cylinders-open-common-result");
+        Assert.Null(Check(BooleanVolumeRule.Common, cylinder, tool, made));
+        Assert.Equal(1, made.IntegrateVolume(new MassOptions { Tolerance = 1e-9 }) / 333333333332.6, 1e-7);
         Shape both = cylinder.Common(tool).Value.Shape;
         // The common part from the geometry, 333333333332.6
         Assert.Equal(1, both.IntegrateVolume(new MassOptions { Tolerance = 1e-6 }) / 333333333332.6, 1e-6);
     }
 
-    // The corpus's boolean/bopfuse_complex/J6, its fuse's inputs: the fuse's faces don't close, 69.1415 about one corner of its box
-    // and 69.1626 about the other, and made the other way round and with fuzzy values they still don't (`Unable to orient the
-    // shape`). So the fuse fails, carrying what it made, where unit 15AH's first form returned it with a warning (the owner,
-    // 14 November 2026)
+    // The corpus's boolean/bopfuse_complex/J6, its fuse's inputs: as OCCT reads the fuse's faces they don't close, 69.1415 about
+    // one corner of its box and 69.1626 about the other, and made the other way round and with fuzzy values they still don't
+    // (`Unable to orient the shape`), so since unit 15AH's second slice the fuse failed. Its gaps are inside its vertices'
+    // tolerances too: read closed there it is 1.8e-7 from its inputs' volumes less their common part, and 1.3e-8 from the two
+    // cuts and the common, so it's a success (decision 2258)
     [Fact]
-    public void A_fuse_whose_faces_dont_close_whatever_is_tried_fails_carrying_it()
+    public void A_fuse_whose_faces_are_open_inside_its_vertices_is_right_read_through_them()
     {
-        Result<Built<Shape>> fused = Fixtures.Named("fuse-open-faces-a").Fuse(Fixtures.Named("fuse-open-faces-b"));
-        Assert.False(fused.IsSuccess);
-        Assert.Contains(fused.Diagnostics, static d => d.Code == DiagnosticCode.InvalidResult && d.Message.Contains("its faces don't close", StringComparison.Ordinal));
-        Assert.True(fused.TryGetInvalid(out Built<Shape>? made));
-        Assert.Equal(11, made.Shape.AllFaces().Length);
+        Shape a = Fixtures.Named("fuse-open-faces-a"), b = Fixtures.Named("fuse-open-faces-b");
+        Result<Built<Shape>> fused = a.Fuse(b);
+        Assert.True(fused.IsSuccess);
+        Assert.Equal(11, fused.Value.Shape.AllFaces().Length);
+        var precise = new MassOptions { Tolerance = 1e-9 };
+        double parts = a.Cut(b).Value.Shape.IntegrateVolume(precise) + b.Cut(a).Value.Shape.IntegrateVolume(precise) + a.Common(b).Value.Shape.IntegrateVolume(precise);
+        Assert.Equal(1, fused.Value.Shape.IntegrateVolume(precise) / parts, 1e-6);
     }
 
     // The corpus's boolean/gdml_public/A5, its last cut's inputs: a cylinder of radius 2.9 partly inside a solid of revolution
@@ -547,5 +595,16 @@ public class BooleanVolumeTests
             sum += 2 * across * Math.Max(0, Math.Min(radius, z + reach) - Math.Max(-radius, z - reach)) * half * Math.Cos(angle) * Math.PI / steps;
         }
         return (cylinder, tool, sum);
+    }
+
+    // Crossing's cylinders with the tool's axis in the first's end plane and the tool turned the other way about X, as
+    // Kerf.Modeling's sweeps of reliability.md turn it: its seam is still at +X, but its face inside the first then ends there
+    private static (Shape Cylinder, Shape Tool, double Common) CrossingTurned(double radius, double offset)
+    {
+        (Shape cylinder, _, double common) = Crossing(radius, offset, 1.0);
+        var turn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), Direction3D.UnitX), Math.PI / 2);
+        Shape tool = Solid.Cylinder(radius, 4 * radius).Value.Shape.Transformed(turn).Value.Shape
+            .Transformed(Transform3D.Translation(new Vector3D(offset, 2 * radius, radius))).Value.Shape;
+        return (cylinder, tool, common);
     }
 }

@@ -15,7 +15,8 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// <see cref="BasisCurve"/> returns the stored copy frozen, as OCCT returns its handle; this curve's internal
-/// mutators then copy the basis curve again before changing it.
+/// mutators then copy the basis curve again before changing it. A basis curve given frozen is kept, not copied (Kerf):
+/// it can't change, and the mutators copy it in the same way.
 /// </remarks>
 public sealed class TrimmedCurve3D : BoundedCurve3D
 {
@@ -34,19 +35,14 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
         _uTrim1 = u1;
         _uTrim2 = u2;
         // kill trimmed basis curves
-        TrimmedCurve3D? t = curve as TrimmedCurve3D;
-        if (t is not null)
-        {
-            _basisCurve = (Curve3D)t._basisCurve.Copy(); // Kerf: the field, so that T's basis curve isn't frozen
-        }
-        else
-        {
-            _basisCurve = (Curve3D)curve.Copy();
-        }
+        // Kerf: T's field, so that T's basis curve isn't frozen. A frozen basis can't change, so it's shared, not copied: the
+        // mutators below copy it first, as they do one that BasisCurve has frozen
+        Curve3D basis = curve is TrimmedCurve3D t ? t._basisCurve : curve;
+        _basisCurve = basis.IsFrozen ? basis : (Curve3D)basis.Copy();
         SetTrim(u1, u2, sense, adjustPeriodic);
     }
 
-    /// <summary>A new, unfrozen trimmed curve equal to this one (on a copy of the basis curve).</summary>
+    /// <summary>A new, unfrozen trimmed curve equal to this one (on a copy of the basis curve, or on the same one if it's frozen).</summary>
     public sealed override Geometry3D Copy()
     {
         TrimmedCurve3D tc = new TrimmedCurve3D(_basisCurve, _uTrim1, _uTrim2);

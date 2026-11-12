@@ -13,14 +13,49 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// H(v) = (T1.P2(v) - P1) * ||T(v)||^2 - (T(v).P2(v) - P1) * ||T1||^2, used by Bisector_BisecCC to find the point of
 /// the second curve paired with a point of the first.
 /// </summary>
+/// <remarks>
+/// The function itself is <see cref="FunctionHValues"/>, a struct (Kerf): Bisector_BisecCC finds a root of it for each point
+/// it evaluates, with <see cref="BissecNewton"/>, and this class is made only for the solvers that take one.
+/// </remarks>
 internal sealed class FunctionH : FunctionWithDerivative
+{
+    private readonly FunctionHValues _h;
+
+    /// <summary>The function of the curve C2, for the point P1 of tangent T1.</summary>
+    public FunctionH(Curve2D c2, in Point2D p1, in Vector2D t1)
+    {
+        _h = new FunctionHValues(c2, p1, t1);
+    }
+
+    /// <summary>The function <paramref name="h"/>.</summary>
+    public FunctionH(in FunctionHValues h)
+    {
+        _h = h;
+    }
+
+    //                F = P1P2.(||T2||T1 + T2)
+    /// <inheritdoc/>
+    public override bool Value(double x, out double f) => _h.Value(x, out f);
+
+    /// <inheritdoc/>
+    public override bool Derivative(double x, out double d)
+    {
+        return Values(x, out double _, out d);
+    }
+
+    /// <inheritdoc/>
+    public override bool Values(double x, out double f, out double d) => _h.Values(x, out f, out d);
+}
+
+/// <summary>The function of <see cref="FunctionH"/>, as a struct.</summary>
+internal readonly struct FunctionHValues : IFunctionValues
 {
     private readonly Curve2D _curve2;
     private readonly Point2D _p1;
     private readonly Vector2D _t1;
 
     /// <summary>The function of the curve C2, for the point P1 of tangent T1.</summary>
-    public FunctionH(Curve2D c2, in Point2D p1, in Vector2D t1)
+    public FunctionHValues(Curve2D c2, in Point2D p1, in Vector2D t1)
     {
         _p1 = p1;
         Vector2D aT1 = t1;
@@ -30,8 +65,8 @@ internal sealed class FunctionH : FunctionWithDerivative
     }
 
     //                F = P1P2.(||T2||T1 + T2)
-    /// <inheritdoc/>
-    public override bool Value(double x, out double f)
+    /// <summary>Computes the value <paramref name="f"/> at <paramref name="x"/>.</summary>
+    public bool Value(double x, out double f)
     {
         _curve2.D1(x, out Point2D p2, out Vector2D t2); // point on C2, tangent to C2 at V.
         double normT2 = t2.Magnitude;
@@ -44,13 +79,7 @@ internal sealed class FunctionH : FunctionWithDerivative
     }
 
     /// <inheritdoc/>
-    public override bool Derivative(double x, out double d)
-    {
-        return Values(x, out double _, out d);
-    }
-
-    /// <inheritdoc/>
-    public override bool Values(double x, out double f, out double d)
+    public bool Values(double x, out double f, out double d)
     {
         // point on C2, tangent to C2 at V, second derivative of C2 at V.
         _curve2.D2(x, out Point2D p2, out Vector2D t2, out Vector2D t2v);
