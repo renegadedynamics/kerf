@@ -160,7 +160,7 @@ internal sealed class SampleSeparation
         if (_curveBound < 0.0)
         {
             Spans(_curveBreaks, t0, t1, out _spanFrom, out _spanTo);
-            if (_spanTo - _spanFrom > MostCurveSpans || HasKink(_curveKinks, t0, t1))
+            if (_spanTo - _spanFrom > MostCurveSpans || HasKink(_curveKinks, t0, t1) || !IsWithin(_curveBreaks, t0, t1))
             {
                 return false;
             }
@@ -174,7 +174,8 @@ internal sealed class SampleSeparation
 
         Spans(_uBreaks, u0, u1, out _uFrom, out _uTo);
         Spans(_vBreaks, v0, v1, out _vFrom, out _vTo);
-        if ((_uTo - _uFrom) * (_vTo - _vFrom) > MostSurfaceCells || HasKink(_uKinks, u0, u1) || HasKink(_vKinks, v0, v1))
+        if ((_uTo - _uFrom) * (_vTo - _vFrom) > MostSurfaceCells || HasKink(_uKinks, u0, u1) || HasKink(_vKinks, v0, v1)
+            || !IsWithin(_uBreaks, u0, u1) || !IsWithin(_vBreaks, v0, v1))
         {
             return false;
         }
@@ -391,6 +392,14 @@ internal sealed class SampleSeparation
         {
             to++;
         }
+    }
+
+    // True if the range lies in what the breaks span, to a rounding: a span's nodes bound nothing beyond it (a caller may
+    // give the intersector ranges of its own)
+    private static bool IsWithin(double[] breaks, double first, double last)
+    {
+        double slack = 1e-9 * (breaks[^1] - breaks[0]);
+        return first >= breaks[0] - slack && last <= breaks[^1] + slack;
     }
 
     // True if a knot where the first derivative breaks lies inside the range: within a rounding of an end it's no more

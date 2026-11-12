@@ -306,8 +306,9 @@ public class SampleSeparationTests
         }
     }
 
-    // What isn't bounded isn't called apart, however far: a surface that isn't a polynomial spline (a rational one, an
-    // offset, a cylinder), a rational or a periodic curve, and a piece with a knot inside it where the surface folds
+    // What isn't bounded isn't called apart, however far: a range beyond the surface's own, a surface that isn't a
+    // polynomial spline (a rational one, an offset, a cylinder), a periodic curve, and a piece with a knot inside it where
+    // the surface folds
     [Fact]
     public void Apart_SaysNothingOfWhatItCannotBound()
     {
@@ -316,6 +317,8 @@ public class SampleSeparationTests
         SampleSeparation aSeparation = Of(aFar, aWavy, out EdgeCurveAdaptor aCurve, out _);
         double aFirst = aCurve.FirstParameter(), aLast = aCurve.LastParameter();
         Assert.True(aSeparation.Apart(aFirst, aLast, 0, 1, 0, 1, 1e-3));
+        Assert.False(aSeparation.Apart(aFirst, aLast, -0.5, 0.5, 0, 1, 1e-3)); // beyond the surface's own range
+        Assert.False(aSeparation.Apart(aFirst, aLast, 0, 1, 7.5, 8.5, 1e-3));
 
         double[] aWeights = new double[56];
         Array.Fill(aWeights, 1.0);
