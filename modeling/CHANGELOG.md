@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **Booleans of solids that nearly touch come out with closed faces far more often** (kernel decisions 32901 to 32906): see the kernel's CHANGELOG; nothing to change in a caller. A few that failed as invalid, a few parts in 1e11 of a large cylinder's radius past a touch, now succeed.
 - **A clean can't make a wrong Boolean pass** (kernel decision 2277): the check of a Boolean's volume measures against the result's own tolerance, and the clean could raise it (to 236 on a cylinder of radius 50000) until nothing could be proved, so a cut that removed nothing was returned as a success, 74% out. Where the clean at least doubles the tolerance, the result as made is checked too.
 - **Booleans of solids that nearly touch come out with closed faces more often** (kernel decision 2276): see the kernel's CHANGELOG; nothing to change in a caller.
 - **A Boolean's clean merges faces of a sphere held on two frames turned about one axis** (kernel decision 2262; OCCT #1573): halves of a spherical cap from a sphere and the same sphere turned came out as three or four faces; they are now one.
