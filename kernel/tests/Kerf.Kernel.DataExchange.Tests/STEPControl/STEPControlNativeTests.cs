@@ -134,12 +134,13 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
             aDifferent.Add($"{Path.GetFileName(aFiles[i])}: {aFirst}");
         }
         output.WriteLine($"{aFiles.Count} files read: {aSame} as native");
-        Assert.Equal(337, aSame);
         foreach (string aLine in aDifferent)
         {
             output.WriteLine(aLine);
         }
+        Assert.Equal(336, aSame);
         Assert.DoesNotContain(aDifferent, d => !KnownReadDifferences.Contains(d.Split(':')[0]));
+        Assert.Contains("bug32314_corrupted.stp: native 'L 58 178 0' port 'L 58 204 0'", aDifferent);
     }
 
     // Files whose checks differ from native's, each attributed (decision 1272)
@@ -148,6 +149,10 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         // native throws Standard_OutOfRange ("NCollection_Sequence::Value") while the recorder walks the model's check
         // list after the transfer; the port's list is complete (1 entity, 2 fails): occt-issues.md, 8F
         "bug25013_25013faces.stp",
+        // corrupted throughout, with references to entities that aren't in it: unresolved in the port, where native binds
+        // each to the entity at the record of that number (decision 2308), so the load's checks count 204 warnings for
+        // native's 178, on the same 58 entities
+        "bug32314_corrupted.stp",
     };
 
     /// <summary>The STEP text with its varying parts masked, as tools/stepctlrec masks it.</summary>

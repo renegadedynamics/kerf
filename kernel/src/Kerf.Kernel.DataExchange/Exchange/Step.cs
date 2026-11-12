@@ -190,6 +190,61 @@ public static class Step
                                CancellationToken cancellationToken = default)
         => Write(ModelNode.Part(shape), stream, options, progress, cancellationToken);
 
+    /// <summary>
+    /// The warning for entities the reader couldn't load or translate, so that what refers to them is missing from the
+    /// model (decision 2308): those whose data failed its checks as the file was loaded, a reference to an entity that
+    /// isn't in the file among them, and those whose translation recorded a failure. Null where there are none.
+    /// </summary>
+    private static Diagnostic? SkippedEntities(CafReader reader)
+    {
+        if (reader.Reader().WS() is not { } session || session.Model() is not StepModel model)
+        {
+            return null;
+        }
+
+        var ids = new SortedSet<int>();
+        string? reason = null;
+        void Note(Kerf.Engine.Foundation.Transient? entity, Kerf.Engine.Exchange.Framework.FrameworkCheck? check)
+        {
+            if (entity is null || !ids.Add(model.IdentLabel(entity)))
+            {
+                return;
+            }
+            if (reason is null && check is { FailCount: > 0 })
+            {
+                reason = check.CFail(1);
+            }
+        }
+
+        for (int number = 1; number <= model.EntityCount; number++)
+        {
+            if (model.IsErrorEntity(number))
+            {
+                Note(model.Value(number), model.ReportEntity(number)?.Check());
+            }
+        }
+        if (session.TransferReader()?.TransientProcess() is { } process)
+        {
+            for (int item = 1; item <= process.MappedCount; item++)
+            {
+                if (process.MapItem(item) is { } binder && binder.Check() is { HasFailed: true } check)
+                {
+                    Note(process.Mapped(item), check);
+                }
+            }
+        }
+        if (ids.Count == 0)
+        {
+            return null;
+        }
+
+        string listed = string.Join(", ", ids.Take(8).Select(id => FormattableString.Invariant($"#{id}")));
+        string more = ids.Count > 8 ? FormattableString.Invariant($" and {ids.Count - 8} more") : "";
+        string why = string.IsNullOrWhiteSpace(reason) ? "" : $" The first says: {reason.Trim()}.";
+        return Diagnostic.Warning(ExchangeTree.EntitySkipped,
+            FormattableString.Invariant($"{ids.Count} entities of the STEP data couldn't be read, and what refers to them is missing from the model: {listed}{more}.") + why);
+    }
+
     private static Result<ModelNode> ReadCore(string name, Stream stream, StepReadOptions options, string? folder, IProgress<double>? progress,
                                               CancellationToken cancellationToken)
     {
@@ -245,9 +300,11 @@ public static class Step
             var document = new ExchangeDocument();
             reader.Transfer(document, new ProgressIndicator(cancellationToken).Start());
             cancellationToken.ThrowIfCancellationRequested();
-            return ExchangeTree.FromTree(document.ToTree(), options.ProductNames, meshes: false) is { } model
-                ? model
-                : Result<ModelNode>.Failure(ExchangeDiagnostics.ToDiagnostic(ReturnStatus.RetVoid)!);
+            if (ExchangeTree.FromTree(document.ToTree(), options.ProductNames, meshes: false) is not { } model)
+            {
+                return Result<ModelNode>.Failure(ExchangeDiagnostics.ToDiagnostic(ReturnStatus.RetVoid)!);
+            }
+            return SkippedEntities(reader) is { } skipped ? Result<ModelNode>.Success(model, [skipped]) : model;
         }
         catch (Exception e) when (e is not OperationCanceledException && ExchangeTree.IsBadData(e))
         {

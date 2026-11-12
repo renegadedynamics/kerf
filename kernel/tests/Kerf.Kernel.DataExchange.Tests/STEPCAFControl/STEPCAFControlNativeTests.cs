@@ -276,13 +276,22 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
         }
         Assert.DoesNotContain(aDifferent, d => !KnownWriteDifferences.Contains(d.Split(':')[0]));
         Assert.Equal(aJobs.Count - KnownWriteDifferences.Count, aSame + aCanonical);
+        // The cube tessellated by CATIA (decision 2309): native's 71 entities and 5,295 characters, its strips' triangles
+        // written back with their nodes in the order they are now read in
+        Assert.Contains("step_testdata_step_bug33638.stp AP214IS: native 'W step_testdata_step_bug33638.stp AP214IS 1 71 "
+                        + "6969b10d8da40cae7d7523fbc02db8391e134283435e49befb4992e42acd0e57 5295 c22d462c832e9e49f9a8d9adead94983f6d78a3587f14fe24b910bd5be0da69f' "
+                        + "port 'W step_testdata_step_bug33638.stp AP214IS 1 71 "
+                        + "b07d71cbe9fc58711073d6a4a13a7bc2507f5bc842c93ab306b152f93350e689 5295 c2780847daf9a562764599e2aa45511ea06e24dfd793f4947704b2b124716097'",
+                        aDifferent);
     }
 
     // Writes that differ from native's, each attributed: the AP203 assemblies, where native leaves out the AP203
     // management entities of the last assembly occurrences (as STEPControl's, decision 1272 of unit 8F); files whose
-    // GD&T (decision 1279) or materials native reads and writes back; the name native reads past its end
+    // GD&T (decision 1279) or materials native reads and writes back; the name native reads past its end; a file of
+    // triangle strips, wound as their lists are (decision 2309)
     private static readonly HashSet<string> KnownWriteDifferences = new(StringComparer.Ordinal)
     {
+        "step_testdata_step_bug33638.stp AP214IS",
         "assembly_Ball.brep AP203", "assembly_Pump_Nut.brep AP203", "assembly_bottle.brep AP203",
         "step_testdata_step_bug32745_pmi1.stp AP214IS", "step_testdata_step_bug33569.stp AP214IS",
         "step_testdata_step_bug33661_nist_ftc_08_asme1_ap242-e1-tg.stp AP214IS",

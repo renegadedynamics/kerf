@@ -76,7 +76,8 @@ public sealed record GltfWriteOptions { public bool Binary { get; init; } = true
 - **Readers take streams, limits and cancellation**, as build123d.NET's `Importers` and Bento's `CAD_IO_` functions do
   today; a malformed or over-limit file is a failed `Result` with `exchange.malformed`, `exchange.limit-exceeded`
   (with which limit), `exchange.unsupported-schema`; skipped entities are warnings (`exchange.entity-skipped`) with
-  their STEP ids in the message. Assemblies nest at most `ModelNode.MaxNesting`, 64 levels, in a file or in code (decision 1854).
+  their STEP ids in the message (made since decision 2308: entities whose data failed its checks, an unresolved
+  reference among them, or whose translation failed; the first eight ids and the first failure's text). Assemblies nest at most `ModelNode.MaxNesting`, 64 levels, in a file or in code (decision 1854).
 - **Writers take the mesh or tree they write.** STL takes a `ShapeMesh` (meshing.md) rather than meshing a shape in
   place; glTF and 3MF mesh with `options.Mesh` themselves. A closed solid's mesh is written closed (0.5.1, decision
   2191): 3MF writes a vertex per node of the part's mesh, faces meeting at an edge sharing its nodes; glTF shares a

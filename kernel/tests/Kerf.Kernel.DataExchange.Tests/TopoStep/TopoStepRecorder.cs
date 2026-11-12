@@ -12,6 +12,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Kerf.Kernel.DataExchange.Tests.StepGen;
@@ -54,6 +55,159 @@ internal static class TopoStepRecorder
     private static string? Translate(Transient theEnt, TransientProcess theTP, out string? theText)
     {
         theText = null;
+        ImportBuilder? aBuilder = Build(theEnt, theTP);
+        if (aBuilder is null)
+        {
+            return null;
+        }
+
+        if (!aBuilder.IsDone)
+        {
+            return "NOTDONE";
+        }
+
+        var aS = new StringWriter { NewLine = "\n" };
+        BrepTools.Write(aBuilder.Value(), aS);
+        theText = aS.ToString();
+        return Sha256(theText) + " " + theText.Length;
+    }
+
+    /// <summary>
+    /// The hash and length of the item's BRep text, <paramref name="theText"/>, with the triangles of its complex
+    /// triangulated faces and surface sets turned the other way, their second and third nodes exchanged: how OCCT 8.0.1
+    /// winds a strip's and a fan's triangles, against their lists (decision 2309). Null where the item has none, or its
+    /// triangulations can't be told apart.
+    /// </summary>
+    public static string? WoundAsNative(Transient theEnt, string theText)
+    {
+        List<bool>? aComplex = theEnt switch
+        {
+            ComplexTriangulatedFace or ComplexTriangulatedSurfaceSet => [true],
+            TessellatedShell aShell => ComplexFaces(aShell.Items()),
+            TessellatedSolid aSolid => ComplexFaces(aSolid.Items()),
+            _ => null,
+        };
+        if (aComplex is null || !aComplex.Contains(true))
+        {
+            return null;
+        }
+
+        // The text's triangulations, one for each face in the faces' order: a line of the counts of nodes and
+        // triangles, whether there are UV nodes and normals, and the deflection; then a line of the nodes, the UV
+        // nodes, the triangles and the normals
+        string[] aLines = theText.Split('\n');
+        int aHead = Array.FindIndex(aLines, l => l.StartsWith("Triangulations ", StringComparison.Ordinal));
+        if (aHead < 0 || int.Parse(aLines[aHead].Split(' ')[1], CultureInfo.InvariantCulture) != aComplex.Count)
+        {
+            return null;
+        }
+
+        for (int k = 0; k < aComplex.Count; k++)
+        {
+            string[] aCounts = aLines[aHead + 1 + 2 * k].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string[] aData = aLines[aHead + 2 + 2 * k].Split(' ');
+            int aNbNodes = int.Parse(aCounts[0], CultureInfo.InvariantCulture), aNbTriangles = int.Parse(aCounts[1], CultureInfo.InvariantCulture);
+            int aFirst = aNbNodes * (aCounts[2] == "1" ? 5 : 3);
+            if (aCounts.Length != 5 || aData.Count(d => d.Length > 0) != aFirst + 3 * aNbTriangles + (aCounts[3] == "1" ? 3 * aNbNodes : 0))
+            {
+                return null;
+            }
+
+            if (!aComplex[k])
+            {
+                continue;
+            }
+
+            for (int aTriangle = 0; aTriangle < aNbTriangles; aTriangle++)
+            {
+                (aData[aFirst + 3 * aTriangle + 1], aData[aFirst + 3 * aTriangle + 2]) = (aData[aFirst + 3 * aTriangle + 2], aData[aFirst + 3 * aTriangle + 1]);
+            }
+
+            aLines[aHead + 2 + 2 * k] = string.Join(' ', aData);
+        }
+
+        string aText = string.Join('\n', aLines);
+        return Sha256(aText) + " " + aText.Length;
+    }
+
+    /// <summary>
+    /// How many triangles of the model's complex triangulated faces and surface sets that carry normals turn the way their
+    /// nodes' normals point, and how many turn against them.
+    /// </summary>
+    public static (int With, int Against) Windings(StepModel theModel)
+    {
+        theModel.InternalParameters = new Parameters();
+        int aWith = 0, anAgainst = 0;
+        for (int i = 1; i <= theModel.EntityCount; i++)
+        {
+            Transient anEnt = theModel.Value(i)!;
+            if (anEnt is not (ComplexTriangulatedFace or ComplexTriangulatedSurfaceSet))
+            {
+                continue;
+            }
+
+            var aTP = new TransientProcess(theModel.EntityCount);
+            aTP.SetModel(theModel);
+            ImportBuilder? aBuilder = Build(anEnt, aTP);
+            if (aBuilder is null || !aBuilder.IsDone)
+            {
+                continue;
+            }
+
+            for (var anExp = new Explorer(aBuilder.Value(), ShapeType.Face); anExp.More(); anExp.Next())
+            {
+                if (Kerf.Engine.Topology.Brep.Tool.Triangulation(ShapeCasts.Face(anExp.Current()), out _) is not { HasNormals: true } aMesh)
+                {
+                    continue;
+                }
+
+                for (int aTriangle = 1; aTriangle <= aMesh.TriangleCount; aTriangle++)
+                {
+                    aMesh.Triangle(aTriangle).Get(out int aN1, out int aN2, out int aN3);
+                    var (aP1, aP2, aP3) = (aMesh.Node(aN1), aMesh.Node(aN2), aMesh.Node(aN3));
+                    double aUx = aP2.X - aP1.X, aUy = aP2.Y - aP1.Y, aUz = aP2.Z - aP1.Z;
+                    double aVx = aP3.X - aP1.X, aVy = aP3.Y - aP1.Y, aVz = aP3.Z - aP1.Z;
+                    double aNx = aUy * aVz - aUz * aVy, aNy = aUz * aVx - aUx * aVz, aNz = aUx * aVy - aUy * aVx;
+                    double aDot = 0;
+                    foreach (int aNode in (int[])[aN1, aN2, aN3])
+                    {
+                        var aNormal = aMesh.Normal(aNode);
+                        aDot += aNx * aNormal.X + aNy * aNormal.Y + aNz * aNormal.Z;
+                    }
+
+                    if (aDot > 0)
+                    {
+                        aWith++;
+                    }
+                    else if (aDot < 0)
+                    {
+                        anAgainst++;
+                    }
+                }
+            }
+        }
+
+        return (aWith, anAgainst);
+    }
+
+    // Which of a tessellated shell's or solid's faces, in their order, are complex triangulated ones
+    private static List<bool> ComplexFaces(NCollection_HArray1<TessellatedStructuredItem> theItems)
+    {
+        var aRes = new List<bool>();
+        for (int i = theItems.Lower(); i <= theItems.Upper(); i++)
+        {
+            if (theItems.Value(i) is TessellatedFace aFace)
+            {
+                aRes.Add(aFace is ComplexTriangulatedFace);
+            }
+        }
+
+        return aRes;
+    }
+
+    // The builder an item is translated with, initialised with it (null: not an item translated)
+    private static ImportBuilder? Build(Transient theEnt, TransientProcess theTP)
+    {
         var aBuilder = new ImportBuilder();
         var aFactors = new Factors();
         bool aHasGeom = false;
@@ -99,15 +253,7 @@ internal static class TopoStepRecorder
                 return null;
         }
 
-        if (!aBuilder.IsDone)
-        {
-            return "NOTDONE";
-        }
-
-        var aS = new StringWriter { NewLine = "\n" };
-        BrepTools.Write(aBuilder.Value(), aS);
-        theText = aS.ToString();
-        return Sha256(theText) + " " + theText.Length;
+        return aBuilder;
     }
 
     /// <summary>The lines of a model's items ("I ..."), and the BRep texts by entity number.</summary>

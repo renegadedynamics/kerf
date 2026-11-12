@@ -1729,7 +1729,13 @@ internal class ComposeShellFixer : RootFixer
                     {
                         // Very specific case when the constructed seam edge
                         // overlaps with spur edge [ACIS22539]
-                        if (_closedMode && (intLinePar[ii] - intLinePar[jj]) * (intLinePar[k] - intLinePar[ii]) <= 0.0)
+                        // Kerf: a spur runs back along the line; a segment of no length is not one. Where an edge
+                        // along the line meets the next a little off it (2e-9 in #382's file), the crossing is found
+                        // twice, the line's parameter goes back by rounding alone, and keeping both points left the
+                        // tangency never closed and the seam never made (decision 2305).
+                        if (_closedMode && (intLinePar[ii] - intLinePar[jj]) * (intLinePar[k] - intLinePar[ii]) <= 0.0
+                            && Math.Abs(intLinePar[ii] - intLinePar[jj]) > Kerf.Engine.Foundation.Precision.PConfusion()
+                            && Math.Abs(intLinePar[k] - intLinePar[ii]) > Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             continue;
                         }

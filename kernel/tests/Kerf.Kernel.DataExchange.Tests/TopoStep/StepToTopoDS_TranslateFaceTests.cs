@@ -314,4 +314,75 @@ public sealed class StepToTopoDS_TranslateFaceTests
         // Only 1 non-degenerate triangle from strip [1,2,3,3].
         Assert.Equal(1, aMesh.TriangleCount);
     }
+
+    // Kerf's own, OCCT's issue 1579 and its commit 22a9ead2a0 (decision 2309)
+
+    /// <summary>The Z of each triangle's normal by its nodes' order, twice its area in the XY plane.</summary>
+    private static double[] windings(Triangulation theMesh)
+    {
+        var aRes = new double[theMesh.TriangleCount];
+        for (int i = 1; i <= theMesh.TriangleCount; ++i)
+        {
+            theMesh.Triangle(i).Get(out int aN1, out int aN2, out int aN3);
+            Assert.InRange(aN1, 1, theMesh.NodeCount);
+            Assert.InRange(aN2, 1, theMesh.NodeCount);
+            Assert.InRange(aN3, 1, theMesh.NodeCount);
+            Point3D aP1 = theMesh.Node(aN1), aP2 = theMesh.Node(aN2), aP3 = theMesh.Node(aN3);
+            aRes[i - 1] = (aP2.X - aP1.X) * (aP3.Y - aP1.Y) - (aP2.Y - aP1.Y) * (aP3.X - aP1.X);
+        }
+
+        return aRes;
+    }
+
+    [Fact]
+    public void ComplexTriangulatedFace_FanWithARepeatedIndex()
+    {
+        // Fan [1, 2, 3, 3, 4] about node 1: (1,2,3), nothing for (1,3,3), then (1,3,4). It was three triangles, one
+        // of them (1,3,3) and one never set, its nodes all zero.
+        ComplexTriangulatedFace aCTF =
+            complexFace(createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(1, 1, 0), new Xyz(0, 1, 0)), 4, null,
+                        oneList(intArray(1, 2, 3, 3, 4)));
+
+        bool aHasGeom = false;
+        var aTranslator = new TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
+
+        Triangulation aMesh = getMesh(aTranslator);
+        Assert.Equal(2, aMesh.TriangleCount);
+        Assert.Equal([1.0, 1.0], windings(aMesh));
+    }
+
+    [Fact]
+    public void ComplexTriangulatedFace_StripsAndFansAreWoundAsTheirFirstTriangle()
+    {
+        // A strip's first triangle is its first three nodes in their order, the next turns the other way round its
+        // list, and so on; a fan's are (1, k, k + 1). Both lists here go anticlockwise seen from +Z.
+        ComplexTriangulatedFace aStrip =
+            complexFace(createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(0, 1, 0), new Xyz(1, 1, 0), new Xyz(0, 2, 0)), 5,
+                        oneList(intArray(1, 2, 3, 4, 5)), null);
+        ComplexTriangulatedFace aFan =
+            complexFace(createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(1, 1, 0), new Xyz(0, 1, 0), new Xyz(-1, 0, 0)),
+                        5, null, oneList(intArray(1, 2, 3, 4, 5)));
+
+        bool aHasGeom = false;
+        Assert.Equal([1.0, 1.0, 1.0], windings(getMesh(new TranslateFace(aStrip, myTool, myNMTool, false, ref aHasGeom))));
+        Assert.Equal([1.0, 1.0, 1.0], windings(getMesh(new TranslateFace(aFan, myTool, myNMTool, false, ref aHasGeom))));
+    }
+
+    [Fact]
+    public void ComplexTriangulatedFace_NormalsThatDontMatchTheNodesAreLeftOut()
+    {
+        // Two normals for four nodes: neither one for all nor one each. The mesh had normals, none of them set.
+        var aCTF = new ComplexTriangulatedFace();
+        aCTF.Init(new TCollection_HAsciiString("complex_face"),
+                  createCoords(new Xyz(0, 0, 0), new Xyz(1, 0, 0), new Xyz(0, 1, 0), new Xyz(1, 1, 0)), 4,
+                  createNormals(new Xyz(0, 0, 1), new Xyz(0, 0, 1)), false, new FaceOrSurface(), null,
+                  oneList(intArray(1, 2, 3, 4)), null);
+
+        bool aHasGeom = false;
+        var aTranslator = new TranslateFace(aCTF, myTool, myNMTool, false, ref aHasGeom);
+
+        Triangulation aMesh = getMesh(aTranslator);
+        Assert.Equal(2, aMesh.TriangleCount);
+        Assert.False(aMesh.HasNormals);
+    }
 }

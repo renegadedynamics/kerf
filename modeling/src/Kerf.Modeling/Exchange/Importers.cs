@@ -126,7 +126,9 @@ public static class Importers
             return Result<ModelShape>.Failure(error with { Message = $"Could not import {name}: it isn't readable STEP data. {error.Message}" });
         }
         var root = read.Value;
-        return root.Shape is null && root.Children.IsEmpty ? new Assembly(TopoUtil.EmptyCompound()) : FromModel(root);
+        ModelShape model = root.Shape is null && root.Children.IsEmpty ? new Assembly(TopoUtil.EmptyCompound()) : FromModel(root);
+        // The reader's warnings come with the model: the entities it had to leave out (the kernel's decision 2308)
+        return Result<ModelShape>.Success(model, [.. read.Diagnostics]);
     }
 
     private static ModelShape FromModel(ModelNode node)

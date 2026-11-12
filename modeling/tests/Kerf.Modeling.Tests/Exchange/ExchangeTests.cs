@@ -211,6 +211,26 @@ public partial class ExchangeTests
     }
 
     [Fact]
+    public void StepThatRefersToAnEntityItDoesntHaveImportsWithAWarning()
+    {
+        // A box's STEP data with one vertex's point changed to an identifier the data doesn't have (the kernel's
+        // decision 2308): the import said nothing, and gave whatever the kernel made of it
+        var stream = new MemoryStream();
+        Assert.True(Exporters3D.ExportStep(new Box(10, 10, 10), stream).IsSuccess);
+        string step = Encoding.ASCII.GetString(stream.ToArray());
+        Match vertex = Regex.Match(step, @"VERTEX_POINT\('',#(\d+)\)");
+        Assert.True(vertex.Success);
+        string broken = step.Replace(vertex.Value, "VERTEX_POINT('',#99999999)");
+
+        var read = Importers.ImportStep(new MemoryStream(Encoding.ASCII.GetBytes(broken)));
+
+        Assert.True(read.IsSuccess);
+        var skipped = Assert.Single(read.Diagnostics);
+        Assert.Equal("exchange.entity-skipped", skipped.Code.Value);
+        Assert.Empty(Importers.ImportStep(new MemoryStream(Encoding.ASCII.GetBytes(step))).Diagnostics);
+    }
+
+    [Fact]
     public void StepPastTheByteLimitIsRefused()
     {
         var stream = new MemoryStream();

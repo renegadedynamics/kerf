@@ -2,6 +2,7 @@
 
 using System.Text;
 using Kerf.Exchange;
+using Kerf.Healing;
 using Kerf.Measurement;
 using Kerf.Meshing;
 using Kerf.Topology;
@@ -58,6 +59,125 @@ public class ExchangeTests
                 Assert.Equal(6000, read.Value.Shape!.Value.IntegrateVolume(), 1e-6);
             }
         }
+    }
+
+    /// <summary>
+    /// OCCT's issue 382 (decision 2305): a band of a cylinder between a circle and a loop with a step in it, as a STEP
+    /// file gives it, with no seam. The reader puts the seam in along the step's line; where the arc that leaves the
+    /// step begins a few billionths of a radian before that line, the seam was never made and the band came back as two
+    /// invalid faces, a success.
+    /// </summary>
+    [Theory]
+    [InlineData(-3e-9)]
+    [InlineData(-2e-8)]
+    [InlineData(0.0)]
+    public void STEP_band_of_a_cylinder_whose_lower_rim_has_a_step_is_read_as_one_valid_face(double offset)
+    {
+        double a1 = 39 * Math.PI / 180, a2 = 141 * Math.PI / 180;
+        string At(double angle, double z) => FormattableString.Invariant($"({Math.Cos(angle):R},{Math.Sin(angle):R},{z:R})");
+        string step = string.Join('\n',
+            "ISO-10303-21;", "HEADER;", "FILE_DESCRIPTION((''),'2;1');", "FILE_NAME('','',(''),(''),'','','');",
+            "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 3 1 1 1 }'));", "ENDSEC;", "DATA;",
+            $"#1=CARTESIAN_POINT('',{At(a1, 0)});", $"#2=CARTESIAN_POINT('',{At(a1 + offset, 0.2)});",
+            $"#3=CARTESIAN_POINT('',{At(a2, 0.2)});", $"#4=CARTESIAN_POINT('',{At(a2, 0)});", "#5=CARTESIAN_POINT('',(-1.,0.,2.));",
+            "#11=VERTEX_POINT('',#1);", "#12=VERTEX_POINT('',#2);", "#13=VERTEX_POINT('',#3);", "#14=VERTEX_POINT('',#4);", "#15=VERTEX_POINT('',#5);",
+            "#20=DIRECTION('',(0.,0.,1.));", "#21=DIRECTION('',(1.,0.,0.));",
+            "#22=CARTESIAN_POINT('',(0.,0.,0.));", "#23=CARTESIAN_POINT('',(0.,0.,0.2));", "#24=CARTESIAN_POINT('',(0.,0.,2.));",
+            "#25=AXIS2_PLACEMENT_3D('',#22,#20,#21);", "#26=AXIS2_PLACEMENT_3D('',#23,#20,#21);", "#27=AXIS2_PLACEMENT_3D('',#24,#20,#21);",
+            "#30=CIRCLE('',#25,1.);", "#31=CIRCLE('',#26,1.);", "#32=CIRCLE('',#27,1.);",
+            "#33=VECTOR('',#20,1.);", "#34=LINE('',#1,#33);", "#35=LINE('',#4,#33);", "#36=CYLINDRICAL_SURFACE('',#25,1.);",
+            "#40=EDGE_CURVE('',#14,#11,#30,.T.);", "#41=EDGE_CURVE('',#11,#12,#34,.T.);", "#42=EDGE_CURVE('',#12,#13,#31,.T.);",
+            "#43=EDGE_CURVE('',#14,#13,#35,.T.);", "#44=EDGE_CURVE('',#15,#15,#32,.T.);",
+            "#50=ORIENTED_EDGE('',*,*,#40,.T.);", "#51=ORIENTED_EDGE('',*,*,#41,.T.);", "#52=ORIENTED_EDGE('',*,*,#42,.T.);",
+            "#53=ORIENTED_EDGE('',*,*,#43,.F.);", "#54=ORIENTED_EDGE('',*,*,#44,.F.);",
+            "#60=EDGE_LOOP('',(#50,#51,#52,#53));", "#61=EDGE_LOOP('',(#54));", "#62=FACE_BOUND('',#60,.T.);", "#63=FACE_BOUND('',#61,.T.);",
+            "#64=ADVANCED_FACE('',(#62,#63),#36,.T.);", "#65=OPEN_SHELL('',(#64));", "#66=SHELL_BASED_SURFACE_MODEL('',(#65));",
+            "#70=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.));", "#71=(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.));",
+            "#72=(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT());",
+            "#73=UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-07),#70,'distance_accuracy_value','');",
+            "#74=(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#73))GLOBAL_UNIT_ASSIGNED_CONTEXT((#70,#71,#72))REPRESENTATION_CONTEXT('',''));",
+            "#75=MANIFOLD_SURFACE_SHAPE_REPRESENTATION('',(#66),#74);",
+            "#80=APPLICATION_CONTEXT('automotive design');", "#81=PRODUCT_CONTEXT('',#80,'mechanical');", "#82=PRODUCT('band','band','',(#81));",
+            "#83=PRODUCT_DEFINITION_FORMATION('','',#82);", "#84=PRODUCT_DEFINITION_CONTEXT('part definition',#80,'design');",
+            "#85=PRODUCT_DEFINITION('','',#83,#84);", "#86=PRODUCT_DEFINITION_SHAPE('','',#85);", "#87=SHAPE_DEFINITION_REPRESENTATION(#86,#75);",
+            "ENDSEC;", "END-ISO-10303-21;", "");
+
+        Result<ModelNode> read = Step.Read(new MemoryStream(Encoding.ASCII.GetBytes(step)));
+
+        Assert.True(read.IsSuccess, read.Error?.Message);
+        Shape band = read.Value.ToShape();
+        Assert.Single(band.AllFaces());
+        Assert.True(band.Validate().IsValid);
+        // the long arc, 258 degrees, is 2 below the circle, and the short one, 102 degrees, 1.8 below
+        Assert.Equal((258 * 2 + 102 * 1.8) * Math.PI / 180, band.IntegrateArea(), 1e-6);
+    }
+
+    /// <summary>
+    /// OCCT's issue 349 (decision 2306): a strip of plane 0.001 wide written as two lines between the same two vertices,
+    /// the vertices midway between them. OCCT moves a line that misses its vertices onto them; both lines moved so
+    /// became one, and the strip a face of no area whose wire lay on itself, a success.
+    /// </summary>
+    [Fact]
+    public void STEP_strip_between_two_lines_that_share_their_vertices_keeps_its_width()
+    {
+        Result<ModelNode> read = Step.Read(new MemoryStream(Encoding.ASCII.GetBytes(StripStep("#1"))));
+
+        Assert.True(read.IsSuccess, read.Error?.Message);
+        Assert.Empty(read.Diagnostics);
+        Shape strip = read.Value.ToShape();
+        Assert.Single(strip.AllFaces());
+        Assert.True(strip.Validate().IsValid);
+        // The width from the mesh: the area's integral reads the ends, which the vertices cover, as missing until
+        // decision 2257 is on this branch
+        ShapeMesh mesh = strip.Mesh().Value;
+        Assert.Equal(2, mesh.TriangleCount);
+        float[] across = [.. Enumerable.Range(0, mesh.NodeCount).Select(node => mesh.Positions.Span[3 * node + 1])];
+        Assert.Equal(0.001, across.Max() - across.Min(), 1e-6);
+    }
+
+    /// <summary>
+    /// OCCT's issue 1578 (decision 2308): a reference to an entity that isn't in the file was bound to whatever the file
+    /// has at the record of that number, here another point, and the model read as if nothing were wrong. It is unresolved:
+    /// what refers to it is left out, and the read says which entities.
+    /// </summary>
+    [Fact]
+    public void STEP_reference_to_an_entity_that_isnt_there_is_not_bound_to_another_and_is_reported()
+    {
+        // no entity has the identifier 15; the fifteenth record of the file is the point #4
+        Result<ModelNode> read = Step.Read(new MemoryStream(Encoding.ASCII.GetBytes(StripStep("#15"))));
+
+        Assert.True(read.IsSuccess, read.Error?.Message);
+        Diagnostic skipped = Assert.Single(read.Diagnostics);
+        Assert.Equal("exchange.entity-skipped", skipped.Code.Value);
+        Assert.Equal(Severity.Warning, skipped.Severity);
+        Assert.Contains("#11", skipped.Message);
+        Assert.Empty(read.Value.ToShape().AllFaces());
+    }
+
+    /// <summary>A strip of plane 0.001 wide and 1 long, its first vertex at the point <paramref name="firstVertexPoint"/>.</summary>
+    private static string StripStep(string firstVertexPoint)
+    {
+        return string.Join('\n',
+            "ISO-10303-21;", "HEADER;", "FILE_DESCRIPTION((''),'2;1');", "FILE_NAME('','',(''),(''),'','','');",
+            "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 3 1 1 1 }'));", "ENDSEC;", "DATA;",
+            "#1=CARTESIAN_POINT('',(0.,0.,0.));", "#2=CARTESIAN_POINT('',(1.,0.,0.));",
+            "#3=CARTESIAN_POINT('',(0.,-0.0005,0.));", "#4=CARTESIAN_POINT('',(0.,0.0005,0.));",
+            $"#11=VERTEX_POINT('',{firstVertexPoint});", "#12=VERTEX_POINT('',#2);",
+            "#20=DIRECTION('',(0.,0.,1.));", "#21=DIRECTION('',(1.,0.,0.));", "#25=AXIS2_PLACEMENT_3D('',#1,#20,#21);",
+            "#33=VECTOR('',#21,1.);", "#34=LINE('',#3,#33);", "#35=LINE('',#4,#33);", "#36=PLANE('',#25);",
+            "#40=EDGE_CURVE('',#11,#12,#34,.T.);", "#41=EDGE_CURVE('',#11,#12,#35,.T.);",
+            "#50=ORIENTED_EDGE('',*,*,#40,.T.);", "#51=ORIENTED_EDGE('',*,*,#41,.F.);",
+            "#60=EDGE_LOOP('',(#50,#51));", "#62=FACE_OUTER_BOUND('',#60,.T.);",
+            "#64=ADVANCED_FACE('',(#62),#36,.T.);", "#65=OPEN_SHELL('',(#64));", "#66=SHELL_BASED_SURFACE_MODEL('',(#65));",
+            "#70=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.));", "#71=(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.));",
+            "#72=(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT());",
+            "#73=UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#70,'distance_accuracy_value','');",
+            "#74=(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#73))GLOBAL_UNIT_ASSIGNED_CONTEXT((#70,#71,#72))REPRESENTATION_CONTEXT('',''));",
+            "#75=MANIFOLD_SURFACE_SHAPE_REPRESENTATION('',(#66),#74);",
+            "#80=APPLICATION_CONTEXT('automotive design');", "#81=PRODUCT_CONTEXT('',#80,'mechanical');", "#82=PRODUCT('strip','strip','',(#81));",
+            "#83=PRODUCT_DEFINITION_FORMATION('','',#82);", "#84=PRODUCT_DEFINITION_CONTEXT('part definition',#80,'design');",
+            "#85=PRODUCT_DEFINITION('','',#83,#84);", "#86=PRODUCT_DEFINITION_SHAPE('','',#85);", "#87=SHAPE_DEFINITION_REPRESENTATION(#86,#75);",
+            "ENDSEC;", "END-ISO-10303-21;", "");
     }
 
     [Fact]

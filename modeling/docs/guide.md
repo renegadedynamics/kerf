@@ -339,7 +339,9 @@ watertight mesh; in glTF and STL a vertex shared by faces has the same coordinat
 
 Every exporter and importer returns a `Result`. A missing folder or file is `DirectoryNotFoundException` or
 `FileNotFoundException`, as everywhere in .NET; a file past `ImportLimits` (size, nesting) is
-`InvalidDataException`.
+`InvalidDataException`. A STEP import that had to leave entities out, a
+reference to something that isn't in the file say, succeeds with a warning in its `Diagnostics`
+(`exchange.entity-skipped`) that names them.
 
 **Async forms.** Every importer and exporter, and `ExportDxf.Write`, has an async form named `…Async`, taking a
 `CancellationToken` and returning a `Task<Result>` or `Task<Result<…>>`; so do the kernel's readers and writers

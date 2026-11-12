@@ -392,7 +392,8 @@ internal sealed class TranslateEdge : ImportRoot
             // direction; we can shift the line in this case so that it passes through vertices correctly
             if (Math.Abs(temp1 - temp2) < preci
                 && Math.Abs(u2 - u1 - pnt1.DistanceTo(pnt2)) < Kerf.Engine.Foundation.Precision.Confusion()
-                && c1 is LineCurve3D)
+                && c1 is LineCurve3D
+                && !HasParallelTwin(ec, (LineCurve3D)c1, tp, localFactors, preci))
             {
                 LineCurve3D line = c1 as LineCurve3D;
                 Line3D lin = line.Line;
@@ -480,6 +481,50 @@ internal sealed class TranslateEdge : ImportRoot
                 _done = true;
             }
         }
+    }
+
+    /// <summary>
+    /// Kerf (decision 2306): whether the file has another edge between this edge's two vertices whose curve is a line
+    /// parallel to this one and apart from it. Shifted onto the vertices, as #25415's case is, the two would become one
+    /// line: a strip of face between them, 0.001 wide in OCCT's issue 349, would have no width and a wire that lies on
+    /// itself. The file means two lines there, so neither is shifted and the vertices take the distance.
+    /// </summary>
+    private static bool HasParallelTwin(StepEdgeCurve ec, LineCurve3D line, TransientProcess tp, in Factors localFactors,
+                                        double preci)
+    {
+        if (!tp.HasGraph || ec.EdgeStart() == ec.EdgeEnd())
+        {
+            return false;
+        }
+
+        Line3D lin = line.Line;
+        for (var sharings = tp.Graph().Sharings(ec.EdgeStart()); sharings.More(); sharings.Next())
+        {
+            if (sharings.Value() is not StepEdgeCurve other || other == ec
+                || !((other.EdgeStart() == ec.EdgeStart() && other.EdgeEnd() == ec.EdgeEnd())
+                     || (other.EdgeStart() == ec.EdgeEnd() && other.EdgeEnd() == ec.EdgeStart())))
+            {
+                continue;
+            }
+
+            StepCurve geometry = other.EdgeGeometry();
+            if (geometry is StepSurfaceCurve surfaceCurve)
+            {
+                geometry = surfaceCurve.Curve3d();
+            }
+            if (geometry is not StepLine || MakeCurve(geometry, tp, localFactors) is not LineCurve3D twin)
+            {
+                continue;
+            }
+
+            Line3D twinLine = twin.Line;
+            if (twinLine.Direction.IsParallel(lin.Direction, Kerf.Engine.Foundation.Precision.Angular())
+                && lin.DistanceTo(twinLine.Location) > preci)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>Computes an individual pcurve (a 2D curve) of the pcurve entity on the surface; null if it fails.</summary>
