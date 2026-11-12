@@ -1861,7 +1861,7 @@ internal sealed class OffsetWire
         c = Tool.Curve(e, out f, out l);
         ct2d = new TrimmedCurve2D(c2d, f, l);
 
-        if (ct2d.ChangeBasisCurve() is CircleCurve2D && Math.Abs(f - l) >= Math.PI)
+        if (ct2d.BasisCurveToRead() is CircleCurve2D && Math.Abs(f - l) >= Math.PI)
         {
             return 0;
         }

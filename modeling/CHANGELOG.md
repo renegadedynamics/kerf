@@ -5,6 +5,10 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
+- **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
+  cone's apex, on a sphere or on a cylinder cut through its end, now builds where it failed or was wrong** (kernel
+  decisions 2243 to 2248); a fillet that still fails on a seam says so.
 - **A Boolean's clean merges faces of a sphere held on two frames turned about one axis** (kernel decision 2262; OCCT #1573): halves of a spherical cap from a sphere and the same sphere turned came out as three or four faces; they are now one.
 - **`Volume` and `Area` are right across a gap that a vertex covers** (kernel decisions 2257, 2258): a Boolean of surfaces that nearly touch can leave one vertex over two crossing points, and each face's boundary open between them by the vertex's width. The part is valid, but its volume was read short or long by the gap: a cylinder less an equal one crossing 3e-7 from a touch was 1e-5 out at radius 500, 2e-4 at radius 5 and 6e-4 at radius 0.5, with no warning. Volumes, areas and centres of mass are now read across such a gap; over 2,034 such Booleans at radii 0.5 to 50,000 none is more than 8.2e-8 out. A Boolean whose faces are open only inside a vertex's tolerance no longer fails as one "whose faces don't close": 25 of those did, each right.
 - **A 2D offset whose medial axis loops fails over at once** (kernel decisions 2220 to 2222): `Offset` of a wire or
