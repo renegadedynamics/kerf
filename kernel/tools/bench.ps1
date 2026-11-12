@@ -323,7 +323,16 @@ $suites = @(
   @{ Name = 'step-and-healing'; Exe = 'kernel'; Args = @('healing'); Full = 2; Quick = 0 },
   # Users' parts (unit 13C, benchmarks/Kerf.UserCases): two fuses, two collapsing chamfers and the plain ones beside them,
   # and an enclosure built whole; each case warmed twice, then the median of 9 runs in the process
-  @{ Name = 'user-cases'; Exe = 'users'; Args = @('rig', '9'); Full = 2; Quick = 1 }
+  @{ Name = 'user-cases'; Exe = 'users'; Args = @('rig', '9'); Full = 2; Quick = 1 },
+  # The bytes alone, the same from run to run and from build to build (unit 15AN, docs/performance.md): one processor, so
+  # the parallel loops run on the calling thread, and every method compiled once, optimised, without ReadyToRun or
+  # tiering, so what the code allocates doesn't depend on the build's precompiled code or on when methods were compiled
+  # again. Their groups start with "exact "; a rise in one of these is the code's, where one in "bento" or "user cases"
+  # alone may be the compiler's
+  @{ Name = 'bento-exact'; Exe = 'bento'; Args = @('9', '0'); Full = 1; Quick = 1; Prefix = 'exact '; Metrics = @('alloc MB')
+    Env = @{ DOTNET_PROCESSOR_COUNT = '1'; DOTNET_TieredCompilation = '0'; DOTNET_ReadyToRun = '0' } },
+  @{ Name = 'user-cases-exact'; Exe = 'users'; Args = @('rig', '3'); Full = 1; Quick = 1; Prefix = 'exact '; Metrics = @('alloc MB')
+    Env = @{ DOTNET_PROCESSOR_COUNT = '1'; DOTNET_TieredCompilation = '0'; DOTNET_ReadyToRun = '0' } }
 )
 
 $rows = New-Object Collections.ArrayList
@@ -363,6 +372,8 @@ foreach ($suite in $suites) {
     }
     foreach ($line in $(if (Test-Path $rowFile) { [IO.File]::ReadAllLines($rowFile) } else { @() })) {
       $p = $line.Split("`t")
+      # A suite that keeps some metrics only (the exact ones' bytes: their times are the JIT's alone, unlike any user's)
+      if ($suite.Metrics -and $suite.Metrics -notcontains $p[2]) { continue }
       [void] $rows.Add([pscustomobject]@{ Group = "$($suite.Prefix)$($p[0])"; Name = $p[1]; Metric = $p[2]; Value = $p[3] })
     }
   }
