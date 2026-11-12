@@ -2406,7 +2406,7 @@ left is computing the intersections (decision 2264).
 
 ## The night bench's nine allocation rises (unit 15AN)
 
-*November 2026, decisions 33601 to 33607. A loaded machine: the verdicts rest on bytes, which here were made exact (below);
+*November 2026, decisions 2327 to 2333. A loaded machine: the verdicts rest on bytes, which here were made exact (below);
 nothing was timed. The rig's suites for a quiet window: `quiet-15an.ps1` in the scratchpad's `15an` folder.*
 
 The quiet run of 12 November (main at cd25ebc44 against 232c0e477's run of 10 November) flagged nine rows' bytes. Each was
@@ -2423,7 +2423,7 @@ not traced. With every method compiled once, optimised, without ReadyToRun or ti
 from run to run to 0.1% and the same three builds give 7.774, 7.726 and 7.720 MB. On many processors the rows move
 besides with which threads take which items (decisions 1940, 2189): the night run's own spread on Bento's three rows was 1.2% to
 5.3%, against the comparison's threshold of 2%. So these are the figures below ("exact"), and the rig now has them as rows
-of their own (decision 33605).
+of their own (decision 2331).
 
 | Row (exact, MB) | 232c0e477 | cd25ebc44 | main | The night's flag | Cause |
 |---|---:|---:|---:|---:|---|
@@ -2439,13 +2439,13 @@ of their own (decision 33605).
 
 (Bento's three run alone, `KERF_BENTO_ONLY`, 20 passes; the users' five through `Kerf.UserCases serve`, 7 runs, the
 median of the last 5. Alone, an example's bytes differ a little from the whole set's: what the examples before it left in
-the caches.) The new exact suites as the rig runs them (decision 33605: Bento's eleven examples, 9 passes; the users'
+the caches.) The new exact suites as the rig runs them (decision 2331: Bento's eleven examples, 9 passes; the users'
 cases, the median of 3), 232c0e477 against main: the chamfers 1.675 to 1.771, 1.920 to 2.003, 4.612 to 4.743 and 3.995 to
 4.190 MB; Bento's chamfer and fillet 5.399 to 5.468 (+1.3%), the for-loops 7.734 to 7.826 and 5.884 to 5.966 (+1.2%,
 +1.4%), fuse-detent 15.668 to 15.754 (+0.5%); Bento's total 104.4 to 95.9 MB (-8.1%). Each suite added 6 s and 60 s to
 the run on a loaded machine.
 
-**The chamfers' rise is 15L's check** (decisions 2125, 33603): bisected to 85cb5537c, 15L's merge, where all four rose
+**The chamfers' rise is 15L's check** (decisions 2125, 2329): bisected to 85cb5537c, 15L's merge, where all four rose
 (1.677 to 1.774, 1.920 to 2.008, 4.614 to 4.852, 3.997 to 4.219) and nothing else did. The check itself, measured on its
 thread on the guide box's chamfer of 1.4: 102,848 bytes of the operation's 1,814,720 (5.7%), of which finding the edges of
 the faces the chamfer made or trimmed 30.2 kB, the edges' boxes 29.5 kB, their shrunk ranges 18.6 kB and settling the 96
@@ -2454,7 +2454,7 @@ bytes; Bento's chamfer 38,512 and its fillet 79,632. It's the price of a right r
 fillet's bytes): left. What could still be cut without changing what it asks, the exploring of each face's edges, is about
 a third of it, 2% of the case at most, under decision 1829's bar.
 
-**Motor-c's parallel mesh is 15AG's loop** (decisions 2202, 33604). Its serial mesh didn't rise (44.3 MB in both night
+**Motor-c's parallel mesh is 15AG's loop** (decisions 2202, 2330). Its serial mesh didn't rise (44.3 MB in both night
 runs). On two processors, three processes a side, the parallel row was 45.25, 45.28 and 45.79
 MB at 4172dddc0 and 46.17, 46.18 and 46.20 at e76fafdef, 15AG's merge, which replaced `Parallel.For` with Kerf's own loop
 (+2.0%); the timed runs inside a process went from anywhere between 46.2 and 51.5 million bytes to nearly all between 48.3 and 48.5 million. Each thread
