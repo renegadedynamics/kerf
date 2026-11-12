@@ -83,6 +83,10 @@ public static class BooleanOperations
     /// names: <c>boolean.fuzzy-value</c>.</summary>
     public static DiagnosticCode BuiltWithFuzzyValue { get; } = new("boolean.fuzzy-value");
 
+    /// <summary>A warning: the first attempt was proved wrong, and this result was made with each crossing near a vertex given a
+    /// vertex of its own, where OCCT grows the one over them: <c>boolean.crossings-apart</c>.</summary>
+    public static DiagnosticCode BuiltWithCrossingsApart { get; } = new("boolean.crossings-apart");
+
     private static readonly Diagnostic Failure = Diagnostic.Error(OperationDiagnostics.BooleanFailed, "The Boolean operation failed.");
 
     extension<TShape>(TShape a) where TShape : struct, IShape<TShape>
@@ -305,6 +309,14 @@ public static class BooleanOperations
                 ? ClosedAtTheSource(rule, arguments, tools, options, again, cancellationToken)
                 : Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
         }
+        // An invalid result is made again as one proved wrong is, and fails as it did if none of those ways mends it: equal
+        // cylinders of radius 50000, the tool's axis in the other's end plane 3e-4 past crossing its axis, whose cut has a wire
+        // that crosses itself, and is valid and right made the other way round (decision 33706)
+        if (options is not { CheckResult: false } && result.TryGetInvalid(out _) && RuleOf(operation) is { } unmade
+            && Again(unmade, arguments, tools, options, cancellationToken) is { } mended)
+        {
+            return ClosedAtTheSource(unmade, arguments, tools, options, mended, cancellationToken);
+        }
         return RuleOf(operation) is { } made ? ClosedAtTheSource(made, arguments, tools, options, result, cancellationToken) : result;
     }
 
@@ -347,23 +359,14 @@ public static class BooleanOperations
             return first;
         }
 
-        // Three ways, as none closes all the others do (decision 2288): with each touch that hides two crossings given as
-        // the two; with it left as one; and with no crossing held apart at all, OCCT's vertices, closed by the steps that
-        // bring each edge's pieces and each section's curves to one point of them. The one with the fewest gaps is kept,
-        // the first of them to have none the inputs didn't
+        // Four ways, as none closes all the others do (decisions 2288 and 33708). The one with the fewest gaps is kept, the first of
+        // them to have none the inputs didn't
         Result<Built<Shape>> best = first;
+        bool otherWayRound = arguments.Count == 1 && tools.Count == 1 && first.Diagnostics.Any(static d => d.Code == BuiltOtherWayRound);
         double before = double.NaN, areaBefore = double.NaN;
-        foreach ((double apart, bool touches) in (ReadOnlySpan<(double, bool)>)[(CrossingsApart, true), (CrossingsApart, false), (double.PositiveInfinity, false)])
+        foreach ((double Apart, bool Touches, bool SmallPieces) way in WaysApart)
         {
-            BooleanOperation again = rule switch
-            {
-                BooleanVolumeRule.Common => new EngineCommon(),
-                BooleanVolumeRule.Fuse => new EngineFuse(),
-                _ => new EngineCut(),
-            };
-            again.SetTools(List(tools, nameof(tools)));
-            again.SetCrossingsApart(apart, touches);
-            Result<Built<Shape>> result = Run((BuilderAlgo)again, arguments, options, null, cancellationToken);
+            Result<Built<Shape>> result = MadeApart(rule, arguments, tools, options, way, otherWayRound, cancellationToken);
             if (!result.TryGetValue(out Built<Shape>? closed) || closed is null || !closed.Shape.Children.Any())
             {
                 continue;
@@ -395,7 +398,14 @@ public static class BooleanOperations
             double areaAfter = closed.Shape.IntegrateArea(SameVolumeMeasured);
             if (Math.Abs(areaAfter - areaBefore) <= SameVolume * Math.Max(Math.Abs(areaBefore), Math.Abs(areaAfter)))
             {
-                (best, open) = (result, left);
+                // One that stands in for a result made again says so as that did: made the other way round too, or else with
+                // its crossings apart, where that one had a fuzzy value this one hasn't
+                (best, open) = (otherWayRound
+                    ? Result<Built<Shape>>.Success(closed, [.. result.Diagnostics, .. first.Diagnostics.Where(static d => d.Code == BuiltOtherWayRound)])
+                    : first.Diagnostics.Any(static d => d.Code == BuiltWithFuzzyValue || d.Code == BuiltWithCrossingsApart)
+                        ? Result<Built<Shape>>.Success(closed, [.. result.Diagnostics,
+                            Diagnostic.Warning(BuiltWithCrossingsApart, "The first attempt at this Boolean was wrong, and this one was made with each crossing near a vertex given a vertex of its own.")])
+                        : result, left);
                 if (left <= given)
                 {
                     break;
@@ -419,12 +429,13 @@ public static class BooleanOperations
     }
 
     /// <summary>
-    /// A common, cut or fuse whose result <see cref="BooleanVolumes.Check"/> proved wrong, made again as the checked Booleans
-    /// do: with its two inputs the other way round (<c>boolean.other-way-round</c>), then with a fuzzy value of ten times their
-    /// largest tolerance and of a thousand times it (<c>boolean.fuzzy-value</c>), the second only up to a hundred-thousandth of
-    /// the largest input's size. The first that passes the same check, at the fuzzy value asked for, with the warning; a
-    /// failure, <c>boolean.failed</c>, if none does. For a caller that leaves out <see cref="BooleanOptions.CheckResult"/> and
-    /// checks a later step of its own (Kerf.Modeling, after its clean).
+    /// A common, cut or fuse whose result <see cref="BooleanVolumes.Check"/> proved wrong, or which is invalid, made again as
+    /// the checked Booleans do: with its two inputs the other way round (<c>boolean.other-way-round</c>), then with a fuzzy
+    /// value of ten times their largest tolerance and of a thousand times it (<c>boolean.fuzzy-value</c>), the second only up
+    /// to a hundred-thousandth of the largest input's size, then with each crossing near a vertex given a vertex of its own
+    /// (<c>boolean.crossings-apart</c>), kept where two ways of that agree. The first that passes the same check, at the fuzzy
+    /// value asked for, with the warning; a failure, <c>boolean.failed</c>, if none does. For a caller that leaves out
+    /// <see cref="BooleanOptions.CheckResult"/> and checks a later step of its own (Kerf.Modeling, after its clean).
     /// </summary>
     public static Result<Built<Shape>> Retry(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
                                              BooleanOptions? options = null, CancellationToken cancellationToken = default)
@@ -441,7 +452,73 @@ public static class BooleanOperations
     // The ways of making again a Boolean proved wrong, in turn: the first that passes, or null
     private static Result<Built<Shape>>? Again(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
                                                BooleanOptions? options, CancellationToken cancellationToken) =>
-        OtherWayRound(rule, arguments, tools, options, cancellationToken) ?? WithFuzzyValue(rule, arguments, tools, options, cancellationToken);
+        OtherWayRound(rule, arguments, tools, options, cancellationToken) ?? WithFuzzyValue(rule, arguments, tools, options, cancellationToken)
+        ?? WithCrossingsApart(rule, arguments, tools, options, cancellationToken);
+
+    // The ways a Boolean is made again with its crossings held apart (decision 2288): with each touch that hides two crossings
+    // given as the two; with it left as one; and with no crossing held apart at all, OCCT's vertices, closed by the steps that
+    // bring each edge's pieces and each section's curves to one point of them
+    // and, last, that again with each piece of an edge too small to keep taken into its neighbour (decision 33708)
+    private static readonly (double Apart, bool Touches, bool SmallPieces)[] WaysApart =
+        [(CrossingsApart, true, false), (CrossingsApart, false, false), (double.PositiveInfinity, false, false), (double.PositiveInfinity, false, true)];
+
+    // A Boolean made with its crossings held apart one of those ways; with its inputs the other way round where the result
+    // it's to stand in for was made so, as the intersections depend on the order (decision 33705)
+    private static Result<Built<Shape>> MadeApart(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options,
+                                                  (double Apart, bool Touches, bool SmallPieces) way, bool otherWayRound, CancellationToken cancellationToken)
+    {
+        BooleanOperation again = rule switch
+        {
+            BooleanVolumeRule.Common => new EngineCommon(),
+            BooleanVolumeRule.Fuse => new EngineFuse(),
+            _ => new EngineCut(),
+        };
+        if (otherWayRound && rule == BooleanVolumeRule.Cut)
+        {
+            again.SetOperation(Engine.Booleans.Operation.CUT21);
+        }
+        again.SetTools(otherWayRound ? List(arguments, nameof(arguments)) : List(tools, nameof(tools)));
+        again.SetCrossingsApart(way.Apart, way.Touches, way.SmallPieces);
+        return Run((BuilderAlgo)again, otherWayRound ? tools : arguments, options, null, cancellationToken);
+    }
+
+    // A Boolean still proved wrong is made with its crossings held apart, the three ways a result open inside a vertex is, and
+    // one of them kept if it's valid, passes the same check, and another of them has its volume and area: equal cylinders of
+    // radius 50000, the tool's axis in the other's end plane 1e-7 short of crossing its axis, whose cut removes nothing as
+    // OCCT's vertices have it, the other way round and at each fuzzy value, and is right two of these ways (decision 33704).
+    // The first result can't vouch for one made again here, being wrong, so two made differently have to agree: the check
+    // alone measures against the result's tolerance, and can pass what it shouldn't where that's wide (decision 2277). It
+    // costs up to three more Booleans, only on a result that would have failed.
+    private static Result<Built<Shape>>? WithCrossingsApart(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
+                                                            BooleanOptions? options, CancellationToken cancellationToken)
+    {
+        var made = new List<(Result<Built<Shape>> Result, double Volume, double Area)>(WaysApart.Length);
+        // Not the last of the ways, which is the third again wherever no piece is too small to keep, and would agree with it
+        foreach ((double Apart, bool Touches, bool SmallPieces) way in WaysApart.AsSpan(0, 3))
+        {
+            Result<Built<Shape>> result = MadeApart(rule, arguments, tools, options, way, false, cancellationToken);
+            if (!result.TryGetValue(out Built<Shape>? built) || built is null || !built.Shape.Children.Any()
+                || (options is { CheckResult: false } && !built.Shape.Validate().IsValid)
+                || BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is not null)
+            {
+                continue;
+            }
+
+            double volume = built.Shape.IntegrateVolume(SameVolumeMeasured), area = built.Shape.IntegrateArea(SameVolumeMeasured);
+            foreach ((Result<Built<Shape>> other, double otherVolume, double otherArea) in made)
+            {
+                if (Math.Abs(volume - otherVolume) <= SameVolume * Math.Max(Math.Abs(volume), Math.Abs(otherVolume))
+                    && Math.Abs(area - otherArea) <= SameVolume * Math.Max(Math.Abs(area), Math.Abs(otherArea)))
+                {
+                    // The earlier of the two, as a result open inside a vertex is made these ways in this order
+                    return Result<Built<Shape>>.Success(other.Value, [.. other.Diagnostics,
+                        Diagnostic.Warning(BuiltWithCrossingsApart, "The first attempt at this Boolean was wrong, and this one was made with each crossing near a vertex given a vertex of its own.")]);
+                }
+            }
+            made.Add((result, volume, area));
+        }
+        return null;
+    }
 
     // A Boolean proved wrong is tried with its two inputs the other way round, as the intersections depend on the order, and it's
     // kept if that passes the same check: OCCT #1643's lofts give an empty common one way and the right one the other, for a reason

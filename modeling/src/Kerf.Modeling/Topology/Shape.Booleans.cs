@@ -97,14 +97,25 @@ public static partial class ShapeExtensions
 
         // A shortcut above made nothing, so has nothing new to check
         bool made = topoResult is null;
-        (result, history, Diagnostic? wrong) = Finish(operation, arg, tool, options, result, history, made, proved: false);
-        if (wrong is not null)
+        Diagnostic? wrong = null;
+        ModelingException? invalid = null;
+        try
         {
-            // Made again as the kernel's checked Booleans are, the other way round and then with a fuzzy value (decisions
-            // 1937 and 2103), its warning passed on; what that makes is cleaned and checked as the first was
+            (result, history, wrong) = Finish(operation, arg, tool, options, result, history, made, proved: false);
+        }
+        catch (ModelingException failure) when (made && RuleOf(operation) is not null)
+        {
+            // An invalid result is made again as a wrong one is, and fails as it did if that doesn't mend it (decision 33706)
+            invalid = failure;
+        }
+        if (wrong is not null || invalid is not null)
+        {
+            // Made again as the kernel's checked Booleans are, the other way round, then with a fuzzy value, then with its
+            // crossings held apart (decisions 1937, 2103 and 33704), its warning passed on; what that makes is cleaned and
+            // checked as the first was
             var retried = BooleanOperations.Retry(RuleOf(operation)!.Value, arg, tool, (options ?? BooleanOptions.Default) with { Simplify = false, CheckResult = true });
             if (!retried.TryGetValue(out var again))
-                throw Failures.Wrong(result, wrong);
+                throw invalid ?? Failures.Wrong(result, wrong!);
             foreach (var diagnostic in retried.Diagnostics)
                 if (!diagnostic.IsError)
                     Warnings.Warn(diagnostic);
