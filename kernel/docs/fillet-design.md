@@ -429,6 +429,44 @@ Decisions 2208 to 2212. Timings are from a loaded machine.
 
 **What it doesn't do.** The volume isn't checked against an independent integral of the convention for this corner kind (the opening of the closing, in the window's corners): it's checked against ChFi3d's one step on the same solid with its seams elsewhere, which shows the seam's move changes nothing, not that ChFi3d's corner is right. 15T2's next slice for `BuildConvexFirst`, arcs ending on planes, holes or cones, isn't built: the corpus has no failing corner of that kind (of its failing multi-edge fillets, bug26655 is this, `blend/complex/H4` is built by stage 3, A1 is BÃ©zier faces of an open shell, and bug27711_3's first step builds), and the unit's time went to bug26655. A seam on a face that isn't a band between two circles (a cone to its apex, a cylinder with a slot through its end), on a sphere or a torus, and a seam that some edge asked for runs along, aren't moved.
 
+## 17. Stage 4b, the rest: arcs' ends, bug26655's integral, seams (unit 15T4)
+
+Decisions 2243 to 2250.
+
+**An arc's end on a plane, a hole or a cone.** Section 15's first step read a branch's cylinder at an arc's end and cut the branch's whole cylinder from the rim's tool. It now reads the face there as the solid its surface bounds, and works by the gaps in the rim:
+
+| Step | How |
+|---|---|
+| The face at an arc's end | Behind a plane; inside or outside a cylinder or a cone (a cone's own nappe; outside, a box about the shape less the solid) |
+| A gap | From one arc's end to the next one's start, round the rim's circle |
+| What fills it | The part common to its two ends' solids (a rib between two planes, a pipe's wall), or failing that their union: whichever holds the rim across the gap and none of an arc asked for |
+| An arc not asked for | Has to lie in a gap, or the stage isn't asked |
+| The tool | The whole turn less the gaps' solids: an arc of more than half a turn is rounded whole, and no other arc is touched |
+
+**ChFi3d's own corner.** With no seam in the way ChFi3d's one step builds all seven made cases, three of them wrongly though valid and without crossings: 8% of the radius off the ball on the rib aside, which `Fillet` returned; wrongly trimmed on the pipe and the cone aside. What tells them apart is whether the faces ChFi3d made are tangent to one another: 0.2 to 0.5 radians on the three, 2e-4 or less on the four. So where the edges asked for hold such a corner and two of ChFi3d's faces meet at more than its own angle, the stage's result is taken instead if it builds (`InsteadOfAlgorithm`).
+
+**The made cases** (`FilletConvexFirstEndsTests`): a cylinder of radius 5 whose top a rib, a pipe or a cone crosses, half sunk in it, at 0.3.
+
+| Case | Arcs | ChFi3d's one step | With the body's seam on the junction | Kerf less the integral |
+|---|---|---|---|---|
+| Rib, centred | 157, 157 | right, kept | (a plane has none) | 2.0e-6 |
+| Rib, aside | 227, 74 | valid, 8% off the ball: the stage's instead | | 1.5e-6 |
+| Bore, centred | 74, 74 | right, kept | fails: the stage | 3.8e-6, 2.4e-5 |
+| Bore, aside | 254 | right, kept | invalid: the stage | -1.9e-5, 2.5e-5 |
+| Pipe, bore and outside | 74, 74, 74, 74 | valid, wrongly trimmed: the stage's instead | fails: the stage | -3.7e-5, -1.3e-5 |
+| Cone, centred | 139, 139 | right, kept | fails: the stage | -4.9e-6, -4.8e-6 |
+| Cone, aside | 227, 74 | valid, wrongly trimmed: the stage's instead | fails: the stage | 5.4e-7, 3.2e-6 |
+
+Each result: valid, without crossings, the ball in closed form within 3.1e-5, tangency within 9.4e-4 radians.
+
+**The integral** (`FilletJunctionIntegral`). The convention's region, from its definition alone: a point outside both bodies is added if no ball of the radius clear of both reaches it. The centres of the balls that touch both bodies lie on a closed curve, where the first body's core is twice the radius away and the other body the radius; it's traced by Newton's method. Every added point lies on a ray from one of those centres, in the plane square to the curve, between the directions of the two contacts, beyond the ball and short of the first of the two surfaces. So the volume is one integral along the curve of the fan's, with the curve's bend in the measure: rho (1 - rho K.d) d rho d phi ds. The rim's ring, where it's clear of the crossing body, is integrated the same way, along rays from its section's ball. On the crossing cylinders it agrees with Kerf to 7e-6 at every radius, where section 15's grid of rays was up to 2.7e-3 out.
+
+**bug26655's corners** are the convention the other way about: two convex rims meet one concave edge, and the rims' blends run on over the concave edge's. So the shape is the tube closed and then opened: the concave edges' spandrels through the wall, in closed form, less each opening's rim, a smooth loop round a window with rounded corners, by the same integral with material and space changed over. Kerf's volume is its to 8e-6, 6e-5 and 3.4e-4 at radii 0.5, 1 and 2.
+
+**Seams.** Section 16's move took a face between two whole circles. It now takes a sphere's face too, and a face bounded where the new seam goes by a whole circle, a point where the surface closes (a cone's apex, a sphere's pole) or an arc about the axis, which the seam cuts in two. Made cases, each failing in ChFi3d with the seam through the cut: a hollow cone to its apexes and a hollow sphere with a window, and a tube with a quarter cut from its end; all built, proved as section 16's. Where the move can't be done or its result proved (the cut end's vertical edges alone, whose fillets end on the top, which the stage's proof doesn't allow for), the failure names the seam.
+
+**What it doesn't do.** Decision 2250.
+
 ## Sources
 
 From documentation and the web, read on 6 and 7 November 2026; I've read no kernel's source other than OCCT's.

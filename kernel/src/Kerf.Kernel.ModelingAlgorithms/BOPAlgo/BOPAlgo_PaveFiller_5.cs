@@ -452,6 +452,7 @@ internal partial class PaveFiller
 
                             // Real intersection is present.
                             // Update the existing vertex to cover the intersection point.
+                            bool apart = false;
                             for (j = 0; j < 2; ++j)
                             {
                                 if (bIsOnPave[j])
@@ -459,12 +460,19 @@ internal partial class PaveFiller
                                     Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
                                     Point3D p = Tool.Pnt(v);
                                     double distPP = p.DistanceTo(pnew0);
+                                    // A crossing far from the vertex is a crossing of its own, with its own vertex (decision 2276)
+                                    if (IsApart(nV[j], pnew0, tolE + tolF))
+                                    {
+                                        apart = true;
+                                        continue;
+                                    }
                                     double tol = Tool.Tolerance(v);
                                     double maxDist = 1.0e4 * tol;
                                     // An edge grazing a face stays within tolerance over sqrt(2 R tol), so the reach is what the touch
                                     // spans, not a fixed length: past 1e-3 a large cylinder's edge got new vertices either side of one
                                     // already touching (decision 1923)
-                                    maxDist = Max(maxDist, TouchSpan(e, r, f));
+                                    double span = TouchSpan(e, r, f);
+                                    maxDist = Max(maxDist, span);
                                     if (tol < .01)
                                     {
                                         maxDist = Min(maxDist, 0.1);
@@ -473,10 +481,19 @@ internal partial class PaveFiller
                                     {
                                         UpdateVertex(nV[j], distPP);
                                         _vertsToAvoidExtension.Add(nV[j]);
+                                        // What the touch spans is how far a section's curve may end from this vertex and
+                                        // still end at it (decision 2260)
+                                        if (!_touchSpans.TryGetValue(nV[j], out double widest) || span > widest)
+                                        {
+                                            _touchSpans[nV[j]] = span;
+                                        }
                                     }
                                 }
                             }
-                            continue;
+                            if (!apart)
+                            {
+                                continue;
+                            }
                         }
 
                         if (CheckFacePaves(vnew, mifOn))

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// on the restriction.
 /// </summary>
 /// <remarks>A working object (decision 21): it caches its last solution, which the walkers read.</remarks>
-internal class SurfRstEvolRad : SurfRstFunction
+internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
 {
     private const double Eps = 1.0e-15;
 
@@ -148,6 +148,8 @@ internal class SurfRstEvolRad : SurfRstFunction
 
         _tevol = evol;
         _fevol = evol;
+        _first = cGuide.FirstParameter();
+        _last = cGuide.LastParameter();
     }
 
     public override int NbVariables()
@@ -279,6 +281,256 @@ internal class SurfRstEvolRad : SurfRstFunction
     {
         _tguide = _guide.Trim(first, last, 1.0e-12);
         _tevol = _fevol.Trim(first, last, 1.0e-12);
+        _first = first;
+        _last = last;
+    }
+
+    // Kerf (unit 15AK): the sections are the circles of the envelope the ball of changing radius sweeps (EnvelopeCircle),
+    // which take the derivative of the centre along the walk, and their derivatives its second. The interval the
+    // function is set on:
+    private double _first, _last;
+
+    // Positions the guide and the law at prm, as Set(double) does; the derivative of the guide's plane's normal.
+    private Vector3D Position(double prm)
+    {
+        _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
+        _tevol.D1(prm, out _ray, out _dray);
+        _ray = _sg1 * _ray;
+        _dray = _sg1 * _dray;
+        _normtg = _d1gui.Magnitude;
+        _nplan = _d1gui.Normalized();
+        _d = -_nplan.XYZ().Dot(_ptgui.XYZ());
+        return Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+    }
+
+    // The derivative of the ball's centre along the walk at prm and x, with the walk's derivative of x, the function
+    // left positioned there. False where the walk has none.
+    private bool WalkCentre(double prm, math_Vector x, math_Vector dx, out Vector3D dc)
+    {
+        Matrix grad = new(1, 3, 1, 3);
+        Vector3D dnplan = Position(prm);
+        Ball(x, out Vector3D d1u1, out Vector3D d1v1);
+        BallDerivatives(grad, d1u1, d1v1);
+        GuideSecondMember(dx, dnplan);
+        Gauss resol = new(grad, 1.0e-9);
+        if (!resol.IsDone)
+        {
+            dc = new Vector3D();
+            return false;
+        }
+
+        resol.Solve(dx);
+        Vector3D tgs = Vector3D.LinearForm(dx[1], d1u1, dx[2], d1v1);
+        Vector3D dnw = Vector3D.LinearForm(dx[1], _dnu, dx[2], _dnv);
+        dc = Vector3D.LinearForm(_ray, dnw, _dray, -_nn, tgs);
+        return true;
+    }
+
+    // The same on the walk's solution at prm + dt, found by Newton's method from x and its derivative dx at prm.
+    private bool WalkCentreNear(double prm, math_Vector x, math_Vector dx, double dt, out Vector3D dc)
+    {
+        math_Vector y = new(1, 3), f = new(1, 3), step = new(1, 3), dy = new(1, 3);
+        Matrix grad = new(1, 3, 1, 3);
+        dc = new Vector3D();
+        for (int i = 1; i <= 3; i++)
+        {
+            y[i] = x[i] + dt * dx[i];
+        }
+
+        Position(prm + dt);
+        for (int iter = 0; iter < 8; iter++)
+        {
+            Ball(y, out Vector3D d1u1, out Vector3D d1v1);
+            BallValues(f);
+            BallDerivatives(grad, d1u1, d1v1);
+            Gauss resol = new(grad, 1.0e-14);
+            if (!resol.IsDone)
+            {
+                return false;
+            }
+
+            resol.Solve(-f, step);
+            bool small = true;
+            for (int i = 1; i <= 3; i++)
+            {
+                y[i] += step[i];
+                small &= Math.Abs(step[i]) <= 1.0e-13 * (1.0 + Math.Abs(y[i]));
+            }
+
+            if (small)
+            {
+                break;
+            }
+        }
+
+        return WalkCentre(prm + dt, y, dy, out dc);
+    }
+
+    // The second derivative of the centre along the walk at prm and x: the equations give the first, so its difference
+    // between the walk's solutions a ten-thousandth of the radius either side, or on one side at an end of the interval
+    // the function is set on. It moves the function about the point.
+    private bool WalkCentreD2(double prm, math_Vector x, out Vector3D d2c)
+    {
+        math_Vector dx = new(1, 3);
+        d2c = new Vector3D();
+        if (!WalkCentre(prm, x, dx, out Vector3D dc))
+        {
+            return false;
+        }
+
+        double speed = dc.Magnitude;
+        if (speed <= 0.0 || _last <= _first)
+        {
+            return false;
+        }
+
+        double h = Math.Min(1.0e-4 * Math.Abs(_ray) / speed, (_last - _first) / 4);
+        Vector3D a, b;
+        if (prm - h >= _first && prm + h <= _last)
+        {
+            if (!WalkCentreNear(prm, x, dx, h, out a) || !WalkCentreNear(prm, x, dx, -h, out b))
+            {
+                return false;
+            }
+
+            d2c = (a - b) / (2 * h);
+            return true;
+        }
+
+        if (prm + h > _last)
+        {
+            h = -h;
+        }
+
+        if (!WalkCentreNear(prm, x, dx, h, out a) || !WalkCentreNear(prm, x, dx, 2 * h, out b))
+        {
+            return false;
+        }
+
+        d2c = Vector3D.LinearForm(-3, dc, 4, a, -1, b) / (2 * h);
+        return true;
+    }
+
+    public bool SectionGap(in BlendPoint near, double prm, double before, double after, out double gap, out double radius)
+    {
+        math_Vector x = new(1, 3);
+        near.ParametersOnS(out x[1], out x[2]);
+        x[3] = near.ParameterOnC();
+        CurveAdaptorBase tguide = _tguide;
+        LawsFunction tevol = _tevol;
+        double first = _first, last = _last;
+        gap = 0.0;
+        Point3D m2 = new Point3D();
+        bool ok = ArcMiddle(x, prm, before, prm, out Point3D m1) && ArcMiddle(x, prm, prm, after, out m2);
+        if (ok)
+        {
+            gap = m1.DistanceTo(m2);
+        }
+
+        radius = Math.Abs(_ray);
+        _tguide = tguide;
+        _tevol = tevol;
+        _first = first;
+        _last = last;
+        return ok;
+    }
+
+    public bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius)
+    {
+        math_Vector y = new(1, 3), dx = new(1, 3);
+        at.ParametersOnS(out y[1], out y[2]);
+        y[3] = at.ParameterOnC();
+        double prm = at.Parameter();
+        middle = new Point3D();
+        Position(prm);
+        bool ok = SolveAt(y) && WalkCentre(prm, y, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e) && e.ArcMiddle(out middle);
+        radius = Math.Abs(_ray);
+        return ok;
+    }
+
+    public bool LeastAdvance(in BlendPoint near, double prm, out double advance)
+    {
+        math_Vector y = new(1, 3), dx = new(1, 3);
+        near.ParametersOnS(out y[1], out y[2]);
+        y[3] = near.ParameterOnC();
+        advance = 0.0;
+        Position(prm);
+        // A point of the walk is its own solution: Newton's method only between the walk's points.
+        if ((prm != near.Parameter() && !SolveAt(y)) || !WalkCentreD2(prm, y, out Vector3D d2c) || !WalkCentre(prm, y, dx, out Vector3D dc)
+            || !Envelope(dc, out EnvelopeCircle e))
+        {
+            return false;
+        }
+
+        _tevol.D2(prm, out _, out _, out double d2ray);
+        advance = e.LeastAdvance(_center, dc, d2c, _ray, _dray, _sg1 * d2ray);
+        return true;
+    }
+
+    // The walk's solution at the parameter the function is positioned at, by Newton's method from y, which it replaces.
+    private bool SolveAt(math_Vector y)
+    {
+        math_Vector f = new(1, 3), step = new(1, 3);
+        Matrix grad = new(1, 3, 1, 3);
+        bool small = false;
+        for (int iter = 0; iter < 12 && !small; iter++)
+        {
+            Ball(y, out Vector3D d1u1, out Vector3D d1v1);
+            BallValues(f);
+            BallDerivatives(grad, d1u1, d1v1);
+            Gauss resol = new(grad, 1.0e-14);
+            if (!resol.IsDone)
+            {
+                return false;
+            }
+
+            resol.Solve(-f, step);
+            small = true;
+            for (int i = 1; i <= 3; i++)
+            {
+                y[i] += step[i];
+                small &= Math.Abs(step[i]) <= 1.0e-12 * (1.0 + Math.Abs(y[i]));
+            }
+        }
+
+        return small;
+    }
+
+    // The middle of the arc of the envelope's circle at prm, on the walk's solution there (Newton's method from x),
+    // with the guide and the law as they are between first and last.
+    private bool ArcMiddle(math_Vector x, double prm, double first, double last, out Point3D middle)
+    {
+        math_Vector y = new(1, 3), dx = new(1, 3);
+        middle = new Point3D();
+        Set(first, last);
+        Position(prm);
+        y.Initialized(x);
+        return SolveAt(y) && WalkCentre(prm, y, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e) && e.ArcMiddle(out middle);
+    }
+
+    // The side of its plane the great circle's normal is on, as the sections orient it, at the last positioning.
+    private Vector3D Side()
+    {
+        Vector3D np = _choix % 2 != 0 ? _nplan.Reversed() : _nplan;
+        return ConstRad.SectionNormal(new Vector3D(_center, _pts), new Vector3D(_center, _ptrst), np);
+    }
+
+    // The unit vectors from the ball's centre to its contacts at the last positioning: along the surface's normal, and
+    // along the chord to the restriction.
+    private void Directions(out Vector3D u1, out Vector3D u2)
+    {
+        u1 = _ray > 0.0 ? _nn : -_nn;
+        Vector3D corde = new(_center, _ptrst);
+        u2 = ConstRad.InverseNorm(corde) * corde;
+    }
+
+    // The envelope's circle at the last positioning, from the centre's derivative along the walk.
+    private bool Envelope(in Vector3D dc, out EnvelopeCircle circle)
+    {
+        Vector3D zero = new Vector3D();
+        Directions(out Vector3D u1, out Vector3D u2);
+        return EnvelopeCircle.Make(0, _center, dc, zero, zero, _ray, _dray, 0.0, 0.0, u1, zero, zero, u2, zero, zero, Side(),
+                                   out circle);
     }
 
     public override void GetTolerance(math_Vector tolerance, double tol)
@@ -375,6 +627,15 @@ internal class SurfRstEvolRad : SurfRstFunction
                 _tg2drst = _tg2drst.WithCoord(a, b);
             }
 
+            // Kerf (unit 15AK): the section is the envelope's circle, so the angle below is its arc's.
+            EnvelopeCircle envelope = default;
+            bool hasEnvelope = false;
+            if (!_istangent)
+            {
+                Vector3D dnw = Vector3D.LinearForm(secmember[1], _dnu, secmember[2], _dnv);
+                hasEnvelope = Envelope(Vector3D.LinearForm(_ray, dnw, _dray, ns, _tgs), out envelope);
+            }
+
             // update of maxang
             if (_ray > 0.0)
             {
@@ -393,6 +654,15 @@ internal class SurfRstEvolRad : SurfRstFunction
             if (sina < 0.0)
             {
                 angle = 2.0 * M_PI - angle;
+            }
+
+            if (hasEnvelope)
+            {
+                angle = envelope.Angle();
+                if (angle < 0.0)
+                {
+                    angle += 2.0 * M_PI;
+                }
             }
 
             if (angle > _maxang)
@@ -556,6 +826,31 @@ internal class SurfRstEvolRad : SurfRstFunction
         Vector3D ns, np;
         Point3D center = new();
 
+        // Kerf (unit 15AK): the envelope's circle; the ball's great circle where the walk has no derivative.
+        math_Vector x = new(1, 3), dx = new(1, 3);
+        x[1] = u;
+        x[2] = v;
+        x[3] = w;
+        if (WalkCentre(param, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e))
+        {
+            Vector3D plane = e.Plane;
+            c = c.WithRadius(e.Radius);
+            c = c.WithPosition(new Frame3D(e.Centre, new Direction3D(plane), new Direction3D(e.N1)));
+            pdeb = 0;
+            pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _ptrst);
+            if (pfin > 1.5 * M_PI)
+            {
+                plane = plane.Reversed();
+                c = c.WithPosition(new Frame3D(e.Centre, new Direction3D(plane), new Direction3D(e.N1)));
+                pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _ptrst);
+            }
+            if (pfin < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            {
+                pfin += global::Kerf.Engine.Foundation.Precision.PConfusion();
+            }
+            return;
+        }
+
         _tguide.D1(param, out _ptgui, out _d1gui);
         np = _d1gui.Normalized();
         _ray = _sg1 * _tevol.Value(param);
@@ -616,11 +911,13 @@ internal class SurfRstEvolRad : SurfRstFunction
         // It is supposed that it does not depend on the Radius!
     }
 
+    // Kerf (unit 15AK): the envelope's circle takes the derivative of the centre's path, so the sections are as smooth
+    // as the law one class down and the guide two, as BlendFunc_EvolRad's.
     public override int NbIntervals(Continuity s)
     {
         int Nb_Int_Courbe, Nb_Int_Loi;
-        Nb_Int_Courbe = _guide.NbIntervals(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
-        Nb_Int_Loi = _fevol.NbIntervals(s);
+        Nb_Int_Courbe = _guide.NbIntervals(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s)));
+        Nb_Int_Loi = _fevol.NbIntervals(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
 
         if (Nb_Int_Loi == 1)
         {
@@ -630,8 +927,8 @@ internal class SurfRstEvolRad : SurfRstFunction
         NCollection_Array1<double> intC = new(1, Nb_Int_Courbe + 1);
         NCollection_Array1<double> intL = new(1, Nb_Int_Loi + 1);
         NCollection_Sequence<double> inter = new();
-        _guide.Intervals(intC, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
-        _fevol.Intervals(intL, s);
+        _guide.Intervals(intC, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s)));
+        _fevol.Intervals(intL, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
 
         FusionneIntervalles(intC, intL, inter);
         return inter.Length() - 1;
@@ -640,20 +937,20 @@ internal class SurfRstEvolRad : SurfRstFunction
     public override void Intervals(NCollection_Array1<double> t, Continuity s)
     {
         int Nb_Int_Courbe, Nb_Int_Loi;
-        Nb_Int_Courbe = _guide.NbIntervals(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
-        Nb_Int_Loi = _fevol.NbIntervals(s);
+        Nb_Int_Courbe = _guide.NbIntervals(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s)));
+        Nb_Int_Loi = _fevol.NbIntervals(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
 
         if (Nb_Int_Loi == 1)
         {
-            _guide.Intervals(t, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
+            _guide.Intervals(t, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s)));
         }
         else
         {
             NCollection_Array1<double> intC = new(1, Nb_Int_Courbe + 1);
             NCollection_Array1<double> intL = new(1, Nb_Int_Loi + 1);
             NCollection_Sequence<double> inter = new();
-            _guide.Intervals(intC, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
-            _fevol.Intervals(intL, s);
+            _guide.Intervals(intC, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s)));
+            _fevol.Intervals(intL, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
 
             FusionneIntervalles(intC, intL, inter);
             for (int ii = 1; ii <= inter.Length(); ii++)
@@ -730,6 +1027,17 @@ internal class SurfRstEvolRad : SurfRstFunction
             return;
         }
 
+        // Kerf (unit 15AK): the envelope's circle; the ball's great circle where the walk has no derivative.
+        math_Vector x = new(1, 3), dx = new(1, 3);
+        x[1] = u1;
+        x[2] = v1;
+        x[3] = w;
+        if (WalkCentre(prm, x, dx, out Vector3D dc) && Envelope(dc, out EnvelopeCircle e))
+        {
+            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.Plane, _pts, _ptrst, e.Radius, e.Centre, poles, weights);
+            return;
+        }
+
         // The ball's circle (decision 2158): the surface's own normal, the plane square to it and to the chord.
         ns = d1u1.Crossed(d1v1);
         ns = -ConstRad.InverseNorm(ns) * ns;
@@ -760,8 +1068,6 @@ internal class SurfRstEvolRad : SurfRstFunction
         Vector3D d1urst, d1vrst;
         Point3D center, bid;
 
-        double norm;
-
         math_Vector sol = new(1, 3), secmember = new(1, 3);
         Matrix gradsol = new(1, 3, 1, 3);
 
@@ -769,6 +1075,17 @@ internal class SurfRstEvolRad : SurfRstFunction
         int low = poles.Lower();
         int upp = poles.Upper();
         bool istgt;
+
+        // Kerf (unit 15AK): the centre's second derivative along the walk, which the derivative of the envelope's circle
+        // takes; found first, as finding it moves the function about this point.
+        Vector3D d2c = new();
+        bool second = false;
+        if (_sShape != SectionShape.Linear)
+        {
+            p.ParametersOnS(out sol[1], out sol[2]);
+            sol[3] = p.ParameterOnC();
+            second = WalkCentreD2(prm, sol, out d2c);
+        }
 
         _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
         _tevol.D1(prm, out _ray, out _dray);
@@ -824,8 +1141,7 @@ internal class SurfRstEvolRad : SurfRstFunction
             dnw = Vector3D.LinearForm(secmember[1], _dnu, secmember[2], _dnv);
             dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgrst, _tgs);
             dn2w = Vector3D.LinearForm(_dray, ns, dn2w);
-            norm = resul.Magnitude;
-            dn2w = dn2w.Divided(norm);
+            dn2w = ConstRad.InverseNorm(resul) * dn2w;
             dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
         }
 
@@ -859,42 +1175,34 @@ internal class SurfRstEvolRad : SurfRstFunction
             return (!istgt);
         }
 
-        // Case of the circle
-        if (!istgt)
+        // Case of the circle: the envelope's (unit 15AK), with its derivative along the walk.
+        if (!istgt && second)
         {
+            Vector3D zero = new();
             tgct = Vector3D.LinearForm(_ray, dnw, _dray, ns, _tgs);
+            _tevol.D2(prm, out _, out _, out double d2ray);
+            double f1 = _ray > 0.0 ? -1.0 : 1.0;
+            if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, _sg1 * d2ray, 0.0, f1 * ns, f1 * dnw, zero, ns2, dn2w, zero,
+                                    Side(), out EnvelopeCircle e))
+            {
+                return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.Plane, e.DPlane, _pts, _ptrst, _tgs, _tgrst,
+                                          e.Radius, e.DRadius, e.Centre, e.DCentre, poles, dPoles, weights, dWeights);
+            }
         }
 
+        // Where the envelope has no circle: the ball's great circle (decision 2158), and no derivative.
         if (_ray > 0.0)
         {
             ns = ns.Reversed();
-            if (!istgt)
-            {
-                dnw = dnw.Reversed();
-            }
         }
         Vector3D np = _nplan;
         if (_choix % 2 != 0)
         {
             np = np.Reversed();
-            dnplan = dnplan.Reversed();
         }
 
-        // The plane of the ball's circle, square to the normal and the chord, on the guide plane's side.
-        Vector3D zero = new();
-        ConstRad.SectionNormal(ns, ns2, dnw, dn2w, zero, zero, np, dnplan, zero, out Vector3D npBall, out Vector3D dnpBall, out _);
-        if (!istgt)
-        {
-            // As OCCT: the radius's derivative with the sign of its absolute value
-            double rayprim = _ray < 0.0 ? -_dray : _dray;
-            return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, dnw, dn2w, npBall, dnpBall, _pts, _ptrst, _tgs, _tgrst,
-                                      Math.Abs(_ray), rayprim, center, tgct, poles, dPoles, weights, dWeights);
-        }
-        else
-        {
-            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, npBall, _pts, _ptrst, Math.Abs(_ray), center, poles, weights);
-            return false;
-        }
+        global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, ConstRad.SectionNormal(ns, ns2, np), _pts, _ptrst, Math.Abs(_ray), center, poles, weights);
+        return false;
     }
 
     public override bool Section(in BlendPoint p, NCollection_Array1<Point3D> poles, NCollection_Array1<Vector3D> dPoles,

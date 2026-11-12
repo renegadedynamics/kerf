@@ -49,7 +49,7 @@ public static class MeasureOperations
             Shape s = NotNull(shape.AsShape());
             options ??= Moments;
             if (s.Type == ShapeType.Face && options.Tolerance > 0 && !options.UseTriangulation
-                && PlanarFaceMass.TryCentre(ShapeCasts.Face(s), new Domain(), out Point3D centre))
+                && PlanarFaceMass.TryCentre(ShapeCasts.Face(s), new Domain(closeGaps: true), out Point3D centre))
             {
                 return centre;
             }
@@ -220,16 +220,16 @@ public static class MeasureOperations
                 MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation, settled: true);
                 break;
             case Dimension.Area when options.Tolerance > 0 && !options.UseTriangulation:
-                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly);
+                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly, closeGaps: true);
                 break;
             case Dimension.Area:
-                MassPropertiesBuilder.SurfaceProperties(shape, props, options.SkipShared, options.UseTriangulation);
+                MassPropertiesBuilder.SurfaceProperties(shape, props, options.SkipShared, options.UseTriangulation, closeGaps: true);
                 break;
             case Dimension.Volume when options.Tolerance > 0 && !options.UseTriangulation:
-                MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly);
+                MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly, closeGaps: true);
                 break;
             case Dimension.Volume:
-                MassPropertiesBuilder.VolumeProperties(shape, props, options.OnlyClosed, options.SkipShared, options.UseTriangulation);
+                MassPropertiesBuilder.VolumeProperties(shape, props, options.OnlyClosed, options.SkipShared, options.UseTriangulation, closeGaps: true);
                 break;
             default:
                 throw new KernelArgumentOutOfRangeException(nameof(dimension), dimension, "Not a dimension.");

@@ -885,41 +885,35 @@ internal class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedro
                 }
                 Direction3D dirTri = new(vecTri);
                 Line3D linTri = new(begT, dirTri);
-                ExtElC extrema = new(linPol, linTri, 0.00000001);
-                if (extrema.IsDone)
+                // Extrema_ExtElC of the two lines, without the object (unit 15AL): it is always done, and when the lines
+                // aren't parallel it has one extremum, at these points
+                if (!ExtElC.LinesAreParallel(linPol, linTri, out double u1, out double u2))
                 {
-                    if (extrema.IsParallel == false)
+                    Point3D po = global::Kerf.Engine.Geometry.ElCLib.Value(u1, linPol);
+                    Point3D pt = global::Kerf.Engine.Geometry.ElCLib.Value(u2, linTri);
+                    dist2 = po.SquareDistanceTo(pt);
+                    if (dist2 <= _tolerance * _tolerance)
                     {
-                        if (extrema.ExtCount != 0)
+                        if (IsInSegment(vecPol, new Vector3D(begO, po), nVecPol, out double paramOnO, _tolerance))
                         {
-                            dist2 = extrema.SquareDistance();
-                            if (dist2 <= _tolerance * _tolerance)
+                            if (IsInSegment(vecTri, new Vector3D(begT, pt), nVecTri, out double paramOnT,
+                                            _tolerance))
                             {
-                                extrema.Points(1, out POnCurv pOnC1, out POnCurv pOnC2);
-                                Point3D po = pOnC1.Value();
-                                Point3D pt = pOnC2.Value();
-                                if (IsInSegment(vecPol, new Vector3D(begO, po), nVecPol, out double paramOnO, _tolerance))
+                                Xyz spLieu = begT.XYZ() + ((endT.XYZ() - begT.XYZ()) * paramOnT);
+                                int tmin, tmax;
+                                if (pTri_i > pTri_ip1pc3)
                                 {
-                                    if (IsInSegment(vecTri, new Vector3D(begT, pt), nVecTri, out double paramOnT,
-                                                    _tolerance))
-                                    {
-                                        Xyz spLieu = begT.XYZ() + ((endT.XYZ() - begT.XYZ()) * paramOnT);
-                                        int tmin, tmax;
-                                        if (pTri_i > pTri_ip1pc3)
-                                        {
-                                            tmin = pTri_ip1pc3;
-                                            tmax = pTri_i;
-                                        }
-                                        else
-                                        {
-                                            tmax = pTri_ip1pc3;
-                                            tmin = pTri_i;
-                                        }
-                                        SectionPoint sp = new(new Point3D(spLieu), typOnG, 0, _iLin, paramOnO,
-                                                                   PIType.Edge, tmin, tmax, 0.0, 1.0);
-                                        _sPoins.Append(sp);
-                                    }
+                                    tmin = pTri_ip1pc3;
+                                    tmax = pTri_i;
                                 }
+                                else
+                                {
+                                    tmax = pTri_ip1pc3;
+                                    tmin = pTri_i;
+                                }
+                                SectionPoint sp = new(new Point3D(spLieu), typOnG, 0, _iLin, paramOnO,
+                                                           PIType.Edge, tmin, tmax, 0.0, 1.0);
+                                _sPoins.Append(sp);
                             }
                         }
                     }
