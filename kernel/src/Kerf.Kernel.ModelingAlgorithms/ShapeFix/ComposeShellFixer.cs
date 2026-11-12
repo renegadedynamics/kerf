@@ -1734,8 +1734,9 @@ internal class ComposeShellFixer : RootFixer
                         // twice, the line's parameter goes back by rounding alone, and keeping both points left the
                         // tangency never closed and the seam never made (decision 2305).
                         if (_closedMode && (intLinePar[ii] - intLinePar[jj]) * (intLinePar[k] - intLinePar[ii]) <= 0.0
-                            && Math.Abs(intLinePar[ii] - intLinePar[jj]) > Kerf.Engine.Foundation.Precision.PConfusion()
-                            && Math.Abs(intLinePar[k] - intLinePar[ii]) > Kerf.Engine.Foundation.Precision.PConfusion())
+                            && (UndoneFixes.AreUndone // for tests (decision 2314)
+                                || (Math.Abs(intLinePar[ii] - intLinePar[jj]) > Kerf.Engine.Foundation.Precision.PConfusion()
+                                    && Math.Abs(intLinePar[k] - intLinePar[ii]) > Kerf.Engine.Foundation.Precision.PConfusion())))
                         {
                             continue;
                         }
