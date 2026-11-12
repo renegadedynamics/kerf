@@ -310,7 +310,7 @@ public class BRepFill_OffsetWireTests
         // contour on every pass from the 18th: each is a fan of chords round an arc of radius 5, whose bisectors meet
         // within 3e-7 of one point, too far apart for the map to take them as one node and too near for it to tell
         // them apart. OCCT's loop stops only after 47,524 passes (the square of the 218 elements), 9 s and 22.4 GB.
-        // MatCycle sees the state come back, and from then on the map takes such nodes as one (decision 32501): it
+        // MatCycle sees the state come back, and from then on the map takes such nodes as one (decision 2265): it
         // ends, and the offset is right, 9.728275 from the wire all along, where OCCT's own (291.991, 20 edges, from
         // its coarser polyline, whose map its patch against loops breaks off) comes within 5.96 of it and crosses
         // itself (OCC24255)
@@ -342,7 +342,7 @@ public class BRepFill_OffsetWireTests
         // tests/offset/wire_closed_inside_0_075/G4, OCCT's known failure (TODO OCC23748, "Offset is not done"): the same
         // wire offset inwards by 29.18. Its medial axes go round the same fans, and OCCT's patch against loops (the same
         // number of edges ten inner passes apart) stops their cancelling and leaves them unfinished. The nodes are taken as
-        // one before the patch acts (decision 32501), the maps end, and the offset is one valid wire, 29.184825 from the
+        // one before the patch acts (decision 2265), the maps end, and the offset is one valid wire, 29.184825 from the
         // wire all along (and all of it: a grid of points in the wire's plane has none deeper that is outside it)
         string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
                                         .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "offset_wire_081.brep");
@@ -369,7 +369,7 @@ public class BRepFill_OffsetWireTests
         // A rectangle 100 by 60 whose corners are quarter ellipses of semi-axes 5.000001 and 5, offset inwards by 7: each
         // corner is a fan of chords whose bisectors meet within a millionth of one point. OCCT's patch broke the loop that
         // makes off and the offset came out as a success, 285.629 long in 28 edges, crossing itself and as near as 5.34
-        // to the wire. With the nodes taken as one (decision 32501) it is the rectangle 86 by 46
+        // to the wire. With the nodes taken as one (decision 2265) it is the rectangle 86 by 46
         const double anA = 5.000001, aB = 5.0, aCx = 50 - anA, aCy = 30 - aB;
         MakeWire aMW = new();
         void Corner(double theX, double theY, double theFrom)
@@ -411,7 +411,7 @@ public class BRepFill_OffsetWireTests
     [InlineData(2_000_000_000, 4_000_000_016L)]
     public void A_medial_axis_fails_after_twice_its_elements_and_16_passes(int theElements, long theLimit)
     {
-        // decision 32502: OCCT's square of the elements where that is fewer; never more than an int holds
+        // decision 2266: OCCT's square of the elements where that is fewer; never more than an int holds
         Assert.Equal((int)Math.Min(theLimit, int.MaxValue), global::Kerf.Engine.Offsets.MedialAxis.Mat2d.PassLimit(theElements));
     }
 }

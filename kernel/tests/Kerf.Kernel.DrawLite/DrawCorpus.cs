@@ -415,10 +415,10 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                                                       && theLog.Contains("The length tan1_2 is 376.991118543385", StringComparison.Ordinal)
                                                                       && !theLog.Contains("circle: tan1_3", StringComparison.Ordinal)),
             // OCCT's script holds the figures of OCCT's own result, which crosses itself (its TODO OCC24255) and comes
-            // within 5.96 of the wire it's 9.73 from: the finer polyline's medial axis now ends (decision 32501), and its
+            // within 5.96 of the wire it's 9.73 from: the finer polyline's medial axis now ends (decision 2265), and its
             // offset is valid, shorter and of 18 edges. The length and the counts are the only errors, and nothing is faulty
             // (the script's own TODO line has the word)
-            ["offset/wire_closed_inside_0_025/G4"] = ("the offset is right where OCCT's crosses itself (TODO OCC24255): 281.771 and 18 edges for the script's 291.991 and 20 (decision 32501)",
+            ["offset/wire_closed_inside_0_025/G4"] = ("the offset is right where OCCT's crosses itself (TODO OCC24255): 281.771 and 18 edges for the script's 291.991 and 20 (decision 2265)",
                                                       theLog =>
                                                       {
                                                           string[] anErrors = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("Error", StringComparison.Ordinal))];
@@ -429,9 +429,9 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                                                  && !theLog.Contains("has self-intersection", StringComparison.Ordinal);
                                                       }),
             // OCCT can't build it (its TODO OCC23748) and its script's figures, 428.734 in two wires, are longer than the
-            // wire offset inwards: the medial axis now ends (decision 32501), and the offset is one valid wire, 29.18 from
+            // wire offset inwards: the medial axis now ends (decision 2265), and the offset is one valid wire, 29.18 from
             // the wire all along and all of it there. The length and the three counts are the only errors
-            ["offset/wire_closed_inside_0_075/G4"] = ("built, and right, where OCCT fails (TODO OCC23748): 125.03 in one wire of 15 edges for the script's 428.734 in two of 18 (decision 32501)",
+            ["offset/wire_closed_inside_0_075/G4"] = ("built, and right, where OCCT fails (TODO OCC23748): 125.03 in one wire of 15 edges for the script's 428.734 in two of 18 (decision 2265)",
                                                       theLog =>
                                                       {
                                                           string[] anErrors = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("Error", StringComparison.Ordinal))];

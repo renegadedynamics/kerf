@@ -900,7 +900,7 @@ internal sealed class Tool2d
     /// Kerf: true if <paramref name="point"/> is within <paramref name="tolerance"/> of the tangents to both bisectors
     /// at the point of index <paramref name="crossing"/>, where they cross: it is where they cross as far as the two
     /// can tell, however shallow the angle between them (two that cross at 5 degrees place their crossing ten times
-    /// less surely along them than across), and it isn't if they cross somewhere else as well (decision 32501).
+    /// less surely along them than across), and it isn't if they cross somewhere else as well (decision 2265).
     /// </summary>
     internal bool CrossAt(MedialBisector one, MedialBisector two, int crossing, in Point2D point, double tolerance)
     {
