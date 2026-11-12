@@ -156,7 +156,7 @@ public class BooleanVolumeTests
     [Fact]
     public void A_results_own_tolerance_cant_excuse_a_fuse_of_a_fraction_of_its_inputs()
     {
-        // OCCT #344's fuse with a fuzzy value of 1e-3 (decision 33107): rubbish of volume 0.45 for inputs of 55,931 and
+        // OCCT #344's fuse with a fuzzy value of 1e-3 (decision 2311): rubbish of volume 0.45 for inputs of 55,931 and
         // 51,101, with vertices of tolerance 7.2, which widened the margin past everything. Here a box of 10 for two of
         // 30 by 30 by 30, its vertices' tolerances 7 in place of 1e-7
         using var written = new MemoryStream();

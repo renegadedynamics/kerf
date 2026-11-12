@@ -315,7 +315,7 @@ public sealed class StepToTopoDS_TranslateFaceTests
         Assert.Equal(1, aMesh.TriangleCount);
     }
 
-    // Kerf's own, OCCT's issue 1579 and its commit 22a9ead2a0 (decision 33105)
+    // Kerf's own, OCCT's issue 1579 and its commit 22a9ead2a0 (decision 2309)
 
     /// <summary>The Z of each triangle's normal by its nodes' order, twice its area in the XY plane.</summary>
     private static double[] windings(Triangulation theMesh)

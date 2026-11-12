@@ -255,7 +255,7 @@ The message is BRepFeat's own description of the status (`BRepFeat::Print`).
 | `exchange.failed` | `IFSelect_ReturnStatus::IFSelect_RetFail` | Reading or writing failed. |
 | `exchange.stopped` | `IFSelect_ReturnStatus::IFSelect_RetStop` | Reading or writing was stopped. |
 
-`exchange.entity-skipped` is a warning on a STEP read that succeeded (decision 33104): entities of the file couldn't be
+`exchange.entity-skipped` is a warning on a STEP read that succeeded (decision 2308): entities of the file couldn't be
 read, and what refers to them is missing from the model. Its message gives how many, the first eight identifiers and
 the first failure's text.
 

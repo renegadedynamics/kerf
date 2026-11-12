@@ -73,7 +73,7 @@ public class XSControlNativeTests(ITestOutputHelper theOutput)
         Assert.Equal(KnownDifferences, aDiffs);
     }
 
-    // Files whose dump differs from native's, each with where it first differs (decision 33104): a reference to an entity
+    // Files whose dump differs from native's, each with where it first differs (decision 2308): a reference to an entity
     // that isn't in the file is unresolved, where native binds the entity at the record of that number and then finds it
     // of the wrong type. The third file is corrupted throughout, and has more such references than checks in common.
     private static readonly string[] KnownDifferences =

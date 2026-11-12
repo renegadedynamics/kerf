@@ -214,7 +214,7 @@ public partial class ExchangeTests
     public void StepThatRefersToAnEntityItDoesntHaveImportsWithAWarning()
     {
         // A box's STEP data with one vertex's point changed to an identifier the data doesn't have (the kernel's
-        // decision 33104): the import said nothing, and gave whatever the kernel made of it
+        // decision 2308): the import said nothing, and gave whatever the kernel made of it
         var stream = new MemoryStream();
         Assert.True(Exporters3D.ExportStep(new Box(10, 10, 10), stream).IsSuccess);
         string step = Encoding.ASCII.GetString(stream.ToArray());

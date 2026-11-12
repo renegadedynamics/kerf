@@ -2159,7 +2159,7 @@ internal class StepReaderData : FileReaderData
                         //  ...  And output a more complete message
                         sout.Append("*** ERR StepReaderData *** Entite #").Append(ident).Append("\n    Type:").Append(RecordType(num))
                             .Append("  Param.n0 ").Append(na).Append(": #").Append(id).Append(" Not found").Append('\n');
-                        // Kerf (decision 33104, OCCT's issue 1578): left as it was, the parameter's number is still the
+                        // Kerf (decision 2308, OCCT's issue 1578): left as it was, the parameter's number is still the
                         // identifier, which what reads it takes for a record's number: the reference bound whatever
                         // entity the file has at that record. Unresolved, as the second pass leaves it.
                         fp.SetEntityNumber(0);

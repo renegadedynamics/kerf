@@ -62,7 +62,7 @@ public class ExchangeTests
     }
 
     /// <summary>
-    /// OCCT's issue 382 (decision 33101): a band of a cylinder between a circle and a loop with a step in it, as a STEP
+    /// OCCT's issue 382 (decision 2305): a band of a cylinder between a circle and a loop with a step in it, as a STEP
     /// file gives it, with no seam. The reader puts the seam in along the step's line; where the arc that leaves the
     /// step begins a few billionths of a radian before that line, the seam was never made and the band came back as two
     /// invalid faces, a success.
@@ -113,7 +113,7 @@ public class ExchangeTests
     }
 
     /// <summary>
-    /// OCCT's issue 349 (decision 33102): a strip of plane 0.001 wide written as two lines between the same two vertices,
+    /// OCCT's issue 349 (decision 2306): a strip of plane 0.001 wide written as two lines between the same two vertices,
     /// the vertices midway between them. OCCT moves a line that misses its vertices onto them; both lines moved so
     /// became one, and the strip a face of no area whose wire lay on itself, a success.
     /// </summary>
@@ -136,7 +136,7 @@ public class ExchangeTests
     }
 
     /// <summary>
-    /// OCCT's issue 1578 (decision 33104): a reference to an entity that isn't in the file was bound to whatever the file
+    /// OCCT's issue 1578 (decision 2308): a reference to an entity that isn't in the file was bound to whatever the file
     /// has at the record of that number, here another point, and the model read as if nothing were wrong. It is unresolved:
     /// what refers to it is left out, and the read says which entities.
     /// </summary>

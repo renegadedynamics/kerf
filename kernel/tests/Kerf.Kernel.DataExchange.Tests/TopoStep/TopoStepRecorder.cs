@@ -75,7 +75,7 @@ internal static class TopoStepRecorder
     /// <summary>
     /// The hash and length of the item's BRep text, <paramref name="theText"/>, with the triangles of its complex
     /// triangulated faces and surface sets turned the other way, their second and third nodes exchanged: how OCCT 8.0.1
-    /// winds a strip's and a fan's triangles, against their lists (decision 33105). Null where the item has none, or its
+    /// winds a strip's and a fan's triangles, against their lists (decision 2309). Null where the item has none, or its
     /// triangulations can't be told apart.
     /// </summary>
     public static string? WoundAsNative(Transient theEnt, string theText)

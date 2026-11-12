@@ -127,7 +127,7 @@ public static class Importers
         }
         var root = read.Value;
         ModelShape model = root.Shape is null && root.Children.IsEmpty ? new Assembly(TopoUtil.EmptyCompound()) : FromModel(root);
-        // The reader's warnings come with the model: the entities it had to leave out (the kernel's decision 33104)
+        // The reader's warnings come with the model: the entities it had to leave out (the kernel's decision 2308)
         return Result<ModelShape>.Success(model, [.. read.Diagnostics]);
     }
 

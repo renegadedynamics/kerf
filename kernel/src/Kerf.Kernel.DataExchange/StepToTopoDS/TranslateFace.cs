@@ -104,7 +104,7 @@ internal sealed class TranslateFace : ImportRoot
             for (int trianStripIndex = 1; trianStripIndex <= trianStripsNum; ++trianStripIndex)
             {
                 NCollection_HArray1<int> triangleStrip = trianStrips.Value(trianStripIndex) as NCollection_HArray1<int>;
-                // Kerf (decision 33105): wound as the strip lists them, the first triangle its first three nodes in
+                // Kerf (decision 2309): wound as the strip lists them, the first triangle its first three nodes in
                 // their order and each next one turning the other way round its three; OCCT 8.0.1 winds every one
                 // of them the other way, against the same triangles written one by one
                 for (int index = 3; index <= triangleStrip.Length(); index += 2)
@@ -145,7 +145,7 @@ internal sealed class TranslateFace : ImportRoot
     }
 
     /// <summary>
-    /// Kerf (decision 33105, OCCT's issue 1579): whether the fan's triangle that ends at <paramref name="index"/>, its
+    /// Kerf (decision 2309, OCCT's issue 1579): whether the fan's triangle that ends at <paramref name="index"/>, its
     /// first node and the two at index - 1 and index, has three different nodes. One test for counting the triangles and
     /// for making them: OCCT counted every one and then left some out, by the strip's test, which on a fan compares the
     /// wrong nodes, so a fan with a repeated index gave a triangle of two nodes and one that was never set.
@@ -288,7 +288,7 @@ internal sealed class TranslateFace : ImportRoot
 
         const bool hasUVNodes = false;
         int nbNodes = pnindices is not null ? pnindices.Length() : nodes.Length();
-        // Kerf (decision 33105, OCCT's issue 1579): normals only where SetNormals can set them, one for all the nodes or
+        // Kerf (decision 2309, OCCT's issue 1579): normals only where SetNormals can set them, one for all the nodes or
         // one each; with any other count OCCT made a mesh that has normals, none of them set
         bool hasNormals = normNum > 0 && normals is not null && normals.RowLength() == 3 && (normNum == 1 || normNum == nbNodes);
 

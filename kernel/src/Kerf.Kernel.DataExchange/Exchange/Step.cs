@@ -192,7 +192,7 @@ public static class Step
 
     /// <summary>
     /// The warning for entities the reader couldn't load or translate, so that what refers to them is missing from the
-    /// model (decision 33104): those whose data failed its checks as the file was loaded, a reference to an entity that
+    /// model (decision 2308): those whose data failed its checks as the file was loaded, a reference to an entity that
     /// isn't in the file among them, and those whose translation recorded a failure. Null where there are none.
     /// </summary>
     private static Diagnostic? SkippedEntities(CafReader reader)

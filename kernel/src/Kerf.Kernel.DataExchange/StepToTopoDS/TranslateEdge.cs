@@ -484,7 +484,7 @@ internal sealed class TranslateEdge : ImportRoot
     }
 
     /// <summary>
-    /// Kerf (decision 33102): whether the file has another edge between this edge's two vertices whose curve is a line
+    /// Kerf (decision 2306): whether the file has another edge between this edge's two vertices whose curve is a line
     /// parallel to this one and apart from it. Shifted onto the vertices, as #25415's case is, the two would become one
     /// line: a strip of face between them, 0.001 wide in OCCT's issue 349, would have no width and a wire that lies on
     /// itself. The file means two lines there, so neither is shifted and the vertices take the distance.

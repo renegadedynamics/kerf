@@ -150,7 +150,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         // list after the transfer; the port's list is complete (1 entity, 2 fails): occt-issues.md, 8F
         "bug25013_25013faces.stp",
         // corrupted throughout, with references to entities that aren't in it: unresolved in the port, where native binds
-        // each to the entity at the record of that number (decision 33104), so the load's checks count 204 warnings for
+        // each to the entity at the record of that number (decision 2308), so the load's checks count 204 warnings for
         // native's 178, on the same 58 entities
         "bug32314_corrupted.stp",
     };

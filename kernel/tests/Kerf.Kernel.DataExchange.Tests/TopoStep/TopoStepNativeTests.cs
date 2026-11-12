@@ -139,7 +139,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
                 }
 
                 // A strip's and a fan's triangles are wound as their lists are, where OCCT 8.0.1 winds them the other
-                // way (decision 33105): such an item is native's once its complex faces' triangles are turned back
+                // way (decision 2309): such an item is native's once its complex faces' triangles are turned back
                 string[] aNative = aN.Split(' ');
                 if (aParts.Length == aNative.Length && aParts.Length > 4 && int.TryParse(aParts[1], out int anItem)
                     && aNative.Where((f, k) => k != 3).SequenceEqual(aParts.Where((f, k) => k != 3))
@@ -172,11 +172,11 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
         Assert.Equal(aRun == aBlocks.Count ? RewoundItems : aRewound, aRewound);
     }
 
-    // The corpus's items with complex triangulated faces or surface sets, in five of its files (decision 33105)
+    // The corpus's items with complex triangulated faces or surface sets, in five of its files (decision 2309)
     private const int RewoundItems = 626;
 
     /// <summary>
-    /// The corpus's complex triangulated faces and surface sets that carry normals (decision 33105): how many of their
+    /// The corpus's complex triangulated faces and surface sets that carry normals (decision 2309): how many of their
     /// strips' and fans' triangles turn the way their nodes' normals point, and how many against. A cube tessellated by
     /// CATIA and two of NIST's test models turn with them, every triangle; one file of annotations, its writer unnamed,
     /// turns against them, every triangle. As OCCT 8.0.1 winds them the two counts of each file change places.

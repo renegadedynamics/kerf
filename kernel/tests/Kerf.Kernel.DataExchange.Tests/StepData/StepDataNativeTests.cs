@@ -57,7 +57,7 @@ public class StepDataNativeTests(ITestOutputHelper output)
             output.WriteLine(aDiff);
         }
 
-        // One file differs from native's (decision 33104): it is corrupted, and its first entity refers to one that isn't
+        // One file differs from native's (decision 2308): it is corrupted, and its first entity refers to one that isn't
         // there. Native binds the reference to the record of that number, a header's, and has a reference to nothing, which
         // it can't write; the port keeps it unresolved, with the file's text
         string[] aKnown = aRun == 0 ? [] :
