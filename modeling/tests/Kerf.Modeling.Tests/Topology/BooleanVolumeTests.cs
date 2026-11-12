@@ -22,7 +22,7 @@ public class BooleanVolumeTests
 
     // The check measures against the result's own tolerance, so a clean that raised it could pass a wrong result: a cut of equal
     // cylinders of radius 50000 that removed nothing, wrong by the check, was cleaned into the whole cylinder with a vertex of
-    // tolerance 236, which passed, 74% out and a success (kernel decision 32702). Here by hand, as that shape came from a
+    // tolerance 236, which passed, 74% out and a success (kernel decision 2277). Here by hand, as that shape came from a
     // switch nothing now turns on for a first attempt: a "cut" that is the cylinder untouched, with a vertex's tolerance at 1e-4
     // as made, which the check proves wrong, and the same with that tolerance at 5 as cleaned, which it passes
     // The shape with its first vertex's tolerance set, through its text: nothing writes into a made shape

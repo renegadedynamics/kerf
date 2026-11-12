@@ -36,7 +36,7 @@ public class GapClosuresTests
     }
 
     // The cut as the engine makes it, and OCCT: the public cut makes this one again with each crossing as a vertex of its own,
-    // and closed (decision 32701)
+    // and closed (decision 2276)
     private static Shape Cut()
     {
         (Shape cylinder, Shape tool) = Inputs(Offset);
@@ -68,7 +68,7 @@ public class GapClosuresTests
     // The public Booleans make a result that's open inside a vertex again, with each crossing as a vertex of its own, the pieces of
     // the end circle between the crossings shared with the tool's seam, and keep that one where it's closed, valid and of the same
     // volume: no gap, no vertex as wide as the crossings are apart, and OCCT's own reading of the volume, which was 1e-5 out, the
-    // geometry's (decision 32701)
+    // geometry's (decision 2276)
     [Theory]
     [InlineData(-3e-7)]
     [InlineData(-1e-8)]

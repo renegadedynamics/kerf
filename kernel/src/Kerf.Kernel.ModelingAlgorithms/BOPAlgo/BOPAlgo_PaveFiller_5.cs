@@ -460,7 +460,7 @@ internal partial class PaveFiller
                                     Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
                                     Point3D p = Tool.Pnt(v);
                                     double distPP = p.DistanceTo(pnew0);
-                                    // A crossing far from the vertex is a crossing of its own, with its own vertex (decision 32701)
+                                    // A crossing far from the vertex is a crossing of its own, with its own vertex (decision 2276)
                                     if (IsApart(nV[j], pnew0, tolE + tolF))
                                     {
                                         apart = true;

@@ -364,7 +364,7 @@ internal partial class PaveFiller
                         pb2.Indices(out nV[2], out nV[3]);
                         //
                         // A crossing far from the vertex its range reaches is a crossing of its own, and isn't taken for that
-                        // vertex (decision 32701)
+                        // vertex (decision 2276)
                         bIsOnPave.CopyTo(bNear);
                         if (_crossingsApart > 0)
                         {
@@ -958,7 +958,7 @@ internal partial class PaveFiller
     /// been increased and unified.
     /// </summary>
     /// <param name="range">The progress range.</param>
-    /// <param name="afterBlocks">Kerf (decision 32701): asked again after MakeBlocks, when the sections' ends have split the edges
+    /// <param name="afterBlocks">Kerf (decision 2276): asked again after MakeBlocks, when the sections' ends have split the edges
     /// and each pave block has its edge; a common block found then takes the edge of its first pave block.</param>
     protected void ForceInterfEE(ProgressRange range, bool afterBlocks = false)
     {

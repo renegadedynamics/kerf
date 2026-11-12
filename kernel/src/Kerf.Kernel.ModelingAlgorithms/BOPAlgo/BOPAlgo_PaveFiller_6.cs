@@ -3037,7 +3037,7 @@ internal partial class PaveFiller
                     Point3D pOnC = new();
                     ic.D0(t, ref pOnC);
                     tolV = pOnC.DistanceTo(Tool.Pnt(v));
-                    // A curve passing far from the vertex doesn't pass through it (decision 32701)
+                    // A curve passing far from the vertex doesn't pass through it (decision 2276)
                     bIsVertexOnLine = !IsApart(nV, pOnC, aTolR3D);
                 }
             }

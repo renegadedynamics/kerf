@@ -196,7 +196,7 @@ public static class BooleanOperations
     }
 
     // How far from a vertex, in tolerances, a crossing may be and still be covered by growing the vertex, when a result open
-    // inside a vertex is made again (decision 32701)
+    // inside a vertex is made again (decision 2276)
     private const double CrossingsApart = 10;
 
     // What two volumes of one Boolean made two ways may differ by, of the larger
@@ -206,7 +206,7 @@ public static class BooleanOperations
     /// A result whose faces are open in their parameters inside a vertex's tolerance, where its inputs' aren't, is made again
     /// with each crossing as a vertex of its own (<see cref="Engine.Booleans.PaveFiller.SetCrossingsApart"/>), and that one is
     /// kept if it's closed, valid, passes the check of volumes and has the first one's volume; otherwise the first is, which the
-    /// public measurements read across the gaps (decisions 2257 and 32701). OCCT grows one vertex over crossings near it and
+    /// public measurements read across the gaps (decisions 2257 and 2276). OCCT grows one vertex over crossings near it and
     /// drops the pieces between, which leaves each face's boundary open there: valid, and read as area missing by anything
     /// that integrates round the boundary as OCCT's own <c>BRepGProp</c> does.
     /// </summary>

@@ -92,7 +92,7 @@ internal class BuilderAlgo : Algo
 
     public global::Kerf.Booleans.GlueMode Glue() => _glue;
 
-    /// <summary>Kerf (decision 32701): the pave filler's <see cref="PaveFiller.SetCrossingsApart"/>; 0, the default, is
+    /// <summary>Kerf (decision 2276): the pave filler's <see cref="PaveFiller.SetCrossingsApart"/>; 0, the default, is
     /// OCCT's behaviour.</summary>
     public void SetCrossingsApart(double tolerances) => _crossingsApart = tolerances;
 

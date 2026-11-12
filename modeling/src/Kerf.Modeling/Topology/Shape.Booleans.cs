@@ -187,7 +187,7 @@ public static partial class ShapeExtensions
 
         // The check measures against the result's own tolerance, so a clean that raises it can pass what the result as made
         // wouldn't: equal cylinders of radius 50000, 2e-8 short of crossing, whose cut removed nothing and was wrong by the
-        // check, cleaned into the whole cylinder with a vertex of tolerance 236, which passed, 74% out (decision 32702). A clean
+        // check, cleaned into the whole cylinder with a vertex of tolerance 236, which passed, 74% out (decision 2277). A clean
         // is only tidying and can't make a wrong result right, so where it at least doubles the tolerance the result as made is
         // what's checked; and one the kernel proved right keeps its clean only if its volume is the same
         if (made && !result.IsSame(uncleaned) && RuleOf(operation) is { } asMade && LargestTolerance(result) > 2 * LargestTolerance(uncleaned))
