@@ -8,6 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Library;
+using Kerf.Engine.Geometry.Properties;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Fixes;
@@ -1362,37 +1363,8 @@ internal partial class UnifySameDomain
     // Gets the normal to surface by the given parameter on edge. Returns True if normal was computed.
     private static bool GetNormalToSurface(in Face face, in Edge edge, double p, ref Direction3D normal)
     {
-        double f, l;
         // get 2d curve to get point in 2d
-        Curve2D? c2d;
-        if (Tool.IsClosed(edge, face))
-        {
-            // Find the edge in the face: it will have correct orientation
-            var         edgeInFace = new Edge();
-            Face aFace        = face;
-            aFace.Orient(Forward);
-            var explo = new Explorer(aFace, ShapeType.Edge);
-            for (; explo.More(); explo.Next())
-            {
-                Edge anEdge = ShapeCasts.Edge(explo.Current());
-                if (anEdge.IsSame(edge))
-                {
-                    edgeInFace = anEdge;
-                    break;
-                }
-            }
-            if (edgeInFace.IsNull)
-            {
-                return false;
-            }
-
-            c2d = Tool.CurveOnSurface(edgeInFace, aFace, out f, out l);
-        }
-        else
-        {
-            c2d = Tool.CurveOnSurface(edge, face, out f, out l);
-        }
-
+        Curve2D? c2d = CurveOfEdgeOnFace(face, edge);
         if (c2d is null)
         {
             return false;
@@ -1420,6 +1392,91 @@ internal partial class UnifySameDomain
         vNormal = vNormal.Transformed(loc.Transformation);
         normal = new Direction3D(vNormal);
         return true;
+    }
+
+    // Kerf: how far apart the normals of two faces may be where they're taken through the edge's own curve on each,
+    // at one parameter, and still be the same normal: an edge's curves on its faces may be up to its tolerance from its
+    // curve in space each, so the two points may be apart, and over that distance a surface's normal turns by its
+    // curvature. Twice the distance between the points times the larger of the surfaces' curvatures there, for the
+    // rounding of both; 0 where the points are further apart than the tolerance allows, or a curvature isn't defined.
+    // OCCT compares the normals at the angular tolerance alone, 1e-12 by default, and so leaves apart two faces of one
+    // cone whose shared edge has curves 2e-6 apart under a tolerance of 2.7e-4 (#666, decision 33001).
+    private static double NormalSlack(in Face face, in Face checkedFace, in Edge edge, double p)
+    {
+        if (!PointAndCurvature(face, edge, p, out Point3D point1, out double curvature1)
+            || !PointAndCurvature(checkedFace, edge, p, out Point3D point2, out double curvature2))
+        {
+            return 0.0;
+        }
+
+        double apart = point1.DistanceTo(point2);
+        if (apart > 2.0 * Tool.Tolerance(edge))
+        {
+            return 0.0;
+        }
+
+        return 2.0 * apart * Math.Max(curvature1, curvature2);
+    }
+
+    // Kerf: the point of the face's surface under the edge's curve on it at p, in space, and the larger of the
+    // surface's principal curvatures there, as a magnitude.
+    private static bool PointAndCurvature(in Face face, in Edge edge, double p, out Point3D point, out double curvature)
+    {
+        point = default;
+        curvature = 0.0;
+        Curve2D? c2d = CurveOfEdgeOnFace(face, edge);
+        if (c2d is null)
+        {
+            return false;
+        }
+
+        c2d.D0(p, out Point2D p2d);
+        Surface s = Tool.Surface(face, out Placement loc)!;
+        var props = new SLProps(s, p2d.X, p2d.Y, 2, global::Kerf.Engine.Foundation.Precision.Confusion());
+        if (!props.IsCurvatureDefined())
+        {
+            return false;
+        }
+
+        point = props.Value().Transformed(loc.Transformation);
+        curvature = Math.Max(Math.Abs(props.MaxCurvature()), Math.Abs(props.MinCurvature()));
+        return true;
+    }
+
+    // The edge's curve on the face: GetNormalToSurface's lookup (Kerf: taken out of it, for NormalSlack)
+    private static Curve2D? CurveOfEdgeOnFace(in Face face, in Edge edge)
+    {
+        double f, l;
+        Curve2D? c2d;
+        if (Tool.IsClosed(edge, face))
+        {
+            // Find the edge in the face: it will have correct orientation
+            var         edgeInFace = new Edge();
+            Face aFace        = face;
+            aFace.Orient(Forward);
+            var explo = new Explorer(aFace, ShapeType.Edge);
+            for (; explo.More(); explo.Next())
+            {
+                Edge anEdge = ShapeCasts.Edge(explo.Current());
+                if (anEdge.IsSame(edge))
+                {
+                    edgeInFace = anEdge;
+                    break;
+                }
+            }
+            if (edgeInFace.IsNull)
+            {
+                return null;
+            }
+
+            c2d = Tool.CurveOnSurface(edgeInFace, aFace, out f, out l);
+        }
+        else
+        {
+            c2d = Tool.CurveOnSurface(edge, face, out f, out l);
+        }
+
+        return c2d;
     }
 
     private static bool IsSameDomain(in Face        aFace,

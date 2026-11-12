@@ -494,7 +494,8 @@ internal partial class UnifySameDomain : Transient
                         {
                             // and check if the adjacent faces are having approximately same normals
                             double angle = dn1.AngleTo(dn2);
-                            if (angle > _angTol)
+                            // Kerf: or as near as the edge's curves on the two faces allow (decision 33001)
+                            if (angle > _angTol && angle > _angTol + NormalSlack(face, checkedFace, edge, tMid))
                             {
                                 continue;
                             }

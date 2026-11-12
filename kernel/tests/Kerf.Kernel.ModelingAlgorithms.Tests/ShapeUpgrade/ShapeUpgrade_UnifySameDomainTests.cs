@@ -118,6 +118,49 @@ public class ShapeUpgrade_UnifySameDomainTests
         Assert.True(aUnifier.Shape().Mesh().IsSuccess);
     }
 
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(2e-7)]
+    public void Two_faces_of_a_cone_whose_shared_edge_has_curves_a_little_apart_are_merged(double theShift)
+    {
+        // #666: two faces of one cone share an edge whose curve on one of them is 2e-7 along U, 2.4e-6 in space, from
+        // its curve on the other, under a tolerance of 2.7e-4. The normals taken through the two curves are then 1.4e-7
+        // apart, and OCCT's test at the angular tolerance left the faces apart (decision 33001).
+        // a surface each, as the issue's faces have
+        static ConicalSurface Cone() => new(new CoordinateSystem(), Math.PI / 4, 12);
+        var aSewing = new global::Kerf.Engine.Healing.Sewing(1.0e-6);
+        aSewing.Add(new MakeFace(Cone(), 0, 1, 0, 3, 1e-7).InternalFace());
+        aSewing.Add(new MakeFace(Cone(), 1, 2, 0, 3, 1e-7).InternalFace());
+        aSewing.Perform();
+        Shape aShell = aSewing.InternalSewedShape();
+        Assert.Equal(2, Count(aShell, ShapeType.Face));
+        Assert.Equal(7, Count(aShell, ShapeType.Edge));
+
+        if (theShift != 0.0)
+        {
+            var aFaces = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, aFaces);
+            int aShared = Enumerable.Range(0, aFaces.Count).Single(i => aFaces.ValueAt(i).Extent() == 2);
+            Edge anEdge = ShapeCasts.Edge(aFaces.KeyAt(aShared));
+            Face aFace = ShapeCasts.Face(aFaces.ValueAt(aShared).Last());
+            var aLine = (LineCurve2D)Tool.CurveOnSurface(anEdge, aFace, out _, out _)!;
+            new BrepBuilder().UpdateEdge(anEdge, new LineCurve2D(new Point2D(aLine.Location.X + theShift, aLine.Location.Y), aLine.Direction),
+                                         aFace, 2.7e-4);
+            Assert.True(new Analyzer(aShell).IsValid());
+        }
+
+        var aUnifier = new UnifySameDomain(aShell, true, true, false);
+        aUnifier.Build();
+
+        Assert.Equal(1, Count(aUnifier.Shape(), ShapeType.Face));
+        Assert.True(new Analyzer(aUnifier.Shape()).IsValid());
+        Properties aBefore = new();
+        Properties anAfter = new();
+        MassPropertiesBuilder.SurfaceProperties(aShell, aBefore);
+        MassPropertiesBuilder.SurfaceProperties(aUnifier.Shape(), anAfter);
+        Assert.Equal(aBefore.Mass(), anAfter.Mass(), 1e-4);
+    }
+
     [Fact]
     public void A_box_cut_by_a_sphere_stays_valid_and_keeps_its_volume()
     {
