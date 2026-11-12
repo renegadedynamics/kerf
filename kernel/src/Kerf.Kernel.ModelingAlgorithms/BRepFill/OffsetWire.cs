@@ -424,6 +424,8 @@ internal sealed class OffsetWire
     /// <exception cref="ConstructionErrorException">A closed result is expected and a parallel wire isn't closed.</exception>
     public void Perform(double offset, double alt = 0.0)
     {
+        // Kerf: whether the parallel has been put to ComesNearer already (the finer polyline's, when it stands)
+        bool keptItsDistance = false;
         try
         {
             _callGen = false;
@@ -452,13 +454,16 @@ internal sealed class OffsetWire
                 bool done;
                 try
                 {
-                    done = PerformOnPolylines(badEdges, offset, alt, .001) && (_isOpenResult || AllWiresClosed(_shape));
+                    done = PerformOnPolylines(badEdges, offset, alt, .001)
+                           && (_isOpenResult || AllWiresClosed(_shape))
+                           && KeepsItsDistance(_spine, _shape, offset, alt, _joinType, _isOpenResult);
                 }
                 catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
                                                     && exception is not ImmutableObjectException)
                 {
                     done = false;
                 }
+                keptItsDistance = done;
                 if (!done)
                 {
                     _mapSpine = mapSpine;
@@ -496,6 +501,134 @@ internal sealed class OffsetWire
                     _isDone = false;
                     throw new ConstructionErrorException("Offset wire is not closed.");
                 }
+            }
+        }
+
+        // Kerf: a parallel is at its distance from the spine, every point of it, or it is wrong, whatever the medial axis
+        // did to give it, and is no success (decisions 1742, 2279, 2281)
+        if (!keptItsDistance && !_shape.IsNull && !KeepsItsDistance(_spine, _shape, offset, alt, _joinType, _isOpenResult))
+        {
+            _shape.Nullify();
+            _isDone = false;
+            throw new ConstructionErrorException("Offset wire is not at the offset from the spine.");
+        }
+    }
+
+    // Kerf's (OCCT has no such check). How far, as parts of the offset, a point of a parallel may be nearer the spine or
+    // further from it than the offset. A polyline standing in for a curve (CheckBadEdges) is out by 1% of the offset by
+    // design and 1.3% as measured, on either side; every parallel of the corpus that is right is within that, and the
+    // nearest wrong one is 2.4% out (decision 2281)
+    private const double LeastOfTheOffset = 0.98;
+    private const double MostOfTheOffset = 1.02;
+
+    /// <summary>
+    /// Kerf: whether every point of the parallel tried is at the offset from the spine: the three quarter points of each
+    /// of its edges, their distance to the nearest edge of the spine, measured in the spine's plane (the parallel is at
+    /// the altitude <paramref name="alt"/> above it). Independent of the medial axis and of the trimming: distances from
+    /// points to curves. Not nearer than <see cref="LeastOfTheOffset"/> of the offset, and not further than
+    /// <see cref="MostOfTheOffset"/> unless the join is by intersection (a sharp corner is further, and right). An
+    /// open result isn't put to it: one side of an open wire may rightly pass nearer the other side of another part
+    /// of it, and OCCT's open results are further than the offset at some corners.
+    /// </summary>
+    internal static bool KeepsItsDistance(in Shape spine, in Shape parallel, double offset, double alt,
+        global::Kerf.Geometry.JoinKind join, bool isOpenResult)
+    {
+        double distance = Math.Abs(offset);
+        if (parallel.IsNull || !(distance > global::Kerf.Engine.Foundation.Precision.Confusion()))
+        {
+            return true;
+        }
+        DistanceRange(spine, parallel, alt, out double least, out double most);
+        if (least > most)
+        {
+            return true; // no point to try
+        }
+        return isOpenResult
+               || (least >= LeastOfTheOffset * distance
+                   && (join == global::Kerf.Geometry.JoinKind.Intersection || most <= MostOfTheOffset * distance));
+    }
+
+    // The least and the most of the distances, in the spine's plane, from the quarter points of the parallel's edges to
+    // the spine (each the distance to the nearest of the spine's edges, those whose boxes are further than the nearest
+    // found left out)
+    private static void DistanceRange(in Shape spine, in Shape parallel, double alt, out double least, out double most)
+    {
+        least = double.MaxValue;
+        most = 0.0;
+        List<(Kerf.Engine.Extrema.CurvePointExtrema Extrema, Kerf.Engine.Geometry.Bounds.Box Box)> spineEdges = [];
+        for (Explorer exp = new(spine, ShapeType.Edge); exp.More(); exp.Next())
+        {
+            Edge edge = ShapeCasts.Edge(exp.Current());
+            if (!Tool.IsGeometric(edge))
+            {
+                continue;
+            }
+            EdgeCurveAdaptor curve = new(edge);
+            Tool.Range(edge, out double first, out double last);
+            Kerf.Engine.Extrema.CurvePointExtrema extrema = new();
+            extrema.Initialize(curve, first, last, Math.Max(curve.Resolution(global::Kerf.Engine.Foundation.Precision.Confusion()),
+                global::Kerf.Engine.Foundation.Precision.PConfusion()));
+            Kerf.Engine.Geometry.Bounds.Box box = new();
+            Kerf.Engine.Measurement.Bounds.Add(edge, ref box);
+            if (!box.IsVoid)
+            {
+                spineEdges.Add((extrema, box));
+            }
+        }
+        if (spineEdges.Count == 0)
+        {
+            return;
+        }
+
+        (double Square, int Index)[] byBox = new (double, int)[spineEdges.Count];
+        for (Explorer exp = new(parallel, ShapeType.Edge); exp.More(); exp.Next())
+        {
+            Edge edge = ShapeCasts.Edge(exp.Current());
+            if (!Tool.IsGeometric(edge))
+            {
+                continue;
+            }
+            EdgeCurveAdaptor curve = new(edge);
+            Tool.Range(edge, out double first, out double last);
+            for (int i = 1; i <= 3; i++)
+            {
+                Point3D point = curve.Value(first + (last - first) * i / 4.0);
+                for (int k = 0; k < byBox.Length; k++)
+                {
+                    spineEdges[k].Box.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
+                    double dx = Math.Max(0.0, Math.Max(xmin - point.X, point.X - xmax));
+                    double dy = Math.Max(0.0, Math.Max(ymin - point.Y, point.Y - ymax));
+                    double dz = Math.Max(0.0, Math.Max(zmin - point.Z, point.Z - zmax));
+                    byBox[k] = (dx * dx + dy * dy + dz * dz, k);
+                }
+                Array.Sort(byBox);
+                double nearest = double.MaxValue;
+                foreach ((double boxSquare, int index) in byBox)
+                {
+                    if (boxSquare >= nearest)
+                    {
+                        break;
+                    }
+                    Kerf.Engine.Extrema.CurvePointExtrema extrema = spineEdges[index].Extrema;
+                    // The ends of the edge are measured whether or not a foot of a perpendicular is found
+                    extrema.Perform(point);
+                    extrema.TrimmedSquareDistances(out double atFirst, out double atLast, out _, out _);
+                    nearest = Math.Min(nearest, Math.Min(atFirst, atLast));
+                    if (extrema.IsDone)
+                    {
+                        for (int n = 1; n <= extrema.ExtCount; n++)
+                        {
+                            nearest = Math.Min(nearest, extrema.SquareDistance(n));
+                        }
+                    }
+                }
+                if (nearest == double.MaxValue)
+                {
+                    continue;
+                }
+                double inPlane = Math.Sqrt(Math.Max(0.0, nearest - alt * alt));
+                least = Math.Min(least, inPlane);
+                most = Math.Max(most, inPlane);
             }
         }
     }

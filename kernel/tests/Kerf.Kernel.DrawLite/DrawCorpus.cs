@@ -370,6 +370,19 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // OCCT can't build it (TODO OCC23748); the finer polyline does, shorter than the script's figure
             ["offset/wire_unclosed_outside_0_075/A1"] = ("built where OCCT fails (TODO OCC23748), 10.60 for the script's 11.69 (decision 1980)",
                                                          "The length of result shape is 10.6026, expected 11.6898"),
+            // Each offset came nearer the wire than its distance, by more than 2%, and was a success; it is refused now
+            // (decisions 2279, 2281). The first, third and fifth are OCCT's known problems (a face on the result is
+            // faulty); the other two passed OCCT's script, which checks a length and counts
+            ["offset/wire_closed_inside_0_005/B7"] = ("refused: the offset came within 0.10 of the wire for 0.93 (OCCT's TODO OCC23068; decision 2279)",
+                                                      " Error: Offset is not done."),
+            ["offset/wire_unclosed_outside_0_025/B3"] = ("refused: the offset came within 10.08 of the wire for 11.24 (decision 2279)",
+                                                         " Error: Offset is not done."),
+            ["offset/wire_unclosed_outside_0_025/B4"] = ("refused: the offset came within 2.35 of the wire for 11.24 (OCCT's TODO OCC31005; decision 2279)",
+                                                         " Error: Offset is not done."),
+            ["bugs/modalg_6/bug6768"] = ("refused: the third wire's offset came within 0.003 of the wire for 1 (decision 2279)",
+                                         " Error: Offset is not done."),
+            ["offset/wire_unclosed_outside_0_075/A9"] = ("refused: the offset came within 2,299 of the wire for 2,357, and a part of it was missing (OCCT's TODO OCC23748; decision 2281)",
+                                                         " Error: Offset is not done."),
         };
 
     // Before IntendedDifferences, which reads them as it's initialised
@@ -379,11 +392,11 @@ public sealed class DrawCorpus(string theTestsDirectory)
         "offset/wire_closed_inside_0_075/C8",
         "offset/wire_closed_outside_0_005/I8", "offset/wire_closed_outside_0_075/A4", "offset/wire_closed_outside_0_075/A5",
         "offset/wire_unclosed_outside_0_005/B6", "offset/wire_unclosed_outside_0_025/A2", "offset/wire_unclosed_outside_0_025/A3",
-        "offset/wire_unclosed_outside_0_025/B2", "offset/wire_unclosed_outside_0_025/B3", "offset/wire_unclosed_outside_0_025/B6",
+        "offset/wire_unclosed_outside_0_025/B2", "offset/wire_unclosed_outside_0_025/B6",
         "offset/wire_unclosed_outside_0_025/C4", "offset/wire_unclosed_outside_0_075/A2", "offset/wire_unclosed_outside_0_075/A3",
         "offset/wire_unclosed_outside_0_075/B1", "offset/wire_unclosed_outside_0_075/B2", "offset/wire_unclosed_outside_0_075/B3",
         "offset/wire_unclosed_outside_0_075/B4", "offset/wire_unclosed_outside_0_075/B5", "offset/wire_unclosed_outside_0_075/B6",
-        "offset/wire_unclosed_outside_0_075/C4", "bugs/modalg_4/bug7668", "bugs/modalg_6/bug6768",
+        "offset/wire_unclosed_outside_0_075/C4", "bugs/modalg_4/bug7668",
     ];
 
     private static readonly Regex OffsetCountError =
