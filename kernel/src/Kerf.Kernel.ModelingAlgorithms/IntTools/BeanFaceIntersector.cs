@@ -33,7 +33,9 @@ namespace Kerf.Engine.Intersection.Tools;
 /// (<see cref="IntersectionContext.SurfaceData(in Face)"/>), keyed by sample only, so a run could reuse boxes another edge
 /// enlarged by its own tolerance, and its result depended on what the context computed before. The port keys the
 /// cached boxes by everything they are computed from and checks a box cached by an earlier run as a fresh one is
-/// checked, so every run gives the result a fresh context gives (decision 753; occt-issues.md, unit 6C).
+/// checked, so every run gives the result a fresh context gives (decision 753; occt-issues.md, unit 6C). Kerf adds to
+/// the boxes a bound along the samples' own directions (<see cref="SampleSeparation"/>, decision 32801), and passes a
+/// pair over once its sample of the curve has a touch and the rest of it is proved apart (decision 32802).
 /// </para>
 /// <para>
 /// The adaptors given to <see cref="Init(EdgeCurveAdaptor, FaceSurfaceAdaptor, double, double)"/> are shared, not
@@ -1255,7 +1257,9 @@ internal class BeanFaceIntersector
     // up for the exact intersection, as OCCT gives it up where it can't sample further. Each pair costs an extremum, about
     // 0.2 ms, and an edge that runs beside a narrow B-spline face without touching it, askew to the axes, lists a pair for
     // every sample down to the size of the gap: 99,873 pairs and 16 s for one edge 0.007 from a band 10 long, where giving
-    // up takes 0.1 to 0.3 s and finds the same (occt-issues.md, unit 15Y). The corpus's Booleans reach 1,458 pairs.
+    // up takes 0.1 to 0.3 s and finds the same (occt-issues.md, unit 15Y). Since unit 15Y2 such an edge lists no pairs
+    // where the samples can be told apart along their own directions (decision 32801), and the corpus's Booleans reach 729,
+    // at the apex of a patch; the limit is for what that bound doesn't speak for, a rational or an offset surface.
     private const int MostLocalizedPairs = 2000;
 
     private bool LocalizeSolutions(in CurveRangeSample curveRange,
