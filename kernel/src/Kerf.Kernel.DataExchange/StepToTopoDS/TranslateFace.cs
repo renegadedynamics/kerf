@@ -104,13 +104,16 @@ internal sealed class TranslateFace : ImportRoot
             for (int trianStripIndex = 1; trianStripIndex <= trianStripsNum; ++trianStripIndex)
             {
                 NCollection_HArray1<int> triangleStrip = trianStrips.Value(trianStripIndex) as NCollection_HArray1<int>;
+                // Kerf (decision 33105): wound as the strip lists them, the first triangle its first three nodes in
+                // their order and each next one turning the other way round its three; OCCT 8.0.1 winds every one
+                // of them the other way, against the same triangles written one by one
                 for (int index = 3; index <= triangleStrip.Length(); index += 2)
                 {
                     if (triangleStrip.Value(index) != triangleStrip.Value(index - 2)
                         && triangleStrip.Value(index) != triangleStrip.Value(index - 1))
                     {
-                        mesh.SetTriangle(triangleIndex++, new Triangle1(triangleStrip.Value(index - 2), triangleStrip.Value(index),
-                                                                                triangleStrip.Value(index - 1)));
+                        mesh.SetTriangle(triangleIndex++, new Triangle1(triangleStrip.Value(index - 2), triangleStrip.Value(index - 1),
+                                                                                triangleStrip.Value(index)));
                     }
                 }
 
@@ -120,8 +123,8 @@ internal sealed class TranslateFace : ImportRoot
                         && triangleStrip.Value(index) != triangleStrip.Value(index - 1))
                     {
                         mesh.SetTriangle(triangleIndex++, new Triangle1(triangleStrip.Value(index - 2),
-                                                                                triangleStrip.Value(index - 1),
-                                                                                triangleStrip.Value(index)));
+                                                                                triangleStrip.Value(index),
+                                                                                triangleStrip.Value(index - 1)));
                     }
                 }
             }
@@ -131,16 +134,24 @@ internal sealed class TranslateFace : ImportRoot
                 NCollection_HArray1<int> triangleFan = trianFans.Value(trianFanIndex) as NCollection_HArray1<int>;
                 for (int index = 3; index <= triangleFan.Length(); ++index)
                 {
-                    if (triangleFan.Value(index) != triangleFan.Value(index - 2)
-                        && triangleFan.Value(index - 1) != triangleFan.Value(index - 2))
+                    if (IsFanTriangle(triangleFan, index))
                     {
-                        mesh.SetTriangle(triangleIndex++, new Triangle1(triangleFan.Value(1), triangleFan.Value(index),
-                                                                                triangleFan.Value(index - 1)));
+                        mesh.SetTriangle(triangleIndex++, new Triangle1(triangleFan.Value(1), triangleFan.Value(index - 1),
+                                                                                triangleFan.Value(index)));
                     }
                 }
             }
         }
     }
+
+    /// <summary>
+    /// Kerf (decision 33105, OCCT's issue 1579): whether the fan's triangle that ends at <paramref name="index"/>, its
+    /// first node and the two at index - 1 and index, has three different nodes. One test for counting the triangles and
+    /// for making them: OCCT counted every one and then left some out, by the strip's test, which on a fan compares the
+    /// wrong nodes, so a fan with a repeated index gave a triangle of two nodes and one that was never set.
+    /// </summary>
+    private static bool IsFanTriangle(NCollection_HArray1<int> fan, int index)
+        => fan.Value(index) != fan.Value(index - 1) && fan.Value(index) != fan.Value(1) && fan.Value(index - 1) != fan.Value(1);
 
     // GetSimpleFaceElements: OCCT's template, once per instantiation
     private static void GetSimpleFaceElements(TriangulatedFace face, out NCollection_HArray1<Xyz> nodes,
@@ -276,8 +287,10 @@ internal sealed class TranslateFace : ImportRoot
         }
 
         const bool hasUVNodes = false;
-        bool hasNormals = (normNum > 0);
         int nbNodes = pnindices is not null ? pnindices.Length() : nodes.Length();
+        // Kerf (decision 33105, OCCT's issue 1579): normals only where SetNormals can set them, one for all the nodes or
+        // one each; with any other count OCCT made a mesh that has normals, none of them set
+        bool hasNormals = normNum > 0 && normals is not null && normals.RowLength() == 3 && (normNum == 1 || normNum == nbNodes);
 
         if (trianStripsNum == 0 && trianFansNum == 0)
         {
@@ -313,7 +326,13 @@ internal sealed class TranslateFace : ImportRoot
             for (int trianFanIndex = 1; trianFanIndex <= trianFansNum; ++trianFanIndex)
             {
                 NCollection_HArray1<int> triangleFan = triaFans.Value(trianFanIndex) as NCollection_HArray1<int>;
-                nbTriaFans += triangleFan.Length() - 2;
+                for (int index = 3; index <= triangleFan.Length(); ++index)
+                {
+                    if (IsFanTriangle(triangleFan, index))
+                    {
+                        ++nbTriaFans;
+                    }
+                }
             }
 
             mesh = new Triangulation(nbNodes, nbTriaStrips + nbTriaFans, hasUVNodes, hasNormals);

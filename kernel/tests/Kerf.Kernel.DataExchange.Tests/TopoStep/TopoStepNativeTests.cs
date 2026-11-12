@@ -100,7 +100,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
         global::Kerf.Engine.Healing.ShapeAlgo.Init(); // as STEPControl_Controller does natively
         List<Block> aBlocks = Recording("TopoStep.toporec-s2t.txt.gz");
         Assert.Equal(338, aBlocks.Count);
-        int aRun = 0, aItems = 0, aSame = 0, aAttributed = 0;
+        int aRun = 0, aItems = 0, aSame = 0, aAttributed = 0, aRewound = 0;
         var aDiffs = new List<string>();
         foreach (Block aBlock in aBlocks)
         {
@@ -138,6 +138,18 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
                     continue;
                 }
 
+                // A strip's and a fan's triangles are wound as their lists are, where OCCT 8.0.1 winds them the other
+                // way (decision 33105): such an item is native's once its complex faces' triangles are turned back
+                string[] aNative = aN.Split(' ');
+                if (aParts.Length == aNative.Length && aParts.Length > 4 && int.TryParse(aParts[1], out int anItem)
+                    && aNative.Where((f, k) => k != 3).SequenceEqual(aParts.Where((f, k) => k != 3))
+                    && aTexts.TryGetValue(anItem, out string? aPortText)
+                    && TopoStepRecorder.WoundAsNative(aModel.Value(anItem)!, aPortText) == aNative[3] + " " + aNative[4])
+                {
+                    aRewound++;
+                    continue;
+                }
+
                 aDiffs.Add($"{aBlock.Name}\n  native: {aN}\n  port:   {aP}");
                 if (aParts.Length > 1 && int.TryParse(aParts[1], out int aNum) && aTexts.TryGetValue(aNum, out string? aText))
                 {
@@ -149,7 +161,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
         }
 
         output.WriteLine($"{aRun} of {aBlocks.Count} files compared, {aItems} items, {aSame} identical, {aAttributed} attributed, "
-                         + $"{aDiffs.Count} different");
+                         + $"{aRewound} native's but for the winding of strips and fans, {aDiffs.Count} different");
         foreach (string aDiff in aDiffs.Take(60))
         {
             output.WriteLine(aDiff);
@@ -157,6 +169,40 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
 
         Assert.Empty(aDiffs);
         Assert.Equal(aRun == aBlocks.Count ? KnownDifferences.Count : aAttributed, aAttributed);
+        Assert.Equal(aRun == aBlocks.Count ? RewoundItems : aRewound, aRewound);
+    }
+
+    // The corpus's items with complex triangulated faces or surface sets, in five of its files (decision 33105)
+    private const int RewoundItems = 626;
+
+    /// <summary>
+    /// The corpus's complex triangulated faces and surface sets that carry normals (decision 33105): how many of their
+    /// strips' and fans' triangles turn the way their nodes' normals point, and how many against. A cube tessellated by
+    /// CATIA and two of NIST's test models turn with them, every triangle; one file of annotations, its writer unnamed,
+    /// turns against them, every triangle. As OCCT 8.0.1 winds them the two counts of each file change places.
+    /// </summary>
+    [Theory]
+    [InlineData("testdata/step/bug33638.stp", 12, 0)]
+    [InlineData("testdata/step/bug29241.stp", 909, 0)]
+    [InlineData("testdata/step/nist_ftc_08_asme1_ap242-2.stp", 3370, 0)]
+    [InlineData("testdata/step/bug32745_pmi1.stp", 0, 520)]
+    public void Strips_and_fans_of_the_corpus_turn_the_way_their_normals_point(string theName, int theWith, int theAgainst)
+    {
+        string? aPath = StepFileDump.CorpusPath(theName);
+        if (aPath is null)
+        {
+            return; // OCCT's dataset not fetched
+        }
+
+        StepProtocol aProtocol = TopoStepRecorder.Protocol();
+        var aModel = new StepModel();
+        aModel.SetProtocol(aProtocol);
+        using (FileStream aStream = File.OpenRead(aPath))
+        {
+            Assert.Equal(0, StepFileReader.Read(aPath, aStream, aModel, aProtocol));
+        }
+
+        Assert.Equal((theWith, theAgainst), TopoStepRecorder.Windings(aModel));
     }
 
     [Fact]
