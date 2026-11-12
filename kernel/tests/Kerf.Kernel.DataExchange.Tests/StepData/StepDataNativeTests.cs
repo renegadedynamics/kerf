@@ -57,7 +57,16 @@ public class StepDataNativeTests(ITestOutputHelper output)
             output.WriteLine(aDiff);
         }
 
-        Assert.Empty(aDiffs);
+        // One file differs from native's (decision 33104): it is corrupted, and its first entity refers to one that isn't
+        // there. Native binds the reference to the record of that number, a header's, and has a reference to nothing, which
+        // it can't write; the port keeps it unresolved, with the file's text
+        string[] aKnown = aRun == 0 ? [] :
+        [
+            "testdata/step/bug32314_corrupted.stp READ: kept line 7: native 'E 1 #1 U APPLICATION_PROTOCOL_DEFINITION(5:'international standard',5:'automotive_design',1:2000,3:#0)', " +
+            "port 'E 1 #1 U APPLICATION_PROTOCOL_DEFINITION(5:'international standard',5:'automotive_design',1:2000,4:#2)'",
+            "testdata/step/bug32314_corrupted.stp WRITE: kept line 41: native 'WC 1 F UnknownReference', port 'WC 1 W Erroneous Entity, equivalent content'",
+        ];
+        Assert.Equal(aKnown, aDiffs);
     }
 
     [Fact]

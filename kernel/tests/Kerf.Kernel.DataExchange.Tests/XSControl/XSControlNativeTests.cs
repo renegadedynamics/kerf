@@ -70,6 +70,18 @@ public class XSControlNativeTests(ITestOutputHelper theOutput)
         {
             theOutput.WriteLine(aDiff);
         }
-        Assert.Empty(aDiffs);
+        Assert.Equal(KnownDifferences, aDiffs);
     }
+
+    // Files whose dump differs from native's, each with where it first differs (decision 33104): a reference to an entity
+    // that isn't in the file is unresolved, where native binds the entity at the record of that number and then finds it
+    // of the wrong type. The third file is corrupted throughout, and has more such references than checks in common.
+    private static readonly string[] KnownDifferences =
+    [
+        "testdata/step/bug31292.stp: line 68: native '  69 2 0 Parameter n0.3 (edge_end) : Entity has illegal type', " +
+        "port '  69 2 0 Parameter n0.3 (edge_end) : Unresolved reference'",
+        "testdata/step/bug32314_corrupted.stp: line 47: native 'checks 58 178 0', port 'checks 58 204 0'",
+        "testdata/step/bug33665.step: line 43: native '  17 2 0 Parameter n0.1 (face_bound) : Entity has illegal type', " +
+        "port '  17 2 0 Parameter n0.1 (face_bound) : Unresolved reference'",
+    ];
 }

@@ -30,6 +30,9 @@ internal static class ExchangeTree
     /// <summary>STEP data that refers to other files, read from a stream: <c>exchange.external-references</c>.</summary>
     public static DiagnosticCode ExternalReferences { get; } = new("exchange.external-references");
 
+    /// <summary>A warning that entities of the data couldn't be read and were left out: <c>exchange.entity-skipped</c>.</summary>
+    public static DiagnosticCode EntitySkipped { get; } = new("exchange.entity-skipped");
+
     /// <summary>Whether meshing a part for a writer stopped at a limit: the mesh's size, or a face refused (decision 1942).</summary>
     internal static bool IsMeshRefused(Exception e) => e is MeshTooLargeException or MeshFaceRefusedException;
 
