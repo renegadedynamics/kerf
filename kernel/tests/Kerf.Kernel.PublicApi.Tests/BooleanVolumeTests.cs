@@ -481,11 +481,25 @@ public class BooleanVolumeTests
     [InlineData(0.5, -1e-7)]
     public void Equal_cylinders_inside_a_touch_have_their_volumes_through_the_vertex_that_covers_it(double radius, double offset)
     {
-        (Shape cylinder, _, double common) = Crossing(radius, offset, 1.0);
-        var turn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), Direction3D.UnitX), Math.PI / 2);
-        Shape tool = Solid.Cylinder(radius, 4 * radius).Value.Shape.Transformed(turn).Value.Shape
-            .Transformed(Transform3D.Translation(new Vector3D(offset, 2 * radius, radius))).Value.Shape;
+        (Shape cylinder, Shape tool, double common) = CrossingTurned(radius, offset);
         double one = Math.PI * radius * radius * 2 * radius;
+        var precise = new MassOptions { Tolerance = 1e-9 };
+        Assert.Equal(one - common, cylinder.Cut(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+        Assert.Equal(common, cylinder.Common(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+        Assert.Equal(3 * one - common, cylinder.Fuse(tool, new BooleanOptions { FuzzyValue = 1e-6 }).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
+    }
+
+    // Radius 5000 at the end plane, 1e-11 inside the touch, which is 11 units in the last place of the radius: the end circle and
+    // the tool are within a tolerance of each other over 0.03, and where they cross is found 3.2e-4 from the touch by the edge
+    // and the face and 4.6e-4 by the section's walk. The seam vertex grown over the first stopped 8e-5 short of the curve's
+    // end, which got a vertex of its own, with a stub of the curve and two faces thinner than a tolerance between them:
+    // `Unorientable shape`, the cut, the common and the fuse each a failure. A curve that ends within twice the tolerance of the
+    // last vertex put on it now ends at that vertex (decision 31804)
+    [Fact]
+    public void Very_large_equal_cylinders_a_few_units_in_the_last_place_inside_a_touch_cut_common_and_fuse()
+    {
+        (Shape cylinder, Shape tool, double common) = CrossingTurned(5000, -1e-11);
+        double one = Math.PI * 5000 * 5000 * 10000;
         var precise = new MassOptions { Tolerance = 1e-9 };
         Assert.Equal(one - common, cylinder.Cut(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
         Assert.Equal(common, cylinder.Common(tool).Value.Shape.IntegrateVolume(precise), 1e-8 * one);
@@ -581,5 +595,16 @@ public class BooleanVolumeTests
             sum += 2 * across * Math.Max(0, Math.Min(radius, z + reach) - Math.Max(-radius, z - reach)) * half * Math.Cos(angle) * Math.PI / steps;
         }
         return (cylinder, tool, sum);
+    }
+
+    // Crossing's cylinders with the tool's axis in the first's end plane and the tool turned the other way about X, as
+    // Kerf.Modeling's sweeps of reliability.md turn it: its seam is still at +X, but its face inside the first then ends there
+    private static (Shape Cylinder, Shape Tool, double Common) CrossingTurned(double radius, double offset)
+    {
+        (Shape cylinder, _, double common) = Crossing(radius, offset, 1.0);
+        var turn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), Direction3D.UnitX), Math.PI / 2);
+        Shape tool = Solid.Cylinder(radius, 4 * radius).Value.Shape.Transformed(turn).Value.Shape
+            .Transformed(Transform3D.Translation(new Vector3D(offset, 2 * radius, radius))).Value.Shape;
+        return (cylinder, tool, common);
     }
 }

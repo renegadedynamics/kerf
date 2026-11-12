@@ -464,7 +464,8 @@ internal partial class PaveFiller
                                     // An edge grazing a face stays within tolerance over sqrt(2 R tol), so the reach is what the touch
                                     // spans, not a fixed length: past 1e-3 a large cylinder's edge got new vertices either side of one
                                     // already touching (decision 1923)
-                                    maxDist = Max(maxDist, TouchSpan(e, r, f));
+                                    double span = TouchSpan(e, r, f);
+                                    maxDist = Max(maxDist, span);
                                     if (tol < .01)
                                     {
                                         maxDist = Min(maxDist, 0.1);
@@ -473,6 +474,12 @@ internal partial class PaveFiller
                                     {
                                         UpdateVertex(nV[j], distPP);
                                         _vertsToAvoidExtension.Add(nV[j]);
+                                        // What the touch spans is how far a section's curve may end from this vertex and
+                                        // still end at it (decision 31804)
+                                        if (!_touchSpans.TryGetValue(nV[j], out double widest) || span > widest)
+                                        {
+                                            _touchSpans[nV[j]] = span;
+                                        }
                                     }
                                 }
                             }

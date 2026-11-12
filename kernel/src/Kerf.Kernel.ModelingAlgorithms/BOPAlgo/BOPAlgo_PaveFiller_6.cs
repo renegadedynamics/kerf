@@ -2255,6 +2255,10 @@ internal partial class PaveFiller
                     // if curve is closed, process only one bound
                     continue;
                 }
+                if (EndsAtItsLastVertex(aNC, j, p[j]))
+                {
+                    continue;
+                }
                 bool bVF = _context!.IsValidPointForFaces(p[j], aF1, aF2, tolR3D);
                 if (!bVF)
                 {
@@ -2282,6 +2286,47 @@ internal partial class PaveFiller
                 aLVB.Append(nVn);
             }
         }
+    }
+
+    //=================================================================================================
+
+    // Where two surfaces touch within a tolerance over a stretch, as equal cylinders 1e-11 short of crossing at radius 5000 do
+    // over 0.03, the points where an edge crosses a face and where the section's curve ends are each found to no better than a
+    // good part of the distance between them: 3.2e-4 from the touch by the edge and the face, 4.6e-4 by the walk. The vertex
+    // grown over the first (decision 1923) then stops short of the curve's end, which got a vertex of its own a tolerance
+    // away, a stub of the curve between them, and two faces thinner than the tolerance: invalid. Not OCCT's: a curve that ends
+    // within twice the tolerance of the last vertex put on it, and within the stretch over which the edge that vertex was grown
+    // for touches the face, ends at that vertex, which grows to cover the end (decision 31804). Any other end is left to
+    // OCCT's steps, which give it a vertex of its own.
+    private const double EndWithinTolerances = 2.0;
+
+    private bool EndsAtItsLastVertex(SectionCurve curve, int end, in Point3D at)
+    {
+        int nV = -1;
+        double extreme = 0.0;
+        for (NCollection_List<Pave>.Iterator paves = new(curve.PaveBlocks().First().ExtPaves()); paves.More(); paves.Next())
+        {
+            paves.Value().Contents(out int index, out double parameter);
+            if (nV < 0 || (end == 0 ? parameter < extreme : parameter > extreme))
+            {
+                (nV, extreme) = (index, parameter);
+            }
+        }
+
+        if (nV < 0 || !_touchSpans.TryGetValue(nV, out double span))
+        {
+            return false;
+        }
+
+        Vertex vertex = ShapeCasts.Vertex(_ds!.Shape(nV));
+        double distance = Tool.Pnt(vertex).DistanceTo(at);
+        if (distance > span || distance > EndWithinTolerances * Tool.Tolerance(vertex))
+        {
+            return false;
+        }
+
+        UpdateVertex(nV, distance + AlgoTools.DTolerance());
+        return true;
     }
 
     //=================================================================================================

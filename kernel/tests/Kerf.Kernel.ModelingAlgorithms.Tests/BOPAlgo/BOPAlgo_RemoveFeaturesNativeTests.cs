@@ -350,6 +350,15 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
                     isRounded = true;
                     output.WriteLine($"{aCase.Id} {aCase.Name}: the same but for rounding ({aDiff})");
                 }
+                else if (aCase.Name == "occ/bottle.brep-44" && aCanon.Unmatched.Count == 0 && aCanon.PropertyDifferences.Count == 0
+                         && aCanon.AttributeDifferences.Count == 1 && aCanon.AttributeDifferences[0].Contains("TopAbs_VERTEX", StringComparison.Ordinal))
+                {
+                    // Decision 31804: a vertex grown over an edge's touch of a face takes the end of the section's curve
+                    // that stops 7.7e-5 from it, where native gives that end a vertex of its own and merges the two later.
+                    // The same shape, with that one vertex's tolerance 7.70e-5 for native's 4.51e-5.
+                    ++aCanonical;
+                    output.WriteLine($"{aCase.Id} {aCase.Name}: the same but for one vertex's tolerance ({aCanon.AttributeDifferences[0].Trim()})");
+                }
                 else
                 {
                     aFailures.Add($"{aCase.Id} {aCase.Name}: result {aDiff}; {aCanon}");
