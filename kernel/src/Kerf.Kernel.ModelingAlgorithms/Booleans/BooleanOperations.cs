@@ -205,8 +205,8 @@ public static class BooleanOperations
     /// <summary>
     /// A result whose faces are open in their parameters inside a vertex's tolerance, where its inputs' aren't, is made again
     /// with each crossing as a vertex of its own (<see cref="Engine.Booleans.PaveFiller.SetCrossingsApart"/>), and that one is
-    /// kept if it's closed, valid, passes the check of volumes and has the first one's volume; otherwise the first is, which the
-    /// public measurements read across the gaps (decisions 2257 and 2276). OCCT grows one vertex over crossings near it and
+    /// kept if it has fewer gaps, is valid, passes the check of volumes and has the first one's volume and area; otherwise the first is,
+    /// which the public measurements read across the gaps (decisions 2257, 2276 and 2288). OCCT grows one vertex over crossings near it and
     /// drops the pieces between, which leaves each face's boundary open there: valid, and read as area missing by anything
     /// that integrates round the boundary as OCCT's own <c>BRepGProp</c> does.
     /// </summary>
@@ -234,24 +234,62 @@ public static class BooleanOperations
             return first;
         }
 
-        BooleanOperation again = rule switch
+        // Three ways, as none closes all the others do (decision 2288): with each touch that hides two crossings given as
+        // the two; with it left as one; and with no crossing held apart at all, OCCT's vertices, closed by the steps that
+        // bring each edge's pieces and each section's curves to one point of them. The one with the fewest gaps is kept,
+        // the first of them to have none the inputs didn't
+        Result<Built<Shape>> best = first;
+        double before = double.NaN, areaBefore = double.NaN;
+        foreach ((double apart, bool touches) in (ReadOnlySpan<(double, bool)>)[(CrossingsApart, true), (CrossingsApart, false), (double.PositiveInfinity, false)])
         {
-            BooleanVolumeRule.Common => new EngineCommon(),
-            BooleanVolumeRule.Fuse => new EngineFuse(),
-            _ => new EngineCut(),
-        };
-        again.SetTools(List(tools, nameof(tools)));
-        again.SetCrossingsApart(CrossingsApart);
-        Result<Built<Shape>> result = Run((BuilderAlgo)again, arguments, options, null, cancellationToken);
-        if (!result.TryGetValue(out Built<Shape>? closed) || closed is null || !closed.Shape.Children.Any() || Gaps(closed.Shape) > given
-            || (options is { CheckResult: false } && !closed.Shape.Validate().IsValid)
-            || BooleanVolumes.Check(rule, arguments, tools, closed.Shape, options?.FuzzyValue ?? 0) is not null)
-        {
-            return first;
-        }
+            BooleanOperation again = rule switch
+            {
+                BooleanVolumeRule.Common => new EngineCommon(),
+                BooleanVolumeRule.Fuse => new EngineFuse(),
+                _ => new EngineCut(),
+            };
+            again.SetTools(List(tools, nameof(tools)));
+            again.SetCrossingsApart(apart, touches);
+            Result<Built<Shape>> result = Run((BuilderAlgo)again, arguments, options, null, cancellationToken);
+            if (!result.TryGetValue(out Built<Shape>? closed) || closed is null || !closed.Shape.Children.Any())
+            {
+                continue;
+            }
 
-        double before = built.Shape.IntegrateVolume(SameVolumeMeasured), after = closed.Shape.IntegrateVolume(SameVolumeMeasured);
-        return Math.Abs(after - before) <= SameVolume * Math.Max(Math.Abs(before), Math.Abs(after)) ? result : first;
+            int left = Gaps(closed.Shape);
+            if (left >= open || (options is { CheckResult: false } && !closed.Shape.Validate().IsValid)
+                || BooleanVolumes.Check(rule, arguments, tools, closed.Shape, options?.FuzzyValue ?? 0) is not null)
+            {
+                continue;
+            }
+
+            if (double.IsNaN(before))
+            {
+                before = built.Shape.IntegrateVolume(SameVolumeMeasured);
+            }
+            // The check alone isn't enough: over the sweep five results made again were valid and passed it, 14% to 42% out
+            // (decision 2291). The volume doesn't depend on a tolerance, and nor does the area, asked as well
+            double after = closed.Shape.IntegrateVolume(SameVolumeMeasured);
+            if (Math.Abs(after - before) > SameVolume * Math.Max(Math.Abs(before), Math.Abs(after)))
+            {
+                continue;
+            }
+
+            if (double.IsNaN(areaBefore))
+            {
+                areaBefore = built.Shape.IntegrateArea(SameVolumeMeasured);
+            }
+            double areaAfter = closed.Shape.IntegrateArea(SameVolumeMeasured);
+            if (Math.Abs(areaAfter - areaBefore) <= SameVolume * Math.Max(Math.Abs(areaBefore), Math.Abs(areaAfter)))
+            {
+                (best, open) = (result, left);
+                if (left <= given)
+                {
+                    break;
+                }
+            }
+        }
+        return best;
     }
 
     private static readonly MassOptions SameVolumeMeasured = new() { Tolerance = 1e-8 };

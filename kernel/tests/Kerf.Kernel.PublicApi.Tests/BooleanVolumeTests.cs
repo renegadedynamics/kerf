@@ -383,7 +383,8 @@ public class BooleanVolumeTests
     // The same at radius 0.1, 2e-7 off: the cut keeps its corner, and its faces' boundaries are open in their parameters, by
     // 0.0020694 about one corner of its box and 0.0020677 about the other (8e-4 of it) as OCCT reads them, which since unit 15AH's
     // second slice was a failure. The gaps are inside a vertex's tolerance, and read closed there the cut is right, so it's a
-    // success again and its volume the geometry's (decision 2258)
+    // success again and its volume the geometry's (decision 2258). Since unit 15AJ2 it's closed at the source too, with no gap
+    // (decision 2290; `The_cut_of_radius_a_tenth_nearly_crossing_is_closed` in the engine's tests)
     [Fact]
     public void A_cut_of_equal_radius_nearly_crossing_is_right_read_through_the_vertex_that_covers_its_gaps()
     {

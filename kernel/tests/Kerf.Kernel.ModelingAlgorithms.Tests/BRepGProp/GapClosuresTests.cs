@@ -95,12 +95,13 @@ public class GapClosuresTests
         }
     }
 
-    // Where the crossings are too near each other for that, 3e-4 from the touch at 1e-10, the result made again is no more closed,
-    // or wrong, and the first is kept, right as the public measurements read it
+    // Where it can't be: within about 1e-15 of the radius of crossing, the cylinders' section is taken to be the ellipses of
+    // crossing axes, 1e-5 off the faces' edges at 1e-13 past the touch, and each way of making the cut again is refused. The first is kept,
+    // open inside its vertex, right as the public measurements read it (decisions 2288 and 2290)
     [Fact]
     public void A_result_that_cant_be_closed_at_the_source_is_kept_as_it_was()
     {
-        (Shape cylinder, Shape tool) = Inputs(-1e-10);
+        (Shape cylinder, Shape tool) = Inputs(1e-13);
         Shape made = cylinder.Cut(tool).Value.Shape;
         Assert.True(Gaps(made) > 0);
         Assert.True(made.Validate().IsValid);
