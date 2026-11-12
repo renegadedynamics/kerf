@@ -241,7 +241,11 @@ internal class BrepShapeSet : ShapeSet
                 Triangulation? tr = tf.Triangulation();
                 if (tr is not null)
                 {
-                    _triangulations.Add(tr, needNormals);
+                    // Kerf: a face's normals are kept where an edge has already added its triangulation without
+                    // them, as OCCT does since 71658f6c8f (decision 34005); in 8.0.1 the first value stood
+                    int index = _triangulations.Add(tr, needNormals);
+                    ref bool withNormals = ref _triangulations.ValueAt(index);
+                    withNormals = withNormals || needNormals;
                 }
             }
 

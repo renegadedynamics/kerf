@@ -135,6 +135,31 @@ public class IntCurveSurface_ThePolygonOfHInter_Test
         aPolygon.Closed(true);
         Assert.True(aPolygon.Closed());
     }
+
+    // Upstream 71658f6c8f's test (decision 34004): a chord of no length threw a construction error
+    [Fact]
+    public void CollapsedChordRetainsMidpointDeparture()
+    {
+        NCollection_Array1<Point3D> aPoles = new(1, 3);
+        aPoles[1] = new Point3D(0, 0, 0);
+        aPoles[2] = new Point3D(-.125, 0, 0);
+        aPoles[3] = new Point3D(.75, 0, 0);
+        CurveAdaptor anAdaptor = new(new BezierCurve3D(aPoles));
+        NCollection_Array1<double> aParameters = new(1, 4);
+        aParameters[1] = 0;
+        aParameters[2] = .25;
+        aParameters[3] = .5;
+        aParameters[4] = 1;
+        ThePolygonOfHInter aExplicit = new(anAdaptor, aParameters);
+        Assert.True(aExplicit.DeflectionOverEstimation() >= .015625);
+        Assert.True(aExplicit.Bounding().Get().Xmin <= -.015625);
+        ThePolygonOfHInter aUniform = new(anAdaptor, 5);
+        Assert.True(aUniform.DeflectionOverEstimation() >= .015625);
+        NCollection_Array1<Point3D> aSame = new(1, 3);
+        aSame[1] = aSame[2] = aSame[3] = new Point3D(1, 2, 3);
+        ThePolygonOfHInter aConstantPolygon = new(new CurveAdaptor(new BezierCurve3D(aSame)), 4);
+        Assert.Equal(0.0, aConstantPolygon.DeflectionOverEstimation());
+    }
 }
 
 /// <summary>OCCT's IntCurveSurface_ThePolyhedronOfHInter GTest.</summary>

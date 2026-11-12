@@ -46,8 +46,12 @@ internal static class PolygonUtils
                 Point3D pm = CurveTool.Value(curve, u);
                 Point3D p1 = pnts.Value(i);
                 Point3D p2 = pnts.Value(i + 1);
-                Line3D l = new(p1, new Direction3D(new Vector3D(p1, p2)));
-                double t = l.DistanceTo(pm);
+                // Kerf: a chord of no length is measured from its point, as OCCT does since 71658f6c8f (decision 34004);
+                // 8.0.1 made a direction of it and threw
+                Vector3D chord = new(p1, p2);
+                double t = chord.Magnitude <= global::Kerf.Engine.Geometry.Constants.Resolution()
+                    ? p1.DistanceTo(pm)
+                    : new Line3D(p1, new Direction3D(chord)).DistanceTo(pm);
                 if (t > deflection)
                 {
                     deflection = t;
@@ -93,8 +97,12 @@ internal static class PolygonUtils
                 Point3D pm = CurveTool.Value(curve, u);
                 Point3D p1 = pnts.Value(i);
                 Point3D p2 = pnts.Value(i + 1);
-                Line3D l = new(p1, new Direction3D(new Vector3D(p1, p2)));
-                double t = l.DistanceTo(pm);
+                // Kerf: a chord of no length is measured from its point, as OCCT does since 71658f6c8f (decision 34004);
+                // 8.0.1 made a direction of it and threw
+                Vector3D chord = new(p1, p2);
+                double t = chord.Magnitude <= global::Kerf.Engine.Geometry.Constants.Resolution()
+                    ? p1.DistanceTo(pm)
+                    : new Line3D(p1, new Direction3D(chord)).DistanceTo(pm);
                 if (t > deflection)
                 {
                     deflection = t;
