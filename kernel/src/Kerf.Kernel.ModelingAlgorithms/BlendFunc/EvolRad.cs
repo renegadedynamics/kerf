@@ -111,6 +111,9 @@ internal class EvolRad : BlendFunction
     private double _last;
     private EnvelopeCircle _envelope;
     private bool _hasEnvelope;
+
+    // The derivatives along the walk of the surfaces' reversed unit normals, from the last Ball.
+    private Vector3D _dnorm1w, _dnorm2w, _d2norm1w, _d2norm2w;
     private readonly math_Vector _envelopeX = new(1, 4);
 
     /// <remarks>OCCT leaves param, the radius and the "quadrant" uninitialised; here they are zero.</remarks>
@@ -644,7 +647,7 @@ internal class EvolRad : BlendFunction
                     Vector3D dnorm1w = Vector3D.LinearForm(solution[1], _dndu1, solution[2], _dndv1, _dn1w);
                     Vector3D dc = Vector3D.LinearForm(_sg1 * _ray, dnorm1w, _sg1 * _dray, ns1, _tg1);
                     Vector3D zero = new Vector3D();
-                    _hasEnvelope = Envelope(0, dc, zero, zero, 0.0, zero, zero, out _envelope);
+                    _hasEnvelope = Envelope(0, dc, zero, zero, 0.0, out _envelope);
                     _envelopeX.Initialized(sol);
                 }
             }
@@ -899,7 +902,7 @@ internal class EvolRad : BlendFunction
         ComputeValues(x, 1, true, prm);
         math_Vector dx = new(1, 4);
         Vector3D zero = new Vector3D();
-        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, zero, zero, out EnvelopeCircle e))
+        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e))
         {
             Vector3D plane = e.Plane;
             c = c.WithRadius(e.Radius);
@@ -1128,7 +1131,7 @@ internal class EvolRad : BlendFunction
     {
         Matrix d2DXdSdt = new(1, 4, 1, 4);
         bool istgt = true;
-        dc = d2c = dtg1 = dtg2 = new Vector3D();
+        dc = d2c = dtg1 = dtg2 = _dnorm1w = _dnorm2w = _d2norm1w = _d2norm2w = new Vector3D();
 
         if (!_pts1.IsEqual(_pts2, 1.0e-4))
         {
@@ -1175,6 +1178,8 @@ internal class EvolRad : BlendFunction
         _tg1 = Vector3D.LinearForm(dx[1], _d1u1, dx[2], _d1v1);
         _tg2 = Vector3D.LinearForm(dx[3], _d1u2, dx[4], _d1v2);
         Vector3D dnorm1w = Vector3D.LinearForm(dx[1], _dndu1, dx[2], _dndv1, _dn1w);
+        _dnorm1w = dnorm1w;
+        _dnorm2w = Vector3D.LinearForm(dx[3], _dndu2, dx[4], _dndv2);
         dc = Vector3D.LinearForm(_sg1 * _ray, dnorm1w, _sg1 * _dray, ns1, _tg1);
         if (order == 2)
         {
@@ -1186,6 +1191,9 @@ internal class EvolRad : BlendFunction
             temp = Vector3D.LinearForm(dx[1] * dx[1], _d2ndu1, 2 * dx[1] * dx[2], _d2nduv1, dx[2] * dx[2], _d2ndv1);
             temp += Vector3D.LinearForm(2 * dx[1], _d2ndtu1, 2 * dx[2], _d2ndtv1, _d2n1w);
             Vector3D d2norm1w = Vector3D.LinearForm(d2x[1], _dndu1, d2x[2], _dndv1, temp);
+            _d2norm1w = d2norm1w;
+            temp = Vector3D.LinearForm(dx[3] * dx[3], _d2ndu2, 2 * dx[3] * dx[4], _d2nduv2, dx[4] * dx[4], _d2ndv2);
+            _d2norm2w = Vector3D.LinearForm(d2x[3], _dndu2, d2x[4], _dndv2, temp);
             d2c = Vector3D.LinearForm(_sg1 * _ray, d2norm1w, 2 * _sg1 * _dray, dnorm1w, _sg1 * _d2ray, ns1);
             d2c += dtg1;
         }
@@ -1193,12 +1201,12 @@ internal class EvolRad : BlendFunction
         return true;
     }
 
-    // The envelope's circle on the ball at the last positioning (Kerf, unit 15AK), to the order asked: the centre's
-    // derivatives to one more, the contacts' to the same. False where the envelope has no circle.
-    private bool Envelope(int order, in Vector3D dc, in Vector3D d2c, in Vector3D d3c, double d3ray, in Vector3D dtg1,
-                          in Vector3D dtg2, out EnvelopeCircle circle)
+    // The envelope's circle on the ball at the last positioning and the last Ball (Kerf, unit 15AK), to the order asked:
+    // the centre's derivatives to one more. False where the envelope has no circle.
+    private bool Envelope(int order, in Vector3D dc, in Vector3D d2c, in Vector3D d3c, double d3ray, out EnvelopeCircle circle)
     {
         Vector3D ns1 = -ConstRad.InverseNorm(_nsurf1) * _nsurf1;
+        Vector3D ns2 = -ConstRad.InverseNorm(_nsurf2) * _nsurf2;
         Point3D center = new Point3D(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
         // The side of its plane the great circle's is on, as the sections orient it.
         Vector3D np = ConstRad.SectionNormal(_nsurf1, _nsurf2, _nplan);
@@ -1207,8 +1215,12 @@ internal class EvolRad : BlendFunction
             np = np.Reversed();
         }
 
-        return EnvelopeCircle.Make(order, center, dc, d2c, d3c, _ray, _dray, order >= 1 ? _d2ray : 0.0, d3ray, _pts1, _tg1,
-                                   dtg1, _pts2, _tg2, dtg2, np, out circle);
+        // ns1 (resp. ns2) oriented from the centre to pts1 (resp. pts2), as the great circle's were.
+        double f1 = _sg1 > 0.0 ? -1.0 : 1.0, f2 = _sg2 > 0.0 ? -1.0 : 1.0;
+        Vector3D zero = new Vector3D();
+        return EnvelopeCircle.Make(order, center, dc, d2c, d3c, _ray, _dray, order >= 1 ? _d2ray : 0.0, d3ray, f1 * ns1,
+                                   order >= 1 ? f1 * _dnorm1w : zero, order >= 2 ? f1 * _d2norm1w : zero, f2 * ns2,
+                                   order >= 1 ? f2 * _dnorm2w : zero, order >= 2 ? f2 * _d2norm2w : zero, np, out circle);
     }
 
     // The ball's great circle through the contacts (decision 2215), where the envelope's can't be had: the surfaces' own
@@ -1365,7 +1377,7 @@ internal class EvolRad : BlendFunction
 
         // The envelope's circle (unit 15AK); the ball's great circle where the walk has no derivative.
         Vector3D zero = new Vector3D();
-        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, zero, zero, out EnvelopeCircle e))
+        if (Ball(1, dx, dx, out Vector3D dc, out _, out _, out _) && Envelope(0, dc, zero, zero, 0.0, out EnvelopeCircle e))
         {
             global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.Plane, _pts1, _pts2, e.Radius, e.Centre, poles, weights);
             return;
@@ -1425,7 +1437,7 @@ internal class EvolRad : BlendFunction
 
         // Case of the circle: the envelope's (unit 15AK), with its derivative along the walk.
         Vector3D zero = new Vector3D();
-        if (!istgt && Envelope(1, dc, d2c, zero, 0.0, dtg1, dtg2, out EnvelopeCircle e))
+        if (!istgt && Envelope(1, dc, d2c, zero, 0.0, out EnvelopeCircle e))
         {
             return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.Plane, e.DPlane, _pts1, _pts2, _tg1, _tg2,
                                       e.Radius, e.DRadius, e.Centre, e.DCentre, poles, dPoles, weights, dWeights);
@@ -1506,7 +1518,7 @@ internal class EvolRad : BlendFunction
         }
 
         // Case of circle: the envelope's (unit 15AK), with its first and second derivatives along the walk.
-        if (!istgt && third && Envelope(2, dc, d2c, d3c, d3ray, dtg1, dtg2, out EnvelopeCircle e))
+        if (!istgt && third && Envelope(2, dc, d2c, d3c, d3ray, out EnvelopeCircle e))
         {
             return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.D2N1, e.D2N2, e.Plane, e.DPlane, e.D2Plane, _pts1,
                                       _pts2, _tg1, _tg2, dtg1, dtg2, e.Radius, e.DRadius, e.D2Radius, e.Centre, e.DCentre,

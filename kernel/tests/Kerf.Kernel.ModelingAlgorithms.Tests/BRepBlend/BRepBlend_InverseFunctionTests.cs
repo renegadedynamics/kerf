@@ -463,4 +463,55 @@ public class BRepBlend_InverseFunctionTests
         Assert.True((aFd1 - aTangent1).Magnitude < 1e-5 * (1 + aFd1.Magnitude), $"first: {aTangent1} against {aFd1}");
         Assert.True((aFd2 - aTangent2).Magnitude < 1e-5 * (1 + aFd2.Magnitude), $"second: {aTangent2} against {aFd2}");
     }
+
+    // Unit 15AK: the derivative of the envelope's section along the walk, which takes the second derivative of the centre's
+    // path (by differences of the first), is that of the sections at the walk's solutions either side
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void RstRstEvolRad_SectionsDerivativeIsThatOfItsSections(int theChoice)
+    {
+        (Point3D[] Poles, double[] Weights, Vector3D[] DPoles, double[] DWeights) Section(double theParam)
+        {
+            RstRstEvolRad aF = BetweenEdgesEvolving(theChoice, theParam);
+            var aTol = new math_Vector(1, 2);
+            var aInf = new math_Vector(1, 2);
+            var aSup = new math_Vector(1, 2);
+            aF.GetTolerance(aTol, 1e-12);
+            aF.GetBounds(aInf, aSup);
+            var aRoot = new FunctionSetRoot(aF, aTol, 50);
+            aRoot.Perform(aF, Vec(4, 4), aInf, aSup);
+            Assert.True(aRoot.IsDone);
+            var aSol = new math_Vector(1, 2);
+            aRoot.Root(aSol);
+            Assert.True(aF.IsSolution(aSol, 1e-9));
+            aF.GetShape(out int aNbPoles, out _, out _, out _);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
+            var aDPoles = new NCollection_Array1<Vector3D>(1, aNbPoles);
+            var aPoles2d = new NCollection_Array1<Point2D>(1, 2);
+            var aDPoles2d = new NCollection_Array1<Vector2D>(1, 2);
+            var aWeights = new NCollection_Array1<double>(1, aNbPoles);
+            var aDWeights = new NCollection_Array1<double>(1, aNbPoles);
+            BlendPoint aPoint = new();
+            aPoint.SetValue(aF.PointOnRst1(), aF.PointOnRst2(), theParam, aSol[1], aSol[2]);
+            Assert.True(aF.Section(aPoint, aPoles, aDPoles, aPoles2d, aDPoles2d, aWeights, aDWeights));
+            return ([.. Enumerable.Range(1, aNbPoles).Select(k => aPoles[k])], [.. Enumerable.Range(1, aNbPoles).Select(k => aWeights[k])],
+                    [.. Enumerable.Range(1, aNbPoles).Select(k => aDPoles[k])], [.. Enumerable.Range(1, aNbPoles).Select(k => aDWeights[k])]);
+        }
+
+        const double H = 1e-4;
+        var aHere = Section(4);
+        var aAfter = Section(4 + H);
+        var aBefore = Section(4 - H);
+        Assert.Equal(aHere.Poles.Length, aAfter.Poles.Length);
+        Assert.Equal(aHere.Poles.Length, aBefore.Poles.Length);
+        for (int k = 0; k < aHere.Poles.Length; k++)
+        {
+            Vector3D aFd = new Vector3D(aBefore.Poles[k], aAfter.Poles[k]) / (2 * H);
+            Assert.True((aFd - aHere.DPoles[k]).Magnitude < 1e-6 * (1 + aFd.Magnitude), $"pole {k}: {aHere.DPoles[k]} against {aFd}");
+            Assert.Equal((aAfter.Weights[k] - aBefore.Weights[k]) / (2 * H), aHere.DWeights[k], 6);
+        }
+    }
 }

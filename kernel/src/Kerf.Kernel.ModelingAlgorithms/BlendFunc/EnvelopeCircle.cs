@@ -31,15 +31,17 @@ internal struct EnvelopeCircle
     public Vector3D Plane, DPlane, D2Plane;
 
     /// <summary>
-    /// The circle of the ball of centre <paramref name="c"/> and radius <paramref name="r"/> (either sign) through the
-    /// contacts <paramref name="p1"/> and <paramref name="p2"/>, to the order asked (0 to 2): order n takes the centre's
-    /// and the radius's derivatives to n + 1 and the contacts' to n. The plane's normal is on the side of
-    /// <paramref name="reference"/>. False where the centre stands still along the walk, so the envelope has no circle
-    /// there.
+    /// The circle of the ball of centre <paramref name="c"/> and radius <paramref name="r"/> (either sign) through its
+    /// contacts, to the order asked (0 to 2): order n takes the centre's and the radius's derivatives to n + 1, and the
+    /// unit vectors <paramref name="u1"/> and <paramref name="u2"/> from the centre to the contacts with their
+    /// derivatives to n. From the directions, not the contacts themselves, so that it holds as the radius runs down to
+    /// nothing: the vector from the circle's centre to a contact is |r| (u + (|r|' / |c'|^2) c'). The plane's normal is
+    /// on the side of <paramref name="reference"/>. False where the centre stands still along the walk, so the envelope
+    /// has no circle there.
     /// </summary>
     public static bool Make(int order, in Point3D c, in Vector3D dc, in Vector3D d2c, in Vector3D d3c, double r, double dr,
-                            double d2r, double d3r, in Point3D p1, in Vector3D dp1, in Vector3D d2p1, in Point3D p2,
-                            in Vector3D dp2, in Vector3D d2p2, in Vector3D reference, out EnvelopeCircle circle)
+                            double d2r, double d3r, in Vector3D u1, in Vector3D du1, in Vector3D d2u1, in Vector3D u2,
+                            in Vector3D du2, in Vector3D d2u2, in Vector3D reference, out EnvelopeCircle circle)
     {
         circle = default;
         double g = dc.SquareMagnitude;
@@ -48,61 +50,61 @@ internal struct EnvelopeCircle
             return false;
         }
 
-        // k = r r' / |c'|^2; the circle's centre is c - k c', its radius squared r^2 - k r r'
-        double a = r * dr;
-        double k = a / g;
-        double b = r * r - a * k;
-        if (b <= Least * Least * r * r)
+        // The radius as a length, with its derivatives; m = |r|' / |c'|^2; the circle's radius is |r| s, s^2 = 1 - t
+        double sign = r < 0.0 ? -1.0 : 1.0;
+        double r0 = sign * r, r1 = sign * dr, r2 = sign * d2r, r3 = sign * d3r;
+        double m = r1 / g;
+        double t = r1 * m;
+        if (1.0 - t <= Least * Least)
         {
             return false;
         }
 
-        double rho = Math.Sqrt(b), norm = Math.Sqrt(g), invnorm = 1.0 / norm;
+        double s = Math.Sqrt(1.0 - t), norm = Math.Sqrt(g), invnorm = 1.0 / norm;
         double side = reference.Dot(dc) < 0.0 ? -1.0 : 1.0;
         Vector3D nn = invnorm * dc;
-        Point3D q = c.Translated(-k * dc);
-        circle.Centre = q;
-        circle.Radius = rho;
+        double k = r0 * m;
+        circle.Centre = c.Translated(-k * dc);
+        circle.Radius = r0 * s;
         circle.Plane = side * nn;
-        circle.N1 = new Vector3D(q, p1) / rho;
-        circle.N2 = InPlane(new Vector3D(q, p2), nn);
+        circle.N1 = InPlane(u1 + m * dc, nn);
+        circle.N2 = InPlane(u2 + m * dc, nn);
         if (order == 0)
         {
             return true;
         }
 
-        double dg = 2 * dc.Dot(d2c);
-        double da = dr * dr + r * d2r;
-        double dk = (da - k * dg) / g;
-        double db = 2 * a - da * k - a * dk;
-        double drho = db / (2 * rho);
-        Vector3D dq = dc - dk * dc - k * d2c;
-        circle.DCentre = dq;
-        circle.DRadius = drho;
+        double g1 = 2 * dc.Dot(d2c);
+        double m1 = (r2 - m * g1) / g;
+        double t1 = (2 * r1 * r2 - t * g1) / g;
+        double s1 = -t1 / (2 * s);
+        double k1 = r1 * m + r0 * m1;
+        circle.DCentre = dc - k1 * dc - k * d2c;
+        circle.DRadius = r1 * s + r0 * s1;
         circle.DPlane = side * ConstRad.UnitNormalD1(nn, invnorm, d2c);
-        circle.DN1 = (dp1 - dq - drho * circle.N1) / rho;
-        circle.DN2 = (dp2 - dq - drho * circle.N2) / rho;
+        circle.DN1 = (du1 + m1 * dc + m * d2c - s1 * circle.N1) / s;
+        circle.DN2 = (du2 + m1 * dc + m * d2c - s1 * circle.N2) / s;
         if (order == 1)
         {
             return true;
         }
 
-        double d2g = 2 * (d2c.SquareMagnitude + dc.Dot(d3c));
-        double d2a = 3 * dr * d2r + r * d3r;
-        double d2k = (d2a - 2 * dk * dg - k * d2g) / g;
-        double d2b = 2 * da - d2a * k - 2 * da * dk - a * d2k;
-        double d2rho = (d2b - 2 * drho * drho) / (2 * rho);
-        Vector3D d2q = d2c - d2k * dc - 2 * dk * d2c - k * d3c;
-        circle.D2Centre = d2q;
-        circle.D2Radius = d2rho;
+        double g2 = 2 * (d2c.SquareMagnitude + dc.Dot(d3c));
+        double m2 = (r3 - 2 * m1 * g1 - m * g2) / g;
+        double t2 = (2 * r2 * r2 + 2 * r1 * r3 - 2 * t1 * g1 - t * g2) / g;
+        double s2 = -t2 / (2 * s) - s1 * s1 / s;
+        double k2 = r2 * m + 2 * r1 * m1 + r0 * m2;
+        circle.D2Centre = d2c - k2 * dc - 2 * k1 * d2c - k * d3c;
+        circle.D2Radius = r2 * s + 2 * r1 * s1 + r0 * s2;
         circle.D2Plane = side * ConstRad.UnitNormalD2(nn, invnorm, d2c, d2c, d3c);
-        circle.D2N1 = (d2p1 - d2q - 2 * drho * circle.DN1 - d2rho * circle.N1) / rho;
-        circle.D2N2 = (d2p2 - d2q - 2 * drho * circle.DN2 - d2rho * circle.N2) / rho;
+        Vector3D common = m2 * dc + 2 * m1 * d2c + m * d3c;
+        circle.D2N1 = (d2u1 + common - 2 * s1 * circle.DN1 - s2 * circle.N1) / s;
+        circle.D2N2 = (d2u2 + common - 2 * s1 * circle.DN2 - s2 * circle.N2) / s;
         return true;
     }
 
-    // v's direction in the plane square to the unit vector n. The second contact is on the ball, and so in the plane,
-    // only as nearly as the walk's point solves its equations.
+    // v's direction in the plane square to the unit vector n. A contact is on the ball, and so in the plane, only as
+    // nearly as the walk's point solves its equations.
     private static Vector3D InPlane(in Vector3D v, in Vector3D n)
     {
         Vector3D p = v - v.Dot(n) * n;

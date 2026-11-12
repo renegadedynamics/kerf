@@ -418,8 +418,9 @@ internal class RstRstEvolRad : RstRstFunction
     private bool Envelope(in Vector3D dc, out EnvelopeCircle circle)
     {
         Vector3D zero = new Vector3D();
-        return EnvelopeCircle.Make(0, _center, dc, zero, zero, _ray, _dray, 0.0, 0.0, _ptrst1, zero, zero, _ptrst2, zero, zero,
-                                   Side(), out circle);
+        Vector3D u1 = new(_center, _ptrst1), u2 = new(_center, _ptrst2);
+        return EnvelopeCircle.Make(0, _center, dc, zero, zero, _ray, _dray, 0.0, 0.0, ConstRad.InverseNorm(u1) * u1, zero, zero,
+                                   ConstRad.InverseNorm(u2) * u2, zero, zero, Side(), out circle);
     }
 
     public override void GetTolerance(math_Vector tolerance, double tol)
@@ -987,7 +988,7 @@ internal class RstRstEvolRad : RstRstFunction
                                  NCollection_Array1<Point2D> poles2d, NCollection_Array1<Vector2D> dPoles2d,
                                  NCollection_Array1<double> weights, NCollection_Array1<double> dWeights)
     {
-        Vector3D dnplan;
+        Vector3D dnplan, d1n1 = new(), d1n2 = new();
         Vector3D tgct = new();
         Vector3D d1urst, d1vrst;
         Point3D center, notUsed;
@@ -1057,6 +1058,7 @@ internal class RstRstEvolRad : RstRstFunction
         center = _center;
 
         Vector3D n1 = new(center, _ptrst1), n2 = new(center, _ptrst2);
+        double norm1 = n1.Magnitude, norm2 = n2.Magnitude;
         n1 = n1.Normalized();
         n2 = n2.Normalized();
 
@@ -1066,9 +1068,13 @@ internal class RstRstEvolRad : RstRstFunction
             _tgrst1 = secmember[1] * _d11;
             _tgrst2 = secmember[2] * _d21;
 
-            // The centre's derivative along the walk.
+            // The centre's derivative along the walk, then the unit chords'.
             CentreD1(out Vector3D dcu, out Vector3D dcv);
             tgct = Vector3D.LinearForm(secmember[1], dcu, secmember[2], dcv, CentreDRay());
+            d1n1 = (_tgrst1 - tgct) / norm1;
+            d1n1 = d1n1 - n1.Dot(d1n1) * n1;
+            d1n2 = (_tgrst2 - tgct) / norm2;
+            d1n2 = d1n2 - n2.Dot(d1n2) * n2;
         }
 
         // Tops 2d
@@ -1109,7 +1115,7 @@ internal class RstRstEvolRad : RstRstFunction
         {
             Vector3D zero = new();
             _tevol.D2(prm, out _, out _, out double d2ray);
-            if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, d2ray, 0.0, _ptrst1, _tgrst1, zero, _ptrst2, _tgrst2, zero,
+            if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, d2ray, 0.0, n1, d1n1, zero, n2, d1n2, zero,
                                     Side(), out EnvelopeCircle e))
             {
                 return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.Plane, e.DPlane, _ptrst1, _ptrst2, _tgrst1, _tgrst2,

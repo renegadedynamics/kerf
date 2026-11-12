@@ -418,11 +418,21 @@ internal class SurfRstEvolRad : SurfRstFunction
         return ConstRad.SectionNormal(new Vector3D(_center, _pts), new Vector3D(_center, _ptrst), np);
     }
 
+    // The unit vectors from the ball's centre to its contacts at the last positioning: along the surface's normal, and
+    // along the chord to the restriction.
+    private void Directions(out Vector3D u1, out Vector3D u2)
+    {
+        u1 = _ray > 0.0 ? _nn : -_nn;
+        Vector3D corde = new(_center, _ptrst);
+        u2 = ConstRad.InverseNorm(corde) * corde;
+    }
+
     // The envelope's circle at the last positioning, from the centre's derivative along the walk.
     private bool Envelope(in Vector3D dc, out EnvelopeCircle circle)
     {
         Vector3D zero = new Vector3D();
-        return EnvelopeCircle.Make(0, _center, dc, zero, zero, _ray, _dray, 0.0, 0.0, _pts, zero, zero, _ptrst, zero, zero, Side(),
+        Directions(out Vector3D u1, out Vector3D u2);
+        return EnvelopeCircle.Make(0, _center, dc, zero, zero, _ray, _dray, 0.0, 0.0, u1, zero, zero, u2, zero, zero, Side(),
                                    out circle);
     }
 
@@ -956,7 +966,7 @@ internal class SurfRstEvolRad : SurfRstFunction
                                  NCollection_Array1<double> weights, NCollection_Array1<double> dWeights)
     {
         Vector3D d1u1, d1v1, d1;
-        Vector3D ns, ns2, dnplan, dnw = new();
+        Vector3D ns, ns2, dnplan, dnw = new(), dn2w = new();
         Vector3D tgct = new(), resul;
         Vector3D d1urst, d1vrst;
         Point3D center, bid;
@@ -1030,8 +1040,12 @@ internal class SurfRstEvolRad : SurfRstFunction
             _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
             _tgrst = secmember[3] * d1;
 
-            // The normal's derivative along the walk.
+            // The normal's derivative along the walk, then the unit chord's.
             dnw = Vector3D.LinearForm(secmember[1], _dnu, secmember[2], _dnv);
+            dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgrst, _tgs);
+            dn2w = Vector3D.LinearForm(_dray, ns, dn2w);
+            dn2w = ConstRad.InverseNorm(resul) * dn2w;
+            dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
         }
 
         // Tops 2D
@@ -1070,7 +1084,8 @@ internal class SurfRstEvolRad : SurfRstFunction
             Vector3D zero = new();
             tgct = Vector3D.LinearForm(_ray, dnw, _dray, ns, _tgs);
             _tevol.D2(prm, out _, out _, out double d2ray);
-            if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, _sg1 * d2ray, 0.0, _pts, _tgs, zero, _ptrst, _tgrst, zero,
+            double f1 = _ray > 0.0 ? -1.0 : 1.0;
+            if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, _sg1 * d2ray, 0.0, f1 * ns, f1 * dnw, zero, ns2, dn2w, zero,
                                     Side(), out EnvelopeCircle e))
             {
                 return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, e.N1, e.N2, e.DN1, e.DN2, e.Plane, e.DPlane, _pts, _ptrst, _tgs, _tgrst,

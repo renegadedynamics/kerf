@@ -242,8 +242,9 @@ public class FilletBlendTests
             "cone on a cylinder's axis" => (() => Main().Fuse(Solid.Cone(7, 3, 6, new Frame3D(origin, z)).Value.Shape).Value.Shape,
                                             main, Cone(origin, z, 7, 3, 6)),
             // Not one of the fourteen: a box's edge along z, between the planes x = 0 and y = 0
-            "box's edge" => (() => Solid.Box(20, 20, 20, new Frame3D(origin, z, new Direction3D(1, 0, 0))).Value.Shape,
-                             p => Math.Abs(p.X), p => Math.Abs(p.Y)),
+            "box's edge" or "short box's edge" => (() => Solid.Box(20, 20, name[0] == 's' ? 4 : 20,
+                                                                   new Frame3D(origin, z, new Direction3D(1, 0, 0))).Value.Shape,
+                                                   p => Math.Abs(p.X), p => Math.Abs(p.Y)),
             _ => throw new ArgumentException(name),
         };
     }
@@ -301,12 +302,18 @@ public class FilletBlendTests
     // through a point of it touches the surface there, so they're tangent along the contacts. Before, each section was a great
     // circle of its ball (decision 2215), and this missed by up to 6.5e-3, 1.4e-2 and 1.8e-2 (decision 2218); OCCT's sections
     // were 2D fillets in the plane square to the edge, further off.
+    // With "unlike laws" every other edge of the contour rises to 0.7 only, so the law's second derivative jumps where two
+    // edges meet (its first is nothing there, as ChFi3d's laws' always is at an edge's end): the sections are continuous
+    // there and their derivative along the walk isn't, and the approximation is cut there.
     [Theory]
-    [InlineData("cylinder tilted through a plane")]
-    [InlineData("cylinder through a sphere off its centre")]
-    [InlineData("tee 5/3")]
-    [InlineData("box's edge")]
-    public void ChFi3ds_evolving_fillets_are_the_envelope_of_their_balls(string name)
+    [InlineData("cylinder tilted through a plane", false)]
+    [InlineData("cylinder through a sphere off its centre", false)]
+    [InlineData("tee 5/3", false)]
+    [InlineData("box's edge", false)]
+    [InlineData("short box's edge", false)]
+    [InlineData("tee 5/3", true)]
+    [InlineData("tee 5/4", true)]
+    public void ChFi3ds_evolving_fillets_are_the_envelope_of_their_balls(string name, bool unlikeLaws)
     {
         (Func<Shape> make, Distance first, Distance second) = Pair(name);
         Shape shape = make();
@@ -322,9 +329,14 @@ public class FilletBlendTests
         law.SetValue(1, new Point2D(0.0, 0.4));
         law.SetValue(2, new Point2D(0.5, 1.0));
         law.SetValue(3, new Point2D(1.0, 0.4));
-        foreach (Edge edge in edges)
+        NCollection_Array1<Point2D> lower = new(1, 3);
+        lower.SetValue(1, new Point2D(0.0, 0.4));
+        lower.SetValue(2, new Point2D(0.5, 0.7));
+        lower.SetValue(3, new Point2D(1.0, 0.4));
+        Assert.True(!unlikeLaws || edges.Length > 1);
+        for (int i = 0; i < edges.Length; i++)
         {
-            chfi3d.Add(law, edge);
+            chfi3d.Add(unlikeLaws && i % 2 == 1 ? lower : law, edges[i]);
         }
         chfi3d.Build();
         Assert.True(chfi3d.IsDone);
@@ -333,9 +345,39 @@ public class FilletBlendTests
         Assert.True(miss < Approximation, $"{name}: the envelope's balls miss by {miss}");
         Assert.True(other < 10 * Approximation, $"{name}: the balls that touch one surface miss the other by {other}");
         Assert.True(offContact < Approximation, $"{name}: the contacts are off their surfaces by {offContact}");
-        // The box's surface runs a little past its edge's ends, where the law's cubic goes on below 0.4 (to 0.39967)
-        Assert.InRange(least, 0.4 - 10 * Approximation, 0.45);
+        // A box's surface runs a little past its edge's ends, where the law's cubic goes on below 0.4 (to 0.39967, and to
+        // 0.39185 on the short box, whose edge is 4 long: a law that rises 0.6 over 2)
+        Assert.InRange(least, 0.39, 0.45);
         Assert.InRange(greatest, 0.95, 1 + Approximation);
+    }
+
+    // A radius that runs down to nothing at an edge's end (the corpus's blend/tolblend_buildvol: 50 to 100 to 0 along a box's
+    // edge): the envelope's circle shrinks to a point there with the ball, and is made from the directions to the contacts, not
+    // the contacts themselves, which meet. Built, valid, on the envelope where it has any width.
+    [Fact]
+    public void An_evolving_fillet_whose_radius_runs_down_to_nothing_is_built()
+    {
+        Shape box = Solid.Box(500, 500, 500, new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0))).Value.Shape;
+        Edge edge = box.AllEdges().Single(e =>
+        {
+            var curve = new EdgeCurveAdaptor(e);
+            Point3D p = curve.Value(0.37 * curve.FirstParameter() + 0.63 * curve.LastParameter());
+            return Math.Abs(p.X) < 1e-6 && Math.Abs(p.Y) < 1e-6;
+        });
+        var chfi3d = new MakeFillet(box);
+        NCollection_Array1<Point2D> law = new(1, 3);
+        law.SetValue(1, new Point2D(0.0, 50));
+        law.SetValue(2, new Point2D(0.5, 100));
+        law.SetValue(3, new Point2D(1.0, 0));
+        chfi3d.Add(law, edge);
+        chfi3d.Build();
+        Assert.True(chfi3d.IsDone);
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        (double miss, _, double offContact, _, double greatest) = EnvelopeMiss(chfi3d, p => Math.Abs(p.X), p => Math.Abs(p.Y), 1e-3, 150);
+        Assert.True(miss < 100 * Approximation, $"the envelope's balls miss by {miss}");
+        Assert.True(offContact < 100 * Approximation, $"the contacts are off their surfaces by {offContact}");
+        // The law's cubic, through unlike rises, goes a little past 100 beside its middle point (to 101.6)
+        Assert.InRange(greatest, 95, 105);
     }
 
     // The envelope's test, the ball test's kin for a radius that changes. At 39 by 9 points of each new face, its boundaries
