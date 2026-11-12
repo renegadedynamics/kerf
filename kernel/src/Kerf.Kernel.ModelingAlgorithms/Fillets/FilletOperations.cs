@@ -233,6 +233,12 @@ public static class FilletOperations
                 EngineOutcome outcome = MakerOutcome.Of(fillet, range, [solid]);
                 if (outcome.IsDone)
                 {
+                    // Where a rim's arc ends on two concave edges and ChFi3d's faces there aren't tangent to one another, its result
+                    // is wrong, though valid: the one made rim first, which is proved, in its place (unit 15T4)
+                    if (FilletLimits.InsteadOfAlgorithm(solid, specs, options, fillet, outcome.Shape) is { } proved)
+                    {
+                        return proved;
+                    }
                     built = outcome;
                     return outcome;
                 }
