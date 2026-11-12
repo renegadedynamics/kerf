@@ -74,6 +74,10 @@ public class FilletConvexFirstTests
         double area = blends.Sum(f => ((Shape)f).IntegrateArea(Precise));
         Assert.Equal(Expected(rad), shape.IntegrateVolume(Precise), Approximation * area);
 
+        // And against unit 15T4's integral of the same convention, along rays from the ball's centres, which has no grid to miss the
+        // region's thin runs: to a tenth of that
+        Assert.Equal(AlongTheCentres(input, rad), shape.IntegrateVolume(Precise), 0.1 * Approximation * area);
+
         // Each of the top rim's arcs gave the rim's torus, and is gone
         foreach (Edge arc in edges.Where(e => IsTopArc(e)))
         {
@@ -218,6 +222,18 @@ public class FilletConvexFirstTests
         double main = Math.PI * Main * Main * 2 * Half - 2 * 2 * Math.PI * spandrel * (Main - centroid);
         double branch = Math.PI * rad * rad * 2 * Length - 2 * 2 * Math.PI * spandrel * (rad - centroid);
         return main + branch - Common(rad) + Added(rad);
+    }
+
+    // The same volume by FilletJunctionIntegral: the input's, less each rim's ring (the top's only where it's clear of the branch;
+    // the bottom's and the branch's two ends' whole, by Pappus), with what the concave blend adds round the branch
+    private static double AlongTheCentres(Shape input, double rad)
+    {
+        double spandrel = Ball * Ball * (1 - Math.PI / 4), centroid = Ball * (10 - 3 * Math.PI) / (3 * (4 - Math.PI));
+        double Branch(FilletJunctionIntegral.V p) => Math.Sqrt(p.X * p.X + (p.Z - Half) * (p.Z - Half)) - rad;
+        return input.IntegrateVolume(Precise) - 2 * Math.PI * spandrel * (Main - centroid) - 2 * 2 * Math.PI * spandrel * (rad - centroid)
+               - FilletJunctionIntegral.Ring(Main, Half, Ball, Branch)
+               + FilletJunctionIntegral.Added(p => FilletJunctionIntegral.FromCylinder(p, Main - Ball, Half - Ball), Branch, Ball,
+                                              new FilletJunctionIntegral.V(rad + Ball, 0, Half + Ball), Ball / 40);
     }
 
     // Gauss-Legendre on [lo, hi]
