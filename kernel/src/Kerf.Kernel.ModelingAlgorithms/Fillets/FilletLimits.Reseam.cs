@@ -15,6 +15,7 @@ namespace Kerf.Fillets;
 // The seam is only where the face's parameters wrap, not a feature of the shape, so, where ChFi3d has failed, each such face is
 // remade with its seam moved round to where no edge or vertex of the face lies, and ChFi3d is asked again on the shape so remade,
 // which is the same solid. Its result is proved by the ball as stage 4b's first slice is.
+// Unit 15T4 (section 17): a sphere's seam too, and one that runs to a point where the surface closes or ends on an arc.
 internal static partial class FilletLimits
 {
     // Counted for the tests: fillets built this way and returned, and those the ball test refused
@@ -117,7 +118,13 @@ internal static partial class FilletLimits
         var ends = new HashSet<Shape>(ShapeHasher.Instance);
         foreach (FilletSpec spec in specs)
         {
-            foreach (Vertex vertex in spec.Edge.AllVertices())
+            // A whole circle's one vertex is always its face's seam's, and ChFi3d builds those
+            Vertex[] own = [.. spec.Edge.AllVertices()];
+            if (own.Length < 2)
+            {
+                continue;
+            }
+            foreach (Vertex vertex in own)
             {
                 ends.Add(vertex);
             }

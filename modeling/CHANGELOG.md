@@ -5,6 +5,9 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
+  cone's apex, on a sphere or on a cylinder cut through its end, now builds where it failed or was wrong** (kernel
+  decisions 32101 to 32106); a fillet that still fails on a seam says so.
 - **A 2D offset whose medial axis loops fails over at once** (kernel decisions 2220 to 2222): `Offset` of a wire or
   face inwards past its curves' bends could spend seconds and gigabytes in the kernel before giving the same result (7.4
   s and 22.4 GB for a wire of 36 B-splines, now 0.05 s and 46 MB). Results are unchanged.

@@ -238,8 +238,9 @@ public static class FilletOperations
                 if (outcome.IsDone)
                 {
                     // Where a rim's arc ends on two concave edges and ChFi3d's faces there aren't tangent to one another, its result
-                    // is wrong, though valid: the one made rim first, which is proved, in its place (unit 15T4)
-                    if (FilletLimits.InsteadOfAlgorithm(solid, specs, options, fillet, outcome.Shape) is { } proved)
+                    // is wrong, though valid: the one made rim first, which is proved, in its place (unit 15T4). A caller who has
+                    // left the check out has asked for what the algorithm makes
+                    if (options.CheckResult && FilletLimits.InsteadOfAlgorithm(solid, specs, options, fillet, outcome.Shape) is { } proved)
                     {
                         return proved;
                     }
@@ -266,7 +267,7 @@ public static class FilletOperations
                 }
 
                 // The reason, where it's known: an edge that ends on a seam (OCCT #26655), which couldn't be moved or the result proved (unit 15T4)
-                if (FilletLimits.EndsOnSeam(solid, specs))
+                if (faulty[0].Code == Failed && FilletLimits.EndsOnSeam(solid, specs))
                 {
                     faulty = [Diagnostic.Error(Failed, OnSeam), .. faulty];
                 }

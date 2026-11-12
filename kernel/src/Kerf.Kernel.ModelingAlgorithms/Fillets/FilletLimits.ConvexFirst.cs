@@ -26,6 +26,9 @@ namespace Kerf.Fillets;
 // now one loop round the branch over the plane, the rim's torus and the side. Its result is proved by the ball, apart from how it's
 // built: at points of each face it made, the ball put back reaches the faces it was built on at the radius and no nearer, and along
 // each of that face's edges the face is tangent to the next.
+// Unit 15T4 (section 17): the face an arc ends on may be a plane, or a cylinder or a cone with the material on either side of it, and
+// the rim's tool is the whole turn less what fills each gap between its arcs; and where ChFi3d's one step has built such a corner
+// with faces that aren't tangent to one another, this stage's result is taken in its place.
 internal static partial class FilletLimits
 {
     // Counted for the tests and the sweeps: fillets built this way and returned, and those the ball test refused
