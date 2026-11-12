@@ -69,6 +69,22 @@ public class ShapeAnalysis_SurfaceTests
     }
 
     [Fact]
+    public void A_surface_with_no_bound_along_V_has_no_singular_bound_and_isnt_evaluated_there()
+    {
+        // #1365: a line turned about an axis it doesn't meet, and that surface offset: V runs to 2e100 each way. OCCT
+        // evaluates the bounds' ends there, where the offset surface has no normal, and fixshape threw (decision 33002).
+        var aRevolution = new RevolutionSurface(new LineCurve3D(new Point3D(4000, 0, 0), new Direction3D(0.6, -0.8, 0)),
+                                                new Axis3D(new Point3D(-10000, 0, 0), new Direction3D(0, 1, 0)));
+        foreach (Surface aSurface in new Surface[] { new OffsetSurface(aRevolution, 10), aRevolution })
+        {
+            var aSAS = new SurfaceAnalysis(aSurface);
+            Assert.Equal(0, aSAS.NbSingularities(1e10));
+            Assert.False(aSAS.HasSingularities(1));
+            Assert.False(aSAS.IsDegenerated(new Point3D(4000, 0, 0), 1e-3));
+        }
+    }
+
+    [Fact]
     public void Plane()
     {
         var aSAS = new SurfaceAnalysis(new PlaneSurface(XOY));

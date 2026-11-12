@@ -268,6 +268,15 @@ internal class SurfaceAnalysis : Transient
                  || _surf is global::Kerf.Geometry.OffsetSurface)
         { // rln S4135
 
+            // Kerf: a surface with no bound on a side has no boundary there to shrink to a point. OCCT evaluates it at
+            // the bound all the same, 2e100, where an offset surface has no normal and throws: fixshape's exception on
+            // an offset of a line's surface of revolution (#1365, decision 33002).
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(su1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(su2)
+                || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(sv2))
+            {
+                return;
+            }
+
             // rln S4135 //:r3
             _p3d[0] = _adSur!.Value(su1, 0.5 * (sv1 + sv2));
             _firstP2d[0] = _firstP2d[0].WithCoord(su1, sv2);
