@@ -16,8 +16,9 @@ namespace Kerf.Fillets;
 /// <remarks>
 /// <para>
 /// <b>Along an edge,</b> between the planes square to it at its ends, each section is the region between the edge's point,
-/// its contacts on the two faces (solved where they lie, at the length from the point in the plane square to the edge) and the
-/// chord between them: the triangle, with the segment between each face's section and its side, by the face's sag at the
+/// its contacts on the two faces (solved where they lie, in the plane square to the edge: at the chamfer's length from the
+/// point, at its two distances, or at its distance on the reference face and where the chord makes its angle with that face's
+/// section, as ChFi3d's BlendFunc_ChAsym has it) and the chord between them: the triangle, with the segment between each face's section and its side, by the face's sag at the
 /// side's middle (a parabola's two thirds of chord times sag). Swept along the edge, each element of the section moves by
 /// one less the edge's curvature vector dotted with its offset, so the volume is the integral of the section's area less its
 /// first moment against the curvature, by Gauss's points. Where edges run on through a vertex their planes there are one.
@@ -25,7 +26,10 @@ namespace Kerf.Fillets;
 /// <para>
 /// <b>At a corner,</b> what the chamfers take off together is not the sum of their sections: in a box round the corner,
 /// what's in the input and past any chamfer's surface less what's in each section's region, along lines cut exactly where
-/// they cross the corner's surfaces (<c>ChamferMeet.Corners.cs</c>). Only corners where every edge is convex.
+/// they cross the corner's surfaces (<c>ChamferMeet.Corners.cs</c>). Where every edge at the corner is convex the input is
+/// what's behind all of its faces; at a corner of convex and concave edges (unit 15U3) it's what the corner's formula holds
+/// without its chamfers, and what's built what it holds with them, in a box inside the reach where the formula decides the
+/// fuse's pieces. Only convex chamfers.
 /// </para>
 /// <para>
 /// The result's volume, measured, has to match to a part in a million of it, the approximation's tolerance over the chamfer's
@@ -37,8 +41,8 @@ internal static partial class ChamferMeet
     private static ReadOnlySpan<double> GaussNodes => [-0.9602898564975363, -0.7966664774136267, -0.5255324099163290, -0.1834346424956498,
                                                        0.1834346424956498, 0.5255324099163290, 0.7966664774136267, 0.9602898564975363];
 
-    private static ReadOnlySpan<double> GaussWeights => [0.1012285362903763, 0.2223810344533745, 0.3137066661925477, 0.3626837833783620,
-                                                         0.3626837833783620, 0.3137066661925477, 0.2223810344533745, 0.1012285362903763];
+    private static ReadOnlySpan<double> GaussWeights => [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620,
+                                                         0.3626837833783620, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
 
     // Panels of Gauss's eight points along each edge, and how far a corner's box reaches from the corner, in its widest
     // chamfer's widths
@@ -47,8 +51,8 @@ internal static partial class ChamferMeet
     private const double CornerReach = 3;
 
     /// <summary>The expected volume and how far from it the result may be, or null where it can't be worked out.</summary>
-    private static (double Expected, double Allowed)? ExpectedVolume(Shape input, Face[] faces, List<Band> bands, List<Corner> corners,
-                                                                     Edge[] chamfered, ChamferSpec[] specs, double tolerance)
+    private static (double Expected, double Allowed)? ExpectedVolume(Shape input, Face[] faces, List<Band> bands, List<Corner> corners, List<Carried> carried,
+                                                                     Edge[] chamfered, ChamferSpec[] specs, Face[] referenceFaces, double tolerance, double near)
     {
         if (bands.Any(static b => !b.Convex))
         {
@@ -58,7 +62,13 @@ internal static partial class ChamferMeet
         double removed = 0, area = 0;
         foreach (Edge edge in chamfered.DistinctBy(static e => (Shape)e, ShapeHasher.Instance))
         {
-            if (EqualDistance(specs, [edge]) is not { } distance || Swept(faces, edge, distance, context) is not { } swept)
+            // The edge's cut is its own spec's, or its contour's where the spec names another of its edges; at a corner of
+            // convex and concave edges the corner's integral counts the sections behind the edge's own two faces carried on,
+            // so they're solved on those alone
+            Edge[] contour = bands.FirstOrDefault(b => b.Edges.Any(e => e.IsSame(edge)))?.Edges ?? [edge];
+            bool ownFaces = corners.Any(c => c.Mixed is not null && contour.Any(e => e.AllVertices().Any(v => v.IsSame(c.Vertex))));
+            if ((CutOf(specs, referenceFaces, [edge]) ?? CutOf(specs, referenceFaces, contour)) is not { } cut
+                || Swept(faces, edge, cut.Cut, cut.References, ownFaces, context) is not { } swept)
             {
                 return null;
             }
@@ -71,8 +81,12 @@ internal static partial class ChamferMeet
         foreach (Corner corner in corners)
         {
             Edge[] at = [.. chamfered.Where(e => e.AllVertices().Any(v => v.IsSame(corner.Vertex))).DistinctBy(static e => (Shape)e, ShapeHasher.Instance)];
+            // A convex corner's box is three of its widest chamfer's widths; one of convex and concave edges has its box inside
+            // the reach where its formula says what's built (unit 15U3)
             double reach = CornerReach * corner.Bands.Max(static b => b.Width);
-            (double excess, double error) = CornerExcess(corner, faces, at, bands, reach);
+            (double excess, double error) = corner.Mixed is { } formula
+                ? MixedExcess(corner, formula, at, carried, near / Math.Sqrt(3))
+                : CornerExcess(corner, faces, at, bands, reach);
             if (double.IsNaN(excess) || double.IsNaN(error))
             {
                 return null;
@@ -86,20 +100,25 @@ internal static partial class ChamferMeet
 
     private static double MeasuredVolume(Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 });
 
-    internal static double? SweptVolume(Face[] faces, Edge edge, double distance) => Swept(faces, edge, distance, new IntersectionContext())?.Volume;
+    internal static double? SweptVolume(Face[] faces, Edge edge, double distance) =>
+        Swept(faces, edge, new Cut(distance, null, null), [], false, new IntersectionContext())?.Volume;
+
+    internal static double? SweptVolume(Face[] faces, Edge edge, double distance, double? second, double? angle, Face reference) =>
+        Swept(faces, edge, new Cut(distance, second, angle), [reference], false, new IntersectionContext())?.Volume;
 
     // The region the chamfer takes off along the edge, between the planes square to it at its ends, and the chamfer's area there
-    private static (double Volume, double Width)? Swept(Face[] faces, Edge edge, double distance, IntersectionContext context)
+    private static (double Volume, double Width)? Swept(Face[] faces, Edge edge, Cut cut, Face[] references, bool ownFaces, IntersectionContext context)
     {
         Face[] two = [.. faces.Where(f => OnFace(edge, f))];
-        if (two.Length != 2 || Tool.Curve(edge, out double a, out double b) is not { } curve)
+        if (two.Length != 2 || Tool.Curve(edge, out double a, out double b) is not { } curve || IsReference(cut, references, two[0]) is not { } firstIsReference
+            || (!firstIsReference && IsReference(cut, references, two[1]) != true))
         {
             return null;
         }
-        Face[] ordered1 = [two[0], .. faces.Where(f => !f.IsSame(two[0]))], ordered2 = [two[1], .. faces.Where(f => !f.IsSame(two[1]))];
-        Edge in1 = two[0].AllEdges().First(e => e.IsSame(edge)), in2 = two[1].AllEdges().First(e => e.IsSame(edge));
-        Point2D? last1 = null, last2 = null;
-        Face face1 = default, face2 = default;
+        Face[] ordered1 = ownFaces ? [two[0]] : [two[0], .. faces.Where(f => !f.IsSame(two[0]))];
+        Face[] ordered2 = ownFaces ? [two[1]] : [two[1], .. faces.Where(f => !f.IsSame(two[1]))];
+        var side1 = new Side { Start = two[0], Candidates = ordered1, InStart = two[0].AllEdges().First(e => e.IsSame(edge)) };
+        var side2 = new Side { Start = two[1], Candidates = ordered2, InStart = two[1].AllEdges().First(e => e.IsSame(edge)) };
         double volume = 0, width = 0;
         for (int panel = 0; panel < VolumePanels; panel++)
         {
@@ -111,12 +130,12 @@ internal static partial class ChamferMeet
                 double speed = d1.Magnitude;
                 Vector3D tangent = d1 / speed;
                 Vector3D bend = (d2 - (tangent * d2.Dot(tangent))) / (speed * speed);
-                if (Contact(two[0], ordered1, in1, t, c, tangent, distance, ref last1, ref face1, context) is not { } p1
-                    || Contact(two[1], ordered2, in2, t, c, tangent, distance, ref last2, ref face2, context) is not { } p2)
+                if (Contacts(cut, firstIsReference ? side1 : side2, firstIsReference ? side2 : side1, t, c, tangent, context) is not { } contacts)
                 {
                     return null;
                 }
-                (double sectionArea, Vector3D moment) = Section(c, p1, p2, face1, face2);
+                (Point3D p1, Point3D p2) = firstIsReference ? contacts : (contacts.Other, contacts.Reference);
+                (double sectionArea, Vector3D moment) = Section(c, p1, p2, side1.Face, side2.Face);
                 double weight = 0.5 * (hi - lo) * GaussWeights[i] * speed;
                 volume += weight * (sectionArea - bend.Dot(moment));
                 width += weight * p1.DistanceTo(p2);
