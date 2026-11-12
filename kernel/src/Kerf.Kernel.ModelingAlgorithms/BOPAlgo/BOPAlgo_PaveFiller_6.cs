@@ -1131,7 +1131,7 @@ internal partial class PaveFiller
         PaveFiller pf = new();
         pf.SetIsPrimary(false);
         pf.SetNonDestructive(_nonDestructive);
-        pf.SetCrossingsApart(_crossingsApart, _touchesApart);
+        pf.SetCrossingsApart(_crossingsApart, _touchesApart, _smallPiecesTaken);
         //
         List<InterfFF> fFs = _ds!.InterfFF();
         int nbFF = fFs.Count;
@@ -4616,6 +4616,8 @@ internal partial class PaveFiller
     {
         BrepBuilder builder = new();
         List<PaveBlock> ordered = new();
+        NCollection_IntMap taken = new();
+        List<int> small = new();
         for (int nE = 0; nE < _ds!.SourceShapeCount; ++nE)
         {
             ShapeInfo info = _ds.ShapeInfo(nE);
@@ -4647,9 +4649,19 @@ internal partial class PaveFiller
             int vertex = first.IsNull ? -1 : SameDomainOf(_ds.Index(first)), end = last.IsNull ? -1 : SameDomainOf(_ds.Index(last));
             double reached = from, least = global::Kerf.Engine.Foundation.Precision.PConfusion();
             PaveBlock? before = null;
+            EdgeCurveAdaptor? curve = null;
+            small.Clear();
             for (int i = 0; i <= ordered.Count; ++i)
             {
                 PaveBlock? block = i < ordered.Count ? ordered[i] : null;
+                // Kerf (decision 33708): asked to, a piece between two vertices that is no longer than their tolerances
+                // is taken for missing too
+                if (_smallPiecesTaken && block is not null && TooSmallToKeep(block, nE))
+                {
+                    small.Add(block.Edge());
+                    continue;
+                }
+
                 double starts = block is null ? to : block.Pave1().Parameter();
                 int at = block is null ? end : SameDomainOf(block.Pave1().Index());
                 if (starts > reached + least && at == vertex && vertex >= 0)
@@ -4671,7 +4683,30 @@ internal partial class PaveFiller
                         RunOn(block, builder);
                     }
                 }
+                else if (starts > reached + least && at != vertex && at >= 0 && vertex >= 0 && small.Count > 0)
+                {
+                    // Kerf (decision 33708): a piece too small to keep is missing between two vertices, and one of them
+                    // covers all of it: that vertex's piece runs on through it, to a point still inside the vertex
+                    curve ??= new EdgeCurveAdaptor(edge);
+                    if (before is not null && OwnPiece(before, nE) && Covers(vertex, curve.Value(starts)))
+                    {
+                        Pave pave = before.Pave2();
+                        pave.SetParameter(starts);
+                        before.SetPave2(pave);
+                        RunOn(before, builder);
+                        Take(small, taken);
+                    }
+                    else if (block is not null && OwnPiece(block, nE) && Covers(at, curve.Value(reached)))
+                    {
+                        Pave pave = block.Pave1();
+                        pave.SetParameter(reached);
+                        block.SetPave1(pave);
+                        RunOn(block, builder);
+                        Take(small, taken);
+                    }
+                }
 
+                small.Clear();
                 if (block is not null)
                 {
                     reached = block.Pave2().Parameter();
@@ -4680,6 +4715,31 @@ internal partial class PaveFiller
                 }
             }
         }
+
+        // The pieces run on through are gone from the edges and the faces, as micro edges are
+        if (taken.Extent() > 0)
+        {
+            RemovePaveBlocks(taken);
+        }
+
+        static void Take(List<int> small, NCollection_IntMap taken)
+        {
+            foreach (int piece in small)
+            {
+                taken.Add(piece);
+            }
+        }
+    }
+
+    // A piece of an edge, with an edge of its own, between two vertices whose tolerances leave it no range
+    private bool TooSmallToKeep(PaveBlock block, int nE)
+        => SameDomainOf(block.Pave1().Index()) != SameDomainOf(block.Pave2().Index()) && OwnPiece(block, nE)
+           && AlgoTools.IsMicroEdge(ShapeCasts.Edge(_ds!.Shape(block.Edge())), _context, false);
+
+    private bool Covers(int nV, in Point3D point)
+    {
+        Vertex vertex = ShapeCasts.Vertex(_ds!.Shape(nV));
+        return Tool.Pnt(vertex).DistanceTo(point) <= Tool.Tolerance(vertex);
     }
 
     private int SameDomainOf(int nV)
