@@ -774,6 +774,18 @@ internal static class InterUtils
         V = v1;
     }
 
+    // The vector divided by its largest component, as a direction; false for a zero vector (decision 34003)
+    private static bool ScaledDirection(ref Vector3D vector)
+    {
+        double scale = Math.Max(Math.Abs(vector.X), Math.Max(Math.Abs(vector.Y), Math.Abs(vector.Z)));
+        if (scale == 0.0)
+        {
+            return false;
+        }
+        vector = new Vector3D(vector.X / scale, vector.Y / scale, vector.Z / scale);
+        return true;
+    }
+
     /// <summary>The transition of the curve through the surface at the point of parameters (u, v) and w.</summary>
     public static void ComputeTransitions<CurveType, CurveTool, SurfaceType, SurfaceTool>(
         in CurveType curve, double w, out TransitionOnCurve transOnCurve, in SurfaceType surface,
@@ -783,26 +795,29 @@ internal static class InterUtils
     {
         Vector3D nSurf, d1U, d1V;
         Point3D psurf;
-        double cosDir;
 
+        // Kerf: each derivative is scaled by its largest component before the test, as OCCT does since 53706f78a8
+        // (decision 34003). 8.0.1 tested the derivatives as they are against 1e-12, so a surface whose parameters run
+        // over a long range for its size (derivatives of 1e-7, a normal of 1e-14) gave every crossing as a tangency,
+        // which a solid's classifier skips; the crossing's direction doesn't depend on the parameterisation.
         SurfaceTool.D1(surface, u, v, out psurf, out d1U, out d1V);
+        if (!ScaledDirection(ref d1U) || !ScaledDirection(ref d1V))
+        {
+            transOnCurve = TransitionOnCurve.Tangent;
+            return;
+        }
         nSurf = d1U.Crossed(d1V);
         CurveTool.D1(curve, w, out psurf, out d1U);
-        double norm = nSurf.Magnitude;
-        if (norm > THE_TOLERANCE_ANGULAIRE && d1U.SquareMagnitude > THE_TOLERANCE_ANGULAIRE)
+        if (ScaledDirection(ref nSurf) && ScaledDirection(ref d1U))
         {
-            d1U = d1U.Normalized();
-            cosDir = nSurf.Dot(d1U);
-            cosDir /= norm;
-            if (-cosDir > THE_TOLERANCE_ANGULAIRE)
+            // the scaling bounds the squared lengths, so the angle's test can't overflow
+            double dot = nSurf.Dot(d1U);
+            double squaredTolerance = THE_TOLERANCE_ANGULAIRE * THE_TOLERANCE_ANGULAIRE
+                                      * nSurf.SquareMagnitude * d1U.SquareMagnitude;
+            if (dot * dot > squaredTolerance)
             {
-                //--  --Curve--->    <----Surface----
-                transOnCurve = TransitionOnCurve.In;
-            }
-            else if (cosDir > THE_TOLERANCE_ANGULAIRE)
-            {
-                //--  --Curve--->  ----Surface-->
-                transOnCurve = TransitionOnCurve.Out;
+                //--  --Curve--->    <----Surface----   or   --Curve--->  ----Surface-->
+                transOnCurve = dot < 0.0 ? TransitionOnCurve.In : TransitionOnCurve.Out;
             }
             else
             {
