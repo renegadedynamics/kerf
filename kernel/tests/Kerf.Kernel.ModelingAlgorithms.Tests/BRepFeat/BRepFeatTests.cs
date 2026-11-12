@@ -133,6 +133,49 @@ public class BRepFeatTests
         Assert.Single(aPrism.Modified(aTop));
     }
 
+    // Upstream 3f3d32d9f3 (decision 34001): mode 2 asks for the separate feature, which 8.0.1's draft prism fused
+    // with the basis shape anyway, as mode 1
+    [Fact]
+    public void MakeDPrism_Mode2_ReturnsTheSeparateFeature()
+    {
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
+        var aFused = new MakeDraftPrism(aBox, aRect, aTop, 5 * Math.PI / 180, 1, false);
+        aFused.Perform(4.0);
+        var aFeature = new MakeDraftPrism(aBox, aRect, aTop, 5 * Math.PI / 180, 2, false);
+        aFeature.Perform(4.0);
+        Assert.True(aFeature.IsDone);
+        Shape aRes = aFeature.Shape();
+        Assert.True(new Analyzer(aRes).IsValid());
+        // the feature alone: a tapered boss of height 4 on the 4 x 6 rectangle, smaller than its prism of 96
+        double aBoss = Volume(aRes);
+        Assert.True(aBoss > 0 && aBoss < 4 * 6 * 4, $"volume {aBoss}");
+        Assert.Equal(Volume(aFused.Shape()) - 6000, aBoss, 6);
+    }
+
+    // Upstream 3f3d32d9f3 (decision 34001): PerformUntilHeight with no Until is Perform of the height, and with a
+    // height of 0 is Perform until the shape; in 8.0.1 the first threw and the second built again with the height 0
+    [Fact]
+    public void MakePrism_And_MakeDPrism_PerformUntilHeight_FallBackToTheirSimpleForms()
+    {
+        (Shape aBox, Face aTop, Face aRect) = BoxAndRect();
+        var aPrism = new MakePrism(aBox, aRect, aTop, new Direction3D(0, 0, 1), 1, true);
+        aPrism.PerformUntilHeight(new Shape(), 5.0);
+        Assert.True(aPrism.IsDone);
+        Assert.Equal(6000 + 4 * 6 * 5, Volume(aPrism.Shape()), 6);
+
+        var aDepression = new MakePrism(aBox, aRect, aTop, new Direction3D(0, 0, -1), 0, true);
+        aDepression.PerformUntilHeight(Bottom(aBox), 0);
+        Assert.True(aDepression.IsDone);
+        Assert.Equal(6000 - 4 * 6 * 30, Volume(aDepression.Shape()), 6);
+
+        var aDraft = new MakeDraftPrism(aBox, aRect, aTop, 5 * Math.PI / 180, 1, false);
+        aDraft.Perform(4.0);
+        var aDraftUntil = new MakeDraftPrism(aBox, aRect, aTop, 5 * Math.PI / 180, 1, false);
+        aDraftUntil.PerformUntilHeight(new Shape(), 4.0);
+        Assert.True(aDraftUntil.IsDone);
+        Assert.Equal(Volume(aDraft.Shape()), Volume(aDraftUntil.Shape()), 9);
+    }
+
     [Fact]
     public void MakeRevol_And_MakePipe_OnFrozenInputs()
     {
