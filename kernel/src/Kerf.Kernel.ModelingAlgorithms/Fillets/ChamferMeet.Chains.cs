@@ -222,10 +222,14 @@ internal static partial class ChamferMeet
 
         public Point2D? Last;
 
+        // The next contact's solution started at the last one's parameters, where it's on the same face, rather than at the
+        // last one's point put back on the face (unit 15U4: the same start, without the search)
+        public bool FromLast { get; init; }
+
         public Face Face;
 
         public Point3D? At(double t, Point3D c, Vector3D tangent, double distance, IntersectionContext context) =>
-            Contact(Start, Candidates, InStart, t, c, tangent, distance, ref Last, ref Face, context);
+            Contact(Start, Candidates, InStart, t, c, tangent, distance, ref Last, ref Face, context, FromLast);
     }
 
     // An angle's contact is solved to this, in radians; where the secant stalls on the contacts' own rounding, this is taken
@@ -294,13 +298,20 @@ internal static partial class ChamferMeet
     }
 
     // ChFi3d's band at the chamfer's distance from its edge along both contacts, to its approximation's tolerance and the edge's
-    private static bool OnSpec(Band band, double distance, double tolerance)
+    private static bool OnSpec(Band band, double distance, double tolerance) => OnSpec(band, distance, distance, tolerance);
+
+    // The same with a distance for each contact, the first face's and the second's; a contact without one isn't looked at
+    private static bool OnSpec(Band band, double? first, double? second, double tolerance)
     {
         for (int k = 0; k <= 8; k++)
         {
             double v = band.VLo + ((band.VHi - band.VLo) * k / 8);
-            foreach ((double u, Face face) in new[] { (0.0, band.Face1), (band.UMax, band.Face2) })
+            foreach ((double u, Face face, double? asked) in new[] { (0.0, band.Face1, first), (band.UMax, band.Face2, second) })
             {
+                if (asked is not { } distance)
+                {
+                    continue;
+                }
                 // The contact where the band crosses its face, as the fuse will find it: off the face by the approximation's
                 // error, it moves along the face by that over the sine of the angle between them
                 Point3D p = band.Original.EvalD0(u, v);
@@ -493,8 +504,9 @@ internal static partial class ChamferMeet
     // The point of one of the faces at the distance from the edge's point, in the plane square to the edge there, by Newton's
     // method from the last one found (or, at first, from a point of the face beside the edge); the face it's on returned
     private static Point3D? Contact(Face start, Face[] candidates, Edge inStart, double t, Point3D c, Vector3D tangent, double distance,
-                                    ref Point2D? last, ref Face lastFace, IntersectionContext context)
+                                    ref Point2D? last, ref Face lastFace, IntersectionContext context, bool fromLast = false)
     {
+        Point2D? lastUv = last;
         Point3D guess;
         if (last is { } previous && !lastFace.IsNull)
         {
@@ -522,12 +534,20 @@ internal static partial class ChamferMeet
         foreach (Face face in order)
         {
             Surface surface = Tool.Surface(face)!;
-            var projection = new ProjectPointOnSurface(guess, surface);
-            if (projection.NbPoints() == 0)
+            double u, v;
+            if (fromLast && lastUv is { } at && face.IsSame(previousFace))
             {
-                continue;
+                (u, v) = (at.X, at.Y);
             }
-            projection.LowerDistanceParameters(out double u, out double v);
+            else
+            {
+                var projection = new ProjectPointOnSurface(guess, surface);
+                if (projection.NbPoints() == 0)
+                {
+                    continue;
+                }
+                projection.LowerDistanceParameters(out u, out v);
+            }
             if (Solve(surface, c, tangent, distance, ref u, ref v) is not { } p)
             {
                 continue;

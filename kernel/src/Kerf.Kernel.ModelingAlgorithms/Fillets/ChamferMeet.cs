@@ -211,15 +211,17 @@ internal static partial class ChamferMeet
     }
 
     // Kerf's own bands for ChFi3d's stripes that are off the chamfer's distance first, and if that isn't built, ChFi3d's (unless
-    // a chain through a vertex needs Kerf's own anyway, whose corners ChFi3d's stripes beside it don't make)
+    // a chain through a vertex needs Kerf's own anyway, whose corners ChFi3d's stripes beside it don't make). Where a stripe of
+    // two distances, or of a distance and an angle, is off its distance because ChFi3d smoothed its guide away from its edge,
+    // ChFi3d's stripes again along guides kept to their edges (unit 15U4)
     private static EngineOutcome? Attempts(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
     {
-        bool anyOff = false;
+        bool anyOff = false, offGuide = false;
         foreach (bool own in (ReadOnlySpan<bool>)[true, false])
         {
             try
             {
-                if (Built(shape, chamfer, specs, referenceFaces, own, ref anyOff) is { } built)
+                if (Built(shape, chamfer, specs, referenceFaces, own, ref anyOff, ref offGuide) is { } built)
                 {
                     return built;
                 }
@@ -228,15 +230,64 @@ internal static partial class ChamferMeet
             {
             }
             Cancellation.ThrowIfRequested();
-            if (!anyOff)
+            if (!anyOff || offGuide)
             {
                 break;
             }
         }
-        return null;
+        if (!offGuide)
+        {
+            return null;
+        }
+        try
+        {
+            MakeChamfer nearer = AlongItsEdges(shape, chamfer, specs, referenceFaces);
+            Cancellation.ThrowIfRequested();
+            return Built(shape, nearer, specs, referenceFaces, false, ref anyOff, ref offGuide);
+        }
+        catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
+        {
+            return null;
+        }
     }
 
-    private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, bool ownWhereOff, ref bool anyOff)
+    // How near its edge a guide that ChFi3d smooths to C2 is kept for the stripes this path asks again: a thousandth of the
+    // approximation's tolerance, where OCCT keeps it to a length of 1e-3 whatever the shape's size
+    private const double GuideOnEdge = 1e-3;
+
+    // ChFi3d's chamfer of the same specs, its guides kept to their edges; its stripes are what's wanted, built or not
+    private static MakeChamfer AlongItsEdges(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
+    {
+        var nearer = new MakeChamfer(shape);
+        ChBuilder builder = nearer.InternalBuilder();
+        builder._guideTolerance = GuideOnEdge * chamfer.InternalBuilder()._tolapp3d;
+        for (int i = 0; i < specs.Length; i++)
+        {
+            ChamferSpec spec = specs[i];
+            if (spec.Angle is { } angle)
+            {
+                nearer.AddDA(spec.Distance, angle, spec.Edge, referenceFaces[i]);
+            }
+            else if (spec.Distance2 is { } second)
+            {
+                nearer.Add(spec.Distance, second, spec.Edge, referenceFaces[i]);
+            }
+            else
+            {
+                nearer.Add(spec.Distance, spec.Edge);
+            }
+        }
+        nearer.Build();
+        return nearer;
+    }
+
+    // A band of ChFi3d's off its cut's distance on a contact by more than twice what the proof allows there
+    private static bool OffItsCut(Band band, Cut cut, Face[] references, double tolerance) =>
+        IsReference(cut, references, band.Face1) is { } firstIsReference
+        && !OnSpec(band, firstIsReference ? cut.Distance : cut.Second, firstIsReference ? cut.Second : cut.Distance, 2 * tolerance);
+
+    private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, bool ownWhereOff, ref bool anyOff,
+                                        ref bool offGuide)
     {
         ChBuilder builder = chamfer.InternalBuilder();
         if (builder._listStripe.IsEmpty() || (builder._badstripes.Extent() != 0 && !ownWhereOff))
@@ -307,6 +358,15 @@ internal static partial class ChamferMeet
                 anyOff = !chained;
                 off.Add(stripe);
                 continue;
+            }
+            // A stripe of two distances, or of a distance and an angle, that ChFi3d walked along a guide it had smoothed off
+            // the edge (ChFi3d_ApproxByC2, to 1e-3 whatever the shape's size) and that is well off its distance on a contact: the
+            // proof would refuse what the fuse made of it, so the stripes are asked again along their edges (unit 15U4)
+            if (builder._guidesSmoothed > 0 && builder._guideTolerance == Builder_0.GuideTolerance
+                && CutOf(specs, referenceFaces, own[0].Edges) is { Cut.Equal: false } asked && own.Any(b => OffItsCut(b, asked.Cut, asked.References, builder._tolapp3d)))
+            {
+                offGuide = true;
+                return null;
             }
             bands.AddRange(own);
             Spine spine = stripe.Spine()!;

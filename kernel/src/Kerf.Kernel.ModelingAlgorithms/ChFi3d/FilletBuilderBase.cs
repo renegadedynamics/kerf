@@ -61,6 +61,12 @@ internal abstract partial class FilletBuilderBase
     internal double _tolesp;
     internal double _tol2d;
     internal double _tolapp3d;
+
+    // Kerf's own (unit 15U4): how near its edge a guide that is smoothed to C2 is kept (OCCT's 1.000001e-3, whatever the
+    // shape's size), and how many guides were smoothed
+    internal double _guideTolerance = Builder_0.GuideTolerance;
+
+    internal int _guidesSmoothed;
     internal double _tolapp2d;
     internal double _fleche;
     internal Continuity _conti;
