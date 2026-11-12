@@ -401,4 +401,17 @@ public class BRepFill_OffsetWireTests
         Explorer aWires = new(aResult, ShapeType.Wire);
         Assert.True(new global::Kerf.Engine.Healing.Checks.Analyzer(new MakeFace(ShapeCasts.Wire(aWires.Current()), true).Face()).IsValid());
     }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(3, 9)]
+    [InlineData(5, 25)]
+    [InlineData(6, 28)]
+    [InlineData(218, 452)]
+    [InlineData(2_000_000_000, 4_000_000_016L)]
+    public void A_medial_axis_fails_after_twice_its_elements_and_16_passes(int theElements, long theLimit)
+    {
+        // decision 32502: OCCT's square of the elements where that is fewer; never more than an int holds
+        Assert.Equal((int)Math.Min(theLimit, int.MaxValue), global::Kerf.Engine.Offsets.MedialAxis.Mat2d.PassLimit(theElements));
+    }
 }

@@ -83,7 +83,7 @@ internal sealed class Mat2d
 
         noofedges = atool.NumberOfItems();
         toleranceofconfusion = atool.ToleranceOfConfusion();
-        numberMaxOfIte = noofedges * noofedges;
+        numberMaxOfIte = PassLimit(noofedges);
 
         NCollection_Array1<int> firstarea = new(0, noofedges);
         NCollection_Array1<int> lastarea = new(0, noofedges);
@@ -360,7 +360,8 @@ internal sealed class Mat2d
             }
 
             // The number of iterations: each removes an element of the contour that is never reinserted, so it
-            // must stay below the number of elements; the maximum is numberofedges * numberofedges.
+            // must stay below the number of elements; OCCT's maximum is numberofedges * numberofedges, Kerf's
+            // PassLimit.
             if (numberOfIte > numberMaxOfIte)
             {
                 _isDone = false; // Failure of the map.
@@ -425,7 +426,7 @@ internal sealed class Mat2d
 
         noofedges = atool.NumberOfItems();
         toleranceofconfusion = atool.ToleranceOfConfusion();
-        numberMaxOfIte = noofedges * noofedges;
+        numberMaxOfIte = PassLimit(noofedges);
 
         NCollection_Array1<int> firstarea = new(0, noofedges);
         NCollection_Array1<int> lastarea = new(0, noofedges);
@@ -765,7 +766,8 @@ internal sealed class Mat2d
             }
 
             // The number of iterations: each removes an element of the contour that is never reinserted, so it
-            // must stay below the number of elements; the maximum is numberofedges * numberofedges.
+            // must stay below the number of elements; OCCT's maximum is numberofedges * numberofedges, Kerf's
+            // PassLimit.
             if (numberOfIte > numberMaxOfIte)
             {
                 _isDone = false; // Failure of the map.
@@ -813,6 +815,22 @@ internal sealed class Mat2d
         _oneNode = new HashSet<int>();
         return true;
     }
+
+    /// <summary>
+    /// Kerf: the most passes the main loop makes over a contour of <paramref name="items"/> elements before the map
+    /// fails: twice the elements and 16, or OCCT's square of the elements where that is fewer (decision 32502).
+    /// </summary>
+    /// <remarks>
+    /// Each pass takes at least one portion off the contour, making one bisector for it, or the loop ends; an element
+    /// comes back only when the bisector of its portion is cancelled, and a bisector is cancelled once. So a map that
+    /// ends after p passes with e elements left has made at least p bisectors and cancelled all but items - e of them
+    /// at most: every pass beyond the number of elements is a pass whose work was thrown away. OCCT's count allows
+    /// items * (items - 1) of those, which is what a loop that MatCycle can't see (its state drifting, never the same
+    /// twice) would run to; this allows items + 16, the 16 so that OCCT's own two patches against loops, which wait
+    /// ten passes, act first on a small contour. Of the maps measured, one took more passes than it has elements (13
+    /// for 11, a loop OCCT's patch broke off); the rest took at most 0.88 of their elements.
+    /// </remarks>
+    internal static int PassLimit(int items) => (int)Math.Min(Math.Min((long)items * items, 2L * items + 16), int.MaxValue);
 
     // OCCT's step 2.4, the same in CreateMat and CreateMatOpen (written once here): cancels the bisectors to
     // remove, going down each tree from bisectoronetoremove(i) to bisectortwotoremove(i).
