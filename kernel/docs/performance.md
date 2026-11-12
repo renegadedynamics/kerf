@@ -148,6 +148,10 @@ its own was still going.
 So allocation and the totals are a real check, and one short operation's time only catches something large: single rows
 are bimodal, depending on when the runtime tiers up. Don't read a 20% move on one row as a finding without running it again.
 
+Allocation is steady between runs of one build, but not between builds: a change that never runs in an example can move
+its bytes by several percent, as the precompiled code and the tiering move with the build (unit 15AN). The `exact` rows,
+one processor and the JIT alone, are the code's own: read a flag on an allocation row against its `exact` row.
+
 ## Where it stands (the timed run after 11E)
 
 *[benchmarks/2026-11-05-fdaa7a7f6.md](benchmarks/2026-11-05-fdaa7a7f6.md), on a quiet machine, 5 November. Compare with this run from here on.*
@@ -2399,3 +2403,65 @@ one process: of the case thread's samples, edge/face about 60% (the root finder 
 
 Every log the same but for addresses and times; `bug32444`'s with a dump of its result the same to the byte. The time
 left is computing the intersections (decision 2264).
+
+## The night bench's nine allocation rises (unit 15AN)
+
+*November 2026, decisions 33601 to 33607. A loaded machine: the verdicts rest on bytes, which here were made exact (below);
+nothing was timed. The rig's suites for a quiet window: `quiet-15an.ps1` in the scratchpad's `15an` folder.*
+
+The quiet run of 12 November (main at cd25ebc44 against 232c0e477's run of 10 November) flagged nine rows' bytes. Each was
+measured again at 232c0e477, at cd25ebc44 and at main (660f6ed45), and bisected between, from builds published as the rig
+publishes them.
+
+**The rig's bytes depend on the build, not only on the code.** Under the rig's settings (ReadyToRun, tiered compilation),
+one build gives the same bytes from process to process on one processor (Bento's for-loop 8.331, 8.339 and 8.335 MB), but
+two builds whose difference never runs in an example don't: the for-loop 8.330 MB at 232c0e477 and 7.950 at 85cb5537c, which
+added a check after fillets and chamfers only. Which methods are precompiled, which are compiled again when hot and when,
+and so which objects an optimised method keeps off the heap, all move with the build; that's inferred from what follows,
+not traced. With every method compiled once, optimised, without ReadyToRun or tiering (`DOTNET_TieredCompilation=0`,
+`DOTNET_ReadyToRun=0`), and one processor, so that the parallel loops run on the calling thread, the bytes are the same
+from run to run to 0.1% and the same three builds give 7.774, 7.726 and 7.720 MB. On many processors the rows move
+besides with which threads take which items (decisions 1940, 2189): the night run's own spread on Bento's three rows was 1.2% to
+5.3%, against the comparison's threshold of 2%. So these are the figures below ("exact"), and the rig now has them as rows
+of their own (decision 33605).
+
+| Row (exact, MB) | 232c0e477 | cd25ebc44 | main | The night's flag | Cause |
+|---|---:|---:|---:|---:|---|
+| user cases, chamfer-guide-box | 1.677 | 1.774 | 1.774 | +8.7% | 15L's check, all of it (below) |
+| user cases, collapse-housing | 3.997 | 4.195 | 4.208 | +8.6% | 15L's check |
+| user cases, chamfer-housing | 4.614 | 4.744 | 4.753 | +8.0% | 15L's check, less later cuts |
+| user cases, collapse-guide-box | 1.920 | 2.006 | 2.004 | +6.9% | 15L's check |
+| meshing, Motor-c.brep, parallel (2 processors, the rig's settings) | 45.11 | | 45.62 | +4.2% | 15AG's parallel loop, the price of halving the time (below) |
+| bento, 9 chamfer, fillet | 5.446 | 5.482 | 5.495 | +4.1% | +0.7%: the check, 70 kB; 15X's merge (1960bd158) added 184 kB, gone again by cd25ebc44 |
+| user cases, fuse-detent | 15.705 | 15.528 | 15.784 | +2.6% | none at cd25ebc44 (-1.1%); +0.5% at main, under the bar |
+| bento, 32 for-loop | 7.774 | 7.706 | 7.833 | +2.2% | none at cd25ebc44 (-0.9%); +0.8% at main, under the bar |
+| bento, 33 function, for-loop | 5.893 | 5.853 | 5.960 | +2.0% | none at cd25ebc44 (-0.7%); +1.1% at main, under the bar |
+
+(Bento's three run alone, `KERF_BENTO_ONLY`, 20 passes; the users' five through `Kerf.UserCases serve`, 7 runs, the
+median of the last 5. Alone, an example's bytes differ a little from the whole set's: what the examples before it left in
+the caches.) The new exact suites as the rig runs them (decision 33605: Bento's eleven examples, 9 passes; the users'
+cases, the median of 3), 232c0e477 against main: the chamfers 1.675 to 1.771, 1.920 to 2.003, 4.612 to 4.743 and 3.995 to
+4.190 MB; Bento's chamfer and fillet 5.399 to 5.468 (+1.3%), the for-loops 7.734 to 7.826 and 5.884 to 5.966 (+1.2%,
++1.4%), fuse-detent 15.668 to 15.754 (+0.5%); Bento's total 104.4 to 95.9 MB (-8.1%). Each suite added 6 s and 60 s to
+the run on a loaded machine.
+
+**The chamfers' rise is 15L's check** (decisions 2125, 33603): bisected to 85cb5537c, 15L's merge, where all four rose
+(1.677 to 1.774, 1.920 to 2.008, 4.614 to 4.852, 3.997 to 4.219) and nothing else did. The check itself, measured on its
+thread on the guide box's chamfer of 1.4: 102,848 bytes of the operation's 1,814,720 (5.7%), of which finding the edges of
+the faces the chamfer made or trimmed 30.2 kB, the edges' boxes 29.5 kB, their shrunk ranges 18.6 kB and settling the 96
+pairs whose boxes meet by their tangents at a shared vertex 24.6 kB; no pair reached the intersector. The collapse, 93,312
+bytes; Bento's chamfer 38,512 and its fillet 79,632. It's the price of a right result, as 15L measured it (3% to 8% of a
+fillet's bytes): left. What could still be cut without changing what it asks, the exploring of each face's edges, is about
+a third of it, 2% of the case at most, under decision 1829's bar.
+
+**Motor-c's parallel mesh is 15AG's loop** (decisions 2202, 33604). Its serial mesh didn't rise (44.3 MB in both night
+runs). On two processors, three processes a side, the parallel row was 45.25, 45.28 and 45.79
+MB at 4172dddc0 and 46.17, 46.18 and 46.20 at e76fafdef, 15AG's merge, which replaced `Parallel.For` with Kerf's own loop
+(+2.0%); the timed runs inside a process went from anywhere between 46.2 and 51.5 million bytes to nearly all between 48.3 and 48.5 million. Each thread
+keeps its own mesh storage, grown to the largest face it has meshed (decision 1940), so the bytes follow which threads
+take which faces; the new loop hands faces out in chunks of a sixteenth of each thread's share, to whichever threads are
+free, which on 24 processors made the same mesh 54.5% quicker in the night run (55.2 to 25.1 ms) for 4.2% more bytes.
+Left: the price of the speed-up, by decision 1829's own reckoning, and not something to tune without the quiet machine.
+
+**What wasn't bisected further:** Bento's two for-loops and fuse-detent, 0.5% to 1.1% over 232c0e477 at main exactly,
+and 1.6% to 1.8% over cd25ebc44: under the bar, and the exact rows will show it if they grow.
