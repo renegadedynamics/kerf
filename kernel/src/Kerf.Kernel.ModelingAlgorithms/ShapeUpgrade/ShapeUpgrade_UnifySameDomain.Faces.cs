@@ -1305,7 +1305,16 @@ internal partial class UnifySameDomain
                 continue;
             }
 
-            TransformPCurves(refFace, face, mapEdgesWithTemporaryPCurves, refSeam, movePoles: true);
+            // Only a face with a pole edge is brought into the period: OCCT can't merge one at all, as it leaves the pole edge
+            // out. A face without one, as a cylinder's, OCCT's later steps place wherever its curves are, a period away or
+            // not, and the recordings from native OCCT hold such faces, which stay native's to the bit
+            bool hasPole = false;
+            for (var edges = new Explorer(face, ShapeType.Edge); edges.More() && !hasPole; edges.Next())
+            {
+                hasPole = Tool.Degenerated(ShapeCasts.Edge(edges.Current()));
+            }
+
+            TransformPCurves(refFace, face, mapEdgesWithTemporaryPCurves, refSeam && hasPole, movePoles: true);
         }
     }
 
