@@ -102,6 +102,9 @@ internal partial class PaveFiller : BooleanAlgorithm
     protected NCollection_IntMap _vertsToAvoidExtension = new();
     //! Kerf: vertices grown over an edge's crossing of a face, each with the widest stretch such an edge touches the face over
     protected Dictionary<int, double> _touchSpans = new();
+    //! Kerf: how many tolerances from a vertex a crossing may be and still be covered by growing it; 0, OCCT's, any
+    //! distance the steps allow (decision 32701)
+    protected double _crossingsApart;
     //! Map to store minimal distances between shapes
     protected Dictionary<Pair, NCollection_List<EdgeRangeDistance>> _distances = new();
 
@@ -147,6 +150,17 @@ internal partial class PaveFiller : BooleanAlgorithm
 
     /// <summary>Whether the operation is non-destructive.</summary>
     public bool NonDestructive() => _nonDestructive;
+
+    /// <summary>
+    /// Kerf (decision 32701): a crossing of two edges, of an edge and a face, or of a section's curve and a vertex's edge
+    /// further from a vertex than <paramref name="tolerances"/> times the tolerances in play isn't covered by growing that
+    /// vertex, as OCCT's steps do, but gets a vertex of its own, and the pieces between such vertices are tested for
+    /// coincidence again once the sections are made. 0, the default, is OCCT's behaviour.
+    /// </summary>
+    public void SetCrossingsApart(double tolerances) => _crossingsApart = tolerances;
+
+    /// <summary>How many tolerances from a vertex a crossing may be and still be covered by growing it (0: any).</summary>
+    public double CrossingsApart() => _crossingsApart;
 
     /// <summary>Sets the glue option.</summary>
     public void SetGlue(global::Kerf.Booleans.GlueMode glue) => _glue = glue;
@@ -328,6 +342,11 @@ internal partial class PaveFiller : BooleanAlgorithm
         if (HasErrors)
         {
             return;
+        }
+        if (_crossingsApart > 0)
+        {
+            // The sections' ends have split the edges since the coincidences were looked for
+            ForceInterfEE(new ProgressRange(), afterBlocks: true);
         }
         //
         CheckSelfInterference();

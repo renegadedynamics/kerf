@@ -1131,6 +1131,7 @@ internal partial class PaveFiller
         PaveFiller pf = new();
         pf.SetIsPrimary(false);
         pf.SetNonDestructive(_nonDestructive);
+        pf.SetCrossingsApart(_crossingsApart);
         //
         List<InterfFF> fFs = _ds!.InterfFF();
         int nbFF = fFs.Count;
@@ -3036,6 +3037,8 @@ internal partial class PaveFiller
                     Point3D pOnC = new();
                     ic.D0(t, ref pOnC);
                     tolV = pOnC.DistanceTo(Tool.Pnt(v));
+                    // A curve passing far from the vertex doesn't pass through it (decision 32701)
+                    bIsVertexOnLine = !IsApart(nV, pOnC, aTolR3D);
                 }
             }
         }

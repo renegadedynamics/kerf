@@ -121,6 +121,18 @@ internal partial class PaveFiller
         }
     }
 
+    // Whether a crossing at this point is too far from the vertex to be covered by growing it
+    private bool IsApart(int nV, in Point3D crossing, double tolerances)
+    {
+        if (!(_crossingsApart > 0))
+        {
+            return false;
+        }
+
+        Vertex vertex = ShapeCasts.Vertex(_ds!.Shape(nV));
+        return Tool.Pnt(vertex).DistanceTo(crossing) > _crossingsApart * (Tool.Tolerance(vertex) + tolerances + _fuzzyValue);
+    }
+
     /// <summary>
     /// Increases the tolerance of the vertex. In non-destructive mode an argument vertex without a same-domain one gets
     /// a new vertex instead, bound as its same-domain vertex. Returns the index of the vertex updated.

@@ -478,6 +478,8 @@ public class BooleanVolumeTests
     [InlineData(5000, 1e-7)]
     [InlineData(5, -3e-7)]
     [InlineData(5, 1e-7)]
+    // Made again with the crossings as vertices of their own, this cut removes nothing, and the first is kept (decision 32701)
+    [InlineData(5, -1e-8)]
     [InlineData(0.5, -1e-7)]
     public void Equal_cylinders_inside_a_touch_have_their_volumes_through_the_vertex_that_covers_it(double radius, double offset)
     {

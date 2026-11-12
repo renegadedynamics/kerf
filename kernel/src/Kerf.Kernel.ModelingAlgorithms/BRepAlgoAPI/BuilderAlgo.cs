@@ -92,6 +92,12 @@ internal class BuilderAlgo : Algo
 
     public global::Kerf.Booleans.GlueMode Glue() => _glue;
 
+    /// <summary>Kerf (decision 32701): the pave filler's <see cref="PaveFiller.SetCrossingsApart"/>; 0, the default, is
+    /// OCCT's behaviour.</summary>
+    public void SetCrossingsApart(double tolerances) => _crossingsApart = tolerances;
+
+    private double _crossingsApart;
+
     /// <summary>Enables or disables the check of the input solids for being inverted.</summary>
     public void SetCheckInverted(bool check) => _checkInverted = check;
 
@@ -332,6 +338,7 @@ internal class BuilderAlgo : Algo
         _dsFiller.SetRunParallel(_options._runParallel);
         _dsFiller.SetFuzzyValue(_options._fuzzyValue);
         _dsFiller.SetNonDestructive(_nonDestructive);
+        _dsFiller.SetCrossingsApart(_crossingsApart);
         _dsFiller.SetGlue(_glue);
         _dsFiller.SetUseOBB(_options._useOBB);
         // Set Face/Face intersection options to the intersection algorithm

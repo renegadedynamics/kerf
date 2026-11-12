@@ -3,6 +3,9 @@
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
+using Kerf.Healing;
+using Kerf.Engine.Measurement;
+using Kerf.Engine.Topology;
 using Kerf.Measurement;
 using Kerf.Topology;
 using Kerf.Engine;
@@ -185,9 +188,83 @@ public static class BooleanOperations
         if (options is not { CheckResult: false } && result.TryGetValue(out built) && RuleOf(operation) is { } rule
             && BooleanVolumes.Check(rule, arguments, tools, built.Shape, options?.FuzzyValue ?? 0) is { } wrong)
         {
-            return Again(rule, arguments, tools, options, cancellationToken) ?? Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
+            return Again(rule, arguments, tools, options, cancellationToken) is { } again
+                ? ClosedAtTheSource(rule, arguments, tools, options, again, cancellationToken)
+                : Result<Built<Shape>>.Invalid(built, wrong, result.Diagnostics);
         }
-        return result;
+        return RuleOf(operation) is { } made ? ClosedAtTheSource(made, arguments, tools, options, result, cancellationToken) : result;
+    }
+
+    // How far from a vertex, in tolerances, a crossing may be and still be covered by growing the vertex, when a result open
+    // inside a vertex is made again (decision 32701)
+    private const double CrossingsApart = 10;
+
+    // What two volumes of one Boolean made two ways may differ by, of the larger
+    private const double SameVolume = 1e-6;
+
+    /// <summary>
+    /// A result whose faces are open in their parameters inside a vertex's tolerance, where its inputs' aren't, is made again
+    /// with each crossing as a vertex of its own (<see cref="Engine.Booleans.PaveFiller.SetCrossingsApart"/>), and that one is
+    /// kept if it's closed, valid, passes the check of volumes and has the first one's volume; otherwise the first is, which the
+    /// public measurements read across the gaps (decisions 2257 and 32701). OCCT grows one vertex over crossings near it and
+    /// drops the pieces between, which leaves each face's boundary open there: valid, and read as area missing by anything
+    /// that integrates round the boundary as OCCT's own <c>BRepGProp</c> does.
+    /// </summary>
+    private static Result<Built<Shape>> ClosedAtTheSource(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools,
+                                                          BooleanOptions? options, Result<Built<Shape>> first, CancellationToken cancellationToken)
+    {
+        if (!first.TryGetValue(out Built<Shape>? built) || built is null)
+        {
+            return first;
+        }
+
+        int open = Gaps(built.Shape);
+        if (open == 0)
+        {
+            return first;
+        }
+
+        int given = 0;
+        foreach (Shape input in arguments.Concat(tools))
+        {
+            given += Gaps(input);
+        }
+        if (open <= given)
+        {
+            return first;
+        }
+
+        BooleanOperation again = rule switch
+        {
+            BooleanVolumeRule.Common => new EngineCommon(),
+            BooleanVolumeRule.Fuse => new EngineFuse(),
+            _ => new EngineCut(),
+        };
+        again.SetTools(List(tools, nameof(tools)));
+        again.SetCrossingsApart(CrossingsApart);
+        Result<Built<Shape>> result = Run((BuilderAlgo)again, arguments, options, null, cancellationToken);
+        if (!result.TryGetValue(out Built<Shape>? closed) || closed is null || !closed.Shape.Children.Any() || Gaps(closed.Shape) > given
+            || (options is { CheckResult: false } && !closed.Shape.Validate().IsValid)
+            || BooleanVolumes.Check(rule, arguments, tools, closed.Shape, options?.FuzzyValue ?? 0) is not null)
+        {
+            return first;
+        }
+
+        double before = built.Shape.IntegrateVolume(SameVolumeMeasured), after = closed.Shape.IntegrateVolume(SameVolumeMeasured);
+        return Math.Abs(after - before) <= SameVolume * Math.Max(Math.Abs(before), Math.Abs(after)) ? result : first;
+    }
+
+    private static readonly MassOptions SameVolumeMeasured = new() { Tolerance = 1e-8 };
+
+    // The gaps the faces' boundaries have in their parameters inside a vertex's tolerance
+    private static int Gaps(Shape shape)
+    {
+        int gaps = 0;
+        for (var faces = new Explorer(shape, ShapeType.Face); faces.More(); faces.Next())
+        {
+            gaps += GapClosures.Of(ShapeCasts.Face(faces.Current()))?.Count ?? 0;
+        }
+        return gaps;
     }
 
     /// <summary>
@@ -204,9 +281,10 @@ public static class BooleanOperations
         KernelArgumentNullException.ThrowIfNull(arguments);
         KernelArgumentNullException.ThrowIfNull(tools);
         using ParallelVolumes.Scope parallel = ParallelVolumes.Enter(options?.ParallelVolumes);
-        return Again(rule, arguments, tools, options, cancellationToken)
-               ?? Result<Built<Shape>>.Failure(Diagnostic.Error(OperationDiagnostics.BooleanFailed,
-                                                                "This Boolean was wrong, and wrong again made the other way round and with fuzzy values."));
+        return Again(rule, arguments, tools, options, cancellationToken) is { } again
+            ? ClosedAtTheSource(rule, arguments, tools, options, again, cancellationToken)
+            : Result<Built<Shape>>.Failure(Diagnostic.Error(OperationDiagnostics.BooleanFailed,
+                                                            "This Boolean was wrong, and wrong again made the other way round and with fuzzy values."));
     }
 
     // The ways of making again a Boolean proved wrong, in turn: the first that passes, or null

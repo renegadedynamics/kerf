@@ -127,6 +127,7 @@ internal partial class PaveFiller
         ShapeType type;
         // The fixed arrays of the TopAbs_VERTEX case (bIsOnPave[4], nV[4], nVS[2])
         Span<bool> bIsOnPave = stackalloc bool[4];
+        Span<bool> bNear = stackalloc bool[4];
         Span<int> nV = stackalloc int[4];
         Span<int> nVS = stackalloc int[2];
         NCollection_List<PaveBlock>.Iterator it1 = new(), it2 = new();
@@ -362,8 +363,20 @@ internal partial class PaveFiller
                         pb1.Indices(out nV[0], out nV[1]);
                         pb2.Indices(out nV[2], out nV[3]);
                         //
-                        if ((bIsOnPave[0] && bIsOnPave[2]) || (bIsOnPave[0] && bIsOnPave[3])
-                            || (bIsOnPave[1] && bIsOnPave[2]) || (bIsOnPave[1] && bIsOnPave[3]))
+                        // A crossing far from the vertex its range reaches is a crossing of its own, and isn't taken for that
+                        // vertex (decision 32701)
+                        bIsOnPave.CopyTo(bNear);
+                        if (_crossingsApart > 0)
+                        {
+                            Point3D crossing = new EdgeCurveAdaptor(e1).Value(t1);
+                            for (j = 0; j < 4; ++j)
+                            {
+                                bNear[j] = bNear[j] && !IsApart(nV[j], crossing, Tool.Tolerance(e1) + Tool.Tolerance(e2));
+                            }
+                        }
+                        //
+                        if ((bNear[0] && bNear[2]) || (bNear[0] && bNear[3])
+                            || (bNear[1] && bNear[2]) || (bNear[1] && bNear[3]))
                         {
                             continue;
                         }
@@ -410,6 +423,10 @@ internal partial class PaveFiller
                                     Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
                                     Point3D p = Tool.Pnt(v);
                                     double distPP = p.DistanceTo(pnew);
+                                    if (IsApart(nV[j], pnew, Tool.Tolerance(e1) + Tool.Tolerance(e2)))
+                                    {
+                                        continue;
+                                    }
                                     // Just update the vertex
                                     UpdateVertex(nV[j], distPP);
                                     _vertsToAvoidExtension.Add(nV[j]);
@@ -418,7 +435,7 @@ internal partial class PaveFiller
                         }
 
                         double tolVnew = Tool.Tolerance(vnew);
-                        if (bAnalytical)
+                        if (bAnalytical && !(_crossingsApart > 0))
                         {
                             // increase tolerance for Line/Circle intersection, but do not update
                             // the vertex till its intersection with some other shape
@@ -940,7 +957,10 @@ internal partial class PaveFiller
     /// Looks for more common blocks among the pave blocks with the same bounding vertices, now that the vertices have
     /// been increased and unified.
     /// </summary>
-    protected void ForceInterfEE(ProgressRange range)
+    /// <param name="range">The progress range.</param>
+    /// <param name="afterBlocks">Kerf (decision 32701): asked again after MakeBlocks, when the sections' ends have split the edges
+    /// and each pave block has its edge; a common block found then takes the edge of its first pave block.</param>
+    protected void ForceInterfEE(ProgressRange range, bool afterBlocks = false)
     {
         // Now that we have vertices increased and unified, try to find additional
         // common blocks among the pairs of edges.
@@ -954,7 +974,7 @@ internal partial class PaveFiller
         for (int i = 0; i < nbS; ++i)
         {
             ShapeInfo si = _ds.ShapeInfo(i);
-            if (si.ShapeType() == ShapeType.Vertex)
+            if (si.ShapeType() == ShapeType.Vertex && !afterBlocks)
             {
                 if (_ds.HasInterf(i))
                 {
@@ -1086,6 +1106,11 @@ internal partial class PaveFiller
                     // Check that the edges came from different arguments
                     if (iR1 == iR2)
                     {
+                        if (afterBlocks)
+                        {
+                            continue;
+                        }
+
                         // If the sharing of the vertices is not original, but has been acquired
                         // during the operation, check the coincidence of the edges even if
                         // they came from the same argument
@@ -1147,7 +1172,8 @@ internal partial class PaveFiller
                     edgeEdge.SetEdge1(e1, t11, t12);
                     edgeEdge.SetEdge2(e2, t21, t22);
                     edgeEdge.SetBoxes(_ds.ShapeInfo(nE1).Box(), _ds.ShapeInfo(nE2).Box());
-                    if (bUseAddTol)
+                    // Asked again, the vertices have grown over the sections' ends, and their tolerance says nothing of the edges
+                    if (bUseAddTol && !afterBlocks)
                     {
                         edgeEdge.SetFuzzyValue(_fuzzyValue + tolAdd);
                     }
@@ -1257,5 +1283,24 @@ internal partial class PaveFiller
         }
         // Create new common blocks of coinciding pairs.
         BuilderTools.PerformCommonBlocks(mpblpb, _ds);
+        if (!afterBlocks)
+        {
+            return;
+        }
+
+        // The split edges are made already, one for each pave block: the block's edge is its first pave block's, with the
+        // block's tolerance
+        HashSet<CommonBlock> done = new();
+        for (int i = 0; i < mpblpb.Count; ++i)
+        {
+            CommonBlock? cb = _ds.CommonBlock(mpblpb.KeyAt(i));
+            if (cb is null || !done.Add(cb) || !cb.PaveBlock1().HasEdge(out int nE))
+            {
+                continue;
+            }
+
+            cb.SetEdge(nE);
+            UpdateEdgeTolerance(nE, BuilderTools.ComputeToleranceOfCB(cb, _ds, _context));
+        }
     }
 }

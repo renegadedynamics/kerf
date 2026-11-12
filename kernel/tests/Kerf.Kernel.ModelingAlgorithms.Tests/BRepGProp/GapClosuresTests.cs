@@ -2,6 +2,8 @@
 
 using Kerf.Booleans;
 using Kerf.Construction;
+using Kerf.Engine;
+using Kerf.Healing;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -23,14 +25,86 @@ public class GapClosuresTests
     // axis: the end circle crosses the tool 0.0173 either side of its seam vertex, which grows to cover both crossings
     private const double Radius = 500, Offset = -3e-7;
 
-    private static Shape Cut()
+    private static (Shape Cylinder, Shape Tool) Inputs(double offset)
     {
         Shape cylinder = Solid.Cylinder(Radius, 2 * Radius).Value.Shape.Transformed(Transform3D.Translation(new Vector3D(0, 0, -Radius))).Value.Shape;
         // Turned so that the tool's face inside the cylinder ends at its seam, half a turn from where its integrals start
         var turn = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), Direction3D.UnitX), Math.PI / 2);
         Shape tool = Solid.Cylinder(Radius, 4 * Radius).Value.Shape.Transformed(turn).Value.Shape
-            .Transformed(Transform3D.Translation(new Vector3D(Offset, 2 * Radius, Radius))).Value.Shape;
-        return cylinder.Cut(tool, new BooleanOptions { CheckResult = false }).Value.Shape;
+            .Transformed(Transform3D.Translation(new Vector3D(offset, 2 * Radius, Radius))).Value.Shape;
+        return (cylinder, tool);
+    }
+
+    // The cut as the engine makes it, and OCCT: the public cut makes this one again with each crossing as a vertex of its own,
+    // and closed (decision 32701)
+    private static Shape Cut()
+    {
+        (Shape cylinder, Shape tool) = Inputs(Offset);
+        var cut = new Kerf.Engine.Booleans.Api.Cut();
+        var arguments = new NCollection_List<Shape>();
+        arguments.Append(cylinder);
+        var tools = new NCollection_List<Shape>();
+        tools.Append(tool);
+        cut.SetArguments(arguments);
+        cut.SetTools(tools);
+        cut.SetNonDestructive(true);
+        cut.Build();
+        Assert.True(cut.IsDone);
+        cut.SimplifyResult();
+        return cut.Shape();
+    }
+
+    private static int Gaps(Shape shape)
+    {
+        int gaps = 0;
+        for (var faces = new Explorer(shape, ShapeType.Face); faces.More(); faces.Next())
+        {
+            gaps += GapClosures.Of(ShapeCasts.Face(faces.Current()))?.Count ?? 0;
+        }
+
+        return gaps;
+    }
+
+    // The public Booleans make a result that's open inside a vertex again, with each crossing as a vertex of its own, the pieces of
+    // the end circle between the crossings shared with the tool's seam, and keep that one where it's closed, valid and of the same
+    // volume: no gap, no vertex as wide as the crossings are apart, and OCCT's own reading of the volume, which was 1e-5 out, the
+    // geometry's (decision 32701)
+    [Theory]
+    [InlineData(-3e-7)]
+    [InlineData(-1e-8)]
+    public void The_public_Booleans_inside_a_touch_are_closed_in_their_parameters(double offset)
+    {
+        (Shape cylinder, Shape tool) = Inputs(offset);
+        double one = Math.PI * Radius * Radius * 2 * Radius, common = 8.0 / 3 * Radius * Radius * Radius;
+        foreach ((Shape made, double expected) in new[]
+                 {
+                     (cylinder.Cut(tool).Value.Shape, one - common),
+                     (cylinder.Common(tool).Value.Shape, common),
+                     (cylinder.Fuse(tool).Value.Shape, 3 * one - common),
+                 })
+        {
+            Assert.Equal(0, Gaps(made));
+            Assert.True(made.Validate().IsValid);
+            var asOcct = new Properties();
+            MassPropertiesBuilder.VolumeProperties(made, asOcct, 1e-9, massOnly: true);
+            Assert.Equal(expected, asOcct.Mass(), 1e-9 * expected);
+            for (var vertices = new Explorer(made, ShapeType.Vertex); vertices.More(); vertices.Next())
+            {
+                Assert.True(Tool.Tolerance(ShapeCasts.Vertex(vertices.Current())) < 0.1 * Math.Sqrt(2 * Radius * -offset));
+            }
+        }
+    }
+
+    // Where the crossings are too near each other for that, 3e-4 from the touch at 1e-10, the result made again is no more closed,
+    // or wrong, and the first is kept, right as the public measurements read it
+    [Fact]
+    public void A_result_that_cant_be_closed_at_the_source_is_kept_as_it_was()
+    {
+        (Shape cylinder, Shape tool) = Inputs(-1e-10);
+        Shape made = cylinder.Cut(tool).Value.Shape;
+        Assert.True(Gaps(made) > 0);
+        Assert.True(made.Validate().IsValid);
+        Assert.Equal(Expected, made.IntegrateVolume(new MassOptions { Tolerance = 1e-9 }), 1e-9 * Expected);
     }
 
     // The cylinder less half of two equal cylinders' common part, 16/3 r^3, which the offset changes by less than 1e-12 of it
