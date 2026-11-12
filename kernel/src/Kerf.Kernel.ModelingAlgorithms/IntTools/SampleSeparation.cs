@@ -23,7 +23,10 @@ namespace Kerf.Engine.Intersection.Tools;
 /// |a.C''| of the line between its ends, and a surface within (hu*hu max|a.Suu| + hv*hv max|a.Svv|)/8 of the bilinear
 /// patch on its corners, which lies between them. The second derivatives are bounded span by span: on a span a polynomial
 /// curve's or surface's second derivative is a polynomial, so along a direction it's no more than the Lebesgue constant
-/// of the Chebyshev nodes times its greatest value at them (under (2/pi) ln(n) + 1 for n nodes; Rivlin). So this only
+/// of the Chebyshev nodes times its greatest value at them (under (2/pi) ln(n) + 1 for n nodes; Rivlin). The nodes are
+/// each span's, kept for the run; where that bound is what stops a small piece of the surface being told apart (the span's
+/// second derivative may be far above the piece's: a patch with a side that's a point bulges at its base, not by its
+/// apex), the piece's own nodes are taken, which bound it as a span's bound the span. So this only
 /// answers for lines, circles, ellipses and polynomial (not rational) Bezier and B-spline curves, on polynomial Bezier
 /// and B-spline surfaces, and only for a piece with no knot inside it where the first derivative breaks; for anything
 /// else (a periodic B-spline among them) it says "not apart", and the localisation goes on as OCCT's does. The spans are
@@ -68,6 +71,11 @@ internal sealed class SampleSeparation
     private double _curveFactor;
     private double _uFactor;
     private double _vFactor;
+    private double _u0;
+    private double _u1;
+    private double _v0;
+    private double _v1;
+    private double[]? _own;
 
     /// <summary>For the curve and the surface of a run.</summary>
     public SampleSeparation(TransformedCurve curve, TransformedSurface surface)
@@ -175,6 +183,12 @@ internal sealed class SampleSeparation
         _uFactor = lebesgue * hu * hu / 8.0;
         _vFactor = lebesgue * hv * hv / 8.0;
 
+        _u0 = u0;
+        _u1 = u1;
+        _v0 = v0;
+        _v1 = v1;
+        _own = null;
+
         Point3D a = _curve.EvalD0(t0), b = _curve.EvalD0(t1);
         Point3D p00 = _surface.EvalD0(u0, v0), p10 = _surface.EvalD0(u1, v0);
         Point3D p01 = _surface.EvalD0(u0, v1), p11 = _surface.EvalD0(u1, v1);
@@ -266,9 +280,32 @@ internal sealed class SampleSeparation
         }
 
         int uCount = _uBreaks.Length - 1;
-        reach += (_uFactor * MostAlong(axis, _cells, _uFrom, _uTo, uCount, _vFrom, _vTo, 0))
-                 + (_vFactor * MostAlong(axis, _cells, _uFrom, _uTo, uCount, _vFrom, _vTo, 3));
-        return gap > reach;
+        double spans = (_uFactor * MostAlong(axis, _cells, _uFrom, _uTo, uCount, _vFrom, _vTo, 0))
+                       + (_vFactor * MostAlong(axis, _cells, _uFrom, _uTo, uCount, _vFrom, _vTo, 3));
+        if (gap > reach + spans)
+        {
+            return true;
+        }
+
+        // The piece's own nodes, where it lies in one span each way: a bound nearer the piece's own second derivative
+        if (_uTo - _uFrom != 1 || _vTo - _vFrom != 1)
+        {
+            return false;
+        }
+
+        _own ??= Nodes(_u0, _u1, _v0, _v1);
+        return gap > reach + (_uFactor * MostAlong(axis, _own, 0)) + (_vFactor * MostAlong(axis, _own, 3));
+    }
+
+    private static double MostAlong(ReadOnlySpan<double> axis, double[] nodes, int offset)
+    {
+        double most = 0.0;
+        for (int k = offset; k < nodes.Length; k += 6)
+        {
+            most = Math.Max(most, Math.Abs((axis[0] * nodes[k]) + (axis[1] * nodes[k + 1]) + (axis[2] * nodes[k + 2])));
+        }
+
+        return most;
     }
 
     // The greatest of |axis . w| over the second derivatives w kept at the nodes of the spans or cells given (a cell keeps
@@ -308,16 +345,19 @@ internal sealed class SampleSeparation
         return nodes;
     }
 
-    private double[] CellNodes(int i, int j)
+    private double[] CellNodes(int i, int j) => Nodes(_uBreaks[i], _uBreaks[i + 1], _vBreaks[j], _vBreaks[j + 1]);
+
+    // Suu and Svv at the Chebyshev nodes of a range that lies in one span each way
+    private double[] Nodes(double uFirst, double uLast, double vFirst, double vLast)
     {
         double[] nodes = new double[6 * _uNodes * _vNodes];
         int at = 0;
         for (int ku = 0; ku < _uNodes; ku++)
         {
-            double u = Node(_uBreaks[i], _uBreaks[i + 1], ku, _uNodes);
+            double u = Node(uFirst, uLast, ku, _uNodes);
             for (int kv = 0; kv < _vNodes; kv++)
             {
-                Surface.ResD2 d2 = _surface.EvalD2(u, Node(_vBreaks[j], _vBreaks[j + 1], kv, _vNodes));
+                Surface.ResD2 d2 = _surface.EvalD2(u, Node(vFirst, vLast, kv, _vNodes));
                 nodes[at++] = d2.D2U.X;
                 nodes[at++] = d2.D2U.Y;
                 nodes[at++] = d2.D2U.Z;

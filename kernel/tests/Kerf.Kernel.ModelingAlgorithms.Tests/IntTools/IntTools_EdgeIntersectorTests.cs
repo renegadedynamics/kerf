@@ -204,6 +204,50 @@ public class IntTools_EdgeIntersectorTests
         }
     }
 
+    // An edge that ends at the apex of a patch one of whose sides is a point: a cone as a Bezier surface, its axis the edge,
+    // less the 1e-9 of its parameter a pave filler takes off an end (the corpus's bopfuse_complex/K9 and its kin). Every
+    // sample of the surface along that side holds the apex, so the localisation lists all 729 against the edge's last
+    // sample, and each took an extremum to find the apex again. Once it's found, a pair whose sample of the surface is
+    // proved apart from the rest of the edge's sample is passed over (unit 15Y2, decision 32802): one extremum, and the same
+    // part found
+    [Fact]
+    public void BeanFace_EdgeEndingAtAPatchsApex_FindsTheApexOnce()
+    {
+        const double K = 0.5522847498;
+        Point3D anApex = new(100, 100, 40);
+        Point3D[] aBase = [new(130, 100, -20), new(130, 100 + (30 * K), -20), new(100 + (30 * K), 130, -20), new(100, 130, -20)];
+        Point3D[] aPoles = new Point3D[8];
+        for (int i = 0; i < 4; i++)
+        {
+            aPoles[2 * i] = aBase[i];
+            aPoles[(2 * i) + 1] = anApex;
+        }
+        global::Kerf.Topology.Face aCone = new MakeFace(new BezierSurface(new Grid<Point3D>(aPoles, 4, 2)), 1e-7).Face();
+        global::Kerf.Topology.Edge anAxis = new MakeEdge(new BezierCurve3D([new Point3D(100, 100, 0), new Point3D(100, 100, 100)])).Edge();
+        const double First = 1e-9, Last = 0.4 - 1e-9;
+
+        // Three times in one context: the last has the face's projector and boxes ready, and allocates what the localisation
+        // itself does
+        IntersectionContext aContext = new();
+        BeanFaceIntersector aBF = new();
+        long aBytes = 0;
+        for (int aRun = 0; aRun < 3; aRun++)
+        {
+            long aBefore = GC.GetAllocatedBytesForCurrentThread();
+            aBF = new BeanFaceIntersector();
+            aBF.SetContext(aContext);
+            aBF.Init(anAxis, aCone);
+            aBF.SetBeanParameters(First, Last);
+            aBF.Perform();
+            aBytes = GC.GetAllocatedBytesForCurrentThread() - aBefore;
+        }
+        Assert.True(aBF.IsDone);
+        Assert.Equal(1, aBF.Result().Length());
+        Assert.Equal(Last, aBF.Result().Value(1).Last(), 1e-12);
+        Assert.Equal(0.3999999944522458, aBF.Result().Value(1).First(), 1e-12); // as with an extremum for each of the 729
+        Assert.True(aBytes < 12L << 20, $"{aBytes >> 10} KB"); // 5.7 MB measured; 27.5 MB with the 729 extrema
+    }
+
     /// <summary>An edge/face pair as BOPAlgo_EdgeFace runs it: through BOPTools_Parallel with the worker's context.</summary>
     private sealed class EFSolver(global::Kerf.Topology.Edge theE, global::Kerf.Topology.Face theF, double theFuzz)
         : BooleanParallel.IContextSolver<IntersectionContext>

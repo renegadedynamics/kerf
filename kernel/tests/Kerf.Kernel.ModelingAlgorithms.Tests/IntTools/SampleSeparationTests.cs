@@ -278,6 +278,34 @@ public class SampleSeparationTests
         Assert.False(isApart);
     }
 
+    // A cone as a Bezier patch, one side its apex, and its axis. A sample by the apex, a 729th each way, bulges next to
+    // nothing, but its span's second derivative is the base's, a thousand times its own: by the span's bound the axis a
+    // millionth below the apex isn't told from it, by the sample's own nodes it is. The axis through the apex never is
+    [Fact]
+    public void Apart_BoundsASmallPieceByItsOwnNodes()
+    {
+        const double K = 0.5522847498;
+        Point3D anApex = new(100, 100, 40);
+        Point3D[] aBase = [new(130, 100, -20), new(130, 100 + (30 * K), -20), new(100 + (30 * K), 130, -20), new(100, 130, -20)];
+        Point3D[] aPoles = new Point3D[8];
+        for (int i = 0; i < 4; i++)
+        {
+            aPoles[2 * i] = aBase[i];
+            aPoles[(2 * i) + 1] = anApex;
+        }
+        BezierSurface aCone = new(new Grid<Point3D>(aPoles, 4, 2));
+        global::Kerf.Topology.Edge anAxis = new MakeEdge(new Point3D(100, 100, 0), new Point3D(100, 100, 40)).Edge();
+        SampleSeparation aSeparation = Of(anAxis, aCone, out EdgeCurveAdaptor aCurve, out _);
+        double aLast = aCurve.LastParameter();
+        for (int i = 0; i < 729; i += 91)
+        {
+            double u0 = i / 729.0, u1 = (i + 1) / 729.0, v0 = 728 / 729.0;
+            Assert.True(aSeparation.Apart(aLast - 0.05, aLast - 3e-6, u0, u1, v0, 1, 6e-7), $"at {i}");
+            Assert.False(aSeparation.Apart(aLast - 0.05, aLast, u0, u1, v0, 1, 6e-7), $"at {i}");
+            Assert.False(aSeparation.Apart(aLast - 0.05, aLast - 3e-6, u0, u1, 0, 1, 6e-7), $"at {i}"); // all the way to the base
+        }
+    }
+
     // What isn't bounded isn't called apart, however far: a surface that isn't a polynomial spline (a rational one, an
     // offset, a cylinder), a rational or a periodic curve, and a piece with a knot inside it where the surface folds
     [Fact]
