@@ -1092,7 +1092,11 @@ internal class GenExtPS
     // every element it reads, but the faces' border, which holds new elements and has only its distances set.
     private sealed class WorkGrids
     {
-        private const int LargestHeld = 1024;
+        // Kerf (unit 15AL): ExtPS samples a B-spline or Bezier surface 44 by 44, and that set (372 kB) is held, as 32 by 32
+        // is. Held weakly, it went whenever a collection found it out of use: the reference's target is this small object,
+        // not its arrays, so a collection of generation 0 or 1 frees it (bug32444: about 690 sets of about 4,000 made
+        // again, 9% of the case's bytes)
+        private const int LargestHeld = 44 * 44;
 
         [ThreadStatic]
         private static WorkGrids? t_spare;
