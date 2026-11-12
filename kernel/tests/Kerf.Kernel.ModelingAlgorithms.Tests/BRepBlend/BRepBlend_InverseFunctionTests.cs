@@ -514,4 +514,65 @@ public class BRepBlend_InverseFunctionTests
             Assert.Equal((aAfter.Weights[k] - aBefore.Weights[k]) / (2 * H), aHere.DWeights[k], 6);
         }
     }
+
+    // Unit 15AK, the same for the ball between a face and an edge (the recorded "surfrstevol" walk's function): the
+    // section's circle goes through both contacts, and its derivative is that of the sections either side
+    [Fact]
+    public void SurfRstEvolRad_SectionsAreTheEnvelopesAndTheirDerivativeThatOfItsSections()
+    {
+        (Point3D[] Poles, double[] Weights, Vector3D[] DPoles, double[] DWeights) Section(double theParam, bool theCircle)
+        {
+            SurfRstEvolRad aF = BlendRecorder.SurfRstEvolAt(1, theParam);
+            var aTol = new math_Vector(1, 3);
+            var aInf = new math_Vector(1, 3);
+            var aSup = new math_Vector(1, 3);
+            var aStart = new math_Vector(1, 3);
+            aStart[1] = theParam;
+            aStart[2] = 1;
+            aStart[3] = theParam;
+            aF.GetTolerance(aTol, 1e-12);
+            aF.GetBounds(aInf, aSup);
+            var aRoot = new FunctionSetRoot(aF, aTol, 50);
+            aRoot.Perform(aF, aStart, aInf, aSup);
+            Assert.True(aRoot.IsDone);
+            var aSol = new math_Vector(1, 3);
+            aRoot.Root(aSol);
+            Assert.True(aF.IsSolution(aSol, 1e-9));
+            Point3D aOnS = aF.PointOnS(), aOnRst = aF.PointOnRst();
+            aF.GetShape(out int aNbPoles, out _, out _, out _);
+            var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
+            var aDPoles = new NCollection_Array1<Vector3D>(1, aNbPoles);
+            var aPoles2d = new NCollection_Array1<Point2D>(1, 2);
+            var aDPoles2d = new NCollection_Array1<Vector2D>(1, 2);
+            var aWeights = new NCollection_Array1<double>(1, aNbPoles);
+            var aDWeights = new NCollection_Array1<double>(1, aNbPoles);
+            BlendPoint aPoint = new();
+            aPoint.SetValue(aOnS, aOnRst, theParam, aSol[1], aSol[2], aSol[3]);
+            Assert.True(aF.Section(aPoint, aPoles, aDPoles, aPoles2d, aDPoles2d, aWeights, aDWeights));
+            if (theCircle)
+            {
+                var aCircle = new Circle3D();
+                aF.Section(theParam, aSol[1], aSol[2], aSol[3], out _, out _, ref aCircle);
+                Assert.Equal(aCircle.Radius, aCircle.Location.DistanceTo(aOnS), 9);
+                Assert.Equal(aCircle.Radius, aCircle.Location.DistanceTo(aOnRst), 9);
+                Assert.Equal(0, new Vector3D(aCircle.Location, aOnS).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
+                Assert.Equal(0, new Vector3D(aCircle.Location, aOnRst).Dot(new Vector3D(aCircle.Axis.Direction)), 9);
+            }
+            return ([.. Enumerable.Range(1, aNbPoles).Select(k => aPoles[k])], [.. Enumerable.Range(1, aNbPoles).Select(k => aWeights[k])],
+                    [.. Enumerable.Range(1, aNbPoles).Select(k => aDPoles[k])], [.. Enumerable.Range(1, aNbPoles).Select(k => aDWeights[k])]);
+        }
+
+        const double H = 1e-4;
+        var aHere = Section(6, true);
+        var aAfter = Section(6 + H, false);
+        var aBefore = Section(6 - H, false);
+        Assert.Equal(aHere.Poles.Length, aAfter.Poles.Length);
+        Assert.Equal(aHere.Poles.Length, aBefore.Poles.Length);
+        for (int k = 0; k < aHere.Poles.Length; k++)
+        {
+            Vector3D aFd = new Vector3D(aBefore.Poles[k], aAfter.Poles[k]) / (2 * H);
+            Assert.True((aFd - aHere.DPoles[k]).Magnitude < 1e-6 * (1 + aFd.Magnitude), $"pole {k}: {aHere.DPoles[k]} against {aFd}");
+            Assert.Equal((aAfter.Weights[k] - aBefore.Weights[k]) / (2 * H), aHere.DWeights[k], 6);
+        }
+    }
 }

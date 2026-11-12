@@ -355,10 +355,12 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         // OK 736, IMPROVEMENT 10, BAD 33, FAILED 20. Every failure is attributed (KnownFailures). Unit 8F's STEP commands:
         // 884 runnable, OK 737. Unit 15W's fillets on the ball (decisions 2157 to 2164): OK 735, as C1, C5, F1, F2, Y6, C8, D1
         // and A6 fail, each attributed. Unit 15W2's walk through the point A6's fillet narrows to (decision 2213): OK 736.
+        // Unit 15AK's envelope of an evolving radius's balls: OK 735, as buildevol/B4 moves to Kerf's figure (MassReferenceCases),
+        // an intended difference as F1's and F4's are.
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(884, aNew.Count);
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 736, $"{aRuns.Count(r => r.Status == "OK")}");
+        Assert.True(aRuns.Count(r => r.Status == "OK") >= 735, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, Check);
     }
