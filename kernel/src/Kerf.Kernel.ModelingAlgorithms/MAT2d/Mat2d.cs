@@ -35,6 +35,17 @@ internal sealed class Mat2d
     private MedialListOfBisector? _roots;
     private bool _isDone;
 
+    // Kerf (decision 32501): once the map has gone round a node in a circle (MatCycle has seen a state come back, or
+    // one of OCCT's two patches against loops was about to act, and a bisector had just reached a new one where it
+    // starts), the bisectors whose two ends are one node as far as the intersections can tell, by index; null until
+    // then, and the map runs as OCCT's
+    private HashSet<int>? _oneNode;
+
+    // Kerf: the main loop's pass, and the last pass in which a bisector reached a new one where it starts and met the
+    // child that ended there
+    private int _pass;
+    private int _reachedNodeAtPass;
+
     public Mat2d(bool isOpenResult = false)
     {
         _semiInfinite = false;
@@ -86,6 +97,9 @@ internal sealed class Mat2d
         _bisectortwotoremove.Clear();
         _typeofbisectortoremove.Clear();
         _bisectormap.Clear();
+        _oneNode = null;
+        _pass = 0;
+        _reachedNodeAtPass = int.MinValue / 2;
 
         _isDone = true;
         noofbisectors = noofedges - 1;
@@ -143,10 +157,12 @@ internal sealed class Mat2d
         //===========================================================================
         int numberOfIte = 0;
         MatCycle? cycle = new();
-        Span<int> loopState = stackalloc int[14];
+        Span<int> loopState = stackalloc int[15];
 
         while (_theedgelist.Number() > 1)
         {
+            _pass = numberOfIte;
+
             // The geometries of the bisectors, through the tool. (step 2.1)
             for (i = beginbisector; i < noofbisectors; i++)
             {
@@ -184,7 +200,19 @@ internal sealed class Mat2d
                 }
                 if (edgeNumbers[evenNbIterBis + 1] == edgeNumbers[1])
                 {
-                    toNullifyNoofbisectorstoremove = true;
+                    // Kerf: before OCCT's patch stops the cancelling for good, the node the loop goes round, if it
+                    // goes round one, is taken as one, and the patch counts again from here (decision 32501)
+                    if (!toNullifyNoofbisectorstoremove && TakesNodesAsOne(1))
+                    {
+                        cycle = new MatCycle();
+                        edgeNumbers.Init(-1);
+                        nbIterBis = 1;
+                        edgeNumbers[1] = _theedgelist.Number();
+                    }
+                    else
+                    {
+                        toNullifyNoofbisectorstoremove = true;
+                    }
                 }
 
                 for (i = 1; i < _theedgelist.Number() - 1; i++)
@@ -240,14 +268,14 @@ internal sealed class Mat2d
             _theedgelist.Next();
 
             currentbisector = _theedgelist.Current().FirstBisector();
-            ParamSigns(atool, currentbisector, toleranceofconfusion, out parama[0], out paramb[0]);
+            ParamSigns(atool, currentbisector, toleranceofconfusion, _oneNode, out parama[0], out paramb[0]);
 
             narea = -1;
 
             for (i = 1; i < _theedgelist.Number() - 1; i++)
             {
                 currentbisector = _theedgelist.Current().SecondBisector();
-                ParamSigns(atool, currentbisector, toleranceofconfusion, out parama[1], out paramb[1]);
+                ParamSigns(atool, currentbisector, toleranceofconfusion, _oneNode, out parama[1], out paramb[1]);
 
                 // Is the edge to remove from the contour? The portions of the contour to remove: narea is their
                 // number, firstarea[i] and lastarea[i] the indices of the first and last edges of portion i.
@@ -316,8 +344,15 @@ internal sealed class Mat2d
                 {
                     loopState[2 + k] = edgeNumbers[k];
                 }
+                loopState[14] = _oneNode?.Count ?? -1;
                 int period = cycle.Step(numberOfIte, _theedgelist, atool, beginbisector, loopState, intersectionpoint);
-                if (period > 0)
+                if (period > 0 && TakesNodesAsOne(period))
+                {
+                    // The first time round a node, it is taken as one (Intersect, decision 32501), and the search for
+                    // a repeat starts afresh
+                    cycle = new MatCycle();
+                }
+                else if (period > 0)
                 {
                     numberOfIte = numberMaxOfIte + 1 - (numberMaxOfIte + 1 - numberOfIte) % period;
                     cycle = null;
@@ -409,6 +444,9 @@ internal sealed class Mat2d
         _bisectortwotoremove.Clear();
         _typeofbisectortoremove.Clear();
         _bisectormap.Clear();
+        _oneNode = null;
+        _pass = 0;
+        _reachedNodeAtPass = int.MinValue / 2;
 
         _isDone = true;
         noofbisectors = noofedges;
@@ -460,10 +498,12 @@ internal sealed class Mat2d
         //===========================================================================
         int numberOfIte = 0;
         MatCycle? cycle = new();
-        Span<int> loopState = stackalloc int[21];
+        Span<int> loopState = stackalloc int[22];
 
         while (_theedgelist.Number() > 1)
         {
+            _pass = numberOfIte;
+
             // The geometries of the bisectors, through the tool. (step 2.1)
             int nbBis = noofbisectors - beginbisector;
             for (i = beginbisector; i < noofbisectors; i++)
@@ -501,7 +541,19 @@ internal sealed class Mat2d
                     if (nbOfNarea1 >= nbMaxNarea1
                         && (countElts[0] >= nbMaxNarea1 || countElts[1] >= nbMaxNarea1))
                     {
-                        isBreak = true;
+                        // Kerf: before OCCT's patch breaks the loop off, the node it goes round, if it goes round
+                        // one, is taken as one, and the patch counts again from here (decision 32501)
+                        if (!isBreak && TakesNodesAsOne(1))
+                        {
+                            cycle = new MatCycle();
+                            nbOfNarea1 = 0;
+                            countElts[0] = 0;
+                            countElts[1] = 0;
+                        }
+                        else
+                        {
+                            isBreak = true;
+                        }
                     }
                 }
                 else
@@ -542,7 +594,19 @@ internal sealed class Mat2d
                 }
                 if (edgeNumbers[evenNbIterBis + 1] == edgeNumbers[1])
                 {
-                    toNullifyNoofbisectorstoremove = true;
+                    // Kerf: before OCCT's patch stops the cancelling for good, the node the loop goes round, if it
+                    // goes round one, is taken as one, and the patch counts again from here (decision 32501)
+                    if (!toNullifyNoofbisectorstoremove && TakesNodesAsOne(1))
+                    {
+                        cycle = new MatCycle();
+                        edgeNumbers.Init(-1);
+                        nbIterBis = 1;
+                        edgeNumbers[1] = _theedgelist.Number();
+                    }
+                    else
+                    {
+                        toNullifyNoofbisectorstoremove = true;
+                    }
                 }
 
                 for (i = 0; i < _theedgelist.Number(); i++)
@@ -597,14 +661,14 @@ internal sealed class Mat2d
             _theedgelist.First();
 
             currentbisector = _theedgelist.Current().FirstBisector();
-            ParamSigns(atool, currentbisector, toleranceofconfusion, out parama[0], out paramb[0]);
+            ParamSigns(atool, currentbisector, toleranceofconfusion, _oneNode, out parama[0], out paramb[0]);
 
             narea = -1;
 
             for (i = 0; i < _theedgelist.Number(); i++)
             {
                 currentbisector = _theedgelist.Current().SecondBisector();
-                ParamSigns(atool, currentbisector, toleranceofconfusion, out parama[1], out paramb[1]);
+                ParamSigns(atool, currentbisector, toleranceofconfusion, _oneNode, out parama[1], out paramb[1]);
 
                 // Is the edge to remove from the contour? The portions of the contour to remove: narea is their
                 // number, firstarea[i] and lastarea[i] the indices of the first and last edges of portion i.
@@ -685,8 +749,15 @@ internal sealed class Mat2d
                 loopState[18] = countElts[0];
                 loopState[19] = countElts[1];
                 loopState[20] = isBreak ? 1 : 0;
+                loopState[21] = _oneNode?.Count ?? -1;
                 int period = cycle.Step(numberOfIte, _theedgelist, atool, beginbisector, loopState, intersectionpoint);
-                if (period > 0)
+                if (period > 0 && TakesNodesAsOne(period))
+                {
+                    // The first time round a node, it is taken as one (Intersect, decision 32501), and the search for
+                    // a repeat starts afresh
+                    cycle = new MatCycle();
+                }
+                else if (period > 0)
                 {
                     numberOfIte = numberMaxOfIte + 1 - (numberMaxOfIte + 1 - numberOfIte) % period;
                     cycle = null;
@@ -729,6 +800,18 @@ internal sealed class Mat2d
 
         // The roots.
         Roots(beginbisector, noofbisectors);
+    }
+
+    // Kerf: true, once in a map, if a bisector reached a new one where it starts within the last `passes` passes: the
+    // loop found goes round a node, and from here such nodes are taken as one (decision 32501)
+    private bool TakesNodesAsOne(int passes)
+    {
+        if (_oneNode is not null || _reachedNodeAtPass < _pass - passes)
+        {
+            return false;
+        }
+        _oneNode = new HashSet<int>();
+        return true;
     }
 
     // OCCT's step 2.4, the same in CreateMat and CreateMatOpen (written once here): cancels the bisectors to
@@ -810,7 +893,7 @@ internal sealed class Mat2d
     // OCCT's sign analysis of the parameters of a bisector (step 2.5), written out twice in each of CreateMat and
     // CreateMatOpen.
     private static void ParamSigns(Tool2d atool, MedialBisector currentbisector, double toleranceofconfusion,
-        out int parama, out int paramb)
+        HashSet<int>? oneNode, out int parama, out int paramb)
     {
         if (currentbisector.FirstParameter() == global::Kerf.Engine.Foundation.Precision.Infinite()
             && currentbisector.SecondParameter() == global::Kerf.Engine.Foundation.Precision.Infinite())
@@ -827,6 +910,12 @@ internal sealed class Mat2d
         {
             paramb = -1;
             parama = 1;
+        }
+        else if (oneNode is not null && oneNode.Contains(currentbisector.IndexNumber()))
+        {
+            // Kerf: its two ends are further apart than the tolerance, and one node all the same (decision 32501)
+            parama = 1;
+            paramb = 1;
         }
         else if (atool.Distance(currentbisector, currentbisector.FirstParameter(), currentbisector.SecondParameter())
                  > toleranceofconfusion)
@@ -888,10 +977,43 @@ internal sealed class Mat2d
 
         atool.TrimBisector(edgetoremove.FirstBisector());
 
+        // Kerf: a portion with a bisector taken as one node is a node spread over more than the tolerance, and its new
+        // bisector starts from the point of the portion nearest the contour, not from its first edge's, so that what
+        // reaches the node later is not behind where the bisector starts (decision 32501)
+        double issueDistance = edgetoremove.Distance();
+        int issuePoint = edgetoremove.IntersectionPoint();
+        if (_oneNode is { Count: > 0 })
+        {
+            double leastDistance = issueDistance;
+            int nearestPoint = issuePoint;
+            bool spread = _oneNode.Contains(edgetoremove.FirstBisector().IndexNumber())
+                          || _oneNode.Contains(edgetoremove.SecondBisector().IndexNumber());
+            for (int j = 1; j < noofarea; j++)
+            {
+                theedges.Next();
+                MedialEdge edge = theedges.Current();
+                spread = spread || _oneNode.Contains(edge.SecondBisector().IndexNumber());
+                if (edge.Distance() < leastDistance)
+                {
+                    leastDistance = edge.Distance();
+                    nearestPoint = edge.IntersectionPoint();
+                }
+            }
+            for (int j = 1; j < noofarea; j++)
+            {
+                theedges.Previous();
+            }
+            if (spread)
+            {
+                issueDistance = leastDistance;
+                issuePoint = nearestPoint;
+            }
+        }
+
         _bisectormap[noofbisectors] = new MedialBisector();
         _bisectormap.GetValue(noofbisectors).IndexNumber(noofbisectors);
-        _bisectormap.GetValue(noofbisectors).DistIssuePoint(edgetoremove.Distance());
-        _bisectormap.GetValue(noofbisectors).IssuePoint(edgetoremove.IntersectionPoint());
+        _bisectormap.GetValue(noofbisectors).DistIssuePoint(issueDistance);
+        _bisectormap.GetValue(noofbisectors).IssuePoint(issuePoint);
         _bisectormap.GetValue(noofbisectors).FirstEdge(theedges.PreviousItem());
         _bisectormap.GetValue(noofbisectors).AddBisector(edgetoremove.FirstBisector());
 
@@ -1080,6 +1202,10 @@ internal sealed class Mat2d
         distance[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
         distance[1] = global::Kerf.Engine.Foundation.Precision.Infinite();
 
+        // Kerf: the two bisectors were found to meet where one of them starts, which does not count (decision 32501)
+        int refusedAtStartOf = aside == 0 ? atool.RefusedAtStartOf : 0;
+        global::Kerf.Geometry.Point2D refusedPoint = refusedAtStartOf != 0 ? atool.RefusedPoint : default;
+
         for (bisectornumber = 0; bisectornumber < 2; bisectornumber++)
         {
             if (aside == 0)
@@ -1154,6 +1280,17 @@ internal sealed class Mat2d
                 {
                     distance[bisectornumber] = distant;
                     lastbisectortoremove[bisectornumber] = lastbisector;
+
+                    // Kerf: a bisector that reaches a new one where it starts, and crosses the child that ended there
+                    // at that same point as far as the two can tell, has reached the node the child ended at. Once
+                    // the map is known to go round such a node, the two ends of the child are one node (decision 32501)
+                    if (refusedAtStartOf == 2 - bisectornumber
+                        && atool.CrossAt(bisectornumber == 0 ? firstbisector : secondbisector, previousbisector,
+                            intersectionpoint, refusedPoint, atool.ToleranceOfConfusion()))
+                    {
+                        _reachedNodeAtPass = _pass;
+                        _oneNode?.Add(previousbisector.IndexNumber());
+                    }
                 }
 
                 lastbisector = previousbisector;

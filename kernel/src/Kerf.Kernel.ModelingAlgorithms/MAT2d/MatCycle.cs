@@ -23,6 +23,8 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// <para>The reference state is Brent's: it moves to the current pass after 1, 2, 4, ... passes, so a cycle of any
 /// length that starts anywhere is found within a few times its length. Nothing is written until a pass ends without
 /// the contour being shorter than it has ever been, so a map that only shrinks pays nothing.</para>
+/// <para>The first repeat does not fail the map: from there MAT2d_Mat2d takes the nodes it was going round as one
+/// (decision 32501) and a new finder watches. A second repeat fails it.</para>
 /// </remarks>
 internal sealed class MatCycle
 {
