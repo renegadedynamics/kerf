@@ -257,8 +257,11 @@ public class BlendFuncDerivativeTests
     public void ConstRad_and_EvolRad_sections_are_the_rolling_balls_circle(string theName, int thePair)
     {
         // Decisions 2156 and 2215: at a solution the centre is at the radius from each contact along that surface's own
-        // normal (EvolRad's radius the law's where the section crosses the guide), and the section's circle lies in the
-        // plane through the centre square to both normals; OCCT projected the normals into the plane square to the guide.
+        // normal (EvolRad's radius the law's where the section crosses the guide), and ConstRad's section's circle lies in
+        // the plane through the centre square to both normals; OCCT projected the normals into the plane square to the
+        // guide. EvolRad's circle (unit 15AK) is the envelope's: in the plane (x - c) . c' = -r r', square to the path of
+        // the centre, through both contacts, its points on the ball; c' and r' here by differences of the solutions
+        // either side.
         PairCase C = THE_PAIRS[thePair];
         SurfaceAdaptorBase S1 = Surf(C.S1), S2 = Surf(C.S2);
         CurveAdaptorBase G = Guide(C.G);
@@ -287,22 +290,31 @@ public class BlendFuncDerivativeTests
             S2.D1(X[3], X[4], out Point3D aP2, out Vector3D aU2, out Vector3D aV2);
             Vector3D aN1 = aU1.Crossed(aV1).Normalized(), aN2 = aU2.Crossed(aV2).Normalized();
             // The centre on both normals at the radius.
-            Vector3D aC1 = new Vector3D(aP1.XYZ()), aC2 = new Vector3D(aP2.XYZ());
-            Point3D aCentre = default;
-            bool aFound = false;
-            foreach (double s1 in new[] { 1.0, -1.0 })
+            bool Centre(math_Vector theX, double theRadius, out Point3D theCentre)
             {
-                foreach (double s2 in new[] { 1.0, -1.0 })
+                S1.D1(theX[1], theX[2], out Point3D aQ1, out Vector3D aDu1, out Vector3D aDv1);
+                S2.D1(theX[3], theX[4], out Point3D aQ2, out Vector3D aDu2, out Vector3D aDv2);
+                Vector3D aM1 = aDu1.Crossed(aDv1).Normalized(), aM2 = aDu2.Crossed(aDv2).Normalized();
+                Vector3D aC1 = new Vector3D(aQ1.XYZ()), aC2 = new Vector3D(aQ2.XYZ());
+                theCentre = default;
+                bool aHas = false;
+                foreach (double s1 in new[] { 1.0, -1.0 })
                 {
-                    Vector3D aD = (aC1 + s1 * aRadius * aN1) - (aC2 + s2 * aRadius * aN2);
-                    if (aD.Magnitude < 1.0e-9)
+                    foreach (double s2 in new[] { 1.0, -1.0 })
                     {
-                        aCentre = new Point3D((aC1 + s1 * aRadius * aN1).XYZ());
-                        aFound = true;
+                        Vector3D aD = (aC1 + s1 * theRadius * aM1) - (aC2 + s2 * theRadius * aM2);
+                        if (aD.Magnitude < 1.0e-9)
+                        {
+                            theCentre = new Point3D((aC1 + s1 * theRadius * aM1).XYZ());
+                            aHas = true;
+                        }
                     }
                 }
+
+                return aHas;
             }
 
+            bool aFound = Centre(X, aRadius, out Point3D aCentre);
             Assert.True(aFound, $"pair {thePair} choix {aChoix}: no centre on both normals at the radius");
             F.GetShape(out int aNbPoles, out _, out _, out _);
             var aPoles = new NCollection_Array1<Point3D>(1, aNbPoles);
@@ -310,6 +322,46 @@ public class BlendFuncDerivativeTests
             var aWeights = new NCollection_Array1<double>(1, aNbPoles);
             BlendPoint aPoint = new(aP1, aP2, C.W, X[1], X[2], X[3], X[4]);
             F.Section(aPoint, aPoles, aPoles2d, aWeights);
+            if (theName == "evolrad")
+            {
+                const double H = 1.0e-5;
+                Point3D[] aCentres = new Point3D[2];
+                double[] aRadii = new double[2];
+                bool aBoth = true;
+                for (int k = 0; k < 2 && aBoth; k++)
+                {
+                    double aW = C.W + (k == 0 ? -H : H);
+                    BlendFunction aNear = RollingBall(theName, S1, S2, G, aChoix, aW, out aRadii[k]);
+                    aNear.Set(G.FirstParameter(), G.LastParameter());
+                    aNear.Set(aW);
+                    FunctionSetRoot aNearRoot = new(aNear, Tol, 30);
+                    aNearRoot.Perform(aNear, X, Inf, Sup);
+                    aBoth = aNearRoot.IsDone && Centre(aNearRoot.Root(), aRadii[k], out aCentres[k]);
+                }
+
+                Assert.True(aBoth, $"pair {thePair} choix {aChoix}: no ball either side");
+                Vector3D aDc = new Vector3D(aCentres[0], aCentres[1]) / (2 * H);
+                double aDr = (aRadii[1] - aRadii[0]) / (2 * H);
+                Assert.True(Math.Abs(new Vector3D(aCentre, aP1).Dot(aDc) + aRadius * aDr) < 1.0e-6,
+                            $"pair {thePair} choix {aChoix}: the first contact is off the envelope's plane");
+                for (int i = 1; i <= aNbPoles; i++)
+                {
+                    Assert.True(Math.Abs(new Vector3D(aCentre, aPoles[i]).Dot(aDc) + aRadius * aDr) < 1.0e-6 * (1 + aDc.Magnitude),
+                                $"pair {thePair} choix {aChoix}: pole {i} off the envelope's plane");
+                }
+
+                // The arc's middle, from its poles and weights where it's one rational span, is on the ball
+                if (aNbPoles == 3)
+                {
+                    double aSum = aWeights[1] + 2 * aWeights[2] + aWeights[3];
+                    Point3D aMid = new((aWeights[1] * aPoles[1].XYZ() + 2 * aWeights[2] * aPoles[2].XYZ() + aWeights[3] * aPoles[3].XYZ()) / aSum);
+                    Assert.True(Math.Abs(aMid.DistanceTo(aCentre) - aRadius) < 1.0e-9,
+                                $"pair {thePair} choix {aChoix}: the arc's middle is off the ball");
+                }
+
+                continue;
+            }
+
             Vector3D aAxis = aN1.Crossed(aN2);
             if (aAxis.Magnitude < 1.0e-6)
             {

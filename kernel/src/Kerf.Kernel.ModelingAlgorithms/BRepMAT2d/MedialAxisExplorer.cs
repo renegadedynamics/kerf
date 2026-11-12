@@ -396,7 +396,7 @@ internal sealed class MedialAxisExplorer
 
         if (theType == typeof(TrimmedCurve2D))
         {
-            theType = ((TrimmedCurve2D)c2d).ChangeBasisCurve().GetType();
+            theType = ((TrimmedCurve2D)c2d).BasisCurveToRead().GetType();
         }
 
         if (theType == typeof(CircleCurve2D))

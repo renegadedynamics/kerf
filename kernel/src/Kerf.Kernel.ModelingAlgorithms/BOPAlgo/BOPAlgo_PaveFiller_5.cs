@@ -314,6 +314,10 @@ internal partial class PaveFiller
             tolF = Tool.Tolerance(f);
             //
             NCollection_Sequence<CommonPrt> cPrts = edgeFace.CommonParts();
+            if (_crossingsApart > 0 && _touchesApart)
+            {
+                cPrts = CrossingsOfTouches(cPrts, e, f, nE, nF, tolE + tolF);
+            }
             nbCPrts = cPrts.Length();
             if (nbCPrts == 0)
             {
@@ -452,6 +456,7 @@ internal partial class PaveFiller
 
                             // Real intersection is present.
                             // Update the existing vertex to cover the intersection point.
+                            bool apart = false;
                             for (j = 0; j < 2; ++j)
                             {
                                 if (bIsOnPave[j])
@@ -459,12 +464,19 @@ internal partial class PaveFiller
                                     Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
                                     Point3D p = Tool.Pnt(v);
                                     double distPP = p.DistanceTo(pnew0);
+                                    // A crossing far from the vertex is a crossing of its own, with its own vertex (decision 2276)
+                                    if (IsApart(nV[j], pnew0, tolE + tolF))
+                                    {
+                                        apart = true;
+                                        continue;
+                                    }
                                     double tol = Tool.Tolerance(v);
                                     double maxDist = 1.0e4 * tol;
                                     // An edge grazing a face stays within tolerance over sqrt(2 R tol), so the reach is what the touch
                                     // spans, not a fixed length: past 1e-3 a large cylinder's edge got new vertices either side of one
                                     // already touching (decision 1923)
-                                    maxDist = Max(maxDist, TouchSpan(e, r, f));
+                                    double span = TouchSpan(e, r, f);
+                                    maxDist = Max(maxDist, span);
                                     if (tol < .01)
                                     {
                                         maxDist = Min(maxDist, 0.1);
@@ -473,10 +485,19 @@ internal partial class PaveFiller
                                     {
                                         UpdateVertex(nV[j], distPP);
                                         _vertsToAvoidExtension.Add(nV[j]);
+                                        // What the touch spans is how far a section's curve may end from this vertex and
+                                        // still end at it (decision 2260)
+                                        if (!_touchSpans.TryGetValue(nV[j], out double widest) || span > widest)
+                                        {
+                                            _touchSpans[nV[j]] = span;
+                                        }
                                     }
                                 }
                             }
-                            continue;
+                            if (!apart)
+                            {
+                                continue;
+                            }
                         }
 
                         if (CheckFacePaves(vnew, mifOn))
@@ -1144,5 +1165,168 @@ internal partial class PaveFiller
             // Create new common blocks for coinciding pairs
             BuilderTools.PerformCommonBlocks(mpbli, _ds);
         }
+    }
+
+    /// <summary>
+    /// Kerf (decision 2286): the parts an edge and a face have in common, with each touch that hides two crossings far
+    /// apart given as two, one at each crossing. Where an edge dips through a face by less than the tolerances, the edge and
+    /// face step sees one stretch the two are within a tolerance over and makes one vertex at its middle; the edge truly
+    /// crosses the face twice, at points that can be thousands of tolerances apart, and the sections' curves end at those.
+    /// The crossings are where the edge's distance from the surface, signed along the way it stands off at the stretch's end,
+    /// changes sign. A touch with one crossing far from where its vertex would be made has the vertex at the crossing.
+    /// </summary>
+    private NCollection_Sequence<CommonPrt> CrossingsOfTouches(NCollection_Sequence<CommonPrt> parts, in Edge e, in Face f, int nE, int nF, double tolerances)
+    {
+        NCollection_Sequence<CommonPrt>? apart = null;
+        for (int i = 1; i <= parts.Length(); ++i)
+        {
+            CommonPrt part = parts[i];
+            double c1 = 0.0, c2 = 0.0;
+            int crossings = part.Type() == ShapeType.Vertex ? TouchCrossings(part, e, f, tolerances, out c1, out c2) : 0;
+            if (part.Type() == ShapeType.Vertex)
+            {
+                // Where a section's curve that stops short within this stretch should have ended (EndsAtACrossing)
+                EdgeCurveAdaptor along = new(e);
+                part.Range1(out double first, out double last);
+                double span = along.Value(first).DistanceTo(along.Value(last));
+                IntersectionTools.VertexParameter(part, out double own);
+                for (int j = 0; j < Max(crossings, 1); ++j)
+                {
+                    _touchCrossings.Add((nE, nF, along.Value(crossings == 0 ? own : j == 0 ? c1 : c2), span));
+                }
+            }
+            if (crossings == 0)
+            {
+                apart?.Append(part);
+                continue;
+            }
+
+            if (apart is null)
+            {
+                apart = new NCollection_Sequence<CommonPrt>();
+                for (int j = 1; j < i; ++j)
+                {
+                    apart.Append(parts[j]);
+                }
+            }
+
+            part.Range1(out double from, out double to);
+            double width = Min(new EdgeCurveAdaptor(e).Resolution(tolerances), crossings == 2 ? (c2 - c1) / 4.0 : to - from);
+            for (int j = 0; j < crossings; ++j)
+            {
+                double at = j == 0 ? c1 : c2;
+                CommonPrt one = new(part);
+                one.SetRange1(Max(from, at - width), Min(to, at + width));
+                one.SetVertexParameter1(at);
+                apart.Append(one);
+            }
+        }
+        return apart ?? parts;
+    }
+
+    // How many crossings a touch is given as, and where on the edge: two, far apart; one, far from the touch's own point; or
+    // none, the touch as it is
+    private int TouchCrossings(CommonPrt part, in Edge e, in Face f, double tolerances, out double c1, out double c2)
+    {
+        c1 = c2 = 0.0;
+        part.Range1(out double from, out double to);
+        if (!(to > from))
+        {
+            return 0;
+        }
+
+        EdgeCurveAdaptor curve = new(e);
+        ProjectPointOnSurface projector = _context!.ProjPS(f);
+        Vector3D along = default;
+        bool hasAlong = false;
+        double Off(double t)
+        {
+            Point3D at = curve.Value(t);
+            projector.Perform(at);
+            if (!projector.IsDone || projector.NbPoints() == 0)
+            {
+                return double.NaN;
+            }
+
+            Vector3D off = new(projector.NearestPoint(), at);
+            return hasAlong ? off.Dot(along) : off.Magnitude;
+        }
+
+        // The way the edge stands off the face, from whichever end of the stretch it stands further off at
+        Point3D start = curve.Value(from), end = curve.Value(to);
+        projector.Perform(start);
+        Vector3D offStart = projector.IsDone && projector.NbPoints() != 0 ? new Vector3D(projector.NearestPoint(), start) : default;
+        projector.Perform(end);
+        Vector3D offEnd = projector.IsDone && projector.NbPoints() != 0 ? new Vector3D(projector.NearestPoint(), end) : default;
+        along = offStart.Magnitude >= offEnd.Magnitude ? offStart : offEnd;
+        if (!(along.Magnitude > 1e-3 * tolerances))
+        {
+            return 0;
+        }
+        along = along.Normalized();
+        hasAlong = true;
+
+        const int Steps = 32;
+        Span<double> changes = stackalloc double[4];
+        int found = 0;
+        double before = Off(from), tBefore = from;
+        for (int i = 1; i <= Steps; ++i)
+        {
+            double t = from + (to - from) * i / Steps, off = Off(t);
+            if (double.IsNaN(off) || double.IsNaN(before))
+            {
+                return 0;
+            }
+
+            if ((off > 0.0) != (before > 0.0))
+            {
+                if (found == 2)
+                {
+                    return 0;
+                }
+
+                double a = tBefore, b = t, offA = before;
+                for (int k = 0; k < 60 && b - a > 1e-15 * Max(1.0, Math.Abs(b)); ++k)
+                {
+                    double middle = 0.5 * (a + b), offMiddle = Off(middle);
+                    if (double.IsNaN(offMiddle))
+                    {
+                        return 0;
+                    }
+
+                    if ((offMiddle > 0.0) != (offA > 0.0))
+                    {
+                        b = middle;
+                    }
+                    else
+                    {
+                        a = middle;
+                        offA = offMiddle;
+                    }
+                }
+                changes[found++] = 0.5 * (a + b);
+            }
+            before = off;
+            tBefore = t;
+        }
+
+        double far = _crossingsApart * (tolerances + _fuzzyValue);
+        if (found == 2 && curve.Value(changes[0]).DistanceTo(curve.Value(changes[1])) > far)
+        {
+            c1 = changes[0];
+            c2 = changes[1];
+            return 2;
+        }
+
+        if (found == 1)
+        {
+            IntersectionTools.VertexParameter(part, out double own);
+            if (curve.Value(changes[0]).DistanceTo(curve.Value(own)) > far)
+            {
+                c1 = changes[0];
+                return 1;
+            }
+        }
+        return 0;
     }
 }

@@ -70,9 +70,27 @@ internal class FunctionSetRoot
         private math_Vector _p;
         private math_Vector _fv;
         private FunctionSetWithDerivatives _f;
+        private BrentMinimum? _brent;
 
         // Kerf (unit 15D): the function a rented work's direction function follows, set for each search (Work)
         public void Use(FunctionSetWithDerivatives f) => _f = f;
+
+        // Kerf (unit 15AL): the line search's minimizer, made anew for each minimization in OCCT, here reset to what
+        // the constructor makes. One minimization is over before the next starts, and a search inside a search has a
+        // work of its own (Work).
+        public BrentMinimum Brent(double tol1d)
+        {
+            if (_brent is null)
+            {
+                _brent = new BrentMinimum(tol1d, 100, tol1d);
+            }
+            else
+            {
+                _brent.Reset(tol1d, 100, tol1d);
+            }
+
+            return _brent;
+        }
 
         public MyDirFunction(math_Vector v1, math_Vector v2, math_Vector v3, math_Vector v4,
                              FunctionSetWithDerivatives f)
@@ -199,7 +217,7 @@ internal class FunctionSetRoot
         // JR/Hp :
         math_Vector pp0 = p0;
         math_Vector pp1 = p1;
-        delta.Initialized(pp1 - pp0);
+        delta.Subtract(pp1, pp0); // OCCT: Delta = P1 - P0, a new vector
         //  Delta = P1 - P0;
         invnorme = delta.Norm();
         if (invnorme <= eps)
@@ -214,13 +232,13 @@ internal class FunctionSetRoot
         // (2) On minimise
         ax = -1;
         bx = 0;
-        cx = (p2 - p1).Norm() * invnorme;
+        cx = p2.NormOfDifference(p1) * invnorme;
         if (cx < 1.0e-2)
         {
             return false;
         }
 
-        BrentMinimum sol = new(tol1d, 100, tol1d);
+        BrentMinimum sol = f.Brent(tol1d);
         sol.Perform(f, ax, bx, cx);
 
         if (sol.IsDone)
@@ -349,7 +367,7 @@ internal class FunctionSetRoot
                 cx = 1.0;
             }
 
-            BrentMinimum sol = new(tol1d, 100, tol1d);
+            BrentMinimum sol = f.Brent(tol1d);
 
             // Base invocation.
             sol.Perform(f, ax, bx, cx);
@@ -749,7 +767,7 @@ internal class FunctionSetRoot
             else
             {
                 delta *= monratio;
-                sol.Initialized(solSave + delta);
+                sol.Add(solSave, delta); // OCCT: Sol = SolSave + Delta, a new vector
                 for (i = 1; i <= ninc; i++)
                 {
                     if (sol[i] < infBound[i])
@@ -1159,7 +1177,7 @@ internal class FunctionSetRoot
                                 }
                                 else
                                 {
-                                    _sol.Initialized(_solSave + _delta);
+                                    _sol.Add(_solSave, _delta); // OCCT: Sol = SolSave + Delta, a new vector
                                     //
                                     for (i = 1; i <= ninc; i++)
                                     {
@@ -1362,7 +1380,7 @@ internal class FunctionSetRoot
                         }
                         else
                         {
-                            _sol.Initialized(_solSave + _delta);
+                            _sol.Add(_solSave, _delta); // OCCT: Sol = SolSave + Delta, a new vector
                             //
                             for (i = 1; i <= ninc; i++)
                             {

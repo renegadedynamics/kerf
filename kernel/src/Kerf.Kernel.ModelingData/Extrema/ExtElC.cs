@@ -117,23 +117,7 @@ internal class ExtElC
             _sqDist[idx] = RealLast();
         }
 
-        Direction3D d1 = c1.Position.Direction, d2 = c2.Position.Direction;
-        double cosA = d1.Dot(d2);
-        double sqSinA = 1.0 - cosA * cosA;
-        double u1 = 0.0, u2 = 0.0;
-        if (sqSinA < Constants.Resolution() || d1.IsParallel(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
-        {
-            _isPar = true;
-        }
-        else
-        {
-            Xyz l1L2 = c2.Location.XYZ() - c1.Location.XYZ();
-            double d1L = d1.XYZ().Dot(l1L2), d2L = d2.XYZ().Dot(l1L2);
-            u1 = (d1L - cosA * d2L) / sqSinA;
-            u2 = (cosA * d1L - d2L) / sqSinA;
-
-            _isPar = global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u2);
-        }
+        _isPar = LinesAreParallel(c1, c2, out double u1, out double u2);
 
         if (_isPar)
         {
@@ -151,6 +135,31 @@ internal class ExtElC
         _point[2 * _nbExt + 1] = new POnCurv(u2, p2);
         _nbExt = 1;
         _done = true;
+    }
+
+    /// <summary>
+    /// The line-line case without the object (unit 15AL): true if the lines are parallel, else the parameters on each of
+    /// their one extremum, whose points are <c>ElCLib.Value(u1, c1)</c> and <c>ElCLib.Value(u2, c2)</c>. The constructor
+    /// computes the same from it.
+    /// </summary>
+    internal static bool LinesAreParallel(in Line3D c1, in Line3D c2, out double u1, out double u2)
+    {
+        Direction3D d1 = c1.Position.Direction, d2 = c2.Position.Direction;
+        double cosA = d1.Dot(d2);
+        double sqSinA = 1.0 - cosA * cosA;
+        u1 = 0.0;
+        u2 = 0.0;
+        if (sqSinA < Constants.Resolution() || d1.IsParallel(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
+        {
+            return true;
+        }
+
+        Xyz l1L2 = c2.Location.XYZ() - c1.Location.XYZ();
+        double d1L = d1.XYZ().Dot(l1L2), d2L = d2.XYZ().Dot(l1L2);
+        u1 = (d1L - cosA * d2L) / sqSinA;
+        u2 = (cosA * d1L - d2L) / sqSinA;
+
+        return global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u2);
     }
 
     /// <summary>Computes the extrema when the line and the circle are in one plane.</summary>

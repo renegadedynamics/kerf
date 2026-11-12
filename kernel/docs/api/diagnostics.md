@@ -190,6 +190,7 @@ A status that says the work was done gives no diagnostic; each other value is an
 | `fillet.walking-failed` | `ChFiDS_ErrorStatus::ChFiDS_WalkingFailure` | The fillet's surface couldn't be followed along the edges. |
 | `fillet.no-starting-solution` | `ChFiDS_ErrorStatus::ChFiDS_StartsolFailure` | No starting point was found for the fillet's surface. |
 | `fillet.twisted-surface` | `ChFiDS_ErrorStatus::ChFiDS_TwistedSurface` | The fillet's surface would be twisted. |
+| `fillet.radius-changes-at-a-corner` | none (Kerf's `ErrorStatus.EnvelopeCorner`) | The fillet's radius is changing where its edges' curvature jumps, or its rate of change jumps: the rolling ball's surface has a corner there that can't be built. Also where a radius changes so sharply that the surface would fold back on itself. |
 
 ### Offsets
 

@@ -250,9 +250,11 @@ public class ChFi3dBuilderNativeTests
     /// </summary>
     private static readonly Dictionary<string, double> BallSections = new()
     {
-        // The evolving radius on a box's edge (decision 2216): between planes, so the ball's sections are OCCT's but for
-        // the last few bits of the walk's knots and the tolerances
-        ["box_edge_evolving"] = 1.0e-9,
+        // The evolving radius on a box's edges (unit 15AK): the sections are the envelope's circles, square to the path
+        // of the ball's centre, where OCCT's are circles of the radius in the plane square to the edge, and the
+        // approximation is cut where the law's second derivative jumps
+        ["box_edge_evolving"] = -2,
+        ["box_two_edges_evolving"] = -2,
         ["pyramid_apex_four_edges"] = -1,
         ["D1_partial_cone_apex"] = -2,
         ["F1_partial_torus"] = -1,
@@ -264,6 +266,8 @@ public class ChFi3dBuilderNativeTests
     private static readonly Dictionary<string, double> BallVolumes = new()
     {
         ["D1_partial_cone_apex"] = 66874.229805177427,
+        // The envelope of the balls (unit 15AK), where native's is the sweep of circles in the plane square to the edge
+        ["box_edge_evolving"] = 997638.96728569805,
     };
 
     [Theory]

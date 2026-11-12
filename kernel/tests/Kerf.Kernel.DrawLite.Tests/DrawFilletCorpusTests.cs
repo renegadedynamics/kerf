@@ -355,10 +355,11 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         // OK 736, IMPROVEMENT 10, BAD 33, FAILED 20. Every failure is attributed (KnownFailures). Unit 8F's STEP commands:
         // 884 runnable, OK 737. Unit 15W's fillets on the ball (decisions 2157 to 2164): OK 735, as C1, C5, F1, F2, Y6, C8, D1
         // and A6 fail, each attributed. Unit 15W2's walk through the point A6's fillet narrows to (decision 2213): OK 736.
+        // Unit 15AK's envelope of an evolving radius's balls: OK 735, as buildevol/B4 fails, attributed (decision 2273).
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(884, aNew.Count);
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 736, $"{aRuns.Count(r => r.Status == "OK")}");
+        Assert.True(aRuns.Count(r => r.Status == "OK") >= 735, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, Check);
     }
@@ -386,6 +387,10 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         ["blend/simple/D1"] = "the fillet on the ball, as C8's: its area 10080.1, OCCT's script holds its off-ball 9940.87 (decisions 2157, 2160)",
         ["blend/complex/A7"] = "its second fillet, which OCCT fails (its TODO), now builds, valid, its walked faces on the ball; the script expects an area of 0 (decision 2164)",
         // Unit 15W2: the evolving radius on the ball (decisions 2215 to 2217)
+        // Unit 15AK: the envelope of the balls (decisions 2269, 2273)
+        ["blend/buildevol/B4"] = "the surface its balls sweep folds: 10 to 20 over a radian of a cone's base, the larger balls covering the smaller "
+                                 + "ones' circles (the walked sections were inside the union of the balls by up to 0.44); refused, where OCCT and Kerf before "
+                                 + "built a surface that isn't the swept one (decision 1742)",
         ["blend/buildevol/K2"] = "faulty natively and before (OCCT's TODO); on the ball, the ball between two edges pivots about a point of the cylinder's rim, the walk between them stops there and the evolving fillet fails (decision 2217)",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails (decision 1738)",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend

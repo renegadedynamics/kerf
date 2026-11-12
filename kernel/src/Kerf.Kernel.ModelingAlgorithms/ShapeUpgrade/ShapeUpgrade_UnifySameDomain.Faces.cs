@@ -941,7 +941,9 @@ internal partial class UnifySameDomain
     // input's own even in the safe input mode (the port works on its copy, see Build)
     private static void TransformPCurves(in Face                refFace,
                                          in Face                face,
-                                         HashSet<Shape> mapEdgesWithTemporaryPCurves)
+                                         HashSet<Shape> mapEdgesWithTemporaryPCurves,
+                                         bool refSeam = false,
+                                         bool movePoles = false)
     {
         Surface refSurf = Tool.Surface(refFace)!;
         if (refSurf is TrimmedSurface refRTS)
@@ -956,7 +958,7 @@ internal partial class UnifySameDomain
         }
 
         bool toModify = false, toTranslate = false, toRotate = false, X_Reverse = false, Y_Reverse = false,
-             toProject = false;
+             toProject = false, sameAxis = false;
 
         double translation = 0.0, angle = 0.0;
 
@@ -996,6 +998,8 @@ internal partial class UnifySameDomain
                 Y_Reverse = true;
             }
 
+            sameAxis = vdirSurfFace.IsParallel(vdirRefSurf, global::Kerf.Engine.Foundation.Precision.Angular());
+
             if (!X_Reverse && !Y_Reverse)
             {
                 Direction3D dirRef = vdirRefSurf;
@@ -1024,13 +1028,48 @@ internal partial class UnifySameDomain
             }
         }
 
+        // Kerf (decision 2262): where the faces to unify hold the reference surface's own seam, nothing of the merged face
+        // can lie across it, so each moved curve is brought into the surface's one period; OCCT 8.0.1 leaves it wherever the
+        // turn put it, a period away from its neighbours' (OCCT #1573 at 180 degrees). uInside is the U of one edge of this
+        // face clear of the seam, which says on which side of the seam an edge along it belongs.
+        bool withinPeriod = refSeam && toModify && !toProject && sameAxis && refSurf.IsUClosed;
+        double uFirst = 0.0, uLast = 0.0, uPeriod = 0.0, uInside = double.NaN;
+        const double onSeam = 1.0e-9;
+        if (withinPeriod)
+        {
+            refSurf.ParameterBounds(out uFirst, out uLast, out _, out _);
+            uPeriod = uLast - uFirst;
+            for (var inside = new Explorer(face, ShapeType.Edge); inside.More() && double.IsNaN(uInside); inside.Next())
+            {
+                Edge edge = ShapeCasts.Edge(inside.Current());
+                Curve2D? curve = Tool.CurveOnSurface(edge, face, out double first, out double last);
+                if (curve is null || Tool.Degenerated(edge))
+                {
+                    continue;
+                }
+
+                double u = curve.Value((first + last) / 2.0).X;
+                u = (X_Reverse ? 2 * M_PI - u : u) + (toRotate ? angle : 0.0);
+                u -= Math.Floor((u - uFirst) / uPeriod) * uPeriod;
+                if (u - uFirst > onSeam * uPeriod && uLast - u > onSeam * uPeriod)
+                {
+                    uInside = u;
+                }
+            }
+        }
+
+        Span<double> middles = stackalloc double[2];
+        Span<bool> along = stackalloc bool[2];
         var bb    = new BrepBuilder();
         var explo = new Explorer(face, ShapeType.Edge);
         var emap = new HashSet<Shape>(ShapeHasher.Instance);
         for (; explo.More(); explo.Next())
         {
             Edge edge = ShapeCasts.Edge(explo.Current());
-            if (Tool.Degenerated(edge) && toModify)
+            // OCCT 8.0.1 leaves out every degenerated edge of a face whose surface is placed differently, so a sphere's pole
+            // edge has no curve on the reference surface and the merged face is invalid (OCCT #1573). About the same axis the
+            // pole is the reference surface's pole too, and its edge's curve moves as the others do (decision 2262).
+            if (Tool.Degenerated(edge) && toModify && !(sameAxis && movePoles))
             {
                 continue;
             }
@@ -1106,6 +1145,33 @@ internal partial class UnifySameDomain
                 if (toRotate)
                 {
                     newPCurves[ii]!.Translate(new Vector2D(angle, 0.0));
+                }
+            }
+
+            if (withinPeriod)
+            {
+                for (int ii = 0; ii < nbPcurves; ii++)
+                {
+                    double middle = newPCurves[ii]!.Value((fpar + lpar) / 2.0).X;
+                    double within = middle - Math.Floor((middle - uFirst) / uPeriod) * uPeriod;
+                    along[ii] = within - uFirst <= onSeam * uPeriod || uLast - within <= onSeam * uPeriod;
+                    if (along[ii] && !double.IsNaN(uInside))
+                    {
+                        within = uInside - uFirst < uPeriod / 2.0 ? uFirst : uLast;
+                    }
+
+                    middles[ii] = within;
+                    if (!(nbPcurves == 2 && along[ii]) && within != middle)
+                    {
+                        newPCurves[ii]!.Translate(new Vector2D(within - middle, 0.0));
+                    }
+                }
+
+                // The face's own seam, turned off the reference surface's: its two curves are now one line, and the edge an
+                // ordinary one. Turned onto the reference surface's seam it stays a seam, its curves as the turn left them
+                if (nbPcurves == 2 && !along[0] && !along[1] && Math.Abs(middles[0] - middles[1]) <= onSeam * uPeriod)
+                {
+                    nbPcurves = 1;
                 }
             }
 
@@ -1221,6 +1287,16 @@ internal partial class UnifySameDomain
             return;
         }
 
+        // Whether the faces hold a seam of the reference surface: an edge with two curves on it
+        bool refSeam = false;
+        for (int i = 1; i <= faces.Length() && !refSeam; i++)
+        {
+            for (var edges = new Explorer(faces[i], ShapeType.Edge); edges.More() && !refSeam; edges.Next())
+            {
+                refSeam = Tool.IsClosed(ShapeCasts.Edge(edges.Current()), refFace);
+            }
+        }
+
         for (int i = 1; i <= faces.Length(); i++)
         {
             Face face = ShapeCasts.Face(faces[i]);
@@ -1230,7 +1306,16 @@ internal partial class UnifySameDomain
                 continue;
             }
 
-            TransformPCurves(refFace, face, mapEdgesWithTemporaryPCurves);
+            // Only a face with a pole edge is brought into the period: OCCT can't merge one at all, as it leaves the pole edge
+            // out. A face without one, as a cylinder's, OCCT's later steps place wherever its curves are, a period away or
+            // not, and the recordings from native OCCT hold such faces, which stay native's to the bit
+            bool hasPole = false;
+            for (var edges = new Explorer(face, ShapeType.Edge); edges.More() && !hasPole; edges.Next())
+            {
+                hasPole = Tool.Degenerated(ShapeCasts.Edge(edges.Current()));
+            }
+
+            TransformPCurves(refFace, face, mapEdgesWithTemporaryPCurves, refSeam && hasPole, movePoles: true);
         }
     }
 
