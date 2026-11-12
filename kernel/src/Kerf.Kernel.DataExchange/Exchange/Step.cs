@@ -208,9 +208,10 @@ public static class Step
     /// <summary>
     /// The warning for entities the reader couldn't load or translate, so that what refers to them is missing from the
     /// model (decision 2308): those whose data failed its checks as the file was loaded, a reference to an entity that
-    /// isn't in the file among them, and those whose translation recorded a failure. Null where there are none.
+    /// isn't in the file among them, and those whose translation recorded a failure. Where nothing is left of the model
+    /// (no vertex in it), the warning says so (decision 33503). Null where there are none.
     /// </summary>
-    private static Diagnostic? SkippedEntities(CafReader reader)
+    private static Diagnostic? SkippedEntities(CafReader reader, ModelNode read)
     {
         if (reader.Reader().WS() is not { } session || session.Model() is not StepModel model)
         {
@@ -256,8 +257,11 @@ public static class Step
         string listed = string.Join(", ", ids.Take(8).Select(id => FormattableString.Invariant($"#{id}")));
         string more = ids.Count > 8 ? FormattableString.Invariant($" and {ids.Count - 8} more") : "";
         string why = string.IsNullOrWhiteSpace(reason) ? "" : $" The first says: {reason.Trim()}.";
+        string empty = new Kerf.Engine.Topology.Explorer(read.ToShape(), Kerf.Topology.ShapeType.Vertex).More()
+            ? ""
+            : " Nothing else was read: the model is empty.";
         return Diagnostic.Warning(ExchangeTree.EntitySkipped,
-            FormattableString.Invariant($"{ids.Count} entities of the STEP data couldn't be read, and what refers to them is missing from the model: {listed}{more}.") + why);
+            FormattableString.Invariant($"{ids.Count} entities of the STEP data couldn't be read, and what refers to them is missing from the model: {listed}{more}.") + why + empty);
     }
 
     /// <summary>
@@ -354,7 +358,7 @@ public static class Step
             {
                 return Result<ModelNode>.Failure(ExchangeDiagnostics.ToDiagnostic(ReturnStatus.RetVoid)!);
             }
-            ImmutableArray<Diagnostic> warnings = [.. new[] { SkippedEntities(reader), InvalidFaces(reader) }.OfType<Diagnostic>()];
+            ImmutableArray<Diagnostic> warnings = [.. new[] { SkippedEntities(reader, model), InvalidFaces(reader) }.OfType<Diagnostic>()];
             return warnings.Length == 0 ? model : Result<ModelNode>.Success(model, warnings);
         }
         catch (Exception e) when (e is not OperationCanceledException && ExchangeTree.IsBadData(e))

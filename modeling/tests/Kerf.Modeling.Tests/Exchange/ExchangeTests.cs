@@ -227,6 +227,49 @@ public partial class ExchangeTests
         Assert.True(read.IsSuccess);
         var skipped = Assert.Single(read.Diagnostics);
         Assert.Equal("exchange.entity-skipped", skipped.Code.Value);
+        // the solid holding the vertex is left out with it, and with it all the box: the warning says the model is empty
+        // (the kernel's decision 33503)
+        Assert.EndsWith("Nothing else was read: the model is empty.", skipped.Message);
+        Assert.Empty(Importers.ImportStep(new MemoryStream(Encoding.ASCII.GetBytes(step))).Diagnostics);
+    }
+
+    [Fact]
+    public void StepWhoseFacesReadInvalidImportsWithAWarning()
+    {
+        // OCCT's issue 349's strip, two lines between the same two vertices, read as the kernel read it before its
+        // decision 2306 (a face of no area): the import passes on the read's warning (the kernel's decision 33502)
+        string step = string.Join('\n',
+            "ISO-10303-21;", "HEADER;", "FILE_DESCRIPTION((''),'2;1');", "FILE_NAME('','',(''),(''),'','','');",
+            "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 3 1 1 1 }'));", "ENDSEC;", "DATA;",
+            "#1=CARTESIAN_POINT('',(0.,0.,0.));", "#2=CARTESIAN_POINT('',(1.,0.,0.));",
+            "#3=CARTESIAN_POINT('',(0.,-0.0005,0.));", "#4=CARTESIAN_POINT('',(0.,0.0005,0.));",
+            "#11=VERTEX_POINT('',#1);", "#12=VERTEX_POINT('',#2);",
+            "#20=DIRECTION('',(0.,0.,1.));", "#21=DIRECTION('',(1.,0.,0.));", "#25=AXIS2_PLACEMENT_3D('',#1,#20,#21);",
+            "#33=VECTOR('',#21,1.);", "#34=LINE('',#3,#33);", "#35=LINE('',#4,#33);", "#36=PLANE('',#25);",
+            "#40=EDGE_CURVE('',#11,#12,#34,.T.);", "#41=EDGE_CURVE('',#11,#12,#35,.T.);",
+            "#50=ORIENTED_EDGE('',*,*,#40,.T.);", "#51=ORIENTED_EDGE('',*,*,#41,.F.);",
+            "#60=EDGE_LOOP('',(#50,#51));", "#62=FACE_OUTER_BOUND('',#60,.T.);",
+            "#64=ADVANCED_FACE('',(#62),#36,.T.);", "#65=OPEN_SHELL('',(#64));", "#66=SHELL_BASED_SURFACE_MODEL('',(#65));",
+            "#70=(LENGTH_UNIT()NAMED_UNIT(*)SI_UNIT(.MILLI.,.METRE.));", "#71=(NAMED_UNIT(*)PLANE_ANGLE_UNIT()SI_UNIT($,.RADIAN.));",
+            "#72=(NAMED_UNIT(*)SI_UNIT($,.STERADIAN.)SOLID_ANGLE_UNIT());",
+            "#73=UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#70,'distance_accuracy_value','');",
+            "#74=(GEOMETRIC_REPRESENTATION_CONTEXT(3)GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#73))GLOBAL_UNIT_ASSIGNED_CONTEXT((#70,#71,#72))REPRESENTATION_CONTEXT('',''));",
+            "#75=MANIFOLD_SURFACE_SHAPE_REPRESENTATION('',(#66),#74);",
+            "#80=APPLICATION_CONTEXT('automotive design');", "#81=PRODUCT_CONTEXT('',#80,'mechanical');", "#82=PRODUCT('strip','strip','',(#81));",
+            "#83=PRODUCT_DEFINITION_FORMATION('','',#82);", "#84=PRODUCT_DEFINITION_CONTEXT('part definition',#80,'design');",
+            "#85=PRODUCT_DEFINITION('','',#83,#84);", "#86=PRODUCT_DEFINITION_SHAPE('','',#85);", "#87=SHAPE_DEFINITION_REPRESENTATION(#86,#75);",
+            "ENDSEC;", "END-ISO-10303-21;", "");
+
+        Kerf.Result<ModelShape> read;
+        using (Kerf.Engine.Healing.Fixes.UndoneFixes.Scope())
+        {
+            read = Importers.ImportStep(new MemoryStream(Encoding.ASCII.GetBytes(step)));
+        }
+
+        Assert.True(read.IsSuccess);
+        var invalid = Assert.Single(read.Diagnostics);
+        Assert.Equal(Kerf.Exchange.Step.InvalidFace, invalid.Code);
+        Assert.Contains("#64", invalid.Message);
         Assert.Empty(Importers.ImportStep(new MemoryStream(Encoding.ASCII.GetBytes(step))).Diagnostics);
     }
 
