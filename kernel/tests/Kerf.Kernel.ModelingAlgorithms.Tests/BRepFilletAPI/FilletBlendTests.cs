@@ -381,7 +381,7 @@ public class FilletBlendTests
         Assert.InRange(greatest, 95, 105);
     }
 
-    // Unit 15AK (decision 32306): where the ball passes from one face to the next while its radius is changing and the faces'
+    // Unit 15AK (decision 2273): where the ball passes from one face to the next while its radius is changing and the faces'
     // curvatures differ (a plane to the cylinder tangent to it, round a contour's arc), the path of its centre has a corner:
     // the centre's speed along the guide changes with the contacts' own. The surface the balls sweep has a piece of the ball
     // there, between the last circle of one face's fillet and the first of the next's, which the walked faces, each carried on

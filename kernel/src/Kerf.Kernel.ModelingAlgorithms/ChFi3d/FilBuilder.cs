@@ -1222,7 +1222,7 @@ internal partial class FilBuilder : FilletBuilderBase
         return true;
     }
 
-    // Kerf (unit 15AK, decision 32306): a fillet of evolving radius is the envelope of its balls, whose sections are
+    // Kerf (unit 15AK, decision 2273): a fillet of evolving radius is the envelope of its balls, whose sections are
     // circles square to the path of the ball's centre. Where the derivative of that path jumps, the true envelope has a
     // piece of the ball between the circles of the two sides, and the walked surfaces, each carried on past its own last
     // circle until they meet, leave it by about the square of the gap between the circles over twice the radius (each is
@@ -1234,7 +1234,7 @@ internal partial class FilBuilder : FilletBuilderBase
     //    (a plane to a cylinder tangent to it, round a contour's arc): the centre's speed along the guide changes with
     //    the contacts' own, whatever the guide; so each surface's end circles are kept, and those of the same ball
     //    compared, between two faces (where the ball comes to rest on an edge the same holds, but the measure isn't
-    //    proved there, and nothing is refused: decision 32306);
+    //    proved there, and nothing is refused: decision 2273);
     //  - where the law's slope jumps, or the guide's curvature while the radius is changing (the function's C0
     //    intervals).
     // And where the radius's change itself bends hard enough for the circles of neighbouring balls to cross between the
