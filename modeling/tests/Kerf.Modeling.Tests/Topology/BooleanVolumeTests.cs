@@ -1,4 +1,6 @@
 using Kerf.Booleans;
+using Kerf.Healing;
+using Kerf.Measurement;
 using Kerf.Tests.Shared;
 
 namespace Kerf.Modeling.Tests;
@@ -17,6 +19,63 @@ public class BooleanVolumeTests
 
     private static DiagnosticCode? Raised(WarningScope warnings, DiagnosticCode code) =>
         warnings.Raised.Select(r => r.Code).FirstOrDefault(c => c == code);
+
+    // The check measures against the result's own tolerance, so a clean that raised it could pass a wrong result: a cut of equal
+    // cylinders of radius 50000 that removed nothing, wrong by the check, was cleaned into the whole cylinder with a vertex of
+    // tolerance 236, which passed, 74% out and a success (kernel decision 32702). Here by hand, as that shape came from a
+    // switch nothing now turns on for a first attempt: a "cut" that is the cylinder untouched, with a vertex's tolerance at 1e-4
+    // as made, which the check proves wrong, and the same with that tolerance at 5 as cleaned, which it passes
+    // The shape with its first vertex's tolerance set, through its text: nothing writes into a made shape
+    private static Shape WithVertexTolerance(Shape shape, double tolerance)
+    {
+        using var written = new MemoryStream();
+        Assert.True(Kerf.Exchange.Brep.Write(shape, written).IsSuccess);
+        string text = System.Text.Encoding.ASCII.GetString(written.ToArray()).Replace("\r\n", "\n");
+        const string vertex = "\nVe\n1e-07\n";
+        int at = text.IndexOf(vertex, StringComparison.Ordinal);
+        Assert.True(at >= 0);
+        text = text[..at] + "\nVe\n" + tolerance.ToString("R", System.Globalization.CultureInfo.InvariantCulture) + "\n" + text[(at + vertex.Length)..];
+        return Kerf.Exchange.Brep.Read(new MemoryStream(System.Text.Encoding.ASCII.GetBytes(text))).Value;
+    }
+
+    private static (Shape Cylinder, Shape Tool) Crossed() =>
+        (new Cylinder(5, 10), new Location(new Point3D(0, 0, 3)) * (new Rotation(Axis.X, 90) * new Cylinder(2, 20)));
+
+    [Fact]
+    public void A_clean_that_raises_a_wrong_results_tolerance_doesnt_make_it_pass()
+    {
+        (Shape cylinder, Shape tool) = Crossed();
+        Shape made = WithVertexTolerance(cylinder, 1e-4), cleaned = WithVertexTolerance(cylinder, 5);
+
+        // What the test stands on
+        Assert.NotNull(BooleanVolumes.Check(BooleanVolumeRule.Cut, [cylinder], [tool], made, 0));
+        Assert.Null(BooleanVolumes.Check(BooleanVolumeRule.Cut, [cylinder], [tool], cleaned, 0));
+        Assert.True(cleaned.Validate().IsValid);
+
+        // The result as made is what's wrong, and it's that one the Boolean is made again for
+        var history = new ModelHistory([cylinder], [tool]);
+        (Shape result, _, Diagnostic? wrong) = ShapeExtensions.Checked(BooleanKind.Cut, [cylinder], [tool], null, cleaned, history, made, history, made: true, proved: false);
+        Assert.NotNull(wrong);
+        Assert.Equal(DiagnosticCode.InvalidResult, wrong.Code);
+        Assert.True(result.IsSame(made));
+    }
+
+    // A result the kernel proved right as made keeps a clean that raises its tolerance only if the volume is the same: here the
+    // right cut as made, and for its clean the cylinder untouched with a vertex's tolerance at 5, which the check passes
+    [Fact]
+    public void A_clean_that_raises_the_tolerance_of_a_result_proved_right_and_changes_its_volume_is_left_out()
+    {
+        (Shape cylinder, Shape tool) = Crossed();
+        Shape made = BooleanOperations.Cut([cylinder], [tool]).Value.Shape, cleaned = WithVertexTolerance(cylinder, 5);
+        Assert.Null(BooleanVolumes.Check(BooleanVolumeRule.Cut, [cylinder], [tool], cleaned, 0));
+
+        var history = new ModelHistory([cylinder], [tool]);
+        using var warnings = Warnings.Capture();
+        (Shape result, _, Diagnostic? wrong) = ShapeExtensions.Checked(BooleanKind.Cut, [cylinder], [tool], null, cleaned, history, made, history, made: true, proved: true);
+        Assert.Null(wrong);
+        Assert.True(result.IsSame(made));
+        Assert.Single(warnings.Raised);
+    }
 
     [Fact]
     public void A_cut_with_a_solid_inside_out_is_made_again_with_a_fuzzy_value()

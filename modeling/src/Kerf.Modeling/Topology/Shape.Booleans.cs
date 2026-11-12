@@ -164,6 +164,16 @@ public static partial class ShapeExtensions
         else if (made)
             result = Failures.Valid(result, what);
 
+        return Checked(operation, arg, tool, options, result, history, uncleaned, uncleanedHistory, made, proved);
+    }
+
+    /// <summary>
+    /// The check of a Boolean's result after its clean: <paramref name="result"/> as cleaned and <paramref name="uncleaned"/> as
+    /// made (the same shape where the clean was left out).
+    /// </summary>
+    internal static (Shape Result, ModelHistory History, Diagnostic? Wrong) Checked(BooleanKind operation, List<Shape> arg, List<Shape> tool,
+        BooleanOptions? options, Shape result, ModelHistory history, Shape uncleaned, ModelHistory uncleanedHistory, bool made, bool proved)
+    {
         // A valid shape can still be the wrong one, and its volume can prove it (decision 1860). As above, a clean that spoils
         // a good result is left out. One the kernel proved right isn't checked again unless the clean changed it
         if (made && !(proved && result.IsSame(uncleaned)) && RuleOf(operation) is { } rule
