@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Collections.Immutable;
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Step;
@@ -20,13 +21,27 @@ namespace Kerf.Exchange;
 public static class Step
 {
     /// <summary>
+    /// The warning of a read that left entities of the data out, and what refers to them with them:
+    /// <c>exchange.entity-skipped</c> (decision 2308).
+    /// </summary>
+    public static DiagnosticCode EntitySkipped => ExchangeTree.EntitySkipped;
+
+    /// <summary>
+    /// The warning of a read whose model holds faces that are invalid: <c>exchange.invalid-face</c> (decision 33502). The
+    /// read checks the faces the healing reported on and those with a vertex off its edge's curve, not every face; a
+    /// caller who won't take such a model refuses a result with this warning.
+    /// </summary>
+    public static DiagnosticCode InvalidFace => ExchangeTree.InvalidFace;
+
+    /// <summary>
     /// The model of STEP data: the free shapes as roots (one as it is, several in an assembly), assemblies with their
     /// components placed, names and colours. Data that refers to other STEP files is refused: there is no folder to read
     /// them from.
     /// </summary>
     /// <returns>The model, or a failure: <c>exchange.malformed</c>, <c>exchange.limit-exceeded</c>,
     /// <c>exchange.external-references</c>, the reader's status (<c>exchange.invalid-data</c>…), or
-    /// <c>exchange.nothing-done</c> for data holding no shape.</returns>
+    /// <c>exchange.nothing-done</c> for data holding no shape. A model may come with warnings: <see cref="EntitySkipped"/>
+    /// for entities left out, <see cref="InvalidFace"/> for faces the read's check found invalid.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
     /// <exception cref="OperationCanceledException">The operation was cancelled.</exception>
     public static Result<ModelNode> Read(Stream stream, StepReadOptions? options = null, IProgress<double>? progress = null,
@@ -245,6 +260,41 @@ public static class Step
             FormattableString.Invariant($"{ids.Count} entities of the STEP data couldn't be read, and what refers to them is missing from the model: {listed}{more}.") + why);
     }
 
+    /// <summary>
+    /// The warning for faces the read's check found invalid after healing (decision 33502): how many, and the STEP
+    /// identifiers of the faces they were read from, the first eight. Null where there are none.
+    /// </summary>
+    private static Diagnostic? InvalidFaces(CafReader reader)
+    {
+        if (reader.Reader().WS() is not { } session || session.TransferReader()?.TransientProcess() is not { } process
+            || process.InvalidFaces.Count == 0)
+        {
+            return null;
+        }
+
+        var ids = new SortedSet<int>();
+        if (session.Model() is StepModel model)
+        {
+            foreach ((_, var entity) in process.InvalidFaces)
+            {
+                if (entity is not null && model.IdentLabel(entity) is > 0 and var id)
+                {
+                    ids.Add(id);
+                }
+            }
+        }
+
+        int count = process.InvalidFaces.Count;
+        string faces = count == 1 ? "1 face" : FormattableString.Invariant($"{count} faces");
+        string which = ids.Count == 0
+            ? ""
+            : FormattableString.Invariant($" (from {string.Join(", ", ids.Take(8).Select(id => FormattableString.Invariant($"#{id}")))}")
+              + (ids.Count > 8 ? FormattableString.Invariant($" and {ids.Count - 8} more") : "") + ")";
+        string them = count == 1 ? "it" : "them";
+        return Diagnostic.Warning(ExchangeTree.InvalidFace,
+            $"{faces} of the STEP data {(count == 1 ? "is" : "are")} invalid as read{which}: the healing reported on {them} or a vertex lies off its edge's curve, and the check of such faces found {them} wrong. The model holds {them} as read.");
+    }
+
     private static Result<ModelNode> ReadCore(string name, Stream stream, StepReadOptions options, string? folder, IProgress<double>? progress,
                                               CancellationToken cancellationToken)
     {
@@ -304,7 +354,8 @@ public static class Step
             {
                 return Result<ModelNode>.Failure(ExchangeDiagnostics.ToDiagnostic(ReturnStatus.RetVoid)!);
             }
-            return SkippedEntities(reader) is { } skipped ? Result<ModelNode>.Success(model, [skipped]) : model;
+            ImmutableArray<Diagnostic> warnings = [.. new[] { SkippedEntities(reader), InvalidFaces(reader) }.OfType<Diagnostic>()];
+            return warnings.Length == 0 ? model : Result<ModelNode>.Success(model, warnings);
         }
         catch (Exception e) when (e is not OperationCanceledException && ExchangeTree.IsBadData(e))
         {

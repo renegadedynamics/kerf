@@ -393,7 +393,8 @@ internal sealed class TranslateEdge : ImportRoot
             if (Math.Abs(temp1 - temp2) < preci
                 && Math.Abs(u2 - u1 - pnt1.DistanceTo(pnt2)) < Kerf.Engine.Foundation.Precision.Confusion()
                 && c1 is LineCurve3D
-                && !HasParallelTwin(ec, (LineCurve3D)c1, tp, localFactors, preci))
+                && (global::Kerf.Engine.Healing.Fixes.UndoneFixes.AreUndone // for tests (decision 33502)
+                    || !HasParallelTwin(ec, (LineCurve3D)c1, tp, localFactors, preci)))
             {
                 LineCurve3D line = c1 as LineCurve3D;
                 Line3D lin = line.Line;
@@ -408,6 +409,16 @@ internal sealed class TranslateEdge : ImportRoot
             }
         }
 
+        // Kerf: a vertex off its curve by more than the file's uncertainty marks the faces holding it for the read's
+        // check after healing (decision 33502)
+        if (temp1 > preci)
+        {
+            tp.OffCurveVertices.Add(v1);
+        }
+        if (temp2 > preci)
+        {
+            tp.OffCurveVertices.Add(v2);
+        }
         b.UpdateVertex(v1, 1.000001 * temp1); //: h6 abv 14 Jul 98: PRO8845 #2746: *=1.0001
         b.UpdateVertex(v2, 1.000001 * temp2); //: h6
 
