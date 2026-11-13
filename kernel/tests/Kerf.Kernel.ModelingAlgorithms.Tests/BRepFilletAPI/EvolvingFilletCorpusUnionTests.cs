@@ -11,6 +11,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Healing;
+using Kerf.Measurement;
 using Kerf.Topology;
 using Xunit.Abstractions;
 
@@ -45,8 +46,9 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         typeof(EvolvingFilletCorpusUnionTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
             .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == key).Value!;
 
-    // The script's shape and its laws: restore [locate_data_file X] s, updatevol s_N u r u r ...
-    private static (Shape Shape, List<(int Edge, double[] Law)> Laws, bool Sorted)? Script(string name)
+    // The script's shape, its laws and the area it holds the result to: restore [locate_data_file X] s, updatevol s_N u r u r
+    // ..., checkprops result -s A
+    private static (Shape Shape, List<(int Edge, double[] Law)> Laws, bool Sorted, double Area)? Script(string name)
     {
         string path = Path.Combine(Metadata("OcctSourceDir"), "tests", "blend", "buildevol", name);
         if (!File.Exists(path))
@@ -56,6 +58,7 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
 
         Shape? shape = null;
         bool sorted = false;
+        double area = double.NaN;
         List<(int, double[])> laws = [];
         foreach (string raw in File.ReadAllLines(path))
         {
@@ -75,6 +78,10 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
             {
                 sorted = true;
             }
+            else if (line.StartsWith("checkprops result -s ", StringComparison.Ordinal))
+            {
+                area = double.Parse(line.Split(' ', StringSplitOptions.RemoveEmptyEntries)[3], CultureInfo.InvariantCulture);
+            }
             else if (line.StartsWith("updatevol", StringComparison.Ordinal))
             {
                 string[] words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -83,7 +90,7 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
             }
         }
 
-        return shape is { } s ? (s, laws, sorted) : null;
+        return shape is { } s ? (s, laws, sorted, area) : null;
     }
 
     private static MakeFillet Fillet(Shape shape, List<(int Edge, double[] Law)> laws, bool sorted, bool refused, bool meet)
@@ -146,6 +153,13 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         double Tolerance(MakeFillet f) => f.IsDone ? f.Shape().AllEdges().Max(e => Tool.Tolerance(e)) : double.NaN;
         bool valid = fillet.IsDone && fillet.Shape().Validate().IsValid;
         (int lunes, int creases) = asBuilt.InternalBuilder().EnvelopeCornersMade;
+        // Its area, beside the script's (OCCT's, whose sections aren't the envelope's: decision 2232) and beside that of
+        // the same fillet with every corner tilted, which a corner a few hundredths wide should hardly move
+        double area = built ? fillet.Shape().IntegrateArea(new MassOptions { Tolerance = 1e-9 }) : double.NaN;
+        MakeFillet allTilted = built ? Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: true) : fillet;
+        double tilted = allTilted.IsDone ? allTilted.Shape().IntegrateArea(new MassOptions { Tolerance = 1e-9 }) : double.NaN;
+        text.AppendLine(string.Create(CultureInfo.InvariantCulture,
+            $"AREA\t{name}\t{area:G9}\tOCCT's {script.Area:G9}\t{(area - script.Area) / script.Area:E2}\ttilted {tilted:G9}\t{(area - tilted) / tilted:E2}"));
         text.AppendLine(string.Create(CultureInfo.InvariantCulture,
             $"CASE\t{name}\t{(built ? "built" : $"refused {asBuilt.StripeStatus(1)} ({asBuilt.InternalBuilder().EnvelopeCornerUnbuilt})")}\t{lunes} pieces of the ball, {creases} creases\tdone {fillet.IsDone}\tvalid {valid}\tedge tolerance {Tolerance(fillet):G3}\tedges off their faces {Apart(fillet):G3}\tsurfaces' ends apart {asBuilt.InternalBuilder().EnvelopeJoinWorst:G3}\tworst corner's measure {asBuilt.InternalBuilder().EnvelopeCornerWorst:G4}"));
         List<string> wrong = [];
@@ -189,6 +203,9 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         output.WriteLine(text.ToString());
         Assert.Empty(wrong);
         Assert.True(!built || valid, $"{name}: built, and not a valid shape");
+        // The script's own check, to its tolerance (checkprops: 1%): OCCT's area. And the tilted fillet's, to 1e-4
+        Assert.True(!built || Math.Abs(area - script.Area) < 1e-2 * script.Area, $"{name}: built, with an area of {area} for OCCT's {script.Area}");
+        Assert.True(!built || double.IsNaN(tilted) || Math.Abs(area - tilted) < 1e-4 * tilted, $"{name}: built, with an area of {area} for {tilted} with its corners tilted");
         Assert.True(!built || Apart(fillet) < Approximation, $"{name}: built, and an edge of a new face is {Apart(fillet)} from a face it bounds");
 
         // Nothing built is off the union of its balls past the tolerance, wherever it was read; whatever is refused is,

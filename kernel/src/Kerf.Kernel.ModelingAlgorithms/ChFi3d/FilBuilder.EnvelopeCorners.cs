@@ -43,13 +43,11 @@ internal partial class FilBuilder
             return;
         }
 
-        foreach ((Spine of, Point3D a, Point3D b, EnvelopeEnd from, EnvelopeEnd to, bool crosses) in _envelopePieces)
+        (Spine Spine, Point3D A, Point3D B, EnvelopeEnd From, EnvelopeEnd To, bool Crosses)[] corners =
+            [.. _envelopePieces.Where(piece => ReferenceEquals(piece.Spine, spine))];
+        _envelopePieces.RemoveAll(piece => ReferenceEquals(piece.Spine, spine));
+        foreach ((Spine _, Point3D a, Point3D b, EnvelopeEnd from, EnvelopeEnd to, bool crosses) in corners)
         {
-            if (!ReferenceEquals(of, spine))
-            {
-                continue;
-            }
-
             double same = 1.0e-3 * from.Radius;
             int at = 0, count = seq.Length();
             for (int j = 1; j <= count && at == 0; j++)
@@ -388,7 +386,8 @@ internal partial class FilBuilder
             double apart = onEnd.DistanceTo(first.Value(walkFirst, nextSide1 + share * (nextSide2 - nextSide1)));
             double reach = 1.3 * apart / speed.Magnitude;
             double w = walkFirst, s = nextSide1 + share * (nextSide2 - nextSide1);
-            if (reach > 0.5 * length || !first.Height(onEnd, ref w, ref s, out double high))
+            first.D1(walkFirst, s, out _, out Vector3D nextSpeed, out _);
+            if (reach > 0.5 * length || 1.3 * apart > 0.5 * nextLength * nextSpeed.Magnitude || !first.Height(onEnd, ref w, ref s, out double high))
             {
                 return Unbuilt("a surface beside it is shorter than the corner is wide");
             }

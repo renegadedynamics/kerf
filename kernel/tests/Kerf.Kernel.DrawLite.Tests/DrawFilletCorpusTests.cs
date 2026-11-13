@@ -343,11 +343,12 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         // and A6 fail, each attributed. Unit 15W2's walk through the point A6's fillet narrows to (decision 2213): OK 736.
         // Unit 15AK's envelope of an evolving radius's balls: OK 735, as buildevol/B4 fails, attributed (decision 2273).
         // Unit 15AK2's corners where the ball rests on an edge: OK 715, as 20 of buildevol's I, J and K fail, each
-        // attributed (decisions 2337, 2342).
+        // attributed (decisions 2337, 2342). Unit 15AK3 builds those corners: OK 733, as 18 of the 20 are built, with
+        // OCCT's areas to the scripts' tolerance, and K3 and K5 still fail, attributed (decision 34104).
         Assert.Equal(894, aScans.Count);
         Assert.Empty(aRunnableBefore);
         Assert.Equal(884, aNew.Count);
-        Assert.True(aRuns.Count(r => r.Status == "OK") >= 715, $"{aRuns.Count(r => r.Status == "OK")}");
+        Assert.True(aRuns.Count(r => r.Status == "OK") >= 733, $"{aRuns.Count(r => r.Status == "OK")}");
         Assert.Equal(84, aRuns.Count(r => r.Status.StartsWith("SKIPPED", StringComparison.Ordinal)));
         Assert.All(aRuns, Check);
     }
@@ -379,30 +380,15 @@ public class DrawFilletCorpusTests(ITestOutputHelper output) : ICorpusTest
         ["blend/buildevol/B4"] = "the surface its balls sweep folds: 10 to 20 over a radian of a cone's base, the larger balls covering the smaller "
                                  + "ones' circles (the walked sections were inside the union of the balls by up to 0.44); refused, where OCCT and Kerf before "
                                  + "built a surface that isn't the swept one (decision 1742)",
-        // Unit 15AK2: the radius changing where the ball comes to rest on an edge or leaves it (decisions 2335 to 2342).
-        // Each was built, valid, with OCCT's area, its surfaces either side of the corner not meeting, the edge between
-        // them given the distance as its tolerance; made to meet they are off the surface the ball sweeps by the figure,
-        // the corner's measure, against a tolerance of 1e-4, each shown against the union of its balls
-        ["blend/buildevol/I1"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.19e-4 there (decision 2342)",
-        ["blend/buildevol/I2"] = "the radius changes where its ball rests on an edge: off the swept surface by 4.6e-3 there (decision 2342)",
-        ["blend/buildevol/I3"] = "the radius changes where its ball rests on an edge: off the swept surface by 3.95e-4 there (decision 2342)",
-        ["blend/buildevol/I4"] = "the radius changes where its ball rests on an edge: off the swept surface by 3.7e-3 there (decision 2342)",
-        ["blend/buildevol/I5"] = "the radius changes where its ball rests on an edge: off the swept surface by 3.8e-3 there (decision 2342)",
-        ["blend/buildevol/I7"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.41e-4 there (decision 2342)",
-        ["blend/buildevol/I8"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.50e-4 there (decision 2342)",
-        ["blend/buildevol/J1"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.66e-3 there (decision 2342)",
-        ["blend/buildevol/J2"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.63e-3 there (decision 2342)",
-        ["blend/buildevol/J4"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.68e-4 there (decision 2342)",
-        ["blend/buildevol/J5"] = "the radius changes where its ball rests on an edge: off the swept surface by 2.55e-4 there (decision 2342)",
-        ["blend/buildevol/J7"] = "the radius changes where its ball rests on an edge: off the swept surface by 3.79e-4 there (decision 2342)",
-        ["blend/buildevol/J8"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.63e-3 there (decision 2342)",
-        ["blend/buildevol/J9"] = "the radius changes where its ball rests on an edge: off the swept surface by 3.4e-3 there (decision 2342)",
-        ["blend/buildevol/K1"] = "the radius changes where its ball rests on an edge: off the swept surface by 2.5e-3 there (decision 2342)",
-        ["blend/buildevol/K3"] = "the radius changes where its ball rests on an edge: off the swept surface by 2.8e-3 there (decision 2342)",
-        ["blend/buildevol/K4"] = "the radius changes where its ball rests on an edge: off the swept surface by 4.9e-4 there (decision 2342)",
-        ["blend/buildevol/K5"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.39e-3 there (decision 2342)",
-        ["blend/buildevol/K6"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.78e-4 there (decision 2342)",
-        ["blend/buildevol/K7"] = "the radius changes where its ball rests on an edge: off the swept surface by 1.0e-2 there (decision 2342)",
+        // Unit 15AK2: the radius changing where the ball comes to rest on an edge or leaves it (decisions 2335 to 2342):
+        // 20 of buildevol's cases were refused, each off the surface the ball sweeps past the tolerance of 1e-4 at such a
+        // corner. Unit 15AK3 (decisions 34101 to 34105) builds the corners, the piece of the ball or the crease, and 18 of
+        // them are OK again, each read within the tolerance of the union of its balls; these two are still refused
+        ["blend/buildevol/K3"] = "its ball turns about a vertex between two edges it rests on, the radius changing: the two surfaces there end 0.088 apart, "
+                                 + "on different balls, and what the ball sweeps between them isn't built; refused, where OCCT and Kerf before joined them "
+                                 + "under an edge's tolerance of 0.09, 1.4e-3 off the swept surface (decision 34104)",
+        ["blend/buildevol/K5"] = "the radius changes where its ball rests on an edge, and the surface between two such corners (0.013 long) is shorter "
+                                 + "than the corners are wide (0.08): the crease its surfaces would cross in can't be built; refused (decision 34104)",
         ["blend/buildevol/K2"] = "faulty natively and before (OCCT's TODO); on the ball, the ball between two edges pivots about a point of the cylinder's rim, the walk between them stops there and the evolving fillet fails (decision 2217)",
         ["bugs/modalg_7/bug27711_3"] = "reconstruction order: the second blend names edges by explode index of the first result, other edges here; blend fails (decision 1738)",
         // OCCT's sample, not the port (decision 1310): its second weld names _model_28, an edge the first blend
