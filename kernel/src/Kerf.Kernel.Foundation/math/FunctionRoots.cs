@@ -23,7 +23,10 @@ internal class FunctionRoots
     private readonly NCollection_Sequence<double> _sol = new();
     private readonly NCollection_Sequence<int> _nbStateSol = new();
 
-    /// <summary>The derivative of a function, as a function (math_FunctionRoots.cxx's DerivFunction).</summary>
+    /// <summary>
+    /// The derivative of a function, as a function (math_FunctionRoots.cxx's DerivFunction); upstream 71658f6c8f
+    /// remembers a derivative that failed or wasn't finite.
+    /// </summary>
     private sealed class DerivFunction : Function
     {
         private readonly FunctionWithDerivative _f;
@@ -33,10 +36,22 @@ internal class FunctionRoots
             _f = f;
         }
 
-        public override bool Value(double x, out double fval) => _f.Derivative(x, out fval);
+        public bool HasFailed { get; private set; }
+
+        public override bool Value(double x, out double fval)
+        {
+            if (!_f.Derivative(x, out fval) || !double.IsFinite(fval))
+            {
+                HasFailed = true;
+                return false;
+            }
+
+            return true;
+        }
     }
 
-    private static void AppendRoot(NCollection_Sequence<double> sol, NCollection_Sequence<int> nbStateSol, double x,
+    // Upstream 71658f6c8f: false when the function fails at the root, whose state it reads
+    private static bool AppendRoot(NCollection_Sequence<double> sol, NCollection_Sequence<int> nbStateSol, double x,
                                    FunctionWithDerivative f, double dX)
     {
         int n = sol.Length();
@@ -44,8 +59,12 @@ internal class FunctionRoots
 
         if (n == 0)
         {
+            if (!f.Value(x, out t) || !double.IsFinite(t))
+            {
+                return false;
+            }
+
             sol.Append(x);
-            f.Value(x, out t);
             nbStateSol.Append(f.GetStateNumber());
         }
         else
@@ -70,22 +89,32 @@ internal class FunctionRoots
                 i++;
             } //-- while
 
-            if (pl > n)
+            if (pl > 0)
             {
-                sol.Append(x);
-                f.Value(x, out t);
-                nbStateSol.Append(f.GetStateNumber());
-            }
-            else if (pl > 0)
-            {
-                sol.InsertBefore(pl, x);
-                f.Value(x, out t);
-                nbStateSol.InsertBefore(pl, f.GetStateNumber());
+                if (!f.Value(x, out t) || !double.IsFinite(t))
+                {
+                    return false;
+                }
+
+                if (pl > n)
+                {
+                    sol.Append(x);
+                    nbStateSol.Append(f.GetStateNumber());
+                }
+                else
+                {
+                    sol.InsertBefore(pl, x);
+                    nbStateSol.InsertBefore(pl, f.GetStateNumber());
+                }
             }
         }
+
+        return true;
     }
 
-    private static void Solve(FunctionWithDerivative f, double k, double x1, double y1, double x2, double y2,
+    // Upstream 71658f6c8f: false when an evaluation fails or isn't finite, or the search doesn't converge, where 8.0.1 went
+    // on as if there were no root
+    private static bool Solve(FunctionWithDerivative f, double k, double x1, double y1, double x2, double y2,
                               double tol, double dX, NCollection_Sequence<double> sol, NCollection_Sequence<int> nbStateSol)
     {
         int iter = 0;
@@ -125,31 +154,35 @@ internal class FunctionRoots
                 xp = b;
                 do
                 {
-                    ok = f.Values(xp, out yp, out dp);
-                    if (ok)
+                    if (!f.Values(xp, out yp, out dp) || !double.IsFinite(yp) || !double.IsFinite(dp))
                     {
-                        ok = false;
-                        if (dp > 1e-10 || dp < -1e-10)
+                        return false;
+                    }
+
+                    ok = false;
+                    if (dp > 1e-10 || dp < -1e-10)
+                    {
+                        xp = xp - (yp - k) / dp;
+                    }
+
+                    if (xp <= x2 && xp >= x1)
+                    {
+                        if (!f.Value(xp, out yp) || !double.IsFinite(yp))
                         {
-                            xp = xp - (yp - k) / dp;
+                            return false;
                         }
 
-                        if (xp <= x2 && xp >= x1)
+                        yp -= k;
+                        if (Math.Abs(yp) < Math.Abs(fb))
                         {
-                            f.Value(xp, out yp);
-                            yp -= k;
-                            if (Math.Abs(yp) < Math.Abs(fb))
-                            {
-                                b = xp;
-                                fb = yp;
-                                ok = true;
-                            }
+                            b = xp;
+                            fb = yp;
+                            ok = true;
                         }
                     }
                 } while (ok && --itern >= 0);
 
-                AppendRoot(sol, nbStateSol, b, f, dX);
-                return;
+                return AppendRoot(sol, nbStateSol, b, f, dX);
             }
 
             if (Math.Abs(e) >= tol1 && Math.Abs(fa) > Math.Abs(fb))
@@ -212,9 +245,15 @@ internal class FunctionRoots
                 }
             }
 
-            f.Value(b, out fb);
+            if (!f.Value(b, out fb) || !double.IsFinite(fb))
+            {
+                return false;
+            }
+
             fb -= k;
         }
+
+        return false;
     }
 
     /// <summary>
@@ -273,7 +312,7 @@ internal class FunctionRoots
                     x = xn;
                 }
 
-                ok = f.Value(x, out aux);
+                ok = f.Value(x, out aux) && double.IsFinite(aux);
                 if (ok)
                 {
                     ptrval[++nvalid] = aux - k;
@@ -322,7 +361,11 @@ internal class FunctionRoots
                         {
                             //-- --------------------------------------------------
                             //-- changement de signe dans Xi Xi+1
-                            Solve(f, k, x, ptrval[i], X2, ptrval[ip1], tol, nEpsX, _sol, _nbStateSol);
+                            if (!Solve(f, k, x, ptrval[i], X2, ptrval[ip1], tol, nEpsX, _sol, _nbStateSol))
+                            {
+                                _done = false;
+                                return;
+                            }
                         }
                     }
                     else
@@ -331,7 +374,11 @@ internal class FunctionRoots
                         {
                             //-- --------------------------------------------------
                             //-- changement de signe dans Xi Xi+1
-                            Solve(f, k, x, ptrval[i], X2, ptrval[ip1], tol, nEpsX, _sol, _nbStateSol);
+                            if (!Solve(f, k, x, ptrval[i], X2, ptrval[ip1], tol, nEpsX, _sol, _nbStateSol))
+                            {
+                                _done = false;
+                                return;
+                            }
                         }
                     }
                 }
@@ -342,6 +389,8 @@ internal class FunctionRoots
                 //-- On prend 2 points u0,u1 au voisinage de Xi
                 //-- Si (F(u0)-K)*(F(u1)-K) <0   on lance une recherche
                 //-- Sinon si (F(u0)-K)*(F(u1)-K) !=0 on insere le point X
+                // OCCT takes u0 and u1 at the same point, X + dx/2, so it never searches here, and keeps X only where F is
+                // off K there. Upstream 71658f6c8f mends both; neither is ported (decision 34301)
                 for (i = 0; i <= n; i++)
                 {
                     if (ptrval[i] == 0)
@@ -377,19 +426,28 @@ internal class FunctionRoots
                         }
 
                         double y0, y1;
-                        f.Value(u0, out y0);
+                        if (!f.Value(u0, out y0) || !double.IsFinite(y0) || !f.Value(u1, out y1) || !double.IsFinite(y1))
+                        {
+                            _done = false;
+                            return;
+                        }
+
                         y0 -= k;
-                        f.Value(u1, out y1);
                         y1 -= k;
                         if (y0 * y1 < 0.0)
                         {
-                            Solve(f, k, u0, y0, u1, y1, tol, nEpsX, _sol, _nbStateSol);
+                            if (!Solve(f, k, u0, y0, u1, y1, tol, nEpsX, _sol, _nbStateSol))
+                            {
+                                _done = false;
+                                return;
+                            }
                         }
                         else
                         {
-                            if (y0 != 0.0 || y1 != 0.0)
+                            if ((y0 != 0.0 || y1 != 0.0) && !AppendRoot(_sol, _nbStateSol, x, f, nEpsX))
                             {
-                                AppendRoot(_sol, _nbStateSol, x, f, nEpsX);
+                                _done = false;
+                                return;
                             }
                         }
                     }
@@ -399,12 +457,20 @@ internal class FunctionRoots
                 //-- Il faut traiter differement le cas des points en bout :
                 if (ptrval[0] <= epsF && ptrval[0] >= -epsF)
                 {
-                    AppendRoot(_sol, _nbStateSol, X0, f, nEpsX);
+                    if (!AppendRoot(_sol, _nbStateSol, X0, f, nEpsX))
+                    {
+                        _done = false;
+                        return;
+                    }
                 }
 
                 if (ptrval[n] <= epsF && ptrval[n] >= -epsF)
                 {
-                    AppendRoot(_sol, _nbStateSol, xn, f, nEpsX);
+                    if (!AppendRoot(_sol, _nbStateSol, xn, f, nEpsX))
+                    {
+                        _done = false;
+                        return;
+                    }
                 }
 
                 //-- --------------------------------------------------------------------------------
@@ -438,7 +504,12 @@ internal class FunctionRoots
                                 xm1 = X0;
                             }
 
-                            f.Values(xm1, out ym, out dym);
+                            if (!f.Values(xm1, out ym, out dym) || !double.IsFinite(ym) || !double.IsFinite(dym))
+                            {
+                                _done = false;
+                                return;
+                            }
+
                             ym -= k;
                             if (dym < -1e-10 || dym > 1e-10)
                             {                   // normalement dym < 0
@@ -458,7 +529,12 @@ internal class FunctionRoots
                                     xp1 = xn;
                                 }
 
-                                f.Values(xp1, out ym, out dym);
+                                if (!f.Values(xp1, out ym, out dym) || !double.IsFinite(ym) || !double.IsFinite(dym))
+                                {
+                                    _done = false;
+                                    return;
+                                }
+
                                 ym -= k;
                                 if (dym < -1e-10 || dym > 1e-10)
                                 {                   // normalement dym > 0
@@ -483,7 +559,12 @@ internal class FunctionRoots
                                 xm1 = X0;
                             }
 
-                            f.Values(xm1, out ym, out dym);
+                            if (!f.Values(xm1, out ym, out dym) || !double.IsFinite(ym) || !double.IsFinite(dym))
+                            {
+                                _done = false;
+                                return;
+                            }
+
                             ym -= k;
                             if (dym > 1e-10 || dym < -1e-10)
                             {                   // normalement dym > 0
@@ -505,7 +586,12 @@ internal class FunctionRoots
                                     xm1 = X0;
                                 }
 
-                                f.Values(xm1, out ym, out dym);
+                                if (!f.Values(xm1, out ym, out dym) || !double.IsFinite(ym) || !double.IsFinite(dym))
+                                {
+                                    _done = false;
+                                    return;
+                                }
+
                                 ym -= k;
                                 if (dym > 1e-10 || dym < -1e-10)
                                 {                   // normalement dym < 0
@@ -543,11 +629,24 @@ internal class FunctionRoots
                         //-- by searching for the zero of the function derivative
                         DerivFunction derF = new(f);
                         BracketedRoot br = new(derF, x0, x3, _EpsX);
+                        if (derF.HasFailed)
+                        {
+                            _done = false;
+                            return;
+                        }
+
                         if (br.IsDone)
                         {
                             solX1 = br.Root();
-                            f.Value(solX1, out val1);
-                            val1 = Math.Abs(val1);
+                            if (!f.Value(solX1, out val1) || !double.IsFinite(val1))
+                            {
+                                _done = false;
+                                return;
+                            }
+
+                            // Upstream 71658f6c8f: the distance from the target, where 8.0.1 took |F| and so found a root
+                            // wherever F was near 0 whatever K
+                            val1 = Math.Abs(val1 - k);
                             if (val1 < epsF)
                             {
                                 isSol1 = true;
@@ -581,9 +680,19 @@ internal class FunctionRoots
                         }
 
                         double f1, f2;
-                        f.Value(x1, out f1);
+                        if (!f.Value(x1, out f1) || !double.IsFinite(f1))
+                        {
+                            _done = false;
+                            return;
+                        }
+
                         f1 -= k;
-                        f.Value(x2, out f2);
+                        if (!f.Value(x2, out f2) || !double.IsFinite(f2))
+                        {
+                            _done = false;
+                            return;
+                        }
+
                         f2 -= k;
                         double tolX = 0.001 * nEpsX;
                         while (Math.Abs(x3 - x0) > tolCR * (Math.Abs(x1) + Math.Abs(x2)) && (Math.Abs(x1 - x2) > tolX))
@@ -597,7 +706,12 @@ internal class FunctionRoots
                                     x2 = r * x1 + c * x3;
                                     f0 = f1;
                                     f1 = f2;
-                                    f.Value(x2, out f2);
+                                    if (!f.Value(x2, out f2) || !double.IsFinite(f2))
+                                    {
+                                        _done = false;
+                                        return;
+                                    }
+
                                     f2 -= k;
                                 }
                                 else
@@ -607,7 +721,12 @@ internal class FunctionRoots
                                     x1 = r * x2 + c * x0;
                                     f3 = f2;
                                     f2 = f1;
-                                    f.Value(x1, out f1);
+                                    if (!f.Value(x1, out f1) || !double.IsFinite(f1))
+                                    {
+                                        _done = false;
+                                        return;
+                                    }
+
                                     f1 -= k;
                                 }
                             }
@@ -620,7 +739,12 @@ internal class FunctionRoots
                                     x2 = r * x1 + c * x3;
                                     f0 = f1;
                                     f1 = f2;
-                                    f.Value(x2, out f2);
+                                    if (!f.Value(x2, out f2) || !double.IsFinite(f2))
+                                    {
+                                        _done = false;
+                                        return;
+                                    }
+
                                     f2 -= k;
                                 }
                                 else
@@ -630,21 +754,28 @@ internal class FunctionRoots
                                     x1 = r * x2 + c * x0;
                                     f3 = f2;
                                     f2 = f1;
-                                    f.Value(x1, out f1);
+                                    if (!f.Value(x1, out f1) || !double.IsFinite(f1))
+                                    {
+                                        _done = false;
+                                        return;
+                                    }
+
                                     f1 -= k;
                                 }
                             }
 
                             //-- On ne fait pas que chercher des extremas. Il faut verifier
                             //-- si on ne tombe pas sur une racine
-                            if (f1 * f0 < 0.0)
+                            if (f1 * f0 < 0.0 && !Solve(f, k, x0, f0, x1, f1, tol, nEpsX, _sol, _nbStateSol))
                             {
-                                Solve(f, k, x0, f0, x1, f1, tol, nEpsX, _sol, _nbStateSol);
+                                _done = false;
+                                return;
                             }
 
-                            if (f2 * f3 < 0.0)
+                            if (f2 * f3 < 0.0 && !Solve(f, k, x2, f2, x3, f3, tol, nEpsX, _sol, _nbStateSol))
                             {
-                                Solve(f, k, x2, f2, x3, f3, tol, nEpsX, _sol, _nbStateSol);
+                                _done = false;
+                                return;
                             }
                         }
 
@@ -674,34 +805,63 @@ internal class FunctionRoots
                         {
                             if (val2 - val1 > epsF)
                             {
-                                AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX);
+                                if (!AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX))
+                                {
+                                    _done = false;
+                                    return;
+                                }
                             }
                             else if (val1 - val2 > epsF)
                             {
-                                AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX);
+                                if (!AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX))
+                                {
+                                    _done = false;
+                                    return;
+                                }
                             }
                             else
                             {
                                 der1 = Math.Abs(der1);
-                                f.Derivative(solX2, out der2);
+                                if (!f.Derivative(solX2, out der2) || !double.IsFinite(der2))
+                                {
+                                    _done = false;
+                                    return;
+                                }
+
                                 der2 = Math.Abs(der2);
                                 if (der1 < der2)
                                 {
-                                    AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX);
+                                    if (!AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX))
+                                    {
+                                        _done = false;
+                                        return;
+                                    }
                                 }
                                 else
                                 {
-                                    AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX);
+                                    if (!AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX))
+                                    {
+                                        _done = false;
+                                        return;
+                                    }
                                 }
                             }
                         }
                         else if (isSol1)
                         {
-                            AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX);
+                            if (!AppendRoot(_sol, _nbStateSol, solX1, f, nEpsX))
+                            {
+                                _done = false;
+                                return;
+                            }
                         }
                         else if (isSol2)
                         {
-                            AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX);
+                            if (!AppendRoot(_sol, _nbStateSol, solX2, f, nEpsX))
+                            {
+                                _done = false;
+                                return;
+                            }
                         }
                     } //-- Recherche d un extrema
                 } //-- for
