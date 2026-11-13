@@ -138,7 +138,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         {
             output.WriteLine(aLine);
         }
-        Assert.Equal(336, aSame);
+        Assert.Equal(334, aSame);
         Assert.DoesNotContain(aDifferent, d => !KnownReadDifferences.Contains(d.Split(':')[0]));
         Assert.Contains("bug32314_corrupted.stp: native 'L 58 178 0' port 'L 58 204 0'", aDifferent);
     }
@@ -153,6 +153,9 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         // each to the entity at the record of that number (decision 2308), so the load's checks count 204 warnings for
         // native's 178, on the same 58 entities
         "bug32314_corrupted.stp",
+        // a sphere's and a torus's patches whose outer boundary curves run clockwise, which native reads as the rest of
+        // each surface, or the far side of a rod's hemispherical end (decision 35002, OCCT #1652)
+        "trj4_k1_geo-pe-203.stp", "trj4_k1_geo-pe-214.stp",
     };
 
     /// <summary>The STEP text with its varying parts masked, as tools/stepctlrec masks it.</summary>
