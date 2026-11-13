@@ -400,4 +400,33 @@ public class IntCurveSurface_LawsTests
         Assert.False(aSegment.Equals("no"));
         Assert.Contains("IntersectionSegment", aSegment.ToString());
     }
+
+    // Upstream 53706f78a8 (decision 2354): the transition was read from the surface's derivatives as they are, so a
+    // surface whose parameters run over a long range for its size (derivatives of 1e-7) gave every crossing as a
+    // tangency, which a solid's classifier skips; the crossing's direction doesn't depend on the parameters' scale
+    [Theory]
+    [InlineData(1.0)]
+    [InlineData(1e7)]
+    [InlineData(1e-7)]
+    public void A_crossing_is_in_or_out_whatever_the_scale_of_the_surfaces_parameters(double theRange)
+    {
+        var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0, 0, 0);
+        aPoles[2, 1] = new Point3D(1, 0, 0);
+        aPoles[1, 2] = new Point3D(0, 1, 0);
+        aPoles[2, 2] = new Point3D(1, 1, 0);
+        var aKnots = new NCollection_Array1<double>(1, 2);
+        aKnots[1] = 0;
+        aKnots[2] = theRange;
+        var aMults = new NCollection_Array1<int>(1, 2);
+        aMults[1] = 2;
+        aMults[2] = 2;
+        var aSheet = new BSplineSurface(aPoles, aKnots, aKnots, aMults, aMults, 1, 1);
+        HInter anUp = Check(new TrimmedCurve3D(Line(0.3, 0.6, -1, 0, 0, 1), 0, 2), aSheet, 1);
+        Assert.Equal(TransitionOnCurve.Out, anUp.Point(1).Transition());
+        HInter aDown = Check(new TrimmedCurve3D(Line(0.3, 0.6, 1, 0, 0, -1), 0, 2), aSheet, 1);
+        Assert.Equal(TransitionOnCurve.In, aDown.Point(1).Transition());
+        HInter aSlant = Check(new TrimmedCurve3D(Line(0.3, 0.6, -1, 0.001, 0, 1), 0, 2), aSheet, 1);
+        Assert.Equal(TransitionOnCurve.Out, aSlant.Point(1).Transition());
+    }
 }

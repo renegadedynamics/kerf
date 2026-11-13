@@ -430,7 +430,12 @@ public sealed partial class DrawLiteMeshOracleTests(ITestOutputHelper output) : 
     {
         string aNFile = NewFile(), aPFile = NewFile();
         Assert.True(N.BRepTools.Write(theNative, aNFile, true, theWithNormals, (N.TopTools_FormatVersion)(int)FormatVersion_CURRENT));
-        Assert.True(BrepTools.Write(thePort, aPFile, true, theWithNormals, FormatVersion_CURRENT));
+        // Deliberate difference (decision 2356): Kerf writes the normals of a face whose triangulation an edge added
+        // first, which OCCT 8.0.1 drops (mal_ecrou.brep's correctnormals); compared as 8.0.1 writes them
+        using (global::Kerf.Engine.Exchange.Brep.NativeFaceNormals.Scope())
+        {
+            Assert.True(BrepTools.Write(thePort, aPFile, true, theWithNormals, FormatVersion_CURRENT));
+        }
         myTexts++;
         if (File.ReadAllText(aNFile, Encoding.Latin1) == File.ReadAllText(aPFile, Encoding.Latin1))
         {
