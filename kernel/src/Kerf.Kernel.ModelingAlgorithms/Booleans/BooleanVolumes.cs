@@ -118,7 +118,7 @@ public static class BooleanVolumes
     /// The error if <paramref name="result"/> can't be what <paramref name="rule"/> makes of <paramref name="arguments"/> and
     /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures, or saying that its faces don't close,
     /// though no point shows it wrong, so the solid they bound isn't the one asked for; <c>measurement.unconfirmed</c> where a
-    /// volume it needs couldn't be confirmed to its precision, as an unknown volume proves nothing right (decision 34806). Null
+    /// volume it needs couldn't be confirmed to its precision, as an unknown volume proves nothing right (decision 2460). Null
     /// if it may be right, or if no rule applies to these shapes.
     /// </summary>
     /// <param name="rule">The operation.</param>

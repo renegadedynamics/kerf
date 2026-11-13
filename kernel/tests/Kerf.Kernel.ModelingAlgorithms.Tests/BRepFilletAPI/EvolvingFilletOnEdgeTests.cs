@@ -372,7 +372,7 @@ public class EvolvingFilletOnEdgeTests
         Shape result = chfi3d.Shape();
         Assert.True(result.Validate().IsValid);
         Assert.InRange(chfi3d.InternalBuilder().EnvelopeCornerWorst, 4.7e-5, 5.1e-5);
-        // At the default precision: its corner patches can't be confirmed to 1e-9 (decision 34802), and at 1e-10 the area is NaN
+        // At the default precision: its corner patches can't be confirmed to 1e-9 (decision 2456), and at 1e-10 the area is NaN
         Assert.InRange(result.IntegrateArea(), 766.9996 - 3e-4, 766.9996 + 3e-4);
         Assert.True(result.AllEdges().Max(e => Tool.Tolerance(e)) < 1e-3);
     }

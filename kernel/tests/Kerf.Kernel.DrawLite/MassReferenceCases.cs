@@ -49,7 +49,7 @@ internal static class MassReferenceCases
         ["bugs/modalg_7/bug28828_21"] = ["The volume of result shape is 446299"],
         ["bugs/modalg_7/bug28828_6"] = ["The volume of result shape is 73604.4"],
         // bug31845_2, L3, L4 and L5 at Kerf's figures since offset, extrusion and revolution faces are integrated in their
-        // basis's spans (unit 15E15, decision 34801: 213.285, 330.72, 252.144 and 347.677 before; L3's and L5's now agree
+        // basis's spans (unit 15E15, decision 2455: 213.285, 330.72, 252.144 and 347.677 before; L3's and L5's now agree
         // with the precise measures)
         ["bugs/modalg_7/bug31845_2"] = ["The area of result shape is 213.281"],
         ["feat/featprism/M1"] = ["The area of result shape is 1147.87"],

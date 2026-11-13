@@ -365,7 +365,7 @@ internal static class MassPropertiesBuilder
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
     /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
     /// <param name="confirm">Confirm each face that isn't a plane, cylinder, cone, sphere or torus by integrating it again
-    /// finer, taking the finer where they differ by more than <paramref name="eps"/> (Kerf, decision 34802); the error returned
+    /// finer, taking the finer where they differ by more than <paramref name="eps"/> (Kerf, decision 2456); the error returned
     /// is infinite where nothing confirmed a face.</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double SurfaceProperties(in Shape s, Properties sProps, double eps, bool skipShared = false, bool massOnly = false,
@@ -675,10 +675,10 @@ internal static class MassPropertiesBuilder
         return true;
     }
 
-    /// <summary>How many finer integrations, each ten times finer, may confirm a face's figure (decision 34802).</summary>
+    /// <summary>How many finer integrations, each ten times finer, may confirm a face's figure (decision 2456).</summary>
     private const int ConfirmLevels = 4;
 
-    /// <summary>The finest precision a face is confirmed to: a tolerance below it is confirmed to it (decision 34802). Swept faces'
+    /// <summary>The finest precision a face is confirmed to: a tolerance below it is confirmed to it (decision 2456). Swept faces'
     /// integrations ten and a hundred times finer than 1e-12 stop at their limit of subdivisions, so nothing would confirm them.</summary>
     private const double ConfirmFloor = 1e-10;
 
@@ -686,7 +686,7 @@ internal static class MassPropertiesBuilder
     /// A face's figure at <paramref name="eps"/> (<paramref name="first"/>), confirmed by integrating the face again ten times
     /// finer: kept where the two agree to <paramref name="eps"/> of the finer, which is the figure unchanged to the bit;
     /// otherwise the finer is confirmed in turn by one ten times finer again, up to <see cref="ConfirmLevels"/> times, and the
-    /// first that's confirmed is returned (unit 15E15, decision 34802). A finer integration that disagrees and doesn't reach its
+    /// first that's confirmed is returned (unit 15E15, decision 2456). A finer integration that disagrees and doesn't reach its
     /// own precision ends the search. The adaptive estimate isn't a bound: two Gauss
     /// orders can agree far from the integral, and swept and offset faces came out up to 3e-5 off at 1e-6 with estimates of
     /// 1e-12. A volume's contribution about a point may be near zero, so it's compared against the most the face could
@@ -1025,7 +1025,7 @@ internal static class MassPropertiesBuilder
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
     /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
     /// <param name="confirm">Confirm each face that isn't a plane, cylinder, cone, sphere or torus by integrating it again
-    /// finer, taking the finer where they differ by more than <paramref name="eps"/> (Kerf, decision 34802); the error returned
+    /// finer, taking the finer where they differ by more than <paramref name="eps"/> (Kerf, decision 2456); the error returned
     /// is infinite where nothing confirmed a face.</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double VolumeProperties(in Shape s,

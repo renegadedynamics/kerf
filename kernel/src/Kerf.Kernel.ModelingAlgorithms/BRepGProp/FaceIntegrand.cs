@@ -567,7 +567,7 @@ internal sealed class FaceIntegrand
         }
     }
 
-    // ---- Kerf: where the adaptive integration breaks its intervals (unit 15E15, decision 34801) ----
+    // ---- Kerf: where the adaptive integration breaks its intervals (unit 15E15, decision 2455) ----
     //
     // OCCT's SUIntSubs and UKnots give one interval to an offset, extrusion or revolution surface whatever its basis.
     // Gauss points across a basis's knot, where the integrand
@@ -576,10 +576,10 @@ internal sealed class FaceIntegrand
     // the surface's spans of C2 instead (a B-spline's knots, as OCCT has them; an offset's, extrusion's or revolution's
     // basis's). OCCT's methods above are kept as they are for the oracle's comparisons; only MeasurementGauss's adaptive
     // form calls these. Breaking a boundary curve where it crosses a span's bound as well was tried and left out: it moved
-    // two corner patches of blend/buildevol/K8 away from a fine mesh (decision 34801).
+    // two corner patches of blend/buildevol/K8 away from a fine mesh (decision 2455).
 
     /// <summary>Whether the face's surface is a plane, cylinder, cone, sphere or torus, where the adaptive estimate is
-    /// taken as it stands (decision 34802).</summary>
+    /// taken as it stands (decision 2456).</summary>
     public bool IsElementary => _surface.GetType() is Plane or SurfaceKind.Cylinder or SurfaceKind.Cone or SurfaceKind.Sphere or SurfaceKind.Torus;
 
     /// <summary>The U bounds of the surface's spans for the adaptive integration: <see cref="UKnots"/>, or the spans of C2

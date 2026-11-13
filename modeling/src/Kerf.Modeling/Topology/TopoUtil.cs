@@ -243,7 +243,7 @@ internal static partial class TopoUtil
 
     /// <summary>
     /// A measure, or where the kernel couldn't confirm it to its precision a <see cref="ModelingException"/> with
-    /// <c>measurement.unconfirmed</c>, naming the face and why, rather than its <see cref="ArithmeticException"/> (decision 34806).
+    /// <c>measurement.unconfirmed</c>, naming the face and why, rather than its <see cref="ArithmeticException"/> (decision 2460).
     /// </summary>
     internal static T Measuring<T>(string what, Func<T> measure) => Failures.Doing(() => what, measure);
 

@@ -10,7 +10,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepGProp;
 
 /// <summary>
-/// A measure that couldn't be confirmed to its precision (decision 34806): the public forms that return a number throw an
+/// A measure that couldn't be confirmed to its precision (decision 2460): the public forms that return a number throw an
 /// <see cref="ArithmeticException"/> whose diagnostic is <c>measurement.unconfirmed</c>, <c>Measure</c> fails with it, and no
 /// check or proof of the kernel's passes it. Every confirmation is made to fail on the test's thread, as where nothing
 /// confirms a face.

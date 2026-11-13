@@ -53,7 +53,7 @@ internal static partial class FailureDiagnostics
         KernelArgumentNullException.ThrowIfNull(exception);
         if (exception is UnconfirmedMeasureException unconfirmed)
         {
-            // A measure not known to its precision says so with its own code (decision 34806)
+            // A measure not known to its precision says so with its own code (decision 2460)
             return unconfirmed.Diagnostic;
         }
 

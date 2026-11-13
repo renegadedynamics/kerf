@@ -562,7 +562,7 @@ internal static partial class FilletLimits
         }
         double expected = Measured(input) + change;
         double area = Integral.Area(result);
-        // NaN, a volume that couldn't be confirmed, passes no comparison: the proof fails (decision 34806)
+        // NaN, a volume that couldn't be confirmed, passes no comparison: the proof fails (decision 2460)
         return Math.Abs(Measured(result) - expected) <= Allowed(expected, true) + Tolerance * area;
     }
 

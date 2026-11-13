@@ -717,7 +717,7 @@ internal sealed class MeasurementGauss
         NumericTables.GaussPoints(nbUGaussP[1], uGaussP[1]);
         NumericTables.GaussWeights(nbUGaussP[1], uGaussW[1]);
 
-        // Kerf: the surface's spans, an offset's, extrusion's or revolution's basis's too (decision 34801)
+        // Kerf: the surface's spans, an offset's, extrusion's or revolution's basis's too (decision 2455)
         double[] uSpans = surface.IntegrationUKnots(), vSpans = surface.IntegrationVKnots();
         var uKnots = new NCollection_Array1<double>(1, uSpans.Length);
         uSpans.CopyTo(uKnots.AsSpan());

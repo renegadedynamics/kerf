@@ -10,7 +10,7 @@ namespace Kerf.Kernel.DrawLite.Tests;
 
 /// <summary>
 /// The public area and volume of the corpus's swept and offset faces, right to the tolerance they're asked at (unit 15E15,
-/// decisions 34801 and 34802). Each case's <c>result</c> as its script makes it, measured at the default 1e-6 and against the
+/// decisions 2455 and 2456). Each case's <c>result</c> as its script makes it, measured at the default 1e-6 and against the
 /// same measure at 1e-10. Before, the offsets' faces were integrated across their basis's knots and the sweeps' estimate agreed
 /// with itself far from the integral: bug5805_21's area 3e-5 out, L7's volume 1e-3 out, both with estimates under 1e-8.
 /// </summary>

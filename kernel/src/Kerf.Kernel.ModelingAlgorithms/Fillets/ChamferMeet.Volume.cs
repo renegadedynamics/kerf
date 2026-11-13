@@ -87,7 +87,7 @@ internal static partial class ChamferMeet
                                                                                   double tolerance, double near, double measured, double measuredError, double share)
     {
         (double before, double beforeError) = MeasuredVolume(input);
-        // A volume that couldn't be confirmed proves nothing (decision 34806)
+        // A volume that couldn't be confirmed proves nothing (decision 2460)
         if (double.IsNaN(before) || double.IsNaN(beforeError) || double.IsNaN(measured) || double.IsNaN(measuredError))
         {
             return (Verdict.Refused, double.NaN, double.NaN);
@@ -173,7 +173,7 @@ internal static partial class ChamferMeet
 
     // A solid's volume at 1e-10, and its error: what it moved from 1e-8, and the sum's rounding (unit 15AP). Where it was taken
     // at 1e-8 and a part in a million of it allowed, that was 7.4e-4 on the loft, which the integrals achieve to about 1e-9. NaN
-    // where either couldn't be confirmed (decision 34806)
+    // where either couldn't be confirmed (decision 2460)
     private static (double Volume, double Error) MeasuredVolume(Shape shape)
     {
         double coarse = Kerf.Measurement.MeasureOperations.VolumeOrNaN(shape, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 });

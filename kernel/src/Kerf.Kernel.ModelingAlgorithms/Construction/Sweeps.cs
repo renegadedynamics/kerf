@@ -61,7 +61,7 @@ public static class Sweeps
         }
         catch (Kerf.Engine.Foundation.UnconfirmedMeasureException e)
         {
-            // A volume not known proves nothing either way (decision 34806)
+            // A volume not known proves nothing either way (decision 2460)
             return e.Diagnostic;
         }
     }

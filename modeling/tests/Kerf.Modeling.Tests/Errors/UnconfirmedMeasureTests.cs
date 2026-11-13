@@ -5,7 +5,7 @@ namespace Kerf.Modeling.Tests.Errors;
 using Kerf.Modeling;
 
 /// <summary>
-/// Where the kernel can't confirm an area, volume or centre to its precision (decision 34806), the layer says so as it says any
+/// Where the kernel can't confirm an area, volume or centre to its precision (decision 2460), the layer says so as it says any
 /// failure: a property throws a <see cref="ModelingException"/> with <c>measurement.unconfirmed</c>, naming the face and why,
 /// and an operation whose check needs the measure fails with it. Every confirmation is made to fail on the test's thread.
 /// </summary>

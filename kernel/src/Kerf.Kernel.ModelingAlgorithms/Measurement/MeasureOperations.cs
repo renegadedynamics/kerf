@@ -20,10 +20,10 @@ namespace Kerf.Measurement;
 /// </summary>
 /// <remarks>
 /// Volume, area and length are numbers: OCCT's integration doesn't fail on a valid shape, and on an invalid one the number
-/// is what it is. An area, volume or centre asked for to a precision is confirmed to it face by face (decision 34802); where
+/// is what it is. An area, volume or centre asked for to a precision is confirmed to it face by face (decision 2456); where
 /// it can't be, the forms that return a number throw an <see cref="ArithmeticException"/> saying which face and why, whose
 /// <see cref="Diagnostic.FromException"/> is <see cref="Unconfirmed"/>, and <see cref="Measure{TShape}"/> returns that as a
-/// failure (decision 34806). A distance can fail, so it is a <see cref="Result{T}"/>. A null shape is misuse
+/// failure (decision 2460). A distance can fail, so it is a <see cref="Result{T}"/>. A null shape is misuse
 /// (<see cref="ArgumentException"/>).
 /// </remarks>
 public static class MeasureOperations
@@ -33,7 +33,7 @@ public static class MeasureOperations
 
     /// <summary>
     /// The code of an area, volume or centre that couldn't be confirmed to the precision asked for:
-    /// <c>measurement.unconfirmed</c> (decision 34806). The message names the face and why.
+    /// <c>measurement.unconfirmed</c> (decision 2460). The message names the face and why.
     /// </summary>
     public static DiagnosticCode Unconfirmed { get; } = new("measurement.unconfirmed");
 
@@ -43,13 +43,13 @@ public static class MeasureOperations
         /// without faces; for an open shell, the signed volume of the cone from its location's origin.</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
-        /// decision 34806).</exception>
+        /// decision 2460).</exception>
         public double IntegrateVolume(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Volume, options, massOnly: true).Mass();
 
         /// <summary>The area of the shape's faces (<c>BRepGProp::SurfaceProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
-        /// decision 34806).</exception>
+        /// decision 2460).</exception>
         public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options, massOnly: true).Mass();
 
         /// <summary>
@@ -58,7 +58,7 @@ public static class MeasureOperations
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
-        /// decision 34806).</exception>
+        /// decision 2460).</exception>
         public Point3D CentreOfArea(MassOptions? options = null)
         {
             Shape s = NotNull(shape.AsShape());
@@ -80,13 +80,13 @@ public static class MeasureOperations
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> isn't one of the enum's.</exception>
         /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
-        /// decision 34806).</exception>
+        /// decision 2460).</exception>
         public MassProperties MassProperties(Dimension dimension, MassOptions? options = null)
             => ToMassProperties(Integrate(NotNull(shape.AsShape()), dimension, options ?? Moments), dimension);
 
         /// <summary>
         /// <see cref="MassProperties"/> as a result: a failure with <see cref="Unconfirmed"/>, naming the face and why, where the
-        /// figures couldn't be confirmed to the tolerance (decision 34806).
+        /// figures couldn't be confirmed to the tolerance (decision 2460).
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> isn't one of the enum's.</exception>
@@ -276,14 +276,14 @@ public static class MeasureOperations
         return props;
     }
 
-    /// <summary>For tests: every confirmation on this thread fails, as where nothing confirms a face (decision 34806).</summary>
+    /// <summary>For tests: every confirmation on this thread fails, as where nothing confirms a face (decision 2460).</summary>
     [ThreadStatic]
     internal static bool s_confirmNothing;
 
     // Each face that isn't a plane, cylinder, cone, sphere or torus is integrated again ten times finer and kept where the two
-    // agree to the tolerance (decision 34802). Where no finer integration confirmed a face, or a face's boundary couldn't be
+    // agree to the tolerance (decision 2456). Where no finer integration confirmed a face, or a face's boundary couldn't be
     // read, the error is infinite: a measure that isn't known to the precision asked for, said by measuring the faces one by
-    // one to name the first such face (decision 34806)
+    // one to name the first such face (decision 2460)
     private static void Confirmed(double error, in Shape shape, Dimension dimension, MassOptions options, bool massOnly)
     {
         if (!s_confirmNothing && error < global::Kerf.Engine.Foundation.Precision.Infinite())
@@ -314,7 +314,7 @@ public static class MeasureOperations
 
     /// <summary>
     /// The volume or area to <paramref name="options"/>, or NaN where it couldn't be confirmed: for the kernel's checks and
-    /// proofs, each of which compares it so that a NaN fails (decision 34806).
+    /// proofs, each of which compares it so that a NaN fails (decision 2460).
     /// </summary>
     internal static double VolumeOrNaN(in Shape shape, MassOptions options)
     {

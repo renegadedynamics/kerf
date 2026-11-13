@@ -36,7 +36,7 @@ public static class OffsetVolumes
     private const double GrowthOfMitre = 1000;
 
     /// <summary>The error if <paramref name="result"/> can't be an offset of <paramref name="input"/>, or null; <c>measurement.unconfirmed</c>
-    /// where a volume or centre it needs couldn't be confirmed to its precision (decision 34806).</summary>
+    /// where a volume or centre it needs couldn't be confirmed to its precision (decision 2460).</summary>
     /// <param name="input">The shape.</param>
     /// <param name="distance">How far: outwards when positive.</param>
     /// <param name="join">The join, which says how far a corner can go.</param>

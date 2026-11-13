@@ -131,7 +131,7 @@ public sealed record Diagnostic
     /// <summary>
     /// Whether an exception is a refusal of the kernel's: the .NET exception a value or evaluator throws on misuse, as
     /// opposed to one that didn't come from the kernel's checks; and a measure that couldn't be confirmed (an
-    /// <see cref="ArithmeticException"/> with <c>measurement.unconfirmed</c>, decision 34806).
+    /// <see cref="ArithmeticException"/> with <c>measurement.unconfirmed</c>, decision 2460).
     /// </summary>
     public static bool IsKernelFailure(Exception exception) =>
         Kerf.Engine.Foundation.Refusal.IsFailure(exception) || exception is Kerf.Engine.Foundation.UnconfirmedMeasureException;

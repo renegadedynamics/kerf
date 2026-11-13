@@ -387,7 +387,7 @@ public static class BooleanOperations
             }
             // The check alone isn't enough: over the sweep five results made again were valid and passed it, 14% to 42% out
             // (decision 2291). The volume doesn't depend on a tolerance, and nor does the area, asked as well. A volume or area
-            // that couldn't be confirmed is NaN, which no comparison here passes (decision 34806)
+            // that couldn't be confirmed is NaN, which no comparison here passes (decision 2460)
             double after = MeasureOperations.VolumeOrNaN(closed.Shape, SameVolumeMeasured);
             if (!(Math.Abs(after - before) <= SameVolume * Math.Max(Math.Abs(before), Math.Abs(after))))
             {
@@ -508,7 +508,7 @@ public static class BooleanOperations
                 continue;
             }
 
-            // NaN where unconfirmed, which matches nothing (decision 34806)
+            // NaN where unconfirmed, which matches nothing (decision 2460)
             double volume = MeasureOperations.VolumeOrNaN(built.Shape, SameVolumeMeasured), area = MeasureOperations.AreaOrNaN(built.Shape, SameVolumeMeasured);
             foreach ((Result<Built<Shape>> other, double otherVolume, double otherArea) in made)
             {

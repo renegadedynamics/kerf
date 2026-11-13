@@ -210,7 +210,7 @@ public static partial class ShapeExtensions
             }
             else
             {
-                // A volume the kernel couldn't confirm is NaN here, which keeps the result as made (decision 34806)
+                // A volume the kernel couldn't confirm is NaN here, which keeps the result as made (decision 2460)
                 double cleanedVolume = Unconfirmed(() => result.IntegrateVolume()), asMadeVolume = Unconfirmed(() => uncleaned.IntegrateVolume());
                 if (!(Math.Abs(cleanedVolume - asMadeVolume) <= 1e-6 * Math.Max(Math.Abs(cleanedVolume), Math.Abs(asMadeVolume))))
                 {
@@ -490,7 +490,7 @@ public static partial class ShapeExtensions
             _ => Dimension.Volume,
         }).CentreOfMass);
 
-    // A measure, or NaN where the kernel couldn't confirm it (decision 34806)
+    // A measure, or NaN where the kernel couldn't confirm it (decision 2460)
     private static double Unconfirmed(Func<double> measure)
     {
         try
