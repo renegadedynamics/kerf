@@ -1703,7 +1703,7 @@ internal class IWalking<TheIWFunction, TheIWLine>
                                     //		if (N == 0) {
                                     if (n <= 0)
                                     { // jag 941017
-                                        MakeWalkingPoint(2, uVap[1], uVap[2], func, ref psol);
+                                        MakeBorderPoint(uVap[1], uVap[2], func, ref psol);
                                         tgtend = func.IsTangent();
                                         n = -n;
                                     }
@@ -2333,7 +2333,7 @@ internal class IWalking<TheIWFunction, TheIWLine>
                                     //		if (N==0) {
                                     if (n <= 0)
                                     { // jag 941017
-                                        MakeWalkingPoint(2, uvap[1], uvap[2], func, ref psol);
+                                        MakeBorderPoint(uvap[1], uvap[2], func, ref psol);
                                         tgtend = func.IsTangent(); // jag 940616
                                         if (isOnDegeneratedBorder)
                                         {
@@ -2957,6 +2957,22 @@ internal class IWalking<TheIWFunction, TheIWLine>
         PntOn2S psol = new();
         psol.SetValue(PathPointTool.Value3d(pathPnt), _reversed, _wd1[n].ustart, _wd1[n].vstart);
         currentLine.AddPoint(psol);
+    }
+
+    /// <summary>
+    /// The point a line ends at on the border: OCCT's walking point from the function's last evaluation, made again from the
+    /// function at (u, v) when that evaluation was elsewhere (decision 34901). Where two surfaces are tangent along the border
+    /// the solver can leave its last evaluation a long way from its root: one of #1496's lines ended a quarter turn round
+    /// the tangent circle from where it reached it, its parameters on the walked surface right and its point not. Otherwise
+    /// the two differ only in the last bits, and OCCT's point is kept.
+    /// </summary>
+    private void MakeBorderPoint(double u, double v, TheIWFunction sp, ref PntOn2S psol)
+    {
+        MakeWalkingPoint(2, u, v, sp, ref psol);
+        if (psol.Value().DistanceTo(sp.PSurface().Value(u, v)) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        {
+            MakeWalkingPoint(12, u, v, sp, ref psol);
+        }
     }
 
     /// <summary>

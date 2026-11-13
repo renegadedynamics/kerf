@@ -2494,3 +2494,9 @@ Found by unit 12J:
 | `GeomLib_CheckCurveOnSurface::Perform`, a repeated check (upstream `ec0167b409`) | Doesn't reset the status, distance and parameter | A check after a failed one keeps the failure's status | Fixed (decision 2408) |
 | `Extrema_GenLocateExtPS::Perform`, a closed surface (upstream `ec0167b409`) | A start beyond one end of a closed, not periodic, surface's range is clamped to that end by the search | A point on a B-spline cylinder, projected from a start a turn away, is found 0.35 from itself, a success | Fixed (decision 2409) |
 | `ShapeAnalysis_Surface::SurfaceNewton`, a hint already at the point (upstream `ec0167b409`) | Iterates from a converged hint; at a singular point the zero normal ends the iterations and the general projection takes any parameter along the singular edge | On a patch whose edge is a point, `NextValueOfUV` from (0, 0) at that point gives (0.273, 0) | Left: right, but it moves STEP reads off native, not yet judged (decision 2410) |
+
+## Found by unit 15E, slice 16
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `IntWalk_IWalking::ComputeOpenLine` and `ComputeCloseLine`, a line stopped on the border (`MakeWalkingPoint(2, ...)` after `TestArretCadre`) | The last point takes the parameters solved for and the function's last evaluated point, which the solver can leave elsewhere; where the surfaces are tangent along the border it is a long way off | OCCT #1496's tubes: a cylinder and a torus tangent along a circle, a line's last point a quarter turn round it, its curve 16.97 off both surfaces and a common larger than either input, a success; native 8.0.1 the same | Fixed (decision 34901) |
