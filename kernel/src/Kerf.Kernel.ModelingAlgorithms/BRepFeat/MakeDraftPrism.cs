@@ -200,18 +200,24 @@ internal sealed class MakeDraftPrism : Form
         // if there is no gluing -> call topological operations
         if (!_justGluer)
         {
-            if (_fuse)
+            if (_fuse && !_justFeat)
             {
                 Fuse f = new(_sbase, _gShape);
                 _shape = f.InternalShape();
                 UpdateDescendants(f, _shape, false);
                 Done();
             }
-            else
+            else if (!_fuse)
             {
                 Cut c = new(_sbase, _gShape);
                 _shape = c.InternalShape();
                 UpdateDescendants(c, _shape, false);
+                Done();
+            }
+            else
+            {
+                // Kerf: the separate feature (mode 2), as OCCT does since 3f3d32d9f3; 8.0.1 fused it
+                _shape = _gShape;
                 Done();
             }
         }
@@ -307,18 +313,24 @@ internal sealed class MakeDraftPrism : Form
                 UpdateDescendants(trP, trP.InternalShape(), false);
                 Explorer ex = new(trP.InternalShape(), ShapeType.Solid);
                 Shape cutsh = ex.Current();
-                if (_fuse)
+                if (_fuse && !_justFeat)
                 {
                     Fuse f = new(_sbase, cutsh);
                     _shape = f.InternalShape();
                     UpdateDescendants(f, _shape, false);
                     Done();
                 }
-                else
+                else if (!_fuse)
                 {
                     Cut c = new(_sbase, cutsh);
                     _shape = c.InternalShape();
                     UpdateDescendants(c, _shape, false);
+                    Done();
+                }
+                else
+                {
+                    // Kerf: the separate feature (mode 2), as OCCT does since 3f3d32d9f3; 8.0.1 fused it
+                    _shape = cutsh;
                     Done();
                 }
             }
@@ -499,18 +511,24 @@ internal sealed class MakeDraftPrism : Form
             }
 
             Cut trP = new(vraiDPrism, comp);
-            if (_fuse)
+            if (_fuse && !_justFeat)
             {
                 Fuse f = new(_sbase, trP.InternalShape());
                 _shape = f.InternalShape();
                 UpdateDescendants(f, _shape, false);
                 Done();
             }
-            else
+            else if (!_fuse)
             {
                 Cut c = new(_sbase, trP.InternalShape());
                 _shape = c.InternalShape();
                 UpdateDescendants(c, _shape, false);
+                Done();
+            }
+            else
+            {
+                // Kerf: the separate feature (mode 2), as OCCT does since 3f3d32d9f3; 8.0.1 fused it
+                _shape = trP.InternalShape();
                 Done();
             }
         }
@@ -675,18 +693,24 @@ internal sealed class MakeDraftPrism : Form
             }
 
             Cut trP = new(vraiDPrism, comp);
-            if (_fuse)
+            if (_fuse && !_justFeat)
             {
                 Fuse f = new(_sbase, trP.InternalShape());
                 _shape = f.InternalShape();
                 UpdateDescendants(f, _shape, false);
                 Done();
             }
-            else
+            else if (!_fuse)
             {
                 Cut c = new(_sbase, trP.InternalShape());
                 _shape = c.InternalShape();
                 UpdateDescendants(c, _shape, false);
+                Done();
+            }
+            else
+            {
+                // Kerf: the separate feature (mode 2), as OCCT does since 3f3d32d9f3; 8.0.1 fused it
+                _shape = trP.InternalShape();
                 Done();
             }
         }
@@ -744,15 +768,17 @@ internal sealed class MakeDraftPrism : Form
     public void PerformUntilHeight(in Shape until, double height)
     {
         using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
-        // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero height goes on
-        // and builds the draft prism again with the height 0
+        // Kerf: each of the two first calls returns, as OCCT does since 3f3d32d9f3; in 8.0.1 a null Until went on
+        // and threw below, and a zero height went on and built the draft prism again with the height 0
         if (until.IsNull)
         {
             Perform(height);
+            return;
         }
         if (height == 0)
         {
             Perform(until);
+            return;
         }
         Explorer exp = new(until, ShapeType.Face);
         if (!exp.More())
@@ -829,18 +855,24 @@ internal sealed class MakeDraftPrism : Form
                     b.Add(comp, s);
                 }
                 Cut trP = new(vraiDPrism, comp);
-                if (_fuse)
+                if (_fuse && !_justFeat)
                 {
                     Fuse f = new(_sbase, trP.InternalShape());
                     _shape = f.InternalShape();
                     UpdateDescendants(f, _shape, false);
                     Done();
                 }
-                else
+                else if (!_fuse)
                 {
                     Cut c = new(_sbase, trP.InternalShape());
                     _shape = c.InternalShape();
                     UpdateDescendants(c, _shape, false);
+                    Done();
+                }
+                else
+                {
+                    // Kerf: the separate feature (mode 2), as OCCT does since 3f3d32d9f3; 8.0.1 fused it
+                    _shape = trP.InternalShape();
                     Done();
                 }
             }
