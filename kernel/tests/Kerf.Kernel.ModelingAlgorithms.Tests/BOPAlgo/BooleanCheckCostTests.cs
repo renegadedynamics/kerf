@@ -52,11 +52,12 @@ public class BooleanCheckCostTests(ITestOutputHelper output)
     {
         // Every point of the boss's faces is inside the part or on it, its top on the part's: one classification each for the
         // points inside, and none for those on the part's top. 0.4.0 asked 357, those on the top twice, and measured their
-        // distances
+        // distances. Each input's faces against the result (unit 15AM) add the boss's faces inside the block, inside the fuse,
+        // and the block's top outside the boss, on its boundary: 186 in all
         Shape block = Solid.Box(20, 20, 20).Value.Shape;
         Shape boss = Moved(Solid.Cylinder(3, 5.5).Value.Shape, 10, 10, 14.5);
         Shape fused = block.Fuse(boss, Unchecked).Value.Shape;
-        Assert.True(Asked(block, boss, fused, out Diagnostic? said) <= 2 * 81);
+        Assert.True(Asked(block, boss, fused, out Diagnostic? said) <= 200);
         Assert.Null(said);
     }
 
