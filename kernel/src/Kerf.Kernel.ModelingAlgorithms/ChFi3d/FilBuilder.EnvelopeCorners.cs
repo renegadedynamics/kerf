@@ -34,7 +34,7 @@ internal partial class FilBuilder
     /// <summary>
     /// The creases past the angular tolerance: for each, its curve and the warning (`fillet.creased`) that says how far
     /// apart the two faces' normals are across it at most, and where its middle is. The owner's choice of 13 November
-    /// 2026 (decision 34109): a creased fillet is returned, with these, as the surface the ball sweeps has the crease.
+    /// 2026 (decision 2421): a creased fillet is returned, with these, as the surface the ball sweeps has the crease.
     /// </summary>
     internal IReadOnlyList<(Curve3D Curve, Diagnostic Warning)> EnvelopeCreaseWarnings =>
         [.. _envelopeCreases.Select(crease => (crease.Curve, Warning: StatusDiagnostics.FilletCreased(crease.Angle, _tolappangle, crease.Curve.Value(0.5))))

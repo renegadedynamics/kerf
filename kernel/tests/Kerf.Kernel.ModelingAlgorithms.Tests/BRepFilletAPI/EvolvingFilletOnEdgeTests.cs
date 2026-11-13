@@ -89,7 +89,7 @@ public class EvolvingFilletOnEdgeTests
     // circles where they leave a gap (EnvelopeLune), a face of its own with the contacts for corners, and the crease the two
     // surfaces cross in where they cross, each face ending on it. Every point of them is then within 1.4e-5 of the boundary
     // of the union of the balls (2.4e-6 beside the corners), no edge covers a gap, and the result is a valid shape of 15
-    // faces for 13. Since decision 34108 a corner is built wherever its two circles are more than a thousandth of the
+    // faces for 13. Since decision 2420 a corner is built wherever its two circles are more than a thousandth of the
     // ball's radius apart, whatever its measure, as a tilted surface isn't tangent to its ball along the circle it ends on: so
     // all seven have a piece of the ball and a crease on each of their two curves, and each is within 1.4e-5 of the union.
     [Theory]
@@ -201,7 +201,7 @@ public class EvolvingFilletOnEdgeTests
     //   the measure is 1.0e-2.
     // OCCT builds both, and Kerf did, with OCCT's areas.
     // Unit 15AK3: both are built, those corners made. K6 has a crease where its ball comes to rest on the rim (its other
-    // corner, 6.6e-6, is a crease too since decision 34108) and is within 1.4e-5 of the union of its balls everywhere; K7 has a crease at each of
+    // corner, 6.6e-6, is a crease too since decision 2420) and is within 1.4e-5 of the union of its balls everywhere; K7 has a crease at each of
     // the two corners where its ball comes to rest on the curves and a piece of the ball, 0.22 wide, at each of the two
     // where it leaves them, and is within 5.1e-6.
     [Theory]
@@ -422,7 +422,7 @@ public class EvolvingFilletOnEdgeTests
     // One of the corpus's that was always built, blend/buildevol/H9: a cylinder of radius 8 on a box of 20, and the fillet of
     // the circle they meet in, 1 to 4 to 3, whose ball comes to rest on the edges of the box's top and leaves them, six times.
     // Its worst corner's measure is 9.6e-5, and with every corner tilted its faces were 9.6e-5 inside the union of their balls
-    // there, and up to 0.64 degrees from tangent across the joins. Since decision 34108 its six corners are built, two pieces
+    // there, and up to 0.64 degrees from tangent across the joins. Since decision 2420 its six corners are built, two pieces
     // of the ball and four creases, and it is within 4.4e-6 of the union everywhere.
     [Fact]
     public void The_corpuss_H9_is_built_within_tolerance_of_the_union_of_its_balls()

@@ -395,7 +395,7 @@ public class FilletBlendTests
     // of the union of its balls, the arc's ends included. To 3 and 3.5 one end is a crease (its measure 9.2e-5 and 2.7e-4)
     // and the other, measuring 2.6e-5 and 6.0e-5, stays tilted, the fillet off the union by that much there. With the
     // building turned off, which only the tests can do, 3.5 and 4 are refused as before.
-    // Since decision 34108 a corner is built wherever its circles are more than a thousandth of the radius apart: from 2.5
+    // Since decision 2420 a corner is built wherever its circles are more than a thousandth of the radius apart: from 2.5
     // on both ends are, and the fillet is within 1e-5 of the union; to 1.5 they are 0.0011 and 0.0013 apart on balls of
     // radius 1.1 to 1.4, and stay tilted.
     [Theory]
