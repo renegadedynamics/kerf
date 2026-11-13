@@ -79,8 +79,8 @@ public sealed record GltfWriteOptions { public bool Binary { get; init; } = true
   their STEP ids in the message (made since decision 2308: entities whose data failed its checks, an unresolved
   reference among them, or whose translation failed; the first eight ids and the first failure's text; and, where nothing
   else was read, that the model is empty, decision 2315). Faces the STEP reader may have read wrongly are checked
-  (decision 2314): those the healing reported on and those with a vertex off its edge's curve by more than the file's
-  uncertainty, as `Validate` checks a face; an invalid one is a warning (`exchange.invalid-face`) with how many faces and
+  (decision 2314): those the healing reported on, those with a vertex off its edge's curve by more than the file's
+  uncertainty and those bounded by two edges or fewer, slivers (decision 34706), as `Validate` checks a face; an invalid one is a warning (`exchange.invalid-face`) with how many faces and
   the STEP ids of the faces they were read from, on a read that still succeeds. `Step.InvalidFace` and
   `Step.EntitySkipped` are the two warnings' codes. Assemblies nest at most `ModelNode.MaxNesting`, 64 levels, in a file or in code (decision 1854).
 - **Writers take the mesh or tree they write.** STL takes a `ShapeMesh` (meshing.md) rather than meshing a shape in

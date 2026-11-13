@@ -160,4 +160,24 @@ public class StepReadCheckTests
             "#85=PRODUCT_DEFINITION('','',#83,#84);", "#86=PRODUCT_DEFINITION_SHAPE('','',#85);", "#87=SHAPE_DEFINITION_REPRESENTATION(#86,#75);",
             "ENDSEC;", "END-ISO-10303-21;", "");
     }
+
+    [Fact]
+    public void Slivers_read_invalid_are_reported()
+    {
+        // Decision 34706: bug30790.step holds about 150 faces between two coincident edges, of no area; the healing says
+        // nothing of them, and 80 to 82 of them (as its pcurves' last bits fall) are invalid. A face bounded by two edges
+        // or fewer is now checked, so the read reports every one, whichever they are
+        string? aPath = global::Kerf.Kernel.DataExchange.Tests.StepGen.StepRoundTripTests.CorpusFiles().SingleOrDefault(f => Path.GetFileName(f) == "bug30790.step");
+        if (aPath is null)
+        {
+            return; // OCCT's dataset not fetched
+        }
+        Result<ModelNode> read = Step.Read(aPath);
+        Assert.True(read.IsSuccess, read.Error?.Message);
+        Diagnostic warning = Assert.Single(read.Diagnostics);
+        Assert.Equal(Step.InvalidFace, warning.Code);
+        int invalid = read.Value.ToShape().AllFaces().Count(face => !face.Validate().IsValid);
+        Assert.Equal(82, invalid);
+        Assert.StartsWith("82 faces of the STEP data are invalid as read", warning.Message, StringComparison.Ordinal);
+    }
 }

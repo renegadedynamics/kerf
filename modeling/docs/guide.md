@@ -344,7 +344,7 @@ reference to something that isn't in the file say, succeeds with a warning in it
 (`exchange.entity-skipped`) that names them, and says so if nothing else was read.
 
 A STEP import checks the faces it may have read wrongly: those its healing changed (a seam added, a wire reversed, an
-edge fixed) and those with a vertex off its edge's curve. Where one is invalid, the import succeeds with the warning
+edge fixed), those with a vertex off its edge's curve, and slivers bounded by two edges or fewer. Where one is invalid, the import succeeds with the warning
 `exchange.invalid-face`, which says how many faces and which STEP faces they were read from. The model holds them as
 read. To refuse such a model, test for the code (the kernel's `Step.InvalidFace`); to check every face, which costs
 about a fifth of a read, read the shape's `IsValid`:

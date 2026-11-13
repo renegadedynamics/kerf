@@ -14,7 +14,8 @@ namespace Kerf.Engine.Exchange.Step;
 /// costs a fifth of a read; these are the faces where the reader or the healing already knows something happened: (c) the
 /// faces the healing reported on (a message on the face or anything in it: a seam added, a wire reversed, an edge fixed)
 /// and (d) the faces with a vertex the reader found off its edge's curve by more than the file's uncertainty
-/// (<see cref="TransientProcess.OffCurveVertices"/>). Each such face of the healed shape is checked as the public
+/// (<see cref="TransientProcess.OffCurveVertices"/>), and (e) the faces bounded by two edges or fewer, slivers (decision
+/// 34706). Each such face of the healed shape is checked as the public
 /// <c>Validate</c> checks it, and those that fail go to <see cref="TransientProcess.InvalidFaces"/>, which
 /// <c>Step.Read</c> turns into its warning (<c>exchange.invalid-face</c>).
 /// </summary>
@@ -38,10 +39,6 @@ internal static class HealedFaceCheck
             said = null;
         }
         HashSet<Shape> off = tp.OffCurveVertices;
-        if (said is null && off.Count == 0)
-        {
-            return;
-        }
 
         Dictionary<Shape, Shape>? map = context?.InternalMap();
         var seen = new HashSet<Shape>(ShapeHasher.Instance);
@@ -92,10 +89,18 @@ internal static class HealedFaceCheck
         return null;
     }
 
-    /// <summary>Whether the healing reported on <paramref name="face"/> or anything in it, or it has a vertex off its curve.</summary>
+    /// <summary>
+    /// Whether the healing reported on <paramref name="face"/> or anything in it, it has a vertex off its curve, or it is
+    /// bounded by two edges or fewer (decision 34706): a sliver between two coincident curves, of no area, whose validity
+    /// its pcurves' last bits decide, as <c>bug30790.step</c>'s 150 have it.
+    /// </summary>
     private static bool IsSuspect(in Shape face, HealingMessages? said,
                                   HashSet<Shape> off)
     {
+        if (HasTwoEdgesOrFewer(face))
+        {
+            return true;
+        }
         if (said is not null && said.ContainsKey(face))
         {
             return true;
@@ -125,5 +130,18 @@ internal static class HealedFaceCheck
             }
         }
         return false;
+    }
+
+    private static bool HasTwoEdgesOrFewer(in Shape face)
+    {
+        int count = 0;
+        for (var edges = new Explorer(face, ShapeType.Edge); edges.More(); edges.Next())
+        {
+            if (++count > 2)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }

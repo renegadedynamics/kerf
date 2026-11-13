@@ -260,7 +260,7 @@ read, and what refers to them is missing from the model. Its message gives how m
 the first failure's text, and ends "Nothing else was read: the model is empty." where nothing is left (decision 2315).
 
 `exchange.invalid-face` is a warning on a STEP read that succeeded (decision 2314): a face the read checked, one the
-healing reported on or with a vertex off its edge's curve, is invalid. Its message gives how many faces (each once, however
+healing reported on, with a vertex off its edge's curve or bounded by two edges or fewer (decision 34706), is invalid. Its message gives how many faces (each once, however
 often the model places it) and the STEP identifiers of the faces they were read from, the first eight. Both codes are
 properties of `Step`: `Step.EntitySkipped`, `Step.InvalidFace`.
 
