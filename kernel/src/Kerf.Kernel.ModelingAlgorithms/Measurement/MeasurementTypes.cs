@@ -31,8 +31,8 @@ public sealed record MassOptions
     /// faces bounded by a walked intersection, or on swept and B-spline faces. Areas and volumes only: lengths ignore it.
     /// A face that isn't a plane, cylinder, cone, sphere or torus is integrated again ten times finer, and the finer taken
     /// where the two differ by more than this (or 1e-10, where this is finer); where no integration down to 1e-4 of this
-    /// confirms one, or a face's boundary can't be read, the figures are NaN rather than a number not known to this
-    /// precision (decision 34802).
+    /// confirms one, or a face's boundary can't be read, the measure fails with <c>measurement.unconfirmed</c> rather than
+    /// give a number not known to this precision (decisions 34802, 34806).
     /// </summary>
     public double Tolerance
     {

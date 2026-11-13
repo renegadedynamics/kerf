@@ -562,11 +562,12 @@ internal static partial class FilletLimits
         }
         double expected = Measured(input) + change;
         double area = Integral.Area(result);
+        // NaN, a volume that couldn't be confirmed, passes no comparison: the proof fails (decision 34806)
         return Math.Abs(Measured(result) - expected) <= Allowed(expected, true) + Tolerance * area;
     }
 
-    // A volume to a part in a hundred million, as fixed points aren't exact on the fillet's B-spline
-    private static double Measured(Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, Precise);
+    // A volume to a part in a hundred million, as fixed points aren't exact on the fillet's B-spline; NaN where it couldn't be confirmed
+    private static double Measured(Shape shape) => Kerf.Measurement.MeasureOperations.VolumeOrNaN(shape, Precise);
 
     private static readonly Kerf.Measurement.MassOptions Precise = new() { Tolerance = 1e-8 };
 

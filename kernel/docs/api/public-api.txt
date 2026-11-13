@@ -2447,6 +2447,7 @@ public sealed record Kerf.Measurement.MassProperties : IEquatable<MassProperties
   public double RadiusOfGyration(in Axis3D axis)
 public static class Kerf.Measurement.MeasureOperations
   public static DiagnosticCode DistanceFailed { get; }
+  public static DiagnosticCode Unconfirmed { get; }
   public static (Point2D, double) ParametersOf(this Face face, Point3D point, double tolerance = 1E-07)
   public static BoundingBox BoundingBox<TShape>(this TShape shape, bool optimal = false, bool useTriangulation = false)
   public static Containment Classify(this Face face, Point2D parameters, double tolerance = 1E-07)
@@ -2457,6 +2458,7 @@ public static class Kerf.Measurement.MeasureOperations
   public static OrientedBox OrientedBox<TShape>(this TShape shape, bool optimal = false)
   public static Point3D CentreOfArea<TShape>(this TShape shape, MassOptions? options = default)
   public static Result<DistanceResult> Distance<TShape, TOther>(this TShape shape, TOther other, DistanceOptions? options = default, CancellationToken cancellationToken = default)
+  public static Result<MassProperties> Measure<TShape>(this TShape shape, Dimension dimension, MassOptions? options = default)
   public static bool IsOnFace<TShape>(this TShape shape, Point3D point, double tolerance = 1E-07)
   public static double IntegrateArea<TShape>(this TShape shape, MassOptions? options = default)
   public static double IntegrateLength<TShape>(this TShape shape, MassOptions? options = default)

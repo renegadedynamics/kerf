@@ -61,8 +61,11 @@ public readonly record struct LineHit(Point3D Point, double LineParameter, Face 
 - An area or volume with a `Tolerance` (the default, 1e-6) is right to it on every face: each face that isn't a plane,
   cylinder, cone, sphere or torus is integrated again ten times finer and the finer kept where they differ by more than the tolerance (or 1e-10, where that's finer), and the
   integration breaks at the surface's spans (an offset's, extrusion's or revolution's basis's too) and where a boundary
-  crosses them (decisions 34801, 34802). Where nothing confirms a face, or a face's boundary can't be read, the figures
-  are NaN, not a number off by an unknown amount. `Tolerance = 0` still asks for OCCT's fixed points, unchecked.
+  crosses them (decisions 34801, 34802). Where nothing confirms a face, or a face's boundary can't be read, the forms
+  that return a number throw an `ArithmeticException` whose `Diagnostic.FromException` is `measurement.unconfirmed`
+  (`MeasureOperations.Unconfirmed`), naming the face and why, and `Measure(dimension, options)` returns that as a failed
+  `Result<MassProperties>` (decision 34806). The kernel's checks fail on it, never pass. `Tolerance = 0` still asks for
+  OCCT's fixed points, unchecked.
 - Edge lengths along a parameter (`GCPnts_AbscissaPoint`) are on `EdgeCurve` (topology.md): `Length()`,
   `ParameterAtLength`.
 
