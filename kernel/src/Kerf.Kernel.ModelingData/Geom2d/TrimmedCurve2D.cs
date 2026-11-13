@@ -31,7 +31,10 @@ public sealed class TrimmedCurve2D : BoundedCurve2D
     public sealed override Geometry2D Copy()
     {
         TrimmedCurve2D tc;
-        tc = new TrimmedCurve2D(_basisCurve, _uTrim1, _uTrim2);
+        // Kerf (decision 35102, upstream 71658f6c8f): the copy keeps the trimmed range on a periodic basis as it is,
+        // rather than bringing it back into one period; OCCT 8.0.1's did, so a copy, a transformed or a reversed curve
+        // of a range over more than one period was a shorter curve, and of one outside the first period another chart
+        tc = new TrimmedCurve2D(_basisCurve, _uTrim1, _uTrim2, true, false);
         return tc;
     }
 

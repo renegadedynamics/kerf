@@ -45,7 +45,10 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
     /// <summary>A new, unfrozen trimmed curve equal to this one (on a copy of the basis curve, or on the same one if it's frozen).</summary>
     public sealed override Geometry3D Copy()
     {
-        TrimmedCurve3D tc = new TrimmedCurve3D(_basisCurve, _uTrim1, _uTrim2);
+        // Kerf (decision 35102, upstream 71658f6c8f): the copy keeps the trimmed range on a periodic basis as it is,
+        // rather than bringing it back into one period; OCCT 8.0.1's did, so a copy, a transformed or a reversed curve
+        // of a range over more than one period was a shorter curve, and of one outside the first period another chart
+        TrimmedCurve3D tc = new TrimmedCurve3D(_basisCurve, _uTrim1, _uTrim2, true, false);
         return tc;
     }
 
