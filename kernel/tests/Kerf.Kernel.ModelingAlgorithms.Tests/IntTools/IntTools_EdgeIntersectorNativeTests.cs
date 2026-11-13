@@ -33,6 +33,28 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
     };
 
     /// <summary>
+    /// Decision 34702: a sample of the root finder exactly on its target is a root, where 8.0.1 kept it only if the
+    /// function was off the target half a step on. In this run the edge's nearest approach to the face is on such a
+    /// sample: its distance is 0, where native's is 9.2e-8, at 1 common part either way. Every other run is native's
+    /// (the test above, with 8.0.1's rule).
+    /// </summary>
+    [Fact]
+    public void EdgeFace_TakesARootOnASample()
+    {
+        Case aCase = Cases["topcover-self"];
+        EFRun aRun = aCase.EF.Single(r => r.I == 5 && r.J == 4);
+        Assert.Equal("1 0 3e78c36c00000000 0", aRun.Native);
+        Assert.Equal("1 0 0000000000000000 0", RunEF(Edge(aCase, aCase.EA, aRun.I), Face(aCase, aRun.J), new IntersectionContext()));
+        int aNbOff = 0;
+        foreach (EFRun anOther in aCase.EF.Where(r => r != aRun))
+        {
+            string aPort = RunEF(Edge(aCase, aCase.EA, anOther.I), Face(aCase, anOther.J), new IntersectionContext());
+            Assert.True(Agrees(anOther.Native, aPort, IsCircle(Edge(aCase, aCase.EA, anOther.I)), ref aNbOff),
+                        $"EF {anOther.I} {anOther.J} moves too: {aPort}");
+        }
+    }
+
+    /// <summary>
     /// Same tokens, except that 16-digit hex doubles may differ by 1e-8 relative (to max(1, |a|, |b|)) when
     /// <paramref name="isCircle"/>.
     /// </summary>
@@ -115,6 +137,8 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
     [MemberData(nameof(CaseNames), MemberType = typeof(EdgeIntersectorRecordings))]
     public void EdgeFace_GivesNativeCommonParts_WithFreshAndReusedContexts(string theCase)
     {
+        // A sample exactly on its target is a root now (decision 34702), which moves one run (pinned below)
+        using IDisposable aNative = global::Kerf.Engine.Numerics.NativeSampledRoots.Scope();
         Case aCase = Cases[theCase];
         List<string> aMismatches = [];
         List<int> anOrder = [.. Enumerable.Range(0, aCase.EF.Count)];

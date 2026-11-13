@@ -346,7 +346,9 @@ public sealed class DrawCorpus(string theTestsDirectory)
             aStatus = "FAILED (_check_log: " + anError.Reason + ")";
         }
 
-        if (aStatus.StartsWith("FAILED", StringComparison.Ordinal) && IntendedDifferences.TryGetValue(theCase.Id, out var anIntended)
+        // An intended difference also covers a case whose script expects OCCT's problem (a TODO) that the port no longer has
+        if ((aStatus.StartsWith("FAILED", StringComparison.Ordinal) || aStatus.StartsWith("IMPROVEMENT", StringComparison.Ordinal))
+            && IntendedDifferences.TryGetValue(theCase.Id, out var anIntended)
             && anIntended.IsPortsBehaviour(aText))
         {
             aStatus = "OK (intended difference: " + anIntended.Reason + ")";
@@ -370,27 +372,28 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // OCCT can't build it (TODO OCC23748); the finer polyline does, shorter than the script's figure
             ["offset/wire_unclosed_outside_0_075/A1"] = ("built where OCCT fails (TODO OCC23748), 10.60 for the script's 11.69 (decision 1980)",
                                                          "The length of result shape is 10.6026, expected 11.6898"),
+            // OCCT's known big tolerance (its TODO OCC23068) is still there, with the counts of the other cuts
+            ["offset/wire_closed_outside_0_075/D2"] = ("OCCT's big tolerance (TODO OCC23068), and 27 edges for the script's 23 (decision 34702)",
+                                                       "must contain 23 edges instead of 27"),
             // Each offset came nearer the wire than its distance, by more than 2%, and was a success; it is refused now
-            // (decisions 2279, 2281). The first, third and fifth are OCCT's known problems (a face on the result is
-            // faulty); the other two passed OCCT's script, which checks a length and counts
+            // (decisions 2279, 2281). The first, second and fourth are OCCT's known problems (a face on the result is
+            // faulty); bug6768 passed OCCT's script, which checks a length and counts
             ["offset/wire_closed_inside_0_005/B7"] = ("refused: the offset came within 0.10 of the wire for 0.93 (OCCT's TODO OCC23068; decision 2279)",
                                                       " Error: Offset is not done."),
-            ["offset/wire_unclosed_outside_0_025/B3"] = ("refused: the offset came within 10.08 of the wire for 11.24 (decision 2279)",
-                                                         " Error: Offset is not done."),
             ["offset/wire_unclosed_outside_0_025/B4"] = ("refused: the offset came within 2.35 of the wire for 11.24 (OCCT's TODO OCC31005; decision 2279)",
                                                          " Error: Offset is not done."),
             ["bugs/modalg_6/bug6768"] = ("refused: the third wire's offset came within 0.003 of the wire for 1 (decision 2279)",
                                          " Error: Offset is not done."),
             ["offset/wire_unclosed_outside_0_075/A9"] = ("refused: the offset came within 2,299 of the wire for 2,357, and a part of it was missing (OCCT's TODO OCC23748; decision 2281)",
                                                          " Error: Offset is not done."),
-            // Each offset crossed itself, OCCT's known problem (TODO OCC23068, a face on the result faulty), and was a
-            // success; it is refused now, the log saying where it crosses (decision 34701)
-            ["offset/wire_closed_outside_0_005/C6"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
-                                                       " offset.crosses-itself: The offset in the plane crosses itself, at (-25.1198, 151.127, 26.7433)."),
-            ["offset/wire_closed_outside_0_025/C6"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
-                                                       " offset.crosses-itself: The offset in the plane crosses itself, at (-26.5743, 166.333, 15.2455)."),
-            ["offset/wire_closed_outside_0_075/C6"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
-                                                       " offset.crosses-itself: The offset in the plane crosses itself, at (-30.3201, 204.336, -13.4948)."),
+            // Decision 2279's check refused this offset (it came within 10.08 of the wire for 11.24); cut at the inflections
+            // of decision 34702 it is at its distance but crosses itself, 770.057 long for the script's 738.873, and is
+            // refused for that (decision 34701)
+            ["offset/wire_unclosed_outside_0_025/B3"] = ("refused: the offset crosses itself (decisions 34701, 34702)",
+                                                         " offset.crosses-itself: The offset in the plane crosses itself, at (-30.8236, 17.7821, 100)."),
+            // The offset crossed itself, OCCT's known problem (TODO OCC23068, a face on the result faulty), and was a success;
+            // it is refused now, the log saying where it crosses (decision 34701). The three of wire_closed_outside's C6
+            // that did too are right, cut at the inflections of decision 34702
             ["offset/wire_unclosed_outside_0_025/A9"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
                                                          " offset.crosses-itself: The offset in the plane crosses itself, at (11289.3, 4531.8, -19500)."),
         };
@@ -409,6 +412,30 @@ public sealed class DrawCorpus(string theTestsDirectory)
         "offset/wire_unclosed_outside_0_075/C4", "bugs/modalg_4/bug7668",
     ];
 
+    // Before IntendedDifferences: the 2D offset's cases whose counts the inflections of decision 34702 change
+    private static readonly string[] InflectionCases =
+    [
+        "offset/wire_closed_inside_0_005/A5", "offset/wire_closed_inside_0_005/B2",
+        "offset/wire_closed_inside_0_005/C7", "offset/wire_closed_inside_0_005/D2",
+        "offset/wire_closed_inside_0_005/E4", "offset/wire_closed_inside_0_005/E9",
+        "offset/wire_closed_inside_0_005/G4", "offset/wire_closed_inside_0_025/B2",
+        "offset/wire_closed_inside_0_025/C7", "offset/wire_closed_inside_0_025/E4",
+        "offset/wire_closed_inside_0_025/E9", "offset/wire_closed_inside_0_075/B2",
+        "offset/wire_closed_inside_0_075/D2", "offset/wire_closed_inside_0_075/E4",
+        "offset/wire_closed_inside_0_075/E9", "offset/wire_closed_outside_0_005/A4",
+        "offset/wire_closed_outside_0_005/A5", "offset/wire_closed_outside_0_005/B2",
+        "offset/wire_closed_outside_0_005/C6", "offset/wire_closed_outside_0_005/C7",
+        "offset/wire_closed_outside_0_005/D2", "offset/wire_closed_outside_0_005/E4",
+        "offset/wire_closed_outside_0_005/E9", "offset/wire_closed_outside_0_025/A4",
+        "offset/wire_closed_outside_0_025/A5", "offset/wire_closed_outside_0_025/B2",
+        "offset/wire_closed_outside_0_025/C7", "offset/wire_closed_outside_0_025/D2",
+        "offset/wire_closed_outside_0_025/E4", "offset/wire_closed_outside_0_025/E9",
+        "offset/wire_closed_outside_0_075/B2", "offset/wire_closed_outside_0_075/C7",
+        "offset/wire_closed_outside_0_075/E4",
+        "offset/wire_closed_outside_0_075/E9", "offset/wire_unclosed_outside_0_005/A9",
+        "offset/wire_unclosed_outside_0_005/B3", "offset/wire_unclosed_outside_0_005/B4"
+    ];
+
     private static readonly Regex OffsetCountError =
         new(@"^Error : (The resulting shape is WRONG because it must contain \d+ (vertexes|edges) instead of \d+"
             + @"| is WRONG because number of (VERTEX|EDGE|SHAPE) entities in shape ""[^""]*"" is \d+)$", RegexOptions.CultureInvariant);
@@ -418,7 +445,7 @@ public sealed class DrawCorpus(string theTestsDirectory)
     /// log, which shows the corrected behaviour instead; such a case is OK, with the reason.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, (string Reason, Func<string, bool> IsPortsBehaviour)> IntendedDifferences =
-        WithFinerOffsetPolylines(WithMassReferences(new Dictionary<string, (string, Func<string, bool>)>(StringComparer.Ordinal)
+        WithInflections(WithFinerOffsetPolylines(WithMassReferences(new Dictionary<string, (string, Func<string, bool>)>(StringComparer.Ordinal)
         {
             // OCCT's script requires tuyau's "cannot make a surface": GeomFill_Pipe gave up between two sections on a
             // path the corrected Frenet trihedron corrects; the pipe is built, and tuyau reports its accuracy
@@ -465,12 +492,45 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                                                  && !theLog.Split('\n').Any(l => l.StartsWith("Faulty", StringComparison.Ordinal))
                                                                  && !theLog.Contains("has self-intersection", StringComparison.Ordinal);
                                                       }),
+            // OCCT's offset crossed itself, its faces faulty (its TODO OCC23068), as the port's did until decision 34701
+            // refused it: cut at the inflections of decision 34702 it is valid and passes the script, so the TODO isn't met
+            ["offset/wire_closed_outside_0_025/C6"] = ("right where OCCT's crosses itself (TODO OCC23068): the script passes (decision 34702)", PassesItsScript),
+            ["offset/wire_closed_outside_0_075/C6"] = ("right where OCCT's crosses itself (TODO OCC23068): the script passes (decision 34702)", PassesItsScript),
             // OCCT's script holds the 1.5e-7 of a walked tangency (it's about big tolerances): a sphere of a pipe's minor
             // radius is analytic now, and its curve exact (decision 1818)
             ["lowalgos/intss/bug26684_1"] = ("a sphere touching a torus along a circle is analytic (decision 1818)",
                                              theLog => theLog.Contains("Reached tolerance = 4.96", StringComparison.Ordinal)
                                                        && theLog.Contains("e-15 is not equal to expected 1.4915699300398263e-07", StringComparison.Ordinal)),
-        }));
+        })));
+
+    // A log with no error or faulty shape beside the script's own TODO lines
+    private static bool PassesItsScript(string theLog)
+    {
+        string[] aLines = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => !l.StartsWith("TODO", StringComparison.Ordinal))];
+        return !aLines.Any(l => l.StartsWith("Error", StringComparison.Ordinal) || l.StartsWith("Faulty", StringComparison.Ordinal))
+               && !theLog.Contains("has self-intersection", StringComparison.Ordinal);
+    }
+
+    // The 2D offset's cases whose script counts the vertices and edges of OCCT 8.0.1's result, which cut the wire at the
+    // ends of nearly straight stretches and not at a G1 join that changes concavity (decision 34702): the counts are
+    // the only errors, beside the script's own TODO lines, and nothing is faulty
+    private static Dictionary<string, (string, Func<string, bool>)> WithInflections(Dictionary<string, (string, Func<string, bool>)> theCases)
+    {
+        foreach (string anId in InflectionCases)
+        {
+            theCases[anId] = ("OCCT 8.0.1's script counts the edges of a medial axis cut at inflections it found wrongly (decision 34702)",
+                              theLog =>
+                              {
+                                  string[] aLines = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => !l.StartsWith("TODO", StringComparison.Ordinal))];
+                                  string[] anErrors = [.. aLines.Where(l => l.Contains("Error", StringComparison.Ordinal))];
+                                  return anErrors.Length > 0 && anErrors.All(l => OffsetCountError.IsMatch(l))
+                                         && !aLines.Any(l => l.StartsWith("Faulty", StringComparison.Ordinal))
+                                         && !theLog.Contains("has self-intersection", StringComparison.Ordinal);
+                              });
+        }
+
+        return theCases;
+    }
 
     // The 2D offset's cases whose script counts the vertices and edges of OCCT's result, which a finer polyline for an edge
     // curving tighter than the distance changes (decision 1980): the result is otherwise as checked, closed where it

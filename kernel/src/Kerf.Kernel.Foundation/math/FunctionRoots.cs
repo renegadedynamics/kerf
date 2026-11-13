@@ -385,71 +385,48 @@ internal class FunctionRoots
 
                 //-- On detecte les cas ou la fct s annule sur des Xi et est
                 //-- non nulle au voisinage de Xi
-                //--
-                //-- On prend 2 points u0,u1 au voisinage de Xi
-                //-- Si (F(u0)-K)*(F(u1)-K) <0   on lance une recherche
-                //-- Sinon si (F(u0)-K)*(F(u1)-K) !=0 on insere le point X
-                // OCCT takes u0 and u1 at the same point, X + dx/2, so it never searches here, and keeps X only where F is
-                // off K there. Upstream 71658f6c8f mends both; neither is ported (decision 2390)
+                // Upstream 71658f6c8f (decision 34702): a sample on which F is exactly K is a root unless both its
+                // neighbours are too (inside a run of them). 8.0.1 meant to probe either side of the sample, but took
+                // both probes at X + dx/2, and kept the sample only where F was off K there. Upstream's search for F's
+                // return across K in the neighbouring intervals isn't ported: everywhere Kerf's tests and corpus reach
+                // it, it fires only where F is rounding noise, and there it multiplies the roots (decision 34702).
+                bool isNative = NativeSampledRoots.IsNative;
                 for (i = 0; i <= n; i++)
                 {
-                    if (ptrval[i] == 0)
+                    if (isNative && ptrval[i] == 0.0)
                     {
-                        x = X0 + i * dx;
-                        if (x > xn)
-                        {
-                            x = xn;
-                        }
-
-                        double u0, u1;
-                        u0 = dx * 0.5;
-                        u1 = x + u0;
-                        u0 += x;
-                        if (u0 < X0)
-                        {
-                            u0 = X0;
-                        }
-
-                        if (u0 > xn)
-                        {
-                            u0 = xn;
-                        }
-
-                        if (u1 < X0)
-                        {
-                            u1 = X0;
-                        }
-
-                        if (u1 > xn)
-                        {
-                            u1 = xn;
-                        }
-
-                        double y0, y1;
-                        if (!f.Value(u0, out y0) || !double.IsFinite(y0) || !f.Value(u1, out y1) || !double.IsFinite(y1))
+                        // 8.0.1's test, for the native recordings' tests only
+                        x = Math.Min(X0 + i * dx, xn);
+                        if (!f.Value(Math.Min(x + dx * 0.5, xn), out double aHalfStep) || !double.IsFinite(aHalfStep))
                         {
                             _done = false;
                             return;
                         }
 
-                        y0 -= k;
-                        y1 -= k;
-                        if (y0 * y1 < 0.0)
+                        if (aHalfStep - k != 0.0 && !AppendRoot(_sol, _nbStateSol, x, f, nEpsX))
                         {
-                            if (!Solve(f, k, u0, y0, u1, y1, tol, nEpsX, _sol, _nbStateSol))
-                            {
-                                _done = false;
-                                return;
-                            }
+                            _done = false;
+                            return;
                         }
-                        else
-                        {
-                            if ((y0 != 0.0 || y1 != 0.0) && !AppendRoot(_sol, _nbStateSol, x, f, nEpsX))
-                            {
-                                _done = false;
-                                return;
-                            }
-                        }
+
+                        continue;
+                    }
+
+                    if (ptrval[i] != 0.0 || ((i == 0 || ptrval[i - 1] == 0.0) && (i == n || ptrval[i + 1] == 0.0)))
+                    {
+                        continue;
+                    }
+
+                    x = X0 + i * dx;
+                    if (x > xn)
+                    {
+                        x = xn;
+                    }
+
+                    if (!AppendRoot(_sol, _nbStateSol, x, f, nEpsX))
+                    {
+                        _done = false;
+                        return;
                     }
                 }
 

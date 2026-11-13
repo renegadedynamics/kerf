@@ -173,14 +173,17 @@ internal class CurAndInf2d : CurAndInf
                     var aParams = new NCollection_Array1<double>(1, nbIntervals + 1);
                     adaptor.Intervals(aParams, C3);
 
+                    var numericResult = new CurAndInf();
                     for (int i = 1; i <= nbIntervals; i++)
                     {
-                        numericInf.PerformInf(curve, aParams[i], aParams[i + 1], this);
+                        numericInf.PerformInf(curve, aParams[i], aParams[i + 1], numericResult);
                         if (!numericInf.IsDone)
                         {
                             _isDone = false;
                         }
                     }
+
+                    AddInflectionsWithKnots(curve, aParams, numericResult);
                 }
 
                 break;
@@ -200,6 +203,59 @@ internal class CurAndInf2d : CurAndInf
         get
         {
             return _isDone;
+        }
+    }
+
+    /// <summary>
+    /// Upstream 8f817f5da5 (decision 34702): a G1 join of two smooth intervals at which the curve changes concavity is an
+    /// inflection, though the curvature is zero on neither side, so the numeric search of each interval can't see it.
+    /// The joins' inflections and the intervals' are added in order, the join's exact parameter kept where one of the
+    /// intervals' falls on it.
+    /// </summary>
+    private void AddInflectionsWithKnots(Curve2D curve, NCollection_Array1<double> parameters, CurAndInf numericResult)
+    {
+        var knotInflections = new List<double>();
+        for (int i = parameters.Lower() + 1; !NativeInflections.IsNative && i < parameters.Upper(); i++)
+        {
+            double parameter = parameters[i];
+            var left = new CurveAdaptor2D(curve, parameters[i - 1], parameter);
+            var right = new CurveAdaptor2D(curve, parameter, parameters[i + 1]);
+            left.D2(parameter, out Point2D _, out Vector2D leftD1, out Vector2D leftD2);
+            right.D2(parameter, out Point2D _, out Vector2D rightD1, out Vector2D rightD2);
+            if (leftD1.Magnitude <= Constants.Resolution() || rightD1.Magnitude <= Constants.Resolution()
+                || leftD1.Dot(rightD1) <= 0.0
+                || !leftD1.IsParallel(rightD1, global::Kerf.Engine.Foundation.Precision.Angular()))
+            {
+                continue;
+            }
+
+            double leftBend = leftD1.Crossed(leftD2);
+            double rightBend = rightD1.Crossed(rightD2);
+            if ((leftBend < 0.0 && rightBend > 0.0) || (leftBend > 0.0 && rightBend < 0.0))
+            {
+                knotInflections.Add(parameter);
+            }
+        }
+
+        double pConfusion = global::Kerf.Engine.Foundation.Precision.PConfusion();
+        int knotIndex = 0;
+        for (int i = 1; i <= numericResult.PointCount; i++)
+        {
+            double parameter = numericResult.Parameter(i);
+            while (knotIndex < knotInflections.Count && knotInflections[knotIndex] < parameter - pConfusion)
+            {
+                AddInflection(knotInflections[knotIndex++]);
+            }
+
+            if (knotIndex >= knotInflections.Count || Math.Abs(knotInflections[knotIndex] - parameter) > pConfusion)
+            {
+                AddInflection(parameter);
+            }
+        }
+
+        while (knotIndex < knotInflections.Count)
+        {
+            AddInflection(knotInflections[knotIndex++]);
         }
     }
 }
