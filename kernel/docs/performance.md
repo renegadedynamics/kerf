@@ -2468,7 +2468,7 @@ and 1.6% to 1.8% over cd25ebc44: under the bar, and the exact rows will show it 
 
 ## What the checks cost, and two cuts (unit 15AR)
 
-*November 2026, decisions 34201 to 34206. Bytes exact (one processor, every method compiled once, as the rig's exact
+*November 2026, decisions 2377 to 2382. Bytes exact (one processor, every method compiled once, as the rig's exact
 suites run); times from warm runs on a loaded machine, inclusive shares only. For a quiet window:
 `scratchpad/p15ar/quiet-15ar.ps1`.*
 
@@ -2491,8 +2491,8 @@ intersectors about 38), and the classifications 186 MB, a line intersected with 
 is 131 MB of 2,749 (4.8%), most of it the engravings' `ProvedToOverlap`. 15L's crossing check, `Step.Read`'s, and the public
 Booleans' retry are under 0.2% wherever they run; the evolving fillet's envelope isn't reached.
 
-**Cut 1** (decision 34203): `Bounds.Add` makes its adaptors when it first needs one, and a classifier's tree maps an edge it
-has already no more. Every box and index the same. **Cut 2** (decision 34204): the check's planes from an unrestricted
+**Cut 1** (decision 2379): `Bounds.Add` makes its adaptors when it first needs one, and a classifier's tree maps an edge it
+has already no more. Every box and index the same. **Cut 2** (decision 2380): the check's planes from an unrestricted
 adaptor, and each face's bounds read from the restricted one rather than worked out again.
 
 | Case (exact, MB) | 15AM's head | Cut 1 | Cut 2 | Change |
@@ -2508,20 +2508,20 @@ adaptor, and each face's bounds read from the restricted one rather than worked 
 | Bento, 2 plate with hole | 2.225 | 2.255 | 2.251 | +1.2% |
 | Bento, total (MiB) | 98.839 | 96.233 | 96.211 | -2.7% |
 
-Under decision 1829's bar; free to take, as every result is the same. Tried and not in (decision 34205): the tool or the
+Under decision 1829's bar; free to take, as every result is the same. Tried and not in (decision 2381): the tool or the
 smaller input asked first where a point must be inside both (more bytes everywhere), the classifiers kept with their
 shapes (-2% of the check), the result asked first (64 points of 3,128), fewer points on faces the Boolean left whole (not
 identical), the classifications in parallel (not plainly safe). Left: the classifier's own line/face intersections.
 
 ### The second round: the classifiers, and the proof in parallel
 
-*Decisions 34208 to 34213.* Each check makes at most three classifiers (the object's, the tool's, the result's), shared by
+*Decisions 2384 to 2389.* Each check makes at most three classifiers (the object's, the tool's, the result's), shared by
 all its questions; the enclosure's run makes 255 for 198 checks, 108 MB, and asks 10,524 points for 167 MB, most of it the
-line met with each face and the choice of each point's line. **Cut 3** (decision 34210): an intersector's 2D tool made when a
+line met with each face and the choice of each point's line. **Cut 3** (decision 2386): an intersector's 2D tool made when a
 line first needs it, and a frozen face's 2D tolerances kept, -0.8% on the enclosure, -1.3% on `fuse-boss`. **Cut 4** (decision
-34211): with `ParallelVolumes` on, 15AM's proof classifies its points on several threads, each with its own classifiers, then
+2387): with `ParallelVolumes` on, 15AM's proof classifies its points on several threads, each with its own classifiers, then
 judges them in order: the enclosure 4,129 to 3,869 ms on 2 processors (loaded machine) for 3% more bytes; off, nothing changes.
-`plate with hole`'s rise is when a full collection falls (decision 34212).
+`plate with hole`'s rise is when a full collection falls (decision 2388).
 
 | Case (exact, MB) | 15AM's head | Cuts 1, 2 | Cut 3 | Cut 4 (off) | Change |
 |---|---:|---:|---:|---:|---:|
