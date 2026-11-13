@@ -26,6 +26,17 @@ internal partial class FilBuilder
     /// <summary>The curves of the creases made, each from the contact on the first face (0) to that on the second (1).</summary>
     internal IReadOnlyList<Curve3D> EnvelopeCreases => _envelopeCreases;
 
+    /// <summary>
+    /// The greatest angle, in radians, between the two faces' normals along any crease made: nothing where none was.
+    /// </summary>
+    internal double EnvelopeCreaseAngle { get; private set; }
+
+    /// <summary>
+    /// The warning for a fillet whose surface has a crease past the angular tolerance (`fillet.creased`), or null.
+    /// Ready, and not yet given to anyone: what a fillet returns is as it was (decision 34108).
+    /// </summary>
+    internal Diagnostic? EnvelopeCreaseWarning => StatusDiagnostics.FilletCreased(EnvelopeCreaseAngle, _tolappangle);
+
     /// <summary>How many corners were built as a piece of the ball, and how many as a crease.</summary>
     internal (int Lunes, int Creases) EnvelopeCornersMade { get; private set; }
 
@@ -477,6 +488,7 @@ internal partial class FilBuilder
 
         Curve3D curve;
         Curve2D pcurveLast, pcurveFirst;
+        double creaseAngle;
         Surface lastSurface = dStr.Surface(before.Surf()).Surface(), firstSurface = dStr.Surface(after.Surf()).Surface();
         try
         {
@@ -492,6 +504,7 @@ internal partial class FilBuilder
             NCollection_HArray1<Point2D> onFirst = new(1, Fine + 1);
             NCollection_HArray1<double> fine = new(1, Fine + 1);
             double w = walkFirst, s = nextSide1;
+            double sine = 0.0;
             for (int i = 0; i <= Fine; i++)
             {
                 double share = i / (double)Fine;
@@ -515,7 +528,18 @@ internal partial class FilBuilder
                 fine.SetValue(i + 1, share);
                 points.SetValue(i + 1, p);
                 onFirst.SetValue(i + 1, first.Uv(w, s));
+
+                // How far apart the two surfaces' normals are there
+                lastSurface.D1(uv.X, uv.Y, out _, out Vector3D du, out Vector3D dv);
+                first.D1(w, s, out _, out Vector3D along, out Vector3D across);
+                Vector3D normal = du.Crossed(dv), nextNormal = along.Crossed(across);
+                if (normal.Magnitude > 0.0 && nextNormal.Magnitude > 0.0)
+                {
+                    sine = Math.Max(sine, normal.Normalized().Crossed(nextNormal.Normalized()).Magnitude);
+                }
             }
+
+            creaseAngle = Math.Asin(Math.Min(1.0, sine));
 
             global::Kerf.Engine.Geometry.Api.ApiInterpolate in3d = new(points, fine, false, 1.0e-12);
             in3d.Perform();
@@ -551,6 +575,7 @@ internal partial class FilBuilder
 
         EnvelopeCrease crease = new(curve, pcurveLast, pcurveFirst, 0.0, 1.0, Math.Max(2.0 * apartMost, Precision.Confusion()));
         _envelopeCreases.Add(curve);
+        EnvelopeCreaseAngle = Math.Max(EnvelopeCreaseAngle, creaseAngle);
         before.CreaseAtLast = crease;
         after.CreaseAtFirst = crease;
         (int lunes, int creases) = EnvelopeCornersMade;
