@@ -138,6 +138,18 @@ internal class GenLocateExtPS
         boundSup[1] = _surf.LastUParameter();
         boundSup[2] = _surf.LastVParameter();
 
+        // Upstream ec0167b409 (decision 34504): a closed surface's seam joins the two ends of its range, so a start
+        // beyond one end is brought into the range, where 8.0.1 let the search clamp it to the end it was past
+        if (_surf.IsUClosed && (start[1] < boundInf[1] || start[1] > boundSup[1]))
+        {
+            start[1] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(start[1], boundInf[1], boundSup[1]);
+        }
+
+        if (_surf.IsVClosed && (start[2] < boundInf[2] || start[2] > boundSup[2]))
+        {
+            start[2] = global::Kerf.Engine.Geometry.ElCLib.InPeriod(start[2], boundInf[2], boundSup[2]);
+        }
+
         if (isDistanceCriteria)
         {
             // Distance criteria.
