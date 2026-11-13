@@ -89,18 +89,18 @@ public class EvolvingFilletOnEdgeTests
     // circles where they leave a gap (EnvelopeLune), a face of its own with the contacts for corners, and the crease the two
     // surfaces cross in where they cross, each face ending on it. Every point of them is then within 1.4e-5 of the boundary
     // of the union of the balls (2.4e-6 beside the corners), no edge covers a gap, and the result is a valid shape of 15
-    // faces for 13. A corner is tilted only where its measure is within nine tenths of the tolerance, the approximation's
-    // own error being some 1e-5 (so 3.3 and 1.0 to 3.0's crossing corners, 9.9e-5, are built); at 3.2 and 0.4 to 2.4 the
-    // crossing corners (6.4e-5) stay tilted, and the fillet is 6.5e-5 off the union there.
+    // faces for 13. Since decision 34108 a corner is built wherever its two circles are more than a thousandth of the
+    // ball's radius apart, whatever its measure, as a tilted surface isn't tangent to its ball along the circle it ends on: so
+    // all seven have a piece of the ball and a crease on each of their two curves, and each is within 1.4e-5 of the union.
     [Theory]
-    [InlineData(3.05, 0.4, 1.0, true, 0)]
-    [InlineData(3.2, 0.4, 1.6, true, 0)]
-    [InlineData(3.2, 0.2, 2.0, true, 0)]
-    [InlineData(3.2, 0.4, 2.4, false, 0)]
-    [InlineData(3.3, 1.0, 3.0, false, 2)]
-    [InlineData(3.5, 0.4, 3.0, false, 2)]
-    [InlineData(3.2, 0.4, 3.0, false, 2)]
-    public void An_evolving_fillet_that_rests_on_an_edge_is_within_tolerance_of_its_balls_its_corners_built_where_they_must_be(double top, double low, double high, bool tilted, int creased)
+    [InlineData(3.05, 0.4, 1.0, true)]
+    [InlineData(3.2, 0.4, 1.6, true)]
+    [InlineData(3.2, 0.2, 2.0, true)]
+    [InlineData(3.2, 0.4, 2.4, false)]
+    [InlineData(3.3, 1.0, 3.0, false)]
+    [InlineData(3.5, 0.4, 3.0, false)]
+    [InlineData(3.2, 0.4, 3.0, false)]
+    public void An_evolving_fillet_that_rests_on_an_edge_is_within_tolerance_of_its_balls_its_corners_built_where_they_must_be(double top, double low, double high, bool tilted)
     {
         // Built whatever the measure, to see what it is measuring
         MakeFillet unrefused = RimTeeFillet(top, low, high, refused: false);
@@ -124,20 +124,10 @@ public class EvolvingFilletOnEdgeTests
         // And the faces meet: no edge of the result covers a gap with its tolerance
         Assert.True(unrefused.Shape().AllEdges().Max(e => Tool.Tolerance(e)) < 2 * Approximation);
 
+        // As a user gets it: its corners built, and the fillet on the union
         MakeFillet chfi3d = RimTeeFillet(top, low, high, refused: true);
         Assert.True(chfi3d.IsDone);
-        (int lunes, int creases) = chfi3d.InternalBuilder().EnvelopeCornersMade;
-        if (tilted)
-        {
-            Assert.True(worst < Approximation, $"built, and off the union of the balls by {worst}");
-            Assert.Equal((0, 0), (lunes, creases));
-            return;
-        }
-
-        // Past the tolerance with every corner tilted; so the corners past it are built, and the fillet is on the union
-        Assert.True(worst > Approximation, $"its corners built, though with them tilted it was off the union of the balls by only {worst}");
-        Assert.Equal(2, lunes);
-        Assert.Equal(creased, creases);
+        Assert.Equal((2, 2), chfi3d.InternalBuilder().EnvelopeCornersMade);
         Assert.True(chfi3d.Shape().Validate().IsValid);
         Assert.Equal(unrefused.Shape().AllFaces().Count() + 2, chfi3d.Shape().AllFaces().Count());
         Assert.True(chfi3d.Shape().AllEdges().Max(e => Tool.Tolerance(e)) < 2 * Approximation);
@@ -145,14 +135,21 @@ public class EvolvingFilletOnEdgeTests
                                                          p => new Vector3D(p.X, 0, p.Z).Normalized(), MainBody(top), 10);
         Assert.True(made.Count > 0.9 * points.Count);
         double madeWorst = made.Max(p => p.Miss);
-        Assert.True(madeWorst < (creased == 0 ? 0.7 * Approximation : 0.2 * Approximation), $"its corners built, and off the union of the balls by {madeWorst}");
+        Assert.True(madeWorst < 0.2 * Approximation, $"its corners built, and off the union of the balls by {madeWorst}");
         foreach ((Point3D at, double off, double gap, _) in chfi3d.InternalBuilder().EnvelopeCorners.Where(c => c.Off == 0 && c.Gap > Approximation))
         {
             double beside = made.Where(p => p.At.DistanceTo(at) < 0.1).Max(p => p.Miss);
             Assert.True(beside < 0.05 * Approximation, $"off the union of the balls by {beside} beside a corner that was built");
         }
 
-        // And refused as before where the tests turn the building off
+        if (tilted)
+        {
+            Assert.True(worst < Approximation, $"with its corners tilted, off the union of the balls by {worst}");
+            return;
+        }
+
+        // Past the tolerance with every corner tilted, and refused where the tests turn the building off
+        Assert.True(worst > Approximation, $"with its corners tilted it was off the union of the balls by only {worst}");
         MakeFillet refused = RimTeeFillet(top, low, high, refused: true, cornersBuilt: false);
         Assert.False(refused.IsDone);
         Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, refused.StripeStatus(1));
@@ -170,6 +167,7 @@ public class EvolvingFilletOnEdgeTests
             Shape shape = RimTee(3.2);
             var chfi3d = new MakeFillet(shape);
             chfi3d.InternalBuilder().EnvelopeEndsMeet = meet;
+            chfi3d.InternalBuilder().EnvelopeTiltLimit = double.MaxValue; // the tilt itself: no corner built for being wide
             NCollection_Array1<Point2D> law = new(1, 3);
             law.SetValue(1, new Point2D(0.0, 0.2));
             law.SetValue(2, new Point2D(0.5, 2.0));
@@ -203,11 +201,11 @@ public class EvolvingFilletOnEdgeTests
     //   the measure is 1.0e-2.
     // OCCT builds both, and Kerf did, with OCCT's areas.
     // Unit 15AK3: both are built, those corners made. K6 has a crease where its ball comes to rest on the rim (its other
-    // corner, 6.6e-6, stays tilted) and is within 1.4e-5 of the union of its balls everywhere; K7 has a crease at each of
+    // corner, 6.6e-6, is a crease too since decision 34108) and is within 1.4e-5 of the union of its balls everywhere; K7 has a crease at each of
     // the two corners where its ball comes to rest on the curves and a piece of the ball, 0.22 wide, at each of the two
     // where it leaves them, and is within 5.1e-6.
     [Theory]
-    [InlineData("K6", 1.78e-4, 1.78e-4, 0, 1)]
+    [InlineData("K6", 1.78e-4, 1.78e-4, 0, 2)]
     [InlineData("K7", 1.02e-2, 6.8e-4, 2, 2)]
     public void The_corpuss_fillets_onto_edges_have_their_corners_built_and_were_off_the_union_of_their_balls(string name, double worst, double corner, int pieces, int creases)
     {
@@ -316,6 +314,17 @@ public class EvolvingFilletOnEdgeTests
         Assert.True(made.Max(p => p.Miss) < 0.2 * Approximation, $"{name}: its corners built, and off the union of the balls by {made.Max(p => p.Miss)}");
         Assert.True(made.Where(p => p.At.DistanceTo(at) < 0.1).Max(p => p.Miss) < 0.05 * Approximation);
 
+        // The warning that is ready for a crease past the angular tolerance (0.01 radians), with the greatest angle between
+        // the faces' normals along the creases: K6's 0.88 degrees, K7's 1.17
+        double crease = chfi3d.InternalBuilder().EnvelopeCreaseAngle * 180 / Math.PI;
+        Assert.InRange(crease, rim ? 1.15 : 0.86, rim ? 1.19 : 0.90);
+        var warning = chfi3d.InternalBuilder().EnvelopeCreaseWarning;
+        Assert.NotNull(warning);
+        Assert.Equal(Kerf.Severity.Warning, warning.Severity);
+        Assert.Equal("fillet.creased", warning.Code.ToString());
+        Assert.Contains(rim ? "1.17 degrees" : "0.88 degrees", warning.Message);
+        Assert.Null(Kerf.Engine.Foundation.StatusDiagnostics.FilletCreased(0.009, 0.01));
+
         // And every face of it meshes, the pieces of the ball, whose two corners are single points of their surfaces, too
         var mesh = new Kerf.Engine.Meshing.IncrementalMesh(chfi3d.Shape(), 0.05);
         Assert.True(mesh.IsDone);
@@ -396,10 +405,9 @@ public class EvolvingFilletOnEdgeTests
 
     // One of the corpus's that was always built, blend/buildevol/H9: a cylinder of radius 8 on a box of 20, and the fillet of
     // the circle they meet in, 1 to 4 to 3, whose ball comes to rest on the edges of the box's top and leaves them, six times.
-    // Its worst corner's measure is 9.6e-5, and with every corner tilted its faces are 9.6e-5 inside the union of their balls
-    // there: within the tolerance by less than the approximation's own error. Unit 15AK3 builds a corner whose measure is
-    // past nine tenths of the tolerance, so that one is a crease, and the fillet is 6.8e-5 off the union at most, at the
-    // corner that is its mirror image and measures 6.8e-5.
+    // Its worst corner's measure is 9.6e-5, and with every corner tilted its faces were 9.6e-5 inside the union of their balls
+    // there, and up to 0.64 degrees from tangent across the joins. Since decision 34108 its six corners are built, two pieces
+    // of the ball and four creases, and it is within 4.4e-6 of the union everywhere.
     [Fact]
     public void The_corpuss_H9_is_built_within_tolerance_of_the_union_of_its_balls()
     {
@@ -419,9 +427,7 @@ public class EvolvingFilletOnEdgeTests
         Assert.True(chfi3d.Shape().Validate().IsValid);
         double measure = chfi3d.InternalBuilder().EnvelopeCornerWorst;
         Assert.InRange(measure, 9.0e-5, Approximation);
-        Assert.Equal((0, 1), chfi3d.InternalBuilder().EnvelopeCornersMade);
-        double tilted = chfi3d.InternalBuilder().EnvelopeCorners.Max(c => c.Off);
-        Assert.InRange(tilted, 6.5e-5, 7.1e-5);
+        Assert.Equal((2, 4), chfi3d.InternalBuilder().EnvelopeCornersMade);
 
         // The box's top as a surface, to its edges
         Distance top = p =>
@@ -432,7 +438,7 @@ public class EvolvingFilletOnEdgeTests
         List<(double Miss, Point3D At)> points = UnionMiss(chfi3d, p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 8),
                                                            p => new Vector3D(p.X, p.Y, 0).Normalized(), top, 10);
         double worst = points.Max(p => p.Miss);
-        Assert.True(worst < Approximation && Math.Abs(worst - tilted) < 0.05 * tilted, $"off the union of the balls by {worst}, its worst tilted corner's measure {tilted}");
+        Assert.True(worst < 0.1 * Approximation, $"off the union of the balls by {worst}");
     }
 
     private static Shape? Corpus(string file)

@@ -189,7 +189,9 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                 const double Degrees = 180 / Math.PI;
                 text.AppendLine(string.Create(CultureInfo.InvariantCulture,
                     $"{kind}\t{name}\tthe faces' normals {faces * Degrees:F3} degrees apart\tthe union's balls' {union * Degrees:F3}\tthe faces' from a ball's radius {off1 * Degrees:F3} and {off2 * Degrees:F3}\tat ({at.X:F3},{at.Y:F3},{at.Z:F3})\t{(atCorner ? string.Create(CultureInfo.InvariantCulture, $"corner's measure {corner.Off:G3}, gap {corner.Gap:G3}") : "no corner")}"));
-                if (made && !(Math.Abs(faces - union) < 0.02 * union + 2e-4 && Math.Max(off1, off2) < 0.02 * union + 2e-4))
+                // A built crease's faces are each tangent to a ball that touches there; and where the two balls are told
+                // apart (a shallow crossing's are within 2e-6 of each other all the way between), their angle is the faces'
+                if (made && !(Math.Max(off1, off2) < 0.02 * faces + 2e-4 && (double.IsNaN(union) || union < 0.5 * faces || Math.Abs(faces - union) < 0.03 * faces + 2e-4)))
                 {
                     wrong.Add(string.Create(CultureInfo.InvariantCulture, $"a crease of {faces:G4} radians at ({at.X:F3},{at.Y:F3},{at.Z:F3}) where the union of the balls has one of {union:G4}, its faces {off1:G3} and {off2:G3} from the balls' radii"));
                 }
@@ -806,9 +808,9 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         return points;
     }
 
-    // Each edge between two of the new faces whose normals are more than 0.002 radians apart somewhere along it (a tangent
-    // join is within 2e-4): the greatest angle between them, at 41 points, where, and the greatest angle there between the
-    // radii of the balls that touch the point, each the nearest of its neighbours along its line and within 1e-5 of it. NaN
+    // Each edge between two of the new faces that is a crease the builder made, or whose normals are more than 0.002 radians
+    // apart somewhere along it (a tangent join is within 2e-4): the greatest angle between them, at 41 points, where, and the greatest angle there between the
+    // radii of the balls that touch the point, each the nearest of a stretch of its line that comes within 2e-6 of it. NaN
     // where fewer than two balls do.
     private static List<(double Faces, double Union, double Off1, double Off2, Point3D At, Point3D Middle)> Creases(MakeFillet fillet, List<(Point3D C, double R)[]> lines)
     {
@@ -863,7 +865,8 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                     }
                 }
 
-                if (greatest < 2e-3)
+                Point3D half = curve.Value(0.5 * (curve.FirstParameter() + curve.LastParameter()));
+                if (greatest < 2e-3 && !fillet.InternalBuilder().EnvelopeCreases.Any(c => c.Value(0.5).DistanceTo(half) < 1e-6))
                 {
                     continue;
                 }
@@ -871,17 +874,25 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                 List<Vector3D> radii = [];
                 foreach ((Point3D C, double R)[] line in lines)
                 {
-                    double before = double.MinValue;
-                    for (int k = 0; k <= Dense; k++)
+                    int best = -1;
+                    double nearest = double.MinValue;
+                    for (int k = 0; k <= Dense + 1; k++)
                     {
-                        double depth = line[k].R - at.DistanceTo(line[k].C);
-                        double after = k < Dense ? line[k + 1].R - at.DistanceTo(line[k + 1].C) : double.MinValue;
-                        if (depth > -1e-5 && depth >= before && depth >= after)
+                        double depth = k <= Dense ? line[k].R - at.DistanceTo(line[k].C) : double.MinValue;
+                        if (depth > -2e-6)
                         {
-                            radii.Add(new Vector3D(line[k].C, at).Normalized());
+                            if (depth > nearest)
+                            {
+                                nearest = depth;
+                                best = k;
+                            }
                         }
-
-                        before = depth;
+                        else if (best >= 0)
+                        {
+                            radii.Add(new Vector3D(line[best].C, at).Normalized());
+                            best = -1;
+                            nearest = double.MinValue;
+                        }
                     }
                 }
 
