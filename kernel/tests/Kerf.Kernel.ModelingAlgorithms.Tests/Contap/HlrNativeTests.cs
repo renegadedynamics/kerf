@@ -131,7 +131,7 @@ public class HlrNativeTests
         Compare(aRec.Text, "case contana ", 3);
     }
 
-    // A deliberate difference from native (decision 35004, OCCT #1561): the B-spline face's start points for its contour
+    // A deliberate difference from native (decision 2448, OCCT #1561): the B-spline face's start points for its contour
     // are laid on its own grid, not with their indices swapped, so its walked lines start elsewhere and come out within 3 units
     // in the last place of native's, the same lines with the same points and vertices
     private const int BSplineUlps = 3;

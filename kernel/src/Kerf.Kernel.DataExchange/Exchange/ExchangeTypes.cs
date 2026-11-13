@@ -160,7 +160,7 @@ public sealed record ModelNode
     {
         if (node.Shape is { } shape)
         {
-            // a placement with a scale made part of the geometry (decision 35008)
+            // a placement with a scale made part of the geometry (decision 2452)
             shapes.Add(placement.IsIdentity ? shape : global::Kerf.Engine.Construction.Api.Transform.Placed(shape, placement));
             return;
         }

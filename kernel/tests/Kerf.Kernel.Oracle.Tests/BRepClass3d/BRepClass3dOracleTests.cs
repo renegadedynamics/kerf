@@ -44,7 +44,7 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
             aNC.Load(aShape.N);
             var aPC = new SolidClassifier();
             aPC.Load(aShape.P);
-            // A shape placed with a scale (decision 35008): the port is compared with native's recordings as OCCT
+            // A shape placed with a scale (decision 2452): the port is compared with native's recordings as OCCT
             // classifies it, by the ray in the scaled frame, and as it classifies it, with the geometry the scale makes
             bool aScaled = ClassificationScenes.HasScale(aShape.P);
             SolidClassifier? aTruth = null;

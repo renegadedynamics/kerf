@@ -220,7 +220,7 @@ public class DrawingTests
         Assert.All(others, o => Assert.Equal(first, o));
     }
 
-    // OCCT #1561 (decision 35004): a smooth loft through 3 or 5 circles, each a periodic spline through 48 points, seen from
+    // OCCT #1561 (decision 2448): a smooth loft through 3 or 5 circles, each a periodic spline through 48 points, seen from
     // the front. Its face has 49 knots one way and 2 the other, and the exact method's start points for the outline were laid
     // with their two indices swapped, all in two columns by the seam: the silhouettes half a turn away had none, and the
     // drawing had one silhouette of the two, or none. Lengths as the issue gives them once mended.

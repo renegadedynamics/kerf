@@ -52,7 +52,7 @@ internal class CurveSurfaceIntersector : Transient
     private readonly bool _polyhedronBySamplePars;
     private readonly int _nbsu, _nbsv;
 
-    // Kerf (decision 35009): the samples along a long face past which its cap is raised, and the cap then
+    // Kerf (decision 2453): the samples along a long face past which its cap is raised, and the cap then
     private const int LongFaceAsks = 20, LongFaceCap = 60;
     // Kerf (unit 15D): the box the polyhedron's box is surely inside (HullBox): 0 not worked out, 1 known, -1 none
     private int _hullBoxState;
@@ -216,7 +216,7 @@ internal class CurveSurfaceIntersector : Transient
             {
                 if (Max(dU, dV) > Min(dU, dV) * tresh)
                 {
-                    // Kerf (unit 15E17, decision 35009; OCCT #1703): a long face whose surface asks for more than 20
+                    // Kerf (unit 15E17, decision 2453; OCCT #1703): a long face whose surface asks for more than 20
                     // samples along it gets a cap of 60 a side, not 40, so that its polyhedron follows what it asks for
                     int cap = Max(askU, askV) > LongFaceAsks ? LongFaceCap : maxSamples;
                     int cap2 = cap * cap;

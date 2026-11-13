@@ -142,7 +142,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         aN.LoadS2(theS2.N);
         bool aNDone = aN.Perform();
 
-        // A shape placed with a scale (decision 35008): the port is compared with native's recordings as OCCT classifies
+        // A shape placed with a scale (decision 2452): the port is compared with native's recordings as OCCT classifies
         // it, and its own inner solution with that for the geometry the scale makes. The distances under a scale aren't
         // the geometry's either, which is why the public layer refuses such a placement
         bool aScaled = ClassificationScenes.HasScale(theS1.P) || ClassificationScenes.HasScale(theS2.P);

@@ -120,7 +120,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         }
     }
 
-    // The shape moved by the internal Move: the public Moved refuses a scale (decision 35008)
+    // The shape moved by the internal Move: the public Moved refuses a scale (decision 2452)
     private static Shape Moved(Shape theShape, in Placement theL)
     {
         theShape.Move(theL);
@@ -134,7 +134,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         if (theOracle.Bool())
         {
             (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
-            // with the internal Move: the public Moved refuses a scale (decision 35008)
+            // with the internal Move: the public Moved refuses a scale (decision 2452)
             Shape aMoved = aShape.P;
             aMoved.Move(aL);
             aShape = new(aShape.N.Moved(aNL), aMoved);

@@ -156,7 +156,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
         // native's 178, on the same 58 entities
         "bug32314_corrupted.stp",
         // a sphere's and a torus's patches whose outer boundary curves run clockwise, which native reads as the rest of
-        // each surface, or the far side of a rod's hemispherical end (decision 35002, OCCT #1652)
+        // each surface, or the far side of a rod's hemispherical end (decision 2446, OCCT #1652)
         "trj4_k1_geo-pe-203.stp", "trj4_k1_geo-pe-214.stp",
     };
 

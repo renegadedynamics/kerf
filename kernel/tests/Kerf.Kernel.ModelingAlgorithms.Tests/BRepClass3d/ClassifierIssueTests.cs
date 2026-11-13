@@ -23,7 +23,7 @@ public class ClassifierIssueTests
     // OCCT #1700's "cheek", a valid solid of 31 faces, and a cube of 1 whose corner P lies 6.4 below the cheek's box. The
     // classifier's ray from P meets a B-spline face by its bound, where the face's intersector misses the crossing, so P read
     // IN: the distance was 0, an inner solution and a success. A point outside a finite solid's box is now OUT
-    // (decision 35003), and the distance is the shells', 6.480287, as the issue expects.
+    // (decision 2447), and the distance is the shells', 6.480287, as the issue expects.
     [Fact]
     public void Issue_1700_a_point_outside_the_solids_box_is_outside_it_and_the_distance_is_right()
     {
@@ -54,7 +54,7 @@ public class ClassifierIssueTests
         Assert.Equal(Containment.Out, box.ClassifyPoint(new Point3D(5, 5, 5)));
     }
 
-    // A box placed with a scale, which the public layer no longer gives (decision 35008) but the kernel's own code and
+    // A box placed with a scale, which the public layer no longer gives (decision 2452) but the kernel's own code and
     // Draw-lite can: points by its corners inside and outside, and far outside, against the box's own geometry. The ray
     // read a point inside by a corner OUT, as natively
     [Theory]
@@ -88,7 +88,7 @@ public class ClassifierIssueTests
     // held a scale and a form before each matrix). The classifier's ray from the issue's point, 0.787 outside the solid
     // behind a collar, enters a thread flank, a B-spline with two rows of poles over 32 spans, between the facets of its
     // intersector's polyhedron: the point read IN. The flank's samples now count its boundary rows, and a long face that
-    // asks for more than 20 gets a cap of 60 (decision 35009): OUT
+    // asks for more than 20 gets a cap of 60 (decision 2453): OUT
     [Fact]
     public void Issue_1703_a_point_outside_a_helical_thread_is_outside_it()
     {

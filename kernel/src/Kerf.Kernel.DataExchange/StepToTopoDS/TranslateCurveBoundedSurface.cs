@@ -113,7 +113,7 @@ internal sealed class TranslateCurveBoundedSurface : ImportRoot
             Wire wire = trCC.InternalValue();
             if (cc is StepOuterBoundaryCurve && nb == 1 && !cbs.ImplicitOuter() && IsWoundAsHole(_face, wire, surf))
             {
-                // #1652 (decision 35002): the file says this wire is the outer boundary. Wound clockwise on a sphere or a
+                // #1652 (decision 2446): the file says this wire is the outer boundary. Wound clockwise on a sphere or a
                 // torus, the healing would take it for a hole and add the natural bounds, giving the rest of the surface
                 // for the patch; so it's wound as an outer boundary here, where that is still known.
                 var sewd = new ExtendWireData(wire);

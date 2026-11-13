@@ -182,7 +182,7 @@ internal readonly struct HContTool : ISobTool
             int nbIntV = NbSamplesV(s, vinf, vsup) / 3;
             if (nbIntU * nbIntV > 5)
             {
-                // Kerf (unit 15E17, decision 35004; OCCT #1561): OCCT takes indU over 0 to nbIntV - 1 and indV over 0 to
+                // Kerf (unit 15E17, decision 2448; OCCT #1561): OCCT takes indU over 0 to nbIntV - 1 and indV over 0 to
                 // nbIntU - 1, each scaled by the other's step, which crowds the points into a few columns by the seam where
                 // nbIntU and nbIntV differ, and a loft's silhouettes half a turn away were never found: no outline, and no
                 // error. Each index now runs over its own direction; the steps are OCCT's.

@@ -163,7 +163,7 @@ internal static class BRepTestCommands
 
                 try
                 {
-                    // the internal forms, as Draw's: the public ones refuse a scale (Kerf decision 35008), which -force asks for
+                    // the internal forms, as Draw's: the public ones refuse a scale (Kerf decision 2452), which -force asks for
                     Shape aMoved = S;
                     if (aName is "move" or "reset")
                     {

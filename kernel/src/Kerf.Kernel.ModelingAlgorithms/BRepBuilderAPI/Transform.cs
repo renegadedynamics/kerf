@@ -69,7 +69,7 @@ internal class Transform : ModifyShape
     }
 
     /// <summary>
-    /// Kerf (unit 15E17, decision 35008): <paramref name="shape"/> moved by <paramref name="placement"/>, or, where the
+    /// Kerf (unit 15E17, decision 2452): <paramref name="shape"/> moved by <paramref name="placement"/>, or, where the
     /// placement has a scale, which a shape's placement doesn't take, transformed with the scale made part of its geometry.
     /// </summary>
     internal static Shape Placed(in Shape shape, in Placement placement) =>

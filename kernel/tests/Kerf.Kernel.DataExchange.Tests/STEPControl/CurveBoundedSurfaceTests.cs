@@ -10,7 +10,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.DataExchange.Tests.STEPControl;
 
 /// <summary>
-/// OCCT #1652 (decision 35002): a <c>CURVE_BOUNDED_SURFACE</c> on a sphere or a torus whose <c>OUTER_BOUNDARY_CURVE</c>
+/// OCCT #1652 (decision 2446): a <c>CURVE_BOUNDED_SURFACE</c> on a sphere or a torus whose <c>OUTER_BOUNDARY_CURVE</c>
 /// runs clockwise in the surface's parameters was read as the rest of the surface, a valid face and a success, as the
 /// healing took the outer boundary for a hole and added the natural bounds. The file is the issue's: one patch on a
 /// sphere of radius 20, u from 0 to 30 degrees and v from 10 to 40, area 98.26; the torus is the same patch on a torus

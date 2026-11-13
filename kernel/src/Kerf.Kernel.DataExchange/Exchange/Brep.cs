@@ -60,7 +60,7 @@ public static class Brep
             return Result<Shape>.Failure(Diagnostic.Error(ExchangeTree.Malformed, "The BREP data holds no shape."));
         }
 
-        // Kerf (unit 15E17, decision 35008): a shape's placement with a scale, which the kernel's operations don't hold
+        // Kerf (unit 15E17, decision 2452): a shape's placement with a scale, which the kernel's operations don't hold
         // under, is made part of the geometry where it is the root's own; anywhere below, the data is refused
         Shape inner = shape.Located(new Placement());
         if (HasScale(inner))

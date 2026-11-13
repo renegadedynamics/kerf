@@ -1093,7 +1093,7 @@ internal class SolidExplorer
     public Shape GetShape() => (_shape);
 
     /// <summary>
-    /// Kerf (unit 15E17, decision 35008): for a shape whose own placement has a scale, and nothing placed with a scale below
+    /// Kerf (unit 15E17, decision 2452): for a shape whose own placement has a scale, and nothing placed with a scale below
     /// it, an explorer of the shape without that placement, in which a point is classified by its image under the
     /// placement's inverse; null for any other shape. The ray's crossings aren't the geometry's under a scale: a point
     /// inside a scaled box by its corner read OUT. Made when first asked, and kept.
@@ -1132,7 +1132,7 @@ internal class SolidExplorer
     }
 
     /// <summary>
-    /// Kerf (unit 15E17, decision 35003): true if <paramref name="p"/> is farther than <paramref name="tol"/> outside the
+    /// Kerf (unit 15E17, decision 2447): true if <paramref name="p"/> is farther than <paramref name="tol"/> outside the
     /// shape's box and the shape bounds a finite region (it isn't reversed, its shells are closed, no face is placed with a
     /// scale, and its point at infinity
     /// is OUT): then the point is outside it. The box and the region's finiteness are made when first asked, and kept.

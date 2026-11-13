@@ -98,7 +98,7 @@ public partial struct Shape : IEquatable<Shape>
     /// <summary>This shape with its local coordinate system set to <paramref name="placement"/>.</summary>
     /// <param name="placement">The new local coordinate system.</param>
     /// <param name="throwOnInvalid">Throw if the transformation is negative; one with a scale is always refused.</param>
-    /// <exception cref="ArgumentException">The placement has a scale (decision 35008).</exception>
+    /// <exception cref="ArgumentException">The placement has a scale (decision 2452).</exception>
     public readonly Shape Located(in Placement placement, bool throwOnInvalid = false)
     {
         RefuseScale(placement.Transformation);
@@ -193,7 +193,7 @@ public partial struct Shape : IEquatable<Shape>
     /// <summary>This shape with its location multiplied by <paramref name="position"/>.</summary>
     /// <param name="position">The transformation to apply.</param>
     /// <param name="throwOnInvalid">Throw if the transformation is negative; one with a scale is always refused.</param>
-    /// <exception cref="ArgumentException">The placement has a scale (decision 35008).</exception>
+    /// <exception cref="ArgumentException">The placement has a scale (decision 2452).</exception>
     public readonly Shape Moved(in Placement position, bool throwOnInvalid = false)
     {
         RefuseScale(position.Transformation);
@@ -273,7 +273,7 @@ public partial struct Shape : IEquatable<Shape>
     internal void TShape(TShape? tShape) => _tShape = tShape;
 
     // Checks if the transformation contains scaling or negative values.
-    // Kerf (unit 15E17, decision 35008): a placement with a scale isn't taken from a caller. Under one, OCCT's algorithms
+    // Kerf (unit 15E17, decision 2452): a placement with a scale isn't taken from a caller. Under one, OCCT's algorithms
     // aren't the geometry's: a solid classified a point inside it by a corner OUT, and distances came out up to 20% off;
     // a scale is made part of the geometry by a transform
     private static void RefuseScale(in Transform3D trsf)

@@ -10,7 +10,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.DataExchange.Tests.PublicApi;
 
 /// <summary>
-/// Placements with a scale where they enter from data (decision 35008): the kernel's operations don't hold under one (a
+/// Placements with a scale where they enter from data (decision 2452): the kernel's operations don't hold under one (a
 /// solid classified a point inside it OUT, distances came out up to 20% off), so a scale is made part of the geometry
 /// where the data places a whole shape with it, and refused where it can't be.
 /// </summary>
