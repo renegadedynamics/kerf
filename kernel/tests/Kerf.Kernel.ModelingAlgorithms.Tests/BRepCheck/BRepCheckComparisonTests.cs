@@ -78,7 +78,7 @@ public class BRepCheckComparisonTests(ITestOutputHelper output)
             aShape = aShape.Reversed();
         }
 
-        return ShapeCasts.Face(aShape.Located(s.Placement));
+        return ShapeCasts.Face(aShape.LocatedAny(s.Placement));
     }
 
     private static Wire Ring(BrepBuilder aB, in Face aF, in Plane3D aPln, Spec s, double radius, bool isHole)

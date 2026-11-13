@@ -185,7 +185,7 @@ internal static class ExchangeTree
         Color? color = colour is { } rgba ? Color.FromEngine(rgba) : null;
         if (!product.IsAssembly)
         {
-            Shape placed = product.Shape.Moved(instance.Location);
+            Shape placed = global::Kerf.Engine.Construction.Api.Transform.Placed(product.Shape, instance.Location);
             return meshes
                 ? ModelNode.Part(ShapeMesh.FromMeshOnlyShape(placed), name, color)
                 : ModelNode.Part(placed, name, color);

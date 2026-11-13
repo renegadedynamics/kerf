@@ -129,6 +129,9 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
         "trj12_gd1-id-214.stp",
         // a product name whose decoding reads past its end in native (bytes of other memory in the name: occt-issues.md)
         "bug31670_russian.stp",
+        // a sphere's and a torus's patches whose outer boundary curves run clockwise, which native reads as the rest of
+        // each surface, or the far side of a rod's hemispherical end (decision 2446, OCCT #1652)
+        "trj4_k1_geo-pe-203.stp", "trj4_k1_geo-pe-214.stp",
     };
 
     private static string WriteLine(ExchangeDocument theDoc, string theName, string theSchema, string? theDump)
@@ -302,5 +305,7 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
         "step_testdata_step_nist_ftc_08_asme1_ap242-2.stp AP214IS", "step_testdata_step_trj12_gd1-id-214.stp AP214IS",
         "step_testdata_step_as1-oc-214-mat.stp AP214IS", "step_testdata_step_bug28345_30338.stp AP214IS",
         "step_testdata_step_bug31670_russian.stp AP214IS",
+        // decision 2446, as the reads
+        "step_testdata_step_trj4_k1_geo-pe-203.stp AP214IS", "step_testdata_step_trj4_k1_geo-pe-214.stp AP214IS",
     };
 }

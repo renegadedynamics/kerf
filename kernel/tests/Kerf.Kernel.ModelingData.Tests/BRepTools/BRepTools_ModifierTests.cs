@@ -486,7 +486,7 @@ public class BRepTools_ModifierTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         Transform3D aScale = new Transform3D().WithScale(new Point3D(1, 0, 0), 1.5);
         Transform3D aMove = Transform3D.Translation(new Vector3D(0, 0, 10));
-        Shape aPlaced = aBox.Moved(new Placement(aScale)).Moved(new Placement(aMove));
+        Shape aPlaced = ((Shape)aBox).MovedAny(new Placement(aScale)).MovedAny(new Placement(aMove));
         var aSnapshot = ShapeSnapshot.Of(aPlaced);
 
         var aPurge = new PurgeLocations();

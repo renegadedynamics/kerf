@@ -68,9 +68,11 @@ public partial struct Face : IEquatable<Face>
 
     /// <summary>This shape with its local coordinate system set to <paramref name="placement"/>.</summary>
     /// <param name="placement">The new local coordinate system.</param>
-    /// <param name="throwOnInvalid">Throw if the transformation has a scale or is negative.</param>
+    /// <param name="throwOnInvalid">Throw if the transformation is negative; one with a scale is always refused.</param>
+    /// <exception cref="ArgumentException">The placement has a scale (decision 2452).</exception>
     public readonly Shape Located(in Placement placement, bool throwOnInvalid = false)
     {
+        RefuseScale(placement.Transformation);
         Shape shape = this;
         shape.Location(placement, throwOnInvalid);
         return shape;
@@ -161,9 +163,11 @@ public partial struct Face : IEquatable<Face>
 
     /// <summary>This shape with its location multiplied by <paramref name="position"/>.</summary>
     /// <param name="position">The transformation to apply.</param>
-    /// <param name="throwOnInvalid">Throw if the transformation has a scale or is negative.</param>
+    /// <param name="throwOnInvalid">Throw if the transformation is negative; one with a scale is always refused.</param>
+    /// <exception cref="ArgumentException">The placement has a scale (decision 2452).</exception>
     public readonly Shape Moved(in Placement position, bool throwOnInvalid = false)
     {
+        RefuseScale(position.Transformation);
         Shape shape = this;
         shape.Move(position, throwOnInvalid);
         return shape;
@@ -240,6 +244,17 @@ public partial struct Face : IEquatable<Face>
     internal void TShape(TShape? tShape) => _tShape = tShape;
 
     // Checks if the transformation contains scaling or negative values.
+    // Kerf (unit 15E17, decision 2452): a placement with a scale isn't taken from a caller. Under one, OCCT's algorithms
+    // aren't the geometry's: a solid classified a point inside it by a corner OUT, and distances came out up to 20% off;
+    // a scale is made part of the geometry by a transform
+    private static void RefuseScale(in Transform3D trsf)
+    {
+        if (Math.Abs(Math.Abs(trsf.ScaleFactor) - 1.0) > Placement.ScalePrec())
+        {
+            throw Refusal.Argument(new DomainErrorException("A placement with a scale is refused: scale the geometry with a transform"));
+        }
+    }
+
     private static void ValidateTransformation(in Transform3D trsf)
     {
         if (Math.Abs(Math.Abs(trsf.ScaleFactor) - 1.0) > Placement.ScalePrec() || trsf.IsNegative)

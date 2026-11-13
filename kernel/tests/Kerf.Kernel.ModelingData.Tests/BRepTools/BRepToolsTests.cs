@@ -165,7 +165,7 @@ public class BRepToolsTests
         var aList = new NCollection_List<Shape>();
         BrepTools.CheckLocations(aBox, aList);
         Assert.True(aList.IsEmpty());
-        Shape aScaled = aBox.Moved(new Placement(Transform3D.Scale(new Point3D(), 2.0)));
+        Shape aScaled = ((Shape)aBox).MovedAny(new Placement(Transform3D.Scale(new Point3D(), 2.0)));
         BrepTools.CheckLocations(aScaled, aList);
         Assert.Equal(1, aList.Extent());
     }

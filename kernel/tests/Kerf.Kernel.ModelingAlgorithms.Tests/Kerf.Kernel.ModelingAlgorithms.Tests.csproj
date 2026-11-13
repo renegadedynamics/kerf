@@ -67,6 +67,8 @@
     <EmbeddedResource Include="BOPAlgo\Issues\*.brep" LogicalName="BOPAlgo.Issues.%(Filename)%(Extension)" />
     <!-- The shapes of OCCT issues that fillets get wrong, from their attachments -->
     <EmbeddedResource Include="BRepFilletAPI\Issues\*.brep" LogicalName="BRepFilletAPI.Issues.%(Filename)%(Extension)" />
+    <!-- OCCT #1700's solid as its issue gives it, and #1703's with its locations in 8.0.1's layout (15E17), binary -->
+    <EmbeddedResource Include="BRepClass3d\Issues\*.bbrep" LogicalName="BRepClass3d.Issues.%(Filename)%(Extension)" />
     <!-- Native OCCT's sweep surfaces, laws and package functions, recorded by tools/sweeprec (unit 5L2) -->
     <EmbeddedResource Include="GeomFill\Recordings\sweeprec.txt.gz" LogicalName="GeomFill.sweeprec.txt.gz" />
     <!-- Native OCCT's BRepFill laws and sections and ShapeUpgrade_RemoveLocations, recorded by tools/brepfillrec (unit 5S1) -->

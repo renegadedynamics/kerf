@@ -46,21 +46,21 @@ public class PlanarFaceMassTests
         AssertSame(box.Reversed(), -105.0);
 
         var turned = Transform3D.Rotation(new Axis3D(new Point3D(10, -20, 30), new Direction3D(1, 2, 3)), 0.7);
-        AssertSame(box.Moved(new Placement(turned)), 105.0);
+        AssertSame(box.MovedAny(new Placement(turned)), 105.0);
     }
 
     [Fact]
     public void A_scaled_placement_scales_the_volume()
     {
         Shape box = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        AssertSame(box.Moved(new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0))), 48.0);
+        AssertSame(box.MovedAny(new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0))), 48.0);
     }
 
     [Fact]
     public void Shared_solids_and_what_is_skipped()
     {
         Shape box = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
-        Shape moved = box.Moved(new Placement(Transform3D.Translation(new Vector3D(10, 0, 0))));
+        Shape moved = box.MovedAny(new Placement(Transform3D.Translation(new Vector3D(10, 0, 0))));
         Shape both = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(box, moved));
         AssertSame(both, 12.0);
         Shape cancelled = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(box, box.Reversed()));
@@ -84,7 +84,7 @@ public class PlanarFaceMassTests
     public void A_face_alone_counts_from_the_reference_point_as_the_integration_does(double x, double y, double z, bool reversed)
     {
         Face face = BRepGPropTestShapes.Faces(TestShapes.Frozen(TestShapes.Box(4, 6, 2)))[1];
-        Shape placed = face.Moved(new Placement(Transform3D.Translation(new Vector3D(x, y, z))));
+        Shape placed = ((Shape)face).MovedAny(new Placement(Transform3D.Translation(new Vector3D(x, y, z))));
         placed = reversed ? placed.Reversed() : placed;
         // The reference is where the shape is held, so a face off it bounds a pyramid from there
         Assert.Equal(Integrated(placed), Exact(placed), 1e-11);
@@ -103,7 +103,7 @@ public class PlanarFaceMassTests
         Shape box = TestShapes.Frozen(TestShapes.Box(3, 5, 7));
         Assert.Equal(142.0, Area(box, true), 1e-10);
         Assert.Equal(142.0, Area(box.Reversed(), true), 1e-10);
-        Shape scaled = box.Moved(new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0)));
+        Shape scaled = box.MovedAny(new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0)));
         Assert.Equal(568.0, Area(scaled, true), 1e-10);
         Assert.Equal(Area(scaled, false), Area(scaled, true), 1e-10);
         Shape cylinder = TestShapes.Frozen(BRepGPropTestShapes.CylinderSolid(2, 5));
@@ -137,9 +137,9 @@ public class PlanarFaceMassTests
             Point3D centre = IntegratedCentre(face);
             AssertCentre(face, centre, 1e-7);
             AssertCentre(ShapeCasts.Face(face.Reversed()), centre, 1e-7);
-            AssertCentre(ShapeCasts.Face(face.Moved(new Placement(turned))), centre.Transformed(turned), 1e-7);
-            AssertCentre(ShapeCasts.Face(face.Moved(new Placement(far))), centre.Transformed(far), 1e-7);
-            AssertCentre(ShapeCasts.Face(face.Moved(new Placement(scaled))), centre.Transformed(scaled), 1e-7);
+            AssertCentre(ShapeCasts.Face(((Shape)face).MovedAny(new Placement(turned))), centre.Transformed(turned), 1e-7);
+            AssertCentre(ShapeCasts.Face(((Shape)face).MovedAny(new Placement(far))), centre.Transformed(far), 1e-7);
+            AssertCentre(ShapeCasts.Face(((Shape)face).MovedAny(new Placement(scaled))), centre.Transformed(scaled), 1e-7);
         }
     }
 

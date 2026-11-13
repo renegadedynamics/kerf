@@ -95,7 +95,7 @@ public class BRepGPropKnownAnswerTests
         Placement aLoc = RigidLocation();
         Transform3D aT = aLoc.Transformation;
         Shape aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
-        Shape aMoved = aBox.Moved(aLoc);
+        Shape aMoved = aBox.MovedAny(aLoc);
 
         Properties aRef = MassPropertiesBuilder.VolumeProperties(aBox);
         Properties aV = MassPropertiesBuilder.VolumeProperties(aMoved);
@@ -140,7 +140,7 @@ public class BRepGPropKnownAnswerTests
         Shape aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         Placement aL1 = RigidLocation();
         var aL2 = new Placement(Transform3D.Translation(new Vector3D(10, 0, 0)));
-        Shape aC = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.Moved(aL1), aBox.Moved(aL2)));
+        Shape aC = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.MovedAny(aL1), aBox.MovedAny(aL2)));
 
         Properties aV = MassPropertiesBuilder.VolumeProperties(aC);
         Assert.Equal(18.0, aV.Mass(), 1e-11);
@@ -151,8 +151,8 @@ public class BRepGPropKnownAnswerTests
         // the same as adding the instances one by one
         var aSum = new Properties();
         aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox));
-        aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox.Moved(aL1)));
-        aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox.Moved(aL2)));
+        aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox.MovedAny(aL1)));
+        aSum.Add(MassPropertiesBuilder.VolumeProperties(aBox.MovedAny(aL2)));
         AssertMat(aSum.MatrixOfInertia(), aV.MatrixOfInertia(), 1e-9);
     }
 
@@ -167,7 +167,7 @@ public class BRepGPropKnownAnswerTests
 
         // a scaled instance is integrated face by face
         var aScale = new Placement(Transform3D.Scale(new Point3D(0, 0, 0), 2.0));
-        Shape aC2 = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.Moved(aScale)));
+        Shape aC2 = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.MovedAny(aScale)));
         Assert.Equal(6.0 + 48.0, MassPropertiesBuilder.VolumeProperties(aC2).Mass(), 1e-10);
 
         // twice in place: SkipShared counts it once
@@ -185,8 +185,8 @@ public class BRepGPropKnownAnswerTests
         Shape aTwin = TestShapes.Frozen(TestShapes.Box(1, 1, 1)); // the same box, another TShape
         Face aFree = TestShapes.Frozen(BRepGPropTestShapes.Faces(TestShapes.Box(2, 2, 2))[1]); // z = 2, normal +Z
         var aL = new Placement(Transform3D.Translation(new Vector3D(5, 0, 0)));
-        Shape aShared = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.Moved(aL), aFree));
-        Shape aDistinct = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aTwin.Moved(aL), aFree));
+        Shape aShared = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.MovedAny(aL), aFree));
+        Shape aDistinct = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aTwin.MovedAny(aL), aFree));
 
         // the shared-solid path (cache and free faces) agrees with the face-by-face path; the free face's
         // contribution depends on the reference point, which is the same for both
@@ -405,17 +405,17 @@ public class BRepGPropKnownAnswerTests
 
         // located: the rotation path, and a scale (the copy path)
         Placement aLoc = RigidLocation();
-        Properties aVL = MassPropertiesBuilder.VolumeProperties(aMeshed.Moved(aLoc), false, false, true);
+        Properties aVL = MassPropertiesBuilder.VolumeProperties(aMeshed.MovedAny(aLoc), false, false, true);
         Assert.Equal(6.0, aVL.Mass(), 1e-11);
         AssertPnt(new Point3D(0.5, 1, 1.5).Transformed(aLoc.Transformation), aVL.CentreOfMass(), 1e-11);
         Matrix3x3 aR = aLoc.Transformation.VectorialPart;
         AssertMat(aR.Multiplied(aV.MatrixOfInertia()).Multiplied(aR.Transposed()), aVL.MatrixOfInertia(), 1e-9);
 
         var aScale = new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0));
-        Properties aVS = MassPropertiesBuilder.VolumeProperties(aMeshed.Moved(aScale), false, false, true);
+        Properties aVS = MassPropertiesBuilder.VolumeProperties(aMeshed.MovedAny(aScale), false, false, true);
         Assert.Equal(48.0, aVS.Mass(), 1e-11);
         AssertPnt(new Point3D(0, 1, 2), aVS.CentreOfMass(), 1e-11);
-        Assert.Equal(88.0, MassPropertiesBuilder.SurfaceProperties(aMeshed.Moved(aScale), false, true).Mass(), 1e-11);
+        Assert.Equal(88.0, MassPropertiesBuilder.SurfaceProperties(aMeshed.MovedAny(aScale), false, true).Mass(), 1e-11);
     }
 
     [Fact]

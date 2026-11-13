@@ -72,7 +72,13 @@ public class TopoDS_ShapeTests
         var aScale = new Placement(Transform3D.Scale(new Point3D(), 2.0));
         EngineAssert.Throws<DomainErrorException>(() => aV.Located(aScale, true));
         EngineAssert.Throws<DomainErrorException>(() => aV.Moved(aScale, true));
-        Assert.Equal(aScale, aV.Located(aScale).Placement); // allowed without the check, as in OCCT
+        // a scale is refused without the check too (decision 2452), where OCCT allows it; the internal forms allow it
+        EngineAssert.Throws<DomainErrorException>(() => aV.Located(aScale));
+        EngineAssert.Throws<DomainErrorException>(() => aV.Moved(aScale));
+        Assert.Equal(aScale, ((Shape)aV).LocatedAny(aScale).Placement);
+        var aMirror = new Placement(Transform3D.Mirror(new Point3D()));
+        EngineAssert.Throws<DomainErrorException>(() => aV.Moved(aMirror, true));
+        Assert.Equal(aMirror, aV.Moved(aMirror).Placement); // a mirror without the check, as in OCCT
     }
 
     [Fact]
