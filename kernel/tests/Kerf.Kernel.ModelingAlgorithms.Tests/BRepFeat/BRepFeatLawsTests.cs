@@ -213,7 +213,7 @@ public class BRepFeatLawsTests
         Assert.Throws<ConstructionErrorException>(() => aPrism.PerformFromEnd(new Shape()));
         Assert.Throws<ConstructionErrorException>(() => aPrism.PerformFromEnd(aVertex));
         Assert.Throws<ConstructionErrorException>(() => aPrism.PerformUntilHeight(aVertex, 7));
-        // no Until at all is a prism of the height (decision 34001; 8.0.1 threw here too)
+        // no Until at all is a prism of the height (decision 2352; 8.0.1 threw here too)
         aPrism.PerformUntilHeight(new Shape(), 7);
         Assert.True(aPrism.IsDone);
     }

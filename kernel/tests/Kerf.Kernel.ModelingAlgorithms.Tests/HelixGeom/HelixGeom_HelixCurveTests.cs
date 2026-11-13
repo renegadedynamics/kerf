@@ -251,7 +251,7 @@ public class HelixGeom_HelixCurveTests
     // ---- the port's own: OCCT's behaviour the GTests don't pin ----
 
     /// <summary>OCCT 8.0.1 kept the old taper when a helix was reloaded with a (near) zero taper angle (occt-issues.md,
-    /// unit 7D); since decision 34002 every taper is the helix's, as upstream's 3f3d32d9f3 has it.</summary>
+    /// unit 7D); since decision 2353 every taper is the helix's, as upstream's 3f3d32d9f3 has it.</summary>
     [Fact]
     public void Reloading_with_no_taper_drops_the_old_taper()
     {

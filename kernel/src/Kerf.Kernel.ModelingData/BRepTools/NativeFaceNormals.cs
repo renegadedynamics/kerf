@@ -3,7 +3,7 @@
 namespace Kerf.Engine.Exchange.Brep;
 
 /// <summary>
-/// For tests (decision 34005): while a scope is open, the execution flow writes BREP texts and binaries as OCCT 8.0.1
+/// For tests (decision 2356): while a scope is open, the execution flow writes BREP texts and binaries as OCCT 8.0.1
 /// does, keeping the first "needs normals" flag of a triangulation an edge added before its face, so that the oracle's
 /// native recordings can be compared byte for byte on the rest. The setting flows as <c>UndoneFixes</c>'s does (an
 /// <see cref="AsyncLocal{T}"/>), so tests running in parallel don't affect each other. Never opened outside a test.

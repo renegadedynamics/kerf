@@ -401,7 +401,7 @@ public class IntCurveSurface_LawsTests
         Assert.Contains("IntersectionSegment", aSegment.ToString());
     }
 
-    // Upstream 53706f78a8 (decision 34003): the transition was read from the surface's derivatives as they are, so a
+    // Upstream 53706f78a8 (decision 2354): the transition was read from the surface's derivatives as they are, so a
     // surface whose parameters run over a long range for its size (derivatives of 1e-7) gave every crossing as a
     // tangency, which a solid's classifier skips; the crossing's direction doesn't depend on the parameters' scale
     [Theory]

@@ -273,7 +273,7 @@ public static class Sweeps
            options.MakeSolid ? static made => EnclosesNothing(made, "The sweep") : null);
     }
 
-    // OCCT #304 and #302 (decision 34006): a profile written by FreeCAD with a vertex of tolerance 2e8, a hundred
+    // OCCT #304 and #302 (decision 2357): a profile written by FreeCAD with a vertex of tolerance 2e8, a hundred
     // million times its width, made the sweep's vertices at both ends of the spine one vertex, and its last edge then
     // failed with a construction error that said nothing of why. A profile or spine whose tolerance is larger than
     // itself covers its whole shape, so the sweep refuses it and says so; with a sane tolerance the same sweep is made.

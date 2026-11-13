@@ -133,7 +133,7 @@ public class BRepFeatTests
         Assert.Single(aPrism.Modified(aTop));
     }
 
-    // Upstream 3f3d32d9f3 (decision 34001): mode 2 asks for the separate feature, which 8.0.1's draft prism fused
+    // Upstream 3f3d32d9f3 (decision 2352): mode 2 asks for the separate feature, which 8.0.1's draft prism fused
     // with the basis shape anyway, as mode 1
     [Fact]
     public void MakeDPrism_Mode2_ReturnsTheSeparateFeature()
@@ -152,7 +152,7 @@ public class BRepFeatTests
         Assert.Equal(Volume(aFused.Shape()) - 6000, aBoss, 6);
     }
 
-    // Upstream 3f3d32d9f3 (decision 34001): PerformUntilHeight with no Until is Perform of the height, and with a
+    // Upstream 3f3d32d9f3 (decision 2352): PerformUntilHeight with no Until is Perform of the height, and with a
     // height of 0 is Perform until the shape; in 8.0.1 the first threw and the second built again with the height 0
     [Fact]
     public void MakePrism_And_MakeDPrism_PerformUntilHeight_FallBackToTheirSimpleForms()

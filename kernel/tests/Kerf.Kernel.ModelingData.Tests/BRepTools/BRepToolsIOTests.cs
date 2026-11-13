@@ -279,7 +279,7 @@ public class BRepToolsIOTests
         }
     }
 
-    // Upstream 71658f6c8f's test (decision 34005): an edge's polygon on the next face's triangulation added that
+    // Upstream 71658f6c8f's test (decision 2356): an edge's polygon on the next face's triangulation added that
     // triangulation without normals before the face was reached, and the face's own normals were then not written
     [Theory]
     [InlineData(false)]

@@ -72,7 +72,7 @@ internal sealed class GeometryBuilderHelix : BuilderHelixGen
         else
         {
             // Case: helix spans multiple full turns - process in segments
-            // Kerf: only a helix of no taper repeats its first coil, as OCCT does since 3f3d32d9f3 (decision 34002);
+            // Kerf: only a helix of no taper repeats its first coil, as OCCT does since 3f3d32d9f3 (decision 2353);
             // 8.0.1 repeated it for a taper under 1e-4 radians, whose coils widen
             bool bIsCylindrical = _taperAngle == 0.0;
             t1x = _t1;

@@ -110,7 +110,7 @@ var swept = Sweeps.Sweep(profile, path, new SweepOptions { Transition = Transiti
 A profile or spine whose tolerance is larger than itself (a vertex whose tolerance covers the whole shape, as some files
 have) is refused with `input.invalid`, naming the tolerance: repair it with `Fix` first. A right or round corner whose trim
 merges a thin profile's sides into one vertex fails saying so; the default transition, `Transformed`, may sweep it
-(decisions 34006, 34007).
+(decisions 2357, 2358).
 
 ```csharp
 var lofted = Sweeps.Loft([bottomWire, middleWire, topWire], new LoftOptions { Ruled = false, MakeSolid = true });

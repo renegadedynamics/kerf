@@ -774,7 +774,7 @@ internal static class InterUtils
         V = v1;
     }
 
-    // The vector divided by its largest component, as a direction; false for a zero vector (decision 34003)
+    // The vector divided by its largest component, as a direction; false for a zero vector (decision 2354)
     private static bool ScaledDirection(ref Vector3D vector)
     {
         double scale = Math.Max(Math.Abs(vector.X), Math.Max(Math.Abs(vector.Y), Math.Abs(vector.Z)));
@@ -797,7 +797,7 @@ internal static class InterUtils
         Point3D psurf;
 
         // Kerf: each derivative is scaled by its largest component before the test, as OCCT does since 53706f78a8
-        // (decision 34003). 8.0.1 tested the derivatives as they are against 1e-12, so a surface whose parameters run
+        // (decision 2354). 8.0.1 tested the derivatives as they are against 1e-12, so a surface whose parameters run
         // over a long range for its size (derivatives of 1e-7, a normal of 1e-14) gave every crossing as a tangency,
         // which a solid's classifier skips; the crossing's direction doesn't depend on the parameterisation.
         SurfaceTool.D1(surface, u, v, out psurf, out d1U, out d1V);

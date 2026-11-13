@@ -136,7 +136,7 @@ public class IntCurveSurface_ThePolygonOfHInter_Test
         Assert.True(aPolygon.Closed());
     }
 
-    // Upstream 71658f6c8f's test (decision 34004): a chord of no length threw a construction error
+    // Upstream 71658f6c8f's test (decision 2355): a chord of no length threw a construction error
     [Fact]
     public void CollapsedChordRetainsMidpointDeparture()
     {

@@ -99,7 +99,7 @@ internal class HelixCurve : CurveAdaptorBase
         }
         // Calculate helix coefficient
         _c1 = _pitch / twoPI;
-        // Kerf: every taper is the helix's, as OCCT does since 3f3d32d9f3 (decision 34002); 8.0.1 took a taper under
+        // Kerf: every taper is the helix's, as OCCT does since 3f3d32d9f3 (decision 2353); 8.0.1 took a taper under
         // 1e-4 radians for none, and kept the old one when reloading a tapered helix with such a taper
         _tgBeta = Math.Tan(_taperAngle);
     }
@@ -220,7 +220,7 @@ internal class HelixCurve : CurveAdaptorBase
         x = -a2 * ct - a1 * st;
         // OCCT: y'' is -r sin t + 2r' cos t, not this, which upstream mends in 3f3d32d9f3. Kept: only the coil's
         // approximation reads it, mending it moves 30 of the 56 native helix records' tolerances by about 5% and no
-        // helix measured moves from its cone by more (decision 34002)
+        // helix measured moves from its cone by more (decision 2353)
         y = -a2 * st - a1 * ct;
         if (!_isClockWise)
         {

@@ -233,7 +233,7 @@ public class ConstructionTests
         KernelAssert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 2, 10, new HelixOptions { EndRadius = -1 }));
     }
 
-    // Upstream 3f3d32d9f3 (decision 34002): a taper under 1e-4 radians was taken for none, so the helix ended at its
+    // Upstream 3f3d32d9f3 (decision 2353): a taper under 1e-4 radians was taken for none, so the helix ended at its
     // start radius; every point of a conical helix is at the radius its height gives
     [Theory]
     [InlineData(10.0, 10.005)]
@@ -272,7 +272,7 @@ public class ConstructionTests
         KernelAssert.Throws<ArgumentException>(() => Sweeps.Sweep(profile, spine, new SweepOptions { Frame = SweepFrame.Binormal }));
     }
 
-    // OCCT #304 and #302 (decision 34006): FreeCAD wrote the profile's vertex with a tolerance of 2e8; the sweep made
+    // OCCT #304 and #302 (decision 2357): FreeCAD wrote the profile's vertex with a tolerance of 2e8; the sweep made
     // its two ends one vertex and threw from BuildEdge, saying nothing of why. It now refuses the profile and says so,
     // and the same profile with a sane tolerance sweeps into the solid it should
     [Fact]
@@ -306,7 +306,7 @@ public class ConstructionTests
         Assert.Contains("tolerance of 1.98E+08", refused.Error.Message, StringComparison.Ordinal);
     }
 
-    // OCCT #639 (decision 34007): two T-shaped profiles with a stem 0.007 wide along a spine with a corner of 19
+    // OCCT #639 (decision 2358): two T-shaped profiles with a stem 0.007 wide along a spine with a corner of 19
     // degrees, with right or round corners. The sweeps' intersection at the corner merges the stem's sides into one vertex, and
     // OCCT failed with "command not done" from an edge's maker; Kerf still fails, and now says why. The transformed transition makes it
     [Fact]
