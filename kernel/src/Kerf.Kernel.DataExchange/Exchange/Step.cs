@@ -296,7 +296,7 @@ public static class Step
               + (ids.Count > 8 ? FormattableString.Invariant($" and {ids.Count - 8} more") : "") + ")";
         string them = count == 1 ? "it" : "them";
         return Diagnostic.Warning(ExchangeTree.InvalidFace,
-            $"{faces} of the STEP data {(count == 1 ? "is" : "are")} invalid as read{which}: the healing reported on {them} or a vertex lies off its edge's curve, and the check of such faces found {them} wrong. The model holds {them} as read.");
+            $"{faces} of the STEP data {(count == 1 ? "is" : "are")} invalid as read{which}: the healing reported on {them}, a vertex lies off its edge's curve or {(count == 1 ? "it is" : "they are")} bounded by two edges or fewer, and the check of such faces found {them} wrong. The model holds {them} as read.");
     }
 
     private static Result<ModelNode> ReadCore(string name, Stream stream, StepReadOptions options, string? folder, IProgress<double>? progress,

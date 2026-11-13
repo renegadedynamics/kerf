@@ -261,7 +261,7 @@ read, and what refers to them is missing from the model. Its message gives how m
 the first failure's text, and ends "Nothing else was read: the model is empty." where nothing is left (decision 2315).
 
 `exchange.invalid-face` is a warning on a STEP read that succeeded (decision 2314): a face the read checked, one the
-healing reported on or with a vertex off its edge's curve, is invalid. Its message gives how many faces (each once, however
+healing reported on, with a vertex off its edge's curve or bounded by two edges or fewer (decision 2427), is invalid. Its message gives how many faces (each once, however
 often the model places it) and the STEP identifiers of the faces they were read from, the first eight. Both codes are
 properties of `Step`: `Step.EntitySkipped`, `Step.InvalidFace`.
 
@@ -288,6 +288,8 @@ own. Those a program is likely to test for are static properties of the operatio
 | `boolean.empty-result` | `BooleanOperations` (warning) | The result is empty |
 | `fillet.<status>` | `Fillet2D`, `Chamfer2D` | `ChFi2d_ConstructionError` in kebab case (`fillet.computation-error`), with the corner |
 | `offset.not-planar` | `Offset2D` | The planar offset couldn't be built |
+| `offset.not-at-distance` | `Offset2D` | The planar offset was made but isn't at its distance from the wire everywhere, so it's refused (decisions 2279, 2281) |
+| `offset.crosses-itself` | `Offset2D` | The planar offset was made but crosses itself, or one of its loops crosses another, so it's refused; the message says where (decision 2422) |
 | `offset.join-changed` | `Offset`, `Hollow` (warning) | Round joins failed at an apex, so the result was made with mitred joins, and passed its checks |
 | `draft.face-failed` | `FeatureOperations.Draft` | A face can't be drafted, with the face |
 | `feature.failed` | `FeatureOperations` | A feature failed with no status |
