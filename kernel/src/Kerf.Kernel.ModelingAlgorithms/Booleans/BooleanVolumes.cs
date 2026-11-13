@@ -316,8 +316,7 @@ public static class BooleanVolumes
                 {
                     continue;
                 }
-                var surface = new FaceSurfaceAdaptor(face);
-                BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+                FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
                 if (!double.IsFinite(fromU + toU + fromV + toV))
                 {
                     continue;
@@ -405,8 +404,7 @@ public static class BooleanVolumes
                 {
                     continue;
                 }
-                var surface = new FaceSurfaceAdaptor(face);
-                BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+                FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
                 if (!double.IsFinite(fromU + toU + fromV + toV))
                 {
                     continue;
@@ -546,8 +544,7 @@ public static class BooleanVolumes
                 continue;
             }
 
-            var surface = new FaceSurfaceAdaptor(face);
-            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+            FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
             if (!double.IsFinite(fromU + toU + fromV + toV))
             {
                 continue;
@@ -634,8 +631,7 @@ public static class BooleanVolumes
                 continue;
             }
 
-            var surface = new FaceSurfaceAdaptor(face);
-            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+            FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
             if (!double.IsFinite(fromU + toU + fromV + toV))
             {
                 continue;
@@ -867,8 +863,7 @@ public static class BooleanVolumes
                     continue;
                 }
 
-                var surface = new FaceSurfaceAdaptor(face);
-                BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+                FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
                 if (!double.IsFinite(fromU + toU + fromV + toV))
                 {
                     continue;
@@ -956,9 +951,11 @@ public static class BooleanVolumes
                     }
                     var classifier = new InFace(face);
                     faces.Add((placement, classifier));
+                    // The plane in place, from an adaptor without the face's bounds, which a plane doesn't depend on and which cost a
+                    // pass over its edges' curves on its parameters for each planar face of the result and of both inputs (unit 15AR)
                     if (surface is PlaneSurface plane)
                     {
-                        _planes.Add(new ResultPlane(new FaceSurfaceAdaptor(face).Plane(), plane.Plane, placement, classifier, Math.Max(Tool.Tolerance(face), Tolerances.Confusion)));
+                        _planes.Add(new ResultPlane(new FaceSurfaceAdaptor(face, false).Plane(), plane.Plane, placement, classifier, Math.Max(Tool.Tolerance(face), Tolerances.Confusion)));
                     }
                 }
             }
@@ -1044,6 +1041,23 @@ public static class BooleanVolumes
             Engine.Geometry.ElSLib.Parameters(Own, point.Transformed(Placement.Transformation.Inverted()), out double u, out double v);
             return Classifier.Holds(new Point2D(u, v));
         }
+    }
+
+    // A face's surface over its bounds, and the bounds, which the adaptor has just worked out from the face's edges as
+    // BrepTools.UVBounds does: the same figures without a second pass over the curves on its parameters (unit 15AR). A face
+    // without a surface has none in its adaptor, so it's asked the usual way
+    internal static FaceSurfaceAdaptor Bounded(Face face, out double fromU, out double toU, out double fromV, out double toV)
+    {
+        var surface = new FaceSurfaceAdaptor(face);
+        if (surface.GeomSurfaceOriginal() is null)
+        {
+            BrepTools.UVBounds(face, out fromU, out toU, out fromV, out toV);
+        }
+        else
+        {
+            (fromU, toU, fromV, toV) = (surface.FirstUParameter(), surface.LastUParameter(), surface.FirstVParameter(), surface.LastVParameter());
+        }
+        return surface;
     }
 
     // A face's 2D classifier, made when a point first asks it: most of a result's faces are never asked, and making one for
