@@ -16,7 +16,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepFilletAPI;
 
 /// <summary>
-/// Unit 15AK2 (decisions 33301 to 33304): a fillet of evolving radius whose ball comes to rest on an edge. Where it does, and
+/// Unit 15AK2 (decisions 2335 to 2338): a fillet of evolving radius whose ball comes to rest on an edge. Where it does, and
 /// where it leaves the edge, the path of the ball's centre has a corner unless the edge lies along the way the contact was
 /// going, and with the radius changing there the one ball has two circles, one for each side. How far the walked surfaces are
 /// then off the surface the balls sweep is measured here apart from how they were built, against the boundary of the union of
@@ -129,7 +129,7 @@ public class EvolvingFilletOnEdgeTests
         Assert.Contains("fillet.radius-changes-at-a-corner", Kerf.Engine.Foundation.StatusDiagnostics.ToDiagnostic(chfi3d.StripeStatus(1))!.Code.ToString());
     }
 
-    // Decision 33307: before it each surface ended on its own circle, and at a corner the two didn't meet. The edge between
+    // Decision 2341: before it each surface ended on its own circle, and at a corner the two didn't meet. The edge between
     // them took the distance as its tolerance, in a shape that was valid: 0.013 on the rim at 3.2 with 0.2 to 2.0, a fillet
     // within the tolerance of the swept surface everywhere. With the later surface ending on the earlier's circle they meet.
     [Fact]
@@ -273,9 +273,9 @@ public class EvolvingFilletOnEdgeTests
 
     // The corpus's blend/buildevol/K8, built: K7's cylinders with a third of radius 3 standing on the top, and the fillet of
     // the rim, 1 to 3 to 2, whose ball comes to rest between two edges, the foot of the third cylinder and the curve the
-    // first two meet in (BRepBlend_RstRstEvolRad). Decision 33305: the second derivative of the ball's centre there is the
+    // first two meet in (BRepBlend_RstRstEvolRad). Decision 2339: the second derivative of the ball's centre there is the
     // equations'; taken by differences, it was wrong at 59 of that function's 320 points, beside the corners the walk closes
-    // in on, and the area was 766.9269 for 766.9257. Decision 33307: its surfaces meet at the corners, where two of them
+    // in on, and the area was 766.9269 for 766.9257. Decision 2341: its surfaces meet at the corners, where two of them
     // were 0.017 apart, the edge between them carrying that as its tolerance; closing them brings the area to 766.9996.
     [Fact]
     public void The_corpuss_K8_between_two_edges_is_built_from_the_equations_second_order()

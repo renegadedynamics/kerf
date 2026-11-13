@@ -327,7 +327,7 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
     }
 
     // The second derivative of the centre along the walk at prm and x, from the equations' second order (unit 15AK2,
-    // decision 33305). With J x' = s the walk's first order (J the equations' derivatives in u, v and the restriction's
+    // decision 2339). With J x' = s the walk's first order (J the equations' derivatives in u, v and the restriction's
     // parameter, s the guide's term), J x'' = s' - J' x', each term's derivative along the walk: the surface's third
     // derivatives (the unit normal's second), the restriction's third (its unit tangent's second), the guide's third
     // (its plane's normal's second) and the law's second. Then the centre c = pts - ray nn, whose first derivative is

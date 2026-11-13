@@ -318,7 +318,7 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
     }
 
     // The second derivative of the centre along the walk at prm and x, from the second order of the ball's equations
-    // (unit 15AK2, decision 33305), taken with the centre c among the unknowns, so that nothing of how BallCentre
+    // (unit 15AK2, decision 2339), taken with the centre c among the unknowns, so that nothing of how BallCentre
     // builds it is differentiated: with k1 = c - ptrst1 and k2 = c - ptrst2,
     //   g1 = |k1|^2 - ray^2, g2 = |k2|^2 - ray^2, g3 = k1 . t1, g4 = nplan . (ptrst1 + ptrst2) / 2 + d, g5 = k2 . t2
     // in z = (c, the two edges' parameters). With G z' = s the first order (s the guide's and the law's term),

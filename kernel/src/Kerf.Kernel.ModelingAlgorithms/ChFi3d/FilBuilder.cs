@@ -1222,7 +1222,7 @@ internal partial class FilBuilder : FilletBuilderBase
         return true;
     }
 
-    // Kerf (units 15AK and 15AK2, decisions 2273, 33301 and 33307): a fillet of evolving radius is the envelope of its
+    // Kerf (units 15AK and 15AK2, decisions 2273, 2335 and 2341): a fillet of evolving radius is the envelope of its
     // balls, whose sections are circles square to the path of the ball's centre. Where the derivative of that path
     // jumps, the one ball there has two circles, one for each side, through the same two contacts, and the surface the
     // balls sweep has the piece of the ball between them, or a crease where the two sides' surfaces cross. Two walked
@@ -1254,7 +1254,7 @@ internal partial class FilBuilder : FilletBuilderBase
     internal bool EnvelopeCornersRefused { get; set; } = true;
 
     /// <summary>
-    /// The tests': false leaves each surface ending on its own circle, as before decision 33307, the edge between two
+    /// The tests': false leaves each surface ending on its own circle, as before decision 2341, the edge between two
     /// of them taking the gap as its tolerance.
     /// </summary>
     internal bool EnvelopeEndsMeet { get; set; } = true;

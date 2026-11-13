@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests.BRepFilletAPI;
 
 /// <summary>
-/// Unit 15AK2's probe (decisions 33303, 33308): the corpus's evolving fillets whose ball comes to rest on an edge, each
+/// Unit 15AK2's probe (decisions 2337, 2342): the corpus's evolving fillets whose ball comes to rest on an edge, each
 /// against the union of its balls, the balls read from the input shape and the fillet's contacts alone. It takes minutes, so
 /// it runs only where <c>KERF_15AK2_UNION</c> names a directory, and writes what it reads there (<c>union.tsv</c>).
 /// <para>
