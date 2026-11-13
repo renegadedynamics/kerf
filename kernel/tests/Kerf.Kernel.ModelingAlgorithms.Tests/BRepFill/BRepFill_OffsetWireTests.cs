@@ -492,6 +492,32 @@ public class BRepFill_OffsetWireTests
     }
 
     [Fact]
+    public void Edges_proved_apart_are_spared_and_those_that_cant_be_go_to_the_exact_crossing()
+    {
+        // Decision 34707: a line and then a curve that runs on one way with it (a Bezier whose poles' differences lie in
+        // a half-plane) are proved to meet only at their common end; a curve that turns back and crosses the line
+        // (its poles' differences span more than half a turn) isn't, and its crossing is found exactly
+        Face aPlane = new MakeFace(Square(), true).Face();
+        Assert.Null(OffsetWire.Crossing(aPlane, LineThenBezier(new Point3D(13, 2, 0), new Point3D(16, 3, 0), new Point3D(20, 8, 0))));
+        Point3D? aBack = OffsetWire.Crossing(aPlane, LineThenBezier(new Point3D(12, 5, 0), new Point3D(5, 5, 0), new Point3D(5, -5, 0)));
+        Assert.NotNull(aBack);
+        Assert.True(Math.Abs(aBack.Value.Y) < 1.0e-7 && aBack.Value.X > 5.0 && aBack.Value.X < 10.0, aBack.ToString());
+    }
+
+    // A line from (0, 0) to (10, 0), then a cubic Bezier from (10, 0) through the poles given
+    private static Wire LineThenBezier(Point3D theP1, Point3D theP2, Point3D theP3)
+    {
+        NCollection_Array1<Point3D> aPoles = new(1, 4);
+        aPoles[1] = new Point3D(10, 0, 0);
+        aPoles[2] = theP1;
+        aPoles[3] = theP2;
+        aPoles[4] = theP3;
+        Edge aLine = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge aCurve = new MakeEdge(new BezierCurve3D(aPoles)).Edge();
+        return new MakeWire(aLine, aCurve).Wire();
+    }
+
+    [Fact]
     public void A_refused_offset_says_why_at_the_public_layer()
     {
         // The maker's reason reaches the public layer's diagnostic: a parallel refused for its distance says so
