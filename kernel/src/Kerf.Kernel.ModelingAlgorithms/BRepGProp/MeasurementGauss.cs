@@ -717,9 +717,10 @@ internal sealed class MeasurementGauss
         NumericTables.GaussPoints(nbUGaussP[1], uGaussP[1]);
         NumericTables.GaussWeights(nbUGaussP[1], uGaussW[1]);
 
-        int nbUSubs = surface.SUIntSubs();
-        var uKnots = new NCollection_Array1<double>(1, nbUSubs + 1);
-        surface.UKnots(uKnots);
+        // Kerf: the surface's spans, an offset's, extrusion's or revolution's basis's too (decision 34801)
+        double[] uSpans = surface.IntegrationUKnots(), vSpans = surface.IntegrationVKnots();
+        var uKnots = new NCollection_Array1<double>(1, uSpans.Length);
+        uSpans.CopyTo(uKnots.AsSpan());
 
         Span<Inertia> local = stackalloc Inertia[2];
 
@@ -746,18 +747,25 @@ internal sealed class MeasurementGauss
             NumericTables.GaussPoints(nbLGaussP[1], lGaussP[1]);
             NumericTables.GaussWeights(nbLGaussP[1], lGaussW[1]);
 
-            int nbLSubs = isNaturalRestriction ? surface.SVIntSubs() : surface.LIntSubs();
-            var lKnots = new NCollection_Array1<double>(1, nbLSubs + 1);
+            NCollection_Array1<double> lKnots;
+            if (isNaturalRestriction)
+            {
+                lKnots = new NCollection_Array1<double>(1, vSpans.Length);
+                vSpans.CopyTo(lKnots.AsSpan());
+            }
+            else
+            {
+                lKnots = new NCollection_Array1<double>(1, surface.LIntSubs() + 1);
+                surface.LKnots(lKnots);
+            }
 
             if (isNaturalRestriction)
             {
-                surface.VKnots(lKnots);
                 l1 = bv1;
                 l2 = bv2;
             }
             else
             {
-                surface.LKnots(lKnots);
                 l1 = surface.FirstParameter();
                 l2 = surface.LastParameter();
             }
