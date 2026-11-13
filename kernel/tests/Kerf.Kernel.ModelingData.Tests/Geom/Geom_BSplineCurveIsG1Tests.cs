@@ -6,7 +6,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// Upstream 71658f6c8f's IsG1 tests of a periodic B-spline (decision 35101): ranges translated by periods, across the
+/// Upstream 71658f6c8f's IsG1 tests of a periodic B-spline (decision 2434): ranges translated by periods, across the
 /// seam and over a whole period; and an offset of a periodic curve with a corner at its seam, which OCCT 8.0.1 made.
 /// </summary>
 public class Geom_BSplineCurveIsG1Tests

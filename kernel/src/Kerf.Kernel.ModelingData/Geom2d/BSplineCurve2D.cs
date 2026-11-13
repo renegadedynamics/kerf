@@ -1488,13 +1488,13 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>
-    /// Kerf (decision 35101): whether the curve is periodic with its seam knot's multiplicity at least its degree, so
+    /// Kerf (decision 2434): whether the curve is periodic with its seam knot's multiplicity at least its degree, so
     /// only C0 at the seam, which <see cref="Continuity"/> doesn't count: as OCCT's, it is read from the inner knots.
     /// </summary>
     internal bool HasC0Seam => IsPeriodic && Multiplicity(FirstUKnotIndex()) >= Degree;
 
     /// <summary>
-    /// Kerf (decision 35101): whether [tf, tl] runs across a periodic curve's seam, the seam inside it rather than at an
+    /// Kerf (decision 2434): whether [tf, tl] runs across a periodic curve's seam, the seam inside it rather than at an
     /// end (or it is longer than a period).
     /// </summary>
     internal bool CrossesSeam(double tf, double tl)
@@ -1521,7 +1521,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
             return true;
         }
 
-        // Kerf (decision 35101, upstream 71658f6c8f): a periodic curve's range may be translated by periods, or cover
+        // Kerf (decision 2434, upstream 71658f6c8f): a periodic curve's range may be translated by periods, or cover
         // the seam or a whole period, and the seam's one-sided tangents are compared; OCCT 8.0.1 compared the
         // tangent at the first knot with the one at the last, the same point and side of a periodic curve, so a
         // corner at the seam was G1 (and an offset was made over it)

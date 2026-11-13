@@ -6,7 +6,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// A weight that isn't a number is refused, as one at most gp::Resolution() is (decision 35103, after upstream
+/// A weight that isn't a number is refused, as one at most gp::Resolution() is (decision 2436, after upstream
 /// 573b4be651's ValidatesRationalWeights): it compared false with the limit, and the curve was made, its weights taken
 /// for equal and dropped, a polynomial curve for a rational one.
 /// </summary>

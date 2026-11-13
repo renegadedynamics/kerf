@@ -45,10 +45,10 @@ public sealed class TrimmedCurve3D : BoundedCurve3D
     /// <summary>A new, unfrozen trimmed curve equal to this one (on a copy of the basis curve, or on the same one if it's frozen).</summary>
     public sealed override Geometry3D Copy()
     {
-        // Kerf (decision 35102, after upstream 71658f6c8f): a range over more than one period of a periodic basis is
+        // Kerf (decision 2435, after upstream 71658f6c8f): a range over more than one period of a periodic basis is
         // kept as it is; OCCT 8.0.1 brought it back into one period, so a copy, a transformed or a reversed curve of it
         // was a shorter curve. A range within a period is brought into it as before (upstream keeps that too, but the
-        // 2D offsets fail on the charts that makes, decision 35102)
+        // 2D offsets fail on the charts that makes, decision 2435)
         bool overAPeriod = _basisCurve.IsPeriodic
                            && _uTrim2 - _uTrim1 > _basisCurve.Period + global::Kerf.Engine.Foundation.Precision.PConfusion();
         TrimmedCurve3D tc = new TrimmedCurve3D(_basisCurve, _uTrim1, _uTrim2, true, !overAPeriod);

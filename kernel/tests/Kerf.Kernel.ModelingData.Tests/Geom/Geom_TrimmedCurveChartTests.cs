@@ -5,7 +5,7 @@ using Kerf.Geometry;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// After upstream 71658f6c8f's Geom_TrimmedCurve and Geom2d_TrimmedCurve tests (decision 35102): a copy, a transformed
+/// After upstream 71658f6c8f's Geom_TrimmedCurve and Geom2d_TrimmedCurve tests (decision 2435): a copy, a transformed
 /// and a reversed trimmed curve on a periodic basis are the same curve, a range over more than one period kept as it
 /// is (it came back shorter); a range within a period may be brought into the period, as OCCT 8.0.1 does, the same
 /// points by the period.

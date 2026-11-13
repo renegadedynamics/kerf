@@ -125,7 +125,7 @@ public sealed class OffsetCurve2D : Curve2D
 
         _basisCurveContinuity = checkingCurve.Continuity;
 
-        // Kerf (decision 35101): a periodic B-spline whose seam is only C0 reads C1 or better (its continuity is its
+        // Kerf (decision 2434): a periodic B-spline whose seam is only C0 reads C1 or better (its continuity is its
         // inner knots'), and its offset over a range across the seam was made over a corner, a success; such a range
         // is checked as a C0 curve's. With the seam at the range's ends, as an edge over its whole period has it, the
         // corner is the edge's vertex, and the offset is made as before (the wire offsets take it right there)

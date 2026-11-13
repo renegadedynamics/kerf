@@ -94,7 +94,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             bool aPortG1 = aPort.IsG1(aPort.FirstParameter, aPort.LastParameter, 1e-6);
             if (aPort.IsPeriodic && aNativeG1 && !aPortG1)
             {
-                // Deliberate difference (decision 35101): over a whole period OCCT 8.0.1 compares the tangent at the first
+                // Deliberate difference (decision 2434): over a whole period OCCT 8.0.1 compares the tangent at the first
                 // knot with the one at the last, the same side of a periodic curve; Kerf compares the seam's two sides,
                 // here measured apart by more than the tolerance
                 Assert.True(SeamAngle(aPort) > 1e-6, "IsG1: a seam Kerf finds not G1 is");
