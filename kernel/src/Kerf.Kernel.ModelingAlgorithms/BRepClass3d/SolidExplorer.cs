@@ -49,6 +49,9 @@ internal class SolidExplorer
     private IndexedMap<Shape, NCollection_List<Shape>>? _mapEF;
     // Kerf: the faces whose intersectors OtherSegment replaced by unrestricted ones, with the one each had (unit 15C2)
     private Dictionary<Shape, CurveSurfaceIntersector?>? _restricted;
+    // Kerf (unit 15E17): the shape's box, and whether it bounds a finite region; see IsOutsideFiniteBounds
+    private Box? _bounds;
+    private bool? _finite;
 
     /// <summary>
     /// A point <paramref name="APoint_"/> in the face <paramref name="_face"/>: <paramref name="param_"/>, in ]0, 1[,
@@ -914,6 +917,8 @@ internal class SolidExplorer
 
         _mapOfInter.Clear();
         _restricted?.Clear();
+        _bounds = null;
+        _finite = null;
 
         _reject = true; //-- case of infinite solid (without any face)
 
@@ -1081,6 +1086,76 @@ internal class SolidExplorer
 
     /// <summary>The shape.</summary>
     public Shape GetShape() => (_shape);
+
+    /// <summary>
+    /// Kerf (unit 15E17, decision 35003): true if <paramref name="p"/> is farther than <paramref name="tol"/> outside the
+    /// shape's box and the shape bounds a finite region (it isn't reversed, its shells are closed, no face is placed with a
+    /// scale, and its point at infinity
+    /// is OUT): then the point is outside it. The box and the region's finiteness are made when first asked, and kept.
+    /// </summary>
+    internal bool IsOutsideFiniteBounds(in Point3D p, double tol)
+    {
+        if (_reject)
+        {
+            return false;
+        }
+
+        if (_bounds is null)
+        {
+            Box box = new();
+            Bounds.Add(_shape, ref box, false);
+            _bounds = box;
+        }
+
+        if (_bounds.Value.IsVoid || !_bounds.Value.Enlarged(tol).IsOut(p))
+        {
+            return false;
+        }
+
+        // A box flat in a direction isn't a solid's: OCCT's bug26609_z, an invalid solid of five faces whose box is 2e-7
+        // thick, holds the point its test asks for, by the ray, 30 below that box
+        _bounds.Value.Get(out double xmin, out double ymin, out double zmin, out double xmax, out double ymax, out double zmax);
+        double flat = 10 * Kerf.Engine.Foundation.Precision.Confusion() + 2 * tol;
+        if (xmax - xmin <= flat || ymax - ymin <= flat || zmax - zmin <= flat)
+        {
+            return false;
+        }
+
+        _finite ??= _shape.Orientation != Reversed && IsClosedUnscaled(_shape) && SolidClassifier.InfinitePointState(_shape, tol) == Out;
+        return _finite.Value;
+    }
+
+    // Whether every shell of the shape is closed and no face is placed with a scale. An open shell, a half-space's face
+    // among them, bounds no finite region, whatever its point at infinity reads. The ray's answer under a scale isn't the
+    // geometry's (a point by a scaled box's corner, inside it, reads OUT), as natively, and a point outside such a box is
+    // left to the ray, as natively: the oracle's recordings of a distance to a scaled box read it IN, and are kept
+    private static bool IsClosedUnscaled(in Shape shape)
+    {
+        bool hasShell = false;
+        for (var exp = new Explorer(shape, ShapeType.Shell); exp.More(); exp.Next())
+        {
+            hasShell = true;
+            if (!Tool.IsClosed(exp.Current()))
+            {
+                return false;
+            }
+        }
+
+        if (!hasShell)
+        {
+            return false;
+        }
+
+        for (var exp = new Explorer(shape, ShapeType.Face); exp.More(); exp.Next())
+        {
+            if (exp.Current().Placement.Transformation.ScaleFactor != 1.0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>The tree of the boxes of the edges and vertices (objects are indices in <see cref="GetMapEV"/>).</summary>
     public SpatialTree<int, Box> GetTree()
