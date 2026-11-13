@@ -203,7 +203,7 @@ public class BRepLibCheckTests
     }
 
     /// <summary>
-    /// Upstream ec0167b409's <c>BothSeamPCurvesAndReuse</c>, ported (decision 34303): a seam on a cylinder of radius 1
+    /// Upstream ec0167b409's <c>BothSeamPCurvesAndReuse</c>, ported (decision 2392): a seam on a cylinder of radius 1
     /// whose pcurves are 0.1 and 0.2 radians off its line is 2 sin(0.1) off at worst, whichever pcurve is the first; an
     /// open edge checked after it by the same object is checked alone.
     /// </summary>

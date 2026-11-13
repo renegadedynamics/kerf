@@ -390,7 +390,7 @@ internal class FunctionRoots
                 //-- Si (F(u0)-K)*(F(u1)-K) <0   on lance une recherche
                 //-- Sinon si (F(u0)-K)*(F(u1)-K) !=0 on insere le point X
                 // OCCT takes u0 and u1 at the same point, X + dx/2, so it never searches here, and keeps X only where F is
-                // off K there. Upstream 71658f6c8f mends both; neither is ported (decision 34301)
+                // off K there. Upstream 71658f6c8f mends both; neither is ported (decision 2390)
                 for (i = 0; i <= n; i++)
                 {
                     if (ptrval[i] == 0)

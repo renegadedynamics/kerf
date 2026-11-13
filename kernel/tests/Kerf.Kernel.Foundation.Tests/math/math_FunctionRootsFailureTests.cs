@@ -8,7 +8,7 @@ using Kerf.Engine.Numerics;
 namespace Kerf.Kernel.Foundation.Tests;
 
 /// <summary>
-/// Upstream 71658f6c8f's tests of math_FunctionRoots (decision 34301): an extremum near zero that misses the target, the
+/// Upstream 71658f6c8f's tests of math_FunctionRoots (decision 2390): an extremum near zero that misses the target, the
 /// states of the roots, and callbacks that fail or give NaN, which are no longer a result. Its test of a root on a
 /// sample with the function's return beside it isn't ported, as that part of the commit isn't.
 /// </summary>

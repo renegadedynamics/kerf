@@ -158,7 +158,7 @@ public class ExchangeTests
     }
 
     /// <summary>
-    /// Upstream OCCT's `573b4be651` (decision 34306): an oriented edge that refers to itself, or two that refer to each
+    /// Upstream OCCT's `573b4be651` (decision 2395): an oriented edge that refers to itself, or two that refer to each
     /// other, sent the reader round the chain until the stack overflowed, ending the process. The chain is followed in a
     /// loop now and has no vertices where it comes back on itself.
     /// </summary>
