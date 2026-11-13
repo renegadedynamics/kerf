@@ -908,4 +908,67 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.True(aResult, "Projection should succeed for B-spline with degenerate section");
         Assert.NotNull(aPCurve);
     }
+
+    // Upstream ec0167b409's PeriodicBoundaryWithSingularEndpoints (decision 2425): a B-spline periodic in U whose V ends
+    // are poles. Each U-iso runs from pole to pole, and its projection's line check met a zero normal at the pole, then
+    // judged the line by the distances from its first point only, which a line along a pole passes; the line is now
+    // given up there, and the general projection keeps every point on the surface
+    [Fact]
+    public void PeriodicBoundaryWithSingularEndpoints()
+    {
+        (double X, double Y)[] aRing = [(1.0, 0.0), (1.0, 0.25), (0.75, 0.75), (0.0, 1.1), (-0.75, 0.75), (-1.0, 0.0),
+                                        (-0.75, -0.75), (0.0, -1.1), (0.75, -0.75), (1.0, -0.25)];
+        (double X, double Y)[] aMeridian = [(0.0, -50.0), (12.0, -50.0), (36.0, -40.0), (54.0, 0.0), (36.0, 40.0),
+                                            (12.0, 50.0), (0.0, 50.0)];
+        NCollection_Array2<Point3D> aPoles = new(1, 10, 1, 7);
+        for (int aU = 0; aU < aRing.Length; aU++)
+        {
+            for (int aV = 0; aV < aMeridian.Length; aV++)
+            {
+                aPoles[aU + 1, aV + 1] = new Point3D(aRing[aU].X * aMeridian[aV].X, aRing[aU].Y * aMeridian[aV].X, aMeridian[aV].Y);
+            }
+        }
+        NCollection_Array1<double> aUKnots = new(1, 9);
+        NCollection_Array1<int> aUMults = new(1, 9);
+        for (int aU = 1; aU <= 9; aU++)
+        {
+            aUKnots[aU] = 1.0 + aU;
+            aUMults[aU] = aU == 1 || aU == 9 ? 3 : 1;
+        }
+        NCollection_Array1<double> aVKnots = new(1, 5);
+        NCollection_Array1<int> aVMults = new(1, 5);
+        for (int aV = 1; aV <= 5; aV++)
+        {
+            aVKnots[aV] = 1.0 + aV;
+            aVMults[aV] = aV == 1 || aV == 5 ? 4 : 1;
+        }
+        BSplineSurface aSurface = new(aPoles, aUKnots, aVKnots, aUMults, aVMults, 3, 3, true, false);
+        foreach (bool toExchange in new[] { false, true })
+        {
+            BSplineSurface aSurf = toExchange ? aSurface.ExchangedUV() : aSurface;
+            foreach (double aBoundary in new[] { 2.0, 10.0 })
+            {
+                foreach (bool toReverse in new[] { false, true })
+                {
+                    Curve3D aCurve = toExchange ? aSurf.VIso(aBoundary) : aSurf.UIso(aBoundary);
+                    if (toReverse)
+                    {
+                        aCurve = aCurve.Reversed();
+                    }
+                    ProjectCurveOnSurface aProjector = new();
+                    aProjector.Init(aSurf, 0.1);
+                    Assert.True(aProjector.Perform(aCurve, 2.0, 6.0, out Curve2D? aPCurve));
+                    Assert.NotNull(aPCurve);
+                    for (int aSample = 0; aSample <= 32; aSample++)
+                    {
+                        double aParam = 2.0 + 4.0 * aSample / 32.0;
+                        Point2D aUV = aPCurve.Value(aParam);
+                        double aGap = aCurve.Value(aParam).DistanceTo(aSurf.Value(aUV.X, aUV.Y));
+                        Assert.True(aGap <= global::Kerf.Engine.Foundation.Precision.Confusion(),
+                                    $"exchanged {toExchange}, boundary {aBoundary}, reversed {toReverse}, at {aParam}: {aGap}");
+                    }
+                }
+            }
+        }
+    }
 }

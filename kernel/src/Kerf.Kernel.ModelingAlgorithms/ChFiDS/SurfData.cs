@@ -48,6 +48,15 @@ internal sealed class SurfData : Transient
     private bool _twistons2;
     private Orientation _orientation;
 
+    /// <summary>
+    /// Kerf (unit 15AK3): the crease this surface ends on, or begins on, where it and its neighbour in the stripe
+    /// cross at a corner of the path of an evolving fillet's ball; null where it ends on its own last or first line.
+    /// </summary>
+    internal EnvelopeCrease? CreaseAtLast { get; set; }
+
+    /// <inheritdoc cref="CreaseAtLast"/>
+    internal EnvelopeCrease? CreaseAtFirst { get; set; }
+
     public SurfData()
     {
         _ufspine = 0.0;
@@ -449,3 +458,10 @@ internal sealed class SurfData : Transient
         _twistons2 = t;
     }
 }
+
+/// <summary>
+/// Kerf (unit 15AK3): the curve two neighbouring surfaces of a stripe cross in, from the contact on the first face to
+/// that on the second, with its pcurves on the surface before it and the one after, its parameters and how far apart
+/// the three are at most.
+/// </summary>
+internal sealed record EnvelopeCrease(Curve3D Curve, Curve2D OnBefore, Curve2D OnAfter, double First, double Last, double Tolerance);

@@ -285,4 +285,36 @@ public class BooleanVolumeIssueTests
         Assert.True(lip.Cut(body).IsSuccess);
         Assert.True(lip.Fuse(body).IsSuccess);
     }
+
+    // OCCT #1496's tubes, an annulus of 12 by 9 swept along a corner of 60 filleted at 24 and at 24.5, as Kerf.Modeling's sweep
+    // makes them
+    private static (Shape A, Shape B) Issue1496()
+    {
+        static Shape Read(string name)
+        {
+            using Stream stream = typeof(BooleanVolumeIssueTests).Assembly.GetManifestResourceStream($"BOPAlgo.Issues.1496-{name}.brep")
+                                  ?? throw new InvalidOperationException(name);
+            BrepTools.Read(out Shape shape, new StreamReader(stream));
+            return shape;
+        }
+        return (Read("tube24"), Read("tube24_5"));
+    }
+
+    [Fact]
+    public void Issue_1496_cuts_of_tubes_that_remove_nothing_are_proved_wrong_whatever_the_results_tolerance()
+    {
+        // Each cut removed nothing, valid, with a vertex of 0.25: ten times that was the depth a point had to be inside both tubes,
+        // more than half their walls of 3, so none could be, and the check passed it (decision 2433). The inputs' own tolerances
+        // say how deep a point must be in them, and the result's how deep in it
+        (Shape a, Shape b) = Issue1496();
+        foreach ((Shape obj, Shape tool) in new[] { (a, b), (b, a) })
+        {
+            // The cut as first made isn't valid, and fails so
+            Assert.False(obj.Cut(tool).IsSuccess);
+            // Made again the other ways, as Kerf.Modeling does with an invalid result, it was a success that removed nothing
+            Result<Built<Shape>> again = BooleanOperations.Retry(BooleanVolumeRule.Cut, [obj], [tool], BooleanOptions.Default with { Simplify = false });
+            Assert.False(again.IsSuccess);
+            Assert.Contains("wrong", again.Error!.Message, StringComparison.Ordinal);
+        }
+    }
 }

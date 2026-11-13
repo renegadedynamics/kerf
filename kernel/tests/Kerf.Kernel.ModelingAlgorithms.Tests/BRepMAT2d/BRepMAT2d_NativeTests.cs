@@ -31,6 +31,9 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
     [Fact]
     public void EveryCase_BitIdentical()
     {
+        // With 8.0.1's inflections and roots on a sample (decision 2423); without them, the maps below
+        using IDisposable aNativeRoots = global::Kerf.Engine.Numerics.NativeSampledRoots.Scope();
+        using IDisposable aNativeInflections = global::Kerf.Engine.Geometry.Properties.NativeInflections.Scope();
         int aNbDiff = 0, aNbIntended = 0;
         foreach (MatRecordings.Case aCase in MatRecordings.Cases)
         {
@@ -58,6 +61,35 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
         }
         theOutput.WriteLine($"{MatRecordings.Cases.Count} cases, {aNbIntended} intended differences, {aNbDiff} different");
         Assert.Equal(0, aNbDiff);
+    }
+
+    // Decision 2423: the inflections that cut the curves, found by a continuous function and at a G1 join where the
+    // concavity changes, and a sample exactly on its target a root, move these maps off native's, every one of them an
+    // inflection's parameter in its last bits (0.5 for native's 0.49999999999999994 on an S curve) and what follows from
+    // it, the graph the same; any other map that moves shows here
+    [Fact]
+    public void The_inflections_move_45_maps_in_their_last_bits()
+    {
+        int aNbDiff = 0, aNbOtherGraph = 0;
+        foreach (MatRecordings.Case aCase in MatRecordings.Cases)
+        {
+            List<string> aPort = MatRecordings.Run(aCase.Input);
+            if (IsOneClosedEdge(aCase, aPort) || aPort.SequenceEqual(aCase.Native))
+            {
+                continue;
+            }
+
+            aNbDiff++;
+            if (aPort.Count != aCase.Native.Length
+                || aPort.Zip(aCase.Native).Any(p => p.First.Split(':')[0] != p.Second.Split(':')[0]))
+            {
+                aNbOtherGraph++;
+                theOutput.WriteLine(aCase.Input);
+            }
+        }
+
+        Assert.Equal(45, aNbDiff);
+        Assert.Equal(0, aNbOtherGraph);
     }
 
     // Plan 3.2's third level (occt-issues.md, unit 5M's MAT2d_Mat2d::CreateMat row; Kerf unit 10K1, decision 1438): a

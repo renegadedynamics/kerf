@@ -152,6 +152,14 @@ internal abstract partial class FilletBuilderBase
                                        bool forward, bool recOnS1, bool recOnS2, math_Vector soldep, ref int intf,
                                        ref int intl);
 
+    /// <summary>
+    /// Kerf (unit 15AK3): called once a stripe's surfaces are all walked and before its ends are made, for what a
+    /// builder has to add between them.
+    /// </summary>
+    internal virtual void CompleteSetOfSurf(Stripe stripe)
+    {
+    }
+
     internal abstract void PerformTwoCorner(int index);
 
     internal abstract void PerformThreeCorner(int index);

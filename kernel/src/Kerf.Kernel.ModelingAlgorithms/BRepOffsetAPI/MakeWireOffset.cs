@@ -336,6 +336,7 @@ internal class MakeWireOffset : MakeShape
     {
         StdFail_NotDone_Raise_if(!_isInitialized, "BRepOffsetAPI_MakeOffset : Perform without Init");
 
+        RefusedBecause = null;
         try
         {
             if (_isToApprox)
@@ -457,6 +458,15 @@ internal class MakeWireOffset : MakeShape
         catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
                                             && exception is not ImmutableObjectException)
         {
+            // Kerf: why a parallel was refused, if one was (decision 2422)
+            foreach (OffsetWire algo in offset <= 0.0 ? _left : _right)
+            {
+                if (algo.RefusedBecause is { } why)
+                {
+                    RefusedBecause = why;
+                    break;
+                }
+            }
             // OCCT catches Standard_Failure; with the signals Draw and Kerf.Modeling set, an access violation (the
             // medial axis's null bisector, occt-issues.md) arrives as one: the port's NullReferenceException
             // (decision 917)
@@ -464,6 +474,12 @@ internal class MakeWireOffset : MakeShape
             _shape.Nullify();
         }
     }
+
+    /// <summary>
+    /// Kerf: why the last <see cref="Perform"/> refused a parallel it made, not at its distance from the spine or
+    /// crossing itself, as a diagnostic's code and message; null if it didn't (decisions 2279, 2422).
+    /// </summary>
+    internal (string Code, string Message)? RefusedBecause { get; private set; }
 
     /// <summary>Does nothing: the shape is built by <see cref="Perform"/>.</summary>
     public override void Build(ProgressRange range = default)
