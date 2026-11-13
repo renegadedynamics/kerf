@@ -692,13 +692,57 @@ internal partial class UnifySameDomain
                && surface.Value(0.5 * (a.X + b.X), 0.5 * (a.Y + b.Y)).DistanceTo(pa) <= distance;
     }
 
-    // A vertex's point as an end of one of its edges: the point of the edge's curve at the vertex's parameter where that
-    // is further from the vertex's own point than the default tolerance, else the vertex's own (decision 33702)
-    private static Point3D EndOnItsEdge(Vertex vertex, Edge edge)
+    // Where a merged edge ends at one of its chain's end vertices (decision 33702): the vertex's own point, as OCCT has
+    // it, unless the chain's edge ends at another point of the vertex, more than the default tolerance away, and that
+    // point is nearer than the vertex's to where every other edge at the vertex ends
+    private static Point3D EndOnItsEdge(Vertex vertex, Edge edge, NCollection_Sequence<Shape> chain,
+                                        IndexedMap<Shape, NCollection_List<Shape>> vFmap)
     {
         Point3D own = Tool.Pnt(vertex);
         Point3D end = new EdgeCurveAdaptor(edge).Value(Tool.Parameter(vertex, edge));
-        return own.DistanceTo(end) > global::Kerf.Engine.Foundation.Precision.Confusion() ? end : own;
+        if (!(own.DistanceTo(end) > global::Kerf.Engine.Foundation.Precision.Confusion()) || !vFmap.ContainsKey(vertex))
+        {
+            return own;
+        }
+
+        double fromOwn = -1.0, fromEnd = -1.0;
+        var    seen    = new HashSet<Shape>(ShapeHasher.Instance);
+        for (var faces = new NCollection_List<Shape>.Iterator(vFmap.GetValue(vertex)); faces.More(); faces.Next())
+        {
+            for (var edges = new Explorer(faces.Value(), ShapeType.Edge); edges.More(); edges.Next())
+            {
+                Edge other = ShapeCasts.Edge(edges.Current());
+                if (!seen.Add(other) || Tool.Degenerated(other) || InChain(other, chain) || Tool.Curve(other, out _, out _) is null)
+                {
+                    continue;
+                }
+
+                var curve = new EdgeCurveAdaptor(other);
+                for (var ends = new Explorer(other.Oriented(Forward), ShapeType.Vertex); ends.More(); ends.Next())
+                {
+                    Vertex at = ShapeCasts.Vertex(ends.Current());
+                    if (at.IsSame(vertex) && (at.Orientation == Forward || at.Orientation == Reversed))
+                    {
+                        Point3D there = curve.Value(Tool.Parameter(at, ShapeCasts.Edge(other.Oriented(Forward))));
+                        fromOwn = Max(fromOwn, own.DistanceTo(there));
+                        fromEnd = Max(fromEnd, end.DistanceTo(there));
+                    }
+                }
+            }
+        }
+        return fromEnd >= 0.0 && fromEnd < fromOwn ? end : own;
+
+        static bool InChain(Edge edge, NCollection_Sequence<Shape> chain)
+        {
+            for (int i = 1; i <= chain.Length(); ++i)
+            {
+                if (chain.Value(i).IsSame(edge))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     /// <summary>Merges a sequence of edges into one edge if possible.</summary>
@@ -848,10 +892,11 @@ internal partial class UnifySameDomain
         {
             var v = new Vertex[2];
             v[0] = sae.FirstVertex(ShapeCasts.Edge(chain.First()));
-            // Kerf (decision 33702): from where the chain's first edge starts to where its last one ends, as for circles below
-            Point3D pv1 = EndOnItsEdge(v[0], ShapeCasts.Edge(chain.First()));
+            // Kerf (decision 33702): from where the chain's first edge starts to where its last one ends, as for circles below,
+            // where the other edges at those vertices end there
+            Point3D pv1 = EndOnItsEdge(v[0], ShapeCasts.Edge(chain.First()), chain, vFmap);
             v[1] = sae.LastVertex(ShapeCasts.Edge(chain.Last()));
-            Point3D pv2 = EndOnItsEdge(v[1], ShapeCasts.Edge(chain.Last()));
+            Point3D pv2 = EndOnItsEdge(v[1], ShapeCasts.Edge(chain.Last()), chain, vFmap);
             var    vec = new Vector3D(pv1, pv2);
             if (_safeInputMode)
             {
@@ -959,12 +1004,12 @@ internal partial class UnifySameDomain
                 double        paramLast      = Tool.Parameter(vertexLastOnFE, fe);
 
                 // Kerf (decision 33702): the merged circle runs from where the chain's first edge starts to where its last
-                // one ends, not between the vertices' own points. They are the same but where a vertex is wider than the
-                // default and an edge ends at another point of it, as a Boolean leaves one grown over a crossing (decision
-                // 2289); OCCT's edge then ends at the vertex's point, and a face it bounds, which was closed in its
-                // parameters, is open there inside the vertex
-                Point3D pointFirst       = EndOnItsEdge(v[0], fe);
-                Point3D pointLastInChain = EndOnItsEdge(v[1], ShapeCasts.Edge(chain.Last()));
+                // one ends, where that is nearer than the vertices' own points to where the other edges at those vertices
+                // end. A vertex wider than the default can have its edges end at another point of it, as a Boolean leaves
+                // one grown over a crossing (decision 2289); OCCT's edge then ends at the vertex's point, and a face it
+                // bounds, which was closed in its parameters, is open there inside the vertex
+                Point3D pointFirst       = EndOnItsEdge(v[0], fe, chain, vFmap);
+                Point3D pointLastInChain = EndOnItsEdge(v[1], ShapeCasts.Edge(chain.Last()), chain, vFmap);
 
                 if (_safeInputMode)
                 {
