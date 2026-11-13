@@ -179,17 +179,24 @@ internal static partial class ChamferMeet
     // How a corner's chamfers combine: all or any (a corner of one kind), or by the formula of its faces (unit 15U2)
     private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands, Term? Mixed = null);
 
+    /// <summary>A solid built whose volume's allowance is more than <see cref="ProvedShare"/> of what its chamfers take off, so
+    /// that the volume proves too little of it (unit 15AP).</summary>
+    internal readonly record struct Unproved(double Allowed, double Removed);
+
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply, what it builds isn't proved, or it took longer
     /// than the options' <see cref="ChamferOptions.TimeLimit"/> (<paramref name="late"/>; the owner, decisions 2179 and 2185).
-    /// A solid is proved by its volume too (unit 15V).
+    /// A solid is proved by its volume too (unit 15V); where nothing was built and a solid was refused because its volume
+    /// would prove too little, <paramref name="unproved"/> says by how much (unit 15AP): more than <paramref name="share"/> (a
+    /// twentieth; another only in tests) of what its chamfers take off.
     /// </summary>
     /// <exception cref="OperationCanceledException">The caller's own token, or the one in force, was cancelled.</exception>
     public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
-                                       out bool late)
+                                       out bool late, out Unproved? unproved, double share = ProvedShare)
     {
         late = false;
+        unproved = null;
         if (options.Mode != ChamferMode.Classic || shape.AllSolids().Length > 1 || shape.AllFaces().Length == 0)
         {
             return null;
@@ -206,7 +213,12 @@ internal static partial class ChamferMeet
         {
             using (Cancellation.Use(deadline.Token))
             {
-                return Attempts(shape, chamfer, specs, referenceFaces);
+                EngineOutcome? built = Attempts(shape, chamfer, specs, referenceFaces, share, ref unproved);
+                if (built is not null)
+                {
+                    unproved = null;
+                }
+                return built;
             }
         }
         catch (OperationCanceledException) when (!caller.IsCancellationRequested)
@@ -220,14 +232,14 @@ internal static partial class ChamferMeet
     // a chain through a vertex needs Kerf's own anyway, whose corners ChFi3d's stripes beside it don't make). Where a stripe of
     // two distances, or of a distance and an angle, is off its distance because ChFi3d smoothed its guide away from its edge,
     // ChFi3d's stripes again along guides kept to their edges (unit 15U4)
-    private static EngineOutcome? Attempts(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
+    private static EngineOutcome? Attempts(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, double share, ref Unproved? unproved)
     {
         bool anyOff = false, offGuide = false;
         foreach (bool own in (ReadOnlySpan<bool>)[true, false])
         {
             try
             {
-                if (Built(shape, chamfer, specs, referenceFaces, own, ref anyOff, ref offGuide) is { } built)
+                if (Built(shape, chamfer, specs, referenceFaces, own, ref anyOff, ref offGuide, share, ref unproved) is { } built)
                 {
                     return built;
                 }
@@ -249,7 +261,7 @@ internal static partial class ChamferMeet
         {
             MakeChamfer nearer = AlongItsEdges(shape, chamfer, specs, referenceFaces);
             Cancellation.ThrowIfRequested();
-            return Built(shape, nearer, specs, referenceFaces, false, ref anyOff, ref offGuide);
+            return Built(shape, nearer, specs, referenceFaces, false, ref anyOff, ref offGuide, share, ref unproved);
         }
         catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
@@ -330,7 +342,7 @@ internal static partial class ChamferMeet
     }
 
     private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, bool ownWhereOff, ref bool anyOff,
-                                        ref bool offGuide)
+                                        ref bool offGuide, double share, ref Unproved? unproved)
     {
         ChBuilder builder = chamfer.InternalBuilder();
         if (builder._listStripe.IsEmpty() || (builder._badstripes.Extent() != 0 && !ownWhereOff))
@@ -740,12 +752,22 @@ internal static partial class ChamferMeet
         {
             return null;
         }
-        // A solid's volume against the integral apart from the fuse's faces (unit 15V)
+        // A solid's volume against the integral apart from the fuse's faces (unit 15V), with an allowance that proves something
+        // of what the chamfers take off (unit 15AP)
         if (shape.AllSolids().Length == 1)
         {
-            double measured = MeasuredVolume(built);
-            (double Expected, double Allowed)? volume = ExpectedVolume(shape, faces, bands, cornerRules, carried, [.. chamfered], specs, referenceFaces, builder._tolapp3d, Near * width);
-            if (volume is not { } v || Math.Abs(measured - v.Expected) > v.Allowed)
+            (double measured, double measuredError) = MeasuredVolume(built);
+            if (ExpectedVolume(shape, faces, bands, cornerRules, carried, [.. chamfered], specs, referenceFaces, builder._tolapp3d, Near * width) is not { } v)
+            {
+                return null;
+            }
+            double allowed = v.Allowed + measuredError;
+            if (!(allowed <= share * Math.Abs(v.Removed)))
+            {
+                unproved = new Unproved(allowed, v.Removed);
+                return null;
+            }
+            if (Math.Abs(measured - v.Expected) > allowed)
             {
                 return null;
             }
