@@ -1494,6 +1494,22 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     internal bool HasC0Seam => IsPeriodic && Multiplicity(FirstUKnotIndex()) >= Degree;
 
     /// <summary>
+    /// Kerf (decision 35101): whether [tf, tl] runs across a periodic curve's seam, the seam inside it rather than at an
+    /// end (or it is longer than a period).
+    /// </summary>
+    internal bool CrossesSeam(double tf, double tl)
+    {
+        if (!IsPeriodic)
+        {
+            return false;
+        }
+
+        double firstParam = FirstParameter, lastParam = LastParameter;
+        return tl - tf > lastParam - firstParam
+               || global::Kerf.Engine.Geometry.ElCLib.InPeriod(tf, firstParam, lastParam) + (tl - tf) > lastParam;
+    }
+
+    /// <summary>
     /// True if the curve is G1 on [theTf, theTl]: at every interior knot of multiplicity Degree or more, the
     /// left and right tangents are non-null and within theAngTol radians (and, for a periodic curve whose range
     /// meets the bounds, at the start/end point too).

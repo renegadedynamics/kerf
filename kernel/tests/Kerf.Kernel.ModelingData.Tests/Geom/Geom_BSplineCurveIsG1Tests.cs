@@ -45,20 +45,27 @@ public class Geom_BSplineCurveIsG1Tests
     }
 
     // A periodic quadratic smooth everywhere but at its seam, where the knot's multiplicity is the degree: a corner
-    // of 90 degrees. Its offset was made, a success, though the offset's two sides of the seam are apart.
+    // of 90 degrees. An offset of a range across the seam was made over the corner, a success. Over the whole period
+    // the seam is at the range's ends, the corner an edge's vertex, and the offset is made as before.
     [Fact]
-    public void An_offset_of_a_periodic_curve_with_a_corner_at_its_seam_is_refused()
+    public void An_offset_of_a_periodic_curve_across_a_corner_at_its_seam_is_refused()
     {
         BSplineCurve3D aCurve = new(Square, [0.0, 1.0, 2.0, 3.0], [2, 1, 1, 2], 2, true);
         // Its continuity is its inner knots', as OCCT's: C1, though it has a corner at the seam
         Assert.Equal(Continuity.C1, aCurve.Continuity);
         Assert.True(aCurve.HasC0Seam);
-        EngineAssert.Throws<ConstructionErrorException>(() => new OffsetCurve3D(aCurve, 0.5, new Direction3D(0, 0, 1)));
+        Assert.True(aCurve.CrossesSeam(2.5, 3.5));
+        Assert.False(aCurve.CrossesSeam(0.0, 3.0));
+        Assert.False(aCurve.CrossesSeam(2.5, 3.0));
+        EngineAssert.Throws<ConstructionErrorException>(() => new OffsetCurve3D(new TrimmedCurve3D(aCurve, 2.5, 3.5), 0.5, new Direction3D(0, 0, 1)));
+        Assert.Equal(Continuity.C1, new OffsetCurve3D(aCurve, 0.5, new Direction3D(0, 0, 1)).GetBasisCurveContinuity());
+        _ = new OffsetCurve3D(new TrimmedCurve3D(aCurve, 0.5, 2.5), 0.5, new Direction3D(0, 0, 1));
 
         BSplineCurve2D aCurve2d = new(NCollection_Array1<Point2D>.From([new(0, 0), new(4, 0), new(4, 4), new(0, 4)]),
                                       NCollection_Array1<double>.From([0.0, 1.0, 2.0, 3.0]),
                                       NCollection_Array1<int>.From([2, 1, 1, 2]), 2, true);
-        EngineAssert.Throws<ConstructionErrorException>(() => new OffsetCurve2D(aCurve2d, 0.5));
+        EngineAssert.Throws<ConstructionErrorException>(() => new OffsetCurve2D(new TrimmedCurve2D(aCurve2d, 2.5, 3.5), 0.5));
+        _ = new OffsetCurve2D(aCurve2d, 0.5);
 
         // The same curve with its corner inside (not at the seam) was refused already, and still is
         BSplineCurve3D aMoved = new(Square, [0.0, 1.0, 2.0, 3.0], [1, 2, 1, 1], 2, true);
