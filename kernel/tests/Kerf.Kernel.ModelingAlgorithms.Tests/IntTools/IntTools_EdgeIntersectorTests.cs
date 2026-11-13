@@ -204,6 +204,27 @@ public class IntTools_EdgeIntersectorTests
         }
     }
 
+    // An arc beside a periodic band whose face crosses its seam, like the loft's top arcs beside its rim's band at large
+    // chamfer lengths (unit 15AS). The exact intersection's polyhedron of the face's range past the seam takes in the whole
+    // band, so the arc gave it many start points, each a Newton search that found nothing. The arc is now proved further from
+    // the band over each of the face's two ranges than any point the exact intersection accepts, and it isn't run on them: the
+    // result is the one it gave, and the least distance too, for a twentieth of the bytes
+    [Fact]
+    public void BeanFace_ArcBesideAPeriodicBandAcrossItsSeam_IsProvedApartForTheExactIntersection()
+    {
+        global::Kerf.Topology.Face aBand = new MakeFace(SampleSeparationTests.Ring(), 0, 1, 7.5, 14.5, 1e-7).Face();
+        global::Kerf.Topology.Edge anArc = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 10.55), new Direction3D(0, 0, 1)), 4.0), 0.3, 2.9).Edge();
+        long aBefore = GC.GetAllocatedBytesForCurrentThread();
+        BeanFaceIntersector aBF = new(anArc, aBand);
+        aBF.SetBeanParameters(0.3, 2.9);
+        aBF.Perform();
+        long aBytes = GC.GetAllocatedBytesForCurrentThread() - aBefore;
+        Assert.True(aBF.IsDone);
+        Assert.Equal(0, aBF.Result().Length());
+        Assert.Equal(0.09409984118728228, aBF.MinimalSquareDistance()); // as before, to the last digit
+        Assert.True(aBytes < 2L << 20, $"{aBytes >> 10} KB"); // 0.6 MB measured; 11.5 MB with the exact intersection run
+    }
+
     // An edge that ends at the apex of a patch one of whose sides is a point: a cone as a Bezier surface, its axis the edge,
     // less the 1e-9 of its parameter a pave filler takes off an end (the corpus's bopfuse_complex/K9 and its kin). Every
     // sample of the surface along that side holds the apex, so the localisation lists all 729 against the edge's last
