@@ -41,7 +41,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-mkoffset-").FullName;
     private int myFileNumber;
     private readonly List<string> myDifferences = [];
-    private int myCases, myPerforms, myIdentical, myFreeMasked, myCanonical, myNotDone, myEmpty, myHistory, myHistoryOrder, myRefused, myCrossing;
+    private int myCases, myPerforms, myIdentical, myFreeMasked, myCanonical, myNotDone, myEmpty, myHistory, myHistoryOrder, myRefused, myCrossing, myLeftOpen;
 
     public void Dispose()
     {
@@ -245,6 +245,13 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     myRefused++;
                     myCrossing++;
                 }
+                else if (!theSpine.IsOpenResult && LeftOpen(aNP))
+                {
+                    // Kerf decision 35201: native's parallel has a wire marked closed that isn't, and the port, as upstream
+                    // 8f817f5da5, leaves it open, so isn't done
+                    myRefused++;
+                    myLeftOpen++;
+                }
                 else
                 {
                     myDifferences.Add($"{aWhat}: the port refuses a parallel of native's that keeps its distance and doesn't cross itself");
@@ -344,13 +351,26 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         : !thePlaneFace.IsNull ? ShapeCasts.Face(thePlaneFace)
         : new MakeFace(ShapeCasts.Wire(theSpineShape), true).Face();
 
+    // A wire of the shape marked closed whose ends aren't joined (decision 35201)
+    private static bool LeftOpen(in Shape theShape)
+    {
+        for (Explorer anExp = new(theShape, ShapeType.Wire); anExp.More(); anExp.Next())
+        {
+            if (anExp.Current().ClosedFlag && !global::Kerf.Engine.Topology.Brep.Tool.IsClosed(anExp.Current()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void Report()
     {
         output.WriteLine($"{myCases} cases, {myPerforms} offsets; {myNotDone} not done on both sides; "
                          + $"results: {myIdentical} identical BRep text ({myFreeMasked} with the Free column masked), "
                          + $"{myCanonical} canonically identical, {myEmpty} empty; Generated identical: {myHistory} "
                          + $"({myHistoryOrder} in another order); refused by the port, native's not being at the offset "
-                         + $"from the spine or crossing itself: {myRefused} ({myCrossing} crossing); differences: {myDifferences.Count}");
+                         + $"from the spine, crossing itself or left open: {myRefused} ({myCrossing} crossing, {myLeftOpen} left open); differences: {myDifferences.Count}");
         foreach (string aDiff in myDifferences.Take(30))
         {
             output.WriteLine("  " + aDiff);
