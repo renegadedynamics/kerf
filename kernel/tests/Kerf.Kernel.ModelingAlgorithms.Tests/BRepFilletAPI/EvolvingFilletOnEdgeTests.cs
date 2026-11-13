@@ -314,16 +314,32 @@ public class EvolvingFilletOnEdgeTests
         Assert.True(made.Max(p => p.Miss) < 0.2 * Approximation, $"{name}: its corners built, and off the union of the balls by {made.Max(p => p.Miss)}");
         Assert.True(made.Where(p => p.At.DistanceTo(at) < 0.1).Max(p => p.Miss) < 0.05 * Approximation);
 
-        // The warning that is ready for a crease past the angular tolerance (0.01 radians), with the greatest angle between
-        // the faces' normals along the creases: K6's 0.88 degrees, K7's 1.17
+        // The warning for each crease past the angular tolerance (0.01 radians), with the greatest angle between the faces'
+        // normals along it and where its middle is: K6's 0.88 degrees (its other crease, 0.20, is within it), K7's two of 1.17
         double crease = chfi3d.InternalBuilder().EnvelopeCreaseAngle * 180 / Math.PI;
         Assert.InRange(crease, rim ? 1.15 : 0.86, rim ? 1.19 : 0.90);
-        var warning = chfi3d.InternalBuilder().EnvelopeCreaseWarning;
-        Assert.NotNull(warning);
-        Assert.Equal(Kerf.Severity.Warning, warning.Severity);
-        Assert.Equal("fillet.creased", warning.Code.ToString());
-        Assert.Contains(rim ? "1.17 degrees" : "0.88 degrees", warning.Message);
-        Assert.Null(Kerf.Engine.Foundation.StatusDiagnostics.FilletCreased(0.009, 0.01));
+        var warnings = chfi3d.InternalBuilder().EnvelopeCreaseWarnings;
+        Assert.Equal(rim ? 2 : 1, warnings.Count);
+        Assert.All(warnings, w => Assert.Equal(Kerf.Severity.Warning, w.Warning.Severity));
+        Assert.All(warnings, w => Assert.Equal("fillet.creased", w.Warning.Code.ToString()));
+        Assert.All(warnings, w => Assert.Contains(rim ? "1.17 degrees at (0.5" : "0.88 degrees at (1.2", w.Warning.Message));
+        Assert.Null(Kerf.Engine.Foundation.StatusDiagnostics.FilletCreased(0.009, 0.01, default));
+
+        // As the operation gives them (FilletOperations): each with its crease's edge in the result, and carried to the
+        // result's diagnostics with the shape, which is a success
+        var given = Kerf.Fillets.FilletOperations.Creased(chfi3d, chfi3d.Shape);
+        Assert.Equal(warnings.Count, given.Length);
+        Assert.All(given, d =>
+        {
+            Edge edge = (Edge)Assert.Single(d.Shapes);
+            Assert.Contains(chfi3d.Shape().AllEdges(), e => e.IsSame(edge));
+            var curve = new EdgeCurveAdaptor(edge);
+            Assert.Contains(warnings, w => w.Curve.Value(0.5).DistanceTo(curve.Value(0.5 * (curve.FirstParameter() + curve.LastParameter()))) < 1e-6);
+        });
+        var result = Kerf.Engine.Foundation.EngineOperation.Run<Shape>(
+            _ => new Kerf.Engine.Foundation.EngineOutcome(true, chfi3d.Shape, Warnings: given), Kerf.Diagnostic.Error(new Kerf.DiagnosticCode("fillet.failed"), "failed"));
+        Assert.True(result.IsSuccess);
+        Assert.Equal(given.Length, result.Diagnostics.Count(d => d.Code.ToString() == "fillet.creased" && d.Severity == Kerf.Severity.Warning));
 
         // And every face of it meshes, the pieces of the ball, whose two corners are single points of their surfaces, too
         var mesh = new Kerf.Engine.Meshing.IncrementalMesh(chfi3d.Shape(), 0.05);
@@ -429,6 +445,11 @@ public class EvolvingFilletOnEdgeTests
         Assert.InRange(measure, 9.0e-5, Approximation);
         Assert.Equal((2, 4), chfi3d.InternalBuilder().EnvelopeCornersMade);
 
+        // Its four creases are under the angular tolerance (0.15 and 0.47 degrees, twice each, for 0.573): no warning
+        Assert.InRange(chfi3d.InternalBuilder().EnvelopeCreaseAngle * 180 / Math.PI, 0.45, 0.49);
+        Assert.Empty(chfi3d.InternalBuilder().EnvelopeCreaseWarnings);
+        Assert.Empty(Kerf.Fillets.FilletOperations.Creased(chfi3d, chfi3d.Shape));
+
         // The box's top as a surface, to its edges
         Distance top = p =>
         {
@@ -440,6 +461,7 @@ public class EvolvingFilletOnEdgeTests
         double worst = points.Max(p => p.Miss);
         Assert.True(worst < 0.1 * Approximation, $"off the union of the balls by {worst}");
     }
+
 
     private static Shape? Corpus(string file)
     {

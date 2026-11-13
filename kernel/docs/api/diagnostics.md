@@ -191,7 +191,7 @@ A status that says the work was done gives no diagnostic; each other value is an
 | `fillet.no-starting-solution` | `ChFiDS_ErrorStatus::ChFiDS_StartsolFailure` | No starting point was found for the fillet's surface. |
 | `fillet.twisted-surface` | `ChFiDS_ErrorStatus::ChFiDS_TwistedSurface` | The fillet's surface would be twisted. |
 | `fillet.radius-changes-at-a-corner` | none (Kerf's `ErrorStatus.EnvelopeCorner`) | The fillet's radius is changing where the path of the rolling ball's centre has a corner (where its edges' curvature jumps, where the ball comes to rest on an edge or leaves it, or where the radius's rate of change jumps): the surface the ball sweeps has a piece of the ball or a crease there, which couldn't be built. Also where a radius changes so sharply that the surface would fold back on itself. |
-| `fillet.creased` | none (Kerf's; a warning, not yet given: decision 34108) | The fillet's surface has a crease of N degrees: its radius is changing where the path of the rolling ball's centre has a corner, and the surface the ball sweeps isn't smooth there. |
+| `fillet.creased` | none (Kerf's; a warning on a fillet that is returned: decision 34109) | The fillet's surface has a crease of N degrees at (x, y, z): its radius is changing where the path of the rolling ball's centre has a corner, and the surface the ball sweeps isn't smooth there. |
 
 ### Offsets
 

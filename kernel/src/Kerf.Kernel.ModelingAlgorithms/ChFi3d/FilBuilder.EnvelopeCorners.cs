@@ -21,10 +21,10 @@ internal partial class FilBuilder
     // start of the one after it, and whether those two surfaces cross (a crease) or leave a gap (a piece of the ball).
     private readonly List<(Spine Spine, Point3D A, Point3D B, EnvelopeEnd From, EnvelopeEnd To, bool Crosses)> _envelopePieces = [];
 
-    private readonly List<Curve3D> _envelopeCreases = [];
+    private readonly List<(Curve3D Curve, double Angle)> _envelopeCreases = [];
 
     /// <summary>The curves of the creases made, each from the contact on the first face (0) to that on the second (1).</summary>
-    internal IReadOnlyList<Curve3D> EnvelopeCreases => _envelopeCreases;
+    internal IReadOnlyList<Curve3D> EnvelopeCreases => [.. _envelopeCreases.Select(crease => crease.Curve)];
 
     /// <summary>
     /// The greatest angle, in radians, between the two faces' normals along any crease made: nothing where none was.
@@ -32,10 +32,13 @@ internal partial class FilBuilder
     internal double EnvelopeCreaseAngle { get; private set; }
 
     /// <summary>
-    /// The warning for a fillet whose surface has a crease past the angular tolerance (`fillet.creased`), or null.
-    /// Ready, and not yet given to anyone: what a fillet returns is as it was (decision 34108).
+    /// The creases past the angular tolerance: for each, its curve and the warning (`fillet.creased`) that says how far
+    /// apart the two faces' normals are across it at most, and where its middle is. The owner's choice of 13 November
+    /// 2026 (decision 34109): a creased fillet is returned, with these, as the surface the ball sweeps has the crease.
     /// </summary>
-    internal Diagnostic? EnvelopeCreaseWarning => StatusDiagnostics.FilletCreased(EnvelopeCreaseAngle, _tolappangle);
+    internal IReadOnlyList<(Curve3D Curve, Diagnostic Warning)> EnvelopeCreaseWarnings =>
+        [.. _envelopeCreases.Select(crease => (crease.Curve, Warning: StatusDiagnostics.FilletCreased(crease.Angle, _tolappangle, crease.Curve.Value(0.5))))
+                            .Where(crease => crease.Warning is not null).Select(crease => (crease.Curve, crease.Warning!))];
 
     /// <summary>How many corners were built as a piece of the ball, and how many as a crease.</summary>
     internal (int Lunes, int Creases) EnvelopeCornersMade { get; private set; }
@@ -574,7 +577,7 @@ internal partial class FilBuilder
         }
 
         EnvelopeCrease crease = new(curve, pcurveLast, pcurveFirst, 0.0, 1.0, Math.Max(2.0 * apartMost, Precision.Confusion()));
-        _envelopeCreases.Add(curve);
+        _envelopeCreases.Add((curve, creaseAngle));
         EnvelopeCreaseAngle = Math.Max(EnvelopeCreaseAngle, creaseAngle);
         before.CreaseAtLast = crease;
         after.CreaseAtFirst = crease;

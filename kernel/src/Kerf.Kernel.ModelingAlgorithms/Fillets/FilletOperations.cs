@@ -243,6 +243,10 @@ public static class FilletOperations
                 EngineOutcome outcome = MakerOutcome.Of(fillet, range, [solid]);
                 if (outcome.IsDone)
                 {
+                    // A radius changing at a corner of its ball's path can leave a crease, which is the swept surface's own:
+                    // returned, with a warning for each one past the angular tolerance (the owner, 13 November 2026)
+                    outcome = outcome with { Warnings = Creased(fillet, outcome.Shape) };
+
                     // Where a rim's arc ends on two concave edges and ChFi3d's faces there aren't tangent to one another, its result
                     // is wrong, though valid: the one made rim first, which is proved, in its place (unit 15T4). A caller who has
                     // left the check out has asked for what the algorithm makes
@@ -516,6 +520,35 @@ public static class FilletOperations
             }
             return done;
         }
+    }
+
+    // The warnings for the fillet's creases past the angular tolerance, each with its edge in the result
+    internal static ImmutableArray<Diagnostic> Creased(MakeFillet fillet, Func<Shape> made)
+    {
+        var creases = fillet.InternalBuilder().EnvelopeCreaseWarnings;
+        if (creases.Count == 0)
+        {
+            return [];
+        }
+
+        Edge[] edges = [.. made().AllEdges().Where(e => !global::Kerf.Engine.Topology.Brep.Tool.Degenerated(e))];
+        return
+        [
+            .. creases.Select(crease =>
+            {
+                Point3D middle = crease.Curve.Value(0.5);
+                foreach (Edge e in edges)
+                {
+                    var curve = new global::Kerf.Engine.Topology.Adaptors.EdgeCurveAdaptor(e);
+                    if (curve.Value(0.5 * (curve.FirstParameter() + curve.LastParameter())).DistanceTo(middle) < 1.0e-6)
+                    {
+                        return crease.Warning.WithShapes(e);
+                    }
+                }
+
+                return crease.Warning;
+            }),
+        ];
     }
 
     // ChFi3d's own failure, as the operation would have given it

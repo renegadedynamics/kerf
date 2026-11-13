@@ -96,13 +96,13 @@ internal static class StatusDiagnostics
 
     /// <summary>
     /// The warning for a fillet of changing radius whose surface has a crease of the angle given (radians) between its
-    /// faces' normals, or null where that is within the angular tolerance. Kerf's own (unit 15AK3): the crease is the
-    /// swept surface's, so the fillet is right, and not smooth.
+    /// faces' normals, its middle at <paramref name="at"/>, or null where that is within the angular tolerance. Kerf's
+    /// own (unit 15AK3): the crease is the swept surface's, so the fillet is right, and not smooth.
     /// </summary>
-    public static Diagnostic? FilletCreased(double angle, double angularTolerance) =>
+    public static Diagnostic? FilletCreased(double angle, double angularTolerance, in Kerf.Geometry.Point3D at) =>
         angle > angularTolerance
             ? Diagnostic.Warning(new DiagnosticCode("fillet.creased"), string.Create(System.Globalization.CultureInfo.InvariantCulture,
-                $"The fillet's surface has a crease of {angle * 180.0 / Math.PI:0.##} degrees: its radius is changing where the path of the rolling ball's centre has a corner, and the surface the ball sweeps isn't smooth there."))
+                $"The fillet's surface has a crease of {angle * 180.0 / Math.PI:0.##} degrees at ({at.X:0.###}, {at.Y:0.###}, {at.Z:0.###}): its radius is changing where the path of the rolling ball's centre has a corner, and the surface the ball sweeps isn't smooth there."))
             : null;
 
     /// <summary>The error a 3D offset's status reports, or null if it built the offset.</summary>
