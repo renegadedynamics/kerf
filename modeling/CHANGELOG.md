@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A 2D offset left open, or on the wrong side of its wire, fails** (kernel decisions 35201, 35202): `Offset2D` of a closed wire inwards that gave a wire left open at a vertex, marked closed, now fails, as does one whose loop lies on the other side of the wire than asked (a wire whose edges aren't in order, offset inwards past its width), with the kernel's `offset.wrong-side` and the point, where both were returned as successes.
 - **A STEP import reports invalid slivers** (kernel decision 2427): faces bounded by two edges or fewer are among those an import checks, so invalid slivers come with `exchange.invalid-face`, where they came silently.
 - **A 2D offset that crosses itself fails, saying where** (kernel decisions 2422, 2423): `Offset2D` of a wire or face whose parallel crosses itself, or one of whose loops crosses another, now fails, the kernel's `offset.crosses-itself` among its diagnostics with the point, where it returned the crossing wire; one not at its distance from the wire carries `offset.not-at-distance`.
 

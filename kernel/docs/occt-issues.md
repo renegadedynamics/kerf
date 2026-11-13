@@ -2501,3 +2501,10 @@ Found by unit 12J:
 |---|---|---|---|
 | `BRepFill_OffsetWire::Perform` | A parallel at its distance from the spine may cross itself, or one of its wires another, where the medial axis went wrong, and is done: four of OCCT's own test offsets (`TODO OCC23068`, a face on the result faulty) and one of the oracle's native parallels | 8.0.1 | Fixed: refused, saying where (decision 2422) |
 | `ShapeConstruct_ProjectCurveOnSurface::getLine`, a singular normal (upstream `ec0167b409`) | Where the surface's normal is zero at a point of the line (a pole) the normal check stops and the line is judged by each point's distance compared with the first's, which a line through a pole passes whatever its U: up to 0.0057 off the surface on upstream's case, a success | 8.0.1 | Fixed, as upstream (decision 2425) |
+
+## Found by unit 15E, slice 19
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `BRepFill_OffsetWire::MakeWires` and `FixHoles`, a closed result (upstream `8f817f5da5`) | A wire reaching a vertex with one edge goes on round it, as for an open result, and is marked closed though it isn't; `FixHoles` closes a wire with an edge from its first vertex to its last, against the wire | `offset_wire_018.brep` (`B4`, `TODO OCC23068` and `OCC23748`) inwards at 1% to 7.5% of its length: a wire open by up to 3.1, done, a success through `Offset2D` | Fixed, as upstream (decision 35201) |
+| `BRepOffsetAPI_MakeOffset::Perform`, a wire whose edges aren't in order (upstream `8f817f5da5`'s `CollapsedOffsetReportsFailure`) | The parallel inwards past the width of a thin triangle whose third edge runs against the wire is the one outwards, done | 8.0.1 | Fixed in Kerf's way: a closed offset's loop on the wrong side of the wire is refused, `offset.wrong-side` (decision 35202); upstream's own mend not found |
