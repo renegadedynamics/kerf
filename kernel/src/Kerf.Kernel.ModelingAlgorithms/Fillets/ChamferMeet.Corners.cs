@@ -197,7 +197,7 @@ internal static partial class ChamferMeet
             double depth = 0;
             for (int k = 0; k <= 8; k++)
             {
-                var onBand = new ProjectPointOnSurface(curve.EvalD0(a + ((b - a) * k / 8)), band.Surface, band.EU0, band.EU1, band.EV0, band.EV1);
+                ProjectPointOnSurface onBand = band.Onto(curve.EvalD0(a + ((b - a) * k / 8)));
                 if (onBand.NbPoints() == 0)
                 {
                     return (double.NaN, double.NaN);
