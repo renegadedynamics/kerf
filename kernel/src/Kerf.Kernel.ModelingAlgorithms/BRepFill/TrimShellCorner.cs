@@ -378,6 +378,16 @@ internal sealed class TrimShellCorner
 
         if (commonVertices.Extent() == 2)
         {
+            // Kerf: OCCT #639 (decision 2358). The intersection of the two sweeps at the corner merged the sides of a
+            // profile too thin for it into one vertex (a stem 0.007 wide took a tolerance of 0.36), so both pairs of
+            // edges meet in it and the edge between them has no length; OCCT threw "command not done" from the edge's
+            // maker, which said nothing of why. Still a failure, with right or round corners, now saying so.
+            if (commonVertices.First().IsSame(commonVertices.Last()))
+            {
+                Vertex merged = ShapeCasts.Vertex(commonVertices.First());
+                throw new global::Kerf.Engine.Foundation.ConstructionErrorException(FormattableString.Invariant(
+                    $"BRepFill_TrimShellCorner: at the corner near {Tool.Pnt(merged)} the profile's sides merged into one vertex of tolerance {Tool.Tolerance(merged):G3}, so the corner can't be trimmed; the profile is too thin there for the corner to be trimmed (the transformed transition can sweep it)"));
+            }
             newEdge = new LibraryMakeEdge(ShapeCasts.Vertex(commonVertices.First()),
                                             ShapeCasts.Vertex(commonVertices.Last())).InternalEdge();
             bHasNewEdge = true;

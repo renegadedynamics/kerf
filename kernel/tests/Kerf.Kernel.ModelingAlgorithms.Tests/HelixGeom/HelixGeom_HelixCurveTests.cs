@@ -250,15 +250,18 @@ public class HelixGeom_HelixCurveTests
 
     // ---- the port's own: OCCT's behaviour the GTests don't pin ----
 
-    /// <summary>OCCT keeps the old taper when a helix is reloaded with a (near) zero taper angle (occt-issues.md, unit 7D).</summary>
+    /// <summary>OCCT 8.0.1 kept the old taper when a helix was reloaded with a (near) zero taper angle (occt-issues.md,
+    /// unit 7D); since decision 2353 every taper is the helix's, as upstream's 3f3d32d9f3 has it.</summary>
     [Fact]
-    public void Reloading_with_no_taper_keeps_the_old_taper_as_OCCT()
+    public void Reloading_with_no_taper_drops_the_old_taper()
     {
         var aHelix = new HelixCurve();
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 0.1, true);
-        Point3D aTapered = aHelix.Value(2.0 * M_PI);
+        Assert.NotEqual(2.0, aHelix.Value(2.0 * M_PI).X, 1e-3);
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 0.0, true);
-        Assert.Equal(aTapered, aHelix.Value(2.0 * M_PI));
+        Assert.Equal(2.0, aHelix.Value(2.0 * M_PI).X, 1e-12);
+        aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 5e-5, true);
+        Assert.Equal(2.0 + 5.0 * Math.Tan(5e-5), aHelix.Value(2.0 * M_PI).X, 1e-12);
         var aFresh = new HelixCurve();
         aFresh.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 0.0, true);
         Assert.Equal(2.0, aFresh.Value(2.0 * M_PI).X, 1e-12);

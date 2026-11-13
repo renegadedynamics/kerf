@@ -233,6 +233,32 @@ public class ConstructionTests
         KernelAssert.Throws<ArgumentOutOfRangeException>(() => Sweeps.Helix(5, 2, 10, new HelixOptions { EndRadius = -1 }));
     }
 
+    // Upstream 3f3d32d9f3 (decision 2353): a taper under 1e-4 radians was taken for none, so the helix ended at its
+    // start radius; every point of a conical helix is at the radius its height gives
+    [Theory]
+    [InlineData(10.0, 10.005)]
+    [InlineData(10.0, 10.0 - 0.002)]
+    [InlineData(5.0, 2.0)]
+    [InlineData(2.0, 6.0)]
+    public void A_conical_helix_is_at_the_radius_its_height_gives(double radius, double endRadius)
+    {
+        const double height = 100, pitch = 10;
+        Wire helix = Sweeps.Helix(radius, pitch, height, new HelixOptions { EndRadius = endRadius }).Value;
+        Assert.Contains(helix.AllVertices(), v => v.Point.DistanceTo(new Point3D(endRadius, 0, height)) < 1e-6);
+        double worst = 0;
+        foreach (Edge edge in helix.AllEdges())
+        {
+            EdgeCurve curve = edge.ToCurve();
+            for (int i = 0; i <= 50; i++)
+            {
+                Point3D p = curve.Evaluate(curve.Range.Min + (curve.Range.Max - curve.Range.Min) * i / 50);
+                double expected = radius + (endRadius - radius) * p.Z / height;
+                worst = Math.Max(worst, Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - expected));
+            }
+        }
+        Assert.True(worst < 1e-4, $"{worst} from the cone");
+    }
+
     [Fact]
     public void A_sweep_follows_its_spine()
     {
@@ -244,6 +270,57 @@ public class ConstructionTests
         Built<Shape> open = Sweeps.Sweep(profile, spine, new SweepOptions { MakeSolid = false, Frame = SweepFrame.Frenet }).Value;
         Assert.NotEqual(ShapeType.Solid, open.Shape.Type);
         KernelAssert.Throws<ArgumentException>(() => Sweeps.Sweep(profile, spine, new SweepOptions { Frame = SweepFrame.Binormal }));
+    }
+
+    // OCCT #304 and #302 (decision 2357): FreeCAD wrote the profile's vertex with a tolerance of 2e8; the sweep made
+    // its two ends one vertex and threw from BuildEdge, saying nothing of why. It now refuses the profile and says so,
+    // and the same profile with a sane tolerance sweeps into the solid it should
+    [Fact]
+    public void A_sweep_refuses_a_profile_whose_tolerance_is_past_its_size()
+    {
+        Point3D[] poles =
+        [
+            new(229.056446632, 196.610742917, 211.513), new(199.755909066, 166.946766054, 211.513),
+            new(150.934005737, 117.519287109, 211.513000488), new(167.296920776, 120.491096497, 215.253005981),
+            new(109.373835318, 98.0903250257, 215.253), new(57.488822937, 78.0246734619, 215.253005981),
+        ];
+        Wire spine = Wire.FromEdges([Edge.FromCurve(new BezierCurve3D(poles)).Value]).Value;
+        var frame = new Frame3D(poles[0], new Direction3D(new Vector3D(poles[0], poles[1])));
+        Wire profile = Wire.FromEdges([Edge.Circle(new Circle3D(frame, 7.275)).Value]).Value;
+        Built<Shape> tube = Sweeps.Sweep(profile, spine).Value;
+        Assert.Equal(ShapeType.Solid, tube.Shape.Type);
+        double volume = Kerf.Measurement.MeasureOperations.IntegrateVolume(tube.Shape);
+        Assert.True(volume > 0.99 * Math.PI * 7.275 * 7.275 * 211.5, $"volume {volume}");
+
+        // the profile as FreeCAD wrote it: the same circle, its vertex's tolerance 198472167.324529
+        using var stream = new MemoryStream();
+        Assert.True(Kerf.Exchange.Brep.Write(profile, stream).IsSuccess);
+        string text = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+        int vertex = text.IndexOf("\nVe\n", StringComparison.Ordinal);
+        int line = text.IndexOf('\n', vertex + 4);
+        text = text[..(vertex + 4)] + "198472167.324529" + text[line..];
+        Shape faulty = Kerf.Exchange.Brep.Read(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(text))).Value;
+        Result<Built<Shape>> refused = Sweeps.Sweep(faulty, spine);
+        Assert.False(refused.IsSuccess);
+        Assert.Equal(DiagnosticCode.InvalidInput, refused.Error!.Code);
+        Assert.Contains("tolerance of 1.98E+08", refused.Error.Message, StringComparison.Ordinal);
+    }
+
+    // OCCT #639 (decision 2358): two T-shaped profiles with a stem 0.007 wide along a spine with a corner of 19
+    // degrees, with right or round corners. The sweeps' intersection at the corner merges the stem's sides into one vertex, and
+    // OCCT failed with "command not done" from an edge's maker; Kerf still fails, and now says why. The transformed transition makes it
+    [Fact]
+    public void A_right_corner_too_tight_for_its_profile_fails_saying_why()
+    {
+        Wire spine = Fixtures.Named("issue639-traceline").AllWires()[0];
+        Shape[] profiles = [Fixtures.Named("issue639-profile_1").AllWires()[0], Fixtures.Named("issue639-profile_2").AllWires()[0]];
+        Result<Built<Shape>> right = Sweeps.Sweep(profiles, spine, new SweepOptions { Transition = TransitionMode.RightCorner });
+        Assert.False(right.IsSuccess);
+        Assert.Contains("too thin there for the corner to be trimmed", right.Error!.Message, StringComparison.Ordinal);
+        Result<Built<Shape>> round = Sweeps.Sweep(profiles, spine, new SweepOptions { Transition = TransitionMode.RoundCorner });
+        Assert.Contains("too thin there for the corner to be trimmed", round.Error!.Message, StringComparison.Ordinal);
+        Result<Built<Shape>> transformed = Sweeps.Sweep(profiles, spine);
+        Assert.True(transformed.IsSuccess, transformed.Error?.Message);
     }
 
     [Fact]

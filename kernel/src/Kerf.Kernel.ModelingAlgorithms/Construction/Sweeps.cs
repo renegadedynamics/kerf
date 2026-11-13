@@ -247,6 +247,10 @@ public static class Sweeps
         Shape[] sections = Sections(profiles, nameof(profiles));
         Shape[] inputs = [.. sections, spine];
         bool closed = sections.All(static s => s.Type == ShapeType.Wire && Tool.IsClosed(s));
+        if (TolerancePastSize(sections, spine) is { } refused)
+        {
+            return Result<Built<Shape>>.Failure(refused);
+        }
         Action<MakePipeShell> frame = FrameOf(options);
         return EngineOperation.Run<Shape>(range =>
         {
@@ -267,6 +271,57 @@ public static class Sweeps
             return MakerOutcome.Done(pipe, inputs, () => StatusDiagnostics.ToDiagnostic(pipe.GetStatus()));
         }, Failure, progress, cancellationToken, options.CheckResult ? "The sweep's result" : null,
            options.MakeSolid ? static made => EnclosesNothing(made, "The sweep") : null);
+    }
+
+    // OCCT #304 and #302 (decision 2357): a profile written by FreeCAD with a vertex of tolerance 2e8, a hundred
+    // million times its width, made the sweep's vertices at both ends of the spine one vertex, and its last edge then
+    // failed with a construction error that said nothing of why. A profile or spine whose tolerance is larger than
+    // itself covers its whole shape, so the sweep refuses it and says so; with a sane tolerance the same sweep is made.
+    private static Diagnostic? TolerancePastSize(Shape[] sections, Wire spine)
+    {
+        for (int i = 0; i <= sections.Length; i++)
+        {
+            Shape shape = i < sections.Length ? sections[i] : spine;
+            if (shape.Type == ShapeType.Vertex)
+            {
+                continue;
+            }
+            double tolerance = 0;
+            for (var vertices = new Explorer(shape, ShapeType.Vertex); vertices.More(); vertices.Next())
+            {
+                tolerance = Math.Max(tolerance, Tool.Tolerance((Vertex)vertices.Current()));
+            }
+            var low = new double[] { double.MaxValue, double.MaxValue, double.MaxValue };
+            var high = new double[] { double.MinValue, double.MinValue, double.MinValue };
+            for (var edges = new Explorer(shape, ShapeType.Edge); edges.More(); edges.Next())
+            {
+                var edge = (Edge)edges.Current();
+                tolerance = Math.Max(tolerance, Tool.Tolerance(edge));
+                Curve3D? curve = Tool.Curve(edge, out double first, out double last);
+                if (curve is null || Tool.Degenerated(edge))
+                {
+                    continue;
+                }
+                for (int k = 0; k <= 8; k++)
+                {
+                    Point3D p = curve.Value(first + (last - first) * k / 8);
+                    low[0] = Math.Min(low[0], p.X); low[1] = Math.Min(low[1], p.Y); low[2] = Math.Min(low[2], p.Z);
+                    high[0] = Math.Max(high[0], p.X); high[1] = Math.Max(high[1], p.Y); high[2] = Math.Max(high[2], p.Z);
+                }
+            }
+            if (low[0] > high[0])
+            {
+                continue;
+            }
+            double size = Math.Sqrt(Math.Pow(high[0] - low[0], 2) + Math.Pow(high[1] - low[1], 2) + Math.Pow(high[2] - low[2], 2));
+            if (size > 0 && tolerance > size)
+            {
+                string what = i < sections.Length ? (sections.Length == 1 ? "The profile" : $"Profile {i + 1}") : "The spine";
+                return Diagnostic.Error(DiagnosticCode.InvalidInput, FormattableString.Invariant(
+                    $"{what} has a tolerance of {tolerance:G3}, larger than its own size of {size:G3}, so its vertices and edges cover the whole of it and the sweep can't tell its ends apart: repair its tolerances (Fix) first."));
+            }
+        }
+        return null;
     }
 
     /// <summary>A loft: a surface (or solid) through <paramref name="sections"/> in order, each a wire, or a vertex at

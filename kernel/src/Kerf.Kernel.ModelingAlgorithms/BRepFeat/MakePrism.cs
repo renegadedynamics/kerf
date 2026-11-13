@@ -802,15 +802,17 @@ internal sealed class MakePrism : Form
     public void PerformUntilHeight(in Shape until, double length)
     {
         using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
-        // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero length goes on
-        // and builds the prism again with the length 0
+        // Kerf: each of the two first calls returns, as OCCT does since 3f3d32d9f3; in 8.0.1 a null Until went on
+        // and threw below, and a zero length went on and built the prism again with the length 0
         if (until.IsNull)
         {
             Perform(length);
+            return;
         }
         if (length == 0)
         {
             Perform(until);
+            return;
         }
         Explorer exp = new(until, ShapeType.Face);
         if (!exp.More())
