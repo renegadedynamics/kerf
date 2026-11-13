@@ -230,7 +230,7 @@ public class GeomLib_CheckCurveOnSurfaceTest
         return new CurveOnSurface(aPCurve, aSurface);
     }
 
-    // Upstream ec0167b409's FailedIntervalDoesNotReportPartialMaximum (decision 34503): a curve whose evaluation fails
+    // Upstream ec0167b409's FailedIntervalDoesNotReportPartialMaximum (decision 2408): a curve whose evaluation fails
     // or isn't finite on one interval fails the check. 8.0.1 left the interval out and reported the other's 0.125.
     [Fact]
     public void A_failed_interval_fails_the_check_rather_than_giving_the_others_maximum()
@@ -259,7 +259,7 @@ public class GeomLib_CheckCurveOnSurfaceTest
         }
     }
 
-    // Upstream ec0167b409's RepeatedPerformResetsStatusAndDistance (decision 34503): 8.0.1 kept the failed check's
+    // Upstream ec0167b409's RepeatedPerformResetsStatusAndDistance (decision 2408): 8.0.1 kept the failed check's
     // status through the next, which succeeded
     [Fact]
     public void A_repeated_check_starts_afresh()

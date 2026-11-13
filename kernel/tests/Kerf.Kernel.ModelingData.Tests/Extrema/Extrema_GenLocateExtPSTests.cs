@@ -7,7 +7,7 @@ using Kerf.Geometry;
 
 namespace Kerf.Kernel.ModelingData.Tests;
 
-/// <summary>Upstream ec0167b409's Extrema_GenLocateExtPS_Test (decision 34504).</summary>
+/// <summary>Upstream ec0167b409's Extrema_GenLocateExtPS_Test (decision 2409).</summary>
 public class Extrema_GenLocateExtPSTests
 {
     // ClosedSplineNormalizesStartingParameter: a cylinder made a closed, not periodic, B-spline, a point on it, and a

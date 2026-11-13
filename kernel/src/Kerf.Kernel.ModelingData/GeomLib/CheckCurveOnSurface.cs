@@ -72,7 +72,7 @@ internal sealed class CheckCurveOnSurface
     /// </summary>
     public void Perform(CurveOnSurface? curveOnSurface)
     {
-        // Upstream ec0167b409 (decision 34503): each check starts afresh, where 8.0.1 kept the last one's status and
+        // Upstream ec0167b409 (decision 2408): each check starts afresh, where 8.0.1 kept the last one's status and
         // distance
         _errorStatus = 0;
         _maxDistance = RealLast();
@@ -158,7 +158,7 @@ internal sealed class CheckCurveOnSurface
                     comp.Run(0, i);
                 }
             }
-            // Upstream ec0167b409 (decision 34503): an interval whose search failed fails the check, where 8.0.1 left it
+            // Upstream ec0167b409 (decision 2408): an interval whose search failed fails the check, where 8.0.1 left it
             // out and gave the other intervals' maximum as the curve's
             if (!comp.OptimalValues(out double minimalValue, out double parameter))
             {
@@ -866,7 +866,7 @@ internal sealed class CheckCurveOnSurface
                 return !function.HasFailed;
             }
 
-            // Kerf: an interval too short for the swarm (decision 34503) has its maximum at an end, as 8.0.1 left it out
+            // Kerf: an interval too short for the swarm (decision 2408) has its maximum at an end, as 8.0.1 left it out
             // and upstream ec0167b409 would fail the check for it
             if (parSup[1] - parInf[1] < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
