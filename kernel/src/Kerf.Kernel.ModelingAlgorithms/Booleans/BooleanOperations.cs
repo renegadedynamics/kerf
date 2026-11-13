@@ -291,6 +291,8 @@ public static class BooleanOperations
     {
         KernelArgumentNullException.ThrowIfNull(tools);
         using ParallelVolumes.Scope parallel = ParallelVolumes.Enter(options?.ParallelVolumes);
+        // The check and the attempts made again obey the operation's token, as the Boolean itself does (decision 1855)
+        using Cancellation.Scope cancel = Cancellation.Enter(Cancellation.Effective(cancellationToken));
         operation.SetTools(List(tools, nameof(tools)));
         Result<Built<Shape>> result = Run((BuilderAlgo)operation, arguments, options, progress, cancellationToken);
 
@@ -443,6 +445,7 @@ public static class BooleanOperations
         KernelArgumentNullException.ThrowIfNull(arguments);
         KernelArgumentNullException.ThrowIfNull(tools);
         using ParallelVolumes.Scope parallel = ParallelVolumes.Enter(options?.ParallelVolumes);
+        using Cancellation.Scope cancel = Cancellation.Enter(Cancellation.Effective(cancellationToken));
         return Again(rule, arguments, tools, options, cancellationToken) is { } again
             ? ClosedAtTheSource(rule, arguments, tools, options, again, cancellationToken)
             : Result<Built<Shape>>.Failure(Diagnostic.Error(OperationDiagnostics.BooleanFailed,

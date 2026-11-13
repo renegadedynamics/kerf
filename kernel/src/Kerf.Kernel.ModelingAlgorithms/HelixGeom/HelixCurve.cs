@@ -28,7 +28,6 @@ internal class HelixCurve : CurveAdaptorBase
     protected bool _isClockWise;
     protected double _c1;
     protected double _tgBeta;
-    protected double _tolAngle;
 
     /// <summary>A helix of one turn, pitch 1 and radius 1, clockwise.</summary>
     public HelixCurve()
@@ -42,7 +41,6 @@ internal class HelixCurve : CurveAdaptorBase
         // Calculate derived parameters
         _c1 = _pitch / _last;
         _tgBeta = 0.0;
-        _tolAngle = 1.0e-4;
     }
 
     /// <summary>A copy of <paramref name="other"/> (OCCT's implicit copy constructor).</summary>
@@ -56,7 +54,6 @@ internal class HelixCurve : CurveAdaptorBase
         _isClockWise = other._isClockWise;
         _c1 = other._c1;
         _tgBeta = other._tgBeta;
-        _tolAngle = other._tolAngle;
     }
 
     /// <summary>Reloads the current parameters (validating them and recomputing the derived values).</summary>
@@ -102,12 +99,9 @@ internal class HelixCurve : CurveAdaptorBase
         }
         // Calculate helix coefficient
         _c1 = _pitch / twoPI;
-        // OCCT: myTgBeta isn't reset for a (near) zero taper angle, so reloading a tapered helix as a cylindrical
-        // one keeps the old taper (occt-issues.md).
-        if (Math.Abs(_taperAngle) > _tolAngle)
-        {
-            _tgBeta = Math.Tan(_taperAngle);
-        }
+        // Kerf: every taper is the helix's, as OCCT does since 3f3d32d9f3 (decision 2353); 8.0.1 took a taper under
+        // 1e-4 radians for none, and kept the old one when reloading a tapered helix with such a taper
+        _tgBeta = Math.Tan(_taperAngle);
     }
 
     public override double FirstParameter() => _first;
@@ -224,6 +218,9 @@ internal class HelixCurve : CurveAdaptorBase
         // Calculate second derivative
         a1 = 2.0 * a1;
         x = -a2 * ct - a1 * st;
+        // OCCT: y'' is -r sin t + 2r' cos t, not this, which upstream mends in 3f3d32d9f3. Kept: only the coil's
+        // approximation reads it, mending it moves 30 of the 56 native helix records' tolerances by about 5% and no
+        // helix measured moves from its cone by more (decision 2353)
         y = -a2 * st - a1 * ct;
         if (!_isClockWise)
         {
