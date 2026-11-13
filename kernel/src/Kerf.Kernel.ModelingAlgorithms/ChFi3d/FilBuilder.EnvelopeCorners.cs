@@ -21,6 +21,11 @@ internal partial class FilBuilder
     // start of the one after it, and whether those two surfaces cross (a crease) or leave a gap (a piece of the ball).
     private readonly List<(Spine Spine, Point3D A, Point3D B, EnvelopeEnd From, EnvelopeEnd To, bool Crosses)> _envelopePieces = [];
 
+    private readonly List<Curve3D> _envelopeCreases = [];
+
+    /// <summary>The curves of the creases made, each from the contact on the first face (0) to that on the second (1).</summary>
+    internal IReadOnlyList<Curve3D> EnvelopeCreases => _envelopeCreases;
+
     /// <summary>How many corners were built as a piece of the ball, and how many as a crease.</summary>
     internal (int Lunes, int Creases) EnvelopeCornersMade { get; private set; }
 
@@ -545,6 +550,7 @@ internal partial class FilBuilder
         }
 
         EnvelopeCrease crease = new(curve, pcurveLast, pcurveFirst, 0.0, 1.0, Math.Max(2.0 * apartMost, Precision.Confusion()));
+        _envelopeCreases.Add(curve);
         before.CreaseAtLast = crease;
         after.CreaseAtFirst = crease;
         (int lunes, int creases) = EnvelopeCornersMade;
