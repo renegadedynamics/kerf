@@ -253,9 +253,19 @@ internal class Inter<TheCurve, TheCurveTool, TheSurface, TheSurfaceTool, ThePoly
         for (int i = 0; i < intervals.Count; i++)
         {
             InterUtils.UVBounds bounds = intervals[i];
+            if (IsApartOn(bounds.U0, bounds.U1, bounds.V0, bounds.V1))
+            {
+                continue;
+            }
             Perform(curve, surface, bounds.U0, bounds.V0, bounds.U1, bounds.V1);
         }
     }
+
+    /// <summary>
+    /// Kerf: true if the curve is proved further from the surface over this range than any point the intersection accepts,
+    /// so that the range would give no point and is passed over (unit 15AS). False by default: every range is computed.
+    /// </summary>
+    protected virtual bool IsApartOn(double u0, double u1, double v0, double v1) => false;
 
     /// <summary>
     /// Computes the intersection between the curve (whose polygon is given) and the surface; the polyhedron of the
