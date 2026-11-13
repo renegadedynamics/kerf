@@ -10,6 +10,9 @@ using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Exchange.Step.Data;
 using Kerf.Engine.Exchange.Step.Geometry;
 using Kerf.Engine.Healing;
+using Kerf.Engine.Healing.Analysis;
+using Kerf.Engine.Healing.Extend;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 
 using Kerf.Geometry;
@@ -107,11 +110,55 @@ internal sealed class TranslateCurveBoundedSurface : ImportRoot
                 continue;
             }
 
-            b.Add(_face, trCC.InternalValue());
+            Wire wire = trCC.InternalValue();
+            if (cc is StepOuterBoundaryCurve && nb == 1 && !cbs.ImplicitOuter() && IsWoundAsHole(_face, wire, surf))
+            {
+                // #1652 (decision 2446): the file says this wire is the outer boundary. Wound clockwise on a sphere or a
+                // torus, the healing would take it for a hole and add the natural bounds, giving the rest of the surface
+                // for the patch; so it's wound as an outer boundary here, where that is still known.
+                var sewd = new ExtendWireData(wire);
+                sewd.Reverse();
+                wire = sewd.InternalWire();
+            }
+
+            b.Add(_face, wire);
         }
 
         _done = !_face.IsNull;
         return _done;
+    }
+
+    // Whether the wire, alone on the face's surface, would bound a hole rather than a patch: only where the healing's
+    // natural bounds could follow (a sphere, or a surface periodic both ways), for a wire with no seam or degenerated edge
+    // that doesn't run round a period, as the healing's own test has it (ShapeFix_Face::isNeedAddNaturalBound).
+    private static bool IsWoundAsHole(in Face face, Wire wire, Surface surf)
+    {
+        bool sphere = surf is SphericalSurface;
+        if (!sphere && !(surf.IsUPeriodic && surf.IsVPeriodic))
+        {
+            return false;
+        }
+
+        Face alone = ShapeCasts.Face(face.EmptyCopied());
+        alone.Orient(Orientation.Forward);
+        new BrepBuilder().Add(alone, wire);
+        for (var it = new Explorer(alone, ShapeType.Edge); it.More(); it.Next())
+        {
+            Edge edge = ShapeCasts.Edge(it.Current());
+            if (Tool.Degenerated(edge) || Tool.IsClosed(edge, alone))
+            {
+                return false;
+            }
+        }
+
+        ShapeAnalysisAnalysis.GetFaceUVBounds(alone, out double uMin, out double uMax, out double vMin, out double vMax);
+        if (surf.IsUPeriodic && uMax - uMin >= surf.UPeriod * (1 - 1e-6)
+            || surf.IsVPeriodic && vMax - vMin >= surf.VPeriod * (1 - 1e-6))
+        {
+            return false;
+        }
+
+        return !ShapeAnalysisAnalysis.IsOuterBound(alone);
     }
 
     public bool Init(StepCurveBoundedSurface cbs, TransientProcess tp) => Init(cbs, tp, new Factors());

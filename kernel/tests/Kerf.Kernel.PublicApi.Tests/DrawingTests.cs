@@ -219,4 +219,32 @@ public class DrawingTests
         Parallel.For(0, others.Length, i => others[i] = Svg.WriteToString(cylinder.ProjectLines(Camera.Isometric).Value));
         Assert.All(others, o => Assert.Equal(first, o));
     }
+
+    // OCCT #1561 (decision 2448): a smooth loft through 3 or 5 circles, each a periodic spline through 48 points, seen from
+    // the front. Its face has 49 knots one way and 2 the other, and the exact method's start points for the outline were laid
+    // with their two indices swapped, all in two columns by the seam: the silhouettes half a turn away had none, and the
+    // drawing had one silhouette of the two, or none. Lengths as the issue gives them once mended.
+    [Theory]
+    [InlineData(new[] { 0, 2, 4 }, 371.5)]
+    [InlineData(new[] { 0, 1, 2, 3, 4 }, 376.3)]
+    public void A_loft_through_many_point_splines_has_both_its_silhouettes(int[] levels, double expected)
+    {
+        double[] radii = [30, 40, 47, 28, 25], heights = [0, 45, 99, 144, 180];
+        const int n = 48;
+        List<Shape> sections = [];
+        foreach (int l in levels)
+        {
+            Point3D[] points = [.. Enumerable.Range(0, n).Select(i => new Point3D(radii[l] * Math.Cos(2 * Math.PI * i / n),
+                                                                                  radii[l] * Math.Sin(2 * Math.PI * i / n), heights[l]))];
+            BSplineCurve3D curve = GeometryOperations.Interpolate(points, new InterpolationOptions { Periodic = true, Tolerance = 1e-7 }).Value;
+            sections.Add(ShapeFactory.FromEdges([ShapeFactory.FromCurve(curve).Value]).Value);
+        }
+
+        Shape loft = Sweeps.Loft(sections, new LoftOptions { MakeSolid = true, Ruled = false }).Value.Shape;
+        LineDrawing drawing = loft.ProjectLines(Camera.Front, new DrawingOptions { Method = HiddenLineMethod.Exact }).Value;
+        DrawnEdge[] outlines = [.. drawing.Of(LineKind.Outline, true)];
+        Assert.InRange(Length(outlines), expected - 0.2, expected + 0.2);
+        Assert.Contains(outlines, e => e.Start.X < -20);
+        Assert.Contains(outlines, e => e.Start.X > 20);
+    }
 }

@@ -241,8 +241,9 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
         {
             return;
         }
-        Placement theLoc = new Placement(trsf);
-        shape.Move(theLoc);
+        // Kerf (unit 15E17, decision 2452): a mapped item's scale is made part of the geometry, as a placement
+        // with a scale isn't one the kernel's operations hold under
+        shape = global::Kerf.Engine.Construction.Api.Transform.Placed(shape, new Placement(trsf));
     }
 
     private static void ApplyTransformation(ref Compound shape, in Transform3D trsf)
@@ -251,8 +252,8 @@ internal class ActorRead : ActorOfTransientProcess, IActorRead
         {
             return;
         }
-        Placement theLoc = new Placement(trsf);
-        shape.Move(theLoc);
+        // Kerf (unit 15E17, decision 2452): as for a shape
+        shape = ShapeCasts.Compound(global::Kerf.Engine.Construction.Api.Transform.Placed(shape, new Placement(trsf)));
     }
 
     // ============================================================================

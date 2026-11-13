@@ -99,6 +99,25 @@ internal static class ClassificationScenes
         return aShape;
     }
 
+    /// <summary>Whether a face of the shape is placed with a scale (decision 2452).</summary>
+    public static bool HasScale(in Shape theShape)
+    {
+        for (var anExp = new Explorer(theShape, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            if (anExp.Current().Placement.Transformation.ScaleFactor != 1.0)
+            {
+                return true;
+            }
+        }
+
+        return theShape.Placement.Transformation.ScaleFactor != 1.0;
+    }
+
+    /// <summary>The shape with its own placement's scale made part of its geometry, placed nowhere: what a shape placed
+    /// with a scale is, by which the port's classification of it is judged where native's differs (decision 2452).</summary>
+    public static Shape Baked(in Shape theShape) =>
+        new Kerf.Engine.Construction.Api.Transform(theShape.Located(new Placement()), theShape.Placement.Transformation, true).Shape();
+
     /// <summary>The shape at a random location (or none; scaled if allowed, sometimes), and reversed half the time.</summary>
     public static Twin<N.TopoDS_Shape, Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape, bool theAllowScale)
     {
@@ -106,7 +125,10 @@ internal static class ClassificationScenes
         if (theOracle.Bool())
         {
             (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
-            aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
+            // with the internal Move: the public Moved refuses a scale (decision 2452)
+            Shape aMoved = aShape.P;
+            aMoved.Move(aL);
+            aShape = new(aShape.N.Moved(aNL), aMoved);
         }
 
         return theOracle.Bool() ? new(aShape.N.Reversed(), aShape.P.Reversed()) : aShape;

@@ -181,6 +181,35 @@ internal class SClassifier
     /// <summary>Classifies the point <paramref name="p"/> with the tolerance <paramref name="tol"/> in the solid of <paramref name="solidExplorer"/>.</summary>
     public void Perform(SolidExplorer solidExplorer, in Point3D p, double tol)
     {
+        // Kerf (unit 15E17, decision 2452): a shape placed with a scale is classified in its own frame, the point taken
+        // there by the placement's inverse and the tolerance with it; the deciding face is placed back
+        SolidExplorer? unscaled = solidExplorer.Unscaled(out Placement placement);
+        if (unscaled is not null && !global::Kerf.Engine.Healing.Fixes.UndoneFixes.AreUndone)
+        {
+            Transform3D trsf = placement.Transformation;
+            Perform(unscaled, trsf.Inverted() * p, tol / Math.Abs(trsf.ScaleFactor));
+            if (!_face.IsNull)
+            {
+                _face.Move(placement);
+            }
+
+            return;
+        }
+
+        PerformByRay(solidExplorer, p, tol);
+
+        // Kerf (unit 15E17, decision 2447): a point outside a finite solid's box is outside it, whatever the ray found. The
+        // ray reads IN when the face intersectors miss the crossing where it enters (OCCT #1700, #1703), and that put a point
+        // outside the box IN, so a distance between disjoint solids was 0, an inner solution and a success.
+        if (_state == 3 && solidExplorer.IsOutsideFiniteBounds(p, tol))
+        {
+            _state = 4;
+            _face = new Face();
+        }
+    }
+
+    private void PerformByRay(SolidExplorer solidExplorer, in Point3D p, double tol)
+    {
         // Kerf (unit 15C2): what the last point left in the explorer, its choice of face, where on an edge to aim, the faces'
         // intersectors it made unrestricted and each intersector's flag of a line found parallel, set back to a new explorer's,
         // so every point is classified as by a new classifier. OCCT carries them over, and a stale flag can call a point ON

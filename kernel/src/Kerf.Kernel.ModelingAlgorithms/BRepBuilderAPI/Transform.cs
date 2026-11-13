@@ -68,6 +68,15 @@ internal class Transform : ModifyShape
         }
     }
 
+    /// <summary>
+    /// Kerf (unit 15E17, decision 2452): <paramref name="shape"/> moved by <paramref name="placement"/>, or, where the
+    /// placement has a scale, which a shape's placement doesn't take, transformed with the scale made part of its geometry.
+    /// </summary>
+    internal static Shape Placed(in Shape shape, in Placement placement) =>
+        Math.Abs(Math.Abs(placement.Transformation.ScaleFactor) - 1.0) > Placement.ScalePrec()
+            ? new Transform(shape, placement.Transformation, true).Shape()
+            : shape.Moved(placement);
+
     internal override Shape InternalModifiedShape(in Shape s)
     {
         if (_useModif)

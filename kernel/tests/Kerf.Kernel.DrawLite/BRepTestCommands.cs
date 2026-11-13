@@ -163,7 +163,18 @@ internal static class BRepTestCommands
 
                 try
                 {
-                    theDI.SetShape(a[i], aName is "move" or "reset" ? S.Located(L, isException) : S.Moved(L, isException));
+                    // the internal forms, as Draw's: the public ones refuse a scale (Kerf decision 2452), which -force asks for
+                    Shape aMoved = S;
+                    if (aName is "move" or "reset")
+                    {
+                        aMoved.Location(L, isException);
+                    }
+                    else
+                    {
+                        aMoved.Move(L, isException);
+                    }
+
+                    theDI.SetShape(a[i], aMoved);
                 }
                 catch (Exception caught) when (Refusal.Of(caught) is global::Kerf.Engine.Foundation.DomainErrorException)
                 {

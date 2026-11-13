@@ -30,7 +30,7 @@ public class HlrNativeTests
     private static void Compare(string thePortText, string theCasePrefix, int theExpectedCases) =>
         Compare(thePortText, k => k.StartsWith(theCasePrefix, StringComparison.Ordinal), theExpectedCases);
 
-    private static void Compare(string thePortText, Func<string, bool> theIsCase, int theExpectedCases)
+    private static void Compare(string thePortText, Func<string, bool> theIsCase, int theExpectedCases, int theUlps = 0)
     {
         Dictionary<string, List<string>> aPort = BlendFuncNativeTests.Split(thePortText);
         Dictionary<string, List<string>> aNative = theRecording.Value;
@@ -47,7 +47,7 @@ public class HlrNativeTests
             {
                 string aN = i < aNativeLines.Count ? aNativeLines[i] : "<none>";
                 string aP = i < aPortLines.Count ? aPortLines[i] : "<none>";
-                if (aN != aP)
+                if (aN != aP && !WithinUlps(aN, aP, theUlps))
                 {
                     aDiffs.Add($"{aKey}, line {i + 1}:\n native {aN}\n port   {aP}");
                     break;
@@ -56,6 +56,39 @@ public class HlrNativeTests
         }
 
         Assert.True(aDiffs.Count == 0, $"{aDiffs.Count} of {aKeys.Count} cases differ:\n" + string.Join("\n", aDiffs.Take(10)));
+    }
+
+    // The same line but for numbers written as hex doubles within the given units in the last place of each other
+    private static bool WithinUlps(string theNative, string thePort, int theUlps)
+    {
+        if (theUlps == 0)
+        {
+            return false;
+        }
+
+        string[] aN = theNative.Split(' '), aP = thePort.Split(' ');
+        if (aN.Length != aP.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < aN.Length; i++)
+        {
+            if (aN[i] == aP[i])
+            {
+                continue;
+            }
+
+            if (aN[i].Length != 16 || aP[i].Length != 16
+                || !long.TryParse(aN[i], System.Globalization.NumberStyles.HexNumber, null, out long aNBits)
+                || !long.TryParse(aP[i], System.Globalization.NumberStyles.HexNumber, null, out long aPBits)
+                || Math.Abs(aNBits - aPBits) > theUlps)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     [Fact]
@@ -98,6 +131,11 @@ public class HlrNativeTests
         Compare(aRec.Text, "case contana ", 3);
     }
 
+    // A deliberate difference from native (decision 2448, OCCT #1561): the B-spline face's start points for its contour
+    // are laid on its own grid, not with their indices swapped, so its walked lines start elsewhere and come out within 3 units
+    // in the last place of native's, the same lines with the same points and vertices
+    private const int BSplineUlps = 3;
+
     [Theory]
     [InlineData("sphere")]
     [InlineData("halfsphere")]
@@ -113,6 +151,7 @@ public class HlrNativeTests
     {
         HlrRecorder aRec = new();
         aRec.RecContours(theFace);
-        Compare(aRec.Text, k => k == $"case contour {theFace} draft" || (k.StartsWith($"case contour {theFace} ", StringComparison.Ordinal) && (k.EndsWith(" dir 0", StringComparison.Ordinal) || k.EndsWith(" dir 1", StringComparison.Ordinal) || k.EndsWith(" dir 2", StringComparison.Ordinal) || k.EndsWith(" eye 0", StringComparison.Ordinal) || k.EndsWith(" eye 1", StringComparison.Ordinal)) && k.Length == $"case contour {theFace} dir 0".Length), 6);
+        Compare(aRec.Text, k => k == $"case contour {theFace} draft" || (k.StartsWith($"case contour {theFace} ", StringComparison.Ordinal) && (k.EndsWith(" dir 0", StringComparison.Ordinal) || k.EndsWith(" dir 1", StringComparison.Ordinal) || k.EndsWith(" dir 2", StringComparison.Ordinal) || k.EndsWith(" eye 0", StringComparison.Ordinal) || k.EndsWith(" eye 1", StringComparison.Ordinal)) && k.Length == $"case contour {theFace} dir 0".Length), 6,
+                theFace == "bspline" ? BSplineUlps : 0);
     }
 }
