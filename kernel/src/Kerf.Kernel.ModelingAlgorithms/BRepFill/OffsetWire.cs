@@ -531,6 +531,8 @@ internal sealed class OffsetWire
     // Kerf: the diagnostic codes of the two refusals
     internal const string NotAtDistanceCode = "offset.not-at-distance";
     internal const string CrossesItselfCode = "offset.crosses-itself";
+    // Kerf: MakeWireOffset's, a closed parallel on the wrong side of its spine (decision 2443)
+    internal const string WrongSideCode = "offset.wrong-side";
 
     /// <summary>
     /// Kerf: why the last <see cref="Perform"/> refused the parallel it made, as a diagnostic's code and message; null
@@ -538,7 +540,7 @@ internal sealed class OffsetWire
     /// </summary>
     internal (string Code, string Message)? RefusedBecause { get; private set; }
 
-    private static string Where(Point3D p) =>
+    internal static string Where(Point3D p) =>
         string.Create(System.Globalization.CultureInfo.InvariantCulture, $"({p.X:G6}, {p.Y:G6}, {p.Z:G6})");
 
     /// <summary>
@@ -1913,7 +1915,9 @@ internal sealed class OffsetWire
             end = false;
             mve.GetValue(cv).RemoveFirst();
 
-            if (_isOpenResult && mve.GetValue(cv).IsEmpty())
+            // Kerf: upstream 8f817f5da5's closure: a wire stops at a vertex with one edge whether or not the result
+            // is open, and is then not marked closed; 8.0.1 went on round it, marking it closed (decision 2442)
+            if (mve.GetValue(cv).IsEmpty())
             {
                 mve.Remove(cv);
             }
@@ -1959,7 +1963,7 @@ internal sealed class OffsetWire
                         ce = ShapeCasts.Edge(mve.GetValue(cv).First());
                         mve.GetValue(cv).RemoveFirst();
                     }
-                    else if (_isOpenResult)
+                    else
                     { // CV was a vertex with one edge
                         end = true;
                     }
@@ -2258,8 +2262,8 @@ internal sealed class OffsetWire
                 }
                 else if (Dist <= maxTol)
                 {
-                    // Creating new edge from Vl to Vf
-                    Edge newEdge = new LibraryMakeEdge(vf, vl).InternalEdge();
+                    // Creating new edge from Vl to Vf (Kerf: as upstream 8f817f5da5 does; 8.0.1 made it from Vf to Vl)
+                    Edge newEdge = new LibraryMakeEdge(vl, vf).InternalEdge();
                     bb.Add(Base, newEdge);
                     Base.Closed(true);
                 }

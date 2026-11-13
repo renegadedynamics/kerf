@@ -9,6 +9,8 @@ using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry;
+using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -446,6 +448,14 @@ internal class MakeWireOffset : MakeShape
                 _shape = res;
             }
 
+            // Kerf: each loop of a closed parallel lies on the side of the spine it was asked for, or the offset is no
+            // success (decisions 1742, 2443)
+            if (!_shape.IsNull && !_isOpenResult && WrongSide(_wires, _face, _shape, offset) is { } wrong)
+            {
+                _shape.Nullify();
+                RefusedBecause = (OffsetWire.WrongSideCode, $"The offset in the plane is on the wrong side of the wire, at {OffsetWire.Where(wrong)}.");
+            }
+
             if (_shape.IsNull)
             {
                 NotDone();
@@ -480,6 +490,126 @@ internal class MakeWireOffset : MakeShape
     /// crossing itself, as a diagnostic's code and message; null if it didn't (decisions 2279, 2422).
     /// </summary>
     internal (string Code, string Message)? RefusedBecause { get; private set; }
+
+    /// <summary>
+    /// Kerf (decision 2443): a point of the first loop of the parallel that lies on the wrong side of the spine, or null
+    /// if every loop is on the side asked for: inside the region the closed wires bound for an offset inwards, outside it
+    /// for one outwards, as MakeOffset's sign has it where no wire lies inside another. A loop is at the offset from the
+    /// spine everywhere (decisions 2279, 2281) and doesn't cross the spine, so the middle of its first edge decides its
+    /// side, and the spine's edges as polylines within a quarter of the offset of their curves can't misplace a point that
+    /// far from them. An even-odd count of the polylines' crossings by each of two rays from the point, in the spine's
+    /// plane, a loop wrong only if both say so: independent of the medial axis, of the face made on the spine and of the
+    /// wires' orientations. Not judged where a wire of the spine lies inside another (a hole, whose parallel outwards is
+    /// its own outside, into the face), where a wire is open (a vertex not met by an even number of its edges' ends), nor
+    /// below <c>Precision::Confusion</c>.
+    /// </summary>
+    internal static Point3D? WrongSide(NCollection_List<Shape> spineWires, in Face face, in Shape parallel, double offset)
+    {
+        double deflection = 0.25 * Math.Abs(offset);
+        if (face.IsNull || Tool.Surface(face) is not PlaneSurface plane
+            || !(deflection > global::Kerf.Engine.Foundation.Precision.Confusion()))
+        {
+            return null;
+        }
+        Plane3D pln = plane.Plane;
+        List<(double U, double V)[]> polylines = [];
+        List<List<(double U, double V)[]>> byWire = [];
+        foreach (Shape spineWire in spineWires)
+        {
+            List<(double U, double V)[]> ofWire = [];
+            byWire.Add(ofWire);
+            Dictionary<Shape, int> ends = new(ShapeHasher.Instance);
+            for (Iterator it = new(spineWire); it.More(); it.Next())
+            {
+                Edge edge = ShapeCasts.Edge(it.Value());
+                Exploration.Vertices(edge, out Vertex v1, out Vertex v2);
+                foreach (Vertex v in new[] { v1, v2 })
+                {
+                    if (v.IsNull)
+                    {
+                        return null;
+                    }
+                    ends[v.Oriented(Forward)] = ends.GetValueOrDefault(v.Oriented(Forward)) + 1;
+                }
+                if (!Tool.IsGeometric(edge))
+                {
+                    continue;
+                }
+                TangentialDeflection points = new(new EdgeCurveAdaptor(edge), 0.5, deflection);
+                var polyline = new (double U, double V)[points.PointCount];
+                for (int k = 1; k <= points.PointCount; k++)
+                {
+                    ElSLib.Parameters(pln, points.Value(k), out double u, out double v);
+                    polyline[k - 1] = (u, v);
+                }
+                polylines.Add(polyline);
+                ofWire.Add(polyline);
+            }
+            if (ends.Count == 0 || ends.Values.Any(n => n % 2 != 0))
+            {
+                return null;
+            }
+        }
+        // A wire inside another (a hole) is offset to its own outside when outwards, into the face, so the region of the
+        // wires is no measure there: such spines aren't judged
+        for (int i = 0; i < byWire.Count; i++)
+        {
+            for (int j = 0; j < byWire.Count; j++)
+            {
+                if (i != j && byWire[i].Count > 0 && byWire[i][0].Length > 0
+                    && IsInside(byWire[j], byWire[i][0][0].U, byWire[i][0][0].V, 0.3711))
+                {
+                    return null;
+                }
+            }
+        }
+        for (Explorer exp = new(parallel, ShapeType.Wire); exp.More(); exp.Next())
+        {
+            Explorer edges = new(exp.Current(), ShapeType.Edge);
+            for (; edges.More() && !Tool.IsGeometric(ShapeCasts.Edge(edges.Current())); edges.Next())
+            {
+            }
+            if (!edges.More())
+            {
+                continue;
+            }
+            Edge edge = ShapeCasts.Edge(edges.Current());
+            Tool.Range(edge, out double first, out double last);
+            Point3D middle = new EdgeCurveAdaptor(edge).Value(0.5 * (first + last));
+            ElSLib.Parameters(pln, middle, out double x, out double y);
+            // Two rays, in directions no wire of a drawing is likely to run along, so that one through a vertex, where
+            // the polylines of two edges may miss each other by a rounding, doesn't misplace the point: wrong only if
+            // both say so
+            if (IsInside(polylines, x, y, 0.3711) == (offset <= 0.0) || IsInside(polylines, x, y, 1.9137) == (offset <= 0.0))
+            {
+                continue;
+            }
+            return middle;
+        }
+        return null;
+    }
+
+    // Kerf: whether the point is inside the polylines, by the even-odd count of their crossings by a ray from it at the
+    // angle given
+    private static bool IsInside(List<(double U, double V)[]> polylines, double x, double y, double angle)
+    {
+        double c = Math.Cos(angle), s = Math.Sin(angle);
+        bool inside = false;
+        foreach ((double U, double V)[] polyline in polylines)
+        {
+            for (int k = 0; k + 1 < polyline.Length; k++)
+            {
+                // In a frame whose first axis is the ray
+                double au = (polyline[k].U - x) * c + (polyline[k].V - y) * s, av = (polyline[k].V - y) * c - (polyline[k].U - x) * s;
+                double bu = (polyline[k + 1].U - x) * c + (polyline[k + 1].V - y) * s, bv = (polyline[k + 1].V - y) * c - (polyline[k + 1].U - x) * s;
+                if ((av > 0.0) != (bv > 0.0) && au - av * (bu - au) / (bv - av) > 0.0)
+                {
+                    inside = !inside;
+                }
+            }
+        }
+        return inside;
+    }
 
     /// <summary>Does nothing: the shape is built by <see cref="Perform"/>.</summary>
     public override void Build(ProgressRange range = default)
