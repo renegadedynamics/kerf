@@ -9,8 +9,9 @@ namespace Kerf.Kernel.Foundation.Tests;
 
 /// <summary>
 /// Upstream 71658f6c8f's tests of math_FunctionRoots (decision 2390): an extremum near zero that misses the target, the
-/// states of the roots, and callbacks that fail or give NaN, which are no longer a result. Its test of a root on a
-/// sample with the function's return beside it isn't ported, as that part of the commit isn't.
+/// states of the roots, and callbacks that fail or give NaN, which are no longer a result; a root on a sample (decision
+/// 34702). Its test of the function's return beside such a root isn't ported, as that part of the commit isn't
+/// (decision 2407).
 /// </summary>
 public class math_FunctionRootsFailureTests
 {
@@ -158,6 +159,40 @@ public class math_FunctionRootsFailureTests
         Assert.True(aClose.IsDone);
         Assert.Equal(1, aClose.SolutionCount);
         Assert.Equal(1.0, aClose.Value(1));
+    }
+
+    // (x - 2.5)(x - 2.625) on [0, 5], 20 steps of 0.25: 2.5 is a sample, and the function is exactly 0 half a step on
+    private sealed class SampledRootFunction : FunctionWithDerivative
+    {
+        public override bool Value(double theX, out double theValue)
+        {
+            theValue = (theX - 2.5) * (theX - 2.625);
+            return true;
+        }
+
+        public override bool Derivative(double theX, out double theValue)
+        {
+            theValue = 2.0 * theX - 5.125;
+            return true;
+        }
+
+        public override bool Values(double theX, out double theValue, out double theDerivative)
+        {
+            Value(theX, out theValue);
+            return Derivative(theX, out theDerivative);
+        }
+    }
+
+    // Upstream's SampledRootAndReturnCrossing, its root on a sample (decision 2423): 8.0.1 kept the sample only where the
+    // function was off its target half a step on, so here it found no root at all. The second root, inside the next
+    // interval, needs the search beside the sample, which isn't ported (decision 2407)
+    [Fact]
+    public void A_sample_on_the_target_is_a_root()
+    {
+        FunctionRoots aRoots = new(new SampledRootFunction(), 0.0, 5.0, 10, 1.0e-10, 1.0e-10);
+        Assert.True(aRoots.IsDone);
+        Assert.Equal(1, aRoots.SolutionCount);
+        Assert.Equal(2.5, aRoots.Value(1));
     }
 
     [Fact]

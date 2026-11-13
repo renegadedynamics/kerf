@@ -252,24 +252,24 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
             {
                 case 0:
                     {
-                        _tcurv.D1(t, out _ptgui, out _d1gui);
+                        _tcurv.D1(OnGuide(t), out _ptgui, out _d1gui);
                         _nplan = _d1gui.Normalized();
-                        _ray = _tevol.Value(t);
+                        _ray = _tevol.Value(OnGuide(t));
                     }
                     break;
 
                 case 1:
                     {
-                        _tcurv.D2(t, out _ptgui, out _d1gui, out _d2gui);
+                        _tcurv.D2(OnGuide(t), out _ptgui, out _d1gui, out _d2gui);
                         _nplan = _d1gui.Normalized();
                         _invnormtg = ((double)1) / _d1gui.Magnitude;
                         _dnplan = Vector3D.LinearForm(_invnormtg, _d2gui, -_invnormtg * (_nplan.Dot(_d2gui)), _nplan);
-                        _tevol.D1(t, out _ray, out _dray);
+                        _tevol.D1(OnGuide(t), out _ray, out _dray);
                     }
                     break;
                 case 2:
                     {
-                        _tcurv.D3(t, out _ptgui, out _d1gui, out _d2gui, out _d3gui);
+                        _tcurv.D3(OnGuide(t), out _ptgui, out _d1gui, out _d2gui, out _d3gui);
                         _nplan = _d1gui.Normalized();
                         _invnormtg = ((double)1) / _d1gui.Magnitude;
                         _dnplan = Vector3D.LinearForm(_invnormtg, _d2gui, -_invnormtg * (_nplan.Dot(_d2gui)), _nplan);
@@ -277,7 +277,7 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
                         _d2nplan = Vector3D.LinearForm(_invnormtg, _d3gui, _dinvnormtg, _d2gui);
                         aux = _dinvnormtg * (_nplan.Dot(_d2gui)) + _invnormtg * (_dnplan.Dot(_d2gui) + _nplan.Dot(_d3gui));
                         _d2nplan = Vector3D.LinearForm(-_invnormtg * (_nplan.Dot(_d2gui)), _dnplan, -aux, _nplan, _d2nplan);
-                        _tevol.D2(t, out _ray, out _dray, out _d2ray);
+                        _tevol.D2(OnGuide(t), out _ray, out _dray, out _d2ray);
                         break;
                     }
                 default:
@@ -560,11 +560,18 @@ internal class EvolRad : BlendFunction, IEnvelopeSections
     // function : Set
     // purpose  : Segments curve in its useful part.
     //           Small precision is taken at random
+    // Kerf (unit 15AK3): the guide's parameter brought into its curve's own range where rounding has left it an ulp
+    // outside (ElSpine.OnCurve). The envelope's sections take the guide's second and third derivatives and the law's
+    // second, which a periodic guide and law give from a period away for a parameter outside their knots: the section
+    // at a closed contour's seam was then the far side's, the surface's end line jumped to it, and its normals there
+    // were wrong (5.9 degrees on the corpus's buildevol/K6) though its points were not.
+    private double OnGuide(double parameter) => _curv is global::Kerf.Engine.Fillets.Data.ElSpine spine ? spine.OnCurve(parameter) : parameter;
+
     //=======================================================================
     public override void Set(double first, double last)
     {
-        _tcurv = _curv.Trim(first, last, 1.0e-12);
-        _tevol = _fevol.Trim(first, last, 1.0e-12);
+        _tcurv = _curv.Trim(OnGuide(first), OnGuide(last), 1.0e-12);
+        _tevol = _fevol.Trim(OnGuide(first), OnGuide(last), 1.0e-12);
         _first = first;
         _last = last;
         // Kerf (unit 15AK): the positioning kept is the other interval's, whose derivatives at a shared end differ.

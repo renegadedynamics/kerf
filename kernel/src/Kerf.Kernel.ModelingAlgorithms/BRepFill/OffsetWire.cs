@@ -424,8 +424,10 @@ internal sealed class OffsetWire
     /// <exception cref="ConstructionErrorException">A closed result is expected and a parallel wire isn't closed.</exception>
     public void Perform(double offset, double alt = 0.0)
     {
-        // Kerf: whether the parallel has been put to ComesNearer already (the finer polyline's, when it stands)
+        // Kerf: whether the parallel has been put to KeepsItsDistance and Crossing already (the finer polyline's, when it
+        // stands)
         bool keptItsDistance = false;
+        RefusedBecause = null;
         try
         {
             _callGen = false;
@@ -456,7 +458,8 @@ internal sealed class OffsetWire
                 {
                     done = PerformOnPolylines(badEdges, offset, alt, .001)
                            && (_isOpenResult || AllWiresClosed(_shape))
-                           && KeepsItsDistance(_spine, _shape, offset, alt, _joinType, _isOpenResult);
+                           && KeepsItsDistance(_spine, _shape, offset, alt, _joinType, _isOpenResult)
+                           && Crossing(_spine, _shape) is null;
                 }
                 catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
                                                     && exception is not ImmutableObjectException)
@@ -510,7 +513,351 @@ internal sealed class OffsetWire
         {
             _shape.Nullify();
             _isDone = false;
+            RefusedBecause = (NotAtDistanceCode, "The offset in the plane isn't at its distance from the wire everywhere.");
             throw new ConstructionErrorException("Offset wire is not at the offset from the spine.");
+        }
+
+        // Kerf: nor does a parallel cross itself, or one of its wires another, which a parallel at its distance can
+        // (decisions 1742, 2422)
+        if (!keptItsDistance && !_shape.IsNull && Crossing(_spine, _shape) is { } where)
+        {
+            _shape.Nullify();
+            _isDone = false;
+            RefusedBecause = (CrossesItselfCode, $"The offset in the plane crosses itself, at {Where(where)}.");
+            throw new ConstructionErrorException("Offset wire crosses itself.");
+        }
+    }
+
+    // Kerf: the diagnostic codes of the two refusals
+    internal const string NotAtDistanceCode = "offset.not-at-distance";
+    internal const string CrossesItselfCode = "offset.crosses-itself";
+
+    /// <summary>
+    /// Kerf: why the last <see cref="Perform"/> refused the parallel it made, as a diagnostic's code and message; null
+    /// if it didn't (done, or failed for another reason).
+    /// </summary>
+    internal (string Code, string Message)? RefusedBecause { get; private set; }
+
+    private static string Where(Point3D p) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"({p.X:G6}, {p.Y:G6}, {p.Z:G6})");
+
+    /// <summary>
+    /// Kerf: a point where the parallel crosses itself, or null if it doesn't: an edge crossing itself or another
+    /// edge of its wire (<c>BRepCheck_Wire::SelfIntersect</c>, as on a face: the edges' boxes first, then their exact
+    /// intersections in the spine's plane, a point within a vertex's tolerance of one of the edges' vertices no
+    /// crossing), or a wire crossing another (<c>BRepCheck_Face</c>'s test of two wires). A parallel at its distance
+    /// from the spine may still cross itself where the medial axis went wrong (decision 2422).
+    /// </summary>
+    internal static Point3D? Crossing(in Face spine, in Shape parallel)
+    {
+        if (parallel.IsNull)
+        {
+            return null;
+        }
+        var apart = new ProvedApart(spine);
+        List<Wire> wires = [];
+        for (Explorer exp = new(parallel, ShapeType.Wire); exp.More(); exp.Next())
+        {
+            wires.Add(ShapeCasts.Wire(exp.Current()));
+        }
+        foreach (Wire wire in wires)
+        {
+            Edge e1 = new(), e2 = new();
+            if (new global::Kerf.Engine.Healing.Checks.WireCheck(wire).SelfIntersect(spine, ref e1, ref e2, false, apart.Apart)
+                == global::Kerf.Engine.Healing.Checks.StatusCheck.SelfIntersectingWire)
+            {
+                return CrossingOf(spine, e1, e2) ?? Middle(e1);
+            }
+        }
+        var boxes = new Dictionary<Shape, global::Kerf.Engine.Geometry.Bounds.Box2d>(ShapeHasher.Instance);
+        for (int i = 0; i < wires.Count; i++)
+        {
+            for (int j = i + 1; j < wires.Count; j++)
+            {
+                if (global::Kerf.Engine.Healing.Checks.FaceCheck.Intersect(wires[i], wires[j], spine, boxes))
+                {
+                    // Where: looked for only once the crossing is known
+                    for (Explorer exp1 = new(wires[i], ShapeType.Edge); exp1.More(); exp1.Next())
+                    {
+                        for (Explorer exp2 = new(wires[j], ShapeType.Edge); exp2.More(); exp2.Next())
+                        {
+                            if (CrossingOf(spine, ShapeCasts.Edge(exp1.Current()), ShapeCasts.Edge(exp2.Current())) is { } at)
+                            {
+                                return at;
+                            }
+                        }
+                    }
+                    return Middle(ShapeCasts.Edge(new Explorer(wires[i], ShapeType.Edge).Current()));
+                }
+            }
+        }
+        return null;
+    }
+
+    // Kerf (decision 2428): proves, where it can, that an edge of the parallel doesn't cross itself, or that two edges
+    // following one another in their wire meet only at their common vertex, so that the exact intersection, the check's
+    // cost, is spared there. An edge runs strictly one way, along some direction u, if every tangent it has lies in an open
+    // half-plane: the positive combinations of a few directions hold all its tangents (a line's direction; an arc's
+    // tangents at its ends, under half a turn; the differences of a polynomial B-spline's or Bezier's poles, whose
+    // positive combinations its derivative is; an offset of one, the same, where its curvature, bounded by its
+    // derivatives' control points, can't turn the offset's tangent round). Such an edge doesn't cross itself. Two edges,
+    // the first ending where the second starts, whose directions together lie in an open half-plane about u, are on either
+    // side of the line through the common end square to u when the first's end is not past the second's start along u:
+    // they meet there only. Any edge or pair it can't prove so goes to the exact intersection, as before.
+    private sealed class ProvedApart(Face plane)
+    {
+        // By the edge as oriented in its wire (IsEqual): its directions depend on its orientation
+        private readonly Dictionary<Shape, (double[]? Angles, double Fx, double Fy, double Lx, double Ly)> _edges = new(EqualityComparer<Shape>.Default);
+
+        public bool Apart(Edge e1, Edge e2)
+        {
+            var a = Of(e1);
+            if (a.Angles is null)
+            {
+                return false;
+            }
+            if (e2.IsNull)
+            {
+                return Bisector(a.Angles, out _, out _);
+            }
+            var b = Of(e2);
+            if (b.Angles is null)
+            {
+                return false;
+            }
+            Exploration.Vertices(e1, out Vertex f1, out Vertex l1, true);
+            Exploration.Vertices(e2, out Vertex f2, out Vertex l2, true);
+            if (l1.IsNull || f1.IsNull || l2.IsNull || f2.IsNull)
+            {
+                return false;
+            }
+            if (!Bisector([.. a.Angles, .. b.Angles], out double ux, out double uy))
+            {
+                return false;
+            }
+            // The first ends where the second starts: the first's end not past the second's start along u
+            if (l1.IsSame(f2) && !f1.IsSame(l2) && a.Lx * ux + a.Ly * uy <= b.Fx * ux + b.Fy * uy)
+            {
+                return true;
+            }
+            return l2.IsSame(f1) && !f2.IsSame(l1) && b.Lx * ux + b.Ly * uy <= a.Fx * ux + a.Fy * uy;
+        }
+
+        // The edge's tangent directions as angles, as it runs in its wire, and its curve's ends in the plane in that order
+        private (double[]? Angles, double Fx, double Fy, double Lx, double Ly) Of(in Edge edge)
+        {
+            if (_edges.TryGetValue(edge, out var known))
+            {
+                return known;
+            }
+            (double[]?, double, double, double, double) result = (null, 0, 0, 0, 0);
+            Curve2D? curve = Tool.CurveOnSurface(edge, plane, out double first, out double last);
+            var directions = new List<(double X, double Y)>();
+            if (curve is not null && last > first && Directions(curve, first, last, directions))
+            {
+                bool reversed = edge.Orientation == Reversed;
+                Point2D p = curve.Value(reversed ? last : first);
+                Point2D q = curve.Value(reversed ? first : last);
+                double[] angles = [.. directions.Where(d => d.X * d.X + d.Y * d.Y > 0.0)
+                                                .Select(d => Math.Atan2(reversed ? -d.Y : d.Y, reversed ? -d.X : d.X))];
+                if (angles.Length > 0)
+                {
+                    result = (angles, p.X, p.Y, q.X, q.Y);
+                }
+            }
+            _edges[edge] = result;
+            return result;
+        }
+
+        private static bool Directions(Curve2D curve, double first, double last, List<(double X, double Y)> directions)
+        {
+            switch (curve)
+            {
+                case TrimmedCurve2D trimmed:
+                    return Directions(trimmed.BasisCurve, first, last, directions);
+                case LineCurve2D line:
+                    directions.Add((line.Direction.X, line.Direction.Y));
+                    return true;
+                case CircleCurve2D circle when last - first < Math.PI - 1.0e-6:
+                    circle.D1(first, out _, out Vector2D atFirst);
+                    circle.D1(last, out _, out Vector2D atLast);
+                    directions.Add((atFirst.X, atFirst.Y));
+                    directions.Add((atLast.X, atLast.Y));
+                    return true;
+                case OffsetCurve2D offset:
+                    return OffsetDirections(offset, first, last, directions);
+                default:
+                    return Hodograph(curve, first, last, out (double X, double Y)[] firsts, out _) && Add(firsts, directions);
+            }
+        }
+
+        private static bool Add((double X, double Y)[] vectors, List<(double X, double Y)> directions)
+        {
+            directions.AddRange(vectors);
+            return true;
+        }
+
+        // An offset at d of a polynomial spline C has the tangent (1 + d k) C', k C's signed curvature: C's directions where
+        // |d k| < 1 all along, which C's derivatives' control points bound: |C'| >= m, the least of u.Q over its first
+        // derivative's Q (u in the middle of their directions), |C''| <= the greatest |R| of its second's, so |k| <= R / m^2
+        private static bool OffsetDirections(OffsetCurve2D offset, double first, double last, List<(double X, double Y)> directions)
+        {
+            Curve2D basis = offset.BasisCurve is TrimmedCurve2D trimmed ? trimmed.BasisCurve : offset.BasisCurve;
+            if (!Hodograph(basis, first, last, out (double X, double Y)[] firsts, out (double X, double Y)[] seconds)
+                || !Bisector([.. firsts.Where(q => q.X * q.X + q.Y * q.Y > 0.0).Select(q => Math.Atan2(q.Y, q.X))], out double ux, out double uy))
+            {
+                return false;
+            }
+            double least = firsts.Min(q => q.X * ux + q.Y * uy);
+            double most = seconds.Length == 0 ? 0.0 : seconds.Max(r => Math.Sqrt(r.X * r.X + r.Y * r.Y));
+            if (!(least > 0.0) || !(Math.Abs(offset.Offset) * most < 0.999 * least * least))
+            {
+                return false;
+            }
+            directions.AddRange(firsts);
+            return true;
+        }
+
+        // The control points of a polynomial B-spline's or Bezier's first and second derivatives, on its part from first to
+        // last (a copy cut there, where it is longer)
+        private static bool Hodograph(Curve2D curve, double first, double last, out (double X, double Y)[] firsts, out (double X, double Y)[] seconds)
+        {
+            firsts = seconds = [];
+            NCollection_Array1<Point2D> poles;
+            double[] knots;
+            int degree;
+            switch (curve)
+            {
+                case BSplineCurve2D whole when !whole.IsRational && !whole.IsPeriodic:
+                    BSplineCurve2D spline = Longer(whole, first, last) ? whole.Segmented(first, last) : whole;
+                    poles = spline.InternalPoles();
+                    NCollection_Array1<double> flat = spline.InternalKnotSequence();
+                    knots = new double[flat.Length()];
+                    for (int k = 0; k < knots.Length; k++)
+                    {
+                        knots[k] = flat[flat.Lower() + k];
+                    }
+                    degree = spline.Degree;
+                    break;
+                case BezierCurve2D wholeBezier when !wholeBezier.IsRational:
+                    BezierCurve2D bezier = Longer(wholeBezier, first, last) ? wholeBezier.Segmented(first, last) : wholeBezier;
+                    poles = bezier.InternalPoles();
+                    degree = poles.Length() - 1;
+                    knots = [.. Enumerable.Repeat(0.0, degree + 1), .. Enumerable.Repeat(1.0, degree + 1)];
+                    break;
+                default:
+                    return false;
+            }
+            int n = poles.Length();
+            if (degree < 1 || knots.Length != n + degree + 1)
+            {
+                return false;
+            }
+            // Q_i = p (P_i+1 - P_i) / (t_i+p+1 - t_i+1), and R_i = (p - 1) (Q_i+1 - Q_i) / (t_i+p+1 - t_i+2), 0-based
+            firsts = new (double X, double Y)[n - 1];
+            for (int i = 0; i < n - 1; i++)
+            {
+                double span = knots[i + degree + 1] - knots[i + 1];
+                if (!(span > 0.0))
+                {
+                    return false;
+                }
+                Point2D a = poles[poles.Lower() + i], b = poles[poles.Lower() + i + 1];
+                firsts[i] = (degree * (b.X - a.X) / span, degree * (b.Y - a.Y) / span);
+            }
+            seconds = new (double X, double Y)[Math.Max(0, n - 2)];
+            for (int i = 0; i < n - 2 && degree > 1; i++)
+            {
+                double span = knots[i + degree + 1] - knots[i + 2];
+                if (!(span > 0.0))
+                {
+                    return false;
+                }
+                seconds[i] = ((degree - 1) * (firsts[i + 1].X - firsts[i].X) / span, (degree - 1) * (firsts[i + 1].Y - firsts[i].Y) / span);
+            }
+            return degree > 1 || n == 2;
+        }
+
+        private static bool Longer(Curve2D curve, double first, double last) =>
+            first > curve.FirstParameter + global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || last < curve.LastParameter - global::Kerf.Engine.Foundation.Precision.PConfusion();
+
+        // Whether the directions lie in an open half-plane, with a margin: their widest gap is more than half a turn; u the
+        // middle of the directions they span
+        private static bool Bisector(double[] angles, out double ux, out double uy)
+        {
+            ux = uy = 0.0;
+            double[] sorted = [.. angles.Order()];
+            double widest = sorted[0] + 2.0 * Math.PI - sorted[^1];
+            double after = sorted[^1];
+            for (int i = 1; i < sorted.Length; i++)
+            {
+                if (sorted[i] - sorted[i - 1] > widest)
+                {
+                    widest = sorted[i] - sorted[i - 1];
+                    after = sorted[i - 1];
+                }
+            }
+            if (!(widest > Math.PI + 1.0e-6))
+            {
+                return false;
+            }
+            // the directions run from the end of the widest gap round to its start: their middle is opposite the gap's
+            double middle = after + 0.5 * widest + Math.PI;
+            ux = Math.Cos(middle);
+            uy = Math.Sin(middle);
+            return true;
+        }
+    }
+
+    private static Point3D Middle(in Edge edge)
+    {
+        EdgeCurveAdaptor curve = new(edge);
+        return curve.Value((curve.FirstParameter() + curve.LastParameter()) / 2.0);
+    }
+
+    // The first point where two edges cross (the second null for an edge crossing itself) in the spine's plane, not
+    // within a vertex's tolerance of one of their vertices, or null
+    private static Point3D? CrossingOf(in Face spine, in Edge e1, in Edge e2)
+    {
+        Curve2D? c1 = Tool.CurveOnSurface(e1, spine, out double f1, out double l1);
+        double f2 = 0.0, l2 = 0.0;
+        Curve2D? c2 = e2.IsNull ? null : Tool.CurveOnSurface(e2, spine, out f2, out l2);
+        if (c1 is null || (!e2.IsNull && c2 is null) || !(l1 > f1) || (c2 is not null && !(l2 > f2)))
+        {
+            return null;
+        }
+        var a1 = new CurveAdaptor2D(c1, f1, l1);
+        var inter = c2 is null
+            ? new global::Kerf.Engine.Intersection.TwoD.GInter(a1, 1.0e-10, 1.0e-10)
+            : new global::Kerf.Engine.Intersection.TwoD.GInter(a1, new CurveAdaptor2D(c2, f2, l2), 1.0e-10, 1.0e-10);
+        if (!inter.IsDone)
+        {
+            return null;
+        }
+        EdgeCurveAdaptor first = new(e1);
+        for (int p = 1; p <= inter.PointCount; p++)
+        {
+            Point3D at = first.Value(inter.Point(p).ParamOnFirst());
+            if (!NearAVertex(at, e1) && (e2.IsNull || !NearAVertex(at, e2)))
+            {
+                return at;
+            }
+        }
+        return null;
+
+        static bool NearAVertex(Point3D at, in Edge edge)
+        {
+            for (Explorer exp = new(edge, ShapeType.Vertex); exp.More(); exp.Next())
+            {
+                Vertex v = ShapeCasts.Vertex(exp.Current());
+                double tolerance = Tool.Tolerance(v);
+                if (Tool.Pnt(v).SquareDistanceTo(at) <= tolerance * tolerance)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

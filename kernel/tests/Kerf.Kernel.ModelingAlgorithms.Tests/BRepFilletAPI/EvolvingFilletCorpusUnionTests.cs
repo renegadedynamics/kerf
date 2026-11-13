@@ -11,6 +11,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Healing;
+using Kerf.Measurement;
 using Kerf.Topology;
 using Xunit.Abstractions;
 
@@ -45,8 +46,9 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         typeof(EvolvingFilletCorpusUnionTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
             .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == key).Value!;
 
-    // The script's shape and its laws: restore [locate_data_file X] s, updatevol s_N u r u r ...
-    private static (Shape Shape, List<(int Edge, double[] Law)> Laws, bool Sorted)? Script(string name)
+    // The script's shape, its laws and the area it holds the result to: restore [locate_data_file X] s, updatevol s_N u r u r
+    // ..., checkprops result -s A
+    private static (Shape Shape, List<(int Edge, double[] Law)> Laws, bool Sorted, double Area)? Script(string name)
     {
         string path = Path.Combine(Metadata("OcctSourceDir"), "tests", "blend", "buildevol", name);
         if (!File.Exists(path))
@@ -56,6 +58,7 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
 
         Shape? shape = null;
         bool sorted = false;
+        double area = double.NaN;
         List<(int, double[])> laws = [];
         foreach (string raw in File.ReadAllLines(path))
         {
@@ -75,6 +78,10 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
             {
                 sorted = true;
             }
+            else if (line.StartsWith("checkprops result -s ", StringComparison.Ordinal))
+            {
+                area = double.Parse(line.Split(' ', StringSplitOptions.RemoveEmptyEntries)[3], CultureInfo.InvariantCulture);
+            }
             else if (line.StartsWith("updatevol", StringComparison.Ordinal))
             {
                 string[] words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -83,7 +90,7 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
             }
         }
 
-        return shape is { } s ? (s, laws, sorted) : null;
+        return shape is { } s ? (s, laws, sorted, area) : null;
     }
 
     private static MakeFillet Fillet(Shape shape, List<(int Edge, double[] Law)> laws, bool sorted, bool refused, bool meet)
@@ -133,25 +140,69 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
     [MemberData(nameof(Cases))]
     public void The_corpuss_fillets_onto_edges_against_the_union_of_their_balls(string name)
     {
-        if (Environment.GetEnvironmentVariable("KERF_15AK2_UNION") is not { Length: > 0 } directory || Script(name) is not { } script)
+        if (Environment.GetEnvironmentVariable("KERF_15AK2_UNION") is not { Length: > 0 } directory || Script(name) is not { } script
+            || (Environment.GetEnvironmentVariable("KERF_15AK2_CASES") is { Length: > 0 } only && !only.Split(',').Contains(name)))
         {
             return;
         }
 
         System.Text.StringBuilder text = new();
+        // As a user gets it, its corners past the tolerance built (unit 15AK3); where that is refused, with the refusal off
         MakeFillet asBuilt = Fillet(script.Shape, script.Laws, script.Sorted, refused: true, meet: true);
         bool built = asBuilt.IsDone;
-        MakeFillet apart = Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: false);
-        MakeFillet fillet = Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: true);
+        MakeFillet fillet = built ? asBuilt : Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: true);
         double Tolerance(MakeFillet f) => f.IsDone ? f.Shape().AllEdges().Max(e => Tool.Tolerance(e)) : double.NaN;
+        bool valid = fillet.IsDone && fillet.Shape().Validate().IsValid;
+        (int lunes, int creases) = asBuilt.InternalBuilder().EnvelopeCornersMade;
+        // Its area, beside the script's (OCCT's, whose sections aren't the envelope's: decision 2232) and beside that of
+        // the same fillet with every corner tilted, which a corner a few hundredths wide should hardly move
+        double area = built ? fillet.Shape().IntegrateArea(new MassOptions { Tolerance = 1e-9 }) : double.NaN;
+        MakeFillet allTilted = built ? Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: true) : fillet;
+        double tilted = allTilted.IsDone ? allTilted.Shape().IntegrateArea(new MassOptions { Tolerance = 1e-9 }) : double.NaN;
         text.AppendLine(string.Create(CultureInfo.InvariantCulture,
-            $"CASE\t{name}\t{(built ? "built" : "refused " + asBuilt.StripeStatus(1))}\tdone {fillet.IsDone}\tvalid {fillet.IsDone && fillet.Shape().Validate().IsValid}\tedge tolerance {Tolerance(fillet):G3}\tapart {Tolerance(apart):G3}"));
+            $"AREA\t{name}\t{area:G9}\tOCCT's {script.Area:G9}\t{(area - script.Area) / script.Area:E2}\ttilted {tilted:G9}\t{(area - tilted) / tilted:E2}"));
+        text.AppendLine(string.Create(CultureInfo.InvariantCulture,
+            $"CASE\t{name}\t{(built ? "built" : $"refused {asBuilt.StripeStatus(1)} ({asBuilt.InternalBuilder().EnvelopeCornerUnbuilt})")}\t{lunes} pieces of the ball, {creases} creases\tdone {fillet.IsDone}\tvalid {valid}\tedge tolerance {Tolerance(fillet):G3}\tedges off their faces {Apart(fillet):G3}\tsurfaces' ends apart {asBuilt.InternalBuilder().EnvelopeJoinWorst:G3}\tworst corner's measure {asBuilt.InternalBuilder().EnvelopeCornerWorst:G4}"));
         List<string> wrong = [];
         double worstRead = double.NaN;
         if (fillet.IsDone)
         {
-            List<(double Miss, Point3D At, bool Balls)> points = Union(fillet, script.Shape, out string notes);
+            List<(double Miss, Point3D At, bool Balls)> points = Union(fillet, script.Shape, out string notes, out List<(Point3D C, double R)[]> lines);
             text.AppendLine($"NOTE\t{name}\t{notes}");
+
+            // The edges between two new faces that aren't tangent across them (unit 15AK3), each by the corner it is at:
+            // a crease that was built, a join where the later surface was tilted to end on the earlier's circle, or
+            // neither. At the point of each where the faces' normals are furthest apart: that angle; the angle between
+            // the two balls of the union the point is on (the boundary of the union has the crease itself, and a built
+            // crease has to have its angle); and how far each face's normal is from the radius of a ball that touches
+            // the point (a face of the swept surface is tangent to a ball there)
+            int creased = 0;
+            foreach ((double faces, double union, double off1, double off2, Point3D at, Point3D middle) in Creases(fillet, lines))
+            {
+                // A crease that was made is the builder's own curve; any other is put to the corner nearest its middle,
+                // whose arc's middle that is, within a tenth of the ball's radius
+                bool made = fillet.InternalBuilder().EnvelopeCreases.Any(c => c.Value(0.5).DistanceTo(middle) < 1e-6);
+                var corner = fillet.InternalBuilder().EnvelopeCorners.OrderBy(c => c.At.DistanceTo(middle)).FirstOrDefault();
+                bool atCorner = fillet.InternalBuilder().EnvelopeCorners.Count > 0 && corner.At.DistanceTo(middle) < Math.Max(3 * corner.Gap, 0.1 * corner.Radius);
+                string kind = made ? "CREASE" : atCorner ? "JOIN" : "EDGE";
+                creased += made ? 1 : 0;
+                const double Degrees = 180 / Math.PI;
+                text.AppendLine(string.Create(CultureInfo.InvariantCulture,
+                    $"{kind}\t{name}\tthe faces' normals {faces * Degrees:F3} degrees apart\tthe union's balls' {union * Degrees:F3}\tthe faces' from a ball's radius {off1 * Degrees:F3} and {off2 * Degrees:F3}\tat ({at.X:F3},{at.Y:F3},{at.Z:F3})\t{(atCorner ? string.Create(CultureInfo.InvariantCulture, $"corner's measure {corner.Off:G3}, gap {corner.Gap:G3}") : "no corner")}"));
+                // A built crease's faces are each tangent to a ball that touches there; and past 0.005 radians, where the two
+                // balls are told apart (a shallower crossing's are within 2e-6 of the point over a stretch of their line, and
+                // the angle read between them is too great by up to a thousandth of a radian), their angle is the faces'
+                if (made && !(Math.Max(off1, off2) < 0.02 * faces + 2e-4 && (faces < 5e-3 || Math.Abs(faces - union) < 0.03 * faces + 2e-4)))
+                {
+                    wrong.Add(string.Create(CultureInfo.InvariantCulture, $"a crease of {faces:G4} radians at ({at.X:F3},{at.Y:F3},{at.Z:F3}) where the union of the balls has one of {union:G4}, its faces {off1:G3} and {off2:G3} from the balls' radii"));
+                }
+            }
+
+            if (built && creased != asBuilt.InternalBuilder().EnvelopeCornersMade.Creases)
+            {
+                wrong.Add($"{creased} creases found for {asBuilt.InternalBuilder().EnvelopeCornersMade.Creases} made");
+            }
+
             foreach ((Point3D at, double off, double gap, double radius) in fillet.InternalBuilder().EnvelopeCorners)
             {
                 double reach = Math.Max(3 * gap, 0.05);
@@ -186,6 +237,11 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
 
         output.WriteLine(text.ToString());
         Assert.Empty(wrong);
+        Assert.True(!built || valid, $"{name}: built, and not a valid shape");
+        // The script's own check, to its tolerance (checkprops: 1%): OCCT's area. And the tilted fillet's, to 1e-4
+        Assert.True(!built || Math.Abs(area - script.Area) < 1e-2 * script.Area, $"{name}: built, with an area of {area} for OCCT's {script.Area}");
+        Assert.True(!built || double.IsNaN(tilted) || Math.Abs(area - tilted) < 1e-4 * tilted, $"{name}: built, with an area of {area} for {tilted} with its corners tilted");
+        Assert.True(!built || Apart(fillet) < Approximation, $"{name}: built, and an edge of a new face is {Apart(fillet)} from a face it bounds");
 
         // Nothing built is off the union of its balls past the tolerance, wherever it was read; whatever is refused is,
         // somewhere, with the refusal off
@@ -195,15 +251,114 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         }
     }
 
+    // Unit 15AK3's cost: each case built with its corners past the tolerance built, against the same case with the
+    // refusal off (every corner tilted, as unit 15AK2 built it for its tests), the two alternated seven times in one process,
+    // warm: the process's processor time over five builds and the bytes of one. Runs where KERF_15AK3_COST names a file.
+    [Fact]
+    public void What_building_the_corners_costs()
+    {
+        if (Environment.GetEnvironmentVariable("KERF_15AK3_COST") is not { Length: > 0 } file)
+        {
+            return;
+        }
+
+        System.Text.StringBuilder text = new();
+        foreach (string name in new[] { "I1", "I2", "I3", "I4", "I5", "I7", "I8", "J1", "J2", "J4", "J5", "J7", "J8", "J9", "K1", "K3", "K4", "K5", "K6", "K7" })
+        {
+            if (Script(name) is not { } script)
+            {
+                continue;
+            }
+
+            MakeFillet Build(bool corners) => Fillet(script.Shape, script.Laws, script.Sorted, refused: corners, meet: true);
+            if (!Build(true).IsDone || !Build(false).IsDone || Build(true).InternalBuilder().EnvelopeCornersMade == (0, 0))
+            {
+                continue;
+            }
+
+            List<double>[] times = [[], []], bytes = [[], []];
+            for (int round = 0; round < 7; round++)
+            {
+                for (int form = 0; form < 2; form++)
+                {
+                    long before = GC.GetAllocatedBytesForCurrentThread();
+                    Build(form == 1);
+                    bytes[form].Add((GC.GetAllocatedBytesForCurrentThread() - before) / 1048576.0);
+                    TimeSpan start = System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime;
+                    for (int k = 0; k < 5; k++)
+                    {
+                        Build(form == 1);
+                    }
+
+                    times[form].Add((System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime - start).TotalMilliseconds / 5);
+                }
+            }
+
+            static double Median(List<double> values) => values.Order().ElementAt(values.Count / 2);
+            (int lunes, int creases) = Build(true).InternalBuilder().EnvelopeCornersMade;
+            text.AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"COST\t{name}\t{lunes} pieces, {creases} creases\ttilted {Median(times[0]):F1} ms ({times[0].Min():F1} to {times[0].Max():F1}), {Median(bytes[0]):F2} MB\tbuilt {Median(times[1]):F1} ms ({times[1].Min():F1} to {times[1].Max():F1}), {Median(bytes[1]):F2} MB"));
+        }
+
+        File.WriteAllText(file, text.ToString());
+        output.WriteLine(text.ToString());
+    }
+
+
+
+
+
+    // The most a curve of an edge of the new faces is from a surface it bounds, at 41 points of its pcurve there: what the
+    // faces are really apart by along their edges, whatever tolerance the edges and their vertices were given
+    private static double Apart(MakeFillet fillet)
+    {
+        if (!fillet.IsDone)
+        {
+            return double.NaN;
+        }
+
+        Face[] all = [.. fillet.Shape().AllFaces()];
+        double worst = 0;
+        for (int i = 1; i <= fillet.SurfaceCount; i++)
+        {
+            foreach (Shape shape in fillet.NewFaces(i))
+            {
+                foreach (Edge e in shape.AllEdges().Where(e => !Tool.Degenerated(e)))
+                {
+                    var curve = new EdgeCurveAdaptor(e);
+                    foreach (Face face in all.Where(g => g.AllEdges().Any(x => x.IsSame(e))))
+                    {
+                        if (Tool.CurveOnSurface(e, face, out _, out _) is not { } pcurve)
+                        {
+                            continue;
+                        }
+
+                        var surface = new FaceSurfaceAdaptor(face);
+                        for (int k = 0; k <= 40; k++)
+                        {
+                            double t = curve.FirstParameter() + k / 40.0 * (curve.LastParameter() - curve.FirstParameter());
+                            Point2D uv = pcurve.Value(t);
+                            worst = Math.Max(worst, surface.Value(uv.X, uv.Y).DistanceTo(curve.Value(t)));
+                        }
+                    }
+                }
+            }
+        }
+
+        return worst;
+    }
+
     // Each of 69 by 69 points of each new face, crowded towards its ends: how far inside the union of the balls or outside
     // it, where it is, and whether that face had balls of its own (a face without them is beside balls that are missing)
-    private static List<(double Miss, Point3D At, bool Balls)> Union(MakeFillet fillet, Shape input, out string notes)
+    private static List<(double Miss, Point3D At, bool Balls)> Union(MakeFillet fillet, Shape input, out string notes, out List<(Point3D C, double R)[]> lines)
     {
         Face[] inputFaces = [.. input.AllFaces()];
         Edge[] inputEdges = [.. input.AllEdges()];
         List<(Point3D C, double R)[]> balls = [];
+        lines = balls;
         List<(FaceSurfaceAdaptor Surface, Face Face)> faces = [];
         HashSet<int> withBalls = [];
+        Dictionary<int, string> without = [];
         System.Text.StringBuilder note = new();
         for (int i = 1; i <= fillet.SurfaceCount; i++)
         {
@@ -225,28 +380,34 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                         return surface.Value(u, v);
                     }
 
-                    // The face of the input this boundary lies on, tangent to it
+                    // The face of the input this boundary lies on, tangent to it. At a stripe's end the surface runs on past
+                    // the faces that bound it, so a boundary may leave the face at either end (unit 15AK3: the corpus's I2
+                    // starts 0.2 outside the shape); it has to be on it over at least half its length, in one stretch
                     Face? on = null;
                     foreach (Face g in inputFaces)
                     {
-                        bool all = true;
                         var gs = new FaceSurfaceAdaptor(g);
-                        for (int k = 1; k < 20 && all; k++)
+                        int firstOn = 0, lastOn = 0, onCount = 0;
+                        for (int k = 1; k < 20; k++)
                         {
                             if (!Foot(On(k / 20.0, 0), g, out double d, out double gu, out double gv, out bool inside) || d > 1e-4 || !inside)
                             {
-                                all = false;
-                                break;
+                                continue;
                             }
 
                             (double u, double v) = At(k / 20.0, 0);
                             surface.D1(u, v, out _, out Vector3D du, out Vector3D dv);
                             gs.D1(gu, gv, out _, out Vector3D gdu, out Vector3D gdv);
                             Vector3D n = du.Crossed(dv), gn = gdu.Crossed(gdv);
-                            all = n.Magnitude > 1e-12 && gn.Magnitude > 1e-12 && n.Normalized().Crossed(gn.Normalized()).Magnitude < 0.02;
+                            if (n.Magnitude > 1e-12 && gn.Magnitude > 1e-12 && n.Normalized().Crossed(gn.Normalized()).Magnitude < 0.02)
+                            {
+                                firstOn = onCount == 0 ? k : firstOn;
+                                lastOn = k;
+                                onCount++;
+                            }
                         }
 
-                        if (all)
+                        if (onCount >= 10 && lastOn - firstOn + 1 == onCount)
                         {
                             on = g;
                             break;
@@ -466,6 +627,8 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                     }
                 }
 
+                without[faces.Count - 1] = $"{onEdges.Count} boundaries on edges{(onEdges.Count == 2 && onEdges[0].AlongV != onEdges[1].AlongV ? ", not opposite" : "")}";
+
                 // Between two edges: the ball through the two points whose chords to them are square to the edges
                 if (!withBalls.Contains(faces.Count - 1) && onEdges.Count == 2 && onEdges[0].AlongV == onEdges[1].AlongV)
                 {
@@ -474,6 +637,7 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                     Edge e1 = onEdges.Single(o => o.Low).Edge, e2 = onEdges.Single(o => !o.Low).Edge;
                     EdgeCurveAdaptor c1 = new(e1), c2 = new(e2);
                     var line = new (Point3D C, double R)[Exact + 1];
+                    int fromSection = 0;
                     for (int k = 0; k <= Exact; k++)
                     {
                         double t = k / (double)Exact;
@@ -490,9 +654,51 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                         Vector3D chord = new(p1, p2), n1 = t1.Normalized(), n2 = t2.Normalized();
                         double det = n1.Dot(n2.Crossed(chord));
                         // The three planes that fix the centre nearly share a line where the edges and the chord are nearly
-                        // in one plane: no ball is read there
+                        // in one plane (two edges of one flat face: the contacts then say where the centre is over that
+                        // plane and not how high). There the ball's size is taken from the face's own section: the ball
+                        // also goes through the middle of the line across the face between the two contacts, a fourth
+                        // plane, and the centre is the least-squares point of the four (unit 15AK3). A ball so read is
+                        // the surface's own at that section, so the reading beside it shows only whether the face is
+                        // the envelope of its sections' balls, not whether those are of the radius asked.
                         if (Math.Abs(det) < 0.05 * chord.Magnitude)
                         {
+                            Point3D middle = alongV ? surface.Value((u0 + u1) / 2, v0 + (v1 - v0) * t) : surface.Value(u0 + (u1 - u0) * t, (v0 + v1) / 2);
+                            Vector3D toMiddle = new(p1, middle);
+                            (Vector3D Row, double Right)[] rows =
+                            [
+                                (n1, 0.0), (n2, chord.Dot(n2)), (chord.Normalized(), chord.Magnitude / 2), (toMiddle.Normalized(), toMiddle.Magnitude / 2),
+                            ];
+                            double[,] a = new double[3, 3];
+                            double[] b = new double[3];
+                            foreach ((Vector3D row, double right) in rows)
+                            {
+                                double[] r = [row.X, row.Y, row.Z];
+                                for (int row1 = 0; row1 < 3; row1++)
+                                {
+                                    b[row1] += r[row1] * right;
+                                    for (int row2 = 0; row2 < 3; row2++)
+                                    {
+                                        a[row1, row2] += r[row1] * r[row2];
+                                    }
+                                }
+                            }
+
+                            double d = a[0, 0] * (a[1, 1] * a[2, 2] - a[1, 2] * a[2, 1]) - a[0, 1] * (a[1, 0] * a[2, 2] - a[1, 2] * a[2, 0])
+                                       + a[0, 2] * (a[1, 0] * a[2, 1] - a[1, 1] * a[2, 0]);
+                            if (Math.Abs(d) < 1e-6)
+                            {
+                                continue;
+                            }
+
+                            double x0 = (b[0] * (a[1, 1] * a[2, 2] - a[1, 2] * a[2, 1]) - a[0, 1] * (b[1] * a[2, 2] - a[1, 2] * b[2])
+                                         + a[0, 2] * (b[1] * a[2, 1] - a[1, 1] * b[2])) / d;
+                            double x1 = (a[0, 0] * (b[1] * a[2, 2] - a[1, 2] * b[2]) - b[0] * (a[1, 0] * a[2, 2] - a[1, 2] * a[2, 0])
+                                         + a[0, 2] * (a[1, 0] * b[2] - b[1] * a[2, 0])) / d;
+                            double x2 = (a[0, 0] * (a[1, 1] * b[2] - b[1] * a[2, 1]) - a[0, 1] * (a[1, 0] * b[2] - b[1] * a[2, 0])
+                                         + b[0] * (a[1, 0] * a[2, 1] - a[1, 1] * a[2, 0])) / d;
+                            Vector3D fitted = new(x0, x1, x2);
+                            line[k] = (p1.Translated(fitted), fitted.Magnitude);
+                            fromSection++;
                             continue;
                         }
 
@@ -505,13 +711,33 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                     {
                         balls.Add(dense);
                         withBalls.Add(faces.Count - 1);
-                        note.Append("[between two edges] ");
+                        note.Append(fromSection > 0 ? $"[between two edges, {fromSection} of {Exact + 1} balls' sizes from the face's section] " : "[between two edges] ");
                     }
                 }
             }
         }
 
-        note.Append($"{balls.Count} lines of balls, {withBalls.Count} of {faces.Count} faces with their own");
+        for (int index = 0; index < faces.Count; index++)
+        {
+            if (!withBalls.Contains(index) && !faces[index].Face.AllEdges().Any(e => Tool.Degenerated(e)))
+            {
+                note.Append($"[face {index + 1} has no balls: {without[index]}] ");
+            }
+        }
+
+        // A piece of the ball at a corner (unit 15AK3) touches the input at two points only: it is read against its
+        // neighbours' balls, of which the corner's is the last
+        int pieces = 0;
+        for (int index = 0; index < faces.Count; index++)
+        {
+            if (!withBalls.Contains(index) && faces[index].Face.AllEdges().Any(e => Tool.Degenerated(e)))
+            {
+                withBalls.Add(index);
+                pieces++;
+            }
+        }
+
+        note.Append($"{balls.Count} lines of balls, {withBalls.Count - pieces} of {faces.Count} faces with their own, {pieces} pieces of the ball");
         notes = note.ToString();
         List<(double, Point3D, bool)> points = [];
         double[] near = [1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 2e-3, 4e-3, 7e-3, 0.012, 0.02, 0.03, 0.045, 0.06, 0.08, 0.1, 0.13, 0.16, 0.2, 0.25, 0.3, 0.35, 0.4];
@@ -581,6 +807,112 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         }
 
         return points;
+    }
+
+    // Each edge between two of the new faces that is a crease the builder made, or whose normals are more than 0.002 radians
+    // apart somewhere along it (a tangent join is within 2e-4): the greatest angle between them, at 41 points, where, and the greatest angle there between the
+    // radii of the balls that touch the point, each the nearest of a stretch of its line that comes within 2e-6 of it. NaN
+    // where fewer than two balls do.
+    private static List<(double Faces, double Union, double Off1, double Off2, Point3D At, Point3D Middle)> Creases(MakeFillet fillet, List<(Point3D C, double R)[]> lines)
+    {
+        List<Face> faces = [];
+        for (int i = 1; i <= fillet.SurfaceCount; i++)
+        {
+            faces.AddRange(fillet.NewFaces(i).Select(f => (Face)f));
+        }
+
+        List<(double, double, double, double, Point3D, Point3D)> creases = [];
+        List<Edge> seen = [];
+        foreach (Face face in faces)
+        {
+            foreach (Edge e in face.AllEdges().Where(e => !Tool.Degenerated(e)))
+            {
+                if (seen.Any(x => x.IsSame(e)))
+                {
+                    continue;
+                }
+
+                seen.Add(e);
+                Face[] both = [.. faces.Where(g => g.AllEdges().Any(x => x.IsSame(e)))];
+                if (both.Length != 2 || Tool.CurveOnSurface(e, both[0], out _, out _) is not { } first || Tool.CurveOnSurface(e, both[1], out _, out _) is not { } second)
+                {
+                    continue;
+                }
+
+                var curve = new EdgeCurveAdaptor(e);
+                FaceSurfaceAdaptor s1 = new(both[0]), s2 = new(both[1]);
+                double greatest = 0;
+                Point3D at = default;
+                Vector3D normal1 = default, normal2 = default;
+                for (int k = 0; k <= 40; k++)
+                {
+                    double t = curve.FirstParameter() + k / 40.0 * (curve.LastParameter() - curve.FirstParameter());
+                    Point2D a = first.Value(t), b = second.Value(t);
+                    s1.D1(a.X, a.Y, out _, out Vector3D du1, out Vector3D dv1);
+                    s2.D1(b.X, b.Y, out _, out Vector3D du2, out Vector3D dv2);
+                    Vector3D n1 = du1.Crossed(dv1), n2 = du2.Crossed(dv2);
+                    if (n1.Magnitude < 1e-12 || n2.Magnitude < 1e-12)
+                    {
+                        continue;
+                    }
+
+                    double angle = Math.Asin(Math.Min(1.0, n1.Normalized().Crossed(n2.Normalized()).Magnitude));
+                    if (angle > greatest)
+                    {
+                        greatest = angle;
+                        at = curve.Value(t);
+                        normal1 = n1.Normalized();
+                        normal2 = n2.Normalized();
+                    }
+                }
+
+                Point3D half = curve.Value(0.5 * (curve.FirstParameter() + curve.LastParameter()));
+                if (greatest < 2e-3 && !fillet.InternalBuilder().EnvelopeCreases.Any(c => c.Value(0.5).DistanceTo(half) < 1e-6))
+                {
+                    continue;
+                }
+
+                List<Vector3D> radii = [];
+                foreach ((Point3D C, double R)[] line in lines)
+                {
+                    int best = -1;
+                    double nearest = double.MinValue;
+                    for (int k = 0; k <= Dense + 1; k++)
+                    {
+                        double depth = k <= Dense ? line[k].R - at.DistanceTo(line[k].C) : double.MinValue;
+                        if (depth > -2e-6)
+                        {
+                            if (depth > nearest)
+                            {
+                                nearest = depth;
+                                best = k;
+                            }
+                        }
+                        else if (best >= 0)
+                        {
+                            radii.Add(new Vector3D(line[best].C, at).Normalized());
+                            best = -1;
+                            nearest = double.MinValue;
+                        }
+                    }
+                }
+
+                double union = double.NaN;
+                for (int i = 0; i < radii.Count; i++)
+                {
+                    for (int j = i + 1; j < radii.Count; j++)
+                    {
+                        double angle = Math.Asin(Math.Min(1.0, radii[i].Crossed(radii[j]).Magnitude));
+                        union = double.IsNaN(union) ? angle : Math.Max(union, angle);
+                    }
+                }
+
+                double From(Vector3D normal) => radii.Count == 0 ? double.NaN : radii.Min(r => Math.Asin(Math.Min(1.0, r.Crossed(normal).Magnitude)));
+                creases.Add((greatest, union, From(normal1), From(normal2), at, curve.Value(0.5 * (curve.FirstParameter() + curve.LastParameter()))));
+            }
+        }
+
+        return creases;
     }
 
     // The balls found along a boundary, less those at its ends that weren't, carried to 30,001 by the cubic through the four

@@ -16,8 +16,10 @@ namespace Kerf.Engine.Foundation;
 /// in place of the report's alerts and the operation's own error.</param>
 /// <param name="MoreFailures">Further errors with <paramref name="Failure"/>, as a fillet's other faulty contours.</param>
 /// <param name="Valid">The algorithm has already checked its shape valid, as the operation would: it isn't checked twice (unit 13B).</param>
+/// <param name="Warnings">Warnings the operation itself has for a result that is done, with the report's (unit 15AK3: a fillet's creases).</param>
 internal readonly record struct EngineOutcome(bool IsDone, Func<Shape> Shape, History? History = null, Report? Report = null,
-                                              Diagnostic? Failure = null, ImmutableArray<Diagnostic> MoreFailures = default, bool Valid = false);
+                                              Diagnostic? Failure = null, ImmutableArray<Diagnostic> MoreFailures = default, bool Valid = false,
+                                              ImmutableArray<Diagnostic> Warnings = default);
 
 /// <summary>
 /// The one way a public operation runs an engine algorithm (decision 1369; docs/api/README.md, section 3): the progress
@@ -98,6 +100,10 @@ internal static class EngineOperation
         ImmutableArray<Diagnostic> warnings = outcome.Report is { } done
             ? [.. AlertDiagnostics.ToDiagnostics(done).Where(d => !d.IsError)]
             : [];
+        if (!outcome.Warnings.IsDefaultOrEmpty)
+        {
+            warnings = [.. warnings, .. outcome.Warnings];
+        }
         var built = new Built<TShape>(typed, ShapeHistory.FromEngine(outcome.History));
         return checkedAs is not null && ((outcome.Valid ? null : Validity.Problem(shape, checkedAs)) ?? alsoCheck?.Invoke(shape)) is { } problem
             ? Result<Built<TShape>>.Invalid(built, problem, warnings)

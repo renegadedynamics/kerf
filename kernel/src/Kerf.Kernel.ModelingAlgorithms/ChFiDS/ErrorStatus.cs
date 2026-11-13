@@ -14,8 +14,9 @@ internal enum ErrorStatus
     TwistedSurface,
 
     /// <summary>
-    /// Kerf (unit 15AK): the radius is changing where the guide's curvature jumps, or its rate of change jumps, so the
-    /// surface the ball sweeps has a piece of the ball there that the fillet's sections can't follow.
+    /// Kerf (unit 15AK): the radius is changing where the path of the ball's centre has a corner, so the surface the
+    /// ball sweeps has a piece of the ball or a crease there, and it couldn't be built (unit 15AK3 builds them where it
+    /// can); or the swept surface folds.
     /// </summary>
     EnvelopeCorner,
 }
