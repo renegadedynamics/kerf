@@ -2508,3 +2508,9 @@ Found by unit 12J:
 | Where | What | Seen | State |
 |---|---|---|---|
 | `IntWalk_IWalking::ComputeOpenLine` and `ComputeCloseLine`, a line stopped on the border (`MakeWalkingPoint(2, ...)` after `TestArretCadre`) | The last point takes the parameters solved for and the function's last evaluated point, which the solver can leave elsewhere; where the surfaces are tangent along the border it is a long way off | OCCT #1496's tubes: a cylinder and a torus tangent along a circle, a line's last point a quarter turn round it, its curve 16.97 off both surfaces and a common larger than either input, a success; native 8.0.1 the same | Fixed (decision 2429) |
+## Found by unit 15E, slice 19
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `BRepFill_OffsetWire::MakeWires` and `FixHoles`, a closed result (upstream `8f817f5da5`) | A wire reaching a vertex with one edge goes on round it, as for an open result, and is marked closed though it isn't; `FixHoles` closes a wire with an edge from its first vertex to its last, against the wire | `offset_wire_018.brep` (`B4`, `TODO OCC23068` and `OCC23748`) inwards at 1% to 7.5% of its length: a wire open by up to 3.1, done, a success through `Offset2D` | Fixed, as upstream (decision 2442) |
+| `BRepOffsetAPI_MakeOffset::Perform`, a wire whose edges aren't in order (upstream `8f817f5da5`'s `CollapsedOffsetReportsFailure`) | The parallel inwards past the width of a thin triangle whose third edge runs against the wire is the one outwards, done | 8.0.1 | Fixed in Kerf's way: a closed offset's loop on the wrong side of the wire is refused, `offset.wrong-side` (decision 2443); upstream's own mend not found |

@@ -290,6 +290,7 @@ own. Those a program is likely to test for are static properties of the operatio
 | `offset.not-planar` | `Offset2D` | The planar offset couldn't be built |
 | `offset.not-at-distance` | `Offset2D` | The planar offset was made but isn't at its distance from the wire everywhere, so it's refused (decisions 2279, 2281) |
 | `offset.crosses-itself` | `Offset2D` | The planar offset was made but crosses itself, or one of its loops crosses another, so it's refused; the message says where (decision 2422) |
+| `offset.wrong-side` | `Offset2D` | The planar offset of closed wires was made but a loop of it lies on the other side of the wires than asked (inside for outwards, outside for inwards), so it's refused; the message says where (decision 2443) |
 | `offset.join-changed` | `Offset`, `Hollow` (warning) | Round joins failed at an apex, so the result was made with mitred joins, and passed its checks |
 | `draft.face-failed` | `FeatureOperations.Draft` | A face can't be drafted, with the face |
 | `feature.failed` | `FeatureOperations` | A feature failed with no status |

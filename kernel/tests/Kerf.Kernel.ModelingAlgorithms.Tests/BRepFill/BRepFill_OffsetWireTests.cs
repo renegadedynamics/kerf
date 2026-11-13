@@ -567,4 +567,117 @@ public class BRepFill_OffsetWireTests
         // decision 2266: OCCT's square of the elements where that is fewer; never more than an int holds
         Assert.Equal((int)Math.Min(theLimit, int.MaxValue), global::Kerf.Engine.Offsets.MedialAxis.Mat2d.PassLimit(theElements));
     }
+
+    // Upstream 8f817f5da5's CollapsedOffsetReportsFailure, ported: a thin triangle (its vertices' tolerances 1e-4 and
+    // 1e-3) offset inwards past its width. Its third edge runs against the wire's order, and the parallel was the one
+    // outwards, a loop 8.37 long round a triangle 0.14 round, done, and a success through the public offset; it is refused
+    // now, being on the wrong side (decision 2443). The same triangle with its edges in order has no parallel inwards, as
+    // before
+    [Fact]
+    public void A_collapsed_offset_reports_failure()
+    {
+        Point3D[] aPoints = [new(13.9390666941141, 7.9420793981839504, 35.856828275703201),
+                             new(13.9523335293328, 7.9409297860578096, 35.833849443048798),
+                             new(13.912458477387499, 7.9435331519039503, 35.902915058972503)];
+        double[] aTolerances = [1.0e-4, 1.0e-4, 1.0e-3];
+        global::Kerf.Engine.Topology.Brep.BrepBuilder aBuilder = new();
+        Vertex[] aVertices = new Vertex[3];
+        for (int i = 0; i < 3; i++)
+        {
+            aBuilder.MakeVertex(ref aVertices[i], aPoints[i], aTolerances[i]);
+        }
+        Wire aSpine = new();
+        aBuilder.MakeWire(ref aSpine);
+        foreach ((int a, int b) in new[] { (0, 1), (2, 0), (2, 1) })
+        {
+            MakeEdge anEdge = new(aVertices[a], aVertices[b]);
+            Assert.True(anEdge.IsDone);
+            aBuilder.Add(aSpine, anEdge.Edge());
+        }
+
+        MakeWireOffset anOffset = new(aSpine);
+        anOffset.Perform(-1.3157);
+        Assert.False(anOffset.IsDone);
+        Assert.Equal(OffsetWire.WrongSideCode, anOffset.RefusedBecause?.Code);
+        var aPublic = global::Kerf.Offsets.OffsetOperations.Offset2D(aSpine, -1.3157);
+        Assert.False(aPublic.IsSuccess);
+        Assert.Equal(OffsetWire.WrongSideCode, aPublic.Error!.Code.Value);
+
+        MakeWire anOrdered = new(new MakeEdge(aVertices[0], aVertices[1]).Edge(), new MakeEdge(aVertices[1], aVertices[2]).Edge(),
+                                 new MakeEdge(aVertices[2], aVertices[0]).Edge());
+        MakeWireOffset anOrderedOffset = new(anOrdered.Wire());
+        anOrderedOffset.Perform(-1.3157);
+        Assert.True(!anOrderedOffset.IsDone || Count(anOrderedOffset.Shape(), ShapeType.Edge) == 0);
+    }
+
+    // tests/bugs/modalg_4/bug745_4: a rounded pocket offset inwards by 10, its parallel 511.416 long. The middle of the
+    // parallel's first edge is level with two of the pocket's vertices, where a ray along the axis passes between the
+    // polylines of two edges and the side check of decision 2443, with that ray alone, put the parallel outside
+    [Fact]
+    public void A_parallel_level_with_the_wires_vertices_is_on_its_side()
+    {
+        string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                                        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "OCC745_pocket1.brep");
+        if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
+        {
+            return;
+        }
+        MakeWireOffset anOffset = new(ShapeCasts.Face(aShape));
+        anOffset.Perform(-10.0);
+        Assert.True(anOffset.IsDone, anOffset.RefusedBecause?.Message);
+        Assert.Equal(511.416, Length(anOffset.Shape()), 1.0e-3);
+    }
+
+    // Upstream 8f817f5da5's ClosedOffsetsKeepClosedWires, ported: the closed parallels of a square, each one closed wire,
+    // valid, of the length it should be
+    [Theory]
+    [InlineData(-1.0)]
+    [InlineData(1.0)]
+    public void Closed_offsets_keep_closed_wires(double theDistance)
+    {
+        const double aSide = 10.0;
+        MakeWireOffset anOffset = new(Square(aSide));
+        anOffset.Perform(theDistance);
+        Assert.True(anOffset.IsDone);
+        Shape aResult = anOffset.Shape();
+        Assert.False(aResult.IsNull);
+        Assert.True(new global::Kerf.Engine.Healing.Checks.Analyzer(aResult).IsValid());
+        int aNbWires = 0;
+        for (Explorer anExp = new(aResult, ShapeType.Wire); anExp.More(); anExp.Next())
+        {
+            aNbWires++;
+            Assert.Equal(global::Kerf.Engine.Healing.Checks.StatusCheck.NoError,
+                         new global::Kerf.Engine.Healing.Checks.WireCheck(ShapeCasts.Wire(anExp.Current())).Closed());
+        }
+        Assert.Equal(1, aNbWires);
+        double aLength = theDistance > 0.0 ? 4.0 * aSide + 2.0 * Math.PI * theDistance : 4.0 * (aSide + 2.0 * theDistance);
+        Assert.Equal(aLength, Length(aResult), 1.0e-7);
+    }
+
+    // tests/offset/wire_closed_inside_0_025/B4 and 0_075/B4 (OCCT's known problems OCC23068 and OCC23748), and the same
+    // wire at 1% and 5% of its length: the inward parallel of a closed wire had a wire that stopped at a vertex with one
+    // edge, marked closed, which the closure check reads, so it was returned, a success through the public offset, a
+    // wire open by up to 3.1 in a shape 5 across. Upstream 8f817f5da5 ends such a wire there, unclosed, so the offset
+    // isn't done, as upstream's scripts now expect (decision 2442)
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(-0.025)]
+    [InlineData(-0.05)]
+    [InlineData(-0.075)]
+    public void An_inward_offset_left_open_at_a_vertex_with_one_edge_is_refused(double theFraction)
+    {
+        string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                                        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "offset_wire_018.brep");
+        if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
+        {
+            return;
+        }
+        double aDistance = theFraction * Length(aShape);
+        MakeWireOffset anOffset = new();
+        anOffset.Init(global::Kerf.Geometry.JoinKind.Arc);
+        anOffset.AddWire(ShapeCasts.Wire(aShape));
+        anOffset.Perform(aDistance);
+        Assert.False(anOffset.IsDone);
+        Assert.False(global::Kerf.Offsets.OffsetOperations.Offset2D(aShape, aDistance).IsSuccess);
+    }
 }
