@@ -1913,7 +1913,9 @@ internal sealed class OffsetWire
             end = false;
             mve.GetValue(cv).RemoveFirst();
 
-            if (_isOpenResult && mve.GetValue(cv).IsEmpty())
+            // Kerf: upstream 8f817f5da5's closure: a wire stops at a vertex with one edge whether or not the result
+            // is open, and is then not marked closed; 8.0.1 went on round it, marking it closed (decision 35201)
+            if (mve.GetValue(cv).IsEmpty())
             {
                 mve.Remove(cv);
             }
@@ -1959,7 +1961,7 @@ internal sealed class OffsetWire
                         ce = ShapeCasts.Edge(mve.GetValue(cv).First());
                         mve.GetValue(cv).RemoveFirst();
                     }
-                    else if (_isOpenResult)
+                    else
                     { // CV was a vertex with one edge
                         end = true;
                     }
@@ -2258,8 +2260,8 @@ internal sealed class OffsetWire
                 }
                 else if (Dist <= maxTol)
                 {
-                    // Creating new edge from Vl to Vf
-                    Edge newEdge = new LibraryMakeEdge(vf, vl).InternalEdge();
+                    // Creating new edge from Vl to Vf (Kerf: as upstream 8f817f5da5 does; 8.0.1 made it from Vf to Vl)
+                    Edge newEdge = new LibraryMakeEdge(vl, vf).InternalEdge();
                     bb.Add(Base, newEdge);
                     Base.Closed(true);
                 }
