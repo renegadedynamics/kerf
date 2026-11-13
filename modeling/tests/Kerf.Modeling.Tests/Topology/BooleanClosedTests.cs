@@ -8,7 +8,7 @@ namespace Kerf.Modeling.Tests;
 
 /// <summary>
 /// Booleans of two closed solids that came out open inside a vertex, wrong, or invalid, and are now closed and right
-/// (kernel decisions 33701 to 33707), each on the family of decision 2257's sweep as the sweep makes it: equal cylinders, the
+/// (kernel decisions 2361 to 2367), each on the family of decision 2257's sweep as the sweep makes it: equal cylinders, the
 /// tool's axis in the other's end plane, a little short of crossing its axis or a little past.
 /// </summary>
 public class BooleanClosedTests
@@ -61,7 +61,7 @@ public class BooleanClosedTests
 
     // Radius 50000, 1e-7 short: as OCCT's vertices have it the cut removes nothing and the common is empty, the other way
     // round and at each fuzzy value too, and both failed. Made with the crossings held apart, two ways agree, valid and
-    // passing the check; the first result, being wrong, can't vouch for them (decision 33704)
+    // passing the check; the first result, being wrong, can't vouch for them (decision 2364)
     [Fact]
     public void A_Boolean_proved_wrong_is_made_again_with_its_crossings_apart()
     {
@@ -90,7 +90,7 @@ public class BooleanClosedTests
     }
 
     // Radius 50000, 3e-4 past: the cut as first made is invalid, and failed for it. Made again as a wrong one is, it's
-    // valid, passes the check and is right (decision 33706)
+    // valid, passes the check and is right (decision 2366)
     [Fact]
     public void An_invalid_first_result_is_made_again_as_a_wrong_one_is()
     {
@@ -111,7 +111,7 @@ public class BooleanClosedTests
 
     // Radius 500, 1e-13 short, fused: the first is 16% out, and the one made the other way round is right and open inside
     // a vertex. Held apart the first way round each is 16% out again, so the ways are made the other way round, as the
-    // result they stand in for was, and close it (decision 33705)
+    // result they stand in for was, and close it (decision 2365)
     [Fact]
     public void A_result_made_the_other_way_round_is_closed_the_other_way_round()
     {
@@ -124,7 +124,7 @@ public class BooleanClosedTests
         Assert.Equal(3 * one - common, AsOcct(fuse), 1e-9 * one);
     }
 
-    // A result closed at the source stays closed when its edges are merged (decisions 33702 and 33703). Three ways the
+    // A result closed at the source stays closed when its edges are merged (decisions 2362 and 2363). Three ways the
     // merge opened one: the merged circle built between its vertices' own points, where the pieces had ended at another
     // point of a wide vertex (radius 500, 3e-13 short); the merged curve on a face made again from the curve in space,
     // where the pieces' had been brought to the face's other edges (radius 500, 2e-11 short, on the tool's seam); and merged
@@ -156,7 +156,7 @@ public class BooleanClosedTests
 
     // Radius 0.5, 1e-14 short: the sections' curves end 1e-7 either side of the touch on the tool's seam, each within the
     // default tolerance of the vertex and so left where it was, 2e-7 from the other: a gap. A curve is now brought to its
-    // vertex from half that, and the common, 8.2e-8 out read across the gap, is right to 1e-8 (decision 33707)
+    // vertex from half that, and the common, 8.2e-8 out read across the gap, is right to 1e-8 (decision 2367)
     [Fact]
     public void Curves_that_end_a_default_tolerance_either_side_of_a_vertex_are_brought_to_it()
     {
@@ -179,7 +179,7 @@ public class BooleanClosedTests
     // Radius 50000, 2e-6 short: the walk's tolerance there is 0.6 and one vertex, 1.05 wide, covers both crossings, 0.45
     // either side of the touch, and the end circle's own vertex between them. The circle's two pieces from its own vertex to
     // that one are no longer than the tolerances, and the common, which has neither, was left with the circle open by 0.9
-    // inside the vertex. The last way of making it again takes each into the piece next to it (decision 33708)
+    // inside the vertex. The last way of making it again takes each into the piece next to it (decision 2368)
     [Fact]
     public void A_piece_too_small_to_keep_is_taken_into_its_neighbour()
     {

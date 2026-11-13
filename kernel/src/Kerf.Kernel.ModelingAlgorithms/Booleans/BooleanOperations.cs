@@ -311,7 +311,7 @@ public static class BooleanOperations
         }
         // An invalid result is made again as one proved wrong is, and fails as it did if none of those ways mends it: equal
         // cylinders of radius 50000, the tool's axis in the other's end plane 3e-4 past crossing its axis, whose cut has a wire
-        // that crosses itself, and is valid and right made the other way round (decision 33706)
+        // that crosses itself, and is valid and right made the other way round (decision 2366)
         if (options is not { CheckResult: false } && result.TryGetInvalid(out _) && RuleOf(operation) is { } unmade
             && Again(unmade, arguments, tools, options, cancellationToken) is { } mended)
         {
@@ -359,7 +359,7 @@ public static class BooleanOperations
             return first;
         }
 
-        // Four ways, as none closes all the others do (decisions 2288 and 33708). The one with the fewest gaps is kept, the first of
+        // Four ways, as none closes all the others do (decisions 2288 and 2368). The one with the fewest gaps is kept, the first of
         // them to have none the inputs didn't
         Result<Built<Shape>> best = first;
         bool otherWayRound = arguments.Count == 1 && tools.Count == 1 && first.Diagnostics.Any(static d => d.Code == BuiltOtherWayRound);
@@ -458,12 +458,12 @@ public static class BooleanOperations
     // The ways a Boolean is made again with its crossings held apart (decision 2288): with each touch that hides two crossings
     // given as the two; with it left as one; and with no crossing held apart at all, OCCT's vertices, closed by the steps that
     // bring each edge's pieces and each section's curves to one point of them
-    // and, last, that again with each piece of an edge too small to keep taken into its neighbour (decision 33708)
+    // and, last, that again with each piece of an edge too small to keep taken into its neighbour (decision 2368)
     private static readonly (double Apart, bool Touches, bool SmallPieces)[] WaysApart =
         [(CrossingsApart, true, false), (CrossingsApart, false, false), (double.PositiveInfinity, false, false), (double.PositiveInfinity, false, true)];
 
     // A Boolean made with its crossings held apart one of those ways; with its inputs the other way round where the result
-    // it's to stand in for was made so, as the intersections depend on the order (decision 33705)
+    // it's to stand in for was made so, as the intersections depend on the order (decision 2365)
     private static Result<Built<Shape>> MadeApart(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, BooleanOptions? options,
                                                   (double Apart, bool Touches, bool SmallPieces) way, bool otherWayRound, CancellationToken cancellationToken)
     {
@@ -485,7 +485,7 @@ public static class BooleanOperations
     // A Boolean still proved wrong is made with its crossings held apart, the three ways a result open inside a vertex is, and
     // one of them kept if it's valid, passes the same check, and another of them has its volume and area: equal cylinders of
     // radius 50000, the tool's axis in the other's end plane 1e-7 short of crossing its axis, whose cut removes nothing as
-    // OCCT's vertices have it, the other way round and at each fuzzy value, and is right two of these ways (decision 33704).
+    // OCCT's vertices have it, the other way round and at each fuzzy value, and is right two of these ways (decision 2364).
     // The first result can't vouch for one made again here, being wrong, so two made differently have to agree: the check
     // alone measures against the result's tolerance, and can pass what it shouldn't where that's wide (decision 2277). It
     // costs up to three more Booleans, only on a result that would have failed.

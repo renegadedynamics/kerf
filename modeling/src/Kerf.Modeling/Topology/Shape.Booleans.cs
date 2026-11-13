@@ -105,13 +105,13 @@ public static partial class ShapeExtensions
         }
         catch (ModelingException failure) when (made && RuleOf(operation) is not null)
         {
-            // An invalid result is made again as a wrong one is, and fails as it did if that doesn't mend it (decision 33706)
+            // An invalid result is made again as a wrong one is, and fails as it did if that doesn't mend it (decision 2366)
             invalid = failure;
         }
         if (wrong is not null || invalid is not null)
         {
             // Made again as the kernel's checked Booleans are, the other way round, then with a fuzzy value, then with its
-            // crossings held apart (decisions 1937, 2103 and 33704), its warning passed on; what that makes is cleaned and
+            // crossings held apart (decisions 1937, 2103 and 2364), its warning passed on; what that makes is cleaned and
             // checked as the first was
             var retried = BooleanOperations.Retry(RuleOf(operation)!.Value, arg, tool, (options ?? BooleanOptions.Default) with { Simplify = false, CheckResult = true });
             if (!retried.TryGetValue(out var again))

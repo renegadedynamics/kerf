@@ -4654,7 +4654,7 @@ internal partial class PaveFiller
             for (int i = 0; i <= ordered.Count; ++i)
             {
                 PaveBlock? block = i < ordered.Count ? ordered[i] : null;
-                // Kerf (decision 33708): asked to, a piece between two vertices that is no longer than their tolerances
+                // Kerf (decision 2368): asked to, a piece between two vertices that is no longer than their tolerances
                 // is taken for missing too
                 if (_smallPiecesTaken && block is not null && TooSmallToKeep(block, nE))
                 {
@@ -4685,7 +4685,7 @@ internal partial class PaveFiller
                 }
                 else if (starts > reached + least && at != vertex && at >= 0 && vertex >= 0 && small.Count > 0)
                 {
-                    // Kerf (decision 33708): a piece too small to keep is missing between two vertices, and one of them
+                    // Kerf (decision 2368): a piece too small to keep is missing between two vertices, and one of them
                     // covers all of it: that vertex's piece runs on through it, to a point still inside the vertex
                     curve ??= new EdgeCurveAdaptor(edge);
                     if (before is not null && OwnPiece(before, nE) && Covers(vertex, curve.Value(starts)))

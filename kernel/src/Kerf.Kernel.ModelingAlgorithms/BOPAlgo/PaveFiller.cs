@@ -107,7 +107,7 @@ internal partial class PaveFiller : BooleanAlgorithm
     protected double _crossingsApart;
     //! Kerf: with crossings apart, whether a touch that hides two crossings is given as the two (decision 2286)
     protected bool _touchesApart = true;
-    //! Kerf: with crossings apart, whether a piece of an edge too small to keep is taken into its neighbour (decision 33708)
+    //! Kerf: with crossings apart, whether a piece of an edge too small to keep is taken into its neighbour (decision 2368)
     protected bool _smallPiecesTaken;
     //! Kerf: with crossings apart, each point an edge touches a face at, with the edge, the face and how long the stretch
     //! they're within a tolerance over is (decision 2287)
@@ -166,7 +166,7 @@ internal partial class PaveFiller : BooleanAlgorithm
     /// 32903): a vertex two tangent faces share isn't grown over the end of their curve where that's far from it; an edge's
     /// touch of a face that hides two crossings far apart is given as the two, unless <paramref name="touches"/> is false;
     /// a section's curve that stops short within such a touch is carried on to the crossing; and each section edge's curves
-    /// end at its vertices, in space and on each face. With <paramref name="smallPieces"/> (decision 33708), a piece of an
+    /// end at its vertices, in space and on each face. With <paramref name="smallPieces"/> (decision 2368), a piece of an
     /// edge between two vertices that is no longer than their tolerances, where one of them covers all of it, is taken
     /// into the piece next to it at that vertex.
     /// </summary>

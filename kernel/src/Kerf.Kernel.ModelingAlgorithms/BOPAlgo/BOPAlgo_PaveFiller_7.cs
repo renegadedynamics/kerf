@@ -981,7 +981,7 @@ internal partial class PaveFiller
         // only the curves on the faces move
         BSplineCurve3D? spline = curve as BSplineCurve3D;
         // Half the default tolerance: two curves that each end within that of the vertex end within the whole of each other,
-        // which is where a gap begins to count (decision 33707)
+        // which is where a gap begins to count (decision 2367)
         double confusion = 0.5 * global::Kerf.Engine.Foundation.Precision.Confusion();
         // In space the curve goes to where the first face's edges end, which the vertex covers as it does the second's
         Point3D a = EndAt(first, nF1, onEdges), b = EndAt(last, nF1, onEdges);

@@ -529,7 +529,7 @@ internal partial class UnifySameDomain
             } // for (int ii = 1; ii <= ResPCurves.Length(); ii++)
         }
 
-        // Kerf (decision 33703): each curve ends where the chain's did, unless that takes the edge further from its curve
+        // Kerf (decision 2363): each curve ends where the chain's did, unless that takes the edge further from its curve
         // on the face than its tolerance and its vertices' allow
         if (isSeam)
         {
@@ -586,7 +586,7 @@ internal partial class UnifySameDomain
     }
 
     /// <summary>
-    /// Kerf (decision 33703): the merged edge's curve on a face ends where its chain's did. The curves of the chain's
+    /// Kerf (decision 2363): the merged edge's curve on a face ends where its chain's did. The curves of the chain's
     /// edges on a face can end at other points of their vertices than the edges do in space, where a vertex is wider than
     /// the default: a Boolean brings each to where the face's other edges end, so that the face's boundary is closed in
     /// its parameters (decisions 2285 and 2289). Where the merged curve is made again from the edge's curve in space it
@@ -692,7 +692,7 @@ internal partial class UnifySameDomain
                && surface.Value(0.5 * (a.X + b.X), 0.5 * (a.Y + b.Y)).DistanceTo(pa) <= distance;
     }
 
-    // Where a merged edge ends at one of its chain's end vertices (decision 33702): the vertex's own point, as OCCT has
+    // Where a merged edge ends at one of its chain's end vertices (decision 2362): the vertex's own point, as OCCT has
     // it, unless the chain's edge ends at another point of the vertex, more than the default tolerance away, and that
     // point is nearer than the vertex's to where every other edge at the vertex ends
     private static Point3D EndOnItsEdge(Vertex vertex, Edge edge, NCollection_Sequence<Shape> chain,
@@ -892,7 +892,7 @@ internal partial class UnifySameDomain
         {
             var v = new Vertex[2];
             v[0] = sae.FirstVertex(ShapeCasts.Edge(chain.First()));
-            // Kerf (decision 33702): from where the chain's first edge starts to where its last one ends, as for circles below,
+            // Kerf (decision 2362): from where the chain's first edge starts to where its last one ends, as for circles below,
             // where the other edges at those vertices end there
             Point3D pv1 = EndOnItsEdge(v[0], ShapeCasts.Edge(chain.First()), chain, vFmap);
             v[1] = sae.LastVertex(ShapeCasts.Edge(chain.Last()));
@@ -1003,7 +1003,7 @@ internal partial class UnifySameDomain
                 Vertex vertexLastOnFE = sae.LastVertex(fe);
                 double        paramLast      = Tool.Parameter(vertexLastOnFE, fe);
 
-                // Kerf (decision 33702): the merged circle runs from where the chain's first edge starts to where its last
+                // Kerf (decision 2362): the merged circle runs from where the chain's first edge starts to where its last
                 // one ends, where that is nearer than the vertices' own points to where the other edges at those vertices
                 // end. A vertex wider than the default can have its edges end at another point of it, as a Boolean leaves
                 // one grown over a crossing (decision 2289); OCCT's edge then ends at the vertex's point, and a face it
