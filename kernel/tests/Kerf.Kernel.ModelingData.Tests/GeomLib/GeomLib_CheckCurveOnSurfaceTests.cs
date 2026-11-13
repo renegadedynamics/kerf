@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Library;
+using Kerf.Engine;
 using Kerf.Geometry;
 
 namespace Kerf.Kernel.ModelingData.Tests;
@@ -161,5 +162,123 @@ public class GeomLib_CheckCurveOnSurfaceTest
 
         Assert.True(aCheck.IsDone);
         Assert.Equal(8.0, aCheck.MaxDistance(), global::Kerf.Engine.Foundation.Precision.Confusion());
+    }
+
+    private const double IntervalBoundary = 1.0;
+    private const double LastParameterOfTwo = 2.0;
+    private const double CurveOffset = 0.125;
+
+    private enum IntervalFailure
+    {
+        None,
+        NonFinite,
+        PositiveInfinite,
+        NegativeInfinite,
+        UndefinedValue,
+    }
+
+    // Upstream ec0167b409's GeomLib_IntervalFailureCurve: a line CurveOffset above the plane, failing past the first
+    // of the pcurve's two intervals
+    private sealed class IntervalFailureCurve(IntervalFailure theFailure) : CurveAdaptorBase
+    {
+        public override CurveAdaptorBase ShallowCopy() => new IntervalFailureCurve(theFailure);
+
+        public override double FirstParameter() => 0.0;
+
+        public override double LastParameter() => LastParameterOfTwo;
+
+        public override CurveKind GetType() => CurveKind.OtherCurve;
+
+        public override Point3D EvalD0(double u)
+        {
+            if (u > IntervalBoundary)
+            {
+                switch (theFailure)
+                {
+                    case IntervalFailure.UndefinedValue:
+                        throw new global::Kerf.Engine.Foundation.UndefinedValueException("Undefined curve value");
+                    case IntervalFailure.NonFinite:
+                        return new Point3D(u, 0.0, double.NaN);
+                    case IntervalFailure.PositiveInfinite:
+                        return new Point3D(u, 0.0, global::Kerf.Engine.Foundation.Precision.Infinite());
+                    case IntervalFailure.NegativeInfinite:
+                        return new Point3D(u, 0.0, -global::Kerf.Engine.Foundation.Precision.Infinite());
+                }
+            }
+
+            return new Point3D(u, 0.0, CurveOffset);
+        }
+    }
+
+    // The X axis on the XY plane as a degree 1 B-spline pcurve with knots 0, 1 and 2: two intervals
+    private static CurveOnSurface makeTwoIntervalPCurve()
+    {
+        NCollection_Array1<Point2D> aPoles = new(1, 3);
+        NCollection_Array1<double> aKnots = new(1, 3);
+        NCollection_Array1<int> aMults = new(1, 3);
+        for (int i = 1; i <= 3; i++)
+        {
+            aPoles[i] = new Point2D(i - 1, 0.0);
+            aKnots[i] = i - 1;
+            aMults[i] = i == 1 || i == 3 ? 2 : 1;
+        }
+
+        CurveAdaptor2D aPCurve = new(new BSplineCurve2D(aPoles, aKnots, aMults, 1));
+        SurfaceAdaptor aSurface =
+            new(new PlaneSurface(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0),
+                                                      new Direction3D(1.0, 0.0, 0.0))));
+        return new CurveOnSurface(aPCurve, aSurface);
+    }
+
+    // Upstream ec0167b409's FailedIntervalDoesNotReportPartialMaximum (decision 2408): a curve whose evaluation fails
+    // or isn't finite on one interval fails the check. 8.0.1 left the interval out and reported the other's 0.125.
+    [Fact]
+    public void A_failed_interval_fails_the_check_rather_than_giving_the_others_maximum()
+    {
+        double aFiniteDistance = Math.Sqrt(global::Kerf.Engine.Foundation.Precision.Infinite());
+        CheckCurveOnSurface aFiniteCheck =
+            new(new CurveAdaptor(new LineCurve3D(new Point3D(0.0, 0.0, aFiniteDistance), new Direction3D(1.0, 0.0, 0.0)),
+                                 0.0, LastParameterOfTwo));
+        aFiniteCheck.Perform(makeTwoIntervalPCurve());
+        Assert.True(aFiniteCheck.IsDone);
+        Assert.Equal(aFiniteDistance, aFiniteCheck.MaxDistance(), aFiniteDistance * 1e-15);
+
+        foreach (IntervalFailure aFailure in new[] { IntervalFailure.NonFinite, IntervalFailure.PositiveInfinite,
+                                                     IntervalFailure.NegativeInfinite, IntervalFailure.UndefinedValue })
+        {
+            foreach (bool aParallel in new[] { false, true })
+            {
+                CheckCurveOnSurface aCheck = new(new IntervalFailureCurve(aFailure));
+                aCheck.SetParallel(aParallel);
+                aCheck.Perform(makeTwoIntervalPCurve());
+                Assert.False(aCheck.IsDone, $"{aFailure}, parallel {aParallel}: {aCheck.MaxDistance()}");
+                Assert.Equal(3, aCheck.ErrorStatus());
+                Assert.Equal(double.MaxValue, aCheck.MaxDistance());
+                Assert.Equal(0.0, aCheck.MaxParameter());
+            }
+        }
+    }
+
+    // Upstream ec0167b409's RepeatedPerformResetsStatusAndDistance (decision 2408): 8.0.1 kept the failed check's
+    // status through the next, which succeeded
+    [Fact]
+    public void A_repeated_check_starts_afresh()
+    {
+        CheckCurveOnSurface aCheck = new(new IntervalFailureCurve(IntervalFailure.None));
+        CurveOnSurface aPCurve = makeTwoIntervalPCurve();
+        aCheck.Perform(aPCurve);
+        Assert.True(aCheck.IsDone);
+        Assert.Equal(CurveOffset, aCheck.MaxDistance(), 1e-15);
+
+        aCheck.Perform(null);
+        Assert.False(aCheck.IsDone);
+        Assert.Equal(1, aCheck.ErrorStatus());
+        Assert.Equal(double.MaxValue, aCheck.MaxDistance());
+        Assert.Equal(0.0, aCheck.MaxParameter());
+
+        aCheck.Perform(aPCurve);
+        Assert.True(aCheck.IsDone);
+        Assert.Equal(0, aCheck.ErrorStatus());
+        Assert.Equal(CurveOffset, aCheck.MaxDistance(), 1e-15);
     }
 }

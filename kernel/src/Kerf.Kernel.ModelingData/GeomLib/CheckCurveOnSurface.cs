@@ -72,6 +72,11 @@ internal sealed class CheckCurveOnSurface
     /// </summary>
     public void Perform(CurveOnSurface? curveOnSurface)
     {
+        // Upstream ec0167b409 (decision 2408): each check starts afresh, where 8.0.1 kept the last one's status and
+        // distance
+        _errorStatus = 0;
+        _maxDistance = RealLast();
+        _maxParameter = 0.0;
         if (_curve is null || curveOnSurface is null)
         {
             _errorStatus = 1;
@@ -153,9 +158,16 @@ internal sealed class CheckCurveOnSurface
                     comp.Run(0, i);
                 }
             }
-            comp.OptimalValues(out _maxDistance, out _maxParameter);
+            // Upstream ec0167b409 (decision 2408): an interval whose search failed fails the check, where 8.0.1 left it
+            // out and gave the other intervals' maximum as the curve's
+            if (!comp.OptimalValues(out double minimalValue, out double parameter))
+            {
+                _errorStatus = 3;
+                return;
+            }
 
-            _maxDistance = Math.Sqrt(Math.Abs(_maxDistance));
+            _maxDistance = Math.Sqrt(Math.Abs(minimalValue));
+            _maxParameter = parameter;
         }
         catch (Exception caught) when (Refusal.IsFailure(caught))
         {
@@ -200,6 +212,10 @@ internal sealed class CheckCurveOnSurface
             _last = last;
         }
 
+        // Upstream ec0167b409: whether an evaluation within the interval failed or wasn't finite, so that the
+        // interval's maximum is not known. Each interval has its own function, so no thread shares it.
+        public bool HasFailed { get; private set; }
+
         // returns the number of parameters of the function
         // (the function is one-dimension).
         public override int VariableCount => 1;
@@ -220,11 +236,21 @@ internal sealed class CheckCurveOnSurface
                 }
 
                 Point3D p1 = _curve1.Value(x), p2 = _curve2.Value(x);
+                Vector3D residual = new(p1, p2);
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(residual.X)
+                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(residual.Y)
+                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(residual.Z)
+                    || !double.IsFinite(residual.X) || !double.IsFinite(residual.Y) || !double.IsFinite(residual.Z))
+                {
+                    HasFailed = true;
+                    return false;
+                }
 
-                fVal = -1.0 * p1.SquareDistanceTo(p2);
+                fVal = -1.0 * residual.SquareMagnitude;
             }
             catch (Exception caught) when (Refusal.IsFailure(caught))
             {
+                HasFailed = true;
                 return false;
             }
             return true;
@@ -533,22 +559,30 @@ internal sealed class CheckCurveOnSurface
             _arrOfParam[elemIndex] = par;
         }
 
-        // Returns optimal value (inverse of square of maximal distance)
-        public void OptimalValues(out double minimalValue, out double parameter)
+        // Returns optimal value (inverse of square of maximal distance); false if an interval's search failed
+        // (upstream ec0167b409), as every interval is needed for the curve's maximum
+        public bool OptimalValues(out double minimalValue, out double parameter)
         {
             // This method looks for the minimal value of myArrOfDist.
 
             int startInd = _arrOfDist.Lower();
             minimalValue = _arrOfDist[startInd];
             parameter = _arrOfParam[startInd];
-            for (int i = startInd + 1; i <= _arrOfDist.Upper(); i++)
+            for (int i = startInd; i <= _arrOfDist.Upper(); i++)
             {
+                if (_arrOfDist[i] == RealLast())
+                {
+                    return false;
+                }
+
                 if (_arrOfDist[i] < minimalValue)
                 {
                     minimalValue = _arrOfDist[i];
                     parameter = _arrOfParam[i];
                 }
             }
+
+            return true;
         }
     }
 
@@ -829,6 +863,20 @@ internal sealed class CheckCurveOnSurface
 
             if (function.ElementaryMaximum(ref bestValue, ref bestParameter))
             {
+                return !function.HasFailed;
+            }
+
+            // Kerf: an interval too short for the swarm (decision 2408) has its maximum at an end, as 8.0.1 left it out
+            // and upstream ec0167b409 would fail the check for it
+            if (parSup[1] - parInf[1] < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            {
+                if (!function.Value(parInf[1], out double firstValue) || !function.Value(parSup[1], out double lastValue))
+                {
+                    return false;
+                }
+
+                bestValue = Min(firstValue, lastValue);
+                bestParameter = firstValue <= lastValue ? parInf[1] : parSup[1];
                 return true;
             }
 
@@ -884,6 +932,7 @@ internal sealed class CheckCurveOnSurface
             return false;
         }
 
-        return true;
+        // Upstream ec0167b409: a failed evaluation leaves the interval's maximum unknown
+        return !function.HasFailed && double.IsFinite(bestValue);
     }
 }

@@ -65,6 +65,12 @@ internal class BeanFaceIntersector
     private double _minSqDistance;
     private SampleSeparation? _separation;
 
+    // The exact intersection's proof (ApartForExact): ten times the distance it accepts a point at; past a line's ends by
+    // more than it accepts a point beyond them; and the most pairs of pieces tested in a run, over all its ranges
+    private const double ExactClearance = 1e-3;
+    private const double ExactLineReach = 1e-6;
+    private const int ExactMostTests = 4000;
+
     /// <summary>An empty algorithm.</summary>
     public BeanFaceIntersector()
     {
@@ -481,6 +487,44 @@ internal class BeanFaceIntersector
         return distance;
     }
 
+    // Kerf: for the exact intersection, a proof that the curve is further from the surface over one of its ranges than any
+    // point it accepts, so that it passes the range over; null where there's none to give (unit 15AS). It runs on each of
+    // the surface's intervals of continuity, and accepts a point where its Newton search ends with the curve and the surface
+    // within 1e-4 of each other (its tolerance, 1e-8, is on the squared distance), the point's parameters on the surface in
+    // the interval and on the curve in its range (the polygon's, within the adaptor's, or within 1e-8 of a line's ends): the
+    // adaptors' own ranges, not those this run was given. A range that gives no point changes nothing, so passing it over
+    // gives the same result. Its polyhedron of a periodic surface's range past the seam takes in the whole surface, and a
+    // curve beside it gave tens of thousands of start points, each a Newton search that found nothing (the loft's chamfer at
+    // large lengths)
+    private Func<double, double, double, double, bool>? ApartForExact()
+    {
+        SurfaceKind kind = _surface.GetType();
+        if (kind != SurfaceKind.BSplineSurface && kind != SurfaceKind.BezierSurface)
+        {
+            return null;
+        }
+
+        double t0 = _curve.FirstParameter(), t1 = _curve.LastParameter();
+        double u0 = _surface.FirstUParameter(), u1 = _surface.LastUParameter();
+        double v0 = _surface.FirstVParameter(), v1 = _surface.LastVParameter();
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(t0) || global::Kerf.Engine.Foundation.Precision.IsInfinite(t1)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(u0) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u1)
+            || global::Kerf.Engine.Foundation.Precision.IsInfinite(v0) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v1))
+        {
+            return null;
+        }
+
+        if (_curve.GetType() == Line)
+        {
+            t0 -= ExactLineReach;
+            t1 += ExactLineReach;
+        }
+
+        SampleSeparation separation = new(_curve, _surface, toEnds: true);
+        int tests = ExactMostTests;
+        return (uFirst, uLast, vFirst, vLast) => separation.AllApart(t0, t1, uFirst, uLast, vFirst, vLast, ExactClearance, ref tests);
+    }
+
     private void ComputeAroundExactIntersection()
     {
         HInter exactIntersector = new();
@@ -490,6 +534,7 @@ internal class BeanFaceIntersector
         SurfaceAdaptorBase surface = _surface.ShallowCopy();
 
         exactIntersector.Polyhedra = _context!.Polyhedra(_surface.Face());
+        exactIntersector.Apart = ApartForExact();
         exactIntersector.Perform(curve, surface);
 
         if (exactIntersector.IsDone)

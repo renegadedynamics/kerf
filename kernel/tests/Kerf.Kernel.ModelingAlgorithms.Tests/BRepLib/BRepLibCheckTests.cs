@@ -201,4 +201,50 @@ public class BRepLibCheckTests
         double aDelta = Epsilon(1e6);
         Assert.True(aValidate.CheckTolerance(aValidate.GetMaxDistance() - aDelta / 2));
     }
+
+    /// <summary>
+    /// Upstream ec0167b409's <c>BothSeamPCurvesAndReuse</c>, ported (decision 2392): a seam on a cylinder of radius 1
+    /// whose pcurves are 0.1 and 0.2 radians off its line is 2 sin(0.1) off at worst, whichever pcurve is the first; an
+    /// open edge checked after it by the same object is checked alone.
+    /// </summary>
+    [Fact]
+    public void CheckCurveOnSurface_KeepsTheFurtherOfASeamsPCurves()
+    {
+        const double aLargeAngle = 0.2, aSmallAngle = 0.1;
+        var aB = new BrepBuilder();
+        var aSurface = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1.0);
+        var aCurve = new LineCurve3D(new Point3D(1, 0, 0), new Direction3D(0, 0, 1));
+        Face aF = new();
+        aB.MakeFace(ref aF, aSurface, Tol);
+        Edge anOpen = new();
+        aB.MakeEdge(ref anOpen, aCurve, Tol);
+        aB.UpdateEdge(anOpen, new LineCurve2D(new Point2D(0, 0), new Direction2D(0, 1)), aF, Tol);
+        aB.Range(anOpen, 0.0, 1.0);
+        foreach (bool isLargeFirst in new[] { false, true })
+        {
+            foreach (bool isParallel in new[] { false, true })
+            {
+                Edge aSeam = new();
+                aB.MakeEdge(ref aSeam, aCurve, Tol);
+                aB.UpdateEdge(aSeam,
+                              new LineCurve2D(new Point2D(isLargeFirst ? aLargeAngle : aSmallAngle, 0), new Direction2D(0, 1)),
+                              new LineCurve2D(new Point2D(2 * Math.PI + (isLargeFirst ? aSmallAngle : aLargeAngle), 0),
+                                              new Direction2D(0, 1)),
+                              aF, Tol);
+                aB.Range(aSeam, 0.0, 1.0);
+                Assert.True(Tool.IsClosed(aSeam, aF));
+                var aCheck = new LibraryCheckCurveOnSurface(aSeam, aF);
+                aCheck.SetParallel(isParallel);
+                aCheck.Perform();
+                Assert.True(aCheck.IsDone);
+                Assert.Equal(2.0 * Math.Sin(0.5 * aLargeAngle), aCheck.MaxDistance(), 1e-7);
+                Assert.InRange(aCheck.MaxParameter(), 0.0, 1.0);
+
+                aCheck.Init(anOpen, aF);
+                aCheck.Perform();
+                Assert.True(aCheck.IsDone);
+                Assert.True(aCheck.MaxDistance() <= 1e-7);
+            }
+        }
+    }
 }

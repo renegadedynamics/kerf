@@ -77,9 +77,11 @@ public class BooleanVolumesPointsTests(ITestOutputHelper output)
     [Fact]
     public void A_tight_result_is_not_asked()
     {
-        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(1), out int checks, out int asked));
+        // Decision 1924's points aren't asked; the inputs' faces are (unit 15AM), only the object's face inside the tool and
+        // off its faces being classified, against the result
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(10), out int checks, out int asked));
         Assert.Equal(0, checks);
-        Assert.Equal(0, asked);
+        Assert.True(asked <= 27, $"{asked} points asked");
     }
 
     [Fact]
@@ -88,10 +90,12 @@ public class BooleanVolumesPointsTests(ITestOutputHelper output)
         // A common of a box and one along from it, 64 points through both: those outside the object's box need neither the tool
         // nor a classifier for the object, and those outside the result's box none for the result. Asking each shape at each
         // point, as the reverted form did, was 192 classifications. The inputs' faces are asked too (unit 15AH), and of their
-        // points only those inside the other input are classified against the result: 96 at most for the grid, 120 with them
+        // points only those inside the other input are classified against the result: 96 at most for the grid, 120 with them.
+        // Then each input's faces against the result whatever its tolerance (unit 15AM), a 3 by 3 grid on each, and the result
+        // here is loose, so its classifier has a tolerance to go by: 433 in all
         Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20, at: 5), Loose(Box(5, at: 5)), out int checks, out int asked));
         Assert.Equal(1, checks);
-        Assert.True(asked <= 120, $"{asked} points asked");
+        Assert.True(asked <= 450, $"{asked} points asked");
     }
 
     [Fact]

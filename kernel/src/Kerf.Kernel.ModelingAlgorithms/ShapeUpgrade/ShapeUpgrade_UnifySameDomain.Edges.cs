@@ -529,16 +529,219 @@ internal partial class UnifySameDomain
             } // for (int ii = 1; ii <= ResPCurves.Length(); ii++)
         }
 
+        // Kerf (decision 2363): each curve ends where the chain's did, unless that takes the edge further from its curve
+        // on the face than its tolerance and its vertices' allow
         if (isSeam)
         {
-            builder.UpdateEdge(edge, resPCurves[1], resPCurves[2], ShapeCasts.Face(faceSeq[1]), tolEdge);
+            Face    onFace = ShapeCasts.Face(faceSeq[1]);
+            Curve2D own1   = EndingWhereItsChainDoes(chain, resPCurves[1], first3d, last3d, onFace, true);
+            Curve2D own2   = EndingWhereItsChainDoes(chain, resPCurves[2], first3d, last3d, onFace, true);
+            builder.UpdateEdge(edge, own1, own2, onFace, tolEdge);
+            if (!ReferenceEquals(own1, resPCurves[1]) || !ReferenceEquals(own2, resPCurves[2]))
+            {
+                double worst = double.MaxValue;
+                if (global::Kerf.Engine.Booleans.Tools.AlgoTools.ComputeTolerance(onFace, edge, out double off, out _)
+                    && global::Kerf.Engine.Booleans.Tools.AlgoTools.ComputeTolerance(onFace, ShapeCasts.Edge(edge.Reversed()), out double off2, out _))
+                {
+                    worst = Max(off, off2);
+                }
+                if (worst > Max(tolEdge, ChainReach(chain)))
+                {
+                    builder.UpdateEdge(edge, resPCurves[1], resPCurves[2], onFace, tolEdge);
+                }
+                else if (worst > Tool.Tolerance(edge))
+                {
+                    builder.UpdateEdge(edge, worst);
+                }
+            }
         }
         else
         {
             for (int j = 1; j <= resPCurves.Length(); j++)
             {
-                builder.UpdateEdge(edge, resPCurves[j], ShapeCasts.Face(faceSeq[j]), tolEdge);
+                Face    onFace = ShapeCasts.Face(faceSeq[j]);
+                Curve2D own    = EndingWhereItsChainDoes(chain, resPCurves[j], first3d, last3d, onFace, false);
+                builder.UpdateEdge(edge, own, onFace, tolEdge);
+                if (!ReferenceEquals(own, resPCurves[j]))
+                {
+                    if (!global::Kerf.Engine.Booleans.Tools.AlgoTools.ComputeTolerance(onFace, edge, out double off, out _)
+                        || off > Max(tolEdge, ChainReach(chain)))
+                    {
+                        builder.UpdateEdge(edge, resPCurves[j], onFace, tolEdge);
+                    }
+                    else if (off > Tool.Tolerance(edge))
+                    {
+                        builder.UpdateEdge(edge, off);
+                    }
+                }
             }
+        }
+    }
+
+    // The lesser tolerance of a chain's two end vertices: what the merged edge's own may be raised to
+    private static double ChainReach(NCollection_Sequence<Shape> chain)
+    {
+        var sae = new EdgeAnalysis();
+        return Min(Tool.Tolerance(sae.FirstVertex(ShapeCasts.Edge(chain.First()))), Tool.Tolerance(sae.LastVertex(ShapeCasts.Edge(chain.Last()))));
+    }
+
+    /// <summary>
+    /// Kerf (decision 2363): the merged edge's curve on a face ends where its chain's did. The curves of the chain's
+    /// edges on a face can end at other points of their vertices than the edges do in space, where a vertex is wider than
+    /// the default: a Boolean brings each to where the face's other edges end, so that the face's boundary is closed in
+    /// its parameters (decisions 2285 and 2289). Where the merged curve is made again from the edge's curve in space it
+    /// ends where that does, and the boundary is open there inside the vertex; and lines are merged into the first of them
+    /// carried on, which over a chain much longer than its first edge ends off the last. So a B-spline whose end is off
+    /// the chain's by more than the default tolerance has its end pole moved there, and a line is given as the B-spline
+    /// of degree one between the two ends. The caller measures what that does to the edge, and puts it back if it's too much.
+    /// </summary>
+    private static Curve2D EndingWhereItsChainDoes(NCollection_Sequence<Shape> chain, Curve2D merged, double first, double last, in Face face,
+                                                   bool ofSeam)
+    {
+        if (merged is not (BSplineCurve2D or LineCurve2D) || !(last > first) || Tool.Surface(face) is not { } surface)
+        {
+            return merged;
+        }
+
+        var    sae       = new EdgeAnalysis();
+        Edge   firstEdge = ShapeCasts.Edge(chain.First()), lastEdge = ShapeCasts.Edge(chain.Last());
+        Vertex from      = sae.FirstVertex(firstEdge), to = sae.LastVertex(lastEdge);
+        if (from.IsNull || to.IsNull || from.IsSame(to))
+        {
+            return merged;
+        }
+
+        Point2D mergedStart = merged.Value(first), mergedEnd = merged.Value(last);
+        // A seam's edges have two curves on the face, over the same ranges the same way round; the merged one goes with
+        // whichever of the chain's is on its side of the seam
+        Point2D start = default, end = default;
+        double  nearest = double.MaxValue;
+        for (int side = 0; side < (ofSeam ? 2 : 1); ++side)
+        {
+            Curve2D? onFirst = Tool.CurveOnSurface(side == 1 ? ShapeCasts.Edge(firstEdge.Reversed()) : firstEdge, face, out double first1, out double last1);
+            Curve2D? onLast  = Tool.CurveOnSurface(side == 1 ? ShapeCasts.Edge(lastEdge.Reversed()) : lastEdge, face, out double first2, out double last2);
+            if (onFirst is null || onLast is null)
+            {
+                return merged;
+            }
+
+            Point2D startOn = onFirst.Value(firstEdge.Orientation == Reversed ? last1 : first1);
+            Point2D endOn   = onLast.Value(lastEdge.Orientation == Reversed ? first2 : last2);
+            double  away    = startOn.DistanceTo(mergedStart) + endOn.DistanceTo(mergedEnd);
+            if (away < nearest)
+            {
+                (start, end, nearest) = (startOn, endOn, away);
+            }
+        }
+
+        bool    moveStart = EndsApart(surface, mergedStart, start);
+        bool    moveEnd   = EndsApart(surface, mergedEnd, end);
+        if (!moveStart && !moveEnd)
+        {
+            return merged;
+        }
+
+        try
+        {
+            if (merged is not BSplineCurve2D spline)
+            {
+                // A line goes on at the speed and the heading of the chain's first, so it's a B-spline of degree one instead
+                var poles = new NCollection_Array1<Point2D>(1, 2);
+                poles.SetValue(1, moveStart ? start : mergedStart);
+                poles.SetValue(2, moveEnd ? end : mergedEnd);
+                var knots = new NCollection_Array1<double>(1, 2);
+                knots.SetValue(1, first);
+                knots.SetValue(2, last);
+                var mults = new NCollection_Array1<int>(1, 2);
+                mults.SetValue(1, 2);
+                mults.SetValue(2, 2);
+                return new BSplineCurve2D(poles, knots, mults, 1);
+            }
+
+            var own = (BSplineCurve2D)spline.Copy();
+            own.Segment(first, last);
+            double near = 2.0 * global::Kerf.Engine.Foundation.Precision.PConfusion();
+            if (Math.Abs(own.FirstParameter - first) > near || Math.Abs(own.LastParameter - last) > near)
+            {
+                return merged;
+            }
+
+            if (moveStart)
+            {
+                own.SetPole(1, start);
+            }
+            if (moveEnd)
+            {
+                own.SetPole(own.PoleCount, end);
+            }
+            return own;
+        }
+        catch (Exception caught) when (Refusal.IsFailure(caught))
+        {
+            return merged;
+        }
+    }
+
+    // Two points of a surface's parameters further apart in space than the default tolerance, with the point midway between
+    // them no further from either: not the two sides of a seam
+    private static bool EndsApart(Surface surface, in Point2D a, in Point2D b)
+    {
+        Point3D pa       = surface.Value(a.X, a.Y), pb = surface.Value(b.X, b.Y);
+        double  distance = pa.DistanceTo(pb);
+        return distance > global::Kerf.Engine.Foundation.Precision.Confusion()
+               && surface.Value(0.5 * (a.X + b.X), 0.5 * (a.Y + b.Y)).DistanceTo(pa) <= distance;
+    }
+
+    // Where a merged edge ends at one of its chain's end vertices (decision 2362): the vertex's own point, as OCCT has
+    // it, unless the chain's edge ends at another point of the vertex, more than the default tolerance away, and that
+    // point is nearer than the vertex's to where every other edge at the vertex ends
+    private static Point3D EndOnItsEdge(Vertex vertex, Edge edge, NCollection_Sequence<Shape> chain,
+                                        IndexedMap<Shape, NCollection_List<Shape>> vFmap)
+    {
+        Point3D own = Tool.Pnt(vertex);
+        Point3D end = new EdgeCurveAdaptor(edge).Value(Tool.Parameter(vertex, edge));
+        if (!(own.DistanceTo(end) > global::Kerf.Engine.Foundation.Precision.Confusion()) || !vFmap.ContainsKey(vertex))
+        {
+            return own;
+        }
+
+        double fromOwn = -1.0, fromEnd = -1.0;
+        var    seen    = new HashSet<Shape>(ShapeHasher.Instance);
+        for (var faces = new NCollection_List<Shape>.Iterator(vFmap.GetValue(vertex)); faces.More(); faces.Next())
+        {
+            for (var edges = new Explorer(faces.Value(), ShapeType.Edge); edges.More(); edges.Next())
+            {
+                Edge other = ShapeCasts.Edge(edges.Current());
+                if (!seen.Add(other) || Tool.Degenerated(other) || InChain(other, chain) || Tool.Curve(other, out _, out _) is null)
+                {
+                    continue;
+                }
+
+                var curve = new EdgeCurveAdaptor(other);
+                for (var ends = new Explorer(other.Oriented(Forward), ShapeType.Vertex); ends.More(); ends.Next())
+                {
+                    Vertex at = ShapeCasts.Vertex(ends.Current());
+                    if (at.IsSame(vertex) && (at.Orientation == Forward || at.Orientation == Reversed))
+                    {
+                        Point3D there = curve.Value(Tool.Parameter(at, ShapeCasts.Edge(other.Oriented(Forward))));
+                        fromOwn = Max(fromOwn, own.DistanceTo(there));
+                        fromEnd = Max(fromEnd, end.DistanceTo(there));
+                    }
+                }
+            }
+        }
+        return fromEnd >= 0.0 && fromEnd < fromOwn ? end : own;
+
+        static bool InChain(Edge edge, NCollection_Sequence<Shape> chain)
+        {
+            for (int i = 1; i <= chain.Length(); ++i)
+            {
+                if (chain.Value(i).IsSame(edge))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -689,9 +892,11 @@ internal partial class UnifySameDomain
         {
             var v = new Vertex[2];
             v[0] = sae.FirstVertex(ShapeCasts.Edge(chain.First()));
-            Point3D pv1 = Tool.Pnt(v[0]);
+            // Kerf (decision 2362): from where the chain's first edge starts to where its last one ends, as for circles below,
+            // where the other edges at those vertices end there
+            Point3D pv1 = EndOnItsEdge(v[0], ShapeCasts.Edge(chain.First()), chain, vFmap);
             v[1] = sae.LastVertex(ShapeCasts.Edge(chain.Last()));
-            Point3D pv2 = Tool.Pnt(v[1]);
+            Point3D pv2 = EndOnItsEdge(v[1], ShapeCasts.Edge(chain.Last()), chain, vFmap);
             var    vec = new Vector3D(pv1, pv2);
             if (_safeInputMode)
             {
@@ -798,6 +1003,14 @@ internal partial class UnifySameDomain
                 Vertex vertexLastOnFE = sae.LastVertex(fe);
                 double        paramLast      = Tool.Parameter(vertexLastOnFE, fe);
 
+                // Kerf (decision 2362): the merged circle runs from where the chain's first edge starts to where its last
+                // one ends, where that is nearer than the vertices' own points to where the other edges at those vertices
+                // end. A vertex wider than the default can have its edges end at another point of it, as a Boolean leaves
+                // one grown over a crossing (decision 2289); OCCT's edge then ends at the vertex's point, and a face it
+                // bounds, which was closed in its parameters, is open there inside the vertex
+                Point3D pointFirst       = EndOnItsEdge(v[0], fe, chain, vFmap);
+                Point3D pointLastInChain = EndOnItsEdge(v[1], ShapeCasts.Edge(chain.Last()), chain, vFmap);
+
                 if (_safeInputMode)
                 {
                     for (int k = 0; k < 2; k++)
@@ -815,7 +1028,6 @@ internal partial class UnifySameDomain
                     }
                 }
 
-                Point3D pointFirst = Tool.Pnt(v[0]);
                 while (Math.Abs(paramLast - paramFirst) > 7 * M_PI / 8)
                 {
                     // Kerf: past about 2.4e16 the halving stops moving, as the spacing of doubles there is wider than the
@@ -830,7 +1042,6 @@ internal partial class UnifySameDomain
                 Direction3D vdir             = dir1 ^ dir2;
                 var    ax2            = new Frame3D(origin, vdir, dir1);
                 var    newCircle       = new CircleCurve3D(ax2, cir.Radius);
-                Point3D pointLastInChain = Tool.Pnt(v[1]);
                 var    dirLastInChain   = new Direction3D(new Vector3D(origin, pointLastInChain));
                 double lpar             = dir1.AngleWithRef(dirLastInChain, vdir);
                 if (lpar < 0.0)

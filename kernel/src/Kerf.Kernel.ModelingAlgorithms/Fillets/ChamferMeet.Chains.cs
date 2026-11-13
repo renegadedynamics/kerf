@@ -6,6 +6,7 @@ using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Intersection.Tools;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -297,16 +298,24 @@ internal static partial class ChamferMeet
         return best.Off < AngleStalled ? (p, best.Point) : null;
     }
 
-    // ChFi3d's band at the chamfer's distance from its edge along both contacts, to its approximation's tolerance and the edge's
-    private static bool OnSpec(Band band, double distance, double tolerance) => OnSpec(band, distance, distance, tolerance);
+    // ChFi3d's band at the chamfer's distance from its edge along both contacts, to its approximation's tolerance and the edge's,
+    // at as many sections as are needed to find where it's off before the proof does: at the eight there were, one of the
+    // loft's side stripes from 0.0162 to 0.0171 passed, then its contact was off by just more than that at a point the proof
+    // looked at, so the chamfer wasn't proved and failed (unit 15AQ)
+    private static bool OnSpec(Band band, double distance, double tolerance) => OnSpec(band, distance, distance, tolerance, sections: OffSections);
+
+    // The sections along a band at which it's held to its distance before it's used
+    private const int OffSections = 32;
 
     // The same with a distance for each contact, the first face's and the second's; a contact without one isn't looked at.
     // Without its ends, the band's first and last sections are left out: a stripe ChFi3d built runs on past its edge's ends
-    private static bool OnSpec(Band band, double? first, double? second, double tolerance, bool ends = true)
+    private static bool OnSpec(Band band, double? first, double? second, double tolerance, bool ends = true, int sections = 8)
     {
-        for (int k = ends ? 0 : 1; k <= (ends ? 8 : 7); k++)
+        // Each face's projector loaded once, its grid of samples built at the first point (unit 15AQ)
+        var onto = new Dictionary<Shape, ProjectPointOnSurface>(ShapeHasher.Instance);
+        for (int k = ends ? 0 : 1; k <= (ends ? sections : sections - 1); k++)
         {
-            double v = band.VLo + ((band.VHi - band.VLo) * k / 8);
+            double v = band.VLo + ((band.VHi - band.VLo) * k / sections);
             foreach ((double u, Face face, double? asked) in new[] { (0.0, band.Face1, first), (band.UMax, band.Face2, second) })
             {
                 if (asked is not { } distance)
@@ -319,7 +328,14 @@ internal static partial class ChamferMeet
                 double moved = 0;
                 if (!face.IsNull && Tool.Surface(face) is { } support)
                 {
-                    var onFace = new ProjectPointOnSurface(p, support);
+                    if (!onto.TryGetValue(face, out ProjectPointOnSurface? onFace))
+                    {
+                        support.ParameterBounds(out double su0, out double su1, out double sv0, out double sv1);
+                        onFace = new ProjectPointOnSurface();
+                        onFace.Init(support, su0, su1, sv0, sv1, Precision.Confusion());
+                        onto[face] = onFace;
+                    }
+                    onFace.Perform(p);
                     if (onFace.NbPoints() == 0)
                     {
                         return false;
