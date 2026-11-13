@@ -165,6 +165,15 @@ public static class FilletOperations
                                  + "the tolerance. Try another distance, or an edge whose curve is smoother.")
                   .WithShapes(specs.Select(static s => (Shape)s.Edge));
 
+    // Kerf's construction built a solid whose volume's check would allow more than a twentieth of what its chamfers take off,
+    // so it proves too little of the chamfer to return it (unit 15AP)
+    internal static Diagnostic UnprovedFailure(ChamferMeet.Unproved unproved, ChamferSpec[] specs) =>
+        Diagnostic.Error(Failed, "The chamfer couldn't be built: ChFi3d failed, and its faces carried on until they meet made a solid whose volume couldn't be "
+                                 + "checked closely enough to prove it: the check would allow "
+                                 + unproved.Allowed.ToString("G3", CultureInfo.InvariantCulture) + ", more than a twentieth of the "
+                                 + unproved.Removed.ToString("G3", CultureInfo.InvariantCulture) + " the chamfer takes off. A larger distance may build.")
+                  .WithShapes(specs.Select(static s => (Shape)s.Edge));
+
     internal static Diagnostic LateFailure(TimeSpan limit) =>
         Diagnostic.Error(TimeLimit, "The chamfer couldn't be built: ChFi3d failed, and building its faces until they meet took longer than its limit of "
                                     + limit.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)
@@ -476,11 +485,13 @@ public static class FilletOperations
                 {
                     return outcome;
                 }
-                if (ChamferMeet.Build(solid, chamfer, specs, faces, options, out bool late) is { } met)
+                if (ChamferMeet.Build(solid, chamfer, specs, faces, options, out bool late, out ChamferMeet.Unproved? unproved) is { } met)
                 {
                     return met;
                 }
-                return late ? new EngineOutcome(false, static () => default, Failure: LateFailure(options.TimeLimit), MoreFailures: Failures(outcome)) : outcome;
+                return late ? new EngineOutcome(false, static () => default, Failure: LateFailure(options.TimeLimit), MoreFailures: Failures(outcome))
+                    : unproved is { } tooLittle ? new EngineOutcome(false, static () => default, Failure: UnprovedFailure(tooLittle, specs), MoreFailures: Failures(outcome))
+                    : outcome;
             }, Failure, progress, cancellationToken, options.CheckResult ? "The chamfer's result" : null, Check);
 
             Diagnostic? Check(Shape made) =>
@@ -490,12 +501,13 @@ public static class FilletOperations
             // What ChFi3d made is broken at a corner: its faces carried on until they meet instead, if that's proved (units 15U,
             // 15V), within its time limit, under the caller's token
             bool tooLong = false;
+            ChamferMeet.Unproved? tooLittle = null;
             if (done.TryGetInvalid(out _) && built is not null)
             {
                 EngineOutcome? instead;
                 using (Cancellation.Enter(Cancellation.Effective(cancellationToken)))
                 {
-                    instead = ChamferMeet.Build(solid, built, specs, faces, options, out tooLong);
+                    instead = ChamferMeet.Build(solid, built, specs, faces, options, out tooLong, out tooLittle);
                 }
                 if (instead is { } outcome)
                 {
@@ -512,7 +524,8 @@ public static class FilletOperations
             {
                 ImmutableArray<Diagnostic> all = done.Diagnostics;
                 all = all.Replace(error, error with { Message = $"{error.Message} {CouldNotBuild(specs)}" });
-                return Result<Built<Shape>>.Invalid(invalid, tooLong ? [LateFailure(options.TimeLimit), .. all] : all);
+                return Result<Built<Shape>>.Invalid(invalid, tooLong ? [LateFailure(options.TimeLimit), .. all]
+                                                             : tooLittle is { } refused ? [UnprovedFailure(refused, specs), .. all] : all);
             }
             return done;
         }
