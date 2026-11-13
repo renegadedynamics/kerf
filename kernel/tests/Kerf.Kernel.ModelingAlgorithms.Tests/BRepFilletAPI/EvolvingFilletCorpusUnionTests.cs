@@ -189,9 +189,10 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
                 const double Degrees = 180 / Math.PI;
                 text.AppendLine(string.Create(CultureInfo.InvariantCulture,
                     $"{kind}\t{name}\tthe faces' normals {faces * Degrees:F3} degrees apart\tthe union's balls' {union * Degrees:F3}\tthe faces' from a ball's radius {off1 * Degrees:F3} and {off2 * Degrees:F3}\tat ({at.X:F3},{at.Y:F3},{at.Z:F3})\t{(atCorner ? string.Create(CultureInfo.InvariantCulture, $"corner's measure {corner.Off:G3}, gap {corner.Gap:G3}") : "no corner")}"));
-                // A built crease's faces are each tangent to a ball that touches there; and where the two balls are told
-                // apart (a shallow crossing's are within 2e-6 of each other all the way between), their angle is the faces'
-                if (made && !(Math.Max(off1, off2) < 0.02 * faces + 2e-4 && (double.IsNaN(union) || union < 0.5 * faces || Math.Abs(faces - union) < 0.03 * faces + 2e-4)))
+                // A built crease's faces are each tangent to a ball that touches there; and past 0.005 radians, where the two
+                // balls are told apart (a shallower crossing's are within 2e-6 of the point over a stretch of their line, and
+                // the angle read between them is too great by up to a thousandth of a radian), their angle is the faces'
+                if (made && !(Math.Max(off1, off2) < 0.02 * faces + 2e-4 && (faces < 5e-3 || Math.Abs(faces - union) < 0.03 * faces + 2e-4)))
                 {
                     wrong.Add(string.Create(CultureInfo.InvariantCulture, $"a crease of {faces:G4} radians at ({at.X:F3},{at.Y:F3},{at.Z:F3}) where the union of the balls has one of {union:G4}, its faces {off1:G3} and {off2:G3} from the balls' radii"));
                 }
