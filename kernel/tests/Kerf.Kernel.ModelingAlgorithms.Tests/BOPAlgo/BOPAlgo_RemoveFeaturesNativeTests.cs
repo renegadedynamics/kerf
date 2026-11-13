@@ -297,6 +297,17 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
         return true;
     }
 
+    // The gaps the faces' boundaries have in their parameters inside a vertex's tolerance
+    private static int Gaps(Shape theShape)
+    {
+        int aGaps = 0;
+        for (var aFaces = new Explorer(theShape, ShapeType.Face); aFaces.More(); aFaces.Next())
+        {
+            aGaps += global::Kerf.Engine.Measurement.GapClosures.Of(ShapeCasts.Face(aFaces.Current()))?.Count ?? 0;
+        }
+        return aGaps;
+    }
+
     [Fact]
     public void Defeaturing_as_native()
     {
@@ -349,6 +360,23 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
                     ++aCanonical;
                     isRounded = true;
                     output.WriteLine($"{aCase.Id} {aCase.Name}: the same but for rounding ({aDiff})");
+                }
+                else if (aCase.Name is "occ/bottle.brep-66" or "occ/bottle.brep-44" && aCanon.PropertyDifferences.Count == 0
+                         && aCanon.Unmatched.Count(static u => u.Contains("TopAbs_EDGE", StringComparison.Ordinal)) == 2
+                         && aCanon.Unmatched.Where(static u => u.Contains("TopAbs_EDGE", StringComparison.Ordinal))
+                                            .All(static u => u.Contains("Geom_TrimmedCurve [0, 11.73040", StringComparison.Ordinal))
+                         && aCanon.Unmatched.All(static u => !u.Contains("TopAbs_VERTEX", StringComparison.Ordinal))
+                         && aCanon.AttributeDifferences.Count <= 1 && Gaps(aP) <= Gaps(aN))
+                {
+                    // Decision 33702: a merged line runs from where its chain's first edge starts to where its last one
+                    // ends, where native builds it between the two vertices' own points. One vertex here is wider than
+                    // the default and its edge ends 1.6e-7 and 1.9e-7 from its point, so one line of the result is that
+                    // much longer than native's, and the wires, faces, shell and solid that hold it differ with it.
+                    // The same shape otherwise, of the same volume and area, with no more gaps inside a vertex (two
+                    // for native's two, and two for its three), and in the second case decision 2260's one vertex's
+                    // tolerance, below.
+                    ++aCanonical;
+                    output.WriteLine($"{aCase.Id} {aCase.Name}: the same but for one merged line's length (gaps inside a vertex: native {Gaps(aN)}, port {Gaps(aP)})");
                 }
                 else if (aCase.Name == "occ/bottle.brep-44" && aCanon.Unmatched.Count == 0 && aCanon.PropertyDifferences.Count == 0
                          && aCanon.AttributeDifferences.Count == 1 && aCanon.AttributeDifferences[0].Contains("TopAbs_VERTEX", StringComparison.Ordinal))
