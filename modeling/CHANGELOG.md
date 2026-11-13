@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A STEP import reports invalid slivers** (kernel decision 34706): faces bounded by two edges or fewer are among those an import checks, so invalid slivers come with `exchange.invalid-face`, where they came silently.
 - **A 2D offset that crosses itself fails, saying where** (kernel decisions 34701, 34702): `Offset2D` of a wire or face whose parallel crosses itself, or one of whose loops crosses another, now fails, the kernel's `offset.crosses-itself` among its diagnostics with the point, where it returned the crossing wire; one not at its distance from the wire carries `offset.not-at-distance`.
 
 - **`sweep` says why where it threw** (kernel decisions 2357, 2358): a sweep of a profile whose tolerance is larger than the profile (a FreeCAD file's vertex of tolerance 2e8) now fails naming the tolerance, and a right or round corner too tight for a thin profile fails naming the corner and saying the transformed transition can sweep it, where both reported only OCCT's internal error.
