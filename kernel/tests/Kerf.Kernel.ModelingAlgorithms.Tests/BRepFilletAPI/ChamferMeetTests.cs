@@ -438,7 +438,7 @@ public class ChamferMeetTests
         native.Build();
         Assert.True(!native.IsDone || !native.Shape().Validate().IsValid);
 
-        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, new ChamferOptions { TimeLimit = Timeout.InfiniteTimeSpan }, out bool late);
+        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, new ChamferOptions { TimeLimit = Timeout.InfiniteTimeSpan }, out bool late, out _);
         Assert.False(late);
         Assert.NotNull(met);
         Shape made = met.Value.Shape();
@@ -448,6 +448,31 @@ public class ChamferMeetTests
         Assert.True(ChamferMeet.Proved(loft, made, specs, references, native, 1e-4));
         Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
         Assert.Equal(volume, Kerf.Measurement.MeasureOperations.IntegrateVolume(made, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 }), 1e-5);
+    }
+
+    // The volume proves a solid only where what it allows is a small part of what the chamfers take off (unit 15AP): a
+    // twentieth. The loft at 0.05 is built under it; asked to prove it to a ten-thousandth, the construction refuses it and
+    // says by how much, which the operation turns into a failure that says why
+    [Fact]
+    public void A_solid_whose_volume_would_prove_too_little_of_its_chamfers_isnt_built_and_says_so()
+    {
+        Shape loft = Loft();
+        Edge[] edges = [.. loft.AllEdges()];
+        ChamferSpec[] specs = [.. edges.Select(e => new ChamferSpec(e, 0.05))];
+        Face[] references = [.. edges.Select(e => loft.AllFaces().First(f => f.AllEdges().Any(x => x.IsSame(e))))];
+        MakeChamfer native = Native(loft, specs);
+        native.Build();
+
+        EngineOutcome? met = ChamferMeet.Build(loft, native, specs, references, NoLimit, out bool late, out ChamferMeet.Unproved? unproved, share: 1e-4);
+        Assert.False(late);
+        Assert.Null(met);
+        ChamferMeet.Unproved refused = Assert.NotNull(unproved);
+        Assert.Equal(0.1167, refused.Removed, 1e-3); // the sections' 0.1171 less the corners' 4e-4
+        Assert.InRange(refused.Allowed, 1e-4 * refused.Removed, ChamferMeet.ProvedShare * refused.Removed);
+
+        Diagnostic failure = FilletOperations.UnprovedFailure(refused, specs);
+        Assert.Equal(FilletOperations.Failed, failure.Code);
+        Assert.Contains("more than a twentieth of the 0.117 the chamfer takes off", failure.Message, StringComparison.Ordinal);
     }
 
     // A chamfer whose construction runs past the caller's limit stops there: the operation fails with fillet.time-limit, whose
