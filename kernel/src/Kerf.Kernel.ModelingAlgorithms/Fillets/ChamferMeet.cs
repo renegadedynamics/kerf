@@ -165,7 +165,7 @@ internal static partial class ChamferMeet
             {
                 return false;
             }
-            var projection = new ProjectPointOnSurface(corner.Point, Original);
+            ProjectPointOnSurface projection = OntoOriginal(corner.Point);
             if (projection.NbPoints() == 0)
             {
                 return false;
@@ -174,22 +174,57 @@ internal static partial class ChamferMeet
             v = Within(v, VLo);
             return v > VLo && v < VHi;
         }
+
+        // The point projected on the extended surface's patch, or on the whole of the original surface, by a projector loaded
+        // once for the band: its grid of samples is built at the first point, not again at each (unit 15AQ). The same values as
+        // a projector made for the point, as the grid depends on the surface and its bounds alone; read before the next point
+        private ProjectPointOnSurface? _ontoSurface, _ontoOriginal;
+
+        public ProjectPointOnSurface Onto(Point3D p)
+        {
+            if (_ontoSurface is null)
+            {
+                _ontoSurface = new ProjectPointOnSurface();
+                _ontoSurface.Init(Surface, EU0, EU1, EV0, EV1);
+            }
+            _ontoSurface.Perform(p);
+            return _ontoSurface;
+        }
+
+        private ProjectPointOnSurface OntoOriginal(Point3D p)
+        {
+            if (_ontoOriginal is null)
+            {
+                Original.ParameterBounds(out double u0, out double u1, out double v0, out double v1);
+                _ontoOriginal = new ProjectPointOnSurface();
+                _ontoOriginal.Init(Original, u0, u1, v0, v1, Precision.Confusion());
+            }
+            _ontoOriginal.Perform(p);
+            return _ontoOriginal;
+        }
     }
 
     // How a corner's chamfers combine: all or any (a corner of one kind), or by the formula of its faces (unit 15U2)
     private readonly record struct Corner(Vertex Vertex, Point3D Point, bool All, Band[] Bands, Term? Mixed = null);
 
+    /// <summary>A solid built whose volume's allowance is more than <see cref="ProvedShare"/> of what its chamfers take off, so
+    /// that the volume proves too little of it (unit 15AP).</summary>
+    internal readonly record struct Unproved(double Allowed, double Removed);
+
     /// <summary>
     /// The chamfer built with its faces carried on until they meet, where ChFi3d's <paramref name="chamfer"/> has computed its
     /// stripes and failed at a corner, and proved; null where this doesn't apply, what it builds isn't proved, or it took longer
     /// than the options' <see cref="ChamferOptions.TimeLimit"/> (<paramref name="late"/>; the owner, decisions 2179 and 2185).
-    /// A solid is proved by its volume too (unit 15V).
+    /// A solid is proved by its volume too (unit 15V); where nothing was built and a solid was refused because its volume
+    /// would prove too little, <paramref name="unproved"/> says by how much (unit 15AP): more than <paramref name="share"/> (a
+    /// twentieth; another only in tests) of what its chamfers take off.
     /// </summary>
     /// <exception cref="OperationCanceledException">The caller's own token, or the one in force, was cancelled.</exception>
     public static EngineOutcome? Build(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, ChamferOptions options,
-                                       out bool late)
+                                       out bool late, out Unproved? unproved, double share = ProvedShare)
     {
         late = false;
+        unproved = null;
         if (options.Mode != ChamferMode.Classic || shape.AllSolids().Length > 1 || shape.AllFaces().Length == 0)
         {
             return null;
@@ -206,7 +241,12 @@ internal static partial class ChamferMeet
         {
             using (Cancellation.Use(deadline.Token))
             {
-                return Attempts(shape, chamfer, specs, referenceFaces);
+                EngineOutcome? built = Attempts(shape, chamfer, specs, referenceFaces, share, ref unproved);
+                if (built is not null)
+                {
+                    unproved = null;
+                }
+                return built;
             }
         }
         catch (OperationCanceledException) when (!caller.IsCancellationRequested)
@@ -220,14 +260,14 @@ internal static partial class ChamferMeet
     // a chain through a vertex needs Kerf's own anyway, whose corners ChFi3d's stripes beside it don't make). Where a stripe of
     // two distances, or of a distance and an angle, is off its distance because ChFi3d smoothed its guide away from its edge,
     // ChFi3d's stripes again along guides kept to their edges (unit 15U4)
-    private static EngineOutcome? Attempts(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces)
+    private static EngineOutcome? Attempts(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, double share, ref Unproved? unproved)
     {
         bool anyOff = false, offGuide = false;
         foreach (bool own in (ReadOnlySpan<bool>)[true, false])
         {
             try
             {
-                if (Built(shape, chamfer, specs, referenceFaces, own, ref anyOff, ref offGuide) is { } built)
+                if (Built(shape, chamfer, specs, referenceFaces, own, ref anyOff, ref offGuide, share, ref unproved) is { } built)
                 {
                     return built;
                 }
@@ -249,7 +289,7 @@ internal static partial class ChamferMeet
         {
             MakeChamfer nearer = AlongItsEdges(shape, chamfer, specs, referenceFaces);
             Cancellation.ThrowIfRequested();
-            return Built(shape, nearer, specs, referenceFaces, false, ref anyOff, ref offGuide);
+            return Built(shape, nearer, specs, referenceFaces, false, ref anyOff, ref offGuide, share, ref unproved);
         }
         catch (Exception e) when (Refusal.IsFailure(e) || ModelAlgo.IsCaughtFailure(e))
         {
@@ -330,7 +370,7 @@ internal static partial class ChamferMeet
     }
 
     private static EngineOutcome? Built(Shape shape, MakeChamfer chamfer, ChamferSpec[] specs, Face[] referenceFaces, bool ownWhereOff, ref bool anyOff,
-                                        ref bool offGuide)
+                                        ref bool offGuide, double share, ref Unproved? unproved)
     {
         ChBuilder builder = chamfer.InternalBuilder();
         if (builder._listStripe.IsEmpty() || (builder._badstripes.Extent() != 0 && !ownWhereOff))
@@ -740,12 +780,18 @@ internal static partial class ChamferMeet
         {
             return null;
         }
-        // A solid's volume against the integral apart from the fuse's faces (unit 15V)
+        // A solid's volume against the integral apart from the fuse's faces (unit 15V), with an allowance that proves something
+        // of what the chamfers take off (unit 15AP)
         if (shape.AllSolids().Length == 1)
         {
-            double measured = MeasuredVolume(built);
-            (double Expected, double Allowed)? volume = ExpectedVolume(shape, faces, bands, cornerRules, carried, [.. chamfered], specs, referenceFaces, builder._tolapp3d, Near * width);
-            if (volume is not { } v || Math.Abs(measured - v.Expected) > v.Allowed)
+            (double measured, double measuredError) = MeasuredVolume(built);
+            (Verdict verdict, double allowed, double removed) = VolumeJudged(shape, faces, bands, cornerRules, carried, [.. chamfered], specs, referenceFaces,
+                                                                             builder._tolapp3d, Near * width, measured, measuredError, share);
+            if (verdict == Verdict.TooLittle)
+            {
+                unproved = new Unproved(allowed, removed);
+            }
+            if (verdict != Verdict.Proved)
             {
                 return null;
             }
@@ -1021,7 +1067,7 @@ internal static partial class ChamferMeet
     // The nearest point of the band's extended surface, with its unit normal
     private static Foot? Project(Band band, Point3D p)
     {
-        var projection = new ProjectPointOnSurface(p, band.Surface, band.EU0, band.EU1, band.EV0, band.EV1);
+        ProjectPointOnSurface projection = band.Onto(p);
         if (projection.NbPoints() == 0)
         {
             return null;

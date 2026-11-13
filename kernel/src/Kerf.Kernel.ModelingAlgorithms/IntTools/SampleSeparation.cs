@@ -32,6 +32,11 @@ namespace Kerf.Engine.Intersection.Tools;
 /// else (a periodic B-spline among them) it says "not apart", and the localisation goes on as OCCT's does. The spans are
 /// the knots' own: an adaptor's intervals of continuity leave out the knots a spline of a high degree is smooth at.
 /// </para>
+/// <para>
+/// <see cref="AllApart"/> proves a whole curve apart from a whole surface by splitting both until each pair of pieces is
+/// apart, for the exact intersection (unit 15AS). There a spline's first and last spans may be carried out to the
+/// adaptor's own ends where those lie beyond its knots, as its evaluation carries the end spans' polynomials on.
+/// </para>
 /// <para>A working object for one run of the intersector (plan section 6): it holds what it has bounded so far.</para>
 /// </remarks>
 internal sealed class SampleSeparation
@@ -39,6 +44,10 @@ internal sealed class SampleSeparation
     // Pieces over more spans than this aren't bounded: they're the first, coarse samples, which nothing separates anyway
     private const int MostCurveSpans = 8;
     private const int MostSurfaceCells = 16;
+
+    // How deep AllApart splits before it gives up: a curve that touches the surface is split down to the touch, a few
+    // tests at each depth
+    private const int MostDepth = 40;
 
     private readonly TransformedCurve _curve;
     private readonly TransformedSurface _surface;
@@ -77,8 +86,12 @@ internal sealed class SampleSeparation
     private double _v1;
     private double[]? _own;
 
-    /// <summary>For the curve and the surface of a run.</summary>
-    public SampleSeparation(TransformedCurve curve, TransformedSurface surface)
+    /// <summary>
+    /// For the curve and the surface of a run; with <paramref name="toEnds"/>, a spline's first and last spans reach the
+    /// curve's and the surface's own ends where those lie beyond its knots (an adaptor evaluates a spline there by its
+    /// end spans' polynomials, carried on).
+    /// </summary>
+    public SampleSeparation(TransformedCurve curve, TransformedSurface surface, bool toEnds = false)
     {
         _curve = curve;
         _surface = surface;
@@ -103,9 +116,14 @@ internal sealed class SampleSeparation
                 _curveBreaks = [curve.FirstParameter(), curve.LastParameter()];
                 curveOk = !curve.IsRational;
                 break;
-            case CurveKind.BSplineCurve when curve.GeomCurve() is BSplineCurve3D { IsPeriodic: false } spline:
+            case CurveKind.BSplineCurve when curve.GeomCurve() is BSplineCurve3D spline && (toEnds || !spline.IsPeriodic):
                 _curveNodes = spline.Degree + 1;
                 Knots(spline.InternalKnots(), spline.InternalMultiplicities(), spline.Degree, out _curveBreaks, out _curveKinks);
+                if (toEnds)
+                {
+                    ToEnds(ref _curveBreaks, ref _curveKinks, spline.IsPeriodic, spline.InternalMultiplicities(), spline.Degree,
+                           curve.FirstParameter(), curve.LastParameter());
+                }
                 curveOk = !spline.IsRational;
                 break;
             default:
@@ -122,11 +140,18 @@ internal sealed class SampleSeparation
                 _vBreaks = [surface.FirstVParameter(), surface.LastVParameter()];
                 surfaceOk = true;
             }
-            else if (surface.GetType() == SurfaceKind.BSplineSurface
-                     && surface.GeomSurfaceOriginal() is BSplineSurface { IsUPeriodic: false, IsVPeriodic: false } spline)
+            else if (surface.GetType() == SurfaceKind.BSplineSurface && surface.GeomSurfaceOriginal() is BSplineSurface spline
+                     && (toEnds || (!spline.IsUPeriodic && !spline.IsVPeriodic)))
             {
                 Knots(spline.InternalUKnots(), spline.InternalUMultiplicities(), spline.UDegree, out _uBreaks, out _uKinks);
                 Knots(spline.InternalVKnots(), spline.InternalVMultiplicities(), spline.VDegree, out _vBreaks, out _vKinks);
+                if (toEnds)
+                {
+                    ToEnds(ref _uBreaks, ref _uKinks, spline.IsUPeriodic, spline.InternalUMultiplicities(), spline.UDegree,
+                           surface.FirstUParameter(), surface.LastUParameter());
+                    ToEnds(ref _vBreaks, ref _vKinks, spline.IsVPeriodic, spline.InternalVMultiplicities(), spline.VDegree,
+                           surface.FirstVParameter(), surface.LastVParameter());
+                }
                 surfaceOk = true;
             }
         }
@@ -235,6 +260,174 @@ internal sealed class SampleSeparation
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// True if the whole curve between <paramref name="t0"/> and <paramref name="t1"/> is proved further than
+    /// <paramref name="clearance"/> from the whole surface over the given ranges, by splitting the two until
+    /// <see cref="Apart"/> proves each pair of pieces apart. False says nothing: some pair still wasn't apart after
+    /// <see cref="MostDepth"/> splits, or the pairs <paramref name="tests"/> allows were tested (it's what's left after,
+    /// so that one budget can last a caller several calls).
+    /// </summary>
+    public bool AllApart(double t0, double t1, double u0, double u1, double v0, double v1, double clearance, ref int tests)
+    {
+        if (!_usable || !(t0 < t1) || !(u0 < u1) || !(v0 < v1))
+        {
+            return false;
+        }
+
+        return Split(t0, t1, u0, u1, v0, v1, clearance, 0, ref tests);
+    }
+
+    private bool Split(double t0, double t1, double u0, double u1, double v0, double v1, double clearance, int depth, ref int tests)
+    {
+        if (--tests < 0)
+        {
+            return false;
+        }
+
+        if (Apart(t0, t1, u0, u1, v0, v1, clearance))
+        {
+            return true;
+        }
+
+        if (depth == MostDepth)
+        {
+            return false;
+        }
+
+        // Split where Apart can't speak (a kink inside, too many spans), or else the piece that's longest in space; at a
+        // kink inside it, or else at its middle
+        double tm = 0.5 * (t0 + t1), um = 0.5 * (u0 + u1), vm = 0.5 * (v0 + v1);
+        int split;
+        Spans(_uBreaks, u0, u1, out int uFrom, out int uTo);
+        Spans(_vBreaks, v0, v1, out int vFrom, out int vTo);
+        if (_curveBound < 0.0 && (HasKink(_curveKinks, t0, t1) || SpanCount(_curveBreaks, t0, t1) > MostCurveSpans))
+        {
+            split = 0;
+        }
+        else if (HasKink(_uKinks, u0, u1))
+        {
+            split = 1;
+        }
+        else if (HasKink(_vKinks, v0, v1))
+        {
+            split = 2;
+        }
+        else if ((uTo - uFrom) * (vTo - vFrom) > MostSurfaceCells)
+        {
+            split = uTo - uFrom >= vTo - vFrom ? 1 : 2;
+        }
+        else
+        {
+            Point3D c0 = _curve.EvalD0(t0), c1 = _curve.EvalD0(tm), c2 = _curve.EvalD0(t1);
+            double curve = c0.DistanceTo(c1) + c1.DistanceTo(c2);
+            Point3D a = _surface.EvalD0(u0, vm), b = _surface.EvalD0(um, vm), c = _surface.EvalD0(u1, vm);
+            double across = a.DistanceTo(b) + b.DistanceTo(c);
+            a = _surface.EvalD0(um, v0);
+            c = _surface.EvalD0(um, v1);
+            double along = a.DistanceTo(b) + b.DistanceTo(c);
+            split = curve >= across && curve >= along ? 0 : across >= along ? 1 : 2;
+        }
+
+        switch (split)
+        {
+            case 0:
+                tm = Kink(_curveKinks, t0, t1, tm);
+                return Split(t0, tm, u0, u1, v0, v1, clearance, depth + 1, ref tests) && Split(tm, t1, u0, u1, v0, v1, clearance, depth + 1, ref tests);
+            case 1:
+                um = Kink(_uKinks, u0, u1, um);
+                return Split(t0, t1, u0, um, v0, v1, clearance, depth + 1, ref tests) && Split(t0, t1, um, u1, v0, v1, clearance, depth + 1, ref tests);
+            default:
+                vm = Kink(_vKinks, v0, v1, vm);
+                return Split(t0, t1, u0, u1, v0, vm, clearance, depth + 1, ref tests) && Split(t0, t1, u0, u1, vm, v1, clearance, depth + 1, ref tests);
+        }
+    }
+
+    private static int SpanCount(double[] breaks, double first, double last)
+    {
+        Spans(breaks, first, last, out int from, out int to);
+        return to - from;
+    }
+
+    // The kink inside first..last nearest its middle, or the middle where there's none
+    private static double Kink(double[] kinks, double first, double last, double middle)
+    {
+        double at = middle;
+        double nearest = double.MaxValue;
+        foreach (double kink in kinks)
+        {
+            double slack = 1e-10 * (1.0 + Math.Abs(kink));
+            if (kink > first + slack && kink < last - slack && Math.Abs(kink - middle) < nearest)
+            {
+                nearest = Math.Abs(kink - middle);
+                at = kink;
+            }
+        }
+
+        return at;
+    }
+
+    // The breaks and kinks over the ends given: a periodic spline's repeated a period on, as far as the ends reach (with the
+    // knot it closes at a kink if it's one inside), and otherwise the first and last breaks carried out to the ends, where
+    // those lie beyond them
+    private static void ToEnds(ref double[] breaks, ref double[] kinks, bool periodic, NCollection_Array1<int> multiplicities,
+                               int degree, double first, double last)
+    {
+        if (breaks.Length < 2 || !(Math.Abs(first) < 1e100) || !(Math.Abs(last) < 1e100) || !(first <= last))
+        {
+            return;
+        }
+
+        if (!periodic)
+        {
+            breaks[0] = Math.Min(breaks[0], first);
+            breaks[^1] = Math.Max(breaks[^1], last);
+            return;
+        }
+
+        double origin = breaks[0], period = breaks[^1] - breaks[0];
+        if (!(period > 0.0))
+        {
+            return;
+        }
+
+        List<double> seamless = [.. kinks];
+        if (multiplicities.Value(multiplicities.Lower()) >= degree)
+        {
+            seamless.Add(origin);
+        }
+
+        int from = (int)Math.Floor((first - origin) / period) - 1, to = (int)Math.Ceiling((last - origin) / period) + 1;
+        if (to - from > 64)
+        {
+            return;
+        }
+
+        List<double> all = [], bent = [];
+        for (int m = from; m <= to; m++)
+        {
+            for (int i = 0; i < breaks.Length - 1; i++)
+            {
+                all.Add(breaks[i] + (m * period));
+            }
+
+            foreach (double kink in seamless)
+            {
+                bent.Add(kink + (m * period));
+            }
+        }
+
+        all.Sort();
+        int lo = all.FindLastIndex(b => b <= first), hi = all.FindIndex(b => b >= last);
+        if (lo < 0 || hi < 0)
+        {
+            return;
+        }
+
+        breaks = [.. all.GetRange(lo, hi - lo + 1)];
+        bent.Sort();
+        kinks = [.. bent];
     }
 
     private static void Cross(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> c)

@@ -35,6 +35,14 @@ internal sealed class HInter
     /// </summary>
     internal Dictionary<(double U1, double V1, double U2, double V2), ThePolyhedronOfHInter>? Polyhedra { get; set; }
 
+    /// <summary>
+    /// Kerf: a proof, given the surface's range (u0, u1, v0, v1), that the curve is further from the surface over it than any
+    /// point the intersection accepts; a range it proves is passed over (unit 15AS). None: every range is computed.
+    /// </summary>
+    internal Func<double, double, double, double, bool>? Apart { get; set; }
+
+    protected override bool IsApartOn(double u0, double u1, double v0, double v1) => Apart is { } apart && apart(u0, u1, v0, v1);
+
     protected override ThePolyhedronOfHInter PolyhedronFor(in SurfaceAdaptorBase surface, SurfaceKind surfaceType, double u1, double v1, double u2, double v2)
     {
         if (Polyhedra is null)

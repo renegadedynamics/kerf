@@ -980,7 +980,9 @@ internal partial class PaveFiller
         // A curve in space that isn't a B-spline, as the ellipse two cylinders are taken to meet in, stays where it is, and
         // only the curves on the faces move
         BSplineCurve3D? spline = curve as BSplineCurve3D;
-        double confusion = global::Kerf.Engine.Foundation.Precision.Confusion();
+        // Half the default tolerance: two curves that each end within that of the vertex end within the whole of each other,
+        // which is where a gap begins to count (decision 2367)
+        double confusion = 0.5 * global::Kerf.Engine.Foundation.Precision.Confusion();
         // In space the curve goes to where the first face's edges end, which the vertex covers as it does the second's
         Point3D a = EndAt(first, nF1, onEdges), b = EndAt(last, nF1, onEdges);
         if (a.IsEqual(Tool.Pnt(first), 0.0))

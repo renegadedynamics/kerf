@@ -28,10 +28,18 @@ internal interface IEnvelopeSections
     bool SectionGap(in BlendPoint near, double prm, double before, double after, out double gap, out double radius);
 
     /// <summary>
-    /// The middle of the arc of the section at the walk's point <paramref name="at"/>, and the ball's radius there.
-    /// False where the circle can't be had.
+    /// The section at the walk's point <paramref name="at"/>, with the path of the ball's centre there. False where
+    /// the circle can't be had.
     /// </summary>
-    bool SectionMiddle(in BlendPoint at, out Point3D middle, out double radius);
+    bool SectionEnd(in BlendPoint at, out EnvelopeEnd end);
+
+    /// <summary>
+    /// Tilts the sections beside the parameter <paramref name="at"/>, an end of the walk, by the strength given there,
+    /// falling to nothing over <paramref name="length"/> (<see cref="EnvelopeTilt"/>). The sections given for the
+    /// surface from then on are the tilted ones; <see cref="SectionEnd"/> and <see cref="LeastAdvance"/> stay the
+    /// envelope's.
+    /// </summary>
+    void TiltEnd(double at, double strength, double length);
 
     /// <summary>
     /// <see cref="EnvelopeCircle.LeastAdvance"/> of the section at <paramref name="prm"/>, on the walk's solution there

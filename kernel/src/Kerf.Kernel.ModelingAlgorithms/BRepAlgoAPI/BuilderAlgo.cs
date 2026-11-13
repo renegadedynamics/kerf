@@ -94,14 +94,16 @@ internal class BuilderAlgo : Algo
 
     /// <summary>Kerf (decisions 2276 and 2286): the pave filler's <see cref="PaveFiller.SetCrossingsApart"/>; 0, the default,
     /// is OCCT's behaviour.</summary>
-    public void SetCrossingsApart(double tolerances, bool touches = true)
+    public void SetCrossingsApart(double tolerances, bool touches = true, bool smallPieces = false)
     {
         _crossingsApart = tolerances;
         _touchesApart = touches;
+        _smallPiecesTaken = smallPieces;
     }
 
     private double _crossingsApart;
     private bool _touchesApart = true;
+    private bool _smallPiecesTaken;
 
     /// <summary>Enables or disables the check of the input solids for being inverted.</summary>
     public void SetCheckInverted(bool check) => _checkInverted = check;
@@ -343,7 +345,7 @@ internal class BuilderAlgo : Algo
         _dsFiller.SetRunParallel(_options._runParallel);
         _dsFiller.SetFuzzyValue(_options._fuzzyValue);
         _dsFiller.SetNonDestructive(_nonDestructive);
-        _dsFiller.SetCrossingsApart(_crossingsApart, _touchesApart);
+        _dsFiller.SetCrossingsApart(_crossingsApart, _touchesApart, _smallPiecesTaken);
         _dsFiller.SetGlue(_glue);
         _dsFiller.SetUseOBB(_options._useOBB);
         // Set Face/Face intersection options to the intersection algorithm
