@@ -531,6 +531,8 @@ internal sealed class OffsetWire
     // Kerf: the diagnostic codes of the two refusals
     internal const string NotAtDistanceCode = "offset.not-at-distance";
     internal const string CrossesItselfCode = "offset.crosses-itself";
+    // Kerf: MakeWireOffset's, a closed parallel on the wrong side of its spine (decision 35202)
+    internal const string WrongSideCode = "offset.wrong-side";
 
     /// <summary>
     /// Kerf: why the last <see cref="Perform"/> refused the parallel it made, as a diagnostic's code and message; null
@@ -538,7 +540,7 @@ internal sealed class OffsetWire
     /// </summary>
     internal (string Code, string Message)? RefusedBecause { get; private set; }
 
-    private static string Where(Point3D p) =>
+    internal static string Where(Point3D p) =>
         string.Create(System.Globalization.CultureInfo.InvariantCulture, $"({p.X:G6}, {p.Y:G6}, {p.Z:G6})");
 
     /// <summary>
