@@ -157,6 +157,27 @@ public class ExchangeTests
         Assert.Empty(read.Value.ToShape().AllFaces());
     }
 
+    /// <summary>
+    /// Upstream OCCT's `573b4be651` (decision 34306): an oriented edge that refers to itself, or two that refer to each
+    /// other, sent the reader round the chain until the stack overflowed, ending the process. The chain is followed in a
+    /// loop now and has no vertices where it comes back on itself.
+    /// </summary>
+    [Theory]
+    [InlineData("#50=ORIENTED_EDGE('',*,*,#50,.T.);", "#51=ORIENTED_EDGE('',*,*,#41,.F.);")]
+    [InlineData("#50=ORIENTED_EDGE('',*,*,#51,.T.);", "#51=ORIENTED_EDGE('',*,*,#50,.F.);")]
+    public void STEP_oriented_edges_that_refer_round_in_a_ring_dont_overflow_the_stack(string first, string second)
+    {
+        string step = StripStep("#1").Replace("#50=ORIENTED_EDGE('',*,*,#40,.T.);", first, StringComparison.Ordinal)
+                                     .Replace("#51=ORIENTED_EDGE('',*,*,#41,.F.);", second, StringComparison.Ordinal);
+
+        Result<ModelNode> read = Step.Read(new MemoryStream(Encoding.ASCII.GetBytes(step)));
+
+        // Before, the read never returned: the process ended with a stack overflow. What the ring leaves of the strip is
+        // the file's fault; the second ring's face is reported invalid
+        Assert.True(read.IsSuccess, read.Error?.Message);
+        Assert.True(read.Value.ToShape().AllFaces().Length <= 1);
+    }
+
     /// <summary>A strip of plane 0.001 wide and 1 long, its first vertex at the point <paramref name="firstVertexPoint"/>.</summary>
     private static string StripStep(string firstVertexPoint)
     {
