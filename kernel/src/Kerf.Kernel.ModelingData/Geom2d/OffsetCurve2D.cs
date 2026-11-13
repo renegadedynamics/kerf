@@ -125,7 +125,13 @@ public sealed class OffsetCurve2D : Curve2D
 
         _basisCurveContinuity = checkingCurve.Continuity;
 
-        bool isC0 = !isNotCheckC0 && (_basisCurveContinuity == C0);
+        // Kerf (decision 2434): a periodic B-spline whose seam is only C0 reads C1 or better (its continuity is its
+        // inner knots'), and its offset over a range across the seam was made over a corner, a success; such a range
+        // is checked as a C0 curve's. With the seam at the range's ends, as an edge over its whole period has it, the
+        // corner is the edge's vertex, and the offset is made as before (the wire offsets take it right there)
+        bool isC0 = !isNotCheckC0
+                    && (_basisCurveContinuity == C0
+                        || (checkingCurve is BSplineCurve2D { HasC0Seam: true } seamC0 && seamC0.CrossesSeam(uf, ul)));
 
         // Basis curve must be at least C1
         if (isC0 && checkingCurve is BSplineCurve2D bc)
@@ -134,7 +140,10 @@ public sealed class OffsetCurve2D : Curve2D
             {
                 // Checking if basis curve has more smooth (C1, G2 and above) is not done.
                 // It can be done in case of need.
-                _basisCurveContinuity = G1;
+                if (_basisCurveContinuity == C0)
+                {
+                    _basisCurveContinuity = G1;
+                }
                 isC0 = false;
             }
 

@@ -297,7 +297,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         {
             for (j = weights.LowerCol(); j <= weights.UpperCol(); j++)
             {
-                if (weights[i, j] <= Constants.Resolution())
+                if (!(weights[i, j] > Constants.Resolution()))
                 {
                     throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface: Weights values too small"));
                 }
@@ -1252,7 +1252,7 @@ public sealed partial class BSplineSurface : BoundedSurface
     internal void SetWeight(int uIndex, int vIndex, double weight)
     {
         CheckMutable();
-        if (weight <= Constants.Resolution())
+        if (!(weight > Constants.Resolution()))
         {
             throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeight: Weight too small"));
         }
@@ -1302,7 +1302,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         int i = cPoleWeights.Lower();
         while (i <= cPoleWeights.Upper())
         {
-            if (cPoleWeights[i] <= Constants.Resolution())
+            if (!(cPoleWeights[i] > Constants.Resolution()))
             {
                 throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeightCol: Weight too small"));
             }
@@ -1344,7 +1344,7 @@ public sealed partial class BSplineSurface : BoundedSurface
 
         while (i <= cPoleWeights.Upper())
         {
-            if (cPoleWeights[i] <= Constants.Resolution())
+            if (!(cPoleWeights[i] > Constants.Resolution()))
             {
                 throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineSurface::SetWeightRow: Weight too small"));
             }

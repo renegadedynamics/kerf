@@ -450,7 +450,13 @@ internal class ProjectCurveOnSurface : Transient
                 Vector3D normalVec = du ^ dv;
                 if (normalVec.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
-                    isNormalCheck = false;
+                    // Upstream ec0167b409 (decision 2425): a singular normal needs the general projection. 8.0.1 went
+                    // on to judge the line by its points' distances from the first, which a line beside a pole passes
+                    if (!global::Kerf.Engine.Healing.Analysis.NativeHealingAtPoles.IsNative)
+                    {
+                        return null;
+                    }
+                    isNormalCheck = false; // 8.0.1's, under the test-only scope
                     break;
                 }
                 Line3D normalLine = new(curP, new Direction3D(normalVec));

@@ -150,7 +150,7 @@ public static class OffsetOperations
                     ? new MakeWireOffset((Face)s, options.Join, options.Open)
                     : new MakeWireOffset((Wire)s, options.Join, options.Open);
                 offset.Perform(distance);
-                return MakerOutcome.Done(offset, [s], () => Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
+                return MakerOutcome.Done(offset, [s], () => Refused(offset) ?? Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
                     "The offset in the plane couldn't be built: the shape may not be planar, or the distance too large."));
             }, Failure, checkedAs: options.CheckResult ? "The offset's result" : null);
         }
@@ -176,11 +176,15 @@ public static class OffsetOperations
                 offset.Init(plane, options.Join, options.Open);
                 offset.AddWire(w);
                 offset.Perform(distance);
-                return MakerOutcome.Done(offset, [w], () => Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
+                return MakerOutcome.Done(offset, [w], () => Refused(offset) ?? Diagnostic.Error(new DiagnosticCode("offset.not-planar"),
                     "The offset in the plane couldn't be built: the distance may be too large."));
             }, Failure, checkedAs: options.CheckResult ? "The offset's result" : null);
         }
     }
+
+    // Why the planar offset refused the parallel it made (not at its distance, or crossing itself), or null
+    private static Diagnostic? Refused(MakeWireOffset offset) =>
+        offset.RefusedBecause is { } why ? Diagnostic.Error(new DiagnosticCode(why.Code), why.Message) : null;
 
     extension(Solid solid)
     {

@@ -998,9 +998,12 @@ internal class WireCheck : ResultCheck
     /// <see cref="NoError"/>. <paramref name="retE1"/> and <paramref name="retE2"/> receive the first
     /// intersecting edges found (only <paramref name="retE1"/> for an edge that intersects itself or has no pcurve);
     /// they are left unchanged otherwise. With <paramref name="update"/>, the status is added to
-    /// <see cref="ResultCheck.Status"/> (not for NoCurveOnSurface and InvalidRange, as in OCCT).
+    /// <see cref="ResultCheck.Status"/> (not for NoCurveOnSurface and InvalidRange, as in OCCT). Kerf: an edge, or a pair
+    /// of edges, that <paramref name="provedApart"/> proves don't cross (its second edge null for one edge's own crossing)
+    /// isn't intersected; OCCT has no such hook (decision 2428).
     /// </summary>
-    public StatusCheck SelfIntersect(in Face f, ref Edge retE1, ref Edge retE2, bool update = false)
+    public StatusCheck SelfIntersect(in Face f, ref Edge retE1, ref Edge retE2, bool update = false,
+                                     Func<Edge, Edge, bool>? provedApart = null)
     {
         NCollection_List<StatusCheck> statusList = LockedStatusList();
 
@@ -1100,9 +1103,13 @@ internal class WireCheck : ResultCheck
 
             //
             // Self intersect of C1
-            inter.Perform(c1, myDomain1, tolint, tolint);
+            bool selfApart = provedApart is not null && provedApart(e1, new Edge());
+            if (!selfApart)
+            {
+                inter.Perform(c1, myDomain1, tolint, tolint);
+            }
             //
-            if (inter.IsDone)
+            if (!selfApart && inter.IsDone)
             {
                 int nbp = inter.PointCount;
                 //
@@ -1222,6 +1229,10 @@ internal class WireCheck : ResultCheck
                 //-- ************************************************************
                 //-- ******* I n t e r s e c t i o n   C 1   and   C 2   ********
                 //-- ************************************************************
+                if (provedApart is not null && provedApart(e1, e2))
+                {
+                    continue;
+                }
                 inter.Perform(c1, myDomain1, c2, tabDom[j - 1], tolint, tolint);
                 //
                 if (inter.IsDone)

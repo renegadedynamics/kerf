@@ -377,6 +377,14 @@ internal static partial class Builder_0
                         DsInterference? bidinterf = null;
                         tCurv.SetSCI(interfc1, bidinterf);
                     }
+                    else if (fd.CreaseAtFirst is { } creaseBefore)
+                    {
+                        // Kerf (unit 15AK3): the two surfaces cross here, in a curve that is neither's line, and
+                        // aren't tangent across it
+                        PCurv = creaseBefore.OnAfter;
+                        interfc1 = ChFi3d_FilCurveInDS(icurv, isurf, PCurv, et1);
+                        dStr.ChangeSurfaceInterferences(isurf).Append(interfc1);
+                    }
                     else
                     {
                         regfilfil.SetS2(isurf, false);
@@ -641,14 +649,26 @@ internal static partial class Builder_0
                 {
                     Curve3D? c3d = null;
                     double tolreached;
-                    ChFi3d_ComputeArete(fd.VertexLastOnS1(),
-                                        fd.InterferenceOnS1().PCurveOnSurf()!.Value(
-                                            fd.InterferenceOnS1().LastParameter()),
-                                        fd.VertexLastOnS2(),
-                                        fd.InterferenceOnS2().PCurveOnSurf()!.Value(
-                                            fd.InterferenceOnS2().LastParameter()),
-                                        dStr.Surface(fd.Surf()).Surface()!, ref c3d, ref PCurv, ref pardeb,
-                                        ref parfin, tol3d, tol2d, out tolreached, 0);
+                    if (fd.CreaseAtLast is { } creaseAfter)
+                    {
+                        // Kerf (unit 15AK3)
+                        c3d = creaseAfter.Curve;
+                        PCurv = creaseAfter.OnBefore;
+                        pardeb = creaseAfter.First;
+                        parfin = creaseAfter.Last;
+                        tolreached = creaseAfter.Tolerance;
+                    }
+                    else
+                    {
+                        ChFi3d_ComputeArete(fd.VertexLastOnS1(),
+                                            fd.InterferenceOnS1().PCurveOnSurf()!.Value(
+                                                fd.InterferenceOnS1().LastParameter()),
+                                            fd.VertexLastOnS2(),
+                                            fd.InterferenceOnS2().PCurveOnSurf()!.Value(
+                                                fd.InterferenceOnS2().LastParameter()),
+                                            dStr.Surface(fd.Surf()).Surface()!, ref c3d, ref PCurv, ref pardeb,
+                                            ref parfin, tol3d, tol2d, out tolreached, 0);
+                    }
                     crv = new DsCurve(c3d, tolreached);
                     icurv = dStr.AddCurve(ref crv);
                     regfilfil.SetCurve(icurv);

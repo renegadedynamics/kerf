@@ -190,7 +190,8 @@ A status that says the work was done gives no diagnostic; each other value is an
 | `fillet.walking-failed` | `ChFiDS_ErrorStatus::ChFiDS_WalkingFailure` | The fillet's surface couldn't be followed along the edges. |
 | `fillet.no-starting-solution` | `ChFiDS_ErrorStatus::ChFiDS_StartsolFailure` | No starting point was found for the fillet's surface. |
 | `fillet.twisted-surface` | `ChFiDS_ErrorStatus::ChFiDS_TwistedSurface` | The fillet's surface would be twisted. |
-| `fillet.radius-changes-at-a-corner` | none (Kerf's `ErrorStatus.EnvelopeCorner`) | The fillet's radius is changing where the path of the rolling ball's centre has a corner (where its edges' curvature jumps, where the ball comes to rest on an edge or leaves it, or where the radius's rate of change jumps): the surface the ball sweeps has a piece of the ball there that can't be built. Also where a radius changes so sharply that the surface would fold back on itself. |
+| `fillet.radius-changes-at-a-corner` | none (Kerf's `ErrorStatus.EnvelopeCorner`) | The fillet's radius is changing where the path of the rolling ball's centre has a corner (where its edges' curvature jumps, where the ball comes to rest on an edge or leaves it, or where the radius's rate of change jumps): the surface the ball sweeps has a piece of the ball or a crease there, which couldn't be built. Also where a radius changes so sharply that the surface would fold back on itself. |
+| `fillet.creased` | none (Kerf's; a warning on a fillet that is returned: decision 2421) | The fillet's surface has a crease of N degrees at (x, y, z): its radius is changing where the path of the rolling ball's centre has a corner, and the surface the ball sweeps isn't smooth there. |
 
 ### Offsets
 
@@ -260,7 +261,7 @@ read, and what refers to them is missing from the model. Its message gives how m
 the first failure's text, and ends "Nothing else was read: the model is empty." where nothing is left (decision 2315).
 
 `exchange.invalid-face` is a warning on a STEP read that succeeded (decision 2314): a face the read checked, one the
-healing reported on or with a vertex off its edge's curve, is invalid. Its message gives how many faces (each once, however
+healing reported on, with a vertex off its edge's curve or bounded by two edges or fewer (decision 2427), is invalid. Its message gives how many faces (each once, however
 often the model places it) and the STEP identifiers of the faces they were read from, the first eight. Both codes are
 properties of `Step`: `Step.EntitySkipped`, `Step.InvalidFace`.
 
@@ -287,6 +288,9 @@ own. Those a program is likely to test for are static properties of the operatio
 | `boolean.empty-result` | `BooleanOperations` (warning) | The result is empty |
 | `fillet.<status>` | `Fillet2D`, `Chamfer2D` | `ChFi2d_ConstructionError` in kebab case (`fillet.computation-error`), with the corner |
 | `offset.not-planar` | `Offset2D` | The planar offset couldn't be built |
+| `offset.not-at-distance` | `Offset2D` | The planar offset was made but isn't at its distance from the wire everywhere, so it's refused (decisions 2279, 2281) |
+| `offset.crosses-itself` | `Offset2D` | The planar offset was made but crosses itself, or one of its loops crosses another, so it's refused; the message says where (decision 2422) |
+| `offset.wrong-side` | `Offset2D` | The planar offset of closed wires was made but a loop of it lies on the other side of the wires than asked (inside for outwards, outside for inwards), so it's refused; the message says where (decision 2443) |
 | `offset.join-changed` | `Offset`, `Hollow` (warning) | Round joins failed at an apex, so the result was made with mitred joins, and passed its checks |
 | `draft.face-failed` | `FeatureOperations.Draft` | A face can't be drafted, with the face |
 | `feature.failed` | `FeatureOperations` | A feature failed with no status |

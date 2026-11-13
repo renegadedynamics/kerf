@@ -317,4 +317,52 @@ public class Geom2dAPI_InterCurveCurveTests
         Assert.Equal(0, anInter.NbPoints());
         Assert.Equal(0, anInter.NbSegments());
     }
+
+    // Upstream ec0167b409's TangentRationalEndpointHasOneConnectedZone: two rational cubics tangent at their shared end
+    // make one tangent zone ending at the joint, not fragments of it.
+    [Fact]
+    public void TangentRationalEndpointHasOneConnectedZone()
+    {
+        NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([0.0, 1.0]);
+        NCollection_Array1<int> aMults = NCollection_Array1<int>.From([4, 4]);
+        BSplineCurve2D aCurve1 = new(
+            NCollection_Array1<Point2D>.From([new Point2D(-29.0, 0.0), new Point2D(-29.0, 36.62477607),
+                                              new Point2D(6.91354767, 43.8074856), new Point2D(21.0, 10.0)]),
+            NCollection_Array1<double>.From([1.0, 0.46407742343, 0.46407742343, 1.0]), aKnots, aMults, 3);
+        BSplineCurve2D aCurve2 = new(
+            NCollection_Array1<Point2D>.From([new Point2D(27.22131518, 10.0), new Point2D(12.63802245, 49.69764077),
+                                              new Point2D(-29.0, 42.29154892), new Point2D(-29.0, 0.0)]),
+            NCollection_Array1<double>.From([1.0, 0.45007993394, 0.45007993394, 1.0]), aKnots, aMults, 3);
+        Point2D aJoint = new(-29.0, 0.0);
+        foreach (bool isReversed in new[] { false, true })
+        {
+            Curve2D aFirst = isReversed ? aCurve1.Reversed() : aCurve1;
+            Curve2D aSecond = isReversed ? aCurve2.Reversed() : aCurve2;
+            foreach (bool isSwapped in new[] { false, true })
+            {
+                const double aTolerance = 1.0e-10;
+                Curve2D aC1 = isSwapped ? aSecond : aFirst;
+                Curve2D aC2 = isSwapped ? aFirst : aSecond;
+                CurveCurveIntersection2D anIntersection = new(aC1, aC2, aTolerance);
+                string aCase = $"reversed {isReversed}, swapped {isSwapped}";
+                Assert.True(anIntersection.Intersector().IsDone, aCase);
+                Assert.True(anIntersection.NbPoints() + anIntersection.NbSegments() > 0, aCase);
+                Assert.True(anIntersection.NbSegments() <= 1, $"{aCase}: {anIntersection.NbSegments()} segments");
+                for (int anIndex = 1; anIndex <= anIntersection.NbPoints(); ++anIndex)
+                {
+                    IntersectionPoint2D aPoint = anIntersection.Intersector().Point(anIndex);
+                    Assert.True(aC1.Value(aPoint.ParamOnFirst()).DistanceTo(aC2.Value(aPoint.ParamOnSecond())) <= aTolerance,
+                                aCase);
+                }
+                for (int anIndex = 1; anIndex <= anIntersection.NbSegments(); ++anIndex)
+                {
+                    IntersectionSegment2D aSegment = anIntersection.Intersector().Segment(anIndex);
+                    Assert.True(aSegment.HasFirstPoint && aSegment.HasLastPoint, aCase);
+                    Assert.True(Math.Min(aSegment.FirstPoint().Value().DistanceTo(aJoint),
+                                         aSegment.LastPoint().Value().DistanceTo(aJoint))
+                                <= global::Kerf.Engine.Foundation.Precision.Confusion(), aCase);
+                }
+            }
+        }
+    }
 }
