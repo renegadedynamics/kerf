@@ -261,7 +261,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
         int i;
         for (i = weights.Lower(); i <= weights.Upper(); i++)
         {
-            if (weights[i] <= Constants.Resolution())
+            if (!(weights[i] > Constants.Resolution()))
             {
                 throw Refusal.Argument(new ConstructionErrorException("Geom2d_BSplineCurve: Weights values too small"));
             }
@@ -570,7 +570,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
             throw Refusal.Range(new OutOfRangeException("BSpline curve: InsertPoleAfter: Index and #pole mismatch"));
         }
 
-        if (weight <= Constants.Resolution())
+        if (!(weight > Constants.Resolution()))
         {
             throw Refusal.Argument(new ConstructionErrorException("BSpline curve: InsertPoleAfter: Weight too small"));
         }
@@ -1286,7 +1286,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
             throw Refusal.Range(new OutOfRangeException("BSpline curve: SetWeight: Index and #pole mismatch"));
         }
 
-        if (w <= Constants.Resolution())
+        if (!(w > Constants.Resolution()))
         {
             throw Refusal.Argument(new ConstructionErrorException("BSpline curve: SetWeight: Weight too small"));
         }

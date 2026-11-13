@@ -211,7 +211,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         int i;
         for (i = weights.Lower(); i <= weights.Upper(); i++)
         {
-            if (weights[i] <= Constants.Resolution())
+            if (!(weights[i] > Constants.Resolution()))
             {
                 throw Refusal.Argument(new ConstructionErrorException("Geom_BSplineCurve: Weights values too small"));
             }
@@ -1099,7 +1099,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
             throw Refusal.Range(new OutOfRangeException("BSpline curve: SetWeight: Index and #pole mismatch"));
         }
 
-        if (w <= Constants.Resolution())
+        if (!(w > Constants.Resolution()))
         {
             throw Refusal.Argument(new ConstructionErrorException("BSpline curve: SetWeight: Weight too small"));
         }
