@@ -44,7 +44,7 @@ public class BooleanVolumeTests
     public void A_common_no_larger_than_the_smaller_input_passes()
     {
         Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(10)));
-        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(20), Box(1)));
+        Assert.Null(Check(BooleanVolumeRule.Common, Box(10), Box(1), Box(1)));
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class BooleanVolumeTests
     [Fact]
     public void A_cut_between_the_bounds_passes()
     {
-        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5), Box(5)));
+        Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(5, at: 5), Box(5)));
         Assert.Null(Check(BooleanVolumeRule.Cut, Box(10), Box(20), Compound()));
     }
 
@@ -117,7 +117,7 @@ public class BooleanVolumeTests
     public void A_fuse_between_the_bounds_passes()
     {
         Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(10)));
-        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5), Box(14)));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, Box(10), Box(5, at: 9), Box(14)));
     }
 
     [Fact]
@@ -169,6 +169,17 @@ public class BooleanVolumeTests
         Fires(Check(BooleanVolumeRule.Fuse, Box(30, 30, 30), Box(30, 30, 30, at: 15), rubbish), "a fuse can't be smaller than its largest input");
         // and a tolerance still widens the margin as far as half the larger input
         Assert.Null(Check(BooleanVolumeRule.Fuse, Box(30, 30, 30), Box(30, 30, 30, at: 15), Compound(rubbish, Box(30, 16, 30, at: 100))));
+    }
+
+    // A result's boundary where its operation can't put it (unit 15AM): a fuse of 3,600 for inputs of 2,000 and 3,000 that share
+    // 1,000, inside every rule of volume, its ends inside the inputs, with no tolerance that would have its points asked
+    [Fact]
+    public void A_fuse_whose_faces_lie_inside_its_inputs_fires_naming_a_point()
+    {
+        Shape a = Box(20), b = Box(30, at: 10);
+        Fires(Check(BooleanVolumeRule.Fuse, a, b, Box(36, at: 2)), "on the object's faces outside the other input, aren't on its boundary");
+        Assert.Null(Check(BooleanVolumeRule.Fuse, a, b, Box(40)));
+        Assert.Null(Check(BooleanVolumeRule.Fuse, a, b, a.Fuse(b).Value.Shape));
     }
 
     [Fact]
