@@ -350,4 +350,124 @@ public class SampleSeparationTests
         aSeparation = Of(aPeriodic, aWavy, out aCurve, out _);
         Assert.False(aSeparation.Apart(aCurve.FirstParameter(), aCurve.FirstParameter() + 0.5, 0, 1, 0, 1, 1e-3));
     }
+
+    // A band like the loft's rim chamfer, of degree 1 across and periodic and cubic around, 12 spans of 1 about a circle of
+    // radius 4 at the height of 10, 0.8 wide
+    internal static BSplineSurface Ring()
+    {
+        Point3D[] aPoles = new Point3D[24];
+        for (int j = 0; j < 12; j++)
+        {
+            double anAngle = 2 * Math.PI * j / 12;
+            aPoles[j] = new Point3D(3.6 * Math.Cos(anAngle), 3.6 * Math.Sin(anAngle), 10.0);
+            aPoles[12 + j] = new Point3D(4.4 * Math.Cos(anAngle), 4.4 * Math.Sin(anAngle), 10.3);
+        }
+        return new BSplineSurface(new Grid<Point3D>(aPoles, 2, 12), [0.0, 1], [0.0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [2, 2],
+                                  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 1, 3, false, true);
+    }
+
+    // The least distance between samples of the curve and of the face, over all of both, dense enough to be near the least
+    private static double SampledAll(EdgeCurveAdaptor theCurve, FaceSurfaceAdaptor theFace)
+    {
+        const int OnCurve = 200, Across = 40, Along = 400;
+        double t0 = theCurve.FirstParameter(), t1 = theCurve.LastParameter();
+        double u0 = theFace.FirstUParameter(), u1 = theFace.LastUParameter(), v0 = theFace.FirstVParameter(), v1 = theFace.LastVParameter();
+        Point3D[] aGrid = new Point3D[(Across + 1) * (Along + 1)];
+        for (int i = 0; i <= Across; i++)
+        {
+            for (int j = 0; j <= Along; j++)
+            {
+                aGrid[(i * (Along + 1)) + j] = theFace.EvalD0(u0 + ((u1 - u0) * i / Across), v0 + ((v1 - v0) * j / Along));
+            }
+        }
+        double aLeast = double.MaxValue;
+        for (int k = 0; k <= OnCurve; k++)
+        {
+            Point3D aP = theCurve.EvalD0(t0 + ((t1 - t0) * k / OnCurve));
+            foreach (Point3D aQ in aGrid)
+            {
+                aLeast = Math.Min(aLeast, aP.SquareDistanceTo(aQ));
+            }
+        }
+        return Math.Sqrt(aLeast);
+    }
+
+    // Whole curves over and beside whole surfaces, among them a periodic band whose face crosses its seam (unit 15AS): none
+    // proved apart comes within the clearance, and most of those further than 0.1 are proved apart
+    [Fact]
+    public void AllApart_IsNeverSaidOfACurveWithinTheClearance()
+    {
+        int aTold = 0, aFar = 0, aTried = 0;
+        List<(global::Kerf.Topology.Face, global::Kerf.Topology.Edge[])> aCases = [];
+        foreach (BSplineSurface aSurface in new[] { Wavy(), Smooth() })
+        {
+            List<global::Kerf.Topology.Edge> anEdges = [];
+            foreach (double aHeight in new[] { -0.4, -0.2, 0.0, 0.05, 0.15, 0.31, 0.6 })
+            {
+                anEdges.Add(new MakeEdge(At(-0.5, 0.3 + aHeight, aHeight), At(7.5, 5.5 - aHeight, aHeight + 0.1)).Edge());
+                anEdges.Add(new MakeEdge(new Circle3D(new Frame3D(At(3.5, 3, aHeight), new Direction3D(Up + (Across * 0.3))), 2.5)).Edge());
+                anEdges.Add(new MakeEdge(new Ellipse3D(new Frame3D(At(3, 3, aHeight), new Direction3D(Up + (Along * 0.2))), 3.0, 1.2)).Edge());
+                anEdges.Add(Wave(aHeight));
+            }
+            aCases.Add((new MakeFace(aSurface, 1e-7).Face(), [.. anEdges]));
+        }
+        {
+            List<global::Kerf.Topology.Edge> anEdges = [];
+            foreach (double aHeight in new[] { 9.6, 9.9, 10.05, 10.2, 10.4, 10.7 })
+            {
+                foreach (double aRadius in new[] { 3.2, 3.8, 4.0, 4.6 })
+                {
+                    anEdges.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, aHeight), new Direction3D(0, 0, 1)), aRadius), 0.3, 2.9).Edge());
+                    anEdges.Add(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, aHeight), new Direction3D(0, 0, 1)), aRadius), 4.0, 6.2).Edge());
+                }
+                anEdges.Add(new MakeEdge(new Point3D(-5, 0.5, aHeight), new Point3D(5, 0.5, aHeight + 0.2)).Edge());
+                anEdges.Add(new MakeEdge(new Point3D(4.1, -2, aHeight - 0.5), new Point3D(4.0, 2, aHeight + 0.3)).Edge());
+            }
+            // the face crosses the seam, at v = 12
+            aCases.Add((new MakeFace(Ring(), 0, 1, 7.5, 14.5, 1e-7).Face(), [.. anEdges]));
+        }
+        foreach ((global::Kerf.Topology.Face aFace, global::Kerf.Topology.Edge[] anEdges) in aCases)
+        {
+            FaceSurfaceAdaptor aSurface = new(aFace);
+            foreach (global::Kerf.Topology.Edge anEdge in anEdges)
+            {
+                EdgeCurveAdaptor aCurve = new(anEdge);
+                foreach (double aClearance in new[] { 1e-3, 0.05 })
+                {
+                    int aTests = 4000;
+                    bool isApart = new SampleSeparation(aCurve, aSurface, toEnds: true)
+                        .AllApart(aCurve.FirstParameter(), aCurve.LastParameter(), aSurface.FirstUParameter(), aSurface.LastUParameter(),
+                                  aSurface.FirstVParameter(), aSurface.LastVParameter(), aClearance, ref aTests);
+                    double aLeast = SampledAll(aCurve, aSurface);
+                    Assert.False(isApart && aLeast <= aClearance, $"apart at {aLeast}, clearance {aClearance}");
+                    aTried++;
+                    if (aLeast > 0.1)
+                    {
+                        aFar++;
+                        aTold += isApart ? 1 : 0;
+                    }
+                }
+            }
+        }
+        Assert.True(aFar > aTried / 4, $"{aFar} far of {aTried}");
+        Assert.True(aTold > aFar * 3 / 4, $"{aTold} told apart of {aFar} far");
+    }
+
+    // The band's face across its seam and an arc beside it, 0.4 above: proved apart, which the knots of one period alone
+    // can't (the face's range reaches 2.5 beyond them); a line through the band at its seam isn't, nor is a periodic band
+    // taken without its ends (as the localisation takes it)
+    [Fact]
+    public void AllApart_ReachesAcrossAPeriodicSeam()
+    {
+        FaceSurfaceAdaptor aBand = new(new MakeFace(Ring(), 0, 1, 7.5, 14.5, 1e-7).Face());
+        EdgeCurveAdaptor anArc = new(new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 10.55), new Direction3D(0, 0, 1)), 4.0), 0.3, 2.9).Edge());
+        EdgeCurveAdaptor aThrough = new(new MakeEdge(new Point3D(3.95, 0.02, 9), new Point3D(3.95, 0.02, 11)).Edge());
+        double u0 = aBand.FirstUParameter(), u1 = aBand.LastUParameter(), v0 = aBand.FirstVParameter(), v1 = aBand.LastVParameter();
+        Assert.Equal(14.5, v1, 9);
+        int aTests = 4000, aFew = 4000, aNone = 4000;
+        Assert.True(new SampleSeparation(anArc, aBand, toEnds: true).AllApart(anArc.FirstParameter(), anArc.LastParameter(), u0, u1, v0, v1, 1e-3, ref aTests));
+        Assert.True(aTests > 0);
+        Assert.False(new SampleSeparation(aThrough, aBand, toEnds: true).AllApart(aThrough.FirstParameter(), aThrough.LastParameter(), u0, u1, v0, v1, 1e-3, ref aFew));
+        Assert.False(new SampleSeparation(anArc, aBand).AllApart(anArc.FirstParameter(), anArc.LastParameter(), u0, u1, v0, v1, 1e-3, ref aNone));
+    }
 }

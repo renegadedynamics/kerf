@@ -263,10 +263,12 @@ Part p = Fillet(box, topEdges, 2).Value;    // throws InvalidOperationException,
 - **Kerf doesn't report success for a result it knows is wrong.** A Boolean, offset or fillet whose result fails its
   checks (wrong volume, not a valid solid) is a failure, not a broken shape. `TryGetInvalid` gives the broken shape,
   if one was made, to look at.
-- **A Boolean whose volume proves it wrong is made again before it fails:** with its inputs the other way round, then
-  with a fuzzy value of ten times their largest tolerance, then a thousand times. A retry that passes is the result, with the warning
-  `boolean.other-way-round` or `boolean.fuzzy-value` (which names the value): in `Diagnostics` from `Add`, `Subtract`
-  and `Common`, and raised to `Warnings` from `Cut`, `Fuse`, `Intersect` and the operators.
+- **A Boolean whose volume proves it wrong, or whose result isn't valid, is made again before it fails:** with its
+  inputs the other way round, then with a fuzzy value of ten times their largest tolerance, then a thousand times, then
+  with each crossing near a vertex given a vertex of its own. A retry that passes is the result, with the warning
+  `boolean.other-way-round`, `boolean.fuzzy-value` (which names the value) or `boolean.crossings-apart`: in
+  `Diagnostics` from `Add`, `Subtract` and `Common`, and raised to `Warnings` from `Cut`, `Fuse`, `Intersect` and the
+  operators.
   A retry is checked as the first attempt was, at the fuzzy value you asked for (none by default), so a fuzzy value
   that only hides what was wrong doesn't make it a success.
 - **A Boolean whose result's faces don't close fails,** even where every point of it is near where it should be: the

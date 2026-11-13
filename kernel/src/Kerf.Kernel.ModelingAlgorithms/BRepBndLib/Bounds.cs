@@ -41,11 +41,12 @@ internal static partial class Bounds
     {
         var ex = new Explorer();
 
-        // Add the faces
-        var bs = new FaceSurfaceAdaptor();
+        // Add the faces. Kerf (unit 15AR): the adaptors made when first needed, as one is reused for every face and edge: a
+        // classifier's tree asks the box of each of a shape's edges and vertices alone, and a vertex needs neither
+        FaceSurfaceAdaptor? bs = null;
         Placement l, dummyLoc;
         int i, nbNodes;
-        var bc = new EdgeCurveAdaptor();
+        EdgeCurveAdaptor? bc = null;
 
         for (ex.Init(s, ShapeType.Face); ex.More(); ex.Next())
         {
@@ -61,6 +62,7 @@ internal static partial class Bounds
             {
                 if (gs is not null)
                 {
+                    bs ??= new FaceSurfaceAdaptor();
                     bs.Initialize(f, false);
                     if (bs.GetType() != Plane)
                     {
@@ -83,6 +85,7 @@ internal static partial class Bounds
                                 Edge edge = ShapeCasts.Edge(ex2.Current());
                                 if (Tool.IsGeometric(edge))
                                 {
+                                    bc ??= new EdgeCurveAdaptor();
                                     bc.Initialize(edge);
                                     Add3dCurve.Add(bc, Tool.Tolerance(edge), ref b);
                                 }
@@ -101,6 +104,7 @@ internal static partial class Bounds
             Edge e = ShapeCasts.Edge(ex.Current());
             if (!useTriangulation && Tool.IsGeometric(e))
             {
+                bc ??= new EdgeCurveAdaptor();
                 bc.Initialize(e);
                 Add3dCurve.Add(bc, Tool.Tolerance(e), ref b);
                 continue;
@@ -155,6 +159,7 @@ internal static partial class Bounds
                 {
                     if (Tool.IsGeometric(e))
                     {
+                        bc ??= new EdgeCurveAdaptor();
                         bc.Initialize(e);
                         Add3dCurve.Add(bc, Tool.Tolerance(e), ref b);
                     }
