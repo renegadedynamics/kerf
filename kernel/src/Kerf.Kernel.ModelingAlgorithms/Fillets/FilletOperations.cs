@@ -159,6 +159,12 @@ public static class FilletOperations
                                   + "sphere's or a torus's face closes on itself, which the fillet's algorithm can't start from, and moving the seam clear "
                                   + "of the edges couldn't be done, or its result proved. Making the body with its seam turned away from them builds it.";
 
+    // A chamfer whose faces are off the distance asked, along guides smoothed off their edges and along the edges too
+    private static Diagnostic OffDistance(ChamferSpec[] specs) =>
+        Diagnostic.Error(Failed, "The chamfer couldn't be built at the distance asked: its faces come out off the distance from their edges by more than "
+                                 + "the tolerance. Try another distance, or an edge whose curve is smoother.")
+                  .WithShapes(specs.Select(static s => (Shape)s.Edge));
+
     internal static Diagnostic LateFailure(TimeSpan limit) =>
         Diagnostic.Error(TimeLimit, "The chamfer couldn't be built: ChFi3d failed, and building its faces until they meet took longer than its limit of "
                                     + limit.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture)
@@ -437,6 +443,25 @@ public static class FilletOperations
                                                               ?? FilletLimits.AtBend(bends, specs)
                                                               ?? ChamferFailure(chamfer, specs));
                 built = chamfer;
+
+                // What ChFi3d built along a guide it had smoothed off its edge, its contacts off the distance asked, isn't
+                // the chamfer asked (OCCT keeps such a guide to 1e-3 whatever the shape's size): ChFi3d again with its guides
+                // kept to their edges, and that in its place, built or failed; if that is off too, a failure (unit 15U4)
+                if (outcome.IsDone && options.CheckResult && options.Mode == ChamferMode.Classic && ChamferMeet.OffItsEdges(solid, chamfer, specs, faces))
+                {
+                    MakeChamfer nearer = ChamferMeet.AlongItsEdges(solid, chamfer, specs, faces);
+                    if (ChamferMeet.OffItsEdges(solid, nearer, specs, faces))
+                    {
+                        Diagnostic off = OffDistance(specs);
+                        return new EngineOutcome(false, static () => default, Failure: off, MoreFailures: [off]);
+                    }
+                    chamfer = nearer;
+                    built = nearer;
+                    outcome = MakerOutcome.Done(nearer, [solid],
+                                                () => (FilletLimits.Judge(solid, specs, options) is { } fit ? FilletLimits.TooLarge(fit, specs) : FilletLimits.TooLarge(solid, specs, faces, options))
+                                                      ?? FilletLimits.AtBend(bends, specs)
+                                                      ?? ChamferFailure(nearer, specs));
+                }
                 if (outcome.IsDone)
                 {
                     return outcome;
