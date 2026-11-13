@@ -493,14 +493,15 @@ internal class MakeWireOffset : MakeShape
 
     /// <summary>
     /// Kerf (decision 35202): a point of the first loop of the parallel that lies on the wrong side of the spine, or null
-    /// if every loop is on the side asked for: inside the region the closed wires bound (an odd number of them round it)
-    /// for an offset inwards, outside it for one outwards. A loop is at the offset from the spine everywhere (decisions
-    /// 2279, 2281) and doesn't cross the spine, so the middle of its first edge decides its side, and the spine's edges as
-    /// polylines within a quarter of the offset of their curves can't misplace a point that far from them. An even-odd
-    /// count of the polylines' crossings by each of two rays from the point, in the spine's plane, a loop wrong only if
-    /// both say so: independent of the medial axis,
-    /// of the face made on the spine and of the wires' orientations. Not judged where a wire of the spine is open (each
-    /// of its vertices not met by an even number of its edges' ends), nor below <c>Precision::Confusion</c>.
+    /// if every loop is on the side asked for: inside the region the closed wires bound for an offset inwards, outside it
+    /// for one outwards, as MakeOffset's sign has it where no wire lies inside another. A loop is at the offset from the
+    /// spine everywhere (decisions 2279, 2281) and doesn't cross the spine, so the middle of its first edge decides its
+    /// side, and the spine's edges as polylines within a quarter of the offset of their curves can't misplace a point that
+    /// far from them. An even-odd count of the polylines' crossings by each of two rays from the point, in the spine's
+    /// plane, a loop wrong only if both say so: independent of the medial axis, of the face made on the spine and of the
+    /// wires' orientations. Not judged where a wire of the spine lies inside another (a hole, whose parallel outwards is
+    /// its own outside, into the face), where a wire is open (a vertex not met by an even number of its edges' ends), nor
+    /// below <c>Precision::Confusion</c>.
     /// </summary>
     internal static Point3D? WrongSide(NCollection_List<Shape> spineWires, in Face face, in Shape parallel, double offset)
     {
@@ -512,8 +513,11 @@ internal class MakeWireOffset : MakeShape
         }
         Plane3D pln = plane.Plane;
         List<(double U, double V)[]> polylines = [];
+        List<List<(double U, double V)[]>> byWire = [];
         foreach (Shape spineWire in spineWires)
         {
+            List<(double U, double V)[]> ofWire = [];
+            byWire.Add(ofWire);
             Dictionary<Shape, int> ends = new(ShapeHasher.Instance);
             for (Iterator it = new(spineWire); it.More(); it.Next())
             {
@@ -539,10 +543,24 @@ internal class MakeWireOffset : MakeShape
                     polyline[k - 1] = (u, v);
                 }
                 polylines.Add(polyline);
+                ofWire.Add(polyline);
             }
             if (ends.Count == 0 || ends.Values.Any(n => n % 2 != 0))
             {
                 return null;
+            }
+        }
+        // A wire inside another (a hole) is offset to its own outside when outwards, into the face, so the region of the
+        // wires is no measure there: such spines aren't judged
+        for (int i = 0; i < byWire.Count; i++)
+        {
+            for (int j = 0; j < byWire.Count; j++)
+            {
+                if (i != j && byWire[i].Count > 0 && byWire[i][0].Length > 0
+                    && IsInside(byWire[j], byWire[i][0][0].U, byWire[i][0][0].V, 0.3711))
+                {
+                    return null;
+                }
             }
         }
         for (Explorer exp = new(parallel, ShapeType.Wire); exp.More(); exp.Next())
