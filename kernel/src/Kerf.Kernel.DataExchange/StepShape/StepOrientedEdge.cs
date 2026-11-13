@@ -62,20 +62,25 @@ internal class StepOrientedEdge : StepEdge
 
     public override StepVertex EdgeStart()
     {
-        // WARNING : the field is redefined.
-        // method body is not yet automatically wrote
-        if (_edgeElement is null)
+        // Upstream 573b4be651: the chain of oriented edges is followed in a loop, and a chain that comes back on itself
+        // has no vertex. OCCT 8.0.1 recursed, so a file whose oriented edge referred to itself overflowed the stack
+        // (decision 2395)
+        HashSet<StepEdge>? visited = null;
+        StepEdge edge = _edgeElement;
+        bool isStart = Orientation();
+        while (edge is StepOrientedEdge oriented)
         {
-            return null;
+            if (!(visited ??= new(ReferenceEqualityComparer.Instance)).Add(edge))
+            {
+                return null;
+            }
+            if (!oriented.Orientation())
+            {
+                isStart = !isStart;
+            }
+            edge = oriented.EdgeElement();
         }
-        if (Orientation())
-        {
-            return _edgeElement.EdgeStart();
-        }
-        else
-        {
-            return _edgeElement.EdgeEnd();
-        }
+        return edge is null ? null : isStart ? edge.EdgeStart() : edge.EdgeEnd();
     }
 
     public override void SetEdgeEnd(StepVertex aEdgeEnd)
@@ -87,19 +92,24 @@ internal class StepOrientedEdge : StepEdge
 
     public override StepVertex EdgeEnd()
     {
-        // WARNING : the field is redefined.
-        // method body is not yet automatically wrote
-        if (_edgeElement is null)
+        // Upstream 573b4be651: the chain of oriented edges is followed in a loop, and a chain that comes back on itself
+        // has no vertex. OCCT 8.0.1 recursed, so a file whose oriented edge referred to itself overflowed the stack
+        // (decision 2395)
+        HashSet<StepEdge>? visited = null;
+        StepEdge edge = _edgeElement;
+        bool isStart = !Orientation();
+        while (edge is StepOrientedEdge oriented)
         {
-            return null;
+            if (!(visited ??= new(ReferenceEqualityComparer.Instance)).Add(edge))
+            {
+                return null;
+            }
+            if (!oriented.Orientation())
+            {
+                isStart = !isStart;
+            }
+            edge = oriented.EdgeElement();
         }
-        if (Orientation())
-        {
-            return _edgeElement.EdgeEnd();
-        }
-        else
-        {
-            return _edgeElement.EdgeStart();
-        }
+        return edge is null ? null : isStart ? edge.EdgeStart() : edge.EdgeEnd();
     }
 }

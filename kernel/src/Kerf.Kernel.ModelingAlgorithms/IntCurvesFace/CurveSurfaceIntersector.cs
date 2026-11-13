@@ -32,7 +32,12 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// </remarks>
 internal class CurveSurfaceIntersector : Transient
 {
-    private readonly BrepTopolTool _topolTool;
+    // Kerf (unit 15AR): made when first asked, as most of a solid classifier's intersectors never classify a point of their
+    // face or count its samples; it reads only the face and its adaptor, which don't change
+    private BrepTopolTool? _topolTool;
+    // Kerf (unit 15AR): the 2D tolerances InternalCall works out from the face's and its edges' tolerances, and the largest of
+    // these in 3D, kept for a frozen face, whose tolerances never change again
+    private (double Min2d, double Max2d, double Max3d)? _tolerances;
     private readonly FaceSurfaceAdaptor _hsurface;
     private readonly double _tol;
     private readonly NCollection_Sequence<CurveSurfaceIntersectionPoint> _seqPnt = new();
@@ -158,7 +163,6 @@ internal class CurveSurfaceIntersector : Transient
         _face = face;
         surface.Initialize(face, aRestr);
         _hsurface = surface;
-        _topolTool = new BrepTopolTool(_hsurface);
 
         SurfaceKind surfaceType = HSurfaceTool.GetType(_hsurface);
         if ((surfaceType != Plane) && (surfaceType != SurfaceKind.Cylinder)
@@ -172,8 +176,8 @@ internal class CurveSurfaceIntersector : Transient
             v0 = _hsurface.FirstVParameter();
             v1 = _hsurface.LastVParameter();
             //
-            nbsu = _topolTool.NbSamplesU();
-            nbsv = _topolTool.NbSamplesV();
+            nbsu = TopolTool.NbSamplesU();
+            nbsv = TopolTool.NbSamplesV();
             //
             double uRes = _hsurface.UResolution(1.0);
             double vRes = _hsurface.VResolution(1.0);
@@ -264,26 +268,33 @@ internal class CurveSurfaceIntersector : Transient
         }
     }
 
+    private BrepTopolTool TopolTool => _topolTool ??= new BrepTopolTool(_hsurface);
+
     private void InternalCall(HInter hics, double parinf, double parsup)
     {
         if (hics.IsDone && hics.PointCount > 0)
         {
             // Calculate tolerance for 2d classifier
-            double mintol3d = Tool.Tolerance(_face);
-            double maxtol3d = mintol3d;
-            double mintol2d = _tol, maxtol2d = _tol;
-            var exp = new Explorer(_face, ShapeType.Edge);
-            for (; exp.More(); exp.Next())
+            if (_tolerances is not { } tolerances)
             {
-                double curtol = Tool.Tolerance(ShapeCasts.Edge(exp.Current()));
-                mintol3d = Min(mintol3d, curtol);
-                maxtol3d = Max(maxtol3d, curtol);
-            }
+                double mintol3d = Tool.Tolerance(_face);
+                double maxtol3d0 = mintol3d;
+                for (var edges = new Explorer(_face, ShapeType.Edge); edges.More(); edges.Next())
+                {
+                    double curtol = Tool.Tolerance(ShapeCasts.Edge(edges.Current()));
+                    mintol3d = Min(mintol3d, curtol);
+                    maxtol3d0 = Max(maxtol3d0, curtol);
+                }
 
-            double minres = Max(_hsurface.UResolution(mintol3d), _hsurface.VResolution(mintol3d));
-            double maxres = Max(_hsurface.UResolution(maxtol3d), _hsurface.VResolution(maxtol3d));
-            mintol2d = Max(minres, _tol);
-            maxtol2d = Max(maxres, _tol);
+                double minres = Max(_hsurface.UResolution(mintol3d), _hsurface.VResolution(mintol3d));
+                double maxres = Max(_hsurface.UResolution(maxtol3d0), _hsurface.VResolution(maxtol3d0));
+                tolerances = (Max(minres, _tol), Max(maxres, _tol), maxtol3d0);
+                if (_face.TShape() is { IsFrozen: true } && Kerf.Engine.Topology.Tools.WorkingOverlay.Current is null)
+                {
+                    _tolerances = tolerances;
+                }
+            }
+            (double mintol2d, double maxtol2d, double maxtol3d) = tolerances;
             //
             BrepTopolTool? additionalTool = null;
             for (int index = hics.PointCount; index >= 1; index--)
@@ -292,7 +303,7 @@ internal class CurveSurfaceIntersector : Transient
                 Point2D puv = new(hicsPointindex.U(), hicsPointindex.V());
 
                 // TopAbs_State currentstate = myTopolTool->Classify(Puv,Tol);
-                Containment currentstate = _topolTool.Classify(puv, !_useBoundTol ? 0 : mintol2d);
+                Containment currentstate = TopolTool.Classify(puv, !_useBoundTol ? 0 : mintol2d);
                 if (_useBoundTol && currentstate == global::Kerf.Topology.Containment.Out && maxtol2d > mintol2d)
                 {
                     additionalTool ??= new BrepTopolTool(_hsurface);
@@ -302,8 +313,7 @@ internal class CurveSurfaceIntersector : Transient
                     {
                         currentstate = global::Kerf.Topology.Containment.Out;
                         // Find out nearest edge and it's tolerance
-                        exp.Init(_face, ShapeType.Edge);
-                        for (; exp.More(); exp.Next())
+                        for (var exp = new Explorer(_face, ShapeType.Edge); exp.More(); exp.Next())
                         {
                             Edge e = ShapeCasts.Edge(exp.Current());
                             // OCCT: an edge without a 3D curve (a degenerated edge) gives a null curve to the projection, which
@@ -638,7 +648,7 @@ internal class CurveSurfaceIntersector : Transient
     /// <summary>The state of the point <paramref name="puv"/> of the face's parameter space (tolerance 1e-7).</summary>
     public Containment ClassifyUVPoint(in Point2D puv)
     {
-        Containment state = _topolTool.Classify(puv, 1e-7);
+        Containment state = TopolTool.Classify(puv, 1e-7);
         return state;
     }
 

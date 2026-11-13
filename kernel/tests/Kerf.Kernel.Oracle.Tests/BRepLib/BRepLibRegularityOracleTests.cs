@@ -53,7 +53,12 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
     private string PortText(in Shape theShape)
     {
         string aFile = NewFile();
-        Assert.True(BrepTools.Write(theShape, aFile, true, true, FormatVersion_VERSION_3));
+        // Deliberate difference (decision 2356): Kerf writes the normals of a face whose triangulation an edge added
+        // first, which OCCT 8.0.1 drops; compared as 8.0.1 writes them
+        using (global::Kerf.Engine.Exchange.Brep.NativeFaceNormals.Scope())
+        {
+            Assert.True(BrepTools.Write(theShape, aFile, true, true, FormatVersion_VERSION_3));
+        }
         return Text(aFile);
     }
 

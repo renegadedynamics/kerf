@@ -30,6 +30,8 @@ internal class LibraryCheckCurveOnSurface
     private CurveOnSurface? _adaptorCurveOnSurface;
     private CurveOnSurface? _adaptorCurveOnSurface2;
     private bool _isParallel;
+    // Upstream ec0167b409: the first pcurve's result on a closed surface, where it's further than the second's
+    private (double Distance, double Parameter)? _firstResult;
 
     /// <summary>An empty algorithm; <see cref="Init"/> sets its data.</summary>
     public LibraryCheckCurveOnSurface() => _isParallel = false;
@@ -44,6 +46,11 @@ internal class LibraryCheckCurveOnSurface
     public void Init(in Edge edge, in Face face)
     {
         _cOnSurfGeom.Init();
+        // Upstream ec0167b409: a previous edge's pcurves aren't kept, so a seam's second pcurve isn't checked again with
+        // the next edge
+        _adaptorCurveOnSurface = null;
+        _adaptorCurveOnSurface2 = null;
+        _firstResult = null;
 
         if (edge.IsNull || face.IsNull)
         {
@@ -83,6 +90,7 @@ internal class LibraryCheckCurveOnSurface
     /// <summary>Computes the max distance, in parallel if <see cref="SetParallel"/> asked for it.</summary>
     public void Perform()
     {
+        _firstResult = null;
         // Compute the max distance
         Compute(_adaptorCurveOnSurface);
         if (ErrorStatus() != 0)
@@ -93,9 +101,14 @@ internal class LibraryCheckCurveOnSurface
         //
         if (_adaptorCurveOnSurface2 is not null)
         {
-            // compute max distance for myAdaptorCurveOnSurface2
-            // (for the second curve on closed surface)
+            // Upstream ec0167b409: the larger of the two pcurves' distances, where 8.0.1 kept the second pcurve's alone
+            double firstDistance = _cOnSurfGeom.MaxDistance();
+            double firstParameter = _cOnSurfGeom.MaxParameter();
             Compute(_adaptorCurveOnSurface2);
+            if (ErrorStatus() == 0 && firstDistance > _cOnSurfGeom.MaxDistance())
+            {
+                _firstResult = (firstDistance, firstParameter);
+            }
         }
     }
 
@@ -109,10 +122,10 @@ internal class LibraryCheckCurveOnSurface
     /// <summary>0: OK; 1: null curve, surface or 2D curve; 2: invalid parametric range; 3: error in calculations.</summary>
     public int ErrorStatus() => _cOnSurfGeom.ErrorStatus();
 
-    public double MaxDistance() => _cOnSurfGeom.MaxDistance();
+    public double MaxDistance() => _firstResult?.Distance ?? _cOnSurfGeom.MaxDistance();
 
     /// <summary>The parameter at which the distance is maximal.</summary>
-    public double MaxParameter() => _cOnSurfGeom.MaxParameter();
+    public double MaxParameter() => _firstResult?.Parameter ?? _cOnSurfGeom.MaxParameter();
 
     /// <summary>Computes the max distance between the 3D curve and <paramref name="curveOnSurface"/>.</summary>
     protected void Compute(CurveOnSurface? curveOnSurface)

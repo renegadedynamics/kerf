@@ -279,6 +279,30 @@ public class BRepToolsIOTests
         }
     }
 
+    // Upstream 71658f6c8f's test (decision 2356): an edge's polygon on the next face's triangulation added that
+    // triangulation without normals before the face was reached, and the face's own normals were then not written
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SharedEdgeTriangulationsPreserveFaceNormals(bool theIsBinary)
+    {
+        Shape aMeshed = BinTestShapes.MeshedBox(true, true);
+        foreach (bool aWithNormals in new[] { false, true })
+        {
+            Shape aRead = theIsBinary
+                ? BinToolsRoundTripTests.ReadSet(BinToolsRoundTripTests.WriteSet(aMeshed, 4, true, aWithNormals))
+                : Read(Write(aMeshed, FormatVersion_VERSION_3, true, aWithNormals));
+            int aFaces = 0;
+            for (var anExp = new Explorer(aRead, ShapeType.Face); anExp.More(); anExp.Next())
+            {
+                aFaces++;
+                Triangulation aTri = Tool.Triangulation(ShapeCasts.Face(anExp.Current()), out _)!;
+                Assert.True(aWithNormals == aTri.HasNormals, $"binary {theIsBinary}, face {aFaces}");
+            }
+            Assert.Equal(6, aFaces);
+        }
+    }
+
     [Fact]
     public void Triangulations_and_normals_follow_the_flags_and_the_version()
     {
