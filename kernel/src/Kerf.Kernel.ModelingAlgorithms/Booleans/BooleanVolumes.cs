@@ -259,7 +259,7 @@ public static class BooleanVolumes
                     return Passed;
                 }
                 // A cut that removed nothing is asked deep in its inputs by their own tolerances, and deep in the result by its
-                // tolerances (decision 34905): a result's tolerance says where its own boundary is unsure, not where the inputs
+                // tolerances (decision 2433): a result's tolerance says where its own boundary is unsure, not where the inputs
                 // overlap, and #1496's tubes, bent at 24 and 24.5, had a cut that removed nothing with a vertex of 0.25, whose ten
                 // times took a depth of 2.5 in walls 3 thick, so no point could be asked and the success passed
                 depth = OverlapDepth * size + MarginOfTolerance * ((classifyResult is null ? shared.LargestTolerance : shared.InputTolerance) + fuzzyValue);

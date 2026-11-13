@@ -9,7 +9,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The point a walking line ends at on the border of its domain (decision 34901): made from the function evaluated there,
+/// The point a walking line ends at on the border of its domain (decision 2429): made from the function evaluated there,
 /// not from whatever the function last evaluated, which OCCT takes and which the solver can leave elsewhere.
 /// </summary>
 public class IWalkingBorderPointTests

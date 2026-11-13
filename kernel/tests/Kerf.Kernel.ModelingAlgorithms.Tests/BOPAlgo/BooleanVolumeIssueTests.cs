@@ -304,7 +304,7 @@ public class BooleanVolumeIssueTests
     public void Issue_1496_cuts_of_tubes_that_remove_nothing_are_proved_wrong_whatever_the_results_tolerance()
     {
         // Each cut removed nothing, valid, with a vertex of 0.25: ten times that was the depth a point had to be inside both tubes,
-        // more than half their walls of 3, so none could be, and the check passed it (decision 34905). The inputs' own tolerances
+        // more than half their walls of 3, so none could be, and the check passed it (decision 2433). The inputs' own tolerances
         // say how deep a point must be in them, and the result's how deep in it
         (Shape a, Shape b) = Issue1496();
         foreach ((Shape obj, Shape tool) in new[] { (a, b), (b, a) })

@@ -2961,7 +2961,7 @@ internal class IWalking<TheIWFunction, TheIWLine>
 
     /// <summary>
     /// The point a line ends at on the border: OCCT's walking point from the function's last evaluation, made again from the
-    /// function at (u, v) when that evaluation was elsewhere (decision 34901). Where two surfaces are tangent along the border
+    /// function at (u, v) when that evaluation was elsewhere (decision 2429). Where two surfaces are tangent along the border
     /// the solver can leave its last evaluation a long way from its root: one of #1496's lines ended a quarter turn round
     /// the tangent circle from where it reached it, its parameters on the walked surface right and its point not. Otherwise
     /// the two differ only in the last bits, and OCCT's point is kept.

@@ -6,7 +6,7 @@ using Kerf.Modeling;
 
 /// <summary>
 /// OCCT #1496's tubes: two annular tubes swept along a corner filleted at different radii, overlapping along their straight
-/// runs. Their common was a success larger than the smaller tube (kernel decision 34901): the intersection of one's straight
+/// runs. Their common was a success larger than the smaller tube (kernel decision 2429): the intersection of one's straight
 /// run with the other's bend ended its line a quarter turn round their tangent circle, and its curve, 17 off both surfaces,
 /// gave the result a tolerance that excused it.
 /// </summary>
@@ -28,7 +28,7 @@ public class SweptTubeBooleanTests
     }
 
     // Tubes bent at 24 and 24.5: each cut removed nothing, a success, as the result's vertex of 0.25 took the check's depth to
-    // 2.5 in walls 3 thick (kernel decision 34905). The cuts are still wrong after the retries, so they fail, saying so
+    // 2.5 in walls 3 thick (kernel decision 2433). The cuts are still wrong after the retries, so they fail, saying so
     [Fact]
     public void Cuts_of_tubes_bent_at_24_and_24_5_that_remove_nothing_fail()
     {
