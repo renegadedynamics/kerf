@@ -331,7 +331,7 @@ internal sealed class ExchangeDocument
         if (node.Referred >= 0)
         {
             Shape referred = GetShapeCore(node.Referred, depth + 1);
-            return referred.IsNull || node.RefLocation.IsIdentity ? referred : referred.Moved(node.RefLocation);
+            return referred.IsNull || node.RefLocation.IsIdentity ? referred : global::Kerf.Engine.Construction.Api.Transform.Placed(referred, node.RefLocation);
         }
         if (node.IsAssembly && node.IsDirty)
         {

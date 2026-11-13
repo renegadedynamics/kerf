@@ -181,6 +181,21 @@ internal class SClassifier
     /// <summary>Classifies the point <paramref name="p"/> with the tolerance <paramref name="tol"/> in the solid of <paramref name="solidExplorer"/>.</summary>
     public void Perform(SolidExplorer solidExplorer, in Point3D p, double tol)
     {
+        // Kerf (unit 15E17, decision 35008): a shape placed with a scale is classified in its own frame, the point taken
+        // there by the placement's inverse and the tolerance with it; the deciding face is placed back
+        SolidExplorer? unscaled = solidExplorer.Unscaled(out Placement placement);
+        if (unscaled is not null && !global::Kerf.Engine.Healing.Fixes.UndoneFixes.AreUndone)
+        {
+            Transform3D trsf = placement.Transformation;
+            Perform(unscaled, trsf.Inverted() * p, tol / Math.Abs(trsf.ScaleFactor));
+            if (!_face.IsNull)
+            {
+                _face.Move(placement);
+            }
+
+            return;
+        }
+
         PerformByRay(solidExplorer, p, tol);
 
         // Kerf (unit 15E17, decision 35003): a point outside a finite solid's box is outside it, whatever the ray found. The

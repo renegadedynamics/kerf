@@ -3,6 +3,7 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Extrema;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Measurement.Distance;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -39,6 +40,8 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     private int myNbInner;
     private int myNbBuiltSupports;
     private int myNbRacingInner;
+    private int myNbScaledPairs;
+    private int myNbScaledDiffer;
     private readonly int[] mySupportKinds = new int[3];
 
     public void Dispose()
@@ -139,12 +142,36 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         aN.LoadS2(theS2.N);
         bool aNDone = aN.Perform();
 
+        // A shape placed with a scale (decision 35008): the port is compared with native's recordings as OCCT classifies
+        // it, and its own inner solution with that for the geometry the scale makes. The distances under a scale aren't
+        // the geometry's either, which is why the public layer refuses such a placement
+        bool aScaled = ClassificationScenes.HasScale(theS1.P) || ClassificationScenes.HasScale(theS2.P);
         var aP = new DistanceShapeShape();
         aP.SetDeflection(aDeflection);
         aP.SetMultiThread(aMulti);
         aP.LoadS1(theS1.P);
         aP.LoadS2(theS2.P);
-        bool aPDone = aP.Perform();
+        bool aPDone;
+        using (aScaled ? UndoneFixes.Scope() : null)
+        {
+            aPDone = aP.Perform();
+        }
+
+        if (aScaled)
+        {
+            var aFixed = new DistanceShapeShape();
+            aFixed.SetDeflection(aDeflection);
+            aFixed.LoadS1(theS1.P);
+            aFixed.LoadS2(theS2.P);
+            var aBaked = new DistanceShapeShape();
+            aBaked.SetDeflection(aDeflection);
+            aBaked.LoadS1(ClassificationScenes.HasScale(theS1.P) ? ClassificationScenes.Baked(theS1.P) : theS1.P);
+            aBaked.LoadS2(ClassificationScenes.HasScale(theS2.P) ? ClassificationScenes.Baked(theS2.P) : theS2.P);
+            Assert.Equal(aBaked.Perform(), aFixed.Perform());
+            Assert.Equal(aBaked.InnerSolution(), aFixed.InnerSolution());
+            myNbScaledPairs++;
+            myNbScaledDiffer += aFixed.InnerSolution() != aP.InnerSolution() ? 1 : 0;
+        }
 
         myNbComputations++;
         theOracle.Same(aNDone, aPDone, aWhat + " Perform");
@@ -261,6 +288,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         output.WriteLine($"{myNbComputations} computations, {myNbSolutions} solutions ({myNbInner} inner); supports: "
                          + $"{mySupportKinds[0]} vertices, {mySupportKinds[1]} on edges, {mySupportKinds[2]} in faces; "
                          + $"{myNbBuiltSupports} built by the algorithm; {myNbRacingInner} multi-threaded inner solutions checked as valid, not compared; "
+                         + $"{myNbScaledPairs} pairs with a shape placed with a scale, {myNbScaledDiffer} with an inner solution otherwise than native, as their geometry has it; "
                          + $"{myNbOriginPoints} native points at the origin (intended differences)");
         theOracle.Report(theWhat);
     }

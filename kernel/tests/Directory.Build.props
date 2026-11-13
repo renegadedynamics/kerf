@@ -21,6 +21,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Shared/EngineAssert.cs" Link="Shared/EngineAssert.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Shared/NativeStepText.cs" Link="Shared/NativeStepText.cs" />
   </ItemGroup>
+  <!-- A shape moved by a placement with a scale through the internal forms, which the public ones refuse (decision 35008) -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Kerf.Kernel.ModelingData.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.ModelingAlgorithms.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.DataExchange.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.Oracle.Tests'">
+    <Compile Include="$(MSBuildThisFileDirectory)Shared/ScaledPlacements.cs" Link="Shared/ScaledPlacements.cs" />
+  </ItemGroup>
   <!-- The check as it was and the comparison with it (the check on small shapes): KERF_CHECK_COMPARE=file -->
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Kerf.Kernel.ModelingAlgorithms.Tests' Or '$(MSBuildProjectName)' == 'Kerf.Kernel.DrawLite'">
     <Compile Include="$(MSBuildThisFileDirectory)Shared/FullCheck/*.cs" Link="Shared/FullCheck/%(Filename)%(Extension)" />

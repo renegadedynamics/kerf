@@ -126,7 +126,7 @@ public sealed record ModelNode
         color = node.Color ?? color;
         if (node.Shape is { } shape)
         {
-            Shape placed = placement.IsIdentity ? shape : shape.Moved(placement.Transformation);
+            Shape placed = placement.IsIdentity ? shape : global::Kerf.Engine.Construction.Api.Transform.Placed(shape, placement);
             Result<ShapeMesh> mesh = Mesher.Mesh(placed, meshOptions ?? Renderer.DefaultMeshOptions(placed), null, cancellationToken);
             warnings.AddRange(mesh.Diagnostics.Where(d => !d.IsError));
             if (!mesh.TryGetValue(out ShapeMesh? value))
@@ -160,7 +160,8 @@ public sealed record ModelNode
     {
         if (node.Shape is { } shape)
         {
-            shapes.Add(placement.IsIdentity ? shape : shape.Moved(placement.Transformation));
+            // a placement with a scale made part of the geometry (decision 35008)
+            shapes.Add(placement.IsIdentity ? shape : global::Kerf.Engine.Construction.Api.Transform.Placed(shape, placement));
             return;
         }
 

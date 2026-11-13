@@ -96,7 +96,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 Twin<N.TopoDS_Compound, Compound> aCompound = aTwins.Twins.Compound(
                     aBox,
                     new(aBox.N.Moved(aNL1), aBox.P.Moved(aL1)),
-                    new(aBox.N.Moved(aNL2).Reversed(), aBox.P.Moved(aL2).Reversed()),
+                    new(aBox.N.Moved(aNL2).Reversed(), Moved(aBox.P, aL2).Reversed()),
                     aBox,
                     aCyl,
                     new(aCyl.N.Moved(aNL3), aCyl.P.Moved(aL3)),
@@ -120,6 +120,13 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         }
     }
 
+    // The shape moved by the internal Move: the public Moved refuses a scale (decision 35008)
+    private static Shape Moved(Shape theShape, in Placement theL)
+    {
+        theShape.Move(theL);
+        return theShape;
+    }
+
     /// <summary>The shape at a random location (or none; scaled if allowed, sometimes), and reversed half the time.</summary>
     private static Twin<N.TopoDS_Shape, Shape> Placed(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape, bool theAllowScale)
     {
@@ -127,7 +134,10 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
         if (theOracle.Bool())
         {
             (N.TopLoc_Location aNL, Placement aL) = RandomLocation(theOracle, theAllowScale && theOracle.Bool());
-            aShape = new(aShape.N.Moved(aNL), aShape.P.Moved(aL));
+            // with the internal Move: the public Moved refuses a scale (decision 35008)
+            Shape aMoved = aShape.P;
+            aMoved.Move(aL);
+            aShape = new(aShape.N.Moved(aNL), aMoved);
         }
 
         return theOracle.Bool() ? new(aShape.N.Reversed(), aShape.P.Reversed()) : aShape;

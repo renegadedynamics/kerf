@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Healing.Fixes;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Xunit.Abstractions;
@@ -24,6 +25,7 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
     [Fact]
     public void SolidClassifier_matches_native_OCCT()
     {
+        int aNbScaledScenes = 0, aNbScaledDiffer = 0;
         var anOracle = new Oracle(output, 20261031);
         int aNbPoints = 0, aNbIn = 0, aNbOn = 0, aNbOut = 0;
         for (int aScene = 0; aScene < Scenes; aScene++)
@@ -42,12 +44,35 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
             aNC.Load(aShape.N);
             var aPC = new SolidClassifier();
             aPC.Load(aShape.P);
+            // A shape placed with a scale (decision 35008): the port is compared with native's recordings as OCCT
+            // classifies it, by the ray in the scaled frame, and as it classifies it, with the geometry the scale makes
+            bool aScaled = ClassificationScenes.HasScale(aShape.P);
+            SolidClassifier? aTruth = null;
+            if (aScaled)
+            {
+                aTruth = new SolidClassifier();
+                aTruth.Load(ClassificationScenes.Baked(aShape.P));
+                aNbScaledScenes++;
+            }
             foreach (Point3D aP in aPoints)
             {
                 double aTol = anOracle.Bool() ? global::Kerf.Engine.Foundation.Precision.Confusion() : 1e-3;
                 using var aNP = Oracle.ToNative(aP);
                 aNC.Perform(aNP, aTol);
-                aPC.Perform(aP, aTol);
+                using (aScaled ? UndoneFixes.Scope() : null)
+                {
+                    aPC.Perform(aP, aTol);
+                }
+
+                if (aTruth is not null)
+                {
+                    var aFixed = new SolidClassifier();
+                    aFixed.Load(aShape.P);
+                    aFixed.Perform(aP, aTol);
+                    aTruth.Perform(aP, aTol);
+                    Assert.Equal(aTruth.State(), aFixed.State());
+                    aNbScaledDiffer += aFixed.State() != aPC.State() ? 1 : 0;
+                }
                 string aPWhat = $"{aWhat}, point {aP} tol {aTol}";
                 anOracle.Same((int)aNC.State(), (int)aPC.State(), aPWhat + " State");
                 anOracle.Same(aNC.Rejected(), aPC.Rejected(), aPWhat + " Rejected");
@@ -77,7 +102,11 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
             using (var aNP = Oracle.ToNative(aFirst))
             using (var aNC2 = new N.BRepClass3d_SolidClassifier(aShape.N, aNP, 1e-7))
             {
-                var aPC2 = new SolidClassifier(aShape.P, aFirst, 1e-7);
+                SolidClassifier aPC2;
+                using (aScaled ? UndoneFixes.Scope() : null)
+                {
+                    aPC2 = new SolidClassifier(aShape.P, aFirst, 1e-7);
+                }
                 anOracle.Same((int)aNC2.State(), (int)aPC2.State(), aWhat + " constructor State");
             }
 
@@ -91,7 +120,8 @@ public class BRepClass3dOracleTests(ITestOutputHelper output)
             }
         }
 
-        output.WriteLine($"{aNbPoints} points: {aNbIn} IN, {aNbOn} ON, {aNbOut} OUT");
+        output.WriteLine($"{aNbPoints} points: {aNbIn} IN, {aNbOn} ON, {aNbOut} OUT; {aNbScaledScenes} scenes placed with a scale, "
+                         + $"{aNbScaledDiffer} of their points classified otherwise than native, as their geometry is");
         anOracle.Report("BRepClass3d_SolidClassifier");
     }
 }

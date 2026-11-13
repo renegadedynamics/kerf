@@ -4,6 +4,7 @@ using System.Text;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Exchange.Brep.Binary;
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 
@@ -54,9 +55,38 @@ public static class Brep
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        return shape.IsNull
-            ? Result<Shape>.Failure(Diagnostic.Error(ExchangeTree.Malformed, "The BREP data holds no shape."))
-            : shape;
+        if (shape.IsNull)
+        {
+            return Result<Shape>.Failure(Diagnostic.Error(ExchangeTree.Malformed, "The BREP data holds no shape."));
+        }
+
+        // Kerf (unit 15E17, decision 35008): a shape's placement with a scale, which the kernel's operations don't hold
+        // under, is made part of the geometry where it is the root's own; anywhere below, the data is refused
+        Shape inner = shape.Located(new Placement());
+        if (HasScale(inner))
+        {
+            return Result<Shape>.Failure(Diagnostic.Error(ExchangeTree.Malformed,
+                "The BREP data places a shape inside it with a scale, which Kerf doesn't take: scale its geometry instead."));
+        }
+
+        return shape.Placement.IsIdentity ? shape : global::Kerf.Engine.Construction.Api.Transform.Placed(inner, shape.Placement);
+    }
+
+    // Whether any shape in the shape is placed with a scale
+    private static bool HasScale(in Shape shape)
+    {
+        foreach (ShapeType type in (ReadOnlySpan<ShapeType>)[ShapeType.Vertex, ShapeType.Edge, ShapeType.Face, ShapeType.Solid])
+        {
+            for (var exp = new Explorer(shape, type); exp.More(); exp.Next())
+            {
+                if (Math.Abs(Math.Abs(exp.Current().Placement.Transformation.ScaleFactor) - 1.0) > 1e-14)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

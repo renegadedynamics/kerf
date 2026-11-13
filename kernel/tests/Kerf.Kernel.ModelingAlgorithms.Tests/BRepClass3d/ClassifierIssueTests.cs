@@ -53,4 +53,34 @@ public class ClassifierIssueTests
         Assert.Equal(Containment.Out, reversed.ClassifyPoint(new Point3D(0.5, 0.5, 0.5)));
         Assert.Equal(Containment.Out, box.ClassifyPoint(new Point3D(5, 5, 5)));
     }
+
+    // A box placed with a scale, which the public layer no longer gives (decision 35008) but the kernel's own code and
+    // Draw-lite can: points by its corners inside and outside, and far outside, against the box's own geometry. The ray
+    // read a point inside by a corner OUT, as natively
+    [Theory]
+    [InlineData(1.7, false)]
+    [InlineData(1.7, true)]
+    [InlineData(0.4, true)]
+    public void A_solid_placed_with_a_scale_classifies_as_its_geometry(double factor, bool rotate)
+    {
+        Shape box = Primitives.Box(3, 4, 5).Value.Shape;
+        Transform3D t = Transform3D.Scale(new Point3D(2, -3, 1), factor);
+        if (rotate)
+        {
+            t = t.Multiplied(Transform3D.Identity.WithRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0)), 0.7));
+        }
+
+        KernelAssert.Throws<ArgumentException>(() => box.Moved(new Placement(t)));
+        KernelAssert.Throws<ArgumentException>(() => box.Located(new Placement(t)));
+        Shape placed = box;
+        placed.Move(new Placement(t));
+        foreach ((Point3D local, Containment expected) in new (Point3D, Containment)[]
+                 {
+                     (new(2.9, 3.9, 4.9), Containment.In), (new(0.1, 0.1, 0.1), Containment.In), (new(1.5, 2, 2.5), Containment.In),
+                     (new(3.1, 3.9, 4.9), Containment.Out), (new(-0.1, 2, 2.5), Containment.Out), (new(30, 40, 50), Containment.Out),
+                 })
+        {
+            Assert.Equal(expected, placed.ClassifyPoint(t * local));
+        }
+    }
 }

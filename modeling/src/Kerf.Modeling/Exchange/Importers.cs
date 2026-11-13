@@ -140,6 +140,10 @@ public static class Importers
         // A mesh read (glTF): the faces holding only its triangles, as they were read
         if (node.Mesh is { } mesh)
             return Leaf(mesh.TriangulatedShape, label, color);
+        // An assembly placed with a scale, which a shape's placement doesn't take (the kernel's decision 35008): one shape,
+        // its parts with the scale made part of their geometry
+        if (Math.Abs(Math.Abs(node.Placement.Transformation.ScaleFactor) - 1.0) > 1e-14)
+            return Leaf(node.ToShape(), label, color);
         var children = node.Children.Select(FromModel).ToList();
         var assembly = new Assembly(children, label, color);
         return node.Placement.IsIdentity ? assembly : assembly.Located(new Location(node.Placement));
