@@ -256,20 +256,27 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
     {
         _d1gui = new Vector3D(0.0, 0.0, 0.0);
         _nplan = new Vector3D(0.0, 0.0, 0.0);
-        _tguide.D2(param, out _ptgui, out _d1gui, out _d2gui);
+        _tguide.D2(OnGuide(param), out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude;
         _nplan = _nplan.WithXYZ(_d1gui.Normalized().XYZ());
         Xyz nplanXYZ = _nplan.XYZ();
         Xyz ptguiXYZ = _ptgui.XYZ();
         _d = nplanXYZ.Dot(ptguiXYZ);
         _d = _d * (-1.0);
-        _tevol.D1(param, out _ray, out _dray);
+        _tevol.D1(OnGuide(param), out _ray, out _dray);
     }
+
+    // Kerf (unit 15AK3): the guide's parameter brought into its curve's own range where rounding has left it an ulp
+    // outside (ElSpine.OnCurve). The envelope's sections take the guide's second and third derivatives and the law's
+    // second, which a periodic guide and law give from a period away for a parameter outside their knots: the section
+    // at a closed contour's seam was then the far side's, the surface's end line jumped to it, and its normals there
+    // were wrong (5.9 degrees on the corpus's buildevol/K6) though its points were not.
+    private double OnGuide(double parameter) => _guide is global::Kerf.Engine.Fillets.Data.ElSpine spine ? spine.OnCurve(parameter) : parameter;
 
     public override void Set(double first, double last)
     {
-        _tguide = _guide.Trim(first, last, 1.0e-12);
-        _tevol = _fevol.Trim(first, last, 1.0e-12);
+        _tguide = _guide.Trim(OnGuide(first), OnGuide(last), 1.0e-12);
+        _tevol = _fevol.Trim(OnGuide(first), OnGuide(last), 1.0e-12);
         _first = first;
         _last = last;
     }
@@ -282,8 +289,8 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
     // Positions the guide and the law at prm, as Set(double) does; the derivative of the guide's plane's normal.
     private Vector3D Position(double prm)
     {
-        _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
-        _tevol.D1(prm, out _ray, out _dray);
+        _tguide.D2(OnGuide(prm), out _ptgui, out _d1gui, out _d2gui);
+        _tevol.D1(OnGuide(prm), out _ray, out _dray);
         _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         _d = -_nplan.XYZ().Dot(_ptgui.XYZ());
@@ -339,8 +346,8 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
 
         _cons1.D3(x[1], out _, out _, out Vector3D d2rst1, out Vector3D d3rst1);
         _cons2.D3(x[2], out _, out _, out Vector3D d2rst2, out Vector3D d3rst2);
-        _tguide.D3(prm, out _, out _, out _, out Vector3D d3gui);
-        _tevol.D2(prm, out _, out _, out double d2ray);
+        _tguide.D3(OnGuide(prm), out _, out _, out _, out Vector3D d3gui);
+        _tevol.D2(OnGuide(prm), out _, out _, out double d2ray);
         double inv1 = ConstRad.InverseNorm(_d11), inv2 = ConstRad.InverseNorm(_d21);
         Vector3D d2t1 = ConstRad.UnitNormalD2(_t1, inv1, d2rst1, d2rst1, d3rst1);
         Vector3D d2t2 = ConstRad.UnitNormalD2(_t2, inv2, d2rst2, d2rst2, d3rst2);
@@ -440,7 +447,7 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
             return false;
         }
 
-        _tevol.D2(prm, out _, out _, out double d2ray);
+        _tevol.D2(OnGuide(prm), out _, out _, out double d2ray);
         end = new EnvelopeEnd(e, _center, dc, d2c, _ray, _dray, d2ray);
         return true;
     }
@@ -884,9 +891,9 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
             return;
         }
 
-        _tguide.D1(param, out _ptgui, out _d1gui);
+        _tguide.D1(OnGuide(param), out _ptgui, out _d1gui);
         np = _d1gui.Normalized();
-        _ray = _tevol.Value(param);
+        _ray = _tevol.Value(OnGuide(param));
 
         // The ball's circle (decision 2162): its centre, in the plane through it and both points.
         Ball(x, np);
@@ -1025,9 +1032,9 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         int low = poles.Lower();
         int upp = poles.Upper();
 
-        _tguide.D1(prm, out _ptgui, out _d1gui);
+        _tguide.D1(OnGuide(prm), out _ptgui, out _d1gui);
         _nplan = _d1gui.Normalized();
-        _ray = _tevol.Value(prm);
+        _ray = _tevol.Value(OnGuide(prm));
 
         math_Vector x = new(1, 2);
         x[1] = p.ParameterOnC1();
@@ -1103,8 +1110,8 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
             second = WalkCentreD2(prm, sol, out d2c);
         }
 
-        _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
-        _tevol.D1(prm, out _ray, out _dray);
+        _tguide.D2(OnGuide(prm), out _ptgui, out _d1gui, out _d2gui);
+        _tevol.D1(OnGuide(prm), out _ray, out _dray);
         _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
@@ -1205,7 +1212,7 @@ internal class RstRstEvolRad : RstRstFunction, IEnvelopeSections
         if (!istgt && second)
         {
             Vector3D zero = new();
-            _tevol.D2(prm, out _, out _, out double d2ray);
+            _tevol.D2(OnGuide(prm), out _, out _, out double d2ray);
             _tilt.At(prm, out double tilt, out double dtilt, out _);
             if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, d2ray, 0.0, n1, d1n1, zero, n2, d1n2, zero,
                                     Side(), out EnvelopeCircle e, tilt, dtilt))

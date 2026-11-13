@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine;
 using Kerf.Engine.Geometry.Bounds;
 
 using Kerf.Engine.Healing.Analysis;
@@ -470,5 +471,41 @@ public class ShapeAnalysis_SurfaceTests
         var aSAS = new SurfaceAnalysis(new CylindricalSurface(XOY, 2));
         Assert.True(aSAS.Value(M_PI / 2, 3).IsEqual(new Point3D(0, 2, 3), 1e-15));
         Assert.True(aSAS.Value(new Point2D(0, 1)).IsEqual(new Point3D(2, 0, 1), 1e-15));
+    }
+
+    // Upstream ec0167b409's ConvergedHintAtSingularityKeepsParameters (decision 2424): a bilinear patch whose v = 0 edge
+    // is a point. A hint on that edge already at the point is kept, where 8.0.1's Newton broke off at the zero normal and
+    // the fallback search moved U along the singular edge; a point within the tolerance of the hint keeps it too, and a
+    // point away from the edge is still found
+    [Fact]
+    public void A_converged_hint_at_a_singularity_is_kept()
+    {
+        NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
+        aPoles[1, 1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[2, 1] = new Point3D(0.0, 0.0, 0.0);
+        aPoles[1, 2] = new Point3D(1.0, 0.0, 1.0);
+        aPoles[2, 2] = new Point3D(0.0, 1.0, 1.0);
+        NCollection_Array1<double> aKnots = NCollection_Array1<double>.From(new[] { 0.0, 1.0 });
+        NCollection_Array1<int> aMults = NCollection_Array1<int>.From(new[] { 2, 2 });
+        BSplineSurface aSurface = new(aPoles, aKnots, aKnots, aMults, aMults, 1, 1);
+        var anAnalysis = new SurfaceAnalysis(aSurface);
+        foreach (double aU in new[] { 0.0, 0.375, 1.0 })
+        {
+            Point2D aHint = new(aU, 0.0);
+            Point3D aPoint = aSurface.Value(aHint.X, aHint.Y);
+            Point2D aResult = anAnalysis.NextValueOfUV(aHint, aPoint, global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.Equal(aHint.X, aResult.X);
+            Assert.Equal(aHint.Y, aResult.Y);
+            Assert.True(aPoint.DistanceTo(aSurface.Value(aResult.X, aResult.Y)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+        }
+
+        double aTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
+        Point2D aCloseHint = new(0.375, 0.0);
+        Point2D aCloseResult = anAnalysis.NextValueOfUV(aCloseHint, new Point3D(0.0, 0.0, 0.5 * aTolerance), aTolerance);
+        Assert.Equal(aCloseHint.X, aCloseResult.X);
+        Assert.Equal(aCloseHint.Y, aCloseResult.Y);
+        Point3D aDistantPoint = aSurface.Value(aCloseHint.X, 0.25);
+        Point2D aDistantResult = anAnalysis.NextValueOfUV(aCloseHint, aDistantPoint, aTolerance);
+        Assert.True(aDistantPoint.DistanceTo(aSurface.Value(aDistantResult.X, aDistantResult.Y)) <= aTolerance);
     }
 }

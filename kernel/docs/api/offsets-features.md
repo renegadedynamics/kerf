@@ -50,7 +50,8 @@ public static class FeatureOperations
 }
 ```
 
-- **Diagnostics:** `offset.self-intersection`, `offset.unknown-error`, `offset.not-planar` (2D),
+- **Diagnostics:** `offset.self-intersection`, `offset.unknown-error`, `offset.not-planar`, `offset.not-at-distance` and
+  `offset.crosses-itself` (2D),
   `offset.c0-geometry` (OCCT's `BRepOffset_Error` values, by name); `draft.face-failed` (with the face),
   `feature.no-limit-face`.
 

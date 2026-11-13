@@ -73,7 +73,7 @@ internal sealed class NumericCurInf2d
     internal void PerformInf(Curve2D curve, double uMin, double uMax, CurAndInf result)
     {
         _isDone = true;
-        var func = new FuncCurNul2d(curve);
+        var func = new FuncCurNul2d(curve, uMin, uMax);
         const double epsX = 1.0e-6;
         const double epsF = 1.0e-6;
         const int nbSamples = 30;
