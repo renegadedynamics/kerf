@@ -269,6 +269,27 @@ internal readonly struct EnvelopeEnd(in EnvelopeCircle circle, in Point3D ball, 
         return true;
     }
 
+    /// <summary>The ball's centre.</summary>
+    public Point3D Ball => _ball;
+
+    /// <summary>
+    /// Whether <paramref name="other"/>'s arc, a circle of the same ball, lies on the side of this circle where this
+    /// side's own balls are (<paramref name="direction"/>: 1 for greater parameters, -1 for less): the two sides'
+    /// surfaces then cross, and the swept surface has a crease there. Otherwise the circles leave a gap, and the swept
+    /// surface has the piece of the ball between them. Two circles of a ball through the same two points don't cross
+    /// between them, so the arc's seven inner points agree but for rounding; the greater share is taken.
+    /// </summary>
+    public bool Crosses(in EnvelopeEnd other, int direction)
+    {
+        double sum = 0.0;
+        for (int i = 1; i <= 7; i++)
+        {
+            sum += new Vector3D(Circle.Centre, other.Circle.ArcPoint(i / 8.0)).Dot(_dc);
+        }
+
+        return (sum > 0.0) == (direction > 0);
+    }
+
     /// <summary><see cref="EnvelopeCircle.LeastAdvance"/> of this section.</summary>
     public double LeastAdvance() => Circle.LeastAdvance(_ball, _dc, _d2c, _r, _dr, _d2r);
 
