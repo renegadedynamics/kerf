@@ -220,13 +220,15 @@ public static class MeasureOperations
                 MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation, settled: true);
                 break;
             case Dimension.Area when options.Tolerance > 0 && !options.UseTriangulation:
-                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly, closeGaps: true);
+                Confirmed(MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly, closeGaps: true,
+                                                                  confirm: true), props);
                 break;
             case Dimension.Area:
                 MassPropertiesBuilder.SurfaceProperties(shape, props, options.SkipShared, options.UseTriangulation, closeGaps: true);
                 break;
             case Dimension.Volume when options.Tolerance > 0 && !options.UseTriangulation:
-                MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly, closeGaps: true);
+                Confirmed(MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly,
+                                                                 closeGaps: true, confirm: true), props);
                 break;
             case Dimension.Volume:
                 MassPropertiesBuilder.VolumeProperties(shape, props, options.OnlyClosed, options.SkipShared, options.UseTriangulation, closeGaps: true);
@@ -236,6 +238,18 @@ public static class MeasureOperations
         }
 
         return props;
+    }
+
+    // Each face that isn't a plane, cylinder, cone, sphere or torus is integrated again ten times finer and kept where the two
+    // agree to the tolerance (decision 34802). Where no finer integration confirmed a face, or a face's boundary couldn't be
+    // read, the error is infinite and the figures are NaN: a measure that isn't known to the precision asked for, said so
+    private static void Confirmed(double error, Properties props)
+    {
+        if (error >= global::Kerf.Engine.Foundation.Precision.Infinite() || double.IsNaN(error))
+        {
+            props.Assign(new Properties(new Point3D(double.NaN, double.NaN, double.NaN)));
+            props.AddMass(double.NaN);
+        }
     }
 
     private static MassProperties ToMassProperties(Properties props, Dimension dimension)

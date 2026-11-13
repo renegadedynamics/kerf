@@ -222,7 +222,8 @@ internal static class MassPropertiesBuilder
                                             bool useTriangulation,
                                             bool massOnly = false,
                                             bool exactPlanes = false,
-                                            bool closeGaps = false)
+                                            bool closeGaps = false,
+                                            bool confirm = false)
     {
         int i;
         double errorMax = 0.0, error;
@@ -286,10 +287,16 @@ internal static class MassPropertiesBuilder
                     bd.Init(f);
                 }
 
+                Properties measured = g;
                 if (eps < 1.0)
                 {
                     g.Perform(bf, bd, eps);
                     error = g.GetEpsilon();
+                    if (confirm && !bf.IsElementary)
+                    {
+                        measured = Confirmed(g, bf, bd, isNatRestr, p, eps, volume: false, massOnly, ref error);
+                    }
+
                     if (errorMax < error)
                     {
                         errorMax = error;
@@ -307,7 +314,7 @@ internal static class MassPropertiesBuilder
                     }
                 }
 
-                props.Add(g);
+                props.Add(measured);
             }
         }
 
@@ -357,15 +364,18 @@ internal static class MassPropertiesBuilder
     /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
     /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
+    /// <param name="confirm">Confirm each face that isn't a plane, cylinder, cone, sphere or torus by integrating it again
+    /// finer, taking the finer where they differ by more than <paramref name="eps"/> (Kerf, decision 34802); the error returned
+    /// is infinite where nothing confirmed a face.</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double SurfaceProperties(in Shape s, Properties sProps, double eps, bool skipShared = false, bool massOnly = false,
-                                           bool closeGaps = false)
+                                           bool closeGaps = false, bool confirm = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
         p = p.Transformed(s.Placement.Transformation);
         sProps.Assign(new Properties(p));
-        double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false, massOnly, closeGaps: closeGaps);
+        double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false, massOnly, closeGaps: closeGaps, confirm: confirm);
         return errorMax;
     }
 
@@ -380,10 +390,11 @@ internal static class MassPropertiesBuilder
                                                 bool useTriangulation,
                                                 bool massOnly = false,
                                                 bool exactPlanes = false,
-                                                bool closeGaps = false)
+                                                bool closeGaps = false,
+                                                bool confirm = false)
     {
         if (!useTriangulation && ParallelVolumes.Current && !OsdParallel.IsSerial
-            && TryVolumeFacesInParallel(s, props, refPnt, eps, skipShared, massOnly, exactPlanes, closeGaps, out double inParallel))
+            && TryVolumeFacesInParallel(s, props, refPnt, eps, skipShared, massOnly, exactPlanes, closeGaps, confirm, out double inParallel))
         {
             return inParallel;
         }
@@ -462,10 +473,16 @@ internal static class MassPropertiesBuilder
                         bd.Init(f);
                     }
 
+                    Properties measured = g;
                     if (eps < 1.0)
                     {
                         g.Perform(bf, bd, eps);
                         error = g.GetEpsilon();
+                        if (confirm && !bf.IsElementary)
+                        {
+                            measured = Confirmed(g, bf, bd, isNatRestr, refPnt, eps, volume: true, massOnly, ref error);
+                        }
+
                         if (errorMax < error)
                         {
                             errorMax = error;
@@ -483,7 +500,7 @@ internal static class MassPropertiesBuilder
                         }
                     }
 
-                    props.Add(g);
+                    props.Add(measured);
                 }
             }
         }
@@ -519,6 +536,7 @@ internal static class MassPropertiesBuilder
                                                  bool massOnly,
                                                  bool exactPlanes,
                                                  bool closeGaps,
+                                                 bool confirm,
                                                  out double errorMax)
     {
         errorMax = 0.0;
@@ -575,7 +593,8 @@ internal static class MassPropertiesBuilder
         }
 
         ParallelIntegrationsOnThisThread++;
-        var systems = new global::Kerf.Engine.Measurement.Vinert?[faces.Count];
+        var systems = new Properties?[faces.Count];
+        var errors = new double[faces.Count];
         var failures = new Exception?[faces.Count];
         Point3D location = refPnt;
         OsdParallel.For(0, faces.Count, k =>
@@ -599,9 +618,17 @@ internal static class MassPropertiesBuilder
                     d.Init(f);
                 }
 
+                Properties measured = g;
                 if (eps < 1.0)
                 {
                     g.Perform(bf, d, eps);
+                    double error = g.GetEpsilon();
+                    if (confirm && !bf.IsElementary)
+                    {
+                        measured = Confirmed(g, bf, d, isNatRestr, location, eps, volume: true, massOnly, ref error);
+                    }
+
+                    errors[k] = error;
                 }
                 else if (isNatRestr)
                 {
@@ -612,7 +639,7 @@ internal static class MassPropertiesBuilder
                     g.Perform(bf, d);
                 }
 
-                systems[k] = g;
+                systems[k] = measured;
             }
             catch (Exception e)
             {
@@ -637,20 +664,143 @@ internal static class MassPropertiesBuilder
                 continue;
             }
 
-            var g = systems[k]!;
-            if (eps < 1.0)
+            if (eps < 1.0 && errorMax < errors[k])
             {
-                double error = g.GetEpsilon();
-                if (errorMax < error)
-                {
-                    errorMax = error;
-                }
+                errorMax = errors[k];
             }
 
-            props.Add(g);
+            props.Add(systems[k]!);
         }
 
         return true;
+    }
+
+    /// <summary>How many finer integrations, each ten times finer, may confirm a face's figure (decision 34802).</summary>
+    private const int ConfirmLevels = 4;
+
+    /// <summary>The finest precision a face is confirmed to: a tolerance below it is confirmed to it (decision 34802). Swept faces'
+    /// integrations ten and a hundred times finer than 1e-12 stop at their limit of subdivisions, so nothing would confirm them.</summary>
+    private const double ConfirmFloor = 1e-10;
+
+    /// <summary>
+    /// A face's figure at <paramref name="eps"/> (<paramref name="first"/>), confirmed by integrating the face again ten times
+    /// finer: kept where the two agree to <paramref name="eps"/> of the finer, which is the figure unchanged to the bit;
+    /// otherwise the finer is confirmed in turn by one ten times finer again, up to <see cref="ConfirmLevels"/> times, and the
+    /// first that's confirmed is returned (unit 15E15, decision 34802). A finer integration that disagrees and doesn't reach its
+    /// own precision ends the search. The adaptive estimate isn't a bound: two Gauss
+    /// orders can agree far from the integral, and swept and offset faces came out up to 3e-5 off at 1e-6 with estimates of
+    /// 1e-12. A volume's contribution about a point may be near zero, so it's compared against the most the face could
+    /// contribute (its area by the distance to the point) where it's small. A centre is compared too unless only the mass
+    /// is wanted. Where nothing is confirmed, <paramref name="error"/> is set to infinity and the finest figure returned,
+    /// for the caller to refuse.
+    /// </summary>
+    private static Properties Confirmed(Properties first, FaceIntegrand bf, Domain bd, bool isNatRestr, in Point3D location,
+                                        double eps, bool volume, bool massOnly, ref double error)
+    {
+        Properties coarse = first;
+        double coarseError = error, level = eps, extent = double.NaN, scale = double.NaN, confirmed = Math.Max(eps, ConfirmFloor);
+        Point3D at = location;
+        for (int k = 0; k < ConfirmLevels; k++)
+        {
+            level *= 0.1;
+            (Properties fine, double fineError) = Integrate(level);
+            double diff = Math.Abs(coarse.Mass() - fine.Mass()), allowed = confirmed * Math.Abs(fine.Mass());
+            if (diff > allowed && volume)
+            {
+                allowed = Math.Max(allowed, confirmed * Scale());
+            }
+
+            bool agree = diff <= allowed;
+            if (agree && !massOnly)
+            {
+                // The centres, against how far the face reaches from the reference point
+                double reach = coarse.CentreOfMass().DistanceTo(at) + Extent();
+                agree = coarse.CentreOfMass().DistanceTo(fine.CentreOfMass()) <= confirmed * reach;
+            }
+
+            if (agree)
+            {
+                error = coarseError;
+                return coarse;
+            }
+
+            if (!(fineError <= level))
+            {
+                // A finer that disagrees and didn't reach its own precision stopped at its limit of subdivisions, where its
+                // figure can be far out (bug5805_45 at 1e-12, 4.4e-3): nothing finer is to be trusted
+                break;
+            }
+
+            coarse = fine;
+            coarseError = fineError;
+        }
+
+        error = double.PositiveInfinity;
+        return coarse;
+
+        (Properties, double) Integrate(double precision)
+        {
+            Properties system;
+            double e;
+            if (volume)
+            {
+                var v = new global::Kerf.Engine.Measurement.Vinert();
+                v.SetLocation(at);
+                if (!isNatRestr)
+                {
+                    bd.Init();
+                }
+
+                e = v.Perform(bf, bd, precision);
+                system = v;
+            }
+            else
+            {
+                var a = new global::Kerf.Engine.Measurement.Sinert();
+                a.SetLocation(at);
+                if (!isNatRestr)
+                {
+                    bd.Init();
+                }
+
+                e = a.Perform(bf, bd, precision);
+                system = a;
+            }
+
+            return (system, e);
+        }
+
+        // The face's area by fixed points, and its reach: the square root of its area, a size for its extent
+        double Extent()
+        {
+            if (double.IsNaN(extent))
+            {
+                var a = new global::Kerf.Engine.Measurement.Sinert();
+                a.SetLocation(at);
+                if (isNatRestr)
+                {
+                    a.Perform(bf);
+                }
+                else
+                {
+                    bd.Init();
+                    a.Perform(bf, bd);
+                }
+
+                double area = Math.Abs(a.Mass());
+                extent = Math.Sqrt(area);
+                scale = area * (a.CentreOfMass().DistanceTo(at) + extent) / 3.0;
+            }
+
+            return extent;
+        }
+
+        // The most a face's volume about the point could be: its area by its distance from it, over three
+        double Scale()
+        {
+            _ = Extent();
+            return scale;
+        }
     }
 
     private sealed class SolidCacheEntry
@@ -666,7 +816,8 @@ internal static class MassPropertiesBuilder
                                            bool skipShared,
                                            bool useTriangulation,
                                            bool massOnly = false,
-                                           bool closeGaps = false)
+                                           bool closeGaps = false,
+                                           bool confirm = false)
     {
         Point3D p = RoughBaryCenter(s);
 
@@ -689,7 +840,7 @@ internal static class MassPropertiesBuilder
         if (!hasSharedSolids)
         {
             // No shared solids: use direct face-level iteration (original path).
-            return VolumePropertiesFaces(s, props, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
+            return VolumePropertiesFaces(s, props, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps, confirm: confirm);
         }
 
         // Shared solids detected: iterate at solid level with caching.
@@ -728,7 +879,7 @@ internal static class MassPropertiesBuilder
                 {
                     // Non-rigid relative transform: fall back to direct face-level computation.
                     var solidProps = new Properties(p);
-                    double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
+                    double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps, confirm: confirm);
                     if (errorMax < error)
                     {
                         errorMax = error;
@@ -755,7 +906,7 @@ internal static class MassPropertiesBuilder
             {
                 // First instance of this TShape: compute via face integration.
                 var solidProps = new Properties(p);
-                double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
+                double error = VolumePropertiesFaces(solid, solidProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps, confirm: confirm);
                 if (errorMax < error)
                 {
                     errorMax = error;
@@ -788,7 +939,7 @@ internal static class MassPropertiesBuilder
             if (hasFree)
             {
                 var freeProps = new Properties(p);
-                double freeError = VolumePropertiesFaces(freeComp, freeProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps);
+                double freeError = VolumePropertiesFaces(freeComp, freeProps, p, eps, skipShared, useTriangulation, massOnly, closeGaps: closeGaps, confirm: confirm);
                 if (errorMax < freeError)
                 {
                     errorMax = freeError;
@@ -873,6 +1024,9 @@ internal static class MassPropertiesBuilder
     /// and planar faces can give theirs exactly (<see cref="PlanarFaceMass"/>).</param>
     /// <param name="closeGaps">Close each gap the faces' boundaries have inside a vertex's tolerance, in their parameters
     /// (<see cref="GapClosures"/>; Kerf, decision 2257). OCCT doesn't.</param>
+    /// <param name="confirm">Confirm each face that isn't a plane, cylinder, cone, sphere or torus by integrating it again
+    /// finer, taking the finer where they differ by more than <paramref name="eps"/> (Kerf, decision 34802); the error returned
+    /// is infinite where nothing confirmed a face.</param>
     /// <returns>The largest relative error reached by a face.</returns>
     public static double VolumeProperties(in Shape s,
                                           Properties vProps,
@@ -880,7 +1034,8 @@ internal static class MassPropertiesBuilder
                                           bool onlyClosed = false,
                                           bool skipShared = false,
                                           bool massOnly = false,
-                                          bool closeGaps = false)
+                                          bool closeGaps = false,
+                                          bool confirm = false)
     {
         // find the origin
         Point3D p = new(0, 0, 0);
@@ -902,7 +1057,7 @@ internal static class MassPropertiesBuilder
 
                 if (Tool.IsClosed(sh))
                 {
-                    error = VolumePropertiesCore(sh, vProps, eps, skipShared, false, massOnly, closeGaps);
+                    error = VolumePropertiesCore(sh, vProps, eps, skipShared, false, massOnly, closeGaps, confirm);
                     if (errorMax < error)
                     {
                         errorMax = error;
@@ -912,7 +1067,7 @@ internal static class MassPropertiesBuilder
         }
         else
         {
-            errorMax = VolumePropertiesCore(s, vProps, eps, skipShared, false, massOnly, closeGaps);
+            errorMax = VolumePropertiesCore(s, vProps, eps, skipShared, false, massOnly, closeGaps, confirm);
         }
 
         return errorMax;
