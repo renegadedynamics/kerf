@@ -209,11 +209,17 @@ internal class BrepTopolTool : TopolTool
         Vector3D vi = new(), vip1 = new();
         int sh, nbch, i, j;
 
+        // Kerf (unit 15E17, decision 35009; OCCT #1703): with no interior row of poles in a direction, the boundary rows are
+        // walked. OCCT walks rows 2 to nbup - 1 only, so a surface with two rows of poles (a ruled flank, a strip) counted
+        // no change of sign along the other direction and was sampled as nearly flat there, and a solid's classifier's ray
+        // passed between the facets of a helical flank of 32 spans: a point outside read IN
+        int iFirst = nbup > 2 ? 2 : 1, iLast = nbup > 2 ? nbup - 1 : nbup;
+        int jFirst = nbvp > 2 ? 2 : 1, jLast = nbvp > 2 ? nbvp - 1 : nbvp;
         sh = 1;
         nbch = 0;
         if (nbvp > 2)
         {
-            for (i = 2; i < nbup; i++)
+            for (i = iFirst; i <= iLast; i++)
             {
                 Point3D a = array2.Value(i, 1);
                 Point3D b = array2.Value(i, 2);
@@ -268,7 +274,7 @@ internal class BrepTopolTool : TopolTool
         nbch = 0;
         if (nbup > 2)
         {
-            for (j = 2; j < nbvp; j++)
+            for (j = jFirst; j <= jLast; j++)
             {
                 Point3D a = array2.Value(1, j);
                 Point3D b = array2.Value(2, j);

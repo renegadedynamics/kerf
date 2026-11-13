@@ -51,6 +51,9 @@ internal class CurveSurfaceIntersector : Transient
     private readonly bool _hasPolyhedron;
     private readonly bool _polyhedronBySamplePars;
     private readonly int _nbsu, _nbsv;
+
+    // Kerf (decision 35009): the samples along a long face past which its cap is raised, and the cap then
+    private const int LongFaceAsks = 20, LongFaceCap = 60;
     // Kerf (unit 15D): the box the polyhedron's box is surely inside (HullBox): 0 not worked out, 1 known, -1 none
     private int _hullBoxState;
     private double _hullXmin, _hullYmin, _hullZmin, _hullXmax, _hullYmax, _hullZmax;
@@ -178,6 +181,7 @@ internal class CurveSurfaceIntersector : Transient
             //
             nbsu = TopolTool.NbSamplesU();
             nbsv = TopolTool.NbSamplesV();
+            int askU = nbsu, askV = nbsv;
             //
             double uRes = _hsurface.UResolution(1.0);
             double vRes = _hsurface.VResolution(1.0);
@@ -186,7 +190,6 @@ internal class CurveSurfaceIntersector : Transient
             const double tresh = 100.0;
             int minSamples = 20;
             const int maxSamples = 40;
-            const int maxSamples2 = maxSamples * maxSamples;
             double dU = (u1 - u0) / uRes;
             double dV = (v1 - v0) / vRes;
             if (nbsu < minSamples)
@@ -213,18 +216,22 @@ internal class CurveSurfaceIntersector : Transient
             {
                 if (Max(dU, dV) > Min(dU, dV) * tresh)
                 {
+                    // Kerf (unit 15E17, decision 35009; OCCT #1703): a long face whose surface asks for more than 20
+                    // samples along it gets a cap of 60 a side, not 40, so that its polyhedron follows what it asks for
+                    int cap = Max(askU, askV) > LongFaceAsks ? LongFaceCap : maxSamples;
+                    int cap2 = cap * cap;
                     minSamples = 10;
-                    nbsu = (int)(Math.Sqrt(dU / dV) * maxSamples);
+                    nbsu = (int)(Math.Sqrt(dU / dV) * cap);
                     if (nbsu < minSamples)
                     {
                         nbsu = minSamples;
                     }
 
-                    nbsv = maxSamples2 / nbsu;
+                    nbsv = cap2 / nbsu;
                     if (nbsv < minSamples)
                     {
                         nbsv = minSamples;
-                        nbsu = maxSamples2 / minSamples;
+                        nbsu = cap2 / minSamples;
                     }
                 }
             }

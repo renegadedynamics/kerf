@@ -83,4 +83,19 @@ public class ClassifierIssueTests
             Assert.Equal(expected, placed.ClassifyPoint(t * local));
         }
     }
+
+    // OCCT #1703's sleeve with a helical thread and 24 teeth, its file's location records rewritten to 8.0.1's layout (they
+    // held a scale and a form before each matrix). The classifier's ray from the issue's point, 0.787 outside the solid
+    // behind a collar, enters a thread flank, a B-spline with two rows of poles over 32 spans, between the facets of its
+    // intersector's polyhedron: the point read IN. The flank's samples now count its boundary rows, and a long face that
+    // asks for more than 20 gets a cap of 60 (decision 35009): OUT
+    [Fact]
+    public void Issue_1703_a_point_outside_a_helical_thread_is_outside_it()
+    {
+        Solid sleeve = Read("1703-teeth").AllSolids().Single();
+        Point3D p = new(106.667, 6.60084, 0.465566);
+        Assert.Equal(Containment.Out, sleeve.Classify(p, 1e-6));
+        Assert.Equal(Containment.Out, sleeve.Classify(p, 1e-7));
+        Assert.True(Vertex.At(p).Distance(sleeve).Value.Value > 0.5);
+    }
 }
