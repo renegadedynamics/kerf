@@ -757,17 +757,13 @@ internal static partial class ChamferMeet
         if (shape.AllSolids().Length == 1)
         {
             (double measured, double measuredError) = MeasuredVolume(built);
-            if (ExpectedVolume(shape, faces, bands, cornerRules, carried, [.. chamfered], specs, referenceFaces, builder._tolapp3d, Near * width) is not { } v)
+            (Verdict verdict, double allowed, double removed) = VolumeJudged(shape, faces, bands, cornerRules, carried, [.. chamfered], specs, referenceFaces,
+                                                                             builder._tolapp3d, Near * width, measured, measuredError, share);
+            if (verdict == Verdict.TooLittle)
             {
-                return null;
+                unproved = new Unproved(allowed, removed);
             }
-            double allowed = v.Allowed + measuredError;
-            if (!(allowed <= share * Math.Abs(v.Removed)))
-            {
-                unproved = new Unproved(allowed, v.Removed);
-                return null;
-            }
-            if (Math.Abs(measured - v.Expected) > allowed)
+            if (verdict != Verdict.Proved)
             {
                 return null;
             }

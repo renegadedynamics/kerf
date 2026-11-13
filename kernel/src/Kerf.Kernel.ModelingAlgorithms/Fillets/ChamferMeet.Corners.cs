@@ -154,7 +154,7 @@ internal static partial class ChamferMeet
     // on the points before it; the lines are sampled at half the shallowest chamfer's depth, and only where the excess
     // can be other than nothing; and it has to be nothing on the box's sides (81 points on each), or the box didn't hold it.
     // The box is as small as that allows, from three of the deepest chamfer's depths up to the room
-    private static (double Excess, double Error) CornerExcess(Corner corner, Face[] faces, Edge[] edges, List<Band> bands, double reach)
+    private static (double Excess, double Error) CornerExcess(Corner corner, Face[] faces, Edge[] edges, List<Band> bands, double reach, int level = 2)
     {
         Point3D o = corner.Point;
         Face[] around = [.. faces.Where(f => f.AllVertices().Any(v => v.IsSame(corner.Vertex)))];
@@ -330,13 +330,13 @@ internal static partial class ChamferMeet
             }
             return most;
         }
-        return Integrated(o, reach, all, x => Excess(x) - Sections(x), samples, Gate, finer: 3);
+        return Integrated(o, reach, all, x => Excess(x) - Sections(x), samples, Gate, finer: level == 1 ? 0 : 3);
     }
 
     // The excess at a corner of convex and concave edges (unit 15U3): what its formula holds without its chamfers and not
     // with them, less each edge's section region, in a box that lies inside the reach where the formula says what's built;
     // every nearest point found from the corner's (unit 15AP)
-    private static (double Excess, double Error) MixedExcess(Corner corner, Term formula, Edge[] edges, List<Carried> carried, double reach)
+    private static (double Excess, double Error) MixedExcess(Corner corner, Term formula, Edge[] edges, List<Carried> carried, double reach, int level = 2)
     {
         Point3D o = corner.Point;
         Leaf[] leaves = [.. Leaves(formula)];
@@ -402,7 +402,7 @@ internal static partial class ChamferMeet
             return sum;
         }
 
-        return Integrated(o, reach, all, x => Excess(x) - Sections(x));
+        return Integrated(o, reach, all, x => Excess(x) - Sections(x), finer: level == 1 ? 0 : 4);
     }
 
     // The integral over the box of half-side reach about o of a count that changes only where one of the functions changes sign.
@@ -562,7 +562,8 @@ internal static partial class ChamferMeet
             return sum;
         }
 
-        double coarse = Quadrature(2), fine = Quadrature(finer), midpoint = Midpoint(2 * GaussNodes.Length);
+        // At the first level (finer 0), Gauss's two panels against the midpoint rule alone
+        double coarse = Quadrature(2), midpoint = Midpoint(2 * GaussNodes.Length), fine = finer > 0 ? Quadrature(finer) : coarse;
         return double.IsNaN(coarse) || double.IsNaN(fine) || double.IsNaN(midpoint) ? (double.NaN, double.NaN)
             : (fine, Math.Max(Math.Abs(fine - coarse), Math.Abs(fine - midpoint)));
     }
