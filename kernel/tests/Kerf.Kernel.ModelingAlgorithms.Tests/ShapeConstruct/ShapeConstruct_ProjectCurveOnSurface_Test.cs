@@ -909,7 +909,7 @@ public class ShapeConstruct_ProjectCurveOnSurfaceTest
         Assert.NotNull(aPCurve);
     }
 
-    // Upstream ec0167b409's PeriodicBoundaryWithSingularEndpoints (decision 34704): a B-spline periodic in U whose V ends
+    // Upstream ec0167b409's PeriodicBoundaryWithSingularEndpoints (decision 2425): a B-spline periodic in U whose V ends
     // are poles. Each U-iso runs from pole to pole, and its projection's line check met a zero normal at the pole, then
     // judged the line by the distances from its first point only, which a line along a pole passes; the line is now
     // given up there, and the general projection keeps every point on the surface

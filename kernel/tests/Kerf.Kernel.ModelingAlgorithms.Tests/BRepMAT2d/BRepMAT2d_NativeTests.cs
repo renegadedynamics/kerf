@@ -31,7 +31,7 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
     [Fact]
     public void EveryCase_BitIdentical()
     {
-        // With 8.0.1's inflections and roots on a sample (decision 34702); without them, the maps below
+        // With 8.0.1's inflections and roots on a sample (decision 2423); without them, the maps below
         using IDisposable aNativeRoots = global::Kerf.Engine.Numerics.NativeSampledRoots.Scope();
         using IDisposable aNativeInflections = global::Kerf.Engine.Geometry.Properties.NativeInflections.Scope();
         int aNbDiff = 0, aNbIntended = 0;
@@ -63,7 +63,7 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
         Assert.Equal(0, aNbDiff);
     }
 
-    // Decision 34702: the inflections that cut the curves, found by a continuous function and at a G1 join where the
+    // Decision 2423: the inflections that cut the curves, found by a continuous function and at a G1 join where the
     // concavity changes, and a sample exactly on its target a root, move these maps off native's, every one of them an
     // inflection's parameter in its last bits (0.5 for native's 0.49999999999999994 on an S curve) and what follows from
     // it, the graph the same; any other map that moves shows here

@@ -241,7 +241,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 else if (aP.RefusedBecause?.Code == global::Kerf.Engine.Construction.Filling.OffsetWire.CrossesItselfCode
                          && global::Kerf.Engine.Construction.Filling.OffsetWire.Crossing(PlaneOf(theSpine, aPIn, aPPlane), aNP) is not null)
                 {
-                    // Kerf decision 34701: native's parallel crosses itself, and the port refuses it
+                    // Kerf decision 2422: native's parallel crosses itself, and the port refuses it
                     myRefused++;
                     myCrossing++;
                 }

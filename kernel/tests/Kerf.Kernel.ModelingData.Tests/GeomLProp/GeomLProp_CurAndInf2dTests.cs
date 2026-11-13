@@ -211,7 +211,7 @@ public class GeomLProp_CurAndInf2dTest
         Assert.Equal(0, aAnalyzer.PointCount);
     }
 
-    // Upstream 8f817f5da5's InflectionsWithAffineParameters (decision 34702): an S curve's two inflections, whatever its
+    // Upstream 8f817f5da5's InflectionsWithAffineParameters (decision 2423): an S curve's two inflections, whatever its
     // size and its parameter's origin, scale and sense. 8.0.1 set its function to 0 where |V2| < 1e-4, so where the
     // parameter's span is long against the curve every sample is a root and it finds none.
     [Fact]
@@ -249,7 +249,7 @@ public class GeomLProp_CurAndInf2dTest
         }
     }
 
-    // Upstream 8f817f5da5's ConcavityChangesBetweenCircularArcs (decision 34702): quarter circles joined with the same
+    // Upstream 8f817f5da5's ConcavityChangesBetweenCircularArcs (decision 2423): quarter circles joined with the same
     // tangent and alternating sense; where the sense changes, at the second and fourth knots, is an inflection, though
     // the curvature is zero on neither side
     [Fact]
@@ -291,7 +291,7 @@ public class GeomLProp_CurAndInf2dTest
         }
     }
 
-    // Upstream 8f817f5da5's SmoothInflectionsSurroundConcavityJump (decision 34702): two cubic S curves joined with the
+    // Upstream 8f817f5da5's SmoothInflectionsSurroundConcavityJump (decision 2423): two cubic S curves joined with the
     // same tangent and opposite curvature: an inflection in each, and one at the join
     [Fact]
     public void Inflections_either_side_of_a_concavity_jump_and_at_it()

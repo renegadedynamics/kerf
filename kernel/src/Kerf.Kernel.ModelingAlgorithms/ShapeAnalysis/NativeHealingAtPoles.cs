@@ -3,7 +3,7 @@
 namespace Kerf.Engine.Healing.Analysis;
 
 /// <summary>
-/// For tests (decisions 34703, 34704): while a scope is open, the execution flow's healing works at a surface's poles as
+/// For tests (decisions 2424, 2425): while a scope is open, the execution flow's healing works at a surface's poles as
 /// OCCT 8.0.1 does: <see cref="SurfaceAnalysis"/> begins its Newton iterations even from a hint already at the point, and
 /// <c>ShapeConstruct_ProjectCurveOnSurface</c>'s line check carries on past a zero normal; so that the native recordings
 /// that reach either can be compared bit for bit. The setting flows as <c>NativeFaceNormals</c>'s does (an

@@ -1068,7 +1068,7 @@ internal static class BRepTestCurveCommands
 
             if (!Paral.IsDone)
             {
-                // Kerf: why the parallel was refused, if it was (decisions 2279, 34701)
+                // Kerf: why the parallel was refused, if it was (decisions 2279, 2422)
                 if (Paral.RefusedBecause is { } why)
                 {
                     di.Append($" {why.Code}: {why.Message}\n");
@@ -1148,7 +1148,7 @@ internal static class BRepTestCurveCommands
 
             if (!Paral.IsDone)
             {
-                // Kerf: why the parallel was refused, if it was (decisions 2279, 34701)
+                // Kerf: why the parallel was refused, if it was (decisions 2279, 2422)
                 if (Paral.RefusedBecause is { } why)
                 {
                     di.Append($" {why.Code}: {why.Message}\n");

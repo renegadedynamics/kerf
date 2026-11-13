@@ -1159,7 +1159,7 @@ internal class SurfaceAnalysis : Transient
         double tol2    = tol * tol; //, rs2p=1e10;
         double u       = p2dPrev.X, v = p2dPrev.Y;
         var    rsfirst = new Vector3D(p3D.XYZ() - Value(u, v).XYZ()); // pdn
-        // Upstream ec0167b409 (decision 34703): a hint already at the point is kept, at a singular point too, where 8.0.1
+        // Upstream ec0167b409 (decision 2424): a hint already at the point is kept, at a singular point too, where 8.0.1
         // broke off at the zero normal and the fallback moved the hint along the singular edge
         if (!NativeHealingAtPoles.IsNative && rsfirst.SquareMagnitude <= Math.Min(preci * preci, tol2))
         {

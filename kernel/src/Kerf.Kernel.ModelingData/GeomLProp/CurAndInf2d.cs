@@ -207,7 +207,7 @@ internal class CurAndInf2d : CurAndInf
     }
 
     /// <summary>
-    /// Upstream 8f817f5da5 (decision 34702): a G1 join of two smooth intervals at which the curve changes concavity is an
+    /// Upstream 8f817f5da5 (decision 2423): a G1 join of two smooth intervals at which the curve changes concavity is an
     /// inflection, though the curvature is zero on neither side, so the numeric search of each interval can't see it.
     /// The joins' inflections and the intervals' are added in order, the join's exact parameter kept where one of the
     /// intervals' falls on it.

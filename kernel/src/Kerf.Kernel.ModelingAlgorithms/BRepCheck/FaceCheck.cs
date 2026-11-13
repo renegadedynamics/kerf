@@ -687,7 +687,7 @@ internal class FaceCheck : ResultCheck
     /// <summary>Whether the geometric controls are on.</summary>
     public bool GeometricControls() => _gctrl;
 
-    // Kerf: internal for BRepFill_OffsetWire's check of a parallel (decision 34701)
+    // Kerf: internal for BRepFill_OffsetWire's check of a parallel (decision 2422)
     internal static bool Intersect(in Wire wir1,
                                   in Wire wir2,
                                   in Face f,

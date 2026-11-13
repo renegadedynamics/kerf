@@ -142,7 +142,7 @@ public class DrawStepCafCorpusTests(ITestOutputHelper output) : ICorpusTest
 
     // the corpus's counts after unit 8G2: OK 255, BAD 76 (OCCT's TODOs reproduced), SKIPPED 660 (data not public),
     // FAILED 8, attributed; with unit 8W's commands (exec, ReadFile, WriteFile, xnorm) and Tcl's encodings 1003
-    // gained: OK 264, BAD 76, SKIPPED 660, FAILED 3, attributed; with the healing at poles of decisions 34703 and 34704
+    // gained: OK 264, BAD 76, SKIPPED 660, FAILED 3, attributed; with the healing at poles of decisions 2424 and 2425
     // de/step_2/T9 reads upstream's newer reference (OK by an intended difference, as U8 is): OK 265, BAD 75
     private const int GainedCount = 1003;
     private const int OkCount = 265;

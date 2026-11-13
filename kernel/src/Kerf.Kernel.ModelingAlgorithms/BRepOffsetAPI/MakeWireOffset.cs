@@ -458,7 +458,7 @@ internal class MakeWireOffset : MakeShape
         catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
                                             && exception is not ImmutableObjectException)
         {
-            // Kerf: why a parallel was refused, if one was (decision 34701)
+            // Kerf: why a parallel was refused, if one was (decision 2422)
             foreach (OffsetWire algo in offset <= 0.0 ? _left : _right)
             {
                 if (algo.RefusedBecause is { } why)
@@ -477,7 +477,7 @@ internal class MakeWireOffset : MakeShape
 
     /// <summary>
     /// Kerf: why the last <see cref="Perform"/> refused a parallel it made, not at its distance from the spine or
-    /// crossing itself, as a diagnostic's code and message; null if it didn't (decisions 2279, 34701).
+    /// crossing itself, as a diagnostic's code and message; null if it didn't (decisions 2279, 2422).
     /// </summary>
     internal (string Code, string Message)? RefusedBecause { get; private set; }
 

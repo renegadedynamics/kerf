@@ -430,9 +430,9 @@ public class BRepFill_OffsetWireTests
     public void An_offset_cut_at_the_inflections_it_now_has_crossing_itself_is_refused_saying_where()
     {
         // tests/offset/wire_unclosed_outside_0_025/B3: decision 2279's check refused this offset, which came within 10.08
-        // of the wire for 11.24. Cut at the inflections of decision 34702 its parallel is at its distance, 770.057 long
+        // of the wire for 11.24. Cut at the inflections of decision 2423 its parallel is at its distance, 770.057 long
         // for OCCT's 738.873, but crosses itself, and was returned, valid by BRepCheck, a success (decision 2406). The
-        // check of decision 34701 refuses it, and the public offset fails, saying where
+        // check of decision 2422 refuses it, and the public offset fails, saying where
         string aPath = Path.Combine(typeof(BRepFill_OffsetWireTests).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
                                         .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "OcctTestDataDir").Value!, "brep", "offset_wire_034.brep");
         if (!File.Exists(aPath) || !BrepTools.Read(out Shape aShape, aPath))
@@ -472,7 +472,7 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void A_parallel_that_crosses_itself_is_found_where_it_crosses()
     {
-        // Decision 34701's check: a figure of eight (its first and third edges crossing at (5, 5)), two loops crossing
+        // Decision 2422's check: a figure of eight (its first and third edges crossing at (5, 5)), two loops crossing
         // each other, and an open wire crossing itself, each in the plane of a square; a square, an open L, and two
         // loops apart don't cross
         Face aPlane = new MakeFace(Square(), true).Face();
@@ -494,7 +494,7 @@ public class BRepFill_OffsetWireTests
     [Fact]
     public void Edges_proved_apart_are_spared_and_those_that_cant_be_go_to_the_exact_crossing()
     {
-        // Decision 34707: a line and then a curve that runs on one way with it (a Bezier whose poles' differences lie in
+        // Decision 2428: a line and then a curve that runs on one way with it (a Bezier whose poles' differences lie in
         // a half-plane) are proved to meet only at their common end; a curve that turns back and crosses the line
         // (its poles' differences span more than half a turn) isn't, and its crossing is found exactly
         Face aPlane = new MakeFace(Square(), true).Face();
@@ -521,7 +521,7 @@ public class BRepFill_OffsetWireTests
     public void A_refused_offset_says_why_at_the_public_layer()
     {
         // The maker's reason reaches the public layer's diagnostic: a parallel refused for its distance says so
-        // (decisions 2279, 34701), and a good one has no reason
+        // (decisions 2279, 2422), and a good one has no reason
         MakeWireOffset aGood = new(Square(), global::Kerf.Geometry.JoinKind.Arc);
         aGood.Perform(2.0);
         Assert.True(aGood.IsDone);

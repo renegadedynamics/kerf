@@ -473,7 +473,7 @@ public class ShapeAnalysis_SurfaceTests
         Assert.True(aSAS.Value(new Point2D(0, 1)).IsEqual(new Point3D(2, 0, 1), 1e-15));
     }
 
-    // Upstream ec0167b409's ConvergedHintAtSingularityKeepsParameters (decision 34703): a bilinear patch whose v = 0 edge
+    // Upstream ec0167b409's ConvergedHintAtSingularityKeepsParameters (decision 2424): a bilinear patch whose v = 0 edge
     // is a point. A hint on that edge already at the point is kept, where 8.0.1's Newton broke off at the zero normal and
     // the fallback search moved U along the singular edge; a point within the tolerance of the hint keeps it too, and a
     // point away from the edge is still found

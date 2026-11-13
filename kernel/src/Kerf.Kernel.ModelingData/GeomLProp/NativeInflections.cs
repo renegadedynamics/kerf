@@ -3,7 +3,7 @@
 namespace Kerf.Engine.Geometry.Properties;
 
 /// <summary>
-/// For tests (decision 34702): while a scope is open, the execution flow's <see cref="CurAndInf2d"/> finds a curve's
+/// For tests (decision 2423): while a scope is open, the execution flow's <see cref="CurAndInf2d"/> finds a curve's
 /// inflections as OCCT 8.0.1 does: 8.0.1's function, zero wherever the second derivative is under 1e-4, on the whole
 /// curve, and no inflection at a G1 join. With <c>NativeSampledRoots</c>, which it doesn't open, the medial axis's
 /// native recordings can be compared bit for bit. The setting flows as <c>NativeFaceNormals</c>'s does (an

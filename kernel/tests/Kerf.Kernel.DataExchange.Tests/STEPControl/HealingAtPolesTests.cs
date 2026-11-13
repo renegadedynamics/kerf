@@ -13,7 +13,7 @@ using Kerf.Topology;
 namespace Kerf.Kernel.DataExchange.Tests.STEPControl;
 
 /// <summary>
-/// The healing at a sphere's pole on a file of OCCT's corpus (decision 34704): <c>trj3_s1-db-214.stp</c> has two faces
+/// The healing at a sphere's pole on a file of OCCT's corpus (decision 2425): <c>trj3_s1-db-214.stp</c> has two faces
 /// on spheres of radius 6, mirror images of each other across y = 0. OCCT 8.0.1's line through the pole gave the second
 /// a pcurve that went round the other way, so the face was the rest of the sphere: 344.5015, which with its twin's
 /// 107.888 is the whole sphere, 4 pi 36 = 452.389. Now it is its twin's mirror image.

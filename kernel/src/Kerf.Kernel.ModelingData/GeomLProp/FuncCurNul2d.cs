@@ -15,7 +15,7 @@ namespace Kerf.Engine.Geometry.Properties;
 /// length, with its analytic derivative.
 /// </summary>
 /// <remarks>
-/// Upstream 8f817f5da5 (decision 34702). 8.0.1's F was (V1 ^ V2) / (|V1| |V2|), set to exactly 0 wherever |V2| was under
+/// Upstream 8f817f5da5 (decision 2423). 8.0.1's F was (V1 ^ V2) / (|V1| |V2|), set to exactly 0 wherever |V2| was under
 /// 1e-4 in the curve's own parameter units, so a nearly straight stretch, or a whole curve with a long parameter range,
 /// read as a run of roots, and its ends, where F jumped back to the sine of the angle between V1 and V2, as inflections.
 /// This F is continuous wherever the tangent is, and doesn't change with the parameter's scale.

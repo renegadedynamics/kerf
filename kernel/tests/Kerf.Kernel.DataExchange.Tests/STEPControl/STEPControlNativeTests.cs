@@ -110,7 +110,7 @@ public sealed class STEPControlNativeTests(ITestOutputHelper output)
     [Fact]
     public void ReadsTheCorpusAsNative()
     {
-        // The healing at poles as OCCT 8.0.1 has it, so that the native recordings replay (Kerf decisions 34703, 34704)
+        // The healing at poles as OCCT 8.0.1 has it, so that the native recordings replay (Kerf decisions 2424, 2425)
         using IDisposable aNativeHealing = global::Kerf.Engine.Healing.Analysis.NativeHealingAtPoles.Scope();
         List<string> aFiles = StepRoundTripTests.CorpusFiles();
         if (aFiles.Count == 0)

@@ -33,7 +33,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
     };
 
     /// <summary>
-    /// Decision 34702: a sample of the root finder exactly on its target is a root, where 8.0.1 kept it only if the
+    /// Decision 2423: a sample of the root finder exactly on its target is a root, where 8.0.1 kept it only if the
     /// function was off the target half a step on. In this run the edge's nearest approach to the face is on such a
     /// sample: its distance is 0, where native's is 9.2e-8, at 1 common part either way. Every other run is native's
     /// (the test above, with 8.0.1's rule).
@@ -137,7 +137,7 @@ public class IntTools_EdgeIntersectorNativeTests(ITestOutputHelper theOutput)
     [MemberData(nameof(CaseNames), MemberType = typeof(EdgeIntersectorRecordings))]
     public void EdgeFace_GivesNativeCommonParts_WithFreshAndReusedContexts(string theCase)
     {
-        // A sample exactly on its target is a root now (decision 34702), which moves one run (pinned below)
+        // A sample exactly on its target is a root now (decision 2423), which moves one run (pinned below)
         using IDisposable aNative = global::Kerf.Engine.Numerics.NativeSampledRoots.Scope();
         Case aCase = Cases[theCase];
         List<string> aMismatches = [];

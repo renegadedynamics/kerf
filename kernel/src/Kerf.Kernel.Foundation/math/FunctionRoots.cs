@@ -385,11 +385,11 @@ internal class FunctionRoots
 
                 //-- On detecte les cas ou la fct s annule sur des Xi et est
                 //-- non nulle au voisinage de Xi
-                // Upstream 71658f6c8f (decision 34702): a sample on which F is exactly K is a root unless both its
+                // Upstream 71658f6c8f (decision 2423): a sample on which F is exactly K is a root unless both its
                 // neighbours are too (inside a run of them). 8.0.1 meant to probe either side of the sample, but took
                 // both probes at X + dx/2, and kept the sample only where F was off K there. Upstream's search for F's
                 // return across K in the neighbouring intervals isn't ported: everywhere Kerf's tests and corpus reach
-                // it, it fires only where F is rounding noise, and there it multiplies the roots (decision 34702).
+                // it, it fires only where F is rounding noise, and there it multiplies the roots (decision 2423).
                 bool isNative = NativeSampledRoots.IsNative;
                 for (i = 0; i <= n; i++)
                 {

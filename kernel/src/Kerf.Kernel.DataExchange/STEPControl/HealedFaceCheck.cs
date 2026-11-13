@@ -91,7 +91,7 @@ internal static class HealedFaceCheck
 
     /// <summary>
     /// Whether the healing reported on <paramref name="face"/> or anything in it, it has a vertex off its curve, or it is
-    /// bounded by two edges or fewer (decision 34706): a sliver between two coincident curves, of no area, whose validity
+    /// bounded by two edges or fewer (decision 2427): a sliver between two coincident curves, of no area, whose validity
     /// its pcurves' last bits decide, as <c>bug30790.step</c>'s 150 have it.
     /// </summary>
     private static bool IsSuspect(in Shape face, HealingMessages? said,

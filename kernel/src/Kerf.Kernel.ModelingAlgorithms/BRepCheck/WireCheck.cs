@@ -1000,7 +1000,7 @@ internal class WireCheck : ResultCheck
     /// they are left unchanged otherwise. With <paramref name="update"/>, the status is added to
     /// <see cref="ResultCheck.Status"/> (not for NoCurveOnSurface and InvalidRange, as in OCCT). Kerf: an edge, or a pair
     /// of edges, that <paramref name="provedApart"/> proves don't cross (its second edge null for one edge's own crossing)
-    /// isn't intersected; OCCT has no such hook (decision 34707).
+    /// isn't intersected; OCCT has no such hook (decision 2428).
     /// </summary>
     public StatusCheck SelfIntersect(in Face f, ref Edge retE1, ref Edge retE2, bool update = false,
                                      Func<Edge, Edge, bool>? provedApart = null)

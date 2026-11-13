@@ -164,7 +164,7 @@ public class StepReadCheckTests
     [Fact]
     public void Slivers_read_invalid_are_reported()
     {
-        // Decision 34706: bug30790.step holds about 150 faces between two coincident edges, of no area; the healing says
+        // Decision 2427: bug30790.step holds about 150 faces between two coincident edges, of no area; the healing says
         // nothing of them, and 80 to 82 of them (as its pcurves' last bits fall) are invalid. A face bounded by two edges
         // or fewer is now checked, so the read reports every one, whichever they are
         string? aPath = global::Kerf.Kernel.DataExchange.Tests.StepGen.StepRoundTripTests.CorpusFiles().SingleOrDefault(f => Path.GetFileName(f) == "bug30790.step");

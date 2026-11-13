@@ -96,7 +96,7 @@ public sealed class TopoStepNativeTests(ITestOutputHelper output)
     [Fact]
     public void StepToTopoDS_translates_the_corpus_as_native()
     {
-        // The healing at poles as OCCT 8.0.1 has it, so that the native recordings replay (Kerf decisions 34703, 34704)
+        // The healing at poles as OCCT 8.0.1 has it, so that the native recordings replay (Kerf decisions 2424, 2425)
         using IDisposable aNativeHealing = global::Kerf.Engine.Healing.Analysis.NativeHealingAtPoles.Scope();
         StepProtocol aProtocol = TopoStepRecorder.Protocol();
         global::Kerf.Engine.Healing.ShapeAlgo.Init(); // as STEPControl_Controller does natively

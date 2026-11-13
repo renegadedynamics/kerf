@@ -3,7 +3,7 @@
 namespace Kerf.Engine.Numerics;
 
 /// <summary>
-/// For tests (decision 34702): while a scope is open, the execution flow's <see cref="FunctionRoots"/> treats a sample
+/// For tests (decision 2423): while a scope is open, the execution flow's <see cref="FunctionRoots"/> treats a sample
 /// on which the function is exactly on its target as OCCT 8.0.1 does (a root only where the function is off the target
 /// half a step on), so that the native recordings that reach such a sample can be compared bit for bit. The setting
 /// flows as <c>NativeFaceNormals</c>'s does (an <see cref="AsyncLocal{T}"/>), so tests running in parallel don't affect

@@ -518,7 +518,7 @@ internal sealed class OffsetWire
         }
 
         // Kerf: nor does a parallel cross itself, or one of its wires another, which a parallel at its distance can
-        // (decisions 1742, 34701)
+        // (decisions 1742, 2422)
         if (!keptItsDistance && !_shape.IsNull && Crossing(_spine, _shape) is { } where)
         {
             _shape.Nullify();
@@ -546,7 +546,7 @@ internal sealed class OffsetWire
     /// edge of its wire (<c>BRepCheck_Wire::SelfIntersect</c>, as on a face: the edges' boxes first, then their exact
     /// intersections in the spine's plane, a point within a vertex's tolerance of one of the edges' vertices no
     /// crossing), or a wire crossing another (<c>BRepCheck_Face</c>'s test of two wires). A parallel at its distance
-    /// from the spine may still cross itself where the medial axis went wrong (decision 34701).
+    /// from the spine may still cross itself where the medial axis went wrong (decision 2422).
     /// </summary>
     internal static Point3D? Crossing(in Face spine, in Shape parallel)
     {
@@ -594,7 +594,7 @@ internal sealed class OffsetWire
         return null;
     }
 
-    // Kerf (decision 34707): proves, where it can, that an edge of the parallel doesn't cross itself, or that two edges
+    // Kerf (decision 2428): proves, where it can, that an edge of the parallel doesn't cross itself, or that two edges
     // following one another in their wire meet only at their common vertex, so that the exact intersection, the check's
     // cost, is spared there. An edge runs strictly one way, along some direction u, if every tangent it has lies in an open
     // half-plane: the positive combinations of a few directions hold all its tangents (a line's direction; an arc's

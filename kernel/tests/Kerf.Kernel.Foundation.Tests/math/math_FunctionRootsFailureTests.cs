@@ -183,7 +183,7 @@ public class math_FunctionRootsFailureTests
         }
     }
 
-    // Upstream's SampledRootAndReturnCrossing, its root on a sample (decision 34702): 8.0.1 kept the sample only where the
+    // Upstream's SampledRootAndReturnCrossing, its root on a sample (decision 2423): 8.0.1 kept the sample only where the
     // function was off its target half a step on, so here it found no root at all. The second root, inside the next
     // interval, needs the search beside the sample, which isn't ported (decision 2407)
     [Fact]
