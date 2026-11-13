@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **`sweep` says why where it threw** (kernel decisions 34006, 34007): a sweep of a profile whose tolerance is larger than the profile (a FreeCAD file's vertex of tolerance 2e8) now fails naming the tolerance, and a right or round corner too tight for a thin profile fails naming the corner and saying the transformed transition can sweep it, where both reported only OCCT's internal error.
 - **`Chamfer` along an edge that isn't smooth is at the distance asked on small parts too, and builds round a small solid with curved edges where it failed** (kernel decisions 2318 to 2326): OCCT keeps such a chamfer's distance from a smoothed copy of the edge, which on a part 0.3 across put a chamfer of 0.01 at 0.0104 to 0.0147, returned as a success, and it failed where such chamfers met. The chamfer is now built along the edge itself, or fails if it can't be held to its distance; where the chamfers meet, the kernel's own construction builds them and proves the solid by volume, in 11 to 15 s. A chamfer in which the chamfers have taken one of each other's contacts away is now always a failure.
 - **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
 - **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
