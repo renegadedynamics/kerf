@@ -41,7 +41,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     private readonly string myDirectory = Directory.CreateTempSubdirectory("occtnet-mkoffset-").FullName;
     private int myFileNumber;
     private readonly List<string> myDifferences = [];
-    private int myCases, myPerforms, myIdentical, myFreeMasked, myCanonical, myNotDone, myEmpty, myHistory, myHistoryOrder, myRefused;
+    private int myCases, myPerforms, myIdentical, myFreeMasked, myCanonical, myNotDone, myEmpty, myHistory, myHistoryOrder, myRefused, myCrossing;
 
     public void Dispose()
     {
@@ -238,9 +238,16 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 {
                     myRefused++;
                 }
+                else if (aP.RefusedBecause?.Code == global::Kerf.Engine.Construction.Filling.OffsetWire.CrossesItselfCode
+                         && global::Kerf.Engine.Construction.Filling.OffsetWire.Crossing(PlaneOf(theSpine, aPIn, aPPlane), aNP) is not null)
+                {
+                    // Kerf decision 34701: native's parallel crosses itself, and the port refuses it
+                    myRefused++;
+                    myCrossing++;
+                }
                 else
                 {
-                    myDifferences.Add($"{aWhat}: the port refuses a parallel of native's that keeps its distance");
+                    myDifferences.Add($"{aWhat}: the port refuses a parallel of native's that keeps its distance and doesn't cross itself");
                 }
             }
             else if (aDiff.IsIdentical)
@@ -331,13 +338,19 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         }
     }
 
+    // The plane the port's offset works in: the spine's face, the plane's face given with a wire, or the wire's own plane
+    private static Face PlaneOf(Spine theSpine, Shape theSpineShape, Shape thePlaneFace) =>
+        theSpine.IsFace ? ShapeCasts.Face(theSpineShape)
+        : !thePlaneFace.IsNull ? ShapeCasts.Face(thePlaneFace)
+        : new MakeFace(ShapeCasts.Wire(theSpineShape), true).Face();
+
     private void Report()
     {
         output.WriteLine($"{myCases} cases, {myPerforms} offsets; {myNotDone} not done on both sides; "
                          + $"results: {myIdentical} identical BRep text ({myFreeMasked} with the Free column masked), "
                          + $"{myCanonical} canonically identical, {myEmpty} empty; Generated identical: {myHistory} "
                          + $"({myHistoryOrder} in another order); refused by the port, native's not being at the offset "
-                         + $"from the spine: {myRefused}; differences: {myDifferences.Count}");
+                         + $"from the spine or crossing itself: {myRefused} ({myCrossing} crossing); differences: {myDifferences.Count}");
         foreach (string aDiff in myDifferences.Take(30))
         {
             output.WriteLine("  " + aDiff);

@@ -424,8 +424,10 @@ internal sealed class OffsetWire
     /// <exception cref="ConstructionErrorException">A closed result is expected and a parallel wire isn't closed.</exception>
     public void Perform(double offset, double alt = 0.0)
     {
-        // Kerf: whether the parallel has been put to ComesNearer already (the finer polyline's, when it stands)
+        // Kerf: whether the parallel has been put to KeepsItsDistance and Crossing already (the finer polyline's, when it
+        // stands)
         bool keptItsDistance = false;
+        RefusedBecause = null;
         try
         {
             _callGen = false;
@@ -456,7 +458,8 @@ internal sealed class OffsetWire
                 {
                     done = PerformOnPolylines(badEdges, offset, alt, .001)
                            && (_isOpenResult || AllWiresClosed(_shape))
-                           && KeepsItsDistance(_spine, _shape, offset, alt, _joinType, _isOpenResult);
+                           && KeepsItsDistance(_spine, _shape, offset, alt, _joinType, _isOpenResult)
+                           && Crossing(_spine, _shape) is null;
                 }
                 catch (Exception exception) when ((Refusal.IsFailure(exception) || exception is NullReferenceException)
                                                     && exception is not ImmutableObjectException)
@@ -510,7 +513,134 @@ internal sealed class OffsetWire
         {
             _shape.Nullify();
             _isDone = false;
+            RefusedBecause = (NotAtDistanceCode, "The offset in the plane isn't at its distance from the wire everywhere.");
             throw new ConstructionErrorException("Offset wire is not at the offset from the spine.");
+        }
+
+        // Kerf: nor does a parallel cross itself, or one of its wires another, which a parallel at its distance can
+        // (decisions 1742, 34701)
+        if (!keptItsDistance && !_shape.IsNull && Crossing(_spine, _shape) is { } where)
+        {
+            _shape.Nullify();
+            _isDone = false;
+            RefusedBecause = (CrossesItselfCode, $"The offset in the plane crosses itself, at {Where(where)}.");
+            throw new ConstructionErrorException("Offset wire crosses itself.");
+        }
+    }
+
+    // Kerf: the diagnostic codes of the two refusals
+    internal const string NotAtDistanceCode = "offset.not-at-distance";
+    internal const string CrossesItselfCode = "offset.crosses-itself";
+
+    /// <summary>
+    /// Kerf: why the last <see cref="Perform"/> refused the parallel it made, as a diagnostic's code and message; null
+    /// if it didn't (done, or failed for another reason).
+    /// </summary>
+    internal (string Code, string Message)? RefusedBecause { get; private set; }
+
+    private static string Where(Point3D p) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"({p.X:G6}, {p.Y:G6}, {p.Z:G6})");
+
+    /// <summary>
+    /// Kerf: a point where the parallel crosses itself, or null if it doesn't: an edge crossing itself or another
+    /// edge of its wire (<c>BRepCheck_Wire::SelfIntersect</c>, as on a face: the edges' boxes first, then their exact
+    /// intersections in the spine's plane, a point within a vertex's tolerance of one of the edges' vertices no
+    /// crossing), or a wire crossing another (<c>BRepCheck_Face</c>'s test of two wires). A parallel at its distance
+    /// from the spine may still cross itself where the medial axis went wrong (decision 34701).
+    /// </summary>
+    internal static Point3D? Crossing(in Face spine, in Shape parallel)
+    {
+        if (parallel.IsNull)
+        {
+            return null;
+        }
+        List<Wire> wires = [];
+        for (Explorer exp = new(parallel, ShapeType.Wire); exp.More(); exp.Next())
+        {
+            wires.Add(ShapeCasts.Wire(exp.Current()));
+        }
+        foreach (Wire wire in wires)
+        {
+            Edge e1 = new(), e2 = new();
+            if (new global::Kerf.Engine.Healing.Checks.WireCheck(wire).SelfIntersect(spine, ref e1, ref e2)
+                == global::Kerf.Engine.Healing.Checks.StatusCheck.SelfIntersectingWire)
+            {
+                return CrossingOf(spine, e1, e2) ?? Middle(e1);
+            }
+        }
+        var boxes = new Dictionary<Shape, global::Kerf.Engine.Geometry.Bounds.Box2d>(ShapeHasher.Instance);
+        for (int i = 0; i < wires.Count; i++)
+        {
+            for (int j = i + 1; j < wires.Count; j++)
+            {
+                if (global::Kerf.Engine.Healing.Checks.FaceCheck.Intersect(wires[i], wires[j], spine, boxes))
+                {
+                    // Where: looked for only once the crossing is known
+                    for (Explorer exp1 = new(wires[i], ShapeType.Edge); exp1.More(); exp1.Next())
+                    {
+                        for (Explorer exp2 = new(wires[j], ShapeType.Edge); exp2.More(); exp2.Next())
+                        {
+                            if (CrossingOf(spine, ShapeCasts.Edge(exp1.Current()), ShapeCasts.Edge(exp2.Current())) is { } at)
+                            {
+                                return at;
+                            }
+                        }
+                    }
+                    return Middle(ShapeCasts.Edge(new Explorer(wires[i], ShapeType.Edge).Current()));
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Point3D Middle(in Edge edge)
+    {
+        EdgeCurveAdaptor curve = new(edge);
+        return curve.Value((curve.FirstParameter() + curve.LastParameter()) / 2.0);
+    }
+
+    // The first point where two edges cross (the second null for an edge crossing itself) in the spine's plane, not
+    // within a vertex's tolerance of one of their vertices, or null
+    private static Point3D? CrossingOf(in Face spine, in Edge e1, in Edge e2)
+    {
+        Curve2D? c1 = Tool.CurveOnSurface(e1, spine, out double f1, out double l1);
+        double f2 = 0.0, l2 = 0.0;
+        Curve2D? c2 = e2.IsNull ? null : Tool.CurveOnSurface(e2, spine, out f2, out l2);
+        if (c1 is null || (!e2.IsNull && c2 is null) || !(l1 > f1) || (c2 is not null && !(l2 > f2)))
+        {
+            return null;
+        }
+        var a1 = new CurveAdaptor2D(c1, f1, l1);
+        var inter = c2 is null
+            ? new global::Kerf.Engine.Intersection.TwoD.GInter(a1, 1.0e-10, 1.0e-10)
+            : new global::Kerf.Engine.Intersection.TwoD.GInter(a1, new CurveAdaptor2D(c2, f2, l2), 1.0e-10, 1.0e-10);
+        if (!inter.IsDone)
+        {
+            return null;
+        }
+        EdgeCurveAdaptor first = new(e1);
+        for (int p = 1; p <= inter.PointCount; p++)
+        {
+            Point3D at = first.Value(inter.Point(p).ParamOnFirst());
+            if (!NearAVertex(at, e1) && (e2.IsNull || !NearAVertex(at, e2)))
+            {
+                return at;
+            }
+        }
+        return null;
+
+        static bool NearAVertex(Point3D at, in Edge edge)
+        {
+            for (Explorer exp = new(edge, ShapeType.Vertex); exp.More(); exp.Next())
+            {
+                Vertex v = ShapeCasts.Vertex(exp.Current());
+                double tolerance = Tool.Tolerance(v);
+                if (Tool.Pnt(v).SquareDistanceTo(at) <= tolerance * tolerance)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

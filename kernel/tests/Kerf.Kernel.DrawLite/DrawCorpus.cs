@@ -383,6 +383,16 @@ public sealed class DrawCorpus(string theTestsDirectory)
                                          " Error: Offset is not done."),
             ["offset/wire_unclosed_outside_0_075/A9"] = ("refused: the offset came within 2,299 of the wire for 2,357, and a part of it was missing (OCCT's TODO OCC23748; decision 2281)",
                                                          " Error: Offset is not done."),
+            // Each offset crossed itself, OCCT's known problem (TODO OCC23068, a face on the result faulty), and was a
+            // success; it is refused now, the log saying where it crosses (decision 34701)
+            ["offset/wire_closed_outside_0_005/C6"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
+                                                       " offset.crosses-itself: The offset in the plane crosses itself, at (-25.1198, 151.127, 26.7433)."),
+            ["offset/wire_closed_outside_0_025/C6"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
+                                                       " offset.crosses-itself: The offset in the plane crosses itself, at (-26.5743, 166.333, 15.2455)."),
+            ["offset/wire_closed_outside_0_075/C6"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
+                                                       " offset.crosses-itself: The offset in the plane crosses itself, at (-30.3201, 204.336, -13.4948)."),
+            ["offset/wire_unclosed_outside_0_025/A9"] = ("refused: the offset crosses itself (OCCT's TODO OCC23068; decision 34701)",
+                                                         " offset.crosses-itself: The offset in the plane crosses itself, at (11289.3, 4531.8, -19500)."),
         };
 
     // Before IntendedDifferences, which reads them as it's initialised

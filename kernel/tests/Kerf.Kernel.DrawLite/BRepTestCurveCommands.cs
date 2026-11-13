@@ -1068,6 +1068,11 @@ internal static class BRepTestCurveCommands
 
             if (!Paral.IsDone)
             {
+                // Kerf: why the parallel was refused, if it was (decisions 2279, 34701)
+                if (Paral.RefusedBecause is { } why)
+                {
+                    di.Append($" {why.Code}: {why.Message}\n");
+                }
                 di.Append(" Error: Offset is not done.\n");
                 return 1;
             }
@@ -1143,6 +1148,11 @@ internal static class BRepTestCurveCommands
 
             if (!Paral.IsDone)
             {
+                // Kerf: why the parallel was refused, if it was (decisions 2279, 34701)
+                if (Paral.RefusedBecause is { } why)
+                {
+                    di.Append($" {why.Code}: {why.Message}\n");
+                }
                 di.Append(" Error: Offset is not done.\n");
                 return 1;
             }
