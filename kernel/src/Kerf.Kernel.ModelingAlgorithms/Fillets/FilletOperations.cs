@@ -414,6 +414,7 @@ public static class FilletOperations
             }
             ChamferSpec[] specs = given;
             MakeChamfer? built = null;
+            bool meetBuilt = false;
             Result<Built<Shape>> done = EngineOperation.Run<Shape>(range =>
             {
                 // Past a tight corner, where asked: collapsed, beside ChFi3d, which isn't asked (decision 1988)
@@ -487,6 +488,7 @@ public static class FilletOperations
                 }
                 if (ChamferMeet.Build(solid, chamfer, specs, faces, options, out bool late, out ChamferMeet.Unproved? unproved) is { } met)
                 {
+                    meetBuilt = true;
                     return met;
                 }
                 return late ? new EngineOutcome(false, static () => default, Failure: LateFailure(options.TimeLimit), MoreFailures: Failures(outcome))
@@ -499,10 +501,11 @@ public static class FilletOperations
                 ?? EdgeCrossings.Problem(solid, made, "The chamfer's result", SelfIntersecting);
 
             // What ChFi3d made is broken at a corner: its faces carried on until they meet instead, if that's proved (units 15U,
-            // 15V), within its time limit, under the caller's token
+            // 15V), within its time limit, under the caller's token. Not where what's broken is that construction's own, which
+            // would build the same again and fail the same checks (unit 15AQ)
             bool tooLong = false;
             ChamferMeet.Unproved? tooLittle = null;
-            if (done.TryGetInvalid(out _) && built is not null)
+            if (done.TryGetInvalid(out _) && built is not null && !meetBuilt)
             {
                 EngineOutcome? instead;
                 using (Cancellation.Enter(Cancellation.Effective(cancellationToken)))

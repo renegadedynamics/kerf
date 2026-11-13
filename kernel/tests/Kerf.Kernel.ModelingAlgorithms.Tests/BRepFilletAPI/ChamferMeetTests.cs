@@ -450,6 +450,31 @@ public class ChamferMeetTests
         Assert.Equal(volume, Kerf.Measurement.MeasureOperations.IntegrateVolume(made, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 }), 1e-5);
     }
 
+    // From 0.0162 to 0.0171 ChFi3d's result is self-intersecting and one of its side stripes is off its length by just more than
+    // the approximation's tolerance between the eight sections it was held to, so the construction kept it and the proof
+    // refused what the fuse made of it (unit 15AQ). Held to its length at 32 sections, it's off, takes a band of Kerf's own,
+    // and the loft builds, proved. The specs are Kerf.Modeling's (two equal distances on a reference face)
+    [Fact]
+    public void A_stripe_off_its_length_between_eight_sections_takes_kerfs_own_band()
+    {
+        const double length = 0.0162501;
+        Shape loft = Loft();
+        Edge[] edges = [.. loft.AllEdges()];
+        Face[] references = [.. edges.Select(e => loft.AllFaces().First(f => f.AllEdges().Any(x => x.IsSame(e))))];
+        ChamferSpec[] specs = [.. edges.Select((e, i) => new ChamferSpec(e, length, length, ReferenceFace: references[i]))];
+        MakeChamfer native = Native(loft, specs);
+        native.Build();
+
+        Result<Built<Shape>> chamfered = loft.Chamfer(specs, new ChamferOptions { TimeLimit = Timeout.InfiniteTimeSpan });
+        Assert.True(chamfered.IsSuccess, chamfered.Error?.ToString());
+        Shape made = chamfered.Value.Shape;
+        Assert.Equal(ShapeType.Solid, made.Type);
+        Assert.True(made.Validate().IsValid);
+        Assert.True(ChamferMeet.Proved(loft, made, specs, references, native, 1e-4));
+        Assert.Null(EdgeCrossings.Problem(loft, made, "The chamfer's result", FilletOperations.SelfIntersecting));
+        Assert.Equal(740.956950, Kerf.Measurement.MeasureOperations.IntegrateVolume(made, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 }), 1e-5);
+    }
+
     // The volume proves a solid only where what it allows is a small part of what the chamfers take off (unit 15AP): a
     // twentieth. The loft at 0.05 is built under it; asked to prove it to a ten-thousandth, the construction refuses it and
     // says by how much, which the operation turns into a failure that says why

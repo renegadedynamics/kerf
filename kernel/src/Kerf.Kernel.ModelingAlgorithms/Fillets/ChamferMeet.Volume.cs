@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -199,6 +200,7 @@ internal static partial class ChamferMeet
         // face is nothing (unit 15U4)
         var side1 = new Side { Start = two[0], Candidates = [two[0]], InStart = two[0].AllEdges().First(e => e.IsSame(edge)), FromLast = true };
         var side2 = new Side { Start = two[1], Candidates = [two[1]], InStart = two[1].AllEdges().First(e => e.IsSame(edge)), FromLast = true };
+        var onto = new Dictionary<Shape, ProjectPointOnSurface>(ShapeHasher.Instance);
 
         // Gauss's eight points on [lo, hi], in order along the edge
         (double Volume, double Width)? Panel(double lo, double hi)
@@ -216,7 +218,7 @@ internal static partial class ChamferMeet
                     return null;
                 }
                 (Point3D p1, Point3D p2) = firstIsReference ? contacts : (contacts.Other, contacts.Reference);
-                (double sectionArea, Vector3D moment) = Section(c, p1, p2, side1.Face, side2.Face);
+                (double sectionArea, Vector3D moment) = Section(c, p1, p2, side1.Face, side2.Face, onto);
                 double weight = 0.5 * (hi - lo) * GaussWeights[i] * speed;
                 volume += weight * (sectionArea - bend.Dot(moment));
                 width += weight * p1.DistanceTo(p2);
@@ -277,8 +279,10 @@ internal static partial class ChamferMeet
         return (total, area, Math.Max(error, Math.Abs(total - rough)));
     }
 
-    // A section's area and first moment about the edge's point: the triangle, and each face's segment beside it
-    private static (double Area, Vector3D Moment) Section(Point3D c, Point3D p1, Point3D p2, Face face1, Face face2)
+    // A section's area and first moment about the edge's point: the triangle, and each face's segment beside it. Each face's
+    // sag is by a projector loaded once for the face along the edge (onto), whose grid of samples is built at its first point
+    // and not again at each (unit 15AQ): the same values as one made for each point
+    private static (double Area, Vector3D Moment) Section(Point3D c, Point3D p1, Point3D p2, Face face1, Face face2, Dictionary<Shape, ProjectPointOnSurface> onto)
     {
         var e1 = new Vector3D(c, p1);
         var e2 = new Vector3D(c, p2);
@@ -287,7 +291,15 @@ internal static partial class ChamferMeet
         foreach ((Point3D p, Point3D other, Face face) in new[] { (p1, p2, face1), (p2, p1, face2) })
         {
             Point3D middle = new(0.5 * (c.X + p.X), 0.5 * (c.Y + p.Y), 0.5 * (c.Z + p.Z));
-            var projection = new ProjectPointOnSurface(middle, Tool.Surface(face)!);
+            if (!onto.TryGetValue(face, out ProjectPointOnSurface? projection))
+            {
+                Surface surface = Tool.Surface(face)!;
+                surface.ParameterBounds(out double u0, out double u1, out double v0, out double v1);
+                projection = new ProjectPointOnSurface();
+                projection.Init(surface, u0, u1, v0, v1, Precision.Confusion());
+                onto[face] = projection;
+            }
+            projection.Perform(middle);
             if (projection.NbPoints() == 0)
             {
                 continue;

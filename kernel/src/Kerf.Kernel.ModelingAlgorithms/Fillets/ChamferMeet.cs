@@ -165,7 +165,7 @@ internal static partial class ChamferMeet
             {
                 return false;
             }
-            var projection = new ProjectPointOnSurface(corner.Point, Original);
+            ProjectPointOnSurface projection = OntoOriginal(corner.Point);
             if (projection.NbPoints() == 0)
             {
                 return false;
@@ -173,6 +173,34 @@ internal static partial class ChamferMeet
             projection.LowerDistanceParameters(out _, out double v);
             v = Within(v, VLo);
             return v > VLo && v < VHi;
+        }
+
+        // The point projected on the extended surface's patch, or on the whole of the original surface, by a projector loaded
+        // once for the band: its grid of samples is built at the first point, not again at each (unit 15AQ). The same values as
+        // a projector made for the point, as the grid depends on the surface and its bounds alone; read before the next point
+        private ProjectPointOnSurface? _ontoSurface, _ontoOriginal;
+
+        public ProjectPointOnSurface Onto(Point3D p)
+        {
+            if (_ontoSurface is null)
+            {
+                _ontoSurface = new ProjectPointOnSurface();
+                _ontoSurface.Init(Surface, EU0, EU1, EV0, EV1);
+            }
+            _ontoSurface.Perform(p);
+            return _ontoSurface;
+        }
+
+        private ProjectPointOnSurface OntoOriginal(Point3D p)
+        {
+            if (_ontoOriginal is null)
+            {
+                Original.ParameterBounds(out double u0, out double u1, out double v0, out double v1);
+                _ontoOriginal = new ProjectPointOnSurface();
+                _ontoOriginal.Init(Original, u0, u1, v0, v1, Precision.Confusion());
+            }
+            _ontoOriginal.Perform(p);
+            return _ontoOriginal;
         }
     }
 
@@ -1039,7 +1067,7 @@ internal static partial class ChamferMeet
     // The nearest point of the band's extended surface, with its unit normal
     private static Foot? Project(Band band, Point3D p)
     {
-        var projection = new ProjectPointOnSurface(p, band.Surface, band.EU0, band.EU1, band.EV0, band.EV1);
+        ProjectPointOnSurface projection = band.Onto(p);
         if (projection.NbPoints() == 0)
         {
             return null;
