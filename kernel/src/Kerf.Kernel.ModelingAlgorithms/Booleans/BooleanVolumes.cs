@@ -258,10 +258,15 @@ public static class BooleanVolumes
                 {
                     return Passed;
                 }
-                depth = OverlapDepth * size + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
+                // A cut that removed nothing is asked deep in its inputs by their own tolerances, and deep in the result by its
+                // tolerances (decision 34905): a result's tolerance says where its own boundary is unsure, not where the inputs
+                // overlap, and #1496's tubes, bent at 24 and 24.5, had a cut that removed nothing with a vertex of 0.25, whose ten
+                // times took a depth of 2.5 in walls 3 thick, so no point could be asked and the success passed
+                depth = OverlapDepth * size + MarginOfTolerance * ((classifyResult is null ? shared.LargestTolerance : shared.InputTolerance) + fuzzyValue);
             }
-            // Deep inside both, so it can't be tolerance or a touch
-            if (!Deep(point, a, depth) || !Deep(point, b, depth))
+            // Deep inside both, so it can't be tolerance or a touch; and for a cut deep in the result past its tolerances
+            if (!Deep(point, a, depth) || !Deep(point, b, depth)
+                || (classifyResult is not null && !Deep(point, classifyResult.Shape, depth + 2 * shared.ResultTolerance)))
             {
                 return null;
             }
@@ -1168,7 +1173,7 @@ public static class BooleanVolumes
     {
         private Classified? _argument, _tool, _result;
         private ResultBoundary? _boundary;
-        private double _resultTolerance = -1, _largestTolerance = -1;
+        private double _resultTolerance = -1, _largestTolerance = -1, _inputTolerance = -1;
         private bool? _trustworthy;
 
         // What the point questions are asked of: one object and one tool, as what several mean together isn't plain
@@ -1183,6 +1188,9 @@ public static class BooleanVolumes
         public ResultBoundary Boundary => _boundary ??= new ResultBoundary(result);
 
         public double ResultTolerance => _resultTolerance >= 0 ? _resultTolerance : _resultTolerance = new ShapeToleranceAnalysis().Tolerance(result, 1);
+
+        // The inputs' largest tolerance, without the result's
+        public double InputTolerance => _inputTolerance >= 0 ? _inputTolerance : _inputTolerance = BooleanVolumes.LargestTolerance(arguments, tools, null);
 
         public double LargestTolerance =>_largestTolerance >= 0 ? _largestTolerance : _largestTolerance = BooleanVolumes.LargestTolerance(arguments, tools, result);
 
@@ -1354,10 +1362,10 @@ public static class BooleanVolumes
         return false;
     }
 
-    private static double LargestTolerance(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result)
+    private static double LargestTolerance(IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape? result)
     {
         var analysis = new ShapeToleranceAnalysis();
-        double largest = analysis.Tolerance(result, 1);
+        double largest = result is { } made ? analysis.Tolerance(made, 1) : 0;
         foreach (Shape shape in arguments.Concat(tools))
         {
             largest = Math.Max(largest, analysis.Tolerance(shape, 1));

@@ -26,4 +26,14 @@ public class SweptTubeBooleanTests
         Assert.Equal(b.Volume, common + bLessA, 2);
         Assert.Equal(18541.24, common, 2);
     }
+
+    // Tubes bent at 24 and 24.5: each cut removed nothing, a success, as the result's vertex of 0.25 took the check's depth to
+    // 2.5 in walls 3 thick (kernel decision 34905). The cuts are still wrong after the retries, so they fail, saying so
+    [Fact]
+    public void Cuts_of_tubes_bent_at_24_and_24_5_that_remove_nothing_fail()
+    {
+        Part a = Tube(24), b = Tube(24.5);
+        Assert.Contains("removed nothing", Assert.Throws<ModelingException>(() => a - b).Message);
+        Assert.Contains("removed nothing", Assert.Throws<ModelingException>(() => b - a).Message);
+    }
 }
