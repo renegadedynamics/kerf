@@ -2392,6 +2392,7 @@ internal partial class FilletBuilderBase
 
         if (!simul)
         {
+            CompleteSetOfSurf(stripe); // Kerf, unit 15AK3
             ChFi3d_MakeExtremities(stripe, dStr, _efMap, _tolapp3d, _tol2d);
         }
     }

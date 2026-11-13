@@ -106,6 +106,18 @@ internal sealed class ElSpine : CurveAdaptorBase
         _curve.Intervals(t, s);
     }
 
+    /// <summary>
+    /// Kerf (unit 15AK3): the parameter, brought into the range of the guide's own curve where it is outside it by
+    /// rounding. The first and last parameters kept here are worked out apart from the curve's knots and can be an
+    /// ulp or two outside them (the corpus's buildevol/K6: -3.9e-16 for a first knot of 0); a periodic curve asked
+    /// there answers with the far end's derivatives, a period away.
+    /// </summary>
+    internal double OnCurve(double parameter)
+    {
+        double first = _curve.FirstParameter(), last = _curve.LastParameter();
+        return parameter < first && first - parameter <= 1.0e-12 ? first : parameter > last && parameter - last <= 1.0e-12 ? last : parameter;
+    }
+
     /// <summary>The curve between <paramref name="first"/> and <paramref name="last"/>.</summary>
     public override CurveAdaptorBase Trim(double first, double last, double tol)
     {

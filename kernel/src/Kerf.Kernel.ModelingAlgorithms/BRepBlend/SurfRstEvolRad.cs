@@ -265,22 +265,29 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
     {
         _d1gui = new Vector3D(0.0, 0.0, 0.0);
         _nplan = new Vector3D(0.0, 0.0, 0.0);
-        _tguide.D2(param, out _ptgui, out _d1gui, out _d2gui);
+        _tguide.D2(OnGuide(param), out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude;
         _nplan = _nplan.WithXYZ(_d1gui.Normalized().XYZ());
         Xyz nplanXYZ = _nplan.XYZ();
         Xyz ptguiXYZ = _ptgui.XYZ();
         _d = nplanXYZ.Dot(ptguiXYZ);
         _d = _d * (-1.0);
-        _tevol.D1(param, out _ray, out _dray);
+        _tevol.D1(OnGuide(param), out _ray, out _dray);
         _ray = _sg1 * _ray;
         _dray = _sg1 * _dray;
     }
 
+    // Kerf (unit 15AK3): the guide's parameter brought into its curve's own range where rounding has left it an ulp
+    // outside (ElSpine.OnCurve). The envelope's sections take the guide's second and third derivatives and the law's
+    // second, which a periodic guide and law give from a period away for a parameter outside their knots: the section
+    // at a closed contour's seam was then the far side's, the surface's end line jumped to it, and its normals there
+    // were wrong (5.9 degrees on the corpus's buildevol/K6) though its points were not.
+    private double OnGuide(double parameter) => _guide is global::Kerf.Engine.Fillets.Data.ElSpine spine ? spine.OnCurve(parameter) : parameter;
+
     public override void Set(double first, double last)
     {
-        _tguide = _guide.Trim(first, last, 1.0e-12);
-        _tevol = _fevol.Trim(first, last, 1.0e-12);
+        _tguide = _guide.Trim(OnGuide(first), OnGuide(last), 1.0e-12);
+        _tevol = _fevol.Trim(OnGuide(first), OnGuide(last), 1.0e-12);
         _first = first;
         _last = last;
     }
@@ -293,8 +300,8 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
     // Positions the guide and the law at prm, as Set(double) does; the derivative of the guide's plane's normal.
     private Vector3D Position(double prm)
     {
-        _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
-        _tevol.D1(prm, out _ray, out _dray);
+        _tguide.D2(OnGuide(prm), out _ptgui, out _d1gui, out _d2gui);
+        _tevol.D1(OnGuide(prm), out _ray, out _dray);
         _ray = _sg1 * _ray;
         _dray = _sg1 * _dray;
         _normtg = _d1gui.Magnitude;
@@ -355,8 +362,8 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
         _surf.D3(x[1], x[2], out _, out _, out _, out Vector3D d2u, out Vector3D d2v, out Vector3D d2uv, out Vector3D d3u,
                  out Vector3D d3v, out Vector3D d3uuv, out Vector3D d3uvv);
         _cons.D3(x[3], out _, out _, out _, out Vector3D d3rst);
-        _tguide.D3(prm, out _, out _, out _, out Vector3D d3gui);
-        _tevol.D2(prm, out _, out _, out double d2ray);
+        _tguide.D3(OnGuide(prm), out _, out _, out _, out Vector3D d3gui);
+        _tevol.D2(OnGuide(prm), out _, out _, out double d2ray);
         d2ray = _sg1 * d2ray;
 
         // The reversed unit normal's second derivatives, from those of d1u ^ d1v
@@ -451,7 +458,7 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
             return false;
         }
 
-        _tevol.D2(prm, out _, out _, out double d2ray);
+        _tevol.D2(OnGuide(prm), out _, out _, out double d2ray);
         end = new EnvelopeEnd(e, _center, dc, d2c, _ray, _dray, _sg1 * d2ray);
         return true;
     }
@@ -847,9 +854,9 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
             return;
         }
 
-        _tguide.D1(param, out _ptgui, out _d1gui);
+        _tguide.D1(OnGuide(param), out _ptgui, out _d1gui);
         np = _d1gui.Normalized();
-        _ray = _sg1 * _tevol.Value(param);
+        _ray = _sg1 * _tevol.Value(OnGuide(param));
 
         _surf.D1(u, v, out _pts, out d1u1, out d1v1);
         _ptrst = _cons.Value(w);
@@ -998,9 +1005,9 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
         int low = poles.Lower();
         int upp = poles.Upper();
 
-        _tguide.D1(prm, out _ptgui, out _d1gui);
+        _tguide.D1(OnGuide(prm), out _ptgui, out _d1gui);
         _nplan = _d1gui.Normalized();
-        _ray = _sg1 * _tevol.Value(prm);
+        _ray = _sg1 * _tevol.Value(OnGuide(prm));
 
         p.ParametersOnS(out u1, out v1);
         w = p.ParameterOnC(); // jlr : point on curve not on surface
@@ -1083,8 +1090,8 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
             second = WalkCentreD2(prm, sol, out d2c);
         }
 
-        _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
-        _tevol.D1(prm, out _ray, out _dray);
+        _tguide.D2(OnGuide(prm), out _ptgui, out _d1gui, out _d2gui);
+        _tevol.D1(OnGuide(prm), out _ray, out _dray);
         _ray = _sg1 * _ray;
         _dray = _sg1 * _dray;
         _normtg = _d1gui.Magnitude;
@@ -1176,7 +1183,7 @@ internal class SurfRstEvolRad : SurfRstFunction, IEnvelopeSections
         {
             Vector3D zero = new();
             tgct = Vector3D.LinearForm(_ray, dnw, _dray, ns, _tgs);
-            _tevol.D2(prm, out _, out _, out double d2ray);
+            _tevol.D2(OnGuide(prm), out _, out _, out double d2ray);
             double f1 = _ray > 0.0 ? -1.0 : 1.0;
             _tilt.At(prm, out double tilt, out double dtilt, out _);
             if (EnvelopeCircle.Make(1, center, tgct, d2c, zero, _ray, _dray, _sg1 * d2ray, 0.0, f1 * ns, f1 * dnw, zero, ns2, dn2w, zero,

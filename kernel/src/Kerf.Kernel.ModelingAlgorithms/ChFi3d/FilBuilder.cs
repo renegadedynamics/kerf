@@ -1232,8 +1232,11 @@ internal partial class FilBuilder : FilletBuilderBase
     // the share of the centre's speed at which the later's envelope moves on there (EnvelopeEnd.Depth), and where the
     // two sides' surfaces cross the earlier's end is inside them by as much. Measured against the boundary of the
     // union of the balls, on a box's rounded corner (between faces) and on a cylinder's rim (onto an edge), that is what
-    // the surfaces are off by to a few parts in a hundred. Past the approximation's tolerance the stripe is refused,
-    // with a status that says why (decision 1742). The path's derivative jumps
+    // the surfaces are off by to a few parts in a hundred. Past nine tenths of the approximation's tolerance the corner
+    // is built instead (unit 15AK3, CompleteSetOfSurf): the two surfaces are left ending on their own circles, and
+    // get the piece of the ball between them, or the crease they cross in, once the stripe's surfaces are all there;
+    // where that can't be done the stripe is refused, with a status that says why (decision 1742). The path's
+    // derivative jumps
     //  - where the ball passes from one face to the next while the radius is changing and the faces' curvatures differ
     //    (a plane to a cylinder tangent to it, round a contour's arc): the centre's speed along the guide changes with
     //    the contacts' own, whatever the guide;
@@ -1245,7 +1248,7 @@ internal partial class FilBuilder : FilletBuilderBase
     //    intervals).
     // And where the radius's change itself bends hard enough for the circles of neighbouring balls to cross between the
     // contacts, the swept surface folds back on itself (EnvelopeCircle.LeastAdvance, at the walk's points).
-    private readonly List<(Spine Spine, Point3D A, Point3D B, EnvelopeEnd End)> _envelopeEnds = [];
+    private readonly List<(Spine Spine, Point3D A, Point3D B, EnvelopeEnd End, double Parameter)> _envelopeEnds = [];
 
     /// <summary>
     /// The tests': false builds the fillets <see cref="RefuseEnvelopeCorner"/> would refuse, so that each refusal can be
@@ -1258,6 +1261,18 @@ internal partial class FilBuilder : FilletBuilderBase
     /// of them taking the gap as its tolerance.
     /// </summary>
     internal bool EnvelopeEndsMeet { get; set; } = true;
+
+    /// <summary>
+    /// The tests': false refuses a fillet with a corner past the tolerance, as before unit 15AK3, where true builds the
+    /// corner.
+    /// </summary>
+    internal bool EnvelopeCornersBuilt { get; set; } = true;
+
+    /// <summary>
+    /// The tests': the gap between a corner's two circles, as a share of the ball's radius, past which the corner is
+    /// built whatever its measure.
+    /// </summary>
+    internal double EnvelopeTiltLimit { get; set; } = 1.0e-3;
 
     /// <summary>The most the surfaces either side of a corner of the centre's path are off the swept surface by.</summary>
     internal double EnvelopeCornerWorst { get; private set; }
@@ -1298,7 +1313,7 @@ internal partial class FilBuilder : FilletBuilderBase
 
             Point3D a = point.PointOnS1(), b = point.PointOnS2();
             double radius = end.Radius, same = 1.0e-3 * radius;
-            foreach ((Spine other, Point3D oa, Point3D ob, EnvelopeEnd oend) in _envelopeEnds)
+            foreach ((Spine other, Point3D oa, Point3D ob, EnvelopeEnd oend, double oparameter) in _envelopeEnds)
             {
                 bool sameBall = ReferenceEquals(other, spine) && Math.Abs(oend.Radius - radius) < same
                                 && ((a.DistanceTo(oa) < same && b.DistanceTo(ob) < same) || (a.DistanceTo(ob) < same && b.DistanceTo(oa) < same));
@@ -1320,19 +1335,42 @@ internal partial class FilBuilder : FilletBuilderBase
                 double off = end.Depth(oend, Math.Sign(along) * (k == 1 ? 1 : -1), length);
                 EnvelopeCornerWorst = Math.Max(EnvelopeCornerWorst, off);
                 _envelopeCorners.Add((omiddle, off, gap, radius));
-                if (EnvelopeCornersRefused && (off > _tolapp3d || (!turns && gap > _tolapp3d)))
+                bool past = off > _tolapp3d || (!turns && gap > _tolapp3d);
+                // A closed stripe's own seam, where its last surface meets its first a period on, isn't built (the
+                // stripe's ends are made there): within the tolerance it is tilted
+                bool seam = Math.Abs(point.Parameter() - oparameter) > 1.0e-3 * (1.0 + Math.Abs(oparameter));
+                if (EnvelopeCornersRefused && EnvelopeCornersBuilt && !past && !seam && (off > 0.9 * _tolapp3d || gap > EnvelopeTiltLimit * radius))
                 {
-                    spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
-                    throw new FailureException("PerformSurf : the radius changes where the path of the ball's centre has a corner");
+                    // The measure is of the surfaces aimed at, and the approximation adds its own error, some 1e-5:
+                    // within a tenth of the tolerance the corner is built too, so that nothing built is past it.
+                    // And a tilted surface isn't tangent to its ball along the circle it ends on, by about the
+                    // angle the two circles are apart at the ball's centre (0.1 to 0.5 degrees on the corpus's,
+                    // against the union of the balls): past a thousandth of a radian the corner is built
+                    past = true;
                 }
 
-                if (turns && EnvelopeEndsMeet)
+                if (EnvelopeCornersRefused && past)
+                {
+                    if (!EnvelopeCornersBuilt)
+                    {
+                        spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
+                        throw new FailureException("PerformSurf : the radius changes where the path of the ball's centre has a corner");
+                    }
+
+                    // Past the tolerance the two surfaces are left ending on their own circles, and the corner is
+                    // built once the stripe's surfaces are all there (CompleteSetOfSurf): the piece of the ball
+                    // between the circles, or the crease the two surfaces cross in.
+                    int direction = Math.Sign(along) * (k == 1 ? 1 : -1);
+                    _envelopeCorners[^1] = (omiddle, 0.0, gap, radius);
+                    _envelopePieces.Add((spine, a, b, direction > 0 ? oend : end, direction > 0 ? end : oend, end.Crosses(oend, direction)));
+                }
+                else if (turns && EnvelopeEndsMeet)
                 {
                     func.TiltEnd(point.Parameter(), (oend.DCentre - end.DCentre).Dot(across), length);
                 }
             }
 
-            _envelopeEnds.Add((spine, a, b, end));
+            _envelopeEnds.Add((spine, a, b, end, point.Parameter()));
         }
 
         int n = func.NbIntervals(Continuity.C0);
