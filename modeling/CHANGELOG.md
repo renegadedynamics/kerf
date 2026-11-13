@@ -5,6 +5,7 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+- **A Boolean whose first result is wrong or invalid near a touch succeeds more often, and comes out closed more often** (kernel decisions 33701 to 33709): one proved wrong is also made with each crossing near a vertex given a vertex of its own (warning `boolean.crossings-apart`), and one that isn't valid is made again the same ways as a wrong one before it fails. Twelve Booleans of equal cylinders that failed within 3e-4 of a touch now succeed, each right; nothing that succeeded fails. The clean no longer opens a face's boundary inside a wide vertex.
 - **`Chamfer` of an edge between two flat faces of a solid, ending where an earlier chamfer's face rises out of one of them, now builds** (kernel decisions 2235 to 2237): OCCT fails at that corner; the result is checked at its distances and by its volume.
 - **`Fillet` on a rim whose arcs end on a rib, beside a bore or on a cone, and on edges that end on a seam running to a
   cone's apex, on a sphere or on a cylinder cut through its end, now builds where it failed or was wrong** (kernel
