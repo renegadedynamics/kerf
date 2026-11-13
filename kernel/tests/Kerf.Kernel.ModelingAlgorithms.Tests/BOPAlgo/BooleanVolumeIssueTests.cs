@@ -189,6 +189,42 @@ public class BooleanVolumeIssueTests
     }
 
     [Fact]
+    public void The_proofs_points_classified_in_parallel_give_what_one_at_a_time_gives()
+    {
+        // Unit 15AR: where the check's volumes are integrated in parallel, the inputs'-faces proof classifies its points on
+        // several threads, then judges them in order; what it says, and the point it names, must be what it says serially
+        (Shape a, Shape b) = Issue344();
+        (Shape c, Shape d) = Issue25983();
+        var cases = new (BooleanVolumeRule Rule, Shape Argument, Shape Tool, Shape Result)[]
+        {
+            (BooleanVolumeRule.Fuse, a, b, a.Fuse(b, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Fuse, b, a, b.Fuse(a, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Common, a, b, a.Common(b, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Cut, a, b, a.Cut(b, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Fuse, c, d, c.Fuse(d, Unchecked).Value.Shape),
+        };
+        int inParallel = 0;
+        foreach ((BooleanVolumeRule rule, Shape argument, Shape tool, Shape result) in cases)
+        {
+            string? serial;
+            using (ParallelVolumes.Use(false))
+            {
+                serial = BooleanVolumes.Check(rule, [argument], [tool], result)?.Message;
+            }
+            string? parallel;
+            using (ParallelVolumes.Use())
+            {
+                BooleanVolumes.s_proofsInParallel = 0;
+                parallel = BooleanVolumes.Check(rule, [argument], [tool], result)?.Message;
+                inParallel += BooleanVolumes.s_proofsInParallel;
+            }
+            Assert.Equal(serial, parallel);
+        }
+        // #344's two fuses fire and pass, each with far more than the points it takes to go parallel
+        Assert.True(Kerf.Engine.Foundation.OsdParallel.IsSerial || inParallel > 0);
+    }
+
+    [Fact]
     public void Issue_245s_section_not_approximated_runs_to_its_end()
     {
         // A pcurve of 9,364 intervals overflowed the stack, which ended the process (decision 2116)

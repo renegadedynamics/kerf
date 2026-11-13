@@ -21,6 +21,9 @@ public class ImmutabilityGuardTests
         ["Kerf.Booleans.BooleanVolumes.s_pointChecks"] =
             "Internal and [ThreadStatic]: the checks of decision 1924's points this thread has made, read by the tests that hold "
             + "their cost down (unit 13K). Nothing reads it to decide a result.",
+        ["Kerf.Booleans.BooleanVolumes.s_proofsInParallel"] =
+            "Internal and [ThreadStatic]: the inputs'-faces proofs this thread has classified in parallel, read by the test that "
+            + "they give what one at a time gives (unit 15AR). Nothing reads it to decide a result.",
         ["Kerf.Topology.Placement.s_productItems"] =
             "Private and [ThreadStatic]: scratch storage for the product of two placements' chains, which never escapes the call.",
         ["Kerf.Drawing.Png.Encode"] = "The PNG file's bytes: a new array, the caller's own.",
