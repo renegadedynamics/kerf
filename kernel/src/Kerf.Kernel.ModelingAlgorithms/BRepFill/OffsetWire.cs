@@ -531,7 +531,7 @@ internal sealed class OffsetWire
     // Kerf: the diagnostic codes of the two refusals
     internal const string NotAtDistanceCode = "offset.not-at-distance";
     internal const string CrossesItselfCode = "offset.crosses-itself";
-    // Kerf: MakeWireOffset's, a closed parallel on the wrong side of its spine (decision 35202)
+    // Kerf: MakeWireOffset's, a closed parallel on the wrong side of its spine (decision 2443)
     internal const string WrongSideCode = "offset.wrong-side";
 
     /// <summary>
@@ -1916,7 +1916,7 @@ internal sealed class OffsetWire
             mve.GetValue(cv).RemoveFirst();
 
             // Kerf: upstream 8f817f5da5's closure: a wire stops at a vertex with one edge whether or not the result
-            // is open, and is then not marked closed; 8.0.1 went on round it, marking it closed (decision 35201)
+            // is open, and is then not marked closed; 8.0.1 went on round it, marking it closed (decision 2442)
             if (mve.GetValue(cv).IsEmpty())
             {
                 mve.Remove(cv);

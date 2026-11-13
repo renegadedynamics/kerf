@@ -247,7 +247,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                 }
                 else if (!theSpine.IsOpenResult && LeftOpen(aNP))
                 {
-                    // Kerf decision 35201: native's parallel has a wire marked closed that isn't, and the port, as upstream
+                    // Kerf decision 2442: native's parallel has a wire marked closed that isn't, and the port, as upstream
                     // 8f817f5da5, leaves it open, so isn't done
                     myRefused++;
                     myLeftOpen++;
@@ -351,7 +351,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
         : !thePlaneFace.IsNull ? ShapeCasts.Face(thePlaneFace)
         : new MakeFace(ShapeCasts.Wire(theSpineShape), true).Face();
 
-    // A wire of the shape marked closed whose ends aren't joined (decision 35201)
+    // A wire of the shape marked closed whose ends aren't joined (decision 2442)
     private static bool LeftOpen(in Shape theShape)
     {
         for (Explorer anExp = new(theShape, ShapeType.Wire); anExp.More(); anExp.Next())

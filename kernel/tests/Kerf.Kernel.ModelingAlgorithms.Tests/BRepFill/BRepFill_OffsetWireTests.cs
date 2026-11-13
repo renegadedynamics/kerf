@@ -571,7 +571,7 @@ public class BRepFill_OffsetWireTests
     // Upstream 8f817f5da5's CollapsedOffsetReportsFailure, ported: a thin triangle (its vertices' tolerances 1e-4 and
     // 1e-3) offset inwards past its width. Its third edge runs against the wire's order, and the parallel was the one
     // outwards, a loop 8.37 long round a triangle 0.14 round, done, and a success through the public offset; it is refused
-    // now, being on the wrong side (decision 35202). The same triangle with its edges in order has no parallel inwards, as
+    // now, being on the wrong side (decision 2443). The same triangle with its edges in order has no parallel inwards, as
     // before
     [Fact]
     public void A_collapsed_offset_reports_failure()
@@ -612,7 +612,7 @@ public class BRepFill_OffsetWireTests
 
     // tests/bugs/modalg_4/bug745_4: a rounded pocket offset inwards by 10, its parallel 511.416 long. The middle of the
     // parallel's first edge is level with two of the pocket's vertices, where a ray along the axis passes between the
-    // polylines of two edges and the side check of decision 35202, with that ray alone, put the parallel outside
+    // polylines of two edges and the side check of decision 2443, with that ray alone, put the parallel outside
     [Fact]
     public void A_parallel_level_with_the_wires_vertices_is_on_its_side()
     {
@@ -658,7 +658,7 @@ public class BRepFill_OffsetWireTests
     // wire at 1% and 5% of its length: the inward parallel of a closed wire had a wire that stopped at a vertex with one
     // edge, marked closed, which the closure check reads, so it was returned, a success through the public offset, a
     // wire open by up to 3.1 in a shape 5 across. Upstream 8f817f5da5 ends such a wire there, unclosed, so the offset
-    // isn't done, as upstream's scripts now expect (decision 35201)
+    // isn't done, as upstream's scripts now expect (decision 2442)
     [Theory]
     [InlineData(-0.01)]
     [InlineData(-0.025)]

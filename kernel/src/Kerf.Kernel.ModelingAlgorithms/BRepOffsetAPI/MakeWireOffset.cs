@@ -449,7 +449,7 @@ internal class MakeWireOffset : MakeShape
             }
 
             // Kerf: each loop of a closed parallel lies on the side of the spine it was asked for, or the offset is no
-            // success (decisions 1742, 35202)
+            // success (decisions 1742, 2443)
             if (!_shape.IsNull && !_isOpenResult && WrongSide(_wires, _face, _shape, offset) is { } wrong)
             {
                 _shape.Nullify();
@@ -492,7 +492,7 @@ internal class MakeWireOffset : MakeShape
     internal (string Code, string Message)? RefusedBecause { get; private set; }
 
     /// <summary>
-    /// Kerf (decision 35202): a point of the first loop of the parallel that lies on the wrong side of the spine, or null
+    /// Kerf (decision 2443): a point of the first loop of the parallel that lies on the wrong side of the spine, or null
     /// if every loop is on the side asked for: inside the region the closed wires bound for an offset inwards, outside it
     /// for one outwards, as MakeOffset's sign has it where no wire lies inside another. A loop is at the offset from the
     /// spine everywhere (decisions 2279, 2281) and doesn't cross the spine, so the middle of its first edge decides its

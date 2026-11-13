@@ -498,10 +498,10 @@ public sealed class DrawCorpus(string theTestsDirectory)
             ["offset/wire_closed_outside_0_075/C6"] = ("right where OCCT's crosses itself (TODO OCC23068): the script passes (decision 2423)", PassesItsScript),
             // OCCT 8.0.1 returned an inward offset with a wire that stops at a vertex with one edge, marked closed (its TODOs
             // OCC23068 and OCC23748), as the port did, a success through the public offset: since upstream's 8f817f5da5 such
-            // a wire is left open, so the offset isn't done, and upstream's scripts expect just that (decision 35201)
-            ["offset/wire_closed_inside_0_025/B4"] = ("upstream's newer reference (8f817f5da5): the offset isn't done, where OCCT's had a wire left open and marked closed (TODO OCC23068; decision 35201)",
+            // a wire is left open, so the offset isn't done, and upstream's scripts expect just that (decision 2442)
+            ["offset/wire_closed_inside_0_025/B4"] = ("upstream's newer reference (8f817f5da5): the offset isn't done, where OCCT's had a wire left open and marked closed (TODO OCC23068; decision 2442)",
                                                       IsOnlyNotDone),
-            ["offset/wire_closed_inside_0_075/B4"] = ("upstream's newer reference (8f817f5da5): the offset isn't done, where OCCT's had a wire left open and marked closed (TODO OCC23748; decision 35201)",
+            ["offset/wire_closed_inside_0_075/B4"] = ("upstream's newer reference (8f817f5da5): the offset isn't done, where OCCT's had a wire left open and marked closed (TODO OCC23748; decision 2442)",
                                                       IsOnlyNotDone),
             // Upstream's ec0167b409 updated these two scripts' references to what its converged hint and its line through a
             // pole read from the file, one face fewer (decisions 2424, 2425): the port reads upstream's newer figures
