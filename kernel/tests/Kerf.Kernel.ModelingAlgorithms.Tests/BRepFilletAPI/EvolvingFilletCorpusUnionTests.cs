@@ -139,13 +139,15 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         }
 
         System.Text.StringBuilder text = new();
+        // As a user gets it, its corners past the tolerance built (unit 15AK3); where that is refused, with the refusal off
         MakeFillet asBuilt = Fillet(script.Shape, script.Laws, script.Sorted, refused: true, meet: true);
         bool built = asBuilt.IsDone;
-        MakeFillet apart = Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: false);
-        MakeFillet fillet = Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: true);
+        MakeFillet fillet = built ? asBuilt : Fillet(script.Shape, script.Laws, script.Sorted, refused: false, meet: true);
         double Tolerance(MakeFillet f) => f.IsDone ? f.Shape().AllEdges().Max(e => Tool.Tolerance(e)) : double.NaN;
+        bool valid = fillet.IsDone && fillet.Shape().Validate().IsValid;
+        (int lunes, int creases) = asBuilt.InternalBuilder().EnvelopeCornersMade;
         text.AppendLine(string.Create(CultureInfo.InvariantCulture,
-            $"CASE\t{name}\t{(built ? "built" : "refused " + asBuilt.StripeStatus(1))}\tdone {fillet.IsDone}\tvalid {fillet.IsDone && fillet.Shape().Validate().IsValid}\tedge tolerance {Tolerance(fillet):G3}\tapart {Tolerance(apart):G3}"));
+            $"CASE\t{name}\t{(built ? "built" : $"refused {asBuilt.StripeStatus(1)} ({asBuilt.InternalBuilder().EnvelopeCornerUnbuilt})")}\t{lunes} pieces of the ball, {creases} creases\tdone {fillet.IsDone}\tvalid {valid}\tedge tolerance {Tolerance(fillet):G3}\tedges off their faces {Apart(fillet):G3}\tsurfaces' ends apart {asBuilt.InternalBuilder().EnvelopeJoinWorst:G3}\tworst corner's measure {asBuilt.InternalBuilder().EnvelopeCornerWorst:G4}"));
         List<string> wrong = [];
         double worstRead = double.NaN;
         if (fillet.IsDone)
@@ -186,6 +188,8 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
 
         output.WriteLine(text.ToString());
         Assert.Empty(wrong);
+        Assert.True(!built || valid, $"{name}: built, and not a valid shape");
+        Assert.True(!built || Apart(fillet) < Approximation, $"{name}: built, and an edge of a new face is {Apart(fillet)} from a face it bounds");
 
         // Nothing built is off the union of its balls past the tolerance, wherever it was read; whatever is refused is,
         // somewhere, with the refusal off
@@ -193,6 +197,103 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
         {
             Assert.True(built ? worstRead < Approximation : worstRead > Approximation, $"{name}: {(built ? "built" : "refused")}, off the union of its balls by {worstRead}");
         }
+    }
+
+    // Unit 15AK3's cost: each case built with its corners past the tolerance built, against the same case with the
+    // refusal off (every corner tilted, as unit 15AK2 built it for its tests), the two alternated seven times in one process,
+    // warm: the process's processor time over five builds and the bytes of one. Runs where KERF_15AK3_COST names a file.
+    [Fact]
+    public void What_building_the_corners_costs()
+    {
+        if (Environment.GetEnvironmentVariable("KERF_15AK3_COST") is not { Length: > 0 } file)
+        {
+            return;
+        }
+
+        System.Text.StringBuilder text = new();
+        foreach (string name in new[] { "I1", "I2", "I3", "I4", "I5", "I7", "I8", "J1", "J2", "J4", "J5", "J7", "J8", "J9", "K1", "K3", "K4", "K5", "K6", "K7" })
+        {
+            if (Script(name) is not { } script)
+            {
+                continue;
+            }
+
+            MakeFillet Build(bool corners) => Fillet(script.Shape, script.Laws, script.Sorted, refused: corners, meet: true);
+            if (!Build(true).IsDone || !Build(false).IsDone || Build(true).InternalBuilder().EnvelopeCornersMade == (0, 0))
+            {
+                continue;
+            }
+
+            List<double>[] times = [[], []], bytes = [[], []];
+            for (int round = 0; round < 7; round++)
+            {
+                for (int form = 0; form < 2; form++)
+                {
+                    long before = GC.GetAllocatedBytesForCurrentThread();
+                    Build(form == 1);
+                    bytes[form].Add((GC.GetAllocatedBytesForCurrentThread() - before) / 1048576.0);
+                    TimeSpan start = System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime;
+                    for (int k = 0; k < 5; k++)
+                    {
+                        Build(form == 1);
+                    }
+
+                    times[form].Add((System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime - start).TotalMilliseconds / 5);
+                }
+            }
+
+            static double Median(List<double> values) => values.Order().ElementAt(values.Count / 2);
+            (int lunes, int creases) = Build(true).InternalBuilder().EnvelopeCornersMade;
+            text.AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"COST\t{name}\t{lunes} pieces, {creases} creases\ttilted {Median(times[0]):F1} ms ({times[0].Min():F1} to {times[0].Max():F1}), {Median(bytes[0]):F2} MB\tbuilt {Median(times[1]):F1} ms ({times[1].Min():F1} to {times[1].Max():F1}), {Median(bytes[1]):F2} MB"));
+        }
+
+        File.WriteAllText(file, text.ToString());
+        output.WriteLine(text.ToString());
+    }
+
+
+
+
+
+    // The most a curve of an edge of the new faces is from a surface it bounds, at 41 points of its pcurve there: what the
+    // faces are really apart by along their edges, whatever tolerance the edges and their vertices were given
+    private static double Apart(MakeFillet fillet)
+    {
+        if (!fillet.IsDone)
+        {
+            return double.NaN;
+        }
+
+        Face[] all = [.. fillet.Shape().AllFaces()];
+        double worst = 0;
+        for (int i = 1; i <= fillet.SurfaceCount; i++)
+        {
+            foreach (Shape shape in fillet.NewFaces(i))
+            {
+                foreach (Edge e in shape.AllEdges().Where(e => !Tool.Degenerated(e)))
+                {
+                    var curve = new EdgeCurveAdaptor(e);
+                    foreach (Face face in all.Where(g => g.AllEdges().Any(x => x.IsSame(e))))
+                    {
+                        if (Tool.CurveOnSurface(e, face, out _, out _) is not { } pcurve)
+                        {
+                            continue;
+                        }
+
+                        var surface = new FaceSurfaceAdaptor(face);
+                        for (int k = 0; k <= 40; k++)
+                        {
+                            double t = curve.FirstParameter() + k / 40.0 * (curve.LastParameter() - curve.FirstParameter());
+                            Point2D uv = pcurve.Value(t);
+                            worst = Math.Max(worst, surface.Value(uv.X, uv.Y).DistanceTo(curve.Value(t)));
+                        }
+                    }
+                }
+            }
+        }
+
+        return worst;
     }
 
     // Each of 69 by 69 points of each new face, crowded towards its ends: how far inside the union of the balls or outside
@@ -511,7 +612,19 @@ public class EvolvingFilletCorpusUnionTests(ITestOutputHelper output)
             }
         }
 
-        note.Append($"{balls.Count} lines of balls, {withBalls.Count} of {faces.Count} faces with their own");
+        // A piece of the ball at a corner (unit 15AK3) touches the input at two points only: it is read against its
+        // neighbours' balls, of which the corner's is the last
+        int pieces = 0;
+        for (int index = 0; index < faces.Count; index++)
+        {
+            if (!withBalls.Contains(index) && faces[index].Face.AllEdges().Any(e => Tool.Degenerated(e)))
+            {
+                withBalls.Add(index);
+                pieces++;
+            }
+        }
+
+        note.Append($"{balls.Count} lines of balls, {withBalls.Count - pieces} of {faces.Count} faces with their own, {pieces} pieces of the ball");
         notes = note.ToString();
         List<(double, Point3D, bool)> points = [];
         double[] near = [1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 2e-3, 4e-3, 7e-3, 0.012, 0.02, 0.03, 0.045, 0.06, 0.08, 0.1, 0.13, 0.16, 0.2, 0.25, 0.3, 0.35, 0.4];

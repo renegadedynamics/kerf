@@ -1232,8 +1232,11 @@ internal partial class FilBuilder : FilletBuilderBase
     // the share of the centre's speed at which the later's envelope moves on there (EnvelopeEnd.Depth), and where the
     // two sides' surfaces cross the earlier's end is inside them by as much. Measured against the boundary of the
     // union of the balls, on a box's rounded corner (between faces) and on a cylinder's rim (onto an edge), that is what
-    // the surfaces are off by to a few parts in a hundred. Past the approximation's tolerance the stripe is refused,
-    // with a status that says why (decision 1742). The path's derivative jumps
+    // the surfaces are off by to a few parts in a hundred. Past nine tenths of the approximation's tolerance the corner
+    // is built instead (unit 15AK3, CompleteSetOfSurf): the two surfaces are left ending on their own circles, and
+    // get the piece of the ball between them, or the crease they cross in, once the stripe's surfaces are all there;
+    // where that can't be done the stripe is refused, with a status that says why (decision 1742). The path's
+    // derivative jumps
     //  - where the ball passes from one face to the next while the radius is changing and the faces' curvatures differ
     //    (a plane to a cylinder tangent to it, round a contour's arc): the centre's speed along the guide changes with
     //    the contacts' own, whatever the guide;
@@ -1258,6 +1261,12 @@ internal partial class FilBuilder : FilletBuilderBase
     /// of them taking the gap as its tolerance.
     /// </summary>
     internal bool EnvelopeEndsMeet { get; set; } = true;
+
+    /// <summary>
+    /// The tests': false refuses a fillet with a corner past the tolerance, as before unit 15AK3, where true builds the
+    /// corner.
+    /// </summary>
+    internal bool EnvelopeCornersBuilt { get; set; } = true;
 
     /// <summary>The most the surfaces either side of a corner of the centre's path are off the swept surface by.</summary>
     internal double EnvelopeCornerWorst { get; private set; }
@@ -1320,13 +1329,30 @@ internal partial class FilBuilder : FilletBuilderBase
                 double off = end.Depth(oend, Math.Sign(along) * (k == 1 ? 1 : -1), length);
                 EnvelopeCornerWorst = Math.Max(EnvelopeCornerWorst, off);
                 _envelopeCorners.Add((omiddle, off, gap, radius));
-                if (EnvelopeCornersRefused && (off > _tolapp3d || (!turns && gap > _tolapp3d)))
+                bool past = off > _tolapp3d || (!turns && gap > _tolapp3d);
+                if (EnvelopeCornersRefused && EnvelopeCornersBuilt && !past && off > 0.9 * _tolapp3d)
                 {
-                    spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
-                    throw new FailureException("PerformSurf : the radius changes where the path of the ball's centre has a corner");
+                    // The measure is of the surfaces aimed at, and the approximation adds its own error, some 1e-5:
+                    // within a tenth of the tolerance the corner is built too, so that nothing built is past it
+                    past = true;
                 }
 
-                if (turns && EnvelopeEndsMeet)
+                if (EnvelopeCornersRefused && past)
+                {
+                    if (!EnvelopeCornersBuilt)
+                    {
+                        spine.SetErrorStatus(ErrorStatus.EnvelopeCorner);
+                        throw new FailureException("PerformSurf : the radius changes where the path of the ball's centre has a corner");
+                    }
+
+                    // Past the tolerance the two surfaces are left ending on their own circles, and the corner is
+                    // built once the stripe's surfaces are all there (CompleteSetOfSurf): the piece of the ball
+                    // between the circles, or the crease the two surfaces cross in.
+                    int direction = Math.Sign(along) * (k == 1 ? 1 : -1);
+                    _envelopeCorners[^1] = (omiddle, 0.0, gap, radius);
+                    _envelopePieces.Add((spine, a, b, direction > 0 ? oend : end, direction > 0 ? end : oend, end.Crosses(oend, direction)));
+                }
+                else if (turns && EnvelopeEndsMeet)
                 {
                     func.TiltEnd(point.Parameter(), (oend.DCentre - end.DCentre).Dot(across), length);
                 }

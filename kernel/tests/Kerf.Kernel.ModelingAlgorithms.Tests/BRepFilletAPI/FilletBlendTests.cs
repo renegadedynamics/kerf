@@ -387,29 +387,46 @@ public class FilletBlendTests
     // there, between the last circle of one face's fillet and the first of the next's, which the walked faces, each carried on
     // until they meet, leave by about the square of the gap between those circles over twice the radius. Within the
     // approximation's tolerance of that the fillet is built, and is on the boundary of the union of its balls to that
-    // tolerance (2.3e-6, 2.6e-5 and 9.1e-5 as the radius's end goes from 1.5 to 3); past it, it fails, saying why, where it
+    // tolerance (2.3e-6, 2.6e-5 and 9.1e-5 as the radius's end goes from 1.5 to 3); past it, it failed, saying why, where it
     // built 7.2e-4 off before (at 4).
+    // Unit 15AK3: past nine tenths of the tolerance each such corner is built, between faces as where the ball rests on an
+    // edge: the piece of the ball where the two sides' circles leave a gap and the crease the two surfaces cross in where
+    // they cross. To 4 both of the arc's ends are built so, a piece of the ball and a crease, and the fillet is within 4.7e-6
+    // of the union of its balls, the arc's ends included. To 3 and 3.5 one end is a crease (its measure 9.2e-5 and 2.7e-4)
+    // and the other, measuring 2.6e-5 and 6.0e-5, stays tilted, the fillet off the union by that much there. With the
+    // building turned off, which only the tests can do, 3.5 and 4 are refused as before.
     [Theory]
-    [InlineData(1.5, true)]
-    [InlineData(2.5, true)]
-    [InlineData(3.0, true)]
-    [InlineData(3.5, false)]
-    [InlineData(4.0, false)]
-    public void An_evolving_fillet_round_a_contours_arc_is_built_only_within_tolerance_of_its_balls(double end, bool built)
+    [InlineData(1.5, 0, 0)]
+    [InlineData(2.5, 0, 0)]
+    [InlineData(3.0, 0, 1)]
+    [InlineData(3.5, 0, 1)]
+    [InlineData(4.0, 1, 1)]
+    public void An_evolving_fillet_round_a_contours_arc_is_within_tolerance_of_its_balls_its_corners_built_where_they_must_be(double end, int lunes, int creased)
     {
         MakeFillet chfi3d = RoundedBoxTop(end, out Distance side);
         chfi3d.Build();
-        Assert.Equal(built, chfi3d.IsDone);
-        if (!built)
+        Assert.True(chfi3d.IsDone);
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        (int pieces, int creases) = chfi3d.InternalBuilder().EnvelopeCornersMade;
+        Assert.Equal((lunes, creased), (pieces, creases));
+        bool tilted = lunes + creased == 0;
+        (double worst, double inner, _) = UnionMiss(chfi3d, side);
+        Assert.True(worst < (tilted ? Approximation : lunes + creased == 2 ? 0.1 * Approximation : 0.7 * Approximation), $"to {end}: off the union of the balls by {worst}");
+        Assert.True(inner < 0.15 * Approximation, $"to {end}: off the union of the balls by {inner} away from the arc's ends");
+        if (tilted)
         {
-            Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, chfi3d.StripeStatus(1));
-            Assert.Contains("fillet.radius-changes-at-a-corner", Kerf.Engine.Foundation.StatusDiagnostics.ToDiagnostic(chfi3d.StripeStatus(1))!.Code.ToString());
             return;
         }
-        Assert.True(chfi3d.Shape().Validate().IsValid);
-        (double worst, double inner, _) = UnionMiss(chfi3d, side);
-        Assert.True(worst < Approximation, $"to {end}: off the union of the balls by {worst}");
-        Assert.True(inner < 0.1 * Approximation, $"to {end}: off the union of the balls by {inner} away from the arc's ends");
+
+        MakeFillet refused = RoundedBoxTop(end, out _);
+        refused.InternalBuilder().EnvelopeCornersBuilt = false;
+        refused.Build();
+        Assert.Equal(end <= 3.0, refused.IsDone);
+        if (!refused.IsDone)
+        {
+            Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, refused.StripeStatus(1));
+            Assert.Contains("fillet.radius-changes-at-a-corner", Kerf.Engine.Foundation.StatusDiagnostics.ToDiagnostic(refused.StripeStatus(1))!.Code.ToString());
+        }
     }
 
     // A radius that bends hard enough along the edge (0.2 to 2 and back along a box's edge of 4) that the circles of

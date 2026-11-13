@@ -36,7 +36,7 @@ public class EvolvingFilletOnEdgeTests
         Solid.Cylinder(5, 10 + top, new Frame3D(new Point3D(0, 0, -10), Direction3D.D.Z, Direction3D.D.X)).Value.Shape
              .Fuse(Solid.Cylinder(3, 30, new Frame3D(new Point3D(0, -15, 0), Direction3D.D.Y, Direction3D.D.X)).Value.Shape).Value.Shape;
 
-    private static MakeFillet RimTeeFillet(double top, double low, double high, bool refused)
+    private static MakeFillet RimTeeFillet(double top, double low, double high, bool refused, bool cornersBuilt = true)
     {
         Shape shape = RimTee(top);
         Edge[] edges = [.. shape.AllEdges().Where(e =>
@@ -48,6 +48,7 @@ public class EvolvingFilletOnEdgeTests
         Assert.Equal(2, edges.Length);
         var chfi3d = new MakeFillet(shape);
         chfi3d.InternalBuilder().EnvelopeCornersRefused = refused;
+        chfi3d.InternalBuilder().EnvelopeCornersBuilt = cornersBuilt;
         NCollection_Array1<Point2D> law = new(1, 3);
         law.SetValue(1, new Point2D(0.0, low));
         law.SetValue(2, new Point2D(0.5, high));
@@ -83,16 +84,23 @@ public class EvolvingFilletOnEdgeTests
     // The second of each pair is a corner where the two sides' surfaces would cross: there the measure is what the faces are
     // off by, to 1%. The first is one where their own circles would leave a gap: there it is the most the balls behind the
     // tilted sections can hold of them, and the faces are off by 0.89 to 0.97 of it. So the measure is never less than what
-    // the faces are off by, every refusal here is of a fillet measured past the tolerance, and every fillet built is within it.
+    // the faces are off by, and every fillet built so is within the tolerance.
+    // Unit 15AK3: the last four, which were refused, are built with those corners made: the piece of the ball between the two
+    // circles where they leave a gap (EnvelopeLune), a face of its own with the contacts for corners, and the crease the two
+    // surfaces cross in where they cross, each face ending on it. Every point of them is then within 1.4e-5 of the boundary
+    // of the union of the balls (2.4e-6 beside the corners), no edge covers a gap, and the result is a valid shape of 15
+    // faces for 13. A corner is tilted only where its measure is within nine tenths of the tolerance, the approximation's
+    // own error being some 1e-5 (so 3.3 and 1.0 to 3.0's crossing corners, 9.9e-5, are built); at 3.2 and 0.4 to 2.4 the
+    // crossing corners (6.4e-5) stay tilted, and the fillet is 6.5e-5 off the union there.
     [Theory]
-    [InlineData(3.05, 0.4, 1.0, true)]
-    [InlineData(3.2, 0.4, 1.6, true)]
-    [InlineData(3.2, 0.2, 2.0, true)]
-    [InlineData(3.2, 0.4, 2.4, false)]
-    [InlineData(3.3, 1.0, 3.0, false)]
-    [InlineData(3.5, 0.4, 3.0, false)]
-    [InlineData(3.2, 0.4, 3.0, false)]
-    public void An_evolving_fillet_that_rests_on_an_edge_is_built_only_within_tolerance_of_its_balls(double top, double low, double high, bool built)
+    [InlineData(3.05, 0.4, 1.0, true, 0)]
+    [InlineData(3.2, 0.4, 1.6, true, 0)]
+    [InlineData(3.2, 0.2, 2.0, true, 0)]
+    [InlineData(3.2, 0.4, 2.4, false, 0)]
+    [InlineData(3.3, 1.0, 3.0, false, 2)]
+    [InlineData(3.5, 0.4, 3.0, false, 2)]
+    [InlineData(3.2, 0.4, 3.0, false, 2)]
+    public void An_evolving_fillet_that_rests_on_an_edge_is_within_tolerance_of_its_balls_its_corners_built_where_they_must_be(double top, double low, double high, bool tilted, int creased)
     {
         // Built whatever the measure, to see what it is measuring
         MakeFillet unrefused = RimTeeFillet(top, low, high, refused: false);
@@ -102,7 +110,7 @@ public class EvolvingFilletOnEdgeTests
         List<(double Miss, Point3D At)> points = UnionMiss(unrefused, p => Math.Abs(Math.Sqrt(p.X * p.X + p.Z * p.Z) - 3),
                                                            p => new Vector3D(p.X, 0, p.Z).Normalized(), MainBody(top), 10);
         double worst = points.Max(p => p.Miss);
-        Assert.Equal(built, measure <= Approximation);
+        Assert.Equal(tilted, measure <= Approximation);
 
         // The faces are off the union of the balls by no more than the measure says, and beside each corner by the measure
         // there, or a little less where the circles would leave a gap
@@ -117,16 +125,38 @@ public class EvolvingFilletOnEdgeTests
         Assert.True(unrefused.Shape().AllEdges().Max(e => Tool.Tolerance(e)) < 2 * Approximation);
 
         MakeFillet chfi3d = RimTeeFillet(top, low, high, refused: true);
-        Assert.Equal(built, chfi3d.IsDone);
-        if (built)
+        Assert.True(chfi3d.IsDone);
+        (int lunes, int creases) = chfi3d.InternalBuilder().EnvelopeCornersMade;
+        if (tilted)
         {
             Assert.True(worst < Approximation, $"built, and off the union of the balls by {worst}");
+            Assert.Equal((0, 0), (lunes, creases));
             return;
         }
 
-        Assert.True(worst > Approximation, $"refused, and off the union of the balls by only {worst}");
-        Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, chfi3d.StripeStatus(1));
-        Assert.Contains("fillet.radius-changes-at-a-corner", Kerf.Engine.Foundation.StatusDiagnostics.ToDiagnostic(chfi3d.StripeStatus(1))!.Code.ToString());
+        // Past the tolerance with every corner tilted; so the corners past it are built, and the fillet is on the union
+        Assert.True(worst > Approximation, $"its corners built, though with them tilted it was off the union of the balls by only {worst}");
+        Assert.Equal(2, lunes);
+        Assert.Equal(creased, creases);
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        Assert.Equal(unrefused.Shape().AllFaces().Count() + 2, chfi3d.Shape().AllFaces().Count());
+        Assert.True(chfi3d.Shape().AllEdges().Max(e => Tool.Tolerance(e)) < 2 * Approximation);
+        List<(double Miss, Point3D At)> made = UnionMiss(chfi3d, p => Math.Abs(Math.Sqrt(p.X * p.X + p.Z * p.Z) - 3),
+                                                         p => new Vector3D(p.X, 0, p.Z).Normalized(), MainBody(top), 10);
+        Assert.True(made.Count > 0.9 * points.Count);
+        double madeWorst = made.Max(p => p.Miss);
+        Assert.True(madeWorst < (creased == 0 ? 0.7 * Approximation : 0.2 * Approximation), $"its corners built, and off the union of the balls by {madeWorst}");
+        foreach ((Point3D at, double off, double gap, _) in chfi3d.InternalBuilder().EnvelopeCorners.Where(c => c.Off == 0 && c.Gap > Approximation))
+        {
+            double beside = made.Where(p => p.At.DistanceTo(at) < 0.1).Max(p => p.Miss);
+            Assert.True(beside < 0.05 * Approximation, $"off the union of the balls by {beside} beside a corner that was built");
+        }
+
+        // And refused as before where the tests turn the building off
+        MakeFillet refused = RimTeeFillet(top, low, high, refused: true, cornersBuilt: false);
+        Assert.False(refused.IsDone);
+        Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, refused.StripeStatus(1));
+        Assert.Contains("fillet.radius-changes-at-a-corner", Kerf.Engine.Foundation.StatusDiagnostics.ToDiagnostic(refused.StripeStatus(1))!.Code.ToString());
     }
 
     // Decision 2341: before it each surface ended on its own circle, and at a corner the two didn't meet. The edge between
@@ -172,10 +202,14 @@ public class EvolvingFilletOnEdgeTests
     //   where it does (the measure there 6.8e-4), and where it leaves them the two sides' own circles are 0.22 apart and
     //   the measure is 1.0e-2.
     // OCCT builds both, and Kerf did, with OCCT's areas.
+    // Unit 15AK3: both are built, those corners made. K6 has a crease where its ball comes to rest on the rim (its other
+    // corner, 6.6e-6, stays tilted) and is within 1.4e-5 of the union of its balls everywhere; K7 has a crease at each of
+    // the two corners where its ball comes to rest on the curves and a piece of the ball, 0.22 wide, at each of the two
+    // where it leaves them, and is within 5.1e-6.
     [Theory]
-    [InlineData("K6", 1.78e-4, 1.78e-4)]
-    [InlineData("K7", 1.02e-2, 6.8e-4)]
-    public void The_corpuss_fillets_onto_edges_are_refused_and_were_off_the_union_of_their_balls(string name, double worst, double corner)
+    [InlineData("K6", 1.78e-4, 1.78e-4, 0, 1)]
+    [InlineData("K7", 1.02e-2, 6.8e-4, 2, 2)]
+    public void The_corpuss_fillets_onto_edges_have_their_corners_built_and_were_off_the_union_of_their_balls(string name, double worst, double corner, int pieces, int creases)
     {
         if (Corpus("CFI_6_i12fhh.rle") is not { } shape)
         {
@@ -183,10 +217,11 @@ public class EvolvingFilletOnEdgeTests
         }
 
         bool rim = name == "K7";
-        MakeFillet Fillet(bool refused)
+        MakeFillet Fillet(bool refused, bool cornersBuilt = true)
         {
             var chfi3d = new MakeFillet(shape);
             chfi3d.InternalBuilder().EnvelopeCornersRefused = refused;
+            chfi3d.InternalBuilder().EnvelopeCornersBuilt = cornersBuilt;
             NCollection_Array1<Point2D> law = new(1, rim ? 4 : 3);
             law.SetValue(1, new Point2D(0, 1));
             law.SetValue(2, new Point2D(1, 3));
@@ -254,10 +289,11 @@ public class EvolvingFilletOnEdgeTests
         };
 
         // K6's balls rest on the smaller cylinder, outside it; K7's on the top, under it
-        List<(double Miss, Point3D At)> points = rim
-            ? UnionMiss(unrefused, p => Math.Abs(p.Z - 12), p => new Vector3D(0, 0, -1), side, 10)
-            : UnionMiss(unrefused, p => Math.Abs(Math.Sqrt(p.X * p.X + (p.Z - 7) * (p.Z - 7)) - 3),
+        List<(double Miss, Point3D At)> Read(MakeFillet fillet) => rim
+            ? UnionMiss(fillet, p => Math.Abs(p.Z - 12), p => new Vector3D(0, 0, -1), side, 10)
+            : UnionMiss(fillet, p => Math.Abs(Math.Sqrt(p.X * p.X + (p.Z - 7) * (p.Z - 7)) - 3),
                         p => new Vector3D(p.X, 0, p.Z - 7).Normalized(), side, 10);
+        List<(double Miss, Point3D At)> points = Read(unrefused);
 
         // Where the ball comes to rest on the edge
         (Point3D at, double off, _, _) = corners.MinBy(c => Math.Abs(c.Off - corner));
@@ -266,9 +302,24 @@ public class EvolvingFilletOnEdgeTests
         Assert.True(Math.Abs(beside - off) < 0.06 * off, $"{name}: off the union of the balls by {beside} beside a corner whose measure is {off}");
         Assert.True(beside > Approximation);
 
+        MakeFillet refused = Fillet(true, cornersBuilt: false);
+        Assert.False(refused.IsDone);
+        Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, refused.StripeStatus(1));
+
+        // With the corners built: valid, on the union everywhere, its faces meeting along their edges
         MakeFillet chfi3d = Fillet(true);
-        Assert.False(chfi3d.IsDone);
-        Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, chfi3d.StripeStatus(1));
+        Assert.True(chfi3d.IsDone);
+        Assert.Equal((pieces, creases), chfi3d.InternalBuilder().EnvelopeCornersMade);
+        Assert.True(chfi3d.Shape().Validate().IsValid);
+        List<(double Miss, Point3D At)> made = Read(chfi3d);
+        Assert.True(made.Count > 0.9 * points.Count);
+        Assert.True(made.Max(p => p.Miss) < 0.2 * Approximation, $"{name}: its corners built, and off the union of the balls by {made.Max(p => p.Miss)}");
+        Assert.True(made.Where(p => p.At.DistanceTo(at) < 0.1).Max(p => p.Miss) < 0.05 * Approximation);
+
+        // And every face of it meshes, the pieces of the ball, whose two corners are single points of their surfaces, too
+        var mesh = new Kerf.Engine.Meshing.IncrementalMesh(chfi3d.Shape(), 0.05);
+        Assert.True(mesh.IsDone);
+        Assert.All(mesh.Shape().AllFaces(), f => Assert.NotNull(Tool.Triangulation(f, out _)));
     }
 
     // The corpus's blend/buildevol/K8, built: K7's cylinders with a third of radius 3 standing on the top, and the fillet of
@@ -303,7 +354,8 @@ public class EvolvingFilletOnEdgeTests
     // Decision 1736's case, the corpus's blend/buildevol/J5, which ran through Draw-lite until its fillet was refused (its
     // measure 2.6e-4): where a radius of 4 to 8 to 5 reaches past a circle on the top face the fillet's boundary runs along
     // it, and the edge's part under the boundary goes. Built here with the refusal off, as the fix is to the reconstruction:
-    // valid, with OCCT's area.
+    // valid, with OCCT's area. Unit 15AK3: and as a user gets it, its four corners built as creases: valid, the same area
+    // to the script's tolerance.
     [Fact]
     public void An_edge_under_a_fillets_boundary_goes()
     {
@@ -327,16 +379,27 @@ public class EvolvingFilletOnEdgeTests
         Assert.InRange(result.IntegrateArea(new MassOptions { Tolerance = 1e-9 }), 19572.1 * (1 - 1e-4), 19572.1 * (1 + 1e-4));
 
         var refused = new MakeFillet(shape);
+        refused.InternalBuilder().EnvelopeCornersBuilt = false;
         refused.Add(law, shape.AllEdges()[6]);
         refused.Build();
         Assert.False(refused.IsDone);
         Assert.Equal(Kerf.Engine.Fillets.Data.ErrorStatus.EnvelopeCorner, refused.StripeStatus(1));
+
+        var made = new MakeFillet(shape);
+        made.Add(law, shape.AllEdges()[6]);
+        made.Build();
+        Assert.True(made.IsDone);
+        Assert.Equal((0, 4), made.InternalBuilder().EnvelopeCornersMade);
+        Assert.True(made.Shape().Validate().IsValid);
+        Assert.InRange(made.Shape().IntegrateArea(new MassOptions { Tolerance = 1e-9 }), 19572.1 * (1 - 1e-4), 19572.1 * (1 + 1e-4));
     }
 
-    // One of the corpus's that is still built, blend/buildevol/H9: a cylinder of radius 8 on a box of 20, and the fillet of
+    // One of the corpus's that was always built, blend/buildevol/H9: a cylinder of radius 8 on a box of 20, and the fillet of
     // the circle they meet in, 1 to 4 to 3, whose ball comes to rest on the edges of the box's top and leaves them, six times.
-    // Its worst corners' measure is 9.6e-5, and its faces are 9.5e-5 inside the union of their balls there, at both of them:
-    // within the tolerance, and built.
+    // Its worst corner's measure is 9.6e-5, and with every corner tilted its faces are 9.6e-5 inside the union of their balls
+    // there: within the tolerance by less than the approximation's own error. Unit 15AK3 builds a corner whose measure is
+    // past nine tenths of the tolerance, so that one is a crease, and the fillet is 6.8e-5 off the union at most, at the
+    // corner that is its mirror image and measures 6.8e-5.
     [Fact]
     public void The_corpuss_H9_is_built_within_tolerance_of_the_union_of_its_balls()
     {
@@ -356,6 +419,9 @@ public class EvolvingFilletOnEdgeTests
         Assert.True(chfi3d.Shape().Validate().IsValid);
         double measure = chfi3d.InternalBuilder().EnvelopeCornerWorst;
         Assert.InRange(measure, 9.0e-5, Approximation);
+        Assert.Equal((0, 1), chfi3d.InternalBuilder().EnvelopeCornersMade);
+        double tilted = chfi3d.InternalBuilder().EnvelopeCorners.Max(c => c.Off);
+        Assert.InRange(tilted, 6.5e-5, 7.1e-5);
 
         // The box's top as a surface, to its edges
         Distance top = p =>
@@ -366,7 +432,7 @@ public class EvolvingFilletOnEdgeTests
         List<(double Miss, Point3D At)> points = UnionMiss(chfi3d, p => Math.Abs(Math.Sqrt(p.X * p.X + p.Y * p.Y) - 8),
                                                            p => new Vector3D(p.X, p.Y, 0).Normalized(), top, 10);
         double worst = points.Max(p => p.Miss);
-        Assert.True(worst < Approximation && Math.Abs(worst - measure) < 0.05 * measure, $"off the union of the balls by {worst}, the measure {measure}");
+        Assert.True(worst < Approximation && Math.Abs(worst - tilted) < 0.05 * tilted, $"off the union of the balls by {worst}, its worst tilted corner's measure {tilted}");
     }
 
     private static Shape? Corpus(string file)
