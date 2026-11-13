@@ -1,7 +1,9 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using Kerf.Engine.Classification;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
@@ -108,6 +110,10 @@ public static class BooleanVolumes
     // as both inputs' faces are asked, and a corpus cut of complex faces took 11.6 s more at 9 by 9
     private const int OffBoundaryGrid = 5;
 
+    // The points tried in each direction on each face of each input, for where it lies against the result (unit 15AM): 2 by 2
+    // catches what 3 by 3 did (#344, bug25983_1 and bcut_complex/F2) at less than half the classifications
+    private const int InputFaceGrid = 2;
+
     /// <summary>
     /// The error if <paramref name="result"/> can't be what <paramref name="rule"/> makes of <paramref name="arguments"/> and
     /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures, or saying that its faces don't close,
@@ -174,7 +180,7 @@ public static class BooleanVolumes
                 BooleanVolumeRule.Fuse when r <= least + margin && ProvedLost(shared, fuzzyValue, Math.Min(a.Sum, b.Sum)) is { } lost => lost,
                 BooleanVolumeRule.Fuse when r >= most - margin => ProvedToOverlap(rule, shared, fuzzyValue, Math.Max(0, most - r), Math.Min(a.Sum, b.Sum)),
                 _ => null,
-            }) ?? ProvedByPoints(rule, shared, fuzzyValue, Math.Min(a.Sum, b.Sum));
+            }) ?? ProvedByPoints(rule, shared, fuzzyValue, Math.Min(a.Sum, b.Sum)) ?? ProvedByInputFaces(rule, shared, fuzzyValue, Math.Min(a.Sum, b.Sum));
         }
 
         // Past a rule, which is rare, so this is when the dearer questions are worth asking: is it proved?
@@ -312,8 +318,7 @@ public static class BooleanVolumes
                 {
                     continue;
                 }
-                var surface = new FaceSurfaceAdaptor(face);
-                BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+                FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
                 if (!double.IsFinite(fromU + toU + fromV + toV))
                 {
                     continue;
@@ -347,6 +352,239 @@ public static class BooleanVolumes
             }
         }
         return null;
+    }
+
+    // Where each input's faces lie against the other input says where they lie against the result (unit 15AM): a point of one
+    // input's face outside the other is on a fuse's boundary, and one inside the other is inside the fuse; inside the other it's
+    // on a common's boundary, and outside the other it's outside the common; and a cut's boundary is its object's faces outside
+    // the tool and its tool's inside the object, the rest of each being outside it. OCCT #344's fuse of two plates, valid and
+    // inside every rule, lost a piece of the first less the second, 4,283 of 66,604 (decision 2311); bug25983_1's fuse of a
+    // sweep and its mirror image is 32.8 for 54.0. Their faces are past decision 1924's limit or their tolerances under its
+    // threshold, and the part lost was the larger input's or the fuse inside its rules, which decision 1937's proof doesn't ask.
+    // So each face of each input is asked at the points of a 2 by 2 grid over its parameters that are inside it, and two whose
+    // classifications disagree, each deep in or out of the other input and of the result, prove the result wrong. A distance is
+    // measured only where they disagree, so a result that's right costs classifications alone. Only for inputs of one solid
+    // each: a compound's solids that share faces don't classify as one (bug693's compound of three, whose common and cut are
+    // right, had points of their faces taken for outside it)
+    private static Diagnostic? ProvedByInputFaces(BooleanVolumeRule rule, Shared shared, double fuzzyValue, double smallerVolume)
+    {
+        if (!shared.OneEach || shared.Argument.Shape.Explore<Solid>().Count() != 1 || shared.Tool.Shape.Explore<Solid>().Count() != 1)
+        {
+            return null;
+        }
+
+        ResultBoundary boundary = shared.Boundary;
+        Classified result = shared.Result;
+        bool empty = result.Box.IsEmpty;
+        // What's surely on each input's boundary, as for the result's: a point of one input's face on the other's is skipped
+        // without a classification, which on a boundary is the dearest kind (a box cut by itself: 18 KB a point)
+        var onArgument = new ResultBoundary(shared.Argument.Shape);
+        var onTool = new ResultBoundary(shared.Tool.Shape);
+        // The points to classify, in the order they're asked: which they are depends on no classification (unit 15AR). What
+        // working out a face's points throws is kept in its place, and thrown when the points before it have been judged, as
+        // it was thrown then; nothing after it is asked
+        List<(Point3D Point, bool IsArgument, Exception? Failed)> points = [];
+        foreach ((Classified own, Classified other, bool isArgument) in new[] { (shared.Argument, shared.Tool, true), (shared.Tool, shared.Argument, false) })
+        {
+            ResultBoundary otherBoundary = isArgument ? onTool : onArgument;
+            // Where a face outside the other input must be outside the result, a face clear of the other's box has nothing to
+            // ask: a common's, and a cut's tool's. The users' commons of a small part with one of 237 faces were most of the cost
+            bool outsideIsOut = rule == BooleanVolumeRule.Common || (rule == BooleanVolumeRule.Cut && !isArgument);
+            foreach (Face face in own.Shape.AllFaces())
+            {
+                // A face of the input that's one of the result's is on its boundary all over. Its own bounds, from its wires;
+                // a face with none, such as an infinite plane, has nothing to sample. A face clear of the other input's box is
+                // outside it all over, so is one answer, asked at one point
+                if (boundary.Has(face))
+                {
+                    continue;
+                }
+                try
+                {
+                    BoundingBox faceBox = face.BoundingBox();
+                    bool clear = !faceBox.Intersects(other.Widened);
+                    if (faceBox.IsEmpty || !(faceBox.Min.DistanceTo(faceBox.Max) <= UnboundedFace) || (outsideIsOut && clear))
+                    {
+                        continue;
+                    }
+                    FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
+                    if (!double.IsFinite(fromU + toU + fromV + toV))
+                    {
+                        continue;
+                    }
+
+                    var inFace = new FaceClassifier2D(face, Tolerances.Confusion);
+                    ResultBoundary.Here onIt = boundary.Near(face, surface), onOther = otherBoundary.Near(face, surface);
+                    int asked = 0;
+                    for (int i = 1; i <= InputFaceGrid && !(clear && asked > 0); i++)
+                    {
+                        for (int j = 1; j <= InputFaceGrid && !(clear && asked > 0); j++)
+                        {
+                            double u = fromU + (toU - fromU) * i / (InputFaceGrid + 1), v = fromV + (toV - fromV) * j / (InputFaceGrid + 1);
+                            var uv = new Point2D(u, v);
+                            if (inFace.Perform(uv) != Containment.In || onIt.HoldsInFace(uv) || onOther.HoldsInFace(uv))
+                            {
+                                continue;
+                            }
+                            Point3D point = surface.Value(u, v);
+                            asked++;
+                            if (onIt.HoldsOnPlane(point) || onOther.HoldsOnPlane(point))
+                            {
+                                continue;
+                            }
+                            points.Add((point, isArgument, null));
+                        }
+                    }
+                }
+                catch (Exception failed)
+                {
+                    points.Add((default, isArgument, failed));
+                    goto Collected;
+                }
+            }
+        }
+
+    Collected:
+        // Each point against the other input and, off its boundary, against the result: in parallel where the check's volumes
+        // are (ParallelVolumes), each thread with classifiers of its own, then judged in order as below
+        (Containment Other, Containment Result, Exception? Failed)[]? sides = InParallel(points, shared, empty);
+
+        // The inputs are validated, and the depth measured, only once a point disagrees: a result that's right is never asked
+        // either, and validating the inputs was the largest part of the proof's cost on small Booleans (unit 15AM)
+        double depth = -1;
+        int found = 0;
+        string said = "";
+        for (int k = 0; k < points.Count; k++)
+        {
+            (Point3D point, bool isArgument, Exception? unasked) = points[k];
+            if (unasked is not null)
+            {
+                ExceptionDispatchInfo.Throw(unasked);
+            }
+            Classified other = isArgument ? shared.Tool : shared.Argument;
+            Containment side, inResult;
+            if (sides is null)
+            {
+                side = other.Quick(point);
+                inResult = side == Containment.On ? Containment.Unknown : empty ? Containment.Out : result.Quick(point);
+            }
+            else
+            {
+                (side, inResult, Exception? failed) = sides[k];
+                if (failed is not null)
+                {
+                    ExceptionDispatchInfo.Throw(failed);
+                }
+            }
+
+            // On the other input's boundary it's within a tolerance of it, so can't be deep
+            if (side == Containment.On)
+            {
+                continue;
+            }
+            bool inOther = side == Containment.In;
+            // On the result's boundary (0), inside it (1) or outside it (-1)
+            int expected = rule switch
+            {
+                BooleanVolumeRule.Fuse => inOther ? 1 : 0,
+                BooleanVolumeRule.Common => inOther ? 0 : -1,
+                _ => isArgument ? (inOther ? -1 : 0) : (inOther ? 0 : -1),
+            };
+            bool disagrees = expected switch
+            {
+                0 => inResult != Containment.On,
+                1 => inResult == Containment.Out,
+                _ => inResult == Containment.In,
+            };
+            if (!disagrees)
+            {
+                continue;
+            }
+            if (depth < 0)
+            {
+                if (!shared.Trustworthy)
+                {
+                    return null;
+                }
+                depth = OverlapDepth * Math.Cbrt(smallerVolume) + MarginOfTolerance * (shared.LargestTolerance + fuzzyValue);
+            }
+            if (!other.Deep(point, depth) || (!empty && !result.Deep(point, depth)))
+            {
+                continue;
+            }
+
+            if (found++ == 0)
+            {
+                string what = expected switch
+                {
+                    0 => "aren't on its boundary",
+                    1 => "are outside it",
+                    _ => "are inside it",
+                };
+                said = $"the point ({Figure(point.X)}, {Figure(point.Y)}, {Figure(point.Z)}) and others, on {(isArgument ? "the object's" : "the tool's")} faces {(inOther ? "inside" : "outside")} the other input, {what}";
+            }
+            if (found >= 2)
+            {
+                string name = rule switch
+                {
+                    BooleanVolumeRule.Common => "common",
+                    BooleanVolumeRule.Cut => "cut",
+                    _ => "fuse",
+                };
+                return Diagnostic.Error(DiagnosticCode.InvalidResult, $"The {name}'s result is wrong: {said}.");
+            }
+        }
+        return null;
+    }
+
+    // The proofs this thread has classified in parallel, for the tests
+    [ThreadStatic]
+    internal static int s_proofsInParallel;
+
+    // The fewest points the proof classifies in parallel: below this a thread's own classifiers cost more than they save
+    private const int PointsInParallel = 16;
+
+    // The proof's classifications made in parallel (unit 15AR), where the check's volumes are integrated in parallel, or null
+    // to make them one at a time as they're judged. Each point's two answers depend on the point alone: a classifier sets back
+    // what one point leaves before the next (SolidExplorer.ForANewPoint, unit 15C2), so any classifier of the shape gives the
+    // same. A classifier isn't safe on two threads at once, so each takes a set of its own from a bag, the check's own set
+    // first, and puts it back; a set is used by one thread at a time, and the shapes are only read. What a classification
+    // throws is kept with its point and thrown when the point is judged, so a point after the proof has decided throws nothing
+    private static (Containment Other, Containment Result, Exception? Failed)[]? InParallel(List<(Point3D Point, bool IsArgument, Exception? Failed)> points, Shared shared, bool empty)
+    {
+        if (!ParallelVolumes.Current || OsdParallel.IsSerial || points.Count < PointsInParallel)
+        {
+            return null;
+        }
+        s_proofsInParallel++;
+        var sides = new (Containment Other, Containment Result, Exception? Failed)[points.Count];
+        var sets = new ConcurrentBag<(Classified Argument, Classified Tool, Classified Result)>([(shared.Argument, shared.Tool, shared.Result)]);
+        OsdParallel.For(0, points.Count, k =>
+        {
+            if (!sets.TryTake(out var set))
+            {
+                set = (new Classified(shared.Argument.Shape), new Classified(shared.Tool.Shape), new Classified(shared.Result.Shape));
+            }
+            try
+            {
+                (Point3D point, bool isArgument, Exception? unasked) = points[k];
+                if (unasked is not null)
+                {
+                    return;
+                }
+                Containment side = (isArgument ? set.Tool : set.Argument).Quick(point);
+                sides[k] = (side, side == Containment.On ? Containment.Unknown : empty ? Containment.Out : set.Result.Quick(point), null);
+            }
+            catch (Exception e)
+            {
+                sides[k] = (Containment.Unknown, Containment.Unknown, e);
+            }
+            finally
+            {
+                sets.Add(set);
+            }
+        });
+        return sides;
     }
 
     // What ProvedToOverlap's question returns for a point that proves the result may be right
@@ -398,8 +636,7 @@ public static class BooleanVolumes
                 continue;
             }
 
-            var surface = new FaceSurfaceAdaptor(face);
-            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+            FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
             if (!double.IsFinite(fromU + toU + fromV + toV))
             {
                 continue;
@@ -486,8 +723,7 @@ public static class BooleanVolumes
                 continue;
             }
 
-            var surface = new FaceSurfaceAdaptor(face);
-            BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+            FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
             if (!double.IsFinite(fromU + toU + fromV + toV))
             {
                 continue;
@@ -719,8 +955,7 @@ public static class BooleanVolumes
                     continue;
                 }
 
-                var surface = new FaceSurfaceAdaptor(face);
-                BrepTools.UVBounds(face, out double fromU, out double toU, out double fromV, out double toV);
+                FaceSurfaceAdaptor surface = Bounded(face, out double fromU, out double toU, out double fromV, out double toV);
                 if (!double.IsFinite(fromU + toU + fromV + toV))
                 {
                     continue;
@@ -808,9 +1043,11 @@ public static class BooleanVolumes
                     }
                     var classifier = new InFace(face);
                     faces.Add((placement, classifier));
+                    // The plane in place, from an adaptor without the face's bounds, which a plane doesn't depend on and which cost a
+                    // pass over its edges' curves on its parameters for each planar face of the result and of both inputs (unit 15AR)
                     if (surface is PlaneSurface plane)
                     {
-                        _planes.Add(new ResultPlane(new FaceSurfaceAdaptor(face).Plane(), plane.Plane, placement, classifier, Math.Max(Tool.Tolerance(face), Tolerances.Confusion)));
+                        _planes.Add(new ResultPlane(new FaceSurfaceAdaptor(face, false).Plane(), plane.Plane, placement, classifier, Math.Max(Tool.Tolerance(face), Tolerances.Confusion)));
                     }
                 }
             }
@@ -898,6 +1135,23 @@ public static class BooleanVolumes
         }
     }
 
+    // A face's surface over its bounds, and the bounds, which the adaptor has just worked out from the face's edges as
+    // BrepTools.UVBounds does: the same figures without a second pass over the curves on its parameters (unit 15AR). A face
+    // without a surface has none in its adaptor, so it's asked the usual way
+    internal static FaceSurfaceAdaptor Bounded(Face face, out double fromU, out double toU, out double fromV, out double toV)
+    {
+        var surface = new FaceSurfaceAdaptor(face);
+        if (surface.GeomSurfaceOriginal() is null)
+        {
+            BrepTools.UVBounds(face, out fromU, out toU, out fromV, out toV);
+        }
+        else
+        {
+            (fromU, toU, fromV, toV) = (surface.FirstUParameter(), surface.LastUParameter(), surface.FirstVParameter(), surface.LastVParameter());
+        }
+        return surface;
+    }
+
     // A face's 2D classifier, made when a point first asks it: most of a result's faces are never asked, and making one for
     // each of the door's 52 was about 2.5 ms
     private sealed class InFace(Face face)
@@ -953,12 +1207,22 @@ public static class BooleanVolumes
         // thousandth of its diagonal (decision 1924's points, unit 13K)
         public Containment Quick(in Point3D point)
         {
-            if (_widened is not { } widened)
-            {
-                BoundingBox box = Box;
-                _widened = widened = box.IsEmpty ? box : box.Enlarged(OverlapDepth * box.Min.DistanceTo(box.Max));
-            }
+            BoundingBox widened = Widened;
             return widened.IsEmpty || widened.Contains(point) ? StateOf(point) : Containment.Out;
+        }
+
+        // The box widened by a thousandth of its diagonal: what's outside it is outside the shape
+        public BoundingBox Widened
+        {
+            get
+            {
+                if (_widened is not { } widened)
+                {
+                    BoundingBox box = Box;
+                    _widened = widened = box.IsEmpty ? box : box.Enlarged(OverlapDepth * box.Min.DistanceTo(box.Max));
+                }
+                return widened;
+            }
         }
 
         // Further than the depth from each of the shape's shells: a point at least that far from the box is, without a distance

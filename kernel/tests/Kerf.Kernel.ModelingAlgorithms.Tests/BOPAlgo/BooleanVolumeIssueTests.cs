@@ -118,6 +118,112 @@ public class BooleanVolumeIssueTests
         Assert.Equal(whole, cut.Value.Shape.IntegrateVolume(precise) + inBoth, 1e-6 * whole);
     }
 
+    // OCCT #344's two plates, from its attachments: the same part, its holes moved along X, read from STEP
+    private static (Shape A, Shape B) Issue344()
+    {
+        static Shape Read(string name)
+        {
+            using Stream stream = typeof(BooleanVolumeIssueTests).Assembly.GetManifestResourceStream($"BOPAlgo.Issues.344-{name}.brep")
+                                  ?? throw new InvalidOperationException(name);
+            BrepTools.Read(out Shape shape, new StreamReader(stream));
+            return shape;
+        }
+        return (Read("a"), Read("b"));
+    }
+
+    [Fact]
+    public void Issue_344_a_fuse_that_lost_a_piece_of_its_larger_input_is_made_again_the_other_way_round()
+    {
+        // The exact fuse is valid and inside every rule of volume, and has lost a piece of the first plate less the second,
+        // 4,283 of 66,604 (decision 2311). Points of the plates' faces now prove it (unit 15AM): outside the other plate, where
+        // they must be on the fuse's boundary, and not on it. The fuse the other way round, right, is returned
+        (Shape a, Shape b) = Issue344();
+        var precise = new MassOptions { Tolerance = 1e-6 };
+        Shape exact = a.Fuse(b, Unchecked).Value.Shape;
+        Assert.True(exact.Validate().IsValid);
+        Assert.Equal(62320.11, exact.IntegrateVolume(precise), 0.01);
+        Diagnostic? wrong = BooleanVolumes.Check(BooleanVolumeRule.Fuse, [a], [b], exact);
+        Assert.NotNull(wrong);
+        Assert.Contains("The fuse's result is wrong", wrong.Message, StringComparison.Ordinal);
+        Assert.Contains("the other input", wrong.Message, StringComparison.Ordinal);
+
+        Result<Built<Shape>> fused = a.Fuse(b);
+        Assert.Contains(fused.Diagnostics, static d => d.Code == BooleanOperations.BuiltOtherWayRound);
+        // The plates less what they share: 55,930.72 and 51,101.24 less 40,428.41
+        double whole = a.IntegrateVolume(precise) + b.IntegrateVolume(precise) - a.Common(b).Value.Shape.IntegrateVolume(precise);
+        Assert.Equal(1, fused.Value.Shape.IntegrateVolume(precise) / whole, 1e-6);
+        Assert.DoesNotContain(b.Fuse(a).Diagnostics, static d => d.Code == BooleanOperations.BuiltOtherWayRound);
+    }
+
+    // The corpus's bugs/modalg_7/bug25983_1, its fuse's inputs: a sweep of a square along a helix-like spline and its mirror
+    // image, 27.67 each, as Draw-lite's mksweep makes them
+    private static (Shape A, Shape B) Issue25983()
+    {
+        static Shape Read(string name)
+        {
+            using Stream stream = typeof(BooleanVolumeIssueTests).Assembly.GetManifestResourceStream($"BOPAlgo.Issues.25983-{name}.brep")
+                                  ?? throw new InvalidOperationException(name);
+            BrepTools.Read(out Shape shape, new StreamReader(stream));
+            return shape;
+        }
+        return (Read("a"), Read("b"));
+    }
+
+    [Fact]
+    public void Issue_25983_a_fuse_a_third_short_is_made_again_with_a_fuzzy_value()
+    {
+        // The exact fuse is 32.84 where OCCT's script has 54.04, valid and inside every rule of volume (no smaller than either
+        // input, no larger than both), and a success; points of the inputs' faces prove it wrong (unit 15AM). The common and the
+        // cut, empty and removing nothing, already failed. Made again with a fuzzy value it's within 2e-4 of OCCT's figure
+        (Shape a, Shape b) = Issue25983();
+        Shape exact = a.Fuse(b, Unchecked).Value.Shape;
+        Assert.True(exact.Validate().IsValid);
+        Assert.Equal(32.836, exact.IntegrateVolume(), 0.001);
+        Diagnostic? wrong = BooleanVolumes.Check(BooleanVolumeRule.Fuse, [a], [b], exact);
+        Assert.NotNull(wrong);
+        Assert.Contains("The fuse's result is wrong", wrong.Message, StringComparison.Ordinal);
+
+        Result<Built<Shape>> fused = a.Fuse(b);
+        Assert.Contains(fused.Diagnostics, static d => d.Code == BooleanOperations.BuiltWithFuzzyValue);
+        Assert.Equal(1, fused.Value.Shape.IntegrateVolume() / 54.0383, 2e-4);
+    }
+
+    [Fact]
+    public void The_proofs_points_classified_in_parallel_give_what_one_at_a_time_gives()
+    {
+        // Unit 15AR: where the check's volumes are integrated in parallel, the inputs'-faces proof classifies its points on
+        // several threads, then judges them in order; what it says, and the point it names, must be what it says serially
+        (Shape a, Shape b) = Issue344();
+        (Shape c, Shape d) = Issue25983();
+        var cases = new (BooleanVolumeRule Rule, Shape Argument, Shape Tool, Shape Result)[]
+        {
+            (BooleanVolumeRule.Fuse, a, b, a.Fuse(b, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Fuse, b, a, b.Fuse(a, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Common, a, b, a.Common(b, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Cut, a, b, a.Cut(b, Unchecked).Value.Shape),
+            (BooleanVolumeRule.Fuse, c, d, c.Fuse(d, Unchecked).Value.Shape),
+        };
+        int inParallel = 0;
+        foreach ((BooleanVolumeRule rule, Shape argument, Shape tool, Shape result) in cases)
+        {
+            string? serial;
+            using (ParallelVolumes.Use(false))
+            {
+                serial = BooleanVolumes.Check(rule, [argument], [tool], result)?.Message;
+            }
+            string? parallel;
+            using (ParallelVolumes.Use())
+            {
+                BooleanVolumes.s_proofsInParallel = 0;
+                parallel = BooleanVolumes.Check(rule, [argument], [tool], result)?.Message;
+                inParallel += BooleanVolumes.s_proofsInParallel;
+            }
+            Assert.Equal(serial, parallel);
+        }
+        // #344's two fuses fire and pass, each with far more than the points it takes to go parallel
+        Assert.True(Kerf.Engine.Foundation.OsdParallel.IsSerial || inParallel > 0);
+    }
+
     [Fact]
     public void Issue_245s_section_not_approximated_runs_to_its_end()
     {

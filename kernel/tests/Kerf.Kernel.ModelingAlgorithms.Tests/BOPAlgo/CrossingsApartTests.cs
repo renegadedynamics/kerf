@@ -221,4 +221,37 @@ public class CrossingsApartTests
         Assert.Equal(read, AsOcct(made), 1e-9 * read);
         Assert.Equal(0.0020677179, read, 1e-9);
     }
+
+    // The five results made again that decision 2291 counted wrong, valid and passing the check, 14% and 42% out: each is right,
+    // to 1e-10 of the geometry's volume, and the check is right to pass it. They were measured against the first result, which
+    // Kerf.Modeling's Boolean makes unchecked, and there the first was the wrong one: a fuse as large as its inputs together, or
+    // a cut that removed nothing (unit 15AM)
+    [Theory]
+    [InlineData(500, 3e-12, true, 10, true)]
+    [InlineData(500, 2e-12, false, 10, true)]
+    [InlineData(5000, 3e-11, false, 10, true)]
+    [InlineData(50000, -1e-7, false, 10, false)]
+    [InlineData(50000, -1e-7, false, double.PositiveInfinity, false)]
+    public void The_results_made_again_that_were_counted_wrong_are_right(double radius, double offset, bool fuse, double apart, bool touches)
+    {
+        (Shape cylinder, Shape tool) = Inputs(radius, offset);
+        BooleanOperation operation = fuse ? new Fuse() : new Cut();
+        var arguments = new NCollection_List<Shape>();
+        arguments.Append(cylinder);
+        var tools = new NCollection_List<Shape>();
+        tools.Append(tool);
+        operation.SetArguments(arguments);
+        operation.SetTools(tools);
+        operation.SetNonDestructive(true);
+        operation.SetCrossingsApart(apart, touches);
+        operation.Build();
+        Assert.True(operation.IsDone);
+        Shape made = operation.Shape();
+
+        double one = Math.PI * radius * radius * 2 * radius, common = 8.0 / 3 * radius * radius * radius;
+        double expected = fuse ? 3 * one - common : one - common;
+        Assert.True(made.Validate().IsValid);
+        Assert.Null(BooleanVolumes.Check(fuse ? BooleanVolumeRule.Fuse : BooleanVolumeRule.Cut, [cylinder], [tool], made, 0));
+        Assert.Equal(expected, made.IntegrateVolume(new MassOptions { Tolerance = 1e-8 }), 1e-10 * expected);
+    }
 }

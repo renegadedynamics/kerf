@@ -21,7 +21,9 @@ namespace Kerf.Fillets;
 /// section, as ChFi3d's BlendFunc_ChAsym has it) and the chord between them: the triangle, with the segment between each face's section and its side, by the face's sag at the
 /// side's middle (a parabola's two thirds of chord times sag). Swept along the edge, each element of the section moves by
 /// one less the edge's curvature vector dotted with its offset, so the volume is the integral of the section's area less its
-/// first moment against the curvature, by Gauss's points. Where edges run on through a vertex their planes there are one.
+/// first moment against the curvature, by Gauss's points on panels halved where their halves disagree (unit 15AP: a contact
+/// that crosses onto a face carried on, or an edge's knot, puts a kink in the integrand that fixed panels converge on slowly).
+/// Where edges run on through a vertex their planes there are one.
 /// </para>
 /// <para>
 /// <b>At a corner,</b> what the chamfers take off together is not the sum of their sections: in a box round the corner,
@@ -32,8 +34,17 @@ namespace Kerf.Fillets;
 /// fuse's pieces. Only convex chamfers.
 /// </para>
 /// <para>
-/// The result's volume, measured, has to match to a part in a million of it, the approximation's tolerance over the chamfer's
-/// area, and twice the corners' difference between two quadratures. Everything is local to the call.
+/// <b>What's allowed</b> (unit 15AP), each term an error measured or bounded, where it was a part in a million of the whole
+/// solid: the two volumes' (each measured at 1e-10, its error what it moved from 1e-8), the sections' (what their panels'
+/// halving moved), the corners' (the most two Gauss rules, and Gauss's against the midpoint rule, differ), and the
+/// approximation's tolerance over the chamfers' area, which the faces may lie off their exact sections by. If that comes to
+/// more than a twentieth of what the chamfers take off, the volume proves too little, and the chamfer isn't built.
+/// </para>
+/// <para>
+/// <b>Refined only until it's decided:</b> first the sections on eight panels and sixteen, and the corners by Gauss's two panels
+/// and the midpoint rule on as many lines; the result is proved if it's within that allowance, refused if it's outside the
+/// faces' tolerance by more than the errors so far, and only otherwise are the integrals refined (the sections' panels halved
+/// where they disagree, the corners' finer Gauss rule) and asked again. Everything is local to the call.
 /// </para>
 /// </remarks>
 internal static partial class ChamferMeet
@@ -44,33 +55,87 @@ internal static partial class ChamferMeet
     private static ReadOnlySpan<double> GaussWeights => [0.1012285362903763, 0.2223810344533745, 0.3137066458778873, 0.3626837833783620,
                                                          0.3626837833783620, 0.3137066458778873, 0.2223810344533745, 0.1012285362903763];
 
-    // Panels of Gauss's eight points along each edge, and how far a corner's box reaches from the corner, in its widest
-    // chamfer's widths
-    private const int VolumePanels = 16;
+    // Panels of Gauss's eight points along each edge to start with, how many times one may be halved, and how near its halves
+    // have to come to it, of itself, first and then refined; and how far a corner's box reaches from the corner, in its
+    // widest chamfer's widths
+    private const int FirstPanels = 8;
+
+    private const int VolumePanels = 8;
+
+    private const int VolumeHalvings = 4;
+
+    private const double VolumeAgreed = 1e-7;
 
     private const double CornerReach = 3;
 
-    /// <summary>The expected volume and how far from it the result may be, or null where it can't be worked out.</summary>
-    private static (double Expected, double Allowed)? ExpectedVolume(Shape input, Face[] faces, List<Band> bands, List<Corner> corners, List<Carried> carried,
-                                                                     Edge[] chamfered, ChamferSpec[] specs, Face[] referenceFaces, double tolerance, double near)
+    // The most of what the chamfers take off that the volume's allowance may be, for it to prove anything (unit 15AP)
+    internal const double ProvedShare = 0.05;
+
+    // What the volume says of the result: proved, refused (outside what's allowed, or not worked out), or proving too little
+    private enum Verdict
+    {
+        Proved,
+        Refused,
+        TooLittle,
+    }
+
+    /// <summary>The result's volume, <paramref name="measured"/> to <paramref name="measuredError"/>, against the expected,
+    /// the integrals refined only until that's decided; with the allowance and what the chamfers take off at the last level asked.</summary>
+    private static (Verdict Verdict, double Allowed, double Removed) VolumeJudged(Shape input, Face[] faces, List<Band> bands, List<Corner> corners,
+                                                                                  List<Carried> carried, Edge[] chamfered, ChamferSpec[] specs, Face[] referenceFaces,
+                                                                                  double tolerance, double near, double measured, double measuredError, double share)
+    {
+        (double before, double beforeError) = MeasuredVolume(input);
+        for (int level = 1; level <= 2; level++)
+        {
+            if (ExpectedVolume(input, faces, bands, corners, carried, chamfered, specs, referenceFaces, near, level) is not { } v)
+            {
+                return (Verdict.Refused, double.NaN, double.NaN);
+            }
+            double removed = Math.Abs(v.Removed), licence = tolerance * v.Area, integrals = beforeError + measuredError + v.Error;
+            double allowed = licence + integrals, gap = Math.Abs(measured - (before - v.Removed));
+            if (allowed <= share * removed && gap <= allowed)
+            {
+                return (Verdict.Proved, allowed, v.Removed);
+            }
+            // Past the faces' tolerance by more than every error so far: refining can't bring it in
+            if (gap - integrals > licence && allowed <= share * removed)
+            {
+                return (Verdict.Refused, allowed, v.Removed);
+            }
+            if (level == 2 || licence + beforeError + measuredError > share * removed)
+            {
+                return (allowed > share * removed ? Verdict.TooLittle : Verdict.Refused, allowed, v.Removed);
+            }
+        }
+        return (Verdict.Refused, double.NaN, double.NaN);
+    }
+
+    // What the chamfers take off, their area and the integrals' error, at a level of refinement, or null where it can't be
+    // worked out
+    private readonly record struct VolumeTaken(double Removed, double Area, double Error);
+
+    private static VolumeTaken? ExpectedVolume(Shape input, Face[] faces, List<Band> bands, List<Corner> corners, List<Carried> carried,
+                                               Edge[] chamfered, ChamferSpec[] specs, Face[] referenceFaces, double near, int level)
     {
         if (bands.Any(static b => !b.Convex))
         {
             return null;
         }
         var context = new IntersectionContext();
-        double removed = 0, area = 0;
+        double removed = 0, area = 0, sectionsError = 0;
         foreach (Edge edge in chamfered.DistinctBy(static e => (Shape)e, ShapeHasher.Instance))
         {
             // The edge's cut is its own spec's, or its contour's where the spec names another of its edges
             Edge[] contour = bands.FirstOrDefault(b => b.Edges.Any(e => e.IsSame(edge)))?.Edges ?? [edge];
             if ((CutOf(specs, referenceFaces, [edge]) ?? CutOf(specs, referenceFaces, contour)) is not { } cut
-                || Swept(faces, edge, cut.Cut, cut.References, context) is not { } swept)
+                || Swept(faces, edge, cut.Cut, cut.References, context, level) is not { } swept)
             {
                 return null;
             }
             removed += swept.Volume;
             area += swept.Width;
+            sectionsError += swept.Error;
         }
 
         // Each corner: what's past any chamfer less what's in each edge's sections, in a box about it
@@ -79,16 +144,17 @@ internal static partial class ChamferMeet
         foreach (Corner corner in corners)
         {
             Edge[] at = [.. chamfered.Where(e => e.AllVertices().Any(v => v.IsSame(corner.Vertex))).DistinctBy(static e => (Shape)e, ShapeHasher.Instance)];
-            // A convex corner's box is three of its widest chamfer's widths; one of convex and concave edges has its box inside
-            // the reach where its formula says what's built (unit 15U3)
+            // A convex corner's box is three of its widest chamfer's widths at most; one of convex and concave edges has its
+            // box inside the reach where its formula says what's built (unit 15U3)
             // On a solid small beside its chamfers that box would reach the next corner's faces, where this corner's say
-            // nothing of the input: there the box stays inside the sphere half-way to the nearest other vertex (unit 15U4)
+            // nothing of the input: there the box stays inside the sphere half-way to the nearest other vertex (unit 15U4).
+            // Every convex corner's box is drawn round what its chamfers' depths hold, as such a tight one was (unit 15AP)
             double reach = CornerReach * corner.Bands.Max(static b => b.Width);
             double room = vertices.Where(v => !v.IsSame(corner.Vertex)).Select(v => v.Point.DistanceTo(corner.Point)).DefaultIfEmpty(double.MaxValue).Min()
                           / (2 * Math.Sqrt(3));
             (double excess, double error) = corner.Mixed is { } formula
-                ? MixedExcess(corner, formula, at, carried, near / Math.Sqrt(3))
-                : CornerExcess(corner, faces, at, bands, Math.Min(reach, room), tight: room < reach);
+                ? MixedExcess(corner, formula, at, carried, near / Math.Sqrt(3), level)
+                : CornerExcess(corner, faces, at, bands, Math.Min(reach, room), level);
             if (double.IsNaN(excess) || double.IsNaN(error))
             {
                 return null;
@@ -96,21 +162,31 @@ internal static partial class ChamferMeet
             cornersRemoved += excess;
             cornersError += error;
         }
-        double expected = MeasuredVolume(input) - removed - cornersRemoved;
-        return (expected, (1e-6 * Math.Abs(expected)) + (tolerance * area) + cornersError);
+        return new VolumeTaken(removed + cornersRemoved, area, sectionsError + cornersError);
     }
 
-    private static double MeasuredVolume(Shape shape) => Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 });
+    // A solid's volume at 1e-10, and its error: what it moved from 1e-8, and the sum's rounding (unit 15AP). Where it was taken
+    // at 1e-8 and a part in a million of it allowed, that was 7.4e-4 on the loft, which the integrals achieve to about 1e-9
+    private static (double Volume, double Error) MeasuredVolume(Shape shape)
+    {
+        double coarse = Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, new Kerf.Measurement.MassOptions { Tolerance = 1e-8 });
+        double fine = Kerf.Measurement.MeasureOperations.IntegrateVolume(shape, new Kerf.Measurement.MassOptions { Tolerance = 1e-10 });
+        return (fine, Math.Abs(fine - coarse) + (1e-13 * Math.Abs(fine)));
+    }
 
     internal static double? SweptVolume(Face[] faces, Edge edge, double distance) =>
-        Swept(faces, edge, new Cut(distance, null, null), [], new IntersectionContext())?.Volume;
+        Swept(faces, edge, new Cut(distance, null, null), [], new IntersectionContext(), 2)?.Volume;
 
     internal static double? SweptVolume(Face[] faces, Edge edge, double distance, double? second, double? angle, Face reference) =>
-        Swept(faces, edge, new Cut(distance, second, angle), [reference], new IntersectionContext())?.Volume;
+        Swept(faces, edge, new Cut(distance, second, angle), [reference], new IntersectionContext(), 2)?.Volume;
 
-    // The region the chamfer takes off along the edge, between the planes square to it at its ends, and the chamfer's area there
-    private static (double Volume, double Width)? Swept(Face[] faces, Edge edge, Cut cut, Face[] references, IntersectionContext context)
+    // The region the chamfer takes off along the edge, between the planes square to it at its ends, the chamfer's area there,
+    // and the quadrature's error: on each panel, what its halves moved it by where they agreed with it. At the first level,
+    // eight panels each halved once; refined, halved again while they disagree
+    private static (double Volume, double Width, double Error)? Swept(Face[] faces, Edge edge, Cut cut, Face[] references, IntersectionContext context,
+                                                                     int level)
     {
+        int panels = level == 1 ? FirstPanels : VolumePanels, halvings = level == 1 ? 1 : VolumeHalvings;
         Face[] two = [.. faces.Where(f => OnFace(edge, f))];
         if (two.Length != 2 || Tool.Curve(edge, out double a, out double b) is not { } curve || IsReference(cut, references, two[0]) is not { } firstIsReference
             || (!firstIsReference && IsReference(cut, references, two[1]) != true))
@@ -123,10 +199,11 @@ internal static partial class ChamferMeet
         // face is nothing (unit 15U4)
         var side1 = new Side { Start = two[0], Candidates = [two[0]], InStart = two[0].AllEdges().First(e => e.IsSame(edge)), FromLast = true };
         var side2 = new Side { Start = two[1], Candidates = [two[1]], InStart = two[1].AllEdges().First(e => e.IsSame(edge)), FromLast = true };
-        double volume = 0, width = 0;
-        for (int panel = 0; panel < VolumePanels; panel++)
+
+        // Gauss's eight points on [lo, hi], in order along the edge
+        (double Volume, double Width)? Panel(double lo, double hi)
         {
-            double lo = a + ((b - a) * panel / VolumePanels), hi = a + ((b - a) * (panel + 1) / VolumePanels);
+            double volume = 0, width = 0;
             for (int i = 0; i < GaussNodes.Length; i++)
             {
                 double t = (0.5 * (lo + hi)) + (0.5 * (hi - lo) * GaussNodes[i]);
@@ -144,8 +221,60 @@ internal static partial class ChamferMeet
                 volume += weight * (sectionArea - bend.Dot(moment));
                 width += weight * p1.DistanceTo(p2);
             }
+            return (volume, width);
         }
-        return (volume, width);
+
+        // Where each side's last contact was, so that a panel's halves start from where the panel did: each contact is solved
+        // from the last one's, and one a panel back may not be found from
+        (Point2D? Last, Face Face, Point2D? OtherLast, Face OtherFace) Where() => (side1.Last, side1.Face, side2.Last, side2.Face);
+        void From((Point2D? Last, Face Face, Point2D? OtherLast, Face OtherFace) at) =>
+            (side1.Last, side1.Face, side2.Last, side2.Face) = at;
+
+        // The panel, given its own value and where its contacts started, by its halves, each halved again while they move it
+        // by more than VolumeAgreed of itself
+        double total = 0, area = 0, error = 0;
+        bool Halved(double lo, double hi, double whole, (Point2D?, Face, Point2D?, Face) start, int halvings)
+        {
+            double middle = 0.5 * (lo + hi);
+            From(start);
+            if (Panel(lo, middle) is not { } left)
+            {
+                return false;
+            }
+            var half = Where();
+            if (Panel(middle, hi) is not { } right)
+            {
+                return false;
+            }
+            var end = Where();
+            double moved = Math.Abs(left.Volume + right.Volume - whole);
+            if (moved <= VolumeAgreed * Math.Abs(whole) || halvings == 0)
+            {
+                total += left.Volume + right.Volume;
+                area += left.Width + right.Width;
+                error += moved;
+                return true;
+            }
+            bool both = Halved(lo, middle, left.Volume, start, halvings - 1) && Halved(middle, hi, right.Volume, half, halvings - 1);
+            From(end);
+            return both;
+        }
+
+        double rough = 0;
+        for (int panel = 0; panel < panels; panel++)
+        {
+            double lo = a + ((b - a) * panel / panels), hi = a + ((b - a) * (panel + 1) / panels);
+            var start = Where();
+            if (Panel(lo, hi) is not { } whole || !Halved(lo, hi, whole.Volume, start, halvings - 1))
+            {
+                return null;
+            }
+            rough += whole.Volume;
+        }
+        // Where a panel is still halved at the last, across a contact that jumps where it crosses onto a face carried on, what
+        // the halvings moved it by isn't all its error: then the panels as they were at first say more (on C1, 1.2e-8 where
+        // the halvings said 8e-10)
+        return (total, area, Math.Max(error, Math.Abs(total - rough)));
     }
 
     // A section's area and first moment about the edge's point: the triangle, and each face's segment beside it

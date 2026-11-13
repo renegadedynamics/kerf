@@ -968,6 +968,13 @@ internal class SolidExplorer
                     continue;
                 }
 
+                // Kerf (unit 15AR): an edge already mapped, from the face on its other side, is there with its vertices, as the
+                // map compares shapes by IsSame: mapping it again adds nothing
+                if (_mapEV.Contains(e))
+                {
+                    continue;
+                }
+
                 //
                 Exploration.MapShapes(e, _mapEV);
             }

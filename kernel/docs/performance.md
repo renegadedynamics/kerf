@@ -2465,3 +2465,71 @@ Left: the price of the speed-up, by decision 1829's own reckoning, and not somet
 
 **What wasn't bisected further:** Bento's two for-loops and fuse-detent, 0.5% to 1.1% over 232c0e477 at main exactly,
 and 1.6% to 1.8% over cd25ebc44: under the bar, and the exact rows will show it if they grow.
+
+## What the checks cost, and two cuts (unit 15AR)
+
+*November 2026, decisions 2377 to 2382. Bytes exact (one processor, every method compiled once, as the rig's exact
+suites run); times from warm runs on a loaded machine, inclusive shares only. For a quiet window:
+`scratchpad/p15ar/quiet-15ar.ps1`.*
+
+**Where it goes,** the enclosure's 200 Booleans in a run (MB, inclusive):
+
+| Part | MB | Share | Time, ms |
+|---|---:|---:|---:|
+| The Booleans, through `Kerf.Modeling` | 2,618 | 100% | 4,056 |
+| The engine's run | 1,703 | 65% | 2,380 |
+| The clean | 284 | 11% | 405 |
+| The validity of what was cleaned | 131 | 5% | 219 |
+| `BooleanVolumes.Check` (198) | 485 | 19% | 1,018 |
+| of it, 15AM's inputs'-faces proof (160) | 363 | 14% | 475 |
+| `ProvedToOverlap` (35) | 63 | 2.4% | 82 |
+| the result's volume | 36 | 1.4% | 405 |
+| `ProvedLost` (6) | 16 | 0.6% | 43 |
+
+Inside the check the 255 classifiers it makes cost 155 MB (their trees of edges and vertices 90, their faces'
+intersectors about 38), and the classifications 186 MB, a line intersected with 40 faces a point. The shaft gauge's check
+is 131 MB of 2,749 (4.8%), most of it the engravings' `ProvedToOverlap`. 15L's crossing check, `Step.Read`'s, and the public
+Booleans' retry are under 0.2% wherever they run; the evolving fillet's envelope isn't reached.
+
+**Cut 1** (decision 2379): `Bounds.Add` makes its adaptors when it first needs one, and a classifier's tree maps an edge it
+has already no more. Every box and index the same. **Cut 2** (decision 2380): the check's planes from an unrestricted
+adaptor, and each face's bounds read from the restricted one rather than worked out again.
+
+| Case (exact, MB) | 15AM's head | Cut 1 | Cut 2 | Change |
+|---|---:|---:|---:|---:|
+| enclosure | 2,749.98 | 2,703.42 | 2,673.68 | -2.8% |
+| enclosure-v0.16 | 2,739.17 | 2,690.97 | 2,661.68 | -2.8% |
+| shaft-gauge | 3,035.30 | 3,012.84 | 3,011.87 | -0.8% |
+| fuse-boss | 11.606 | 11.342 | 11.301 | -2.6% |
+| fuse-detent | 16.007 | 15.647 | 15.581 | -2.7% |
+| chamfer and collapse cases | 1.770 to 4.740 | | | -0.6% to -0.7% |
+| Bento, 36 extrude until | 28.409 | 26.265 | 26.260 | -7.6% |
+| Bento, 9 chamfer, fillet | 5.607 | 5.437 | 5.430 | -3.2% |
+| Bento, 2 plate with hole | 2.225 | 2.255 | 2.251 | +1.2% |
+| Bento, total (MiB) | 98.839 | 96.233 | 96.211 | -2.7% |
+
+Under decision 1829's bar; free to take, as every result is the same. Tried and not in (decision 2381): the tool or the
+smaller input asked first where a point must be inside both (more bytes everywhere), the classifiers kept with their
+shapes (-2% of the check), the result asked first (64 points of 3,128), fewer points on faces the Boolean left whole (not
+identical), the classifications in parallel (not plainly safe). Left: the classifier's own line/face intersections.
+
+### The second round: the classifiers, and the proof in parallel
+
+*Decisions 2384 to 2389.* Each check makes at most three classifiers (the object's, the tool's, the result's), shared by
+all its questions; the enclosure's run makes 255 for 198 checks, 108 MB, and asks 10,524 points for 167 MB, most of it the
+line met with each face and the choice of each point's line. **Cut 3** (decision 2386): an intersector's 2D tool made when a
+line first needs it, and a frozen face's 2D tolerances kept, -0.8% on the enclosure, -1.3% on `fuse-boss`. **Cut 4** (decision
+2387): with `ParallelVolumes` on, 15AM's proof classifies its points on several threads, each with its own classifiers, then
+judges them in order: the enclosure 4,129 to 3,869 ms on 2 processors (loaded machine) for 3% more bytes; off, nothing changes.
+`plate with hole`'s rise is when a full collection falls (decision 2388).
+
+| Case (exact, MB) | 15AM's head | Cuts 1, 2 | Cut 3 | Cut 4 (off) | Change |
+|---|---:|---:|---:|---:|---:|
+| enclosure | 2,749.98 | 2,673.68 | 2,652.80 | 2,652.94 | -3.5% |
+| enclosure-v0.16 | 2,739.17 | 2,661.68 | 2,640.00 | 2,640.12 | -3.6% |
+| shaft-gauge | 3,035.30 | 3,011.87 | 3,003.60 | 3,003.61 | -1.0% |
+| fuse-boss | 11.606 | 11.301 | 11.156 | 11.157 | -3.9% |
+| fuse-detent | 16.007 | 15.581 | 15.411 | 15.411 | -3.7% |
+| Bento, 36 extrude until | 28.409 | 26.260 | 26.234 | 26.168 | -7.9% |
+| Bento, 2 plate with hole | 2.225 | 2.251 | 2.204 | 2.242 | +0.8% (collections) |
+| Bento, total (MiB) | 98.839 | 96.211 | 96.064 | 96.037 | -2.8% |
