@@ -496,12 +496,30 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // refused it: cut at the inflections of decision 34702 it is valid and passes the script, so the TODO isn't met
             ["offset/wire_closed_outside_0_025/C6"] = ("right where OCCT's crosses itself (TODO OCC23068): the script passes (decision 34702)", PassesItsScript),
             ["offset/wire_closed_outside_0_075/C6"] = ("right where OCCT's crosses itself (TODO OCC23068): the script passes (decision 34702)", PassesItsScript),
+            // Upstream's ec0167b409 updated these two scripts' references to what its converged hint and its line through a
+            // pole read from the file, one face fewer (decisions 34703, 34704): the port reads upstream's newer figures
+            ["de/step_2/T9"] = ("upstream's newer reference (ec0167b409): 415 faces (414) for 8.0.1's 416 (415) (decisions 34703, 34704)",
+                                theLog => HasOnlyShapeCountDifferences(theLog, "Face     = 415  ( 414 )")),
+            ["de/step_2/U8"] = ("upstream's newer reference (ec0167b409): 414 faces (414) for 8.0.1's 415 (415) (decisions 34703, 34704)",
+                                theLog => HasOnlyShapeCountDifferences(theLog, "Face     = 414  ( 414 )")),
             // OCCT's script holds the 1.5e-7 of a walked tangency (it's about big tolerances): a sphere of a pipe's minor
             // radius is analytic now, and its curve exact (decision 1818)
             ["lowalgos/intss/bug26684_1"] = ("a sphere touching a torus along a circle is analytic (decision 1818)",
                                              theLog => theLog.Contains("Reached tolerance = 4.96", StringComparison.Ordinal)
                                                        && theLog.Contains("e-15 is not equal to expected 1.4915699300398263e-07", StringComparison.Ordinal)),
         })));
+
+    // A data exchange script's log whose only differences from its reference data are the counts of shapes and faces,
+    // the current ones those given
+    private static bool HasOnlyShapeCountDifferences(string theLog, string theFaces)
+    {
+        string[] anErrors = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("Error", StringComparison.Ordinal))];
+        string[] aCurrent = [.. theLog.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("Current data", StringComparison.Ordinal))];
+        return anErrors.Length == 1 && anErrors[0].StartsWith("Error : 2 differences with reference data found", StringComparison.Ordinal)
+               && aCurrent.Length == 2
+               && aCurrent.All(l => (l.Contains("- NBSHAPES ", StringComparison.Ordinal) || l.Contains("- STATSHAPE ", StringComparison.Ordinal))
+                                    && l.Contains(theFaces, StringComparison.Ordinal));
+    }
 
     // A log with no error or faulty shape beside the script's own TODO lines
     private static bool PassesItsScript(string theLog)

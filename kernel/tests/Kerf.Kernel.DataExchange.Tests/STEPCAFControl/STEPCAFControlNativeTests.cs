@@ -73,6 +73,8 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
     [Fact]
     public void ReadsTheCorpusAsNative()
     {
+        // The healing at poles as OCCT 8.0.1 has it, so that the native recordings replay (Kerf decisions 34703, 34704)
+        using IDisposable aNativeHealing = global::Kerf.Engine.Healing.Analysis.NativeHealingAtPoles.Scope();
         List<string> aFiles = StepRoundTripTests.CorpusFiles();
         if (aFiles.Count == 0)
         {
@@ -191,6 +193,8 @@ public sealed class STEPCAFControlNativeTests(ITestOutputHelper output)
     [Fact]
     public void WritesDocumentsAsNative()
     {
+        // The healing at poles as OCCT 8.0.1 has it, so that the native recordings replay (Kerf decisions 34703, 34704)
+        using IDisposable aNativeHealing = global::Kerf.Engine.Healing.Analysis.NativeHealingAtPoles.Scope();
         string aDir = Path.Combine(StepRoundTripTests.Metadata("OcctSourceDir"), "data", "occ");
         if (!Directory.Exists(aDir))
         {
