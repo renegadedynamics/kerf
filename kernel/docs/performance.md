@@ -2512,3 +2512,24 @@ Under decision 1829's bar; free to take, as every result is the same. Tried and 
 smaller input asked first where a point must be inside both (more bytes everywhere), the classifiers kept with their
 shapes (-2% of the check), the result asked first (64 points of 3,128), fewer points on faces the Boolean left whole (not
 identical), the classifications in parallel (not plainly safe). Left: the classifier's own line/face intersections.
+
+### The second round: the classifiers, and the proof in parallel
+
+*Decisions 34208 to 34213.* Each check makes at most three classifiers (the object's, the tool's, the result's), shared by
+all its questions; the enclosure's run makes 255 for 198 checks, 108 MB, and asks 10,524 points for 167 MB, most of it the
+line met with each face and the choice of each point's line. **Cut 3** (decision 34210): an intersector's 2D tool made when a
+line first needs it, and a frozen face's 2D tolerances kept, -0.8% on the enclosure, -1.3% on `fuse-boss`. **Cut 4** (decision
+34211): with `ParallelVolumes` on, 15AM's proof classifies its points on several threads, each with its own classifiers, then
+judges them in order: the enclosure 4,129 to 3,869 ms on 2 processors (loaded machine) for 3% more bytes; off, nothing changes.
+`plate with hole`'s rise is when a full collection falls (decision 34212).
+
+| Case (exact, MB) | 15AM's head | Cuts 1, 2 | Cut 3 | Cut 4 (off) | Change |
+|---|---:|---:|---:|---:|---:|
+| enclosure | 2,749.98 | 2,673.68 | 2,652.80 | 2,652.94 | -3.5% |
+| enclosure-v0.16 | 2,739.17 | 2,661.68 | 2,640.00 | 2,640.12 | -3.6% |
+| shaft-gauge | 3,035.30 | 3,011.87 | 3,003.60 | 3,003.61 | -1.0% |
+| fuse-boss | 11.606 | 11.301 | 11.156 | 11.157 | -3.9% |
+| fuse-detent | 16.007 | 15.581 | 15.411 | 15.411 | -3.7% |
+| Bento, 36 extrude until | 28.409 | 26.260 | 26.234 | 26.168 | -7.9% |
+| Bento, 2 plate with hole | 2.225 | 2.251 | 2.204 | 2.242 | +0.8% (collections) |
+| Bento, total (MiB) | 98.839 | 96.211 | 96.064 | 96.037 | -2.8% |
