@@ -168,7 +168,10 @@ public sealed class OffsetCurve3D : Curve3D
 
         _basisCurveContinuity = checkingCurve.Continuity;
 
-        bool isC0 = !isNotCheckC0 && (_basisCurveContinuity == C0);
+        // Kerf (decision 35101): a periodic B-spline whose seam is only C0 reads C1 or better (its continuity is its
+        // inner knots'), and its offset was made over a corner at the seam, a success; it is checked as a C0 one
+        bool isC0 = !isNotCheckC0
+                    && (_basisCurveContinuity == C0 || checkingCurve is BSplineCurve3D { HasC0Seam: true });
 
         // Basis curve must be at least C1
         if (isC0 && checkingCurve is BSplineCurve3D bc)
@@ -177,7 +180,10 @@ public sealed class OffsetCurve3D : Curve3D
             {
                 // Checking if basis curve has more smooth (C1, G2 and above) is not done.
                 // It can be done in case of need.
-                _basisCurveContinuity = G1;
+                if (_basisCurveContinuity == C0)
+                {
+                    _basisCurveContinuity = G1;
+                }
                 isC0 = false;
             }
 

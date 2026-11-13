@@ -1488,30 +1488,43 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>
+    /// Kerf (decision 35101): whether the curve is periodic with its seam knot's multiplicity at least its degree, so
+    /// only C0 at the seam, which <see cref="Continuity"/> doesn't count: as OCCT's, it is read from the inner knots.
+    /// </summary>
+    internal bool HasC0Seam => IsPeriodic && Multiplicity(FirstUKnotIndex()) >= Degree;
+
+    /// <summary>
     /// True if the curve is G1 on [theTf, theTl]: at every interior knot of multiplicity Degree or more, the
     /// left and right tangents are non-null and within theAngTol radians (and, for a periodic curve whose range
     /// meets the bounds, at the start/end point too).
     /// </summary>
     internal bool IsG1(double tf, double tl, double angTol)
     {
-        if (IsCN(1))
+        if (IsCN(1) && !HasC0Seam)
         {
             return true;
         }
 
+        // Kerf (decision 35101, upstream 71658f6c8f): a periodic curve's range may be translated by periods, or cover
+        // the seam or a whole period, and the seam's one-sided tangents are compared; OCCT 8.0.1 compared the
+        // tangent at the first knot with the one at the last, the same point and side of a periodic curve, so a
+        // corner at the seam was G1 (and an offset was made over it)
+        double firstParam = FirstParameter, lastParam = LastParameter;
+        bool periodic = IsPeriodic;
+        bool wholePeriod = periodic && tl - tf >= lastParam - firstParam;
+        double first = periodic ? global::Kerf.Engine.Geometry.ElCLib.InPeriod(tf, firstParam, lastParam) : tf;
+        double last = periodic ? global::Kerf.Engine.Geometry.ElCLib.InPeriod(tl, firstParam, lastParam) : tl;
+        bool wrapped = periodic && first > last;
         int start = FirstUKnotIndex() + 1, finish = LastUKnotIndex() - 1;
         int deg = Degree;
         for (int nKnot = start; nKnot <= finish; nKnot++)
         {
             double tpar = Knot(nKnot);
 
-            if (tpar < tf)
+            // A translated periodic interval covers one arc or both sides of the seam.
+            if (!wholePeriod && (wrapped ? (tpar < first && tpar > last) : (tpar < first || tpar > last)))
             {
                 continue;
-            }
-            if (tpar > tl)
-            {
-                break;
             }
 
             int mult = Multiplicity(nKnot);
@@ -1536,28 +1549,18 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
             }
         }
 
-        if (!IsPeriodic)
+        if (!periodic
+            || (!wholePeriod && !wrapped && first != firstParam && last != firstParam && first != lastParam
+                && last != lastParam))
         {
             return true;
         }
 
-        double firstParam = FirstParameter, lastParam = LastParameter;
-
-        if (((firstParam - tf) * (tl - firstParam) < 0.0)
-            && ((lastParam - tf) * (tl - lastParam) < 0.0))
-        {
-            // Range [theTf, theTl] does not intersect curve boundaries
-            return true;
-        }
-
-        // Curve is closed or periodic and range [theTf, theTl]
-        // intersect curve boundary. Therefore, it is necessary to
-        // check if curve is smooth in its first and last point.
-
+        // Compare the actual one-sided derivatives at the periodic seam.
         Point2D p;
         Vector2D v1b, v2b;
-        D1(Knot(FirstUKnotIndex()), out p, out v1b);
-        D1(Knot(LastUKnotIndex()), out p, out v2b);
+        LocalD1(firstParam, FirstUKnotIndex(), FirstUKnotIndex() + 1, out p, out v1b);
+        LocalD1(lastParam, LastUKnotIndex() - 1, LastUKnotIndex(), out p, out v2b);
 
         if ((v1b.SquareMagnitude <= Constants.Resolution()) || v2b.SquareMagnitude <= Constants.Resolution())
         {
