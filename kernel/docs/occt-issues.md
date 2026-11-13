@@ -2501,7 +2501,13 @@ Found by unit 12J:
 |---|---|---|---|
 | `BRepFill_OffsetWire::Perform` | A parallel at its distance from the spine may cross itself, or one of its wires another, where the medial axis went wrong, and is done: four of OCCT's own test offsets (`TODO OCC23068`, a face on the result faulty) and one of the oracle's native parallels | 8.0.1 | Fixed: refused, saying where (decision 2422) |
 | `ShapeConstruct_ProjectCurveOnSurface::getLine`, a singular normal (upstream `ec0167b409`) | Where the surface's normal is zero at a point of the line (a pole) the normal check stops and the line is judged by each point's distance compared with the first's, which a line through a pole passes whatever its U: up to 0.0057 off the surface on upstream's case, a success | 8.0.1 | Fixed, as upstream (decision 2425) |
+| `ShapeAnalysis_Surface::SurfaceNewton`, a hint already at the point (upstream `ec0167b409`) | Iterates from a converged hint; at a singular point the zero normal ends the iterations and the general projection takes any parameter along the singular edge | On a patch whose edge is a point, `NextValueOfUV` from (0, 0) at that point gives (0.273, 0) | Left: right, but it moves STEP reads off native, not yet judged (decision 2410) |
 
+## Found by unit 15E, slice 16
+
+| Where | What | Seen | State |
+|---|---|---|---|
+| `IntWalk_IWalking::ComputeOpenLine` and `ComputeCloseLine`, a line stopped on the border (`MakeWalkingPoint(2, ...)` after `TestArretCadre`) | The last point takes the parameters solved for and the function's last evaluated point, which the solver can leave elsewhere; where the surfaces are tangent along the border it is a long way off | OCCT #1496's tubes: a cylinder and a torus tangent along a circle, a line's last point a quarter turn round it, its curve 16.97 off both surfaces and a common larger than either input, a success; native 8.0.1 the same | Fixed (decision 2429) |
 ## Found by unit 15E, slice 19
 
 | Where | What | Seen | State |

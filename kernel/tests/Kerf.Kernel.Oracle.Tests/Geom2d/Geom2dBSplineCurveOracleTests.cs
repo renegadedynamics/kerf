@@ -66,6 +66,15 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
         }
     }
 
+    // The angle between the tangents either side of a periodic curve's seam, by differences a millionth of the period in
+    private static double SeamAngle(BSplineCurve2D theCurve)
+    {
+        double aF = theCurve.FirstParameter, aL = theCurve.LastParameter, h = 1e-6 * (aL - aF);
+        var aAfter = new Vector2D(theCurve.Value(aF), theCurve.Value(aF + h));
+        var aBefore = new Vector2D(theCurve.Value(aL - h), theCurve.Value(aL));
+        return Math.Abs(aBefore.AngleTo(aAfter));
+    }
+
     [Fact]
     public void Evaluation_and_queries()
     {
@@ -81,8 +90,19 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             {
                 anOracle.Same(aNative.IsCN(n), aPort.IsCN(n), $"IsCN({n})");
             }
-            anOracle.Same(aNative.IsG1(aPort.FirstParameter, aPort.LastParameter, 1e-6),
-                          aPort.IsG1(aPort.FirstParameter, aPort.LastParameter, 1e-6), "IsG1");
+            bool aNativeG1 = aNative.IsG1(aPort.FirstParameter, aPort.LastParameter, 1e-6);
+            bool aPortG1 = aPort.IsG1(aPort.FirstParameter, aPort.LastParameter, 1e-6);
+            if (aPort.IsPeriodic && aNativeG1 && !aPortG1)
+            {
+                // Deliberate difference (decision 2434): over a whole period OCCT 8.0.1 compares the tangent at the first
+                // knot with the one at the last, the same side of a periodic curve; Kerf compares the seam's two sides,
+                // here measured apart by more than the tolerance
+                Assert.True(SeamAngle(aPort) > 1e-6, "IsG1: a seam Kerf finds not G1 is");
+            }
+            else
+            {
+                anOracle.Same(aNativeG1, aPortG1, "IsG1");
+            }
 
             double aTol = anOracle.Real(1e-7, 1e-2);
             double aNRes = 0.0;
