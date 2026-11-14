@@ -5,6 +5,22 @@ All notable changes to the Kerf.Modeling package (until 0.2.0 the build123d.NET 
 
 ## Unreleased
 
+## 0.6.0
+
+- **No silent wrong result Kerf knows of:** a Boolean proved wrong is made again before it fails, and one whose faces
+  don't close fails; `Volume`, `Area`, `Center` and the moments are right to their precision on swept, offset and
+  B-spline faces, or throw `ModelingException` with `measurement.unconfirmed`; a 2D offset that crosses itself, is open
+  or lies on the wrong side fails; `ImportStep` warns of invalid faces and of entities it left out.
+- **More fillets and chamfers build:** fillets whose radius changes along the edge, on the true rolling-ball surface;
+  every edge of crossing cylinders and equal tees; chamfers on B-spline faces, at corners of mixed edges, and on lofts;
+  `ChamferOptions.TimeLimit` per call.
+- **Parallel volumes, as a caller chooses**, and `IsInside` reusing a part's classifier point by point.
+- **Speed:** fillets and chamfers of every edge about a third quicker, Booleans a little quicker with 10% fewer bytes,
+  a user's shaft gauges 36% quicker with half the bytes; the checks make the users' enclosures 14% slower than 0.5.0
+  (2.2 to 2.5 s).
+- **Breaking:** an assembly placed with a scale imports as its parts scaled, as the kernel's `Moved` and `Located` now
+  refuse a scale; a measure that can't be confirmed throws; some operations that gave a wrong success now fail.
+
 - **A 2D offset left open, or on the wrong side of its wire, fails** (kernel decisions 2442, 2443): `Offset2D` of a closed wire inwards that gave a wire left open at a vertex, marked closed, now fails, as does one whose loop lies on the other side of the wire than asked (a wire whose edges aren't in order, offset inwards past its width), with the kernel's `offset.wrong-side` and the point, where both were returned as successes.
 - **A STEP import reports invalid slivers** (kernel decision 2427): faces bounded by two edges or fewer are among those an import checks, so invalid slivers come with `exchange.invalid-face`, where they came silently.
 - **A 2D offset that crosses itself fails, saying where** (kernel decisions 2422, 2423): `Offset2D` of a wire or face whose parallel crosses itself, or one of whose loops crosses another, now fails, the kernel's `offset.crosses-itself` among its diagnostics with the point, where it returned the crossing wire; one not at its distance from the wire carries `offset.not-at-distance`.

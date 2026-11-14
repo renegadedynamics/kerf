@@ -5,6 +5,32 @@ version may break the API.
 
 ## Unreleased
 
+## 0.6.0
+
+- **A correctness release: no silent wrong result Kerf knows of.** Every result OCCT's issue list, its test corpus and
+  upstream's fixes since 8.0.1 showed wrong but returned as a success is now right, or fails saying why (decision 1742).
+  A Boolean is checked at points of its inputs' faces and by volume; one proved wrong is made again (the other way round,
+  then with fuzzy values up to a thousand tolerances, `boolean.fuzzy-value`) and fails if nothing makes it right, as does
+  one whose faces don't close. Areas, volumes, centres and inertia are right to the precision asked on swept, offset and
+  B-spline faces, or throw `measurement.unconfirmed`. A 2D offset that crosses itself, is left open, isn't at its
+  distance or lies on the wrong side is refused. `Step.Read` warns of invalid faces and of entities it couldn't read.
+- **More fillets and chamfers build, each proved:** fillets whose radius changes along the edge, on the rolling ball's
+  surface; fillets at seams, a cone's apex, crossing cylinders and equal tees; chamfers on B-spline faces, at corners of
+  mixed edges and at the corners of open shells, where OCCT fails. A chamfer Kerf builds itself is proved by its volume
+  and refused where the proof would be too weak; `ChamferOptions.TimeLimit` sets its limit per call.
+- **Parallel volumes, as a caller chooses:** `ParallelVolumes` on the options or as a scope, the figures the same to
+  the bit.
+- **Speed, against 0.5.1's code:** filleting and chamfering every edge about a third quicker with 37% fewer bytes;
+  complex Booleans 8% quicker with 10% fewer bytes; 24 copies of Bento's examples built side by side 9% quicker. Bento's examples
+  recalculate in 266 ms (native OCCT 8.0.1: 685 ms) with 105 MB, from 117, at
+  [the release's run](docs/benchmarks/2026-11-14-e789c8546.md). Against 0.5.0's packages: the shaft gauges 36% quicker
+  with half the bytes, the detent fuse 16% quicker, the boss fuse 10.9 ms (native: 11 ms); the checks cost the users'
+  enclosures 14% (2.2 to 2.5 s).
+- **Breaking:** `Moved` and `Located` refuse a placement with a scale (`ArgumentException`); data that brings one has it
+  made part of the geometry. A measure that can't be confirmed throws `ArithmeticException` with
+  `measurement.unconfirmed`. Some operations that returned a wrong result as a success now fail, each listed below; new
+  codes include `offset.crosses-itself`, `offset.not-at-distance`, `offset.wrong-side` and `boolean.fuzzy-value`.
+
 - **A 2D offset left open, or on the wrong side of its wire, is refused** (decisions 2442, 2443; upstream OCCT's `8f817f5da5`): `Offset2D` of a closed wire inwards could give a wire stopping at a vertex with one edge, marked closed, as a success (OCCT's `offset_wire_018.brep` at 1% to 7.5% of its length: a wire open by 3.1 in a shape 5 across); it now isn't done, as upstream's. And a closed wire whose edges aren't in order could give the parallel on the other side, done (a thin triangle offset inwards past its width gave a loop round it); each loop of a closed offset of wires none of which lies inside another is now checked to lie on the side asked for, and one that doesn't is refused with `offset.wrong-side`, saying where. The check costs about 0.1% of an offset's time.
 - **A 2D offset that crosses itself is refused, saying where; a refused 2D offset says why** (decisions 2422, 2423): `Offset2D` gave a parallel at its distance from the wire that crossed itself, or one of whose loops crossed another, as a success (four of OCCT's test offsets, its known problem OCC23068); it now fails with `offset.crosses-itself` and the point where it crosses, and one refused for not being at its distance (decisions 2279, 2281) fails with `offset.not-at-distance`, where both said `offset.not-planar`. The check costs about 3% more time and 8% more memory over OCCT's wire offsets, at most about 1.6 times on a few small offsets of curves (decision 2428). A wire is now cut for the medial axis at its true inflections (upstream OCCT's `8f817f5da5` and `71658f6c8f`): nearly straight stretches of a spline no longer read as runs of inflections, and a smooth join where the curvature changes side is one; three offsets that crossed themselves are right, the rest the same but for their numbers of edges.
 - **A STEP read reports invalid slivers** (decision 2427): faces bounded by two edges or fewer are now among those the read checks, so a file's invalid slivers (82 faces of OCCT's `bug30790.step`, which no read reported) come with the `exchange.invalid-face` warning. Reads cost about 1% more memory and 2% more time.
