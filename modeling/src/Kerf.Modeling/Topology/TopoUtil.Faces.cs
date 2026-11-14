@@ -27,7 +27,7 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The centre of mass of a face's area.</summary>
-    internal static Point3D FaceCenter(Face face) => face.CentreOfArea(MeasuredMoments);
+    internal static Point3D FaceCenter(Face face) => Measuring("centre", () => face.CentreOfArea(MeasuredMoments));
 
     // How much further apart than the clean's own 1e-7 and 1e-12 two neighbours must be for this to be sure of them
     private const double SurelyAtAnAngle = 1e-6, SurelyApart = 1e-5;
@@ -172,7 +172,7 @@ internal static partial class TopoUtil
         var sections = list.Where(o => o.IsVertex() || o.IsWire()).Select(o => o).ToList();
         var loft = Failures.Get(Sweeps.Loft(sections, new LoftOptions { MakeSolid = filled, Ruled = ruled, CheckResult = false }), () => "loft").Shape;
         // Sections in one plane make a "valid" solid of nothing (decision 1927)
-        if (filled && Math.Abs(loft.IntegrateVolume()) <= 1e-10 * Math.Pow(loft.IntegrateArea(), 1.5))
+        if (filled && Measuring("loft", () => Math.Abs(loft.IntegrateVolume()) <= 1e-10 * Math.Pow(loft.IntegrateArea(), 1.5)))
             throw Failures.Expected(Sweeps.NoVolume, "The loft encloses no volume: its sections lie in one plane.", shapes: loft);
         return loft;
     }

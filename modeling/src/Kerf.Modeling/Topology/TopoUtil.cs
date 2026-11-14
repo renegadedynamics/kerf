@@ -239,7 +239,17 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The surface area of a shape's faces.</summary>
-    internal static double Area(Shape shape) => shape.IntegrateArea(Measured);
+    internal static double Area(Shape shape) => Measuring("area", () => shape.IntegrateArea(Measured));
+
+    /// <summary>
+    /// A measure, or where the kernel couldn't confirm it to its precision a <see cref="ModelingException"/> with
+    /// <c>measurement.unconfirmed</c>, naming the face and why, rather than its <see cref="ArithmeticException"/> (decision 2460).
+    /// </summary>
+    internal static T Measuring<T>(string what, Func<T> measure) => Failures.Doing(() => what, measure);
+
+    /// <summary>A shape's mass properties to <see cref="MeasuredMoments"/>, as <see cref="Measuring"/> says a failure.</summary>
+    internal static MassProperties MassProperties(Shape shape, Dimension dimension) =>
+        Measuring(dimension == Dimension.Area ? "area" : "volume", () => shape.MassProperties(dimension, MeasuredMoments));
 
     /// <summary>
     /// How areas and volumes are integrated: adaptively, to a millionth of each face's contribution. OCCT's default of a

@@ -19,8 +19,11 @@ namespace Kerf.Measurement;
 /// <c>part.IntegrateVolume()</c> both work.
 /// </summary>
 /// <remarks>
-/// Volume, area and length are numbers, not results: OCCT's integration can't fail on a valid shape, and on an invalid
-/// one the number is what it is. A distance can fail, so it is a <see cref="Result{T}"/>. A null shape is misuse
+/// Volume, area and length are numbers: OCCT's integration doesn't fail on a valid shape, and on an invalid one the number
+/// is what it is. An area, volume or centre asked for to a precision is confirmed to it face by face (decision 2456); where
+/// it can't be, the forms that return a number throw an <see cref="ArithmeticException"/> saying which face and why, whose
+/// <see cref="Diagnostic.FromException"/> is <see cref="Unconfirmed"/>, and <see cref="Measure{TShape}"/> returns that as a
+/// failure (decision 2460). A distance can fail, so it is a <see cref="Result{T}"/>. A null shape is misuse
 /// (<see cref="ArgumentException"/>).
 /// </remarks>
 public static class MeasureOperations
@@ -28,15 +31,25 @@ public static class MeasureOperations
     /// <summary>The code of a distance that couldn't be computed: <c>measurement.distance-failed</c>.</summary>
     public static DiagnosticCode DistanceFailed { get; } = new("measurement.distance-failed");
 
+    /// <summary>
+    /// The code of an area, volume or centre that couldn't be confirmed to the precision asked for:
+    /// <c>measurement.unconfirmed</c> (decision 2460). The message names the face and why.
+    /// </summary>
+    public static DiagnosticCode Unconfirmed { get; } = new("measurement.unconfirmed");
+
     extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
     {
         /// <summary>The volume the shape's faces bound, whatever the shape is (OCCT's <c>BRepGProp::VolumeProperties</c>): zero for a shape
         /// without faces; for an open shell, the signed volume of the cone from its location's origin.</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
+        /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
+        /// decision 2460).</exception>
         public double IntegrateVolume(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Volume, options, massOnly: true).Mass();
 
         /// <summary>The area of the shape's faces (<c>BRepGProp::SurfaceProperties</c>).</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
+        /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
+        /// decision 2460).</exception>
         public double IntegrateArea(MassOptions? options = null) => Integrate(NotNull(shape.AsShape()), Dimension.Area, options, massOnly: true).Mass();
 
         /// <summary>
@@ -44,6 +57,8 @@ public static class MeasureOperations
         /// integrates, and exact for a planar face alone that's bounded by lines and circles.
         /// </summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
+        /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
+        /// decision 2460).</exception>
         public Point3D CentreOfArea(MassOptions? options = null)
         {
             Shape s = NotNull(shape.AsShape());
@@ -64,8 +79,29 @@ public static class MeasureOperations
         /// <summary>The shape's mass properties of the given dimension, with density 1.</summary>
         /// <exception cref="ArgumentException">The shape is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> isn't one of the enum's.</exception>
+        /// <exception cref="ArithmeticException">The figure couldn't be confirmed to the tolerance (<see cref="Unconfirmed"/>,
+        /// decision 2460).</exception>
         public MassProperties MassProperties(Dimension dimension, MassOptions? options = null)
             => ToMassProperties(Integrate(NotNull(shape.AsShape()), dimension, options ?? Moments), dimension);
+
+        /// <summary>
+        /// <see cref="MassProperties"/> as a result: a failure with <see cref="Unconfirmed"/>, naming the face and why, where the
+        /// figures couldn't be confirmed to the tolerance (decision 2460).
+        /// </summary>
+        /// <exception cref="ArgumentException">The shape is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="dimension"/> isn't one of the enum's.</exception>
+        public Result<MassProperties> Measure(Dimension dimension, MassOptions? options = null)
+        {
+            Shape s = NotNull(shape.AsShape());
+            try
+            {
+                return ToMassProperties(Integrate(s, dimension, options ?? Moments), dimension);
+            }
+            catch (UnconfirmedMeasureException e)
+            {
+                return Result<MassProperties>.Failure(e.Diagnostic);
+            }
+        }
 
         /// <summary>
         /// A box aligned with the axes containing the shape (OCCT's <c>BRepBndLib::Add</c>): enlarged by the shape's
@@ -220,13 +256,15 @@ public static class MeasureOperations
                 MassPropertiesBuilder.LinearProperties(shape, props, options.SkipShared, options.UseTriangulation, settled: true);
                 break;
             case Dimension.Area when options.Tolerance > 0 && !options.UseTriangulation:
-                MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly, closeGaps: true);
+                Confirmed(MassPropertiesBuilder.SurfaceProperties(shape, props, options.Tolerance, options.SkipShared, massOnly, closeGaps: true,
+                                                                  confirm: true), shape, dimension, options, massOnly);
                 break;
             case Dimension.Area:
                 MassPropertiesBuilder.SurfaceProperties(shape, props, options.SkipShared, options.UseTriangulation, closeGaps: true);
                 break;
             case Dimension.Volume when options.Tolerance > 0 && !options.UseTriangulation:
-                MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly, closeGaps: true);
+                Confirmed(MassPropertiesBuilder.VolumeProperties(shape, props, options.Tolerance, options.OnlyClosed, options.SkipShared, massOnly,
+                                                                 closeGaps: true, confirm: true), shape, dimension, options, massOnly);
                 break;
             case Dimension.Volume:
                 MassPropertiesBuilder.VolumeProperties(shape, props, options.OnlyClosed, options.SkipShared, options.UseTriangulation, closeGaps: true);
@@ -236,6 +274,71 @@ public static class MeasureOperations
         }
 
         return props;
+    }
+
+    /// <summary>For tests: every confirmation on this thread fails, as where nothing confirms a face (decision 2460).</summary>
+    [ThreadStatic]
+    internal static bool s_confirmNothing;
+
+    // Each face that isn't a plane, cylinder, cone, sphere or torus is integrated again ten times finer and kept where the two
+    // agree to the tolerance (decision 2456). Where no finer integration confirmed a face, or a face's boundary couldn't be
+    // read, the error is infinite: a measure that isn't known to the precision asked for, said by measuring the faces one by
+    // one to name the first such face (decision 2460)
+    private static void Confirmed(double error, in Shape shape, Dimension dimension, MassOptions options, bool massOnly)
+    {
+        if (!s_confirmNothing && error < global::Kerf.Engine.Foundation.Precision.Infinite())
+        {
+            return;
+        }
+
+        string what = dimension == Dimension.Area ? "area" : "volume";
+        int index = 0;
+        foreach (Shape face in shape.AllFaces())
+        {
+            index++;
+            var one = new Properties();
+            double e = dimension == Dimension.Area
+                ? MassPropertiesBuilder.SurfaceProperties(face, one, options.Tolerance, massOnly: massOnly, closeGaps: true, confirm: true)
+                : MassPropertiesBuilder.VolumeProperties(face, one, options.Tolerance, massOnly: massOnly, closeGaps: true, confirm: true);
+            if (s_confirmNothing || e >= global::Kerf.Engine.Foundation.Precision.Infinite())
+            {
+                Surface? surface = Engine.Topology.Brep.Tool.Surface(ShapeCasts.Face(face), out _);
+                throw new UnconfirmedMeasureException(Diagnostic.Error(Unconfirmed, string.Create(System.Globalization.CultureInfo.InvariantCulture,
+                    $"The {what} couldn't be confirmed to {options.Tolerance:G3}: face {index} ({(surface is null ? "with no surface" : "a " + surface.Kind.ToString())}) gave figures that integrations up to ten thousand times finer don't agree with, or has a boundary that couldn't be read.")));
+            }
+        }
+
+        throw new UnconfirmedMeasureException(Diagnostic.Error(Unconfirmed, string.Create(System.Globalization.CultureInfo.InvariantCulture,
+            $"The {what} couldn't be confirmed to {options.Tolerance:G3}.")));
+    }
+
+    /// <summary>
+    /// The volume or area to <paramref name="options"/>, or NaN where it couldn't be confirmed: for the kernel's checks and
+    /// proofs, each of which compares it so that a NaN fails (decision 2460).
+    /// </summary>
+    internal static double VolumeOrNaN(in Shape shape, MassOptions options)
+    {
+        try
+        {
+            return shape.IntegrateVolume(options);
+        }
+        catch (UnconfirmedMeasureException)
+        {
+            return double.NaN;
+        }
+    }
+
+    /// <summary>The area to <paramref name="options"/>, or NaN where it couldn't be confirmed (<see cref="VolumeOrNaN"/>).</summary>
+    internal static double AreaOrNaN(in Shape shape, MassOptions options)
+    {
+        try
+        {
+            return shape.IntegrateArea(options);
+        }
+        catch (UnconfirmedMeasureException)
+        {
+            return double.NaN;
+        }
     }
 
     private static MassProperties ToMassProperties(Properties props, Dimension dimension)

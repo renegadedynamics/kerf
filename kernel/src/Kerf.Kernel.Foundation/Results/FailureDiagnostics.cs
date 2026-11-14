@@ -51,6 +51,12 @@ internal static partial class FailureDiagnostics
     public static Diagnostic ToDiagnostic(Exception exception)
     {
         KernelArgumentNullException.ThrowIfNull(exception);
+        if (exception is UnconfirmedMeasureException unconfirmed)
+        {
+            // A measure not known to its precision says so with its own code (decision 2460)
+            return unconfirmed.Diagnostic;
+        }
+
         exception = Refusal.Unwrapped(exception);
         var own = PublicText(exception);
         var kind = Describe(exception);

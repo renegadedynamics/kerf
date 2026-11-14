@@ -35,7 +35,8 @@ public static class OffsetVolumes
     // Sharp joins go as far as their mitre
     private const double GrowthOfMitre = 1000;
 
-    /// <summary>The error if <paramref name="result"/> can't be an offset of <paramref name="input"/>, or null.</summary>
+    /// <summary>The error if <paramref name="result"/> can't be an offset of <paramref name="input"/>, or null; <c>measurement.unconfirmed</c>
+    /// where a volume or centre it needs couldn't be confirmed to its precision (decision 2460).</summary>
     /// <param name="input">The shape.</param>
     /// <param name="distance">How far: outwards when positive.</param>
     /// <param name="join">The join, which says how far a corner can go.</param>
@@ -43,6 +44,18 @@ public static class OffsetVolumes
     /// <param name="what">What to call it.</param>
     /// <param name="isWall">A hollow solid: it holds less than a whole offset, so outwards there is no lower limit; inwards it must hold less than its input.</param>
     public static Diagnostic? Check(Shape input, double distance, JoinKind join, Shape result, string what, bool isWall = false)
+    {
+        try
+        {
+            return Checked(input, distance, join, result, what, isWall);
+        }
+        catch (Kerf.Engine.Foundation.UnconfirmedMeasureException e)
+        {
+            return e.Diagnostic;
+        }
+    }
+
+    private static Diagnostic? Checked(Shape input, double distance, JoinKind join, Shape result, string what, bool isWall)
     {
         if (input.Type != ShapeType.Solid && input.AllSolids().Length == 0)
         {

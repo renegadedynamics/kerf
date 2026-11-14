@@ -117,8 +117,9 @@ public static class BooleanVolumes
     /// <summary>
     /// The error if <paramref name="result"/> can't be what <paramref name="rule"/> makes of <paramref name="arguments"/> and
     /// <paramref name="tools"/>: <c>result.invalid</c>, naming the rule and the figures, or saying that its faces don't close,
-    /// though no point shows it wrong, so the solid they bound isn't the one asked for. Null if it may be right, or if no rule
-    /// applies to these shapes.
+    /// though no point shows it wrong, so the solid they bound isn't the one asked for; <c>measurement.unconfirmed</c> where a
+    /// volume it needs couldn't be confirmed to its precision, as an unknown volume proves nothing right (decision 2460). Null
+    /// if it may be right, or if no rule applies to these shapes.
     /// </summary>
     /// <param name="rule">The operation.</param>
     /// <param name="arguments">Its objects.</param>
@@ -126,6 +127,18 @@ public static class BooleanVolumes
     /// <param name="result">What it made.</param>
     /// <param name="fuzzyValue">Its fuzzy value, which widens the margin.</param>
     public static Diagnostic? Check(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue = 0)
+    {
+        try
+        {
+            return Checked(rule, arguments, tools, result, fuzzyValue);
+        }
+        catch (UnconfirmedMeasureException e)
+        {
+            return e.Diagnostic;
+        }
+    }
+
+    private static Diagnostic? Checked(BooleanVolumeRule rule, IReadOnlyList<Shape> arguments, IReadOnlyList<Shape> tools, Shape result, double fuzzyValue)
     {
         KernelArgumentNullException.ThrowIfNull(arguments);
         KernelArgumentNullException.ThrowIfNull(tools);

@@ -567,6 +567,57 @@ internal sealed class FaceIntegrand
         }
     }
 
+    // ---- Kerf: where the adaptive integration breaks its intervals (unit 15E15, decision 2455) ----
+    //
+    // OCCT's SUIntSubs and UKnots give one interval to an offset, extrusion or revolution surface whatever its basis.
+    // Gauss points across a basis's knot, where the integrand
+    // has a kink, converge slowly and the two orders the estimate compares can agree far from the integral: an offset
+    // face's area came out 5.8e-4 off with an estimate of 8e-9, the public figure at 1e-6. The adaptive path breaks at
+    // the surface's spans of C2 instead (a B-spline's knots, as OCCT has them; an offset's, extrusion's or revolution's
+    // basis's). OCCT's methods above are kept as they are for the oracle's comparisons; only MeasurementGauss's adaptive
+    // form calls these. Breaking a boundary curve where it crosses a span's bound as well was tried and left out: it moved
+    // two corner patches of blend/buildevol/K8 away from a fine mesh (decision 2455).
+
+    /// <summary>Whether the face's surface is a plane, cylinder, cone, sphere or torus, where the adaptive estimate is
+    /// taken as it stands (decision 2456).</summary>
+    public bool IsElementary => _surface.GetType() is Plane or SurfaceKind.Cylinder or SurfaceKind.Cone or SurfaceKind.Sphere or SurfaceKind.Torus;
+
+    /// <summary>The U bounds of the surface's spans for the adaptive integration: <see cref="UKnots"/>, or the spans of C2
+    /// of a surface OCCT gives one interval.</summary>
+    public double[] IntegrationUKnots() => IntegrationKnots(isU: true);
+
+    /// <summary>The V bounds of the surface's spans for the adaptive integration (see <see cref="IntegrationUKnots"/>).</summary>
+    public double[] IntegrationVKnots() => IntegrationKnots(isU: false);
+
+    private double[] IntegrationKnots(bool isU)
+    {
+        bool own = _surface.GetType() is Plane or SurfaceKind.Cylinder or SurfaceKind.Cone or SurfaceKind.Sphere or SurfaceKind.Torus
+                   or SurfaceKind.BezierSurface or SurfaceKind.BSplineSurface;
+        int n = own ? (isU ? SUIntSubs() : SVIntSubs()) : (isU ? _surface.NbUIntervals(Continuity.C2) : _surface.NbVIntervals(Continuity.C2));
+        var knots = new NCollection_Array1<double>(1, n + 1);
+        if (own)
+        {
+            if (isU)
+            {
+                UKnots(knots);
+            }
+            else
+            {
+                VKnots(knots);
+            }
+        }
+        else if (isU)
+        {
+            _surface.UIntervals(knots, Continuity.C2);
+        }
+        else
+        {
+            _surface.VIntervals(knots, Continuity.C2);
+        }
+
+        return knots.AsSpan().ToArray();
+    }
+
     /// <summary>The parameter of the start point of the current arc.</summary>
     public double FirstParameter() => _curve.FirstParameter();
 

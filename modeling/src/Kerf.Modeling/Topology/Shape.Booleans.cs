@@ -210,8 +210,9 @@ public static partial class ShapeExtensions
             }
             else
             {
-                double cleanedVolume = result.IntegrateVolume(), asMadeVolume = uncleaned.IntegrateVolume();
-                if (Math.Abs(cleanedVolume - asMadeVolume) > 1e-6 * Math.Max(Math.Abs(cleanedVolume), Math.Abs(asMadeVolume)))
+                // A volume the kernel couldn't confirm is NaN here, which keeps the result as made (decision 2460)
+                double cleanedVolume = Unconfirmed(() => result.IntegrateVolume()), asMadeVolume = Unconfirmed(() => uncleaned.IntegrateVolume());
+                if (!(Math.Abs(cleanedVolume - asMadeVolume) <= 1e-6 * Math.Max(Math.Abs(cleanedVolume), Math.Abs(asMadeVolume))))
                 {
                     Warnings.Warn("Boolean operation unable to clean: that would change its result's volume");
                     return (uncleaned, uncleanedHistory, null);
@@ -482,10 +483,23 @@ public static partial class ShapeExtensions
 
     /// <summary>The centre of mass of a shape by its dimension: its length, area or volume.</summary>
     internal static Point3D CentreOfMass(Shape shape) =>
-        shape.MassProperties(TopoUtil.Dim(shape) switch
+        TopoUtil.Measuring("centre", () => shape.MassProperties(TopoUtil.Dim(shape) switch
         {
             1 => Dimension.Length,
             2 => Dimension.Area,
             _ => Dimension.Volume,
-        }).CentreOfMass;
+        }).CentreOfMass);
+
+    // A measure, or NaN where the kernel couldn't confirm it (decision 2460)
+    private static double Unconfirmed(Func<double> measure)
+    {
+        try
+        {
+            return measure();
+        }
+        catch (ArithmeticException e) when (Diagnostic.FromException(e).Code == MeasureOperations.Unconfirmed)
+        {
+            return double.NaN;
+        }
+    }
 }

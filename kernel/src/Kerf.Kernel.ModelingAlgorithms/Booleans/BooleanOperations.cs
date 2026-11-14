@@ -383,21 +383,22 @@ public static class BooleanOperations
 
             if (double.IsNaN(before))
             {
-                before = built.Shape.IntegrateVolume(SameVolumeMeasured);
+                before = MeasureOperations.VolumeOrNaN(built.Shape, SameVolumeMeasured);
             }
             // The check alone isn't enough: over the sweep five results made again were valid and passed it, 14% to 42% out
-            // (decision 2291). The volume doesn't depend on a tolerance, and nor does the area, asked as well
-            double after = closed.Shape.IntegrateVolume(SameVolumeMeasured);
-            if (Math.Abs(after - before) > SameVolume * Math.Max(Math.Abs(before), Math.Abs(after)))
+            // (decision 2291). The volume doesn't depend on a tolerance, and nor does the area, asked as well. A volume or area
+            // that couldn't be confirmed is NaN, which no comparison here passes (decision 2460)
+            double after = MeasureOperations.VolumeOrNaN(closed.Shape, SameVolumeMeasured);
+            if (!(Math.Abs(after - before) <= SameVolume * Math.Max(Math.Abs(before), Math.Abs(after))))
             {
                 continue;
             }
 
             if (double.IsNaN(areaBefore))
             {
-                areaBefore = built.Shape.IntegrateArea(SameVolumeMeasured);
+                areaBefore = MeasureOperations.AreaOrNaN(built.Shape, SameVolumeMeasured);
             }
-            double areaAfter = closed.Shape.IntegrateArea(SameVolumeMeasured);
+            double areaAfter = MeasureOperations.AreaOrNaN(closed.Shape, SameVolumeMeasured);
             if (Math.Abs(areaAfter - areaBefore) <= SameVolume * Math.Max(Math.Abs(areaBefore), Math.Abs(areaAfter)))
             {
                 // One that stands in for a result made again says so as that did: made the other way round too, or else with
@@ -507,7 +508,8 @@ public static class BooleanOperations
                 continue;
             }
 
-            double volume = built.Shape.IntegrateVolume(SameVolumeMeasured), area = built.Shape.IntegrateArea(SameVolumeMeasured);
+            // NaN where unconfirmed, which matches nothing (decision 2460)
+            double volume = MeasureOperations.VolumeOrNaN(built.Shape, SameVolumeMeasured), area = MeasureOperations.AreaOrNaN(built.Shape, SameVolumeMeasured);
             foreach ((Result<Built<Shape>> other, double otherVolume, double otherArea) in made)
             {
                 if (Math.Abs(volume - otherVolume) <= SameVolume * Math.Max(Math.Abs(volume), Math.Abs(otherVolume))

@@ -88,12 +88,12 @@ public static partial class ShapeExtensions
             using ParallelVolumes.Scope parallel = TopoUtil.ParallelVolumesFor(parallelVolumes);
             if (self.IsEmpty || self.AsShape().IsVertex())
                 return 0.0;
-            return TopoUtil.ShapeTypeOf(self.AsShape()) switch
+            return TopoUtil.Measuring("volume", () => TopoUtil.ShapeTypeOf(self.AsShape()) switch
             {
                 ShapeType.Edge or ShapeType.Wire => self.AsShape().IntegrateLength(),
                 ShapeType.Face or ShapeType.Shell => self.AsShape().IntegrateArea(TopoUtil.Measured),
                 _ => self.AsShape().IntegrateVolume(TopoUtil.Measured),
-            };
+            });
         }
 
         /// <summary>The inertia tensor of the shape about its centre of mass, as rows.</summary>
@@ -104,7 +104,7 @@ public static partial class ShapeExtensions
                 if (self.IsEmpty)
                     return [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
                 Span<double> m = stackalloc double[9];
-                self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments).Inertia.CopyTo(m);
+                TopoUtil.MassProperties(self.AsShape(), Dimension.Volume).Inertia.CopyTo(m);
                 return [[m[0], m[1], m[2]], [m[3], m[4], m[5]], [m[6], m[7], m[8]]];
             }
         }
@@ -115,7 +115,7 @@ public static partial class ShapeExtensions
             get
             {
                 self.NeedsGeometry("principal axes");
-                var props = self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments);
+                var props = TopoUtil.MassProperties(self.AsShape(), Dimension.Volume);
                 var (m1, m2, m3) = props.PrincipalMoments;
                 var (a1, a2, a3) = props.PrincipalAxes;
                 return [(a1, m1), (a2, m2), (a3, m3)];
@@ -129,7 +129,7 @@ public static partial class ShapeExtensions
             {
                 if (self.IsEmpty)
                     return (0, 0, 0);
-                var moments = self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments).StaticMoments;
+                var moments = TopoUtil.MassProperties(self.AsShape(), Dimension.Volume).StaticMoments;
                 return (moments.X, moments.Y, moments.Z);
             }
         }
@@ -139,7 +139,7 @@ public static partial class ShapeExtensions
         {
             self.NeedsGeometry("radius of gyration");
             var ax1 = axis.ToAxis3D();
-            return self.AsShape().MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments).RadiusOfGyration(ax1);
+            return TopoUtil.MassProperties(self.AsShape(), Dimension.Volume).RadiusOfGyration(ax1);
         }
 
         // ---- Checks ----
@@ -385,7 +385,7 @@ public static partial class ShapeExtensions
     {
         ShapeType.Vertex => null,
         ShapeType.Edge or ShapeType.Wire => shape.MassProperties(Dimension.Length),
-        ShapeType.Face or ShapeType.Shell => shape.MassProperties(Dimension.Area, TopoUtil.MeasuredMoments),
-        _ => shape.MassProperties(Dimension.Volume, TopoUtil.MeasuredMoments),
+        ShapeType.Face or ShapeType.Shell => TopoUtil.MassProperties(shape, Dimension.Area),
+        _ => TopoUtil.MassProperties(shape, Dimension.Volume),
     };
 }

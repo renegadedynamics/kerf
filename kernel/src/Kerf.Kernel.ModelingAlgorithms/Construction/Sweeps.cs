@@ -52,10 +52,18 @@ public static class Sweeps
             return null;
         }
 
-        double area = shape.IntegrateArea();
-        return area > 0 && Math.Abs(shape.IntegrateVolume()) > 1e-10 * Math.Pow(area, 1.5)
-            ? null
-            : Diagnostic.Error(NoVolume, $"{what} encloses no volume.");
+        try
+        {
+            double area = shape.IntegrateArea();
+            return area > 0 && Math.Abs(shape.IntegrateVolume()) > 1e-10 * Math.Pow(area, 1.5)
+                ? null
+                : Diagnostic.Error(NoVolume, $"{what} encloses no volume.");
+        }
+        catch (Kerf.Engine.Foundation.UnconfirmedMeasureException e)
+        {
+            // A volume not known proves nothing either way (decision 2460)
+            return e.Diagnostic;
+        }
     }
 
     /// <summary>Whether a profile needn't be measured: a plane's extrusion has a volume unless the direction lies in the plane.</summary>

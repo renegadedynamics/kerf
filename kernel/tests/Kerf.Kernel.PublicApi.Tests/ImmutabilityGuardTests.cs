@@ -24,6 +24,8 @@ public class ImmutabilityGuardTests
         ["Kerf.Booleans.BooleanVolumes.s_proofsInParallel"] =
             "Internal and [ThreadStatic]: the inputs'-faces proofs this thread has classified in parallel, read by the test that "
             + "they give what one at a time gives (unit 15AR). Nothing reads it to decide a result.",
+        ["Kerf.Measurement.MeasureOperations.s_confirmNothing"] =
+            "Internal and [ThreadStatic]: set only by the tests that make every confirmation fail on their own thread (decision 2460).",
         ["Kerf.Topology.Placement.s_productItems"] =
             "Private and [ThreadStatic]: scratch storage for the product of two placements' chains, which never escapes the call.",
         ["Kerf.Drawing.Png.Encode"] = "The PNG file's bytes: a new array, the caller's own.",
