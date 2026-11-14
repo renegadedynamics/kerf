@@ -4,6 +4,10 @@
 > their open units, 13H, 13L and 14B's larger items, move here, beside a unit for each loose end left at the release.
 > The release is 0.6.0, with no fixed date: when section 1 is done and the corpus and the users' cases show nothing
 > worse than 0.5.0. Sections 2 to 4 ship with whatever is ready by then.
+>
+> **0.6.0 prepared, 14 November 2026** (decision 2462), for the owner to test and publish. Phase 15 closes with it: 15E
+> stopped where no silent wrong result is known (the owner, 13 November 2026), 15D at the scripts named so far. What's
+> left is in "After 0.6.0" below.
 
 ## The goal
 
@@ -163,8 +167,20 @@ kerf-cad skill moves to 0.6.0 once the owner has published the packages.
 As in phases 13 and 14: at most three helpers, each on a branch and worktree of its own, then the merge gate, one at
 a time. 15A and 15K first; 15B, 15C, 15G and 15H next, with 15E, 15F and 15I as slots free; 15J when the gate isn't in
 use; 15D when the owner names a script. Results stay identical unless a unit says otherwise and records why. Timed
-claims come from a quiet machine; the rig compares against `docs/benchmarks/2026-11-10-33b1e7dc7.tsv` (decision 2087),
+claims come from a quiet machine; the rig compares against `docs/benchmarks/2026-11-14-e789c8546.tsv` (decision 2463; before it 2087's),
 and the release check against 0.5.0's packages. Nothing is pushed, except by the owner.
+
+## After 0.6.0
+
+For 0.6.1 or the next plan, none a known silent wrong result (decisions 2430, 2440, 2444, 2445, 2450):
+
+- **Loud failures that could build:** the 13 rows of occt-defects.md that can't be settled, each with what it needs
+  (decision 2450); the bisector pieces and decision 2391's trim (2444); the face builder's unclassified edges on #1496's
+  tubes bent at 24 and 24.5 (2430, 2433); `Offset(-0.3)` on 15E18's prism throwing `InvalidOperationException` where
+  it should fail with a result (2440).
+- **What the checks cost, won back:** the users' enclosures are 14% slower than 0.5.0 and the Booleans' clean
+  allocates about 5% more (decision 2463), against decision 1829's bar, results identical.
+- **15D:** a script when the owner names one. **15F:** the wasteful cases, on down the list.
 
 ## Questions for the owner
 

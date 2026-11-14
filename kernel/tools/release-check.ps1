@@ -51,7 +51,7 @@
 .PARAMETER RunTimeoutSeconds
   How long one run of a case may take before the check stops it as a hang.
 .EXAMPLE
-  kernel/tools/release-check.ps1 -CandidatePackages ../nuget-release/0.5.0
+  kernel/tools/release-check.ps1 -CandidatePackages ../nuget-release/0.6.0
 .EXAMPLE
   kernel/tools/release-check.ps1 -Last 0.3.0 -Candidate 0.4.0
 #>

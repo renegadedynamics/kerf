@@ -4,7 +4,7 @@ Kerf.Modeling is a .NET 10 CAD modelling library: build123d's API, in C#, over K
 Open CASCADE). This guide gets you from nothing to a part, a mesh and a STEP file, and covers what most often
 trips people up. If you know build123d, [name-map.md](name-map.md) lists every name that changed.
 
-Every example here was compiled and run against Kerf 0.5.0, and its volumes checked by hand.
+Every example here was compiled and run against Kerf 0.6.0, and its volumes checked by hand.
 
 ## 1. Setting up
 
@@ -12,7 +12,7 @@ You need the .NET 10 SDK (`dotnet --version` shows 10.0 or later). The quickest 
 `dotnet run`: no project file needed.
 
 ```csharp
-#:package Kerf.Modeling@0.5.0
+#:package Kerf.Modeling@0.6.0
 #:property PublishAot=false
 using Kerf;
 using Kerf.Geometry;
@@ -31,7 +31,7 @@ runs are quick.
 
 - `#:property PublishAot=false` stops a file-based app from pulling in the native-compilation package, which isn't
   needed and gives a NuGet warning.
-- In a project instead: `dotnet add package Kerf.Modeling --version 0.5.0`. It brings the four kernel packages with it.
+- In a project instead: `dotnet add package Kerf.Modeling --version 0.6.0`. It brings the four kernel packages with it.
 - The namespaces: `Kerf` (`Result<T>`, `Diagnostic`), `Kerf.Geometry` (`Point3D`, `Vector3D`, `Direction3D`),
   `Kerf.Topology` (the kernel's `Shape`, `Face`, `Edge`…), `Kerf.Modeling` (everything in this guide), and
   `using static Kerf.Modeling.Operations;` so that `Extrude(…)`, `Fillet(…)` and the rest read as in build123d.
@@ -221,7 +221,7 @@ is built, its face in two meeting at that point.
 
 **A chamfer OCCT can't build** at a corner of B-spline faces, as on a loft from a square to a circle, where its side
 faces turn tangent at the top, is built Kerf's own way and checked by its volume, in seconds rather than OCCT's fraction of
-one (about 11 to 14 s for that loft with every edge chamfered). It has a time limit, 20 s by default: past it the
+one (that loft with every edge chamfered: about 5 s at 0.05, 11 to 14 s at lengths near 0.01). It has a time limit, 20 s by default: past it the
 chamfer fails with `modeling.chamfer-failed`, saying it couldn't be built within its time limit of so many seconds,
 and the kernel's `fillet.time-limit` among the diagnostics, followed by OCCT's own failure. A token or
 `Cancellation.Use` still stops it sooner, as a cancellation.
@@ -277,6 +277,10 @@ Part p = Fillet(box, topEdges, 2).Value;    // throws InvalidOperationException,
   checked only where surfaces nearly touched (a result's tolerance over 1e-5, 64 faces or fewer). A gap inside a
   vertex's tolerance isn't one: `Volume`, `Area` and the check read a face's boundary straight across it, as the
   mesh does.
+- **`Volume`, `Area`, `Center` and the moments are right to their precision, or throw:** each face that isn't a plane,
+  cylinder, cone, sphere or torus is checked against an integration ten times finer, and a figure that can't be
+  confirmed throws `ModelingException` with `measurement.unconfirmed`, naming the face and why. It's rare: one measure
+  in about 1,600 over OCCT's test shapes, at a precision far tighter than these use.
 - `part.IsValid` checks any shape, as build123d's `is_valid`. Check what you import.
 
 ## 7. Meshing
